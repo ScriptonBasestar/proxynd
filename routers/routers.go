@@ -1,9 +1,9 @@
 package routers
 
 import (
-	apiControllerV1 "Golang-Project-Structure/controllers/api/v1"
-	apiControllerV2 "Golang-Project-Structure/controllers/api/v2"
-	"Golang-Project-Structure/middlewares"
+	apiControllerV1 "dohoarding/controllers/api/v1"
+	apiControllerV2 "dohoarding/controllers/api/v2"
+	"dohoarding/middlewares"
 	"github.com/gin-gonic/gin"
 )
 

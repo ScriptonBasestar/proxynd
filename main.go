@@ -1,7 +1,7 @@
 package main
 
 import (
-	"GoProject/routers"
+	"dohoarding/routers"
 	"fmt"
 	"github.com/joho/godotenv"
 	"os"

@@ -1,9 +1,9 @@
 package v2service
 
 import (
-	u "Golang-Project-Structure/apiHelpers"
-	"Golang-Project-Structure/models"
-	res "Golang-Project-Structure/resources/api/v2"
+	u "dohoarding/apiHelpers"
+	"dohoarding/models"
+	res "dohoarding/resources/api/v2"
 )
 
 //UserService struct
