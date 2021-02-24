@@ -1,8 +1,7 @@
 package proxy
 
 import (
-	u "dohoarding/apiHelpers"
-	config2 "dohoarding/config"
+	"dohoarding/configs"
 	"dohoarding/helpers"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -16,21 +15,15 @@ import (
 
 func Maven(c *gin.Context) {
 	log.Printf("Access proxy maven\n")
-	var downloadService config2.DownloadService
-
 	requestPath := c.Param("path")
-	config, err := downloadService.DownloadProxy(requestPath)
-	if err != nil {
-		u.Respond(c.Writer, u.Message(1, "Invalid request"))
-		return
-	}
+	config := configs.MavenConfig{}
+	config.ReadConfig("configs/maven-proxy.yaml")
 
 	// Create the file
 	dirpath := filepath.Dir(path.Join("d:/tmp/cachedir" + requestPath))
 	filename := filepath.Base(requestPath)
 	os.MkdirAll(dirpath, os.ModePerm)
 	out, err := os.Create(path.Join("d:/tmp/cachedir" + requestPath))
-	//out, err := os.Create("d:/tmp/cachedir/aaa/bbb")
 	if err != nil {
 		panic(err)
 		return

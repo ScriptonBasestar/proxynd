@@ -1,4 +1,4 @@
-package config
+package configs
 
 import (
 	"fmt"
@@ -8,6 +8,12 @@ import (
 	"os"
 	"testing"
 )
+
+func TestMavenConfig_MavenProxy(t *testing.T) {
+	cfg := MavenConfig{}
+	cfg.ReadConfig("maven-proxy.yaml")
+	fmt.Println(cfg)
+}
 
 func TestYamlMake(t *testing.T) {
 	mavenConfig := MavenConfig{}
@@ -37,7 +43,7 @@ func TestYamlMake(t *testing.T) {
 	if err != nil {
 		fmt.Println("errrrr write")
 	}
-	ioutil.WriteFile("../config/maven-tmp.yaml", yamlFile, os.ModeAppend)
+	ioutil.WriteFile("../configs/maven-tmp.yaml", yamlFile, os.ModeAppend)
 	fmt.Println(string(yamlFile))
 
 	mavenConfig2 := MavenConfig{
@@ -48,8 +54,7 @@ func TestYamlMake(t *testing.T) {
 }
 
 func TestYaml(t *testing.T) {
-
-	yamlFile, err := ioutil.ReadFile("../config/maven-proxy-public.yaml")
+	yamlFile, err := ioutil.ReadFile("../configs/maven-proxy.yaml")
 	if err != nil {
 		log.Printf("yamlFile.Get err   #%v ", err)
 	}
@@ -61,5 +66,4 @@ func TestYaml(t *testing.T) {
 	if err != nil {
 		log.Fatalf("Unmarshal: %v", err)
 	}
-
 }

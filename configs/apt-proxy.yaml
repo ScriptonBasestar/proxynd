@@ -1,0 +1,8 @@
+server:
+  official:
+    url: http://archive.ubuntu.com/ubuntu
+    tag1: focal
+    tag2: main
+    tag3: restricted
+    tag4: universe
+    tag5: multiuniverse
