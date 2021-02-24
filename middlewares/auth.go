@@ -13,3 +13,12 @@ func UserMiddlewares() gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+func ProxyMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		//Code for middlewares
+
+		c.Next()
+	}
+}

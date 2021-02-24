@@ -9,12 +9,11 @@ import (
 
 //Execution starts from main function
 func main() {
-
 	e := godotenv.Load()
 	if e != nil {
 		fmt.Print(e)
 	}
-	r := Routers.SetupRouter()
+	r := routers.SetupRouter()
 
 	port := os.Getenv("port")
 
@@ -34,5 +33,4 @@ func main() {
 	}
 
 	r.Run(":" + port)
-
 }

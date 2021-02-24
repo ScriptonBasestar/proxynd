@@ -1,4 +1,4 @@
-maven:
+server:
   # https://docs.gradle.org/current/userguide/declaring_repositories.html
   centeral:
     id: maven-center
@@ -8,17 +8,17 @@ maven:
   jcener:
     url: https://jcenter.bintray.com
     description: "jcenter"
-  google:
-    url: https://maven.google.com
-    description: "google android"
-  # https://repo.spring.io/webapp/#/home
-  spring_release:
-    name: repo.spring.io-releases
-    url: https://repo.spring.io/release
-  spring_snapshorts:
-    id: spring-snapshots
-    name: repo.spring.io-snapshots
-    url: https://repo.spring.io/snapshot
+#  google:
+#    url: https://maven.google.com
+#    description: "google android"
+#  # https://repo.spring.io/webapp/#/home
+#  spring_release:
+#    name: repo.spring.io-releases
+#    url: https://repo.spring.io/release
+#  spring_snapshorts:
+#    id: spring-snapshots
+#    name: repo.spring.io-snapshots
+#    url: https://repo.spring.io/snapshot
 
 #  company_internal:
 #    url: http://company
