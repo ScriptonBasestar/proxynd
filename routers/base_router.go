@@ -1,13 +1,11 @@
 package routers
 
 import (
-	"dohoarding/controllers"
 	"github.com/gin-gonic/gin"
 )
 
 //SetupRouter function will perform all route operations
 func SetupRouter() *gin.Engine {
-
 	r := gin.Default()
 
 	//Giving access to storage folder
@@ -33,25 +31,5 @@ func SetupRouter() *gin.Engine {
 	//	}
 	//})
 
-	//mavenGroup := r.Group("/repo")
-	//mavenGroup.GET("maven*", controllers.Proxy)
-	//r.GET("/repo/maven/:path", controllers.Proxy)
-	r.GET("/repo/maven/*path", controllers.Maven)
-
-	////API route for version 1
-	//v1 := r.Group("/api/v1")
-	//
-	////If you want to pass your route through specific middlewares
-	//v1.Use(middlewares.UserMiddlewares())
-	//{
-	//	v1.POST("user-list", apiControllerV1.UserList)
-	//}
-	//
-	////API route for version 2
-	//v2 := r.Group("/api/v2")
-	//
-	//v2.POST("user-list", apiControllerV2.UserList)
-
 	return r
-
 }

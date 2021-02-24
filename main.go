@@ -13,7 +13,10 @@ func main() {
 	if e != nil {
 		fmt.Print(e)
 	}
+
 	r := routers.SetupRouter()
+	routers.MirrorRouter(r)
+	routers.ProxyRouter(r)
 
 	port := os.Getenv("port")
 

@@ -1,9 +1,9 @@
-package controllers
+package proxy
 
 import (
 	u "dohoarding/apiHelpers"
 	config2 "dohoarding/config"
-	"dohoarding/utils"
+	"dohoarding/helpers"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"io"
@@ -41,7 +41,7 @@ func Maven(c *gin.Context) {
 	fmt.Println(len(config.Server))
 	for s, server := range config.Server {
 		fmt.Printf("for moon %s\n", s)
-		resp, err := http.Get(utils.JoinURL(server.Url, requestPath))
+		resp, err := http.Get(helpers.JoinURL(server.Url, requestPath))
 		if err != nil {
 			log.Fatal(err)
 			return
