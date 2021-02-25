@@ -1,8 +1,22 @@
 server:
-  official:
+  ubuntu_global:
     url: http://archive.ubuntu.com/ubuntu
-    tag1: focal
-    tag2: main
-    tag3: restricted
-    tag4: universe
-    tag5: multiuniverse
+  kakao_mirror:
+    url: http://mirror.kakao.com/ubuntu
+#    editions:
+#      - name: focal
+#        components:
+#          - main
+#          - restricted
+#          - universe
+#          - multiuniverse
+#      - name: buster-updates
+#        components:
+#          - main
+#          - contrib
+#      - name: bionic
+#        components:
+#          - main
+#          - restricted
+#          - universe
+#          - multiuniverse
