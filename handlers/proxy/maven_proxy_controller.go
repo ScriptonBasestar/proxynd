@@ -20,13 +20,17 @@ func Maven(c *gin.Context) {
 	config := configs.MavenConfig{}
 	config.ReadConfig("configs/maven-proxy.yaml")
 
-	base, err := homedir.Dir()
-	if err != nil {
-		log.Fatal(err)
+	basedir := os.Getenv("BASE_DIR")
+	if basedir == "" {
+		var err error
+		basedir, err = homedir.Dir()
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	// Create the file
-	filefullpath := path.Join(base, os.Getenv("CACHE_DIR")+requestPath)
+	filefullpath := path.Join(basedir, os.Getenv("CACHE_DIR")+requestPath)
 	filename := filepath.Base(filefullpath)
 	if _, err := os.Stat(filefullpath); os.IsNotExist(err) {
 		dirpath := filepath.Dir(filefullpath)
