@@ -6,6 +6,10 @@ import (
 )
 
 func TestReadYaml(t *testing.T) {
-	yaml := ReadYaml("maven-proxy.yaml")
-	fmt.Println(yaml)
+	var cfg struct {
+		Server map[string]interface{} `yaml:"server"`
+	}
+	cfg.Server = map[string]interface{}{}
+	ReadYaml("maven-proxy.yaml", cfg)
+	fmt.Println(cfg)
 }
