@@ -26,3 +26,6 @@ maven
 apt
 * https://wiki.debian.org/DebianRepository/Format
 * http://www.ibiblio.org/gferg/ldp/giles/repository/repository-2.html
+
+goproxy
+* https://github.com/elazarl/goproxy
