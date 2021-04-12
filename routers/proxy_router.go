@@ -11,4 +11,6 @@ func ProxyRouter(r *gin.Engine) {
 	//r.GET("/repo/maven/:path", handlers.Proxy)
 	r.GET("/proxy/apt/*path", proxy.Apt)
 	r.GET("/proxy/maven/*path", proxy.Maven)
+	r.GET("/proxy/apt/*path", proxy.Apt)
+	//r.GET("/proxy/vagrant/*path", proxy.Vagrant)
 }

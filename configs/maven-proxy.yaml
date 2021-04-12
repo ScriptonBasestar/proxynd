@@ -1,13 +1,14 @@
 server:
+  path: d:/tmp/cachedir/proxy/maven
   # https://docs.gradle.org/current/userguide/declaring_repositories.html
-  centeral:
-    id: maven-center
-    name: Maven Center
-    url: https://repo.maven.apache.org/maven2/
-    description: "maven centeral"
-  jcener:
-    url: https://jcenter.bintray.com
-    description: "jcenter"
+  servers:
+    - name: Maven Center
+      id: maven-center
+      url: https://repo.maven.apache.org/maven2/
+      description: "maven centeral"
+    - name: jcener
+      url: https://jcenter.bintray.com
+      description: "jcenter"
 #  google:
 #    url: https://maven.google.com
 #    description: "google android"

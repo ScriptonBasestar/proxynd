@@ -12,6 +12,7 @@ type VagrantServer struct {
 }
 
 type VagrantConfig struct {
+	Path   string                 `yaml:"path"`
 	Server map[string]MavenServer `yaml:"server"`
 }
 

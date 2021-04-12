@@ -1,22 +1,6 @@
 server:
-  ubuntu_global:
+  path: d:/tmp/cachedir/proxy/apt
+  official:
     url: http://archive.ubuntu.com/ubuntu
-  kakao_mirror:
+  kakao:
     url: http://mirror.kakao.com/ubuntu
-#    editions:
-#      - name: focal
-#        components:
-#          - main
-#          - restricted
-#          - universe
-#          - multiuniverse
-#      - name: buster-updates
-#        components:
-#          - main
-#          - contrib
-#      - name: bionic
-#        components:
-#          - main
-#          - restricted
-#          - universe
-#          - multiuniverse

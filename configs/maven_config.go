@@ -12,7 +12,8 @@ type MavenServer struct {
 }
 
 type MavenConfig struct {
-	Server map[string]MavenServer `yaml:"server"`
+	Path    string        `yaml:"path"`
+	Servers []MavenServer `yaml:"servers"`
 }
 
 func (cfg *MavenConfig) ReadConfig(path string) {

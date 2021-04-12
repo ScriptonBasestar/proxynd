@@ -43,8 +43,8 @@ func Maven(c *gin.Context) {
 		defer out.Close()
 
 		// Get the data
-		fmt.Println(len(config.Server))
-		for s, server := range config.Server {
+		fmt.Println(len(config.Servers))
+		for s, server := range config.Servers {
 			fmt.Printf("for moon %s\n", s)
 			resp, err := http.Get(helpers.JoinURL(server.Url, requestPath))
 			if err != nil {

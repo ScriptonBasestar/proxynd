@@ -12,7 +12,8 @@ type AptServer struct {
 }
 
 type AptConfig struct {
-	Server map[string]AptServer `yaml:"server"`
+	Path    string        `yaml:"path"`
+	Servers []MavenServer `yaml:"servers"`
 }
 
 func (cfg *AptConfig) ReadConfig(path string) {
