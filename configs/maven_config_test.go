@@ -17,24 +17,24 @@ func TestMavenConfig_MavenProxy(t *testing.T) {
 
 func TestYamlMake(t *testing.T) {
 	mavenConfig := MavenConfig{}
-	mavenConfig.Server = map[string]MavenServer{
-		"centeral": {
+	mavenConfig.Servers = []MavenServer{
+		{
 			Id:          "maven-center",
 			Name:        "Center",
 			Url:         "https://repo.maven.com",
 			Description: "desc1",
 		},
-		"jcenter": {
+		{
 			Id:          "jcenter-center",
 			Name:        "JCenter",
 			Url:         "https://repo.jmaven.com",
 			Description: "desc2",
 		},
-		"google": {
+		{
 			Url:         "https://repo.jmaven.com",
 			Description: "desc2",
 		},
-		"spring-release": {
+		{
 			Name: "springrelease",
 			Url:  "https://repo.jmaven.com",
 		},
@@ -47,7 +47,7 @@ func TestYamlMake(t *testing.T) {
 	fmt.Println(string(yamlFile))
 
 	mavenConfig2 := MavenConfig{
-		Server: map[string]MavenServer{},
+		Servers: []MavenServer{},
 	}
 	err = yaml.Unmarshal(yamlFile, mavenConfig2)
 	fmt.Println(mavenConfig2)
@@ -60,7 +60,7 @@ func TestYaml(t *testing.T) {
 	}
 	fmt.Println(string(yamlFile))
 	mavenConfig := MavenConfig{
-		Server: map[string]MavenServer{},
+		Servers: []MavenServer{},
 	}
 	err = yaml.Unmarshal(yamlFile, mavenConfig)
 	if err != nil {
