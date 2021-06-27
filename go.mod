@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/denisenkom/go-mssqldb v0.0.0-20191124224453-732737034ffd // indirect
-	github.com/elazarl/goproxy v0.0.0-20210110162100-a92cc753f88e // indirect
+	github.com/elazarl/goproxy v0.0.0-20210110162100-a92cc753f88e
 	github.com/gin-gonic/gin v1.7.2
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/joho/godotenv v1.3.0
