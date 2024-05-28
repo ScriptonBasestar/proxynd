@@ -1,4 +1,4 @@
-ARG GO_VERSION=1.16
+ARG GO_VERSION=1.22
 ARG APP_DIR=/go/src/app
 
 FROM golang:${GO_VERSION}-alpine

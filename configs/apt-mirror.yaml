@@ -1,5 +1,5 @@
 server:
-  path: ~/tmp/cachedir/proxy/apt
+  path: ~/tmp/cachedir/mirror/apt
   servers:
     - name: official
       url: http://archive.ubuntu.com/ubuntu
