@@ -2,13 +2,13 @@ package helpers
 
 import (
 	"gopkg.in/yaml.v3"
-	"io/ioutil"
 	"log"
+	"os"
 )
 
 func ReadYaml(path string, out interface{}) {
 	// cache - no expire
-	yamlFile, err := ioutil.ReadFile(path)
+	yamlFile, err := os.ReadFile(path)
 	if err != nil {
 		log.Printf("read configs err #%v ", err)
 	}

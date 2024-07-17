@@ -1,7 +1,9 @@
 package configs
 
 import (
-	"dohoarding/helpers"
+	"gopkg.in/yaml.v3"
+	"log"
+	"os"
 )
 
 type MavenServer struct {
@@ -17,5 +19,16 @@ type MavenConfig struct {
 }
 
 func (cfg *MavenConfig) ReadConfig(path string) {
-	helpers.ReadYaml(path, cfg)
+	//helpers.ReadYaml(path, cfg)
+	yamlFile, err := os.ReadFile(path)
+	if err != nil {
+		log.Printf("read configs err #%v ", err)
+	}
+	log.Printf("read yaml file path: %s", path)
+	err = yaml.Unmarshal(yamlFile, cfg)
+	if err != nil {
+		log.Fatalf("Unmarshal: %v", err)
+		panic(err)
+	}
+	log.Printf("read config success %s \n", cfg)
 }
