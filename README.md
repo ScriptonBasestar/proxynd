@@ -1,27 +1,72 @@
-# DoHoarding
+# 모은다 
 
 ## 용도
 
-프락시, 미러 코드로 관리
+Proxy, Mirror를 같이 하려고 했는데... 귀찮아서 proxy만 남길 예정
 
+- [v] Maven
+- [ ] Apt
+- [ ] Npm
+- [ ] Go
+- [ ] Python
+- [ ] Ruby
+- [ ] Docker
+- [ ] 쩌 Repo 인증기능
+- [ ] 이 리포 인증기능 
 
-HTTP 프락시 쓰는것과 다른점은.. 파일이 내 드라이브에 남는다는 것
+## 쓰면 좋은점
+로컬 repo 충돌났을 때 다 날리고 다시 하는 경우 좋음
+컴퓨터가 두서너대여섯대인 경우 좋음
+인터넷이 느린 경우 좋음
+사무실에서 다 같이 쓰는경우 좋음
 
-http 프락시처럼 내가 받은 파일만 파편화되서 저장하고 있는데 관련파일그룹을 모두 받는 방향으로
+## 쓰면 나쁨점
+한번하면 되지만 설치는 귀찮음
+지원되는게 별로 없음
 
-maven은 jar+pom+디렉토리+소스코드
+## 사용법
 
-## 목표
+대강 이런걸 어느 경로에 저장할까 고민으 좀 해 보는 중
 
-* maven - 디렉토리 단위로 다운로드
-* npm
-* apt
-* vagrant box
-* git
+- global config
+  - 베이스 설정 루프
+  - 베이스 캐시 패스
+  - 캐시 시간
+- PackageManager config
+  - repo별로 cache 설정
+- Registry config
+  - 각각 target cache 설정
+```yaml
+path: d:/tmp/cachedir/proxy/maven
+# https://docs.gradle.org/current/userguide/declaring_repositories.html
+servers:
+  - name: Maven Center
+    id: maven-center
+    url: https://repo.maven.apache.org/maven2/
+    description: "maven centeral"
+    
+  - name: jcener
+    url: https://jcenter.bintray.com
+    description: "jcenter"
+#  google:
+#    url: https://maven.google.com
+#    description: "google android"
+#  # https://repo.spring.io/webapp/#/home
+#  spring_release:
+#    name: repo.spring.io-releases
+#    url: https://repo.spring.io/release
+#  spring_snapshorts:
+#    id: spring-snapshots
+#    name: repo.spring.io-snapshots
+#    url: https://repo.spring.io/snapshot
 
-## Repo
-
-* https://repo.spring.io/webapp/#/artifacts/browse/tree/General/libs-milestone
+#  company_internal:
+#    url: http://company
+#    description: "my company"
+#    auth:
+#      method: BASIC
+#      username:
+```
 
 ## REF
 
