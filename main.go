@@ -7,7 +7,6 @@ import (
 	"os"
 )
 
-//Execution starts from main function
 func main() {
 	e := godotenv.Load()
 	if e != nil {
@@ -15,7 +14,6 @@ func main() {
 	}
 
 	r := routers.SetupRouter()
-	routers.MirrorRouter(r)
 	routers.ProxyRouter(r)
 
 	port := os.Getenv("port")

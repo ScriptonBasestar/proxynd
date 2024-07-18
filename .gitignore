@@ -3,6 +3,8 @@
 
 # go
 vendor/
+/main
 
 # test
 tmp/
+
