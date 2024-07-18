@@ -1,7 +1,7 @@
 package main
 
 import (
-	"dohoarding/routers"
+	"deproxy/routers"
 	"fmt"
 	"github.com/joho/godotenv"
 	"os"

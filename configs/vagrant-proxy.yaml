@@ -1,6 +1,0 @@
-server:
-  path: d:/tmp/cachedir/proxy/vagrant
-  servers:
-    - id: official
-      name: Official
-      url: http://official

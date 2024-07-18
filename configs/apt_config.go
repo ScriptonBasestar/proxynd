@@ -1,13 +1,13 @@
 package configs
 
 import (
-	"dohoarding/helpers"
+	"deproxy/helpers"
 )
 
 type AptServer struct {
 	//Id          string `yaml:"id"`
-	//Name        string `yaml:"name"`
-	Url string `yaml:"url"`
+	Name string `yaml:"name"`
+	Url  string `yaml:"url"`
 	//Description string `yaml:"description"`
 }
 

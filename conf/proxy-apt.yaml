@@ -1,0 +1,8 @@
+path: ~/tmp/cachedir/proxy/apt
+servers:
+  - name: official
+    url: http://archive.ubuntu.com/ubuntu
+  - name: kakao
+    url: http://mirror.kakao.com/ubuntu
+  - name: ubuntu-security
+    url: http://security.ubuntu.com/ubuntu

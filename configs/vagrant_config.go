@@ -1,7 +1,7 @@
 package configs
 
 import (
-	"dohoarding/helpers"
+	"deproxy/helpers"
 )
 
 type VagrantServer struct {

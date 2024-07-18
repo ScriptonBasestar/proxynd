@@ -2,6 +2,7 @@ package configs
 
 import (
 	"fmt"
+	"github.com/go-playground/assert/v2"
 	"gopkg.in/yaml.v3"
 	"log"
 	"os"
@@ -10,13 +11,14 @@ import (
 
 func TestMavenConfig_MavenProxy(t *testing.T) {
 	cfg := MavenConfig{}
-	cfg.ReadConfig("configs/tmpa/maven-proxy.yaml")
+	cfg.ReadConfig("../conf/proxy-maven.yaml")
 	fmt.Println(cfg)
+	assert.Equal(t, cfg.Path, "d:/tmp/cachedir/proxy/maven")
 }
 
 func TestYamlMake(t *testing.T) {
 	mavenConfig := MavenConfig{}
-	mavenConfig.Path = "tmpa"
+	mavenConfig.Path = "tmp"
 	mavenConfig.Servers = []MavenServer{
 		{
 			Id:          "maven-center",
@@ -43,12 +45,12 @@ func TestYamlMake(t *testing.T) {
 	if err != nil {
 		fmt.Println("errrrr write")
 	}
-	err = os.MkdirAll("tmpa/", 0766)
+	err = os.MkdirAll("tmp/", 0766)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	err = os.WriteFile("tmpa/maven-tmp.yaml", yamlFile, 0766)
+	err = os.WriteFile("tmp/maven-tmp.yaml", yamlFile, 0766)
 	if err != nil {
 		t.Error(err)
 		return
@@ -57,7 +59,7 @@ func TestYamlMake(t *testing.T) {
 }
 
 func TestYaml(t *testing.T) {
-	yamlFile, err := os.ReadFile("../configs/maven-proxy.yaml")
+	yamlFile, err := os.ReadFile("../configs/proxy-maven.yaml")
 	if err != nil {
 		log.Printf("yamlFile.Get err   #%v ", err)
 	}

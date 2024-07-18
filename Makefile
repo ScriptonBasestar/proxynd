@@ -1,12 +1,22 @@
 ENV=develop
-DOCKER_REGISTRY=scripton-io
+#DOCKER_REGISTRY=scripton-io
+DOCKER_REGISTRY=archmagece
 
 
-build:
+docker-build:
 	@echo "Building..."
-	docker build -t ${DOCKER_REGISTRY}/doharding:latest .
+	docker build -t deproxy .
+
+docker-push:
+	docker tag deproxy ${DOCKER_REGISTRY}/deproxy:latest .
+	docker push ${DOCKER_REGISTRY}/deproxy:latest
 
 docker-run:
+	@echo "Running..."
+	docker run -it -p 8080:8080 --rm deproxy
+	@echo "image name : deproxy"
+
+test-run:
 	@echo "Running..."
 	docker run -it --rm golang bash
 #	export MYGID=1000

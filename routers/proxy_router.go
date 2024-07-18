@@ -1,7 +1,7 @@
 package routers
 
 import (
-	dproxy "dohoarding/handlers/proxy"
+	dproxy "deproxy/handlers/proxy"
 	"github.com/gin-gonic/gin"
 )
 

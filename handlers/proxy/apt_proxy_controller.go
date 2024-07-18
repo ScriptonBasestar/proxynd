@@ -1,8 +1,8 @@
 package proxy
 
 import (
-	"dohoarding/configs"
-	"dohoarding/helpers"
+	"deproxy/configs"
+	"deproxy/helpers"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/mitchellh/go-homedir"
@@ -18,7 +18,7 @@ func Apt(c *gin.Context) {
 	log.Printf("Access proxy apt\n")
 	requestPath := c.Param("path")
 	config := configs.AptConfig{}
-	config.ReadConfig("configs/apt-proxy.yaml")
+	config.ReadConfig("configs/proxy-apt.yaml")
 
 	basedir := os.Getenv("BASE_DIR")
 	if basedir == "" {

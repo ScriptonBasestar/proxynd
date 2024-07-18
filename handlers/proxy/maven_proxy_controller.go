@@ -1,8 +1,8 @@
 package proxy
 
 import (
-	"dohoarding/configs"
-	"dohoarding/helpers"
+	"deproxy/configs"
+	"deproxy/helpers"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/mitchellh/go-homedir"
@@ -39,7 +39,8 @@ func Maven(c *gin.Context) {
 	log.Printf("Access proxy maven\n")
 	requestPath := c.Param("path")
 	config := configs.MavenConfig{}
-	config.ReadConfig("configs/maven-proxy.yaml")
+	configDir := helpers.GetEnv("CONFIG_DIR", "conf/")
+	config.ReadConfig(configDir + "/conf/proxy-maven.yaml")
 
 	basedir := helpers.GetEnv("BASE_DIR", "./tmp")
 	if basedir == "" {

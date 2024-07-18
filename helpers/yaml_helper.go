@@ -11,6 +11,7 @@ func ReadYaml(path string, out interface{}) {
 	yamlFile, err := os.ReadFile(path)
 	if err != nil {
 		log.Printf("read configs err #%v ", err)
+		panic(err)
 	}
 	log.Printf("read yaml file path: %s", path)
 	err = yaml.Unmarshal(yamlFile, out)

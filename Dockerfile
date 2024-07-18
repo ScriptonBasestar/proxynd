@@ -1,10 +1,9 @@
 ARG GO_VERSION=1.22
-ARG APP_BUILD_DIR=/go/src/app
-ARG APP_RUN_DIR=/go/src/app
-
 
 FROM golang:${GO_VERSION} as builder
 
+ARG APP_BUILD_DIR=/go/src/app
+ARG APP_RUN_DIR=/go/src/app
 #ARG MYGID=1001
 #ARG MYUID=1001
 #ARG APP_USER=user01
@@ -25,15 +24,18 @@ FROM golang:${GO_VERSION} as builder
 
 WORKDIR $APP_BUILD_DIR
 
-COPY . .
+#COPY . .
+COPY . $APP_BUILD_DIR
 RUN go get -d -v ./...
 RUN go mod download
-#RUN go install -v ./...
 RUN go build -o main
 
 
 # run phase
-FROM alpine:latest
+FROM golang:${GO_VERSION}
+
+ARG APP_BUILD_DIR=/go/src/app
+ARG APP_RUN_DIR=/go/src/app
 
 ENV BASE_DIR=/storage
 ENV CACHE_DIR=$BASE_DIR/cachedir
@@ -45,9 +47,11 @@ VOLUME $MIRROR_DIR
 
 EXPOSE 8080
 
-RUN apk --no-cache add ca-certificates
+RUN #apk --no-cache add ca-certificates
 
-RUN echo $APP_BUILD_DIR $APP_RUN_DIR
 WORKDIR $APP_RUN_DIR
-COPY --from=builder $APP_BUILD_DIR/main .
+COPY --from=builder $APP_BUILD_DIR/main $APP_RUN_DIR/main
+COPY --from=builder $APP_BUILD_DIR/templates $APP_RUN_DIR/templates
+
 CMD ["./main"]
+#ENTRYPOINT ["./main"]
