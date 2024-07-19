@@ -1,0 +1,7 @@
+base_dir: ~/tmp
+config_dir: ~/tmp/config
+
+cache_enabled: false
+cache_dir: ~/tmp/cache
+mirror_enabled: false
+mirror_dir: ~/tmp/mirror

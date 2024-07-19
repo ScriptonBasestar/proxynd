@@ -1,4 +1,5 @@
-server:
+path: ~/tmp/cachedir/mirror/apt
+servers:
   gitrepo:
     service: git
     url: https://github.com/zitryss/go-sample.git

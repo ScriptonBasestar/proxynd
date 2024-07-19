@@ -1,10 +1,11 @@
 package routers
 
 import (
+	"deproxy/configs"
 	"github.com/gin-gonic/gin"
 )
 
-//SetupRouter function will perform all route operations
+// SetupRouter function will perform all route operations
 func SetupRouter() *gin.Engine {
 	r := gin.Default()
 
@@ -12,8 +13,19 @@ func SetupRouter() *gin.Engine {
 	r.Static("/storage", "storage")
 
 	//Giving access to template folder
-	r.Static("/templates", "templates")
+	//r.Static("/templates", "templates")
 	r.LoadHTMLGlob("templates/*")
+
+	r.GET("/", func(c *gin.Context) {
+		mvnSite := configs.MavenConfig{}
+		mvnSite.ReadConfig("conf/proxy-maven.yaml")
+		aptSite := configs.AptConfig{}
+		aptSite.ReadConfig("conf/proxy-apt.yaml")
+		c.HTML(200, "dashboard.html", gin.H{
+			"maven": mvnSite.Servers,
+			"apt":   aptSite.Servers,
+		})
+	})
 
 	//r.Use(func(c *gin.Context) {
 	//	// add header Access-Control-Allow-Origin

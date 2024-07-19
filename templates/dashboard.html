@@ -1,10 +1,34 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+		"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 	<meta charset="UTF-8">
-	<title>Title</title>
+	<meta name="viewport" content="width=device-width"/>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+	<title>Deproxy Dashboard</title>
+	<style type="text/css">
+        body {
+            margin: 0 auto;
+            padding: 0;
+            min-width: 100%;
+            font-family: sans-serif;
+        }
+	</style>
 </head>
-<body>
+
+<body bgcolor="#009587">
+
+<h1>Deproxy Dashboard</h1>
+
+<h2>Maven</h2>
+{{range .maven}}
+<div><a href="{{.Url}}">{{.Name}}</a> {{.Url}}</div>
+{{end}}
+
+<h2>Apt</h2>
+{{range .apt}}
+<div><a href="{{.Url}}">{{.Name}}</a> {{.Url}}</div>
+{{end}}
 
 </body>
 </html>

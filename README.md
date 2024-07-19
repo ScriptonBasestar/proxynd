@@ -4,8 +4,8 @@
 
 Proxy, Mirror를 같이 하려고 했는데... 귀찮아서 proxy만 남길 예정
 
-- [v] Maven
-- [ ] Apt
+- [x] Maven
+- [x] Apt
 - [ ] Npm
 - [ ] Go
 - [ ] Python
