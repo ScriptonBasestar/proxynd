@@ -1,5 +1,8 @@
 # 모은다 
 
+## Stacks
+- gin-gonic/gin
+
 ## 용도
 
 Proxy, Mirror를 같이 하려고 했는데... 귀찮아서 proxy만 남길 예정
