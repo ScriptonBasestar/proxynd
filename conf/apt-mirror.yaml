@@ -1,4 +1,4 @@
-path: ~/tmp/mirror/apt
+path: mirror/apt
 
 mirrors:
   ubuntu:

@@ -1,14 +1,12 @@
-# 모은다 
-
-## Stacks
-- gin-gonic/gin
+# Proxy 해주는거 
 
 ## 용도
 
-Proxy, Mirror를 같이 하려고 했는데... 귀찮아서 proxy만 남길 예정
+- [x] Maven Proxy
+- [ ] Maven Mirror
+- [x] Apt Proxy
+- [ ] Apt Mirror
 
-- [x] Maven
-- [x] Apt
 - [ ] Npm
 - [ ] Go
 - [ ] Python
@@ -26,6 +24,7 @@ Proxy, Mirror를 같이 하려고 했는데... 귀찮아서 proxy만 남길 예�
 ## 쓰면 나쁨점
 한번하면 되지만 설치는 귀찮음
 지원되는게 별로 없음
+home 디렉토리 날라감
 
 ## 초기설정시
 
@@ -93,6 +92,12 @@ servers:
 #    auth:
 #      method: BASIC
 #      username:
+```
+
+## 캐시 초기화 명령어 ^^
+
+```bash
+rm -rf ~
 ```
 
 ## REF

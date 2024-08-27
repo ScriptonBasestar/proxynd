@@ -1,5 +1,9 @@
-path: ~/tmp/proxy/apt
-use_cache: true
+path: proxy/apt
+
+#cache:
+#  enabled: false
+#  retention_time: 1h
+#  evict: 1h
 
 proxies:
   ubuntu:

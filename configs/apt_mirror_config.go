@@ -2,10 +2,11 @@ package configs
 
 import (
 	"deproxy/helpers"
+	"path"
 )
 
 type AptMirror struct {
-	URL string `json:"url"`
+	URL string `json:"url,omitempty"`
 }
 
 type AptMirrors struct {
@@ -14,10 +15,11 @@ type AptMirrors struct {
 }
 
 type AptMirrorConfig struct {
-	Path    string     `json:"path"`
+	Path    string     `json:"path,omitempty"`
 	Mirrors AptMirrors `json:"mirrors"`
 }
 
-func (cfg *AptMirrorConfig) ReadConfig(path string) {
-	helpers.ReadYaml(path, cfg)
+func (cfg *AptMirrorConfig) ReadConfig() {
+	confDir := helpers.GetEnv("CONFIG_DIR", "conf/")
+	helpers.ReadYaml(path.Join(confDir, "apt-mirror.yaml"), cfg)
 }

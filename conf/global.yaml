@@ -1,11 +1,8 @@
-base_dir: ~/tmp
-config_dir: ~/tmp/config
+#proxy:
+#  http: 192.168.11.99:3128
+#  https: 192.168.11.99:3129
 
-proxy:
-  http: 192.168.11.99:3128
-  https: 192.168.11.99:3129
-
-cache_enabled: false
-cache_dir: ~/tmp/cache
-mirror_enabled: false
-mirror_dir: ~/tmp/mirror
+#if base_dir set? proxy, mirror relative
+base_dir: ~/tmp/deproxy
+#proxy_root: ~/tmp/proxy
+#mirror_root: ~/tmp/mirror

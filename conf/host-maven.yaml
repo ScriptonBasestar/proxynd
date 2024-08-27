@@ -1,9 +1,0 @@
-path: ~/tmp/data/maven/
-
-repositories:
-  company-dev:
-    snapshot: true
-    overwrite: true
-  company-prd:
-    snapshot: false
-    overwrite: false

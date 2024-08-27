@@ -2,20 +2,27 @@ package configs
 
 import (
 	"deproxy/helpers"
+	"path"
 )
 
 type MavenProxyServer struct {
-	Id          string `yaml:"id"`
+	Id          string `yaml:"id,omitempty"`
 	Name        string `yaml:"name"`
-	Url         string `yaml:"url"`
+	Url         string `yaml:"url,omitempty"`
 	Description string `yaml:"description"`
 }
 
 type MavenProxyConfig struct {
-	Path    string             `yaml:"path"`
+	Path    string             `yaml:"path,omitempty"`
 	Proxies []MavenProxyServer `yaml:"proxies"`
 }
 
-func (cfg *MavenProxyConfig) ReadConfig(path string) {
-	helpers.ReadYaml(path, cfg)
+func (cfg *MavenProxyConfig) ConfigExists() bool {
+	confDir := helpers.GetEnv("CONFIG_DIR", "conf/")
+	return helpers.FileExists(path.Join(confDir, "maven-proxy.yaml"))
+}
+
+func (cfg *MavenProxyConfig) ReadConfig() {
+	confDir := helpers.GetEnv("CONFIG_DIR", "conf/")
+	helpers.ReadYaml(path.Join(confDir, "maven-proxy.yaml"), cfg)
 }

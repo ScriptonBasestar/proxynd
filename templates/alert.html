@@ -5,7 +5,7 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width"/>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-	<title>Deproxy Dashboard</title>
+	<title>Deproxy Alert</title>
 	<style type="text/css">
         body {
             margin: 0 auto;
@@ -18,25 +18,18 @@
 
 <body bgcolor="#009587">
 
-<h1>Deproxy Dashboard</h1>
+<h1>경고</h1>
 
-<h2>Maven</h2>
-{{range .mavenProxy}}
-<div><a href="{{.Url}}">{{.Name}}</a> {{.Url}}</div>
-{{end}}
+<p>
+설정파일을 설정하지 않고 프로그램을 사용하려는 것은 잘못된 행위입니다. 설정파일을 설정하고 오시기 바랍니다.
+</p>
 
-<h2>Apt</h2>
-{{range $key, $proxies := .aptProxy}}
-<div>
-	<h3>{{ $key }}</h3> <!-- Map의 키를 출력 (예: "ubuntu", "debian") -->
-	{{range $proxies}}
-	<div>
-		<a href="{{ .URL }}">{{ .Name }}</a> {{ .URL }}
-	</div>
-	{{end}}
-</div>
-{{end}}
-
+<p>
+경로: {{ .ConfigFileDir }}
+</p>
+<p>
+파일명:  {{.ConfigFileName }}
+</p>
 
 </body>
 </html>

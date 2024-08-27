@@ -2,20 +2,22 @@ package configs
 
 import (
 	"deproxy/helpers"
+	"path"
 )
 
 type MavenMirrorServer struct {
 	Name        string `yaml:"name"`
-	Url         string `yaml:"url"`
+	Url         string `yaml:"url,omitempty"`
 	Description string `yaml:"description"`
 }
 
 type MavenMirrorConfig struct {
-	Path     string                       `yaml:"path"`
-	UseCache bool                         `yaml:"use_cache"`
+	Path     string                       `yaml:"path,omitempty"`
+	UseCache bool                         `yaml:"use_cache,omitempty"`
 	Mirrors  map[string]MavenMirrorServer `yaml:"mirrors"`
 }
 
-func (cfg *MavenMirrorConfig) ReadConfig(path string) {
-	helpers.ReadYaml(path, cfg)
+func (cfg *MavenMirrorConfig) ReadConfig() {
+	confDir := helpers.GetEnv("CONFIG_DIR", "conf/")
+	helpers.ReadYaml(path.Join(confDir, "maven-mirror.yaml"), cfg)
 }

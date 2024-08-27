@@ -5,7 +5,6 @@ import (
 	"deproxy/helpers"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/mitchellh/go-homedir"
 	"io"
 	"log"
 	"net/http"
@@ -35,33 +34,37 @@ func responseHandler(c *gin.Context, responseContent []byte, filename string) {
 	}
 }
 
-func Maven(c *gin.Context) {
+func MavenProxy(c *gin.Context) {
 	log.Printf("Access proxy maven\n")
-	requestPath := c.Param("path")
-	config := configs.MavenConfig{}
-	configDir := helpers.GetEnv("CONFIG_DIR", "conf/")
-	config.ReadConfig(configDir + "/conf/proxy-maven.yaml")
 
-	basedir := helpers.GetEnv("BASE_DIR", "./tmp")
-	if basedir == "" {
-		var err error
-		basedir, err = homedir.Dir()
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
+	requestPath := c.Param("path")
+
+	globalConfig := configs.GlobalConfig{}
+	globalConfig.ReadConfig()
+	config := configs.MavenProxyConfig{}
+	config.ReadConfig()
+
+	//basedir := helpers.GetEnv("BASE_DIR", "./tmp")
+	//if basedir == "" {
+	//	var err error
+	//	basedir, err = homedir.Dir()
+	//	if err != nil {
+	//		log.Fatal(err)
+	//	}
+	//}
 
 	var responseContent []byte
 	// Create the file
-	filefullpath := path.Join(basedir, os.Getenv("CACHE_DIR")+requestPath)
+	filefullpath := path.Join(globalConfig.BaseDir, config.Path, requestPath)
 	filename := filepath.Base(filefullpath)
 	if _, err := os.Stat(filefullpath); os.IsNotExist(err) {
 		dirpath := filepath.Dir(filefullpath)
 		os.MkdirAll(dirpath, 0766)
 
 		// Get the data
-		fmt.Println(len(config.Servers))
-		for s, server := range config.Servers {
+		fmt.Println(len(config.Proxies))
+
+		for s, server := range config.Proxies {
 			fmt.Printf("for moon %s\n", s)
 			resp, err := http.Get(helpers.JoinURL(server.Url, requestPath))
 			if err != nil {

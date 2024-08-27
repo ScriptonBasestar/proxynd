@@ -7,4 +7,5 @@ vendor/
 
 # test
 tmp/
-
+~tmp/
+~/

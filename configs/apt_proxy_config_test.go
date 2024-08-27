@@ -4,12 +4,14 @@ import (
 	"deproxy/helpers"
 	"fmt"
 	"github.com/go-playground/assert/v2"
+	"os"
 	"testing"
 )
 
 func TestAptProxyConfig_ReadConfig(t *testing.T) {
+	os.Setenv("CONFIG_DIR", "../conf/")
 	cfg := AptProxyConfig{}
-	cfg.ReadConfig("../conf/proxy-apt.yaml")
+	cfg.ReadConfig()
 	fmt.Println(cfg)
 	assert.Equal(t, cfg.Path, "~/tmp/proxy/apt")
 	fmt.Println(helpers.ToStringYaml(cfg))

@@ -8,11 +8,11 @@ import (
 	"testing"
 )
 
-func TestAptMirrorConfig_ReadConfig(t *testing.T) {
+func TestRead_GlobalConfig(t *testing.T) {
 	os.Setenv("CONFIG_DIR", "../conf/")
-	cfg := AptMirrorConfig{}
+	cfg := GlobalConfig{}
 	cfg.ReadConfig()
-	fmt.Println(cfg)
-	assert.Equal(t, cfg.Path, "~/tmp/mirror/apt")
+	assert.Equal(t, cfg.BaseDir, "~/tmp/deproxy")
+	//assert.Equal(t, cfg.ConfigDir, "~/tmp/config")
 	fmt.Println(helpers.ToStringYaml(cfg))
 }

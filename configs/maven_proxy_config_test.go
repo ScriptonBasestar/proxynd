@@ -11,10 +11,11 @@ import (
 )
 
 func TestMavenConfig_MavenProxy(t *testing.T) {
+	os.Setenv("CONFIG_DIR", "../conf/")
 	cfg := MavenProxyConfig{}
-	cfg.ReadConfig("../conf/proxy-maven.yaml")
+	cfg.ReadConfig()
 	//fmt.Println(cfg)
-	assert.Equal(t, cfg.Path, "tmp/cachedir/proxy/maven")
+	assert.Equal(t, cfg.Path, "~/tmp/proxy/maven")
 	fmt.Println(helpers.ToStringYaml(cfg))
 }
 
@@ -61,7 +62,7 @@ func TestYamlMake(t *testing.T) {
 }
 
 func TestYaml(t *testing.T) {
-	yamlFile, err := os.ReadFile("../configs/proxy-maven.yaml")
+	yamlFile, err := os.ReadFile("../configs/maven-proxy.yaml")
 	if err != nil {
 		log.Printf("yamlFile.Get err   #%v ", err)
 	}

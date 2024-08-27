@@ -5,7 +5,6 @@ import (
 	"deproxy/helpers"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/mitchellh/go-homedir"
 	"io"
 	"log"
 	"net/http"
@@ -14,23 +13,29 @@ import (
 	"path/filepath"
 )
 
-func Apt(c *gin.Context) {
+func AptProxy(c *gin.Context) {
 	log.Printf("Access proxy apt\n")
-	requestPath := c.Param("path")
-	config := configs.AptProxyConfig{}
-	config.ReadConfig("config/proxy-apt.yaml")
 
-	basedir := os.Getenv("BASE_DIR")
-	if basedir == "" {
-		var err error
-		basedir, err = homedir.Dir()
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
+	pathOs := c.Param("osType")
+	requestPath := c.Param("requestPath")
+
+	// fixme di
+	globalConfig := configs.GlobalConfig{}
+	globalConfig.ReadConfig()
+	config := configs.AptProxyConfig{}
+	config.ReadConfig()
+
+	//basedir := os.Getenv("BASE_DIR")
+	//if basedir == "" {
+	//	var err error
+	//	basedir, err = homedir.Dir()
+	//	if err != nil {
+	//		log.Fatal(err)
+	//	}
+	//}
 
 	// Create the file
-	filefullpath := path.Join(basedir, os.Getenv("CACHE_DIR")+requestPath)
+	filefullpath := path.Join(globalConfig.BaseDir, config.Path, requestPath)
 	filename := filepath.Base(filefullpath)
 	if _, err := os.Stat(filefullpath); os.IsNotExist(err) {
 		dirpath := filepath.Dir(filefullpath)
@@ -43,9 +48,10 @@ func Apt(c *gin.Context) {
 		defer out.Close()
 
 		// Get the data
-		for s, server := range config.Proxies.Ubuntu {
+		proxy := config.Proxies[pathOs]
+		for s, server := range proxy {
 			fmt.Printf("for moon %s\n", s)
-			resp, err := http.Get(helpers.JoinURL(server.Url, requestPath))
+			resp, err := http.Get(helpers.JoinURL(server.URL, requestPath))
 			if err != nil {
 				log.Fatal(err)
 				return

@@ -17,13 +17,13 @@ func SetupRouter() *gin.Engine {
 	r.LoadHTMLGlob("templates/*")
 
 	r.GET("/", func(c *gin.Context) {
-		mvnSite := configs.MavenConfig{}
-		mvnSite.ReadConfig("conf/proxy-maven.yaml")
-		aptSite := configs.AptConfig{}
-		aptSite.ReadConfig("conf/proxy-apt.yaml")
+		mvnSite := configs.MavenProxyConfig{}
+		mvnSite.ReadConfig()
+		aptSite := configs.AptProxyConfig{}
+		aptSite.ReadConfig()
 		c.HTML(200, "dashboard.html", gin.H{
-			"maven": mvnSite.Servers,
-			"apt":   aptSite.Servers,
+			"mavenProxy": mvnSite.Proxies,
+			"aptProxy":   aptSite.Proxies,
 		})
 	})
 
