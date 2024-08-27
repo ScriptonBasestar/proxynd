@@ -1,0 +1,8 @@
+#cache:
+#  relative: false
+#  path: /proxy/vagrant
+#
+#servers:
+#  - id: official
+#    name: Official
+#    url: http://official

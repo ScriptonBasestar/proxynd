@@ -1,0 +1,26 @@
+#path: ~/tmp/mirror/git
+#
+#workpath: ~/mymirror
+#
+## naming은... github/{user}/{repo}를 기본으로
+## 아니면
+## repoanme만 쓸 수 있으면 쓰고..
+## {user}-{repo} 안되는 경우
+#
+#mirrors:
+#  github:
+#    zitryss:
+#      groups: ['go']
+#      repos:
+#        go-sample:
+#  #        branch: master
+#          groups: ['git', 'go']
+#    PersonaIam:
+#      groups: ['coin']
+#      repos:
+#        persona-client:
+#          groups: ['coin', 'go']
+#    streamlit:
+#      groups: ['coin', 'python']
+#      repos:
+#        streamlit:
