@@ -12,7 +12,7 @@ func ProxyRouter(r *gin.Engine) {
 	globalConfig.ReadConfig()
 
 	mavenProxyConfig := configs.MavenProxyConfig{}
-	mavenProxyConfig.ReadConfig()
+	//mavenProxyConfig.ReadConfig()
 
 	if mavenProxyConfig.ConfigExists() {
 		mavenGroup := r.Group("/proxy/maven")
@@ -27,7 +27,7 @@ func ProxyRouter(r *gin.Engine) {
 	}
 
 	aptProxyConfig := configs.AptProxyConfig{}
-	aptProxyConfig.ReadConfig()
+	//aptProxyConfig.ReadConfig()
 
 	if aptProxyConfig.ConfigExists() {
 		aptGroup := r.Group("/proxy/apt")
