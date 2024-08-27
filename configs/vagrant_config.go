@@ -12,8 +12,8 @@ type VagrantServer struct {
 }
 
 type VagrantConfig struct {
-	Path   string                 `yaml:"path"`
-	Server map[string]MavenServer `yaml:"server"`
+	Path   string                   `yaml:"path"`
+	Server map[string]VagrantServer `yaml:"server"`
 }
 
 func (cfg *VagrantConfig) ReadConfig(path string) {

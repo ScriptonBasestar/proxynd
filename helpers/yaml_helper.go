@@ -21,3 +21,12 @@ func ReadYaml(path string, out interface{}) {
 	}
 	log.Printf("read config success %s \n", out)
 }
+
+func ToStringYaml(out interface{}) string {
+	d, err := yaml.Marshal(out)
+	if err != nil {
+		log.Fatalf("error: %v", err)
+	}
+	log.Printf("---\n%s\n", string(d))
+	return string(d)
+}

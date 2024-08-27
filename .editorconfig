@@ -17,11 +17,15 @@ indent_style = space
 indent_size = 4
 
 # 2 space indentation
-[*.{js,json,y{a,}ml,html,cwl}]
+[*.{js, json, html, cwl}]
 indent_style = space
 indent_size = 2
 
 [*.xml]
+indent_style = space
+indent_size = 2
+
+[*.{yaml,yml}]
 indent_style = space
 indent_size = 2
 

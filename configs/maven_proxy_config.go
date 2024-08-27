@@ -4,18 +4,18 @@ import (
 	"deproxy/helpers"
 )
 
-type MavenServer struct {
+type MavenProxyServer struct {
 	Id          string `yaml:"id"`
 	Name        string `yaml:"name"`
 	Url         string `yaml:"url"`
 	Description string `yaml:"description"`
 }
 
-type MavenConfig struct {
-	Path    string        `yaml:"path"`
-	Servers []MavenServer `yaml:"servers"`
+type MavenProxyConfig struct {
+	Path    string             `yaml:"path"`
+	Proxies []MavenProxyServer `yaml:"proxies"`
 }
 
-func (cfg *MavenConfig) ReadConfig(path string) {
+func (cfg *MavenProxyConfig) ReadConfig(path string) {
 	helpers.ReadYaml(path, cfg)
 }

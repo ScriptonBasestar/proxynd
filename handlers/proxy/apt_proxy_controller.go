@@ -17,8 +17,8 @@ import (
 func Apt(c *gin.Context) {
 	log.Printf("Access proxy apt\n")
 	requestPath := c.Param("path")
-	config := configs.AptConfig{}
-	config.ReadConfig("configs/proxy-apt.yaml")
+	config := configs.AptProxyConfig{}
+	config.ReadConfig("config/proxy-apt.yaml")
 
 	basedir := os.Getenv("BASE_DIR")
 	if basedir == "" {
@@ -43,8 +43,7 @@ func Apt(c *gin.Context) {
 		defer out.Close()
 
 		// Get the data
-		fmt.Println(len(config.Servers))
-		for s, server := range config.Servers {
+		for s, server := range config.Proxies.Ubuntu {
 			fmt.Printf("for moon %s\n", s)
 			resp, err := http.Get(helpers.JoinURL(server.Url, requestPath))
 			if err != nil {

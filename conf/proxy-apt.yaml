@@ -1,12 +1,14 @@
 path: ~/tmp/proxy/apt
 use_cache: true
-servers:
-  - name: ubuntu
-    id: ubuntu
-    url: http://archive.ubuntu.com/ubuntu
-  - name: kakao
-    id: kakao
-    url: http://mirror.kakao.com/ubuntu
-  - name: ubuntu-security
-    id: ubuntu-security
-    url: http://security.ubuntu.com/ubuntu
+
+proxies:
+  ubuntu:
+    - name: official
+      url: http://archive.ubuntu.com/ubuntu
+    - name: kakao
+      url: http://mirror.kakao.com/ubuntu
+    - name: ubuntu-security
+      url: http://security.ubuntu.com/ubuntu
+  debian:
+    - name: official
+      url: http://ftp.debian.org/debian

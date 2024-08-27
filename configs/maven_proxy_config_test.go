@@ -1,6 +1,7 @@
 package configs
 
 import (
+	"deproxy/helpers"
 	"fmt"
 	"github.com/go-playground/assert/v2"
 	"gopkg.in/yaml.v3"
@@ -10,16 +11,17 @@ import (
 )
 
 func TestMavenConfig_MavenProxy(t *testing.T) {
-	cfg := MavenConfig{}
+	cfg := MavenProxyConfig{}
 	cfg.ReadConfig("../conf/proxy-maven.yaml")
-	fmt.Println(cfg)
-	assert.Equal(t, cfg.Path, "d:/tmp/cachedir/proxy/maven")
+	//fmt.Println(cfg)
+	assert.Equal(t, cfg.Path, "tmp/cachedir/proxy/maven")
+	fmt.Println(helpers.ToStringYaml(cfg))
 }
 
 func TestYamlMake(t *testing.T) {
-	mavenConfig := MavenConfig{}
+	mavenConfig := MavenProxyConfig{}
 	mavenConfig.Path = "tmp"
-	mavenConfig.Servers = []MavenServer{
+	mavenConfig.Proxies = []MavenProxyServer{
 		{
 			Id:          "maven-center",
 			Name:        "Center",
@@ -64,8 +66,8 @@ func TestYaml(t *testing.T) {
 		log.Printf("yamlFile.Get err   #%v ", err)
 	}
 	fmt.Println(string(yamlFile))
-	mavenConfig := MavenConfig{
-		Servers: []MavenServer{},
+	mavenConfig := MavenProxyConfig{
+		Proxies: []MavenProxyServer{},
 	}
 	err = yaml.Unmarshal(yamlFile, mavenConfig)
 	if err != nil {

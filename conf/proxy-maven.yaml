@@ -1,7 +1,8 @@
-path: d:/tmp/cachedir/proxy/maven
+path: tmp/cachedir/proxy/maven
 use_cache: true
 # https://docs.gradle.org/current/userguide/declaring_repositories.html
-servers:
+
+proxies:
   - name: Maven Center
     id: maven-center
     url: https://repo.maven.apache.org/maven2/

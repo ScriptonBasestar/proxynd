@@ -1,0 +1,22 @@
+path: tmp/cachedir/mirror/maven
+use_cache: true
+# https://docs.gradle.org/current/userguide/declaring_repositories.html
+
+mirrors:
+  central:
+    name: maven-center
+    url: https://repo.maven.apache.org/maven2/
+    description: "maven centeral"
+  jcenter:
+    name: jcenter
+    url: https://jcenter.bintray.com
+  google:
+    name: google
+    url: https://maven.google.com
+  spring_release:
+    name: repo.spring.io-releases
+    url: https://repo.spring.io/release
+  spring_snapshots:
+    name: repo.spring.io-snapshots
+    url: https://repo.spring.io/snapshot
+
