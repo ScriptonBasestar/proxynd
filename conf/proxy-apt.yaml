@@ -1,8 +1,12 @@
-path: ~/tmp/cachedir/proxy/apt
+path: ~/tmp/proxy/apt
+use_cache: true
 servers:
-  - name: official
+  - name: ubuntu
+    id: ubuntu
     url: http://archive.ubuntu.com/ubuntu
   - name: kakao
+    id: kakao
     url: http://mirror.kakao.com/ubuntu
   - name: ubuntu-security
+    id: ubuntu-security
     url: http://security.ubuntu.com/ubuntu

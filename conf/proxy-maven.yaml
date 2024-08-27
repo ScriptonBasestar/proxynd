@@ -1,4 +1,5 @@
 path: d:/tmp/cachedir/proxy/maven
+use_cache: true
 # https://docs.gradle.org/current/userguide/declaring_repositories.html
 servers:
   - name: Maven Center
@@ -6,19 +7,18 @@ servers:
     url: https://repo.maven.apache.org/maven2/
     description: "maven centeral"
   - name: jcener
+    id: jcenter
     url: https://jcenter.bintray.com
-    description: "jcenter"
-#  google:
-#    url: https://maven.google.com
-#    description: "google android"
-#  # https://repo.spring.io/webapp/#/home
-#  spring_release:
-#    name: repo.spring.io-releases
-#    url: https://repo.spring.io/release
-#  spring_snapshorts:
-#    id: spring-snapshots
-#    name: repo.spring.io-snapshots
-#    url: https://repo.spring.io/snapshot
+  - name: google
+    id: google
+    url: https://maven.google.com
+  # https://repo.spring.io/webapp/#/home
+  - name: spring_release
+    id: repo.spring.io-releases
+    url: https://repo.spring.io/release
+  - name: spring_snapshots
+    id: repo.spring.io-snapshots
+    url: https://repo.spring.io/snapshot
 
 #  company_internal:
 #    url: http://company

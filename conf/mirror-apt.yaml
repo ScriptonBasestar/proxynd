@@ -1,8 +1,15 @@
-path: ~/tmp/cachedir/mirror/apt
-servers:
-  - name: official
-    url: http://archive.ubuntu.com/ubuntu
-  - name: kakao
-    url: http://mirror.kakao.com/ubuntu
-  - name: ubuntu-security
-    url: http://security.ubuntu.com/ubuntu
+path: ~/tmp/mirror/apt
+
+mirrors:
+  ubuntu:
+    official:
+      url: http://archive.ubuntu.com/ubuntu
+    kakao:
+      url: http://mirror.kakao.com/ubuntu
+    ubuntu-security:
+      url: http://security.ubuntu.com/ubuntu
+  debian:
+    official:
+      url: http://ftp.debian.org/debian
+    kakao:
+      url: http://mirror.kakao.com/debian
