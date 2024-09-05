@@ -1,6 +1,6 @@
 ARG GO_VERSION=1.22
 
-FROM golang:${GO_VERSION} as builder
+FROM golang:${GO_VERSION} AS builder
 
 ARG APP_BUILD_DIR=/go/src/app
 ARG APP_RUN_DIR=/go/src/app
@@ -37,10 +37,11 @@ FROM golang:${GO_VERSION}
 ARG APP_BUILD_DIR=/go/src/app
 ARG APP_RUN_DIR=/go/src/app
 
-ENV BASE_DIR=/storage
-ENV CACHE_DIR=$BASE_DIR/cachedir
-ENV MIRROR_DIR=$BASE_DIR/mirrordir
-ENV CONFIG_DIR=$BASE_DIR/configdir
+ENV STORAGE_DIR=/storage
+#ENV CACHE_DIR=$STORAGE_DIR/cachedir
+#ENV MIRROR_DIR=$STORAGE_DIR/mirrordir
+#ENV CONFIG_DIR=$STORAGE_DIR/configdir
+ENV CONFIG_DIR=/config
 
 VOLUME $CACHE_DIR
 VOLUME $MIRROR_DIR

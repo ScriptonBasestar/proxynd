@@ -26,7 +26,16 @@
 지원되는게 별로 없음
 home 디렉토리 날라감
 
-## 초기설정시
+## Install
+
+### docker
+
+- CONFIG_DIR=/config
+  - apt-proxy.yaml
+  - maven-proxy.yaml
+- STORAGE_DIR=/storage
+  - apt-proxy
+  - maven-proxy
 
 ### helm/chart-releaser-action
 1 하위 디렉토리를 1뎁스 모두 뒤져서 chart.yaml파일을 찾는 방법으로 검증을 하게 되는데

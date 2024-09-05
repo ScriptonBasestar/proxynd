@@ -11,7 +11,7 @@ import (
 )
 
 func TestMavenConfig_MavenProxy(t *testing.T) {
-	os.Setenv("CONFIG_DIR", "../conf/")
+	os.Setenv("CONFIG_DIR", "../sample-conf/")
 	cfg := MavenProxyConfig{}
 	cfg.ReadConfig()
 	//fmt.Println(cfg)

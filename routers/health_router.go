@@ -8,15 +8,15 @@ import (
 )
 
 func HealthRouter(r *gin.Engine) {
-	//confDirCheck := checks.NewEnvCheck("BASE_DIR")
+	confDirCheck := checks.NewEnvCheck("CONFIG_DIR")
 	// You can also validate env format using regex
-	//BaseDirCheck := checks.NewEnvCheck("BASE_DIR")
-	//BaseDirCheck.SetRegexValidator("^(~|/).+")
-	//healthcheck.New(r, config.DefaultConfig(), []checks.Check{confDirCheck})
+	StorageDirCheck := checks.NewEnvCheck("STORAGE_DIR")
+	//StorageDirCheck.SetRegexValidator("^(~|/).+")
+	healthcheck.New(r, config.DefaultConfig(), []checks.Check{confDirCheck, StorageDirCheck})
 
 	//ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	//defer stop()
 	//signalsCheck := checks.NewContextCheck(ctx, "signals")
 	//healthcheck.New(r, config.DefaultConfig(), []checks.Check{signalsCheck})
-	healthcheck.New(r, config.DefaultConfig(), []checks.Check{})
+	//healthcheck.New(r, config.DefaultConfig(), []checks.Check{})
 }

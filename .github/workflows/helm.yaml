@@ -3,7 +3,7 @@ name: Helm Chart
 on:
   push:
     paths:
-      - 'helm/**'
+      - '../../deploy/helm/**'
     branches:
       - 'master'
 

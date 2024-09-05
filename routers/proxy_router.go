@@ -20,7 +20,7 @@ func ProxyRouter(r *gin.Engine) {
 	} else {
 		r.GET("/proxy/maven/*path", func(c *gin.Context) {
 			c.HTML(200, "alert.html", gin.H{
-				"ConfigFileDir":  globalConfig.BaseDir,
+				"ConfigFileDir":  globalConfig.StorageDir,
 				"ConfigFileName": "maven-proxy.yaml",
 			})
 		})
@@ -35,7 +35,7 @@ func ProxyRouter(r *gin.Engine) {
 	} else {
 		r.GET("/proxy/maven/*path", func(c *gin.Context) {
 			c.HTML(200, "alert.html", gin.H{
-				"ConfigFileDir":  globalConfig.BaseDir,
+				"ConfigFileDir":  globalConfig.StorageDir,
 				"ConfigFileName": "apt-proxy.yaml",
 			})
 		})

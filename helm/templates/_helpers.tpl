@@ -9,6 +9,7 @@ Expand the name of the chart.
 Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 If release name contains chart name it will be used as a full name.
+release-name이라고 나오는거 없애기
 */}}
 {{- define "deproxy.fullname" -}}
 {{- if .Values.fullnameOverride }}
@@ -18,7 +19,11 @@ If release name contains chart name it will be used as a full name.
 {{- if contains $name .Release.Name }}
 {{- .Release.Name | trunc 63 | trimSuffix "-" }}
 {{- else }}
+{{- if eq .Release.Name "release-name" }}
+{{- printf "%s-%s" .Chart.Name $name | trunc 63 | trimSuffix "-" }}
+{{- else }}
 {{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" }}
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}
@@ -47,7 +52,7 @@ Selector labels
 */}}
 {{- define "deproxy.selectorLabels" -}}
 app.kubernetes.io/name: {{ include "deproxy.name" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/instance: {{ include "deproxy.fullname" . }}
 {{- end }}
 
 {{/*

@@ -18,11 +18,11 @@ type MavenProxyConfig struct {
 }
 
 func (cfg *MavenProxyConfig) ConfigExists() bool {
-	confDir := helpers.GetEnv("CONFIG_DIR", "conf/")
+	confDir := helpers.GetConfigDir()
 	return helpers.FileExists(path.Join(confDir, "maven-proxy.yaml"))
 }
 
 func (cfg *MavenProxyConfig) ReadConfig() {
-	confDir := helpers.GetEnv("CONFIG_DIR", "conf/")
+	confDir := helpers.GetConfigDir()
 	helpers.ReadYaml(path.Join(confDir, "maven-proxy.yaml"), cfg)
 }

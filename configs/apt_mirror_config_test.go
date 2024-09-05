@@ -9,7 +9,7 @@ import (
 )
 
 func TestAptMirrorConfig_ReadConfig(t *testing.T) {
-	os.Setenv("CONFIG_DIR", "../conf/")
+	os.Setenv("CONFIG_DIR", "../sample-conf/")
 	cfg := AptMirrorConfig{}
 	cfg.ReadConfig()
 	fmt.Println(cfg)

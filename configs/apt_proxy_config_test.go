@@ -9,7 +9,7 @@ import (
 )
 
 func TestAptProxyConfig_ReadConfig(t *testing.T) {
-	os.Setenv("CONFIG_DIR", "../conf/")
+	os.Setenv("CONFIG_DIR", "../sample-conf/")
 	cfg := AptProxyConfig{}
 	cfg.ReadConfig()
 	fmt.Println(cfg)

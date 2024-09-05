@@ -18,6 +18,6 @@ type MavenMirrorConfig struct {
 }
 
 func (cfg *MavenMirrorConfig) ReadConfig() {
-	confDir := helpers.GetEnv("CONFIG_DIR", "conf/")
+	confDir := helpers.GetConfigDir()
 	helpers.ReadYaml(path.Join(confDir, "maven-mirror.yaml"), cfg)
 }

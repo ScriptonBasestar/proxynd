@@ -17,11 +17,11 @@ type AptProxyConfig struct {
 }
 
 func (cfg *AptProxyConfig) ConfigExists() bool {
-	confDir := helpers.GetEnv("CONFIG_DIR", "conf/")
+	confDir := helpers.GetConfigDir()
 	return helpers.FileExists(path.Join(confDir, "apt-proxy.yaml"))
 }
 
 func (cfg *AptProxyConfig) ReadConfig() {
-	confDir := helpers.GetEnv("CONFIG_DIR", "conf/")
+	confDir := helpers.GetConfigDir()
 	helpers.ReadYaml(path.Join(confDir, "apt-proxy.yaml"), cfg)
 }

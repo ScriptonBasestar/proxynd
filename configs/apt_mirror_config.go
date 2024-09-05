@@ -20,6 +20,6 @@ type AptMirrorConfig struct {
 }
 
 func (cfg *AptMirrorConfig) ReadConfig() {
-	confDir := helpers.GetEnv("CONFIG_DIR", "conf/")
+	confDir := helpers.GetConfigDir()
 	helpers.ReadYaml(path.Join(confDir, "apt-mirror.yaml"), cfg)
 }

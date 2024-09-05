@@ -3,14 +3,16 @@ ENV=develop
 DOCKER_REGISTRY=archmagece
 
 setup:
-	cp -r conf/ tmpconf/
+	mkdir -p ~/tmp/config
+	mkdir -p ~/tmp/storage
+	cp -r sample-conf/* ~/tmp/config/.
 
 docker-build:
 	@echo "Building..."
 	docker compose build --no-cache
 
 docker-push:
-	docker tag deproxy ${DOCKER_REGISTRY}/deproxy:latest .
+	docker tag 'local_dev/deproxy' ${DOCKER_REGISTRY}/deproxy:latest
 	docker push ${DOCKER_REGISTRY}/deproxy:latest
 
 docker-run:

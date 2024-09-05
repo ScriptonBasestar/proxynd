@@ -2,7 +2,7 @@
 #  http: 192.168.11.99:3128
 #  https: 192.168.11.99:3129
 
-#if base_dir set? proxy, mirror relative
-base_dir: ~/tmp/deproxy
+#if storage_dir set? proxy, mirror relative
+storage_dir: ~/tmp/deproxy
 #proxy_root: ~/tmp/proxy
 #mirror_root: ~/tmp/mirror

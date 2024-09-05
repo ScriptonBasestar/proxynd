@@ -3,21 +3,22 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    image: local_dev/deproxy
     container_name: deproxy
     ports:
       - "8080:8080"
     volumes:
-      - ./tmpconf/:/tmpconf
-      - base_volume:/storage
+      - ~/tmp/config/:/config
+      - storage_volume:/storage
 #      - proxy_volume:/storage/cachedir
 #      - mirror_volume:/storage/mirrordir
     environment:
-      - BASE_DIR=/storage
+      - CONFIG_DIR=/config
+      - STORAGE_DIR=/storage
 #      - CACHE_DIR=~/tmp/storage/cachedir
 #      - MIRROR_DIR=~/tmp/storage/mirrordir
-      - CONFIG_DIR=/tmpconf
 
 volumes:
-  base_volume:
+  storage_volume:
 #  proxy_volume:
 #  mirror_volume:
