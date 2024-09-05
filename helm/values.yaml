@@ -38,6 +38,11 @@ service:
   type: ClusterIP
   port: 8080
 
+serviceLocal:
+  enabled: false
+  type: LoadBalancer
+  port: 18080
+
 ingress:
   enabled: false
   className: ""
@@ -68,25 +73,37 @@ resources: {}
 
 livenessProbe:
   httpGet:
-    path: /
+    path: /healthz
     port: http
 readinessProbe:
   httpGet:
-    path: /
+    path: /healthz
     port: http
 
 # Additional volumes on the output Deployment definition.
-volumes: []
-# - name: foo
-#   secret:
-#     secretName: mysecret
-#     optional: false
+volumes:
+  - name: "proxynd-configmap-volume-mount-files"
+    configMap:
+      name: "proxynd-configmap-files"
+      items:
+        - key: proxynd_global.yaml
+          path: global.yaml
+        - key: proxynd_apt-proxy.yaml
+          path: apt-proxy.yaml
+        - key: proxynd_maven-proxy.yaml
+          path: maven-proxy.yaml
 
 # Additional volumeMounts on the output Deployment definition.
-volumeMounts: []
-# - name: foo
-#   mountPath: "/etc/foo"
-#   readOnly: true
+volumeMounts:
+  - name: "proxynd-configmap-volume-mount-files"
+    mountPath: /config/global.yaml
+    subPath: global.yaml
+  - name: "proxynd-configmap-volume-mount-files"
+    mountPath: /config/apt-proxy.yaml
+    subPath: apt-proxy.yaml
+  - name: "proxynd-configmap-volume-mount-files"
+    mountPath: /config/maven-proxy.yaml
+    subPath: maven-proxy.yaml
 
 nodeSelector: {}
 

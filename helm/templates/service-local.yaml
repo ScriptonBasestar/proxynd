@@ -1,0 +1,17 @@
+{{- if .Values.serviceLocal.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "proxynd.fullname" . }}-local
+  labels:
+    {{- include "proxynd.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.serviceLocal.type }}
+  ports:
+    - port: {{ .Values.serviceLocal.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "proxynd.selectorLabels" . | nindent 4 }}
+{{- end }}

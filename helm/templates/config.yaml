@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "proxynd.fullname" . }}-files
+data:
+  proxynd_global.yaml: |-
+    cache:
+      ttl: 3600
+  proxynd_apt-proxy.yaml: |-
+    path: proxy/apt
+    #cache:
+    #  enabled: false
+    #  retention_time: 1h
+    #  evict: 1h
+    proxies:
+      ubuntu:
+        - name: official
+          url: http://archive.ubuntu.com/ubuntu
+        - name: kakao
+          url: http://mirror.kakao.com/ubuntu
+        - name: ubuntu-security
+          url: http://security.ubuntu.com/ubuntu
+      debian:
+        - name: official
+          url: http://ftp.debian.org/debian
+  proxynd_maven-proxy.yaml: |-
+    path: proxy/maven
+    use_cache: true
+    # https://docs.gradle.org/current/userguide/declaring_repositories.html
+    proxies:
+      - name: Maven Center
+        id: maven-center
+        url: https://repo.maven.apache.org/maven2/
+        description: "maven centeral"
+      - name: jcener
+        id: jcenter
+        url: https://jcenter.bintray.com
+      - name: google
+        id: google
+        url: https://maven.google.com
+      # https://repo.spring.io/webapp/#/home
+      - name: spring_release
+        id: repo.spring.io-releases
+        url: https://repo.spring.io/release
+      - name: spring_snapshots
+        id: repo.spring.io-snapshots
+        url: https://repo.spring.io/snapshot
+
+
