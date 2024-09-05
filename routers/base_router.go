@@ -5,8 +5,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// SetupRouter function will perform all route operations
-func SetupRouter() *gin.Engine {
+// BaseRouter function will perform all route operations
+func BaseRouter() *gin.Engine {
 	r := gin.Default()
 
 	//Giving access to storage folder

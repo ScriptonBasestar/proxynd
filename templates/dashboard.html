@@ -20,9 +20,13 @@
 
 <h1>Deproxy Dashboard</h1>
 
+<h2>Status</h2>
+<div>Running: {{.running}}</div>
+<div>Healthz: <a href="/healthz">status</a></div>
+
 <h2>Maven</h2>
 {{range .mavenProxy}}
-<div><a href="{{.Url}}">{{.Name}}</a> {{.Url}}</div>
+<div><a href="{{ .Url }}">{{.Name}}</a> {{.Url}}</div>
 {{end}}
 
 <h2>Apt</h2>

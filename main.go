@@ -13,7 +13,8 @@ func main() {
 		fmt.Print(e)
 	}
 
-	r := routers.SetupRouter()
+	r := routers.BaseRouter()
+	routers.HealthRouter(r)
 	routers.ProxyRouter(r)
 
 	port := os.Getenv("port")

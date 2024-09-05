@@ -10,3 +10,6 @@ tmp/
 ~tmp/
 ~/
 tmpconf/
+*-test.yaml
+*-test.yml
+*-test.json
