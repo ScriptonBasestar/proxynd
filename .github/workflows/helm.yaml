@@ -3,7 +3,7 @@ name: Helm Chart
 on:
   push:
     paths:
-      - '../../deploy/helm/**'
+      - 'helm/**'
     branches:
       - 'master'
 
@@ -38,7 +38,7 @@ jobs:
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.6.0
         with:
-          charts_dir: .
+          charts_dir: helm
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           CR_GENERATE_RELEASE_NOTES: true
