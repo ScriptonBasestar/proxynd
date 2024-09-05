@@ -67,7 +67,7 @@ func MavenProxy(c *gin.Context) {
 		fmt.Println(len(config.Proxies))
 
 		for s, server := range config.Proxies {
-			fmt.Printf("for moon %s\n", s)
+			fmt.Printf("for moon %d\n", s)
 			resp, err := http.Get(helpers.JoinURL(server.Url, requestPath))
 			if err != nil {
 				log.Fatal(err)

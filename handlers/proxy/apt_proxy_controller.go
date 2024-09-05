@@ -51,7 +51,7 @@ func AptProxy(c *gin.Context) {
 		// Get the data
 		proxy := config.Proxies[pathOs]
 		for s, server := range proxy {
-			fmt.Printf("for moon %s\n", s)
+			fmt.Printf("for moon %d\n", s)
 			resp, err := http.Get(helpers.JoinURL(server.URL, requestPath))
 			if err != nil {
 				log.Fatal(err)
