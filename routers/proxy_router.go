@@ -3,11 +3,13 @@ package routers
 import (
 	"deproxy/configs"
 	dproxy "deproxy/handlers/proxy"
+	"deproxy/helpers"
 	"github.com/gin-gonic/gin"
 )
 
 func ProxyRouter(r *gin.Engine) {
 	// fixme di??
+	storageDir := helpers.GetStorageDir()
 	globalConfig := configs.GlobalConfig{}
 	globalConfig.ReadConfig()
 
@@ -20,7 +22,7 @@ func ProxyRouter(r *gin.Engine) {
 	} else {
 		r.GET("/proxy/maven/*path", func(c *gin.Context) {
 			c.HTML(200, "alert.html", gin.H{
-				"ConfigFileDir":  globalConfig.StorageDir,
+				"ConfigFileDir":  storageDir,
 				"ConfigFileName": "maven-proxy.yaml",
 			})
 		})
@@ -35,7 +37,7 @@ func ProxyRouter(r *gin.Engine) {
 	} else {
 		r.GET("/proxy/maven/*path", func(c *gin.Context) {
 			c.HTML(200, "alert.html", gin.H{
-				"ConfigFileDir":  globalConfig.StorageDir,
+				"ConfigFileDir":  storageDir,
 				"ConfigFileName": "apt-proxy.yaml",
 			})
 		})

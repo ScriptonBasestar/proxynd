@@ -13,6 +13,6 @@ func TestAptMirrorConfig_ReadConfig(t *testing.T) {
 	cfg := AptMirrorConfig{}
 	cfg.ReadConfig()
 	fmt.Println(cfg)
-	assert.Equal(t, cfg.Path, "~/tmp/mirror/apt")
+	assert.Equal(t, cfg.Path, "mirror/apt")
 	fmt.Println(helpers.ToStringYaml(cfg))
 }

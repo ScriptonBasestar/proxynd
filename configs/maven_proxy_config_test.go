@@ -15,7 +15,7 @@ func TestMavenConfig_MavenProxy(t *testing.T) {
 	cfg := MavenProxyConfig{}
 	cfg.ReadConfig()
 	//fmt.Println(cfg)
-	assert.Equal(t, cfg.Path, "~/tmp/proxy/maven")
+	assert.Equal(t, cfg.Path, "proxy/maven")
 	fmt.Println(helpers.ToStringYaml(cfg))
 }
 

@@ -20,6 +20,7 @@ func AptProxy(c *gin.Context) {
 	requestPath := c.Param("requestPath")
 
 	// fixme di
+	storageDir := helpers.GetStorageDir()
 	globalConfig := configs.GlobalConfig{}
 	globalConfig.ReadConfig()
 	config := configs.AptProxyConfig{}
@@ -35,7 +36,7 @@ func AptProxy(c *gin.Context) {
 	//}
 
 	// Create the file
-	filefullpath := path.Join(globalConfig.StorageDir, config.Path, requestPath)
+	filefullpath := path.Join(storageDir, config.Path, requestPath)
 	filename := filepath.Base(filefullpath)
 	if _, err := os.Stat(filefullpath); os.IsNotExist(err) {
 		dirpath := filepath.Dir(filefullpath)

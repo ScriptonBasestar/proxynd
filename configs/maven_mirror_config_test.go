@@ -13,6 +13,6 @@ func TestMavenConfig_MavenMirror(t *testing.T) {
 	cfg := MavenMirrorConfig{}
 	cfg.ReadConfig()
 	//fmt.Println(cfg)
-	assert.Equal(t, cfg.Path, "~/tmp/mirror/maven")
+	assert.Equal(t, cfg.Path, "mirror/maven")
 	fmt.Println(helpers.ToStringYaml(cfg))
 }

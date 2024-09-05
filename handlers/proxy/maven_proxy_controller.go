@@ -39,6 +39,8 @@ func MavenProxy(c *gin.Context) {
 
 	requestPath := c.Param("path")
 
+	// fixme di
+	storageDir := helpers.GetStorageDir()
 	globalConfig := configs.GlobalConfig{}
 	globalConfig.ReadConfig()
 	config := configs.MavenProxyConfig{}
@@ -55,7 +57,7 @@ func MavenProxy(c *gin.Context) {
 
 	var responseContent []byte
 	// Create the file
-	filefullpath := path.Join(globalConfig.StorageDir, config.Path, requestPath)
+	filefullpath := path.Join(storageDir, config.Path, requestPath)
 	filename := filepath.Base(filefullpath)
 	if _, err := os.Stat(filefullpath); os.IsNotExist(err) {
 		dirpath := filepath.Dir(filefullpath)

@@ -13,6 +13,6 @@ func TestAptProxyConfig_ReadConfig(t *testing.T) {
 	cfg := AptProxyConfig{}
 	cfg.ReadConfig()
 	fmt.Println(cfg)
-	assert.Equal(t, cfg.Path, "~/tmp/proxy/apt")
+	assert.Equal(t, cfg.Path, "proxy/apt")
 	fmt.Println(helpers.ToStringYaml(cfg))
 }
