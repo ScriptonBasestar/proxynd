@@ -33,5 +33,6 @@ func main() {
 		Run()
 	}
 
+	fmt.Println("http://localhost:" + port + "\n")
 	r.Run(":" + port)
 }
