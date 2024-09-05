@@ -35,12 +35,12 @@
 
 ```yaml
 services:
-  deproxy:
+  proxynd:
     build:
       context: .
       dockerfile: Dockerfile
-    image: local_dev/deproxy
-    container_name: deproxy
+    image: local_dev/proxynd
+    container_name: proxynd
     ports:
       - "8080:8080"
     volumes:
@@ -56,7 +56,7 @@ volumes:
 
 #### helm
 
-helm repo install deproxy https://github.com/ScriptonBasestar-io/deproxy/releases/download
+helm repo install proxynd https://github.com/ScriptonBasestar-io/proxynd/releases/download
 
 ## REF
 

@@ -1,8 +1,6 @@
 package proxy
 
 import (
-	"deproxy/configs"
-	"deproxy/helpers"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"io"
@@ -11,6 +9,8 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"proxynd/configs"
+	"proxynd/helpers"
 )
 
 func AptProxy(c *gin.Context) {

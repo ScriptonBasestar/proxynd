@@ -1,13 +1,13 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "deproxy.fullname" . }}
+  name: {{ include "proxynd.fullname" . }}
   labels:
-    {{- include "deproxy.labels" . | nindent 4 }}
+    {{- include "proxynd.labels" . | nindent 4 }}
 spec:
   selector:
     matchLabels:
-      {{- include "deproxy.selectorLabels" . | nindent 6 }}
+      {{- include "proxynd.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -15,7 +15,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "deproxy.labels" . | nindent 8 }}
+        {{- include "proxynd.labels" . | nindent 8 }}
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -24,7 +24,7 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      serviceAccountName: {{ include "deproxy.serviceAccountName" . }}
+      serviceAccountName: {{ include "proxynd.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:

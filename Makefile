@@ -12,16 +12,16 @@ docker-build:
 	docker compose build --no-cache
 
 docker-push:
-	docker tag 'local_dev/deproxy' ${DOCKER_REGISTRY}/deproxy:latest
-	docker push ${DOCKER_REGISTRY}/deproxy:latest
+	docker tag 'local_dev/proxynd' ${DOCKER_REGISTRY}/proxynd:latest
+	docker push ${DOCKER_REGISTRY}/proxynd:latest
 
 docker-run:
 	@echo "Running..."
 	docker compose up -d
-	@echo "image name : deproxy"
+	@echo "image name : proxynd"
 
 docker-enter:
 	@echo "Entering..."
-	docker exec -it deproxy bash
+	docker exec -it proxynd bash
 
 .PHONY: build

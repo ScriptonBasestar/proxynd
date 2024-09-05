@@ -1,4 +1,4 @@
-module deproxy
+module proxynd
 
 go 1.22
 

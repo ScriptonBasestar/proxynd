@@ -1,7 +1,7 @@
 package configs
 
 import (
-	"deproxy/helpers"
+	"proxynd/helpers"
 )
 
 type VagrantServer struct {

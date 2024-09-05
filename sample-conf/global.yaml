@@ -6,6 +6,6 @@ cache:
   ttl: 3600
 
 #if storage_dir set? proxy, mirror relative
-#storage_dir: ~/tmp/deproxy
+#storage_dir: ~/tmp/proxynd
 #proxy_root: ~/tmp/proxy
 #mirror_root: ~/tmp/mirror

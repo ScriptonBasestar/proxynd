@@ -1,12 +1,12 @@
 package configs
 
 import (
-	"deproxy/helpers"
 	"fmt"
 	"github.com/go-playground/assert/v2"
 	"gopkg.in/yaml.v3"
 	"log"
 	"os"
+	"proxynd/helpers"
 	"testing"
 )
 

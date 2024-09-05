@@ -5,7 +5,7 @@
 replicaCount: 1
 
 image:
-  repository: scriptonbasestar/deproxy
+  repository: scriptonbasestar/proxynd
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
   tag: "latest"
@@ -45,14 +45,14 @@ ingress:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     cert-manager.io/cluster-issuer: letsencrypt-prd
   hosts:
-    - host: deproxy.example.com.kr
+    - host: proxynd.example.com.kr
       paths:
         - path: /
           pathType: Prefix
   tls:
-    - secretName: deproxy-key
+    - secretName: proxynd-key
       hosts:
-        - deproxy.example.com.kr
+        - proxynd.example.com.kr
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
@@ -77,14 +77,14 @@ readinessProbe:
 
 # Additional volumes on the output Deployment definition.
 volumes:
-  - name: deproxy-base-dir
+  - name: proxynd-base-dir
     hostPath:
-      path: /work/deproxy
+      path: /work/proxynd
       type: Directory
 
 # Additional volumeMounts on the output Deployment definition.
 volumeMounts:
-  - name: deproxy-base-dir
+  - name: proxynd-base-dir
     mountPath: /storage
 
 nodeSelector: {}

@@ -1,10 +1,10 @@
 package main
 
 import (
-	"deproxy/routers"
 	"fmt"
 	"github.com/joho/godotenv"
 	"os"
+	"proxynd/routers"
 )
 
 func main() {

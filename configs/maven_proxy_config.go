@@ -1,8 +1,8 @@
 package configs
 
 import (
-	"deproxy/helpers"
 	"path"
+	"proxynd/helpers"
 )
 
 type MavenProxyServer struct {

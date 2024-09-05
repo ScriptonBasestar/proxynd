@@ -1,8 +1,8 @@
 package routers
 
 import (
-	"deproxy/configs"
 	"github.com/gin-gonic/gin"
+	"proxynd/configs"
 )
 
 // BaseRouter function will perform all route operations
