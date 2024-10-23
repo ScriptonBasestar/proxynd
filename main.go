@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/joho/godotenv"
+	"log"
 	"os"
 	"proxynd/routers"
 )
@@ -17,7 +18,10 @@ func main() {
 	routers.HealthRouter(r)
 	routers.ProxyRouter(r)
 
-	port := os.Getenv("port")
+	port := os.Getenv("SERVER_PORT")
+	if port == "" {
+		log.Fatalln("Error: SERVER_PORT environment variable is not set.")
+	}
 
 	// For run on requested port
 	if len(os.Args) > 1 {
@@ -27,13 +31,11 @@ func main() {
 		}
 	}
 
-	if port == "" {
-		port = "8080" //localhost
-	}
 	type Job interface {
 		Run()
 	}
 
-	fmt.Println("http://localhost:" + port + "\n")
+	url := fmt.Sprintf("http://%s:%s", "0.0.0.0", port)
+	fmt.Println(url)
 	r.Run(":" + port)
 }

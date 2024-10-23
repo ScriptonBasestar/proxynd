@@ -10,7 +10,7 @@ func BaseRouter() *gin.Engine {
 	r := gin.Default()
 
 	//Giving access to storage folder
-	r.Static("/storage", "storage")
+	//r.Static("/storage", "storage")
 
 	//Giving access to template folder
 	//r.Static("/templates", "templates")
