@@ -16,12 +16,11 @@ docker-build:
 	@echo "Building..."
 	docker compose build --no-cache
 
-.PHONY: docker-push
+.PHONY: docker-
 docker-push:
 	docker tag 'local_dev/proxynd' ${DOCKER_REGISTRY}/proxynd:latest
 	docker push ${DOCKER_REGISTRY}/proxynd:latest
 
-.PHONY: docker-run
 docker-run:
 	@echo "Running..."
 	docker compose up -d
@@ -55,3 +54,8 @@ dev-setup:
 dev-run:
 	@echo "Running..."
 	go run main.go
+
+.PHONY: dev-test
+dev-test:
+	@echo "Testing..."
+	go test -v ./...
