@@ -1,7 +1,10 @@
 .git/
 .idea/
-.env
+.env*
+.env_default
+
 README.md
-.env_defaultn
+REF.md
+*.md
 
 Makefile

@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "proxynd.fullname" . }}-vals
+data:
+  SERVER_PORT: {{ .Values.proxynd.port | quote }}
+
+  CONFIG_DIR: {{ .Values.proxynd.configDir | quote }}
+  STORAGE_DIR: {{ .Values.proxynd.storageDir | quote }}

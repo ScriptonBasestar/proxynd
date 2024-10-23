@@ -10,6 +10,12 @@ image:
   # Overrides the image tag whose default is the chart appVersion.
   tag: "latest"
 
+proxynd:
+  version: "0.001"
+  port: 8080
+  configDir: "/config"
+  storageDir: "/storage"
+
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""

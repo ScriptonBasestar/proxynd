@@ -54,5 +54,7 @@ WORKDIR $APP_RUN_DIR
 COPY --from=builder $APP_BUILD_DIR/main $APP_RUN_DIR/main
 COPY --from=builder $APP_BUILD_DIR/templates $APP_RUN_DIR/templates
 
-CMD ["./main"]
-#ENTRYPOINT ["./main"]
+#ENTRYPOINT "ulimit -v $((1024*1024*1024)) && ./main"
+#CMD ["./main"]
+# 256MB
+CMD "ulimit -v $((256*1024*1024)) && ./main"
