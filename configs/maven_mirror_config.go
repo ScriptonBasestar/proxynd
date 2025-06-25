@@ -7,7 +7,7 @@ import (
 
 type MavenMirrorServer struct {
 	Name        string `yaml:"name"`
-	Url         string `yaml:"url,omitempty"`
+	URL         string `yaml:"url,omitempty"`
 	Description string `yaml:"description"`
 }
 

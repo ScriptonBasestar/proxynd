@@ -1,41 +1,51 @@
-# 프론신디 
+# 프록신디 
 
 ## 지원기능
 
 - [x] Maven Proxy
-- [ ] Maven Mirror
 - [x] Apt Proxy
-- [ ] Apt Mirror
-
 - [ ] Npm
-- [ ] Go
 - [ ] Python
 - [ ] Ruby
-- [ ] Docker
 - [ ] 쩌 Repo 인증기능
 - [ ] 이 리포 인증기능 
+ 
+불가능
+- Docker - distribution/registry를 연동하는 방법
+- Golang - https://github.com/gomods/athens.git
 
 ## Install
 
 ### 설정
 
-기본값 없음을 지향함
-기본값이 편한듯 하기도 하지만 이 때문에 오류가 발생하는 경우가 많고 이런경우 문제해결이 매우 힘듦
-
-#### env
-- CONFIG_DIR=/config
-- STORAGE_DIR=/storage
-- SERVER_PORT=8080
+설정파일이 좀 복잡하면 어때서
+반복적이고 모든 내용이 다 적혀있는 설정이 최고다
 
 #### 설정파일
-`sample-conf` 하위 파일들 참고
+default.yaml > server1.yaml 와같은 형태로 오버라이딩
+
+yaml, yml, toml 순서로 로딩
+
+**`sample-conf` 디렉토리 하위 파일들 참고**
+
 - global.yaml
 - apt-proxy.yaml
 - maven-proxy.yaml
 
-**주의! .yml 지원안함**
+#### env 오버라이딩
+- CONFIG_DIR=/config
+- STORAGE_DIR=/storage
+- SERVER_PORT=8080
 
 ### 실행
+
+#### main run 
+
+```bash
+set -a; source .env; set +a
+
+main run main.go --config-dir /config --storage-dir /storage --server-port 8080
+```
 
 #### docker-compose
 
