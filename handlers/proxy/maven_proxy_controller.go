@@ -2,7 +2,7 @@ package proxy
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
+	"github.com/gofiber/fiber/v2"
 	"io"
 	"log"
 	"net/http"
@@ -14,30 +14,27 @@ import (
 	"strings"
 )
 
-func responseHandler(c *gin.Context, responseContent []byte, filename string) {
+func responseHandler(c *fiber.Ctx, responseContent []byte, filename string) error {
 	ext := filename[strings.LastIndex(filename, ".")+1:]
 	// text or octetstream
 	if ext == "pom" || ext == "xml" {
-		c.Header("Content-Type", "application/xml")
-		//c.Header("Last-Modified", "date")
-		c.Header("Content-Type", "application/xml")
-		c.Header("Content-Disposition", "inline; filename="+filename)
-		//c.XML(http.StatusOK, xmlContent)
-		c.Data(http.StatusOK, "application/xml", responseContent)
+		c.Set("Content-Type", "application/xml")
+		//c.Set("Last-Modified", "date")
+		c.Set("Content-Disposition", "inline; filename="+filename)
+		return c.Status(fiber.StatusOK).Send(responseContent)
 	} else {
-		c.Header("Content-Description", "File Transfer")
-		c.Header("Content-Transfer-Encoding", "binary")
-		c.Header("Content-Disposition", "attachment; filename="+filename)
-		c.Header("Content-Type", "application/octet-stream")
-		//c.File(filefullpath)
-		c.Data(http.StatusOK, "application/octet-stream", responseContent)
+		c.Set("Content-Description", "File Transfer")
+		c.Set("Content-Transfer-Encoding", "binary")
+		c.Set("Content-Disposition", "attachment; filename="+filename)
+		c.Set("Content-Type", "application/octet-stream")
+		return c.Status(fiber.StatusOK).Send(responseContent)
 	}
 }
 
-func MavenProxy(c *gin.Context) {
+func MavenProxy(c *fiber.Ctx) error {
 	log.Printf("Access proxy maven\n")
 
-	requestPath := c.Param("path")
+	requestPath := c.Params("*")
 
 	// fixme di
 	storageDir := helpers.GetStorageDir()
@@ -70,8 +67,8 @@ func MavenProxy(c *gin.Context) {
 			fmt.Printf("for moon %d\n", s)
 			resp, err := http.Get(helpers.JoinURL(server.Url, requestPath))
 			if err != nil {
-				log.Fatal(err)
-				return
+				log.Printf("Error fetching from proxy: %v", err)
+				continue
 			}
 			//fmt.Println(resp.Header)
 			fmt.Println(resp.StatusCode)
@@ -80,8 +77,8 @@ func MavenProxy(c *gin.Context) {
 			bytes, _ := io.ReadAll(resp.Body)
 			err = os.WriteFile(filefullpath, bytes, 0766)
 			if err != nil {
-				log.Fatal(err)
-				return
+				log.Printf("Error writing file: %v", err)
+				return c.Status(fiber.StatusInternalServerError).SendString("Error writing file")
 			}
 			resp.Body.Close()
 			responseContent = bytes
@@ -92,5 +89,5 @@ func MavenProxy(c *gin.Context) {
 		responseContent = bytes
 	}
 
-	responseHandler(c, responseContent, filename)
+	return responseHandler(c, responseContent, filename)
 }

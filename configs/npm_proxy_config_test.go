@@ -22,14 +22,16 @@ func TestNpmConfig_NpmProxy(t *testing.T) {
 func TestNpmYamlMake(t *testing.T) {
 	npmConfig := NpmProxyConfig{}
 	npmConfig.Path = "tmp"
-	npmConfig.Proxies = []NpmProxyServer{
-		{
-			Name: "Center",
-			URL:  "https://repo.npm.com",
-		},
-		{
-			Name: "npm-github-packages",
-			URL:  "https://repo.jmaven.com",
+	npmConfig.Proxies = map[string][]NpmProxyServer{
+		"default": {
+			{
+				Name: "Center",
+				URL:  "https://repo.npm.com",
+			},
+				{
+				Name: "npm-github-packages",
+				URL:  "https://repo.jmaven.com",
+			},
 		},
 	}
 	yamlFile, err := yaml.Marshal(npmConfig)

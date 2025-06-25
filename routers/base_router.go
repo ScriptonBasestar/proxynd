@@ -1,47 +1,57 @@
 package routers
 
 import (
-	"github.com/gin-gonic/gin"
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/gofiber/template/html/v2"
 	"proxynd/configs"
 )
 
 // BaseRouter function will perform all route operations
-func BaseRouter() *gin.Engine {
-	r := gin.Default()
+func BaseRouter() *fiber.App {
+	// 템플릿 엔진 설정
+	engine := html.New("./templates", ".html")
+
+	// Fiber 앱 생성
+	app := fiber.New(fiber.Config{
+		Views: engine,
+	})
+
+	// 로거 미들웨어 사용
+	app.Use(logger.New())
 
 	//Giving access to storage folder
-	//r.Static("/storage", "storage")
+	//app.Static("/storage", "./storage")
 
 	//Giving access to template folder
-	//r.Static("/templates", "templates")
-	r.LoadHTMLGlob("templates/*")
+	//app.Static("/templates", "./templates")
 
-	r.GET("/", func(c *gin.Context) {
+	app.Get("/", func(c *fiber.Ctx) error {
 		mvnSite := configs.MavenProxyConfig{}
 		mvnSite.ReadConfig()
 		aptSite := configs.AptProxyConfig{}
 		aptSite.ReadConfig()
-		c.HTML(200, "dashboard.html", gin.H{
+		return c.Render("dashboard", fiber.Map{
 			"mavenProxy": mvnSite.Proxies,
 			"aptProxy":   aptSite.Proxies,
 		})
 	})
 
-	//r.Use(func(c *gin.Context) {
+	// CORS 미들웨어 (필요시 활성화)
+	//app.Use(func(c *fiber.Ctx) error {
 	//	// add header Access-Control-Allow-Origin
-	//	c.Writer.Header().Set("Content-Type", "application/json")
-	//	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	//	c.Writer.Header().Set("Access-Control-Max-Age", "86400")
-	//	c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, PUT, DELETE, UPDATE")
-	//	c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, X-Max")
-	//	c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+	//	c.Set("Content-Type", "application/json")
+	//	c.Set("Access-Control-Allow-Origin", "*")
+	//	c.Set("Access-Control-Max-Age", "86400")
+	//	c.Set("Access-Control-Allow-Methods", "POST, GET, PUT, DELETE, UPDATE")
+	//	c.Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, X-Max")
+	//	c.Set("Access-Control-Allow-Credentials", "true")
 	//
-	//	if c.Request.Method == "OPTIONS" {
-	//		c.AbortWithStatus(200)
-	//	} else {
-	//		c.Next()
+	//	if c.Method() == "OPTIONS" {
+	//		return c.SendStatus(200)
 	//	}
+	//	return c.Next()
 	//})
 
-	return r
+	return app
 }

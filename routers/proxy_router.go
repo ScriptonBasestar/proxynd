@@ -1,13 +1,13 @@
 package routers
 
 import (
-	"github.com/gin-gonic/gin"
+	"github.com/gofiber/fiber/v2"
 	"proxynd/configs"
 	proxynd "proxynd/handlers/proxy"
 	"proxynd/helpers"
 )
 
-func ProxyRouter(r *gin.Engine) {
+func ProxyRouter(app *fiber.App) {
 	// fixme di??
 	storageDir := helpers.GetStorageDir()
 	globalConfig := configs.GlobalConfig{}
@@ -17,11 +17,11 @@ func ProxyRouter(r *gin.Engine) {
 	//mavenProxyConfig.ReadConfig()
 
 	if mavenProxyConfig.ConfigExists() {
-		mavenGroup := r.Group("/proxy/maven")
-		mavenGroup.GET("*path", proxynd.MavenProxy)
+		mavenGroup := app.Group("/proxy/maven")
+		mavenGroup.Get("/*", proxynd.MavenProxy)
 	} else {
-		r.GET("/proxy/maven/*path", func(c *gin.Context) {
-			c.HTML(200, "alert.html", gin.H{
+		app.Get("/proxy/maven/*", func(c *fiber.Ctx) error {
+			return c.Render("alert", fiber.Map{
 				"ConfigFileDir":  storageDir,
 				"ConfigFileName": "maven-proxy.yaml",
 			})
@@ -32,11 +32,11 @@ func ProxyRouter(r *gin.Engine) {
 	//aptProxyConfig.ReadConfig()
 
 	if aptProxyConfig.ConfigExists() {
-		aptGroup := r.Group("/proxy/apt")
-		aptGroup.GET(":osType/*requestPath", proxynd.AptProxy)
+		aptGroup := app.Group("/proxy/apt")
+		aptGroup.Get("/:osType/*", proxynd.AptProxy)
 	} else {
-		r.GET("/proxy/maven/*path", func(c *gin.Context) {
-			c.HTML(200, "alert.html", gin.H{
+		app.Get("/proxy/apt/*", func(c *fiber.Ctx) error {
+			return c.Render("alert", fiber.Map{
 				"ConfigFileDir":  storageDir,
 				"ConfigFileName": "apt-proxy.yaml",
 			})

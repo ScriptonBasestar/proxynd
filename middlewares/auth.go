@@ -1,24 +1,24 @@
 package middlewares
 
-import "github.com/gin-gonic/gin"
+import "github.com/gofiber/fiber/v2"
 
 /*
 UserMiddlewares function to add auth
 */
-func UserMiddlewares() gin.HandlerFunc {
-	return func(c *gin.Context) {
+func UserMiddlewares() fiber.Handler {
+	return func(c *fiber.Ctx) error {
 
 		//Code for middlewares
 
-		c.Next()
+		return c.Next()
 	}
 }
 
-func ProxyMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
+func ProxyMiddleware() fiber.Handler {
+	return func(c *fiber.Ctx) error {
 
 		//Code for middlewares
 
-		c.Next()
+		return c.Next()
 	}
 }
