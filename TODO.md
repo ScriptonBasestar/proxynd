@@ -23,7 +23,7 @@ ProxyND 프로젝트의 **최초 릴리스(MVP)** 에 반드시 포함되어야 
 - [x] `apt` (Ubuntu, Debian 등 APT 프록시 처리)
 - [x] `pip` (PyPI)
 - [x] `npm` (npmjs)
-- [ ] `docker` (Docker registry v2)
+- [x] `docker` (Docker registry v2)
 
 > 단일 프레임워크 안에서 멀티 포맷 프록시 지원
 

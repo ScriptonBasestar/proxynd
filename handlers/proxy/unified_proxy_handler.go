@@ -52,6 +52,10 @@ func UnifiedProxyHandler(c *fiber.Ctx) error {
 		
 	case "docker":
 		// Docker 설정 확인
+		dockerConfig := configs.DockerProxyConfig{}
+		if !dockerConfig.ConfigExists() {
+			return renderConfigAlert(c, "docker-proxy.yaml")
+		}
 		return DockerProxy(c)
 		
 	default:

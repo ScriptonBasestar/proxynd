@@ -103,6 +103,11 @@ func checkCache(proxyType, requestPath string) CacheInfo {
 		config.ReadConfig()
 		cachePath = path.Join(storageDir, config.Path, requestPath)
 		
+	case "docker":
+		config := configs.DockerProxyConfig{}
+		config.ReadConfig()
+		cachePath = path.Join(storageDir, config.Path, requestPath)
+		
 	default:
 		cachePath = path.Join(storageDir, "proxy", proxyType, requestPath)
 	}
