@@ -1,0 +1,10 @@
+path: proxy/docker
+use_cache: true
+
+proxies:
+  - name: docker-hub
+    url: https://registry-1.docker.io
+  - name: gcr
+    url: https://gcr.io
+  - name: quay
+    url: https://quay.io
