@@ -1,0 +1,117 @@
+package middlewares
+
+import (
+	"github.com/gofiber/fiber/v2"
+	"log"
+	"os"
+	"path"
+	"proxynd/configs"
+	"proxynd/helpers"
+	"strings"
+)
+
+// ProxyPolicyMiddleware 프록시 정책 처리 미들웨어
+// 캐시 hit/miss 판단, 인증/허가 체크, 요청 허용/차단 정책 적용
+func ProxyPolicyMiddleware() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		// 프록시 타입과 경로 추출
+		proxyType := c.Params("type")
+		requestPath := c.Params("*")
+		
+		log.Printf("ProxyPolicy middleware - type: %s, path: %s\n", proxyType, requestPath)
+		
+		// 1. 요청 허용/차단 정책 체크
+		if !isProxyTypeAllowed(proxyType) {
+			return c.Status(fiber.StatusForbidden).SendString("Proxy type not allowed: " + proxyType)
+		}
+		
+		// 2. 인증/허가 체크 (현재는 기본 구현)
+		if !isAuthenticated(c) {
+			return c.Status(fiber.StatusUnauthorized).SendString("Authentication required")
+		}
+		
+		// 3. 캐시 hit/miss 판단
+		cacheInfo := checkCache(proxyType, requestPath)
+		c.Locals("cache_hit", cacheInfo.Hit)
+		c.Locals("cache_path", cacheInfo.Path)
+		
+		if cacheInfo.Hit {
+			log.Printf("Cache HIT for %s/%s\n", proxyType, requestPath)
+		} else {
+			log.Printf("Cache MISS for %s/%s\n", proxyType, requestPath)
+		}
+		
+		// 다음 핸들러로 진행
+		return c.Next()
+	}
+}
+
+// CacheInfo 캐시 정보 구조체
+type CacheInfo struct {
+	Hit  bool
+	Path string
+}
+
+// isProxyTypeAllowed 프록시 타입이 허용되는지 확인
+func isProxyTypeAllowed(proxyType string) bool {
+	allowedTypes := []string{"apt", "maven", "npm", "pip", "docker"}
+	for _, allowed := range allowedTypes {
+		if proxyType == allowed {
+			return true
+		}
+	}
+	return false
+}
+
+// isAuthenticated 인증 여부 확인 (기본 구현)
+func isAuthenticated(c *fiber.Ctx) bool {
+	// TODO: 실제 인증 로직 구현
+	// 현재는 모든 요청을 허용
+	return true
+}
+
+// checkCache 캐시 존재 여부 확인
+func checkCache(proxyType, requestPath string) CacheInfo {
+	storageDir := helpers.GetStorageDir()
+	
+	// 프록시 타입별 설정 읽기
+	var cachePath string
+	switch proxyType {
+	case "maven":
+		config := configs.MavenProxyConfig{}
+		config.ReadConfig()
+		cachePath = path.Join(storageDir, config.Path, requestPath)
+		
+	case "apt":
+		config := configs.AptProxyConfig{}
+		config.ReadConfig()
+		// APT는 osType을 포함하므로 경로 처리가 다름
+		pathParts := strings.SplitN(requestPath, "/", 2)
+		if len(pathParts) >= 2 {
+			cachePath = path.Join(storageDir, config.Path, pathParts[1])
+		} else {
+			cachePath = path.Join(storageDir, config.Path, requestPath)
+		}
+		
+	case "npm":
+		config := configs.NpmProxyConfig{}
+		config.ReadConfig()
+		cachePath = path.Join(storageDir, config.Path, requestPath)
+		
+	default:
+		cachePath = path.Join(storageDir, "proxy", proxyType, requestPath)
+	}
+	
+	// 파일 존재 여부 확인
+	if _, err := os.Stat(cachePath); err == nil {
+		return CacheInfo{
+			Hit:  true,
+			Path: cachePath,
+		}
+	}
+	
+	return CacheInfo{
+		Hit:  false,
+		Path: cachePath,
+	}
+}

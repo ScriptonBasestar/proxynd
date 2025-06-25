@@ -4,6 +4,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"proxynd/configs"
 	proxynd "proxynd/handlers/proxy"
+	"proxynd/middlewares"
 )
 
 func ProxyRouter(app *fiber.App) {
@@ -14,6 +15,10 @@ func ProxyRouter(app *fiber.App) {
 	// 통합 프록시 라우터 설정
 	// /proxy/:type/*path 형식으로 모든 프록시 요청을 처리
 	proxyGroup := app.Group("/proxy")
+	
+	// 프록시 미들웨어 적용
+	proxyGroup.Use(middlewares.ProxyPolicyMiddleware())
+	proxyGroup.Use(middlewares.AccessLogMiddleware())
 	
 	// 통합 프록시 핸들러로 모든 프록시 타입 처리
 	proxyGroup.Get("/:type/*", proxynd.UnifiedProxyHandler)
