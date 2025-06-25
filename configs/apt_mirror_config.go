@@ -6,17 +6,17 @@ import (
 )
 
 type AptMirror struct {
-	URL string `json:"url,omitempty"`
+	URL string `yaml:"url,omitempty"`
 }
 
 type AptMirrors struct {
-	Ubuntu map[string]AptMirror `json:"ubuntu"`
-	Debian map[string]AptMirror `json:"debian"`
+	Ubuntu map[string]AptMirror `yaml:"ubuntu"`
+	Debian map[string]AptMirror `yaml:"debian"`
 }
 
 type AptMirrorConfig struct {
-	Path    string     `json:"path,omitempty"`
-	Mirrors AptMirrors `json:"mirrors"`
+	Path    string     `yaml:"path,omitempty"`
+	Mirrors AptMirrors `yaml:"mirrors"`
 }
 
 func (cfg *AptMirrorConfig) ReadConfig() {

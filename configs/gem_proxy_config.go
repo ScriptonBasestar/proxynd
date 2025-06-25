@@ -5,23 +5,23 @@ import (
 	"proxynd/helpers"
 )
 
-type AptProxy struct {
+type GemProxy struct {
 	Name string `yaml:"name,omitempty"`
 	URL  string `yaml:"url,omitempty"`
 }
 
-type AptProxyConfig struct {
+type GemProxyConfig struct {
 	Path      string                `yaml:"path,omitempty"`
 	UserCache bool                  `yaml:"user_cache,omitempty" default:false`
 	Proxies   map[string][]AptProxy `yaml:"proxies"`
 }
 
-func (cfg *AptProxyConfig) ConfigExists() bool {
+func (cfg *GemProxyConfig) ConfigExists() bool {
 	confDir := helpers.GetConfigDir()
-	return helpers.FileExists(path.Join(confDir, "apt-proxy.yaml"))
+	return helpers.FileExists(path.Join(confDir, "gem-proxy.yaml"))
 }
 
-func (cfg *AptProxyConfig) ReadConfig() {
+func (cfg *GemProxyConfig) ReadConfig() {
 	confDir := helpers.GetConfigDir()
-	helpers.ReadYaml(path.Join(confDir, "apt-proxy.yaml"), cfg)
+	helpers.ReadYaml(path.Join(confDir, "gem-proxy.yaml"), cfg)
 }
