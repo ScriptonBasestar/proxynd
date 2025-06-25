@@ -1,0 +1,10 @@
+path: proxy/pip
+use_cache: true
+
+proxies:
+  - name: pypi
+    url: https://pypi.org
+  - name: douban
+    url: https://pypi.doubanio.com
+  - name: aliyun
+    url: https://mirrors.aliyun.com/pypi
