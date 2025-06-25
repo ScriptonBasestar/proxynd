@@ -77,9 +77,16 @@ func AptProxyUnified(c *fiber.Ctx) error {
 		}
 	}
 
-	c.Set("Content-Description", "File Transfer")
-	c.Set("Content-Transfer-Encoding", "binary")
-	c.Set("Content-Disposition", "attachment; filename="+filename)
-	c.Set("Content-Type", "application/octet-stream")
+	// APT 파일 타입에 따른 적절한 Content-Type 설정
+	contentType := getAptContentType(filename)
+	c.Set("Content-Type", contentType)
+	
+	// 특정 파일은 inline으로 전송
+	if isInlineFile(filename) {
+		c.Set("Content-Disposition", "inline; filename="+filename)
+	} else {
+		c.Set("Content-Disposition", "attachment; filename="+filename)
+	}
+	
 	return c.SendFile(filefullpath)
 }
