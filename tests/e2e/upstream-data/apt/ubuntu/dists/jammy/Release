@@ -1,0 +1,13 @@
+Origin: Ubuntu
+Label: Ubuntu
+Suite: jammy
+Version: 22.04
+Codename: jammy
+Date: Mon, 25 Jun 2025 10:00:00 UTC
+Architectures: amd64 arm64 armhf ppc64el s390x
+Components: main restricted universe multiverse
+Description: Ubuntu Jammy 22.04
+
+SHA256:
+ d2d5d7b3c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5  1234 main/binary-amd64/Packages.gz
+ a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1  5678 main/binary-amd64/Packages

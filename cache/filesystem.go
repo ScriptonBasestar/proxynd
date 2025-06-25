@@ -11,14 +11,25 @@ import (
 	"time"
 )
 
+// FileSystemConfig 파일 시스템 백엔드 설정
+type FileSystemConfig struct {
+	Path string // 캐시 저장 경로
+}
+
 // FileSystemBackend 파일 시스템 기반 캐시 백엔드
 type FileSystemBackend struct {
 	basePath string
 	mu       sync.RWMutex
 }
 
-// NewFileSystemBackend 새 파일 시스템 백엔드 생성
+// NewFileSystemBackend 새 파일 시스템 백엔드 생성 (문자열 경로)
 func NewFileSystemBackend(basePath string) (*FileSystemBackend, error) {
+	return NewFileSystemBackendWithConfig(FileSystemConfig{Path: basePath})
+}
+
+// NewFileSystemBackendWithConfig 설정으로 새 파일 시스템 백엔드 생성
+func NewFileSystemBackendWithConfig(config FileSystemConfig) (*FileSystemBackend, error) {
+	basePath := config.Path
 	// 기본 경로 생성
 	if err := os.MkdirAll(basePath, 0755); err != nil {
 		return nil, fmt.Errorf("failed to create cache directory: %w", err)

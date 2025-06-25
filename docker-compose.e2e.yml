@@ -1,0 +1,163 @@
+version: '3.8'
+
+services:
+  # ProxyND 서버
+  proxynd:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: proxynd:e2e
+    container_name: proxynd-e2e
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./tests/e2e/config:/config
+      - proxynd_storage:/storage
+      - proxynd_cache:/cache
+    environment:
+      - CONFIG_DIR=/config
+      - STORAGE_DIR=/storage
+      - CACHE_DIR=/cache
+      - LOG_LEVEL=debug
+    depends_on:
+      - minio
+      - nginx-upstream
+    networks:
+      - proxynd-test
+
+  # MinIO (S3 호환 스토리지) - S3 캐시 백엔드 테스트용
+  minio:
+    image: minio/minio:latest
+    container_name: minio-e2e
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin123
+    command: server /data --console-address ":9001"
+    networks:
+      - proxynd-test
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # 업스트림 서버 시뮬레이션용 Nginx
+  nginx-upstream:
+    image: nginx:alpine
+    container_name: nginx-upstream-e2e
+    ports:
+      - "8081:80"
+    volumes:
+      - ./tests/e2e/nginx:/etc/nginx/conf.d
+      - ./tests/e2e/upstream-data:/usr/share/nginx/html
+    networks:
+      - proxynd-test
+
+  # APT 테스트용 Ubuntu 클라이언트
+  ubuntu-client:
+    image: ubuntu:22.04
+    container_name: ubuntu-client-e2e
+    volumes:
+      - ./tests/e2e/scripts:/scripts
+    environment:
+      - DEBIAN_FRONTEND=noninteractive
+      - PROXYND_HOST=proxynd
+      - PROXYND_PORT=8080
+    command: tail -f /dev/null
+    networks:
+      - proxynd-test
+    depends_on:
+      - proxynd
+
+  # Node.js 테스트용 클라이언트
+  node-client:
+    image: node:18-alpine
+    container_name: node-client-e2e
+    working_dir: /workspace
+    volumes:
+      - ./tests/e2e/scripts:/scripts
+      - ./tests/e2e/workspace:/workspace
+    environment:
+      - PROXYND_HOST=proxynd
+      - PROXYND_PORT=8080
+    command: tail -f /dev/null
+    networks:
+      - proxynd-test
+    depends_on:
+      - proxynd
+
+  # Python 테스트용 클라이언트
+  python-client:
+    image: python:3.11-alpine
+    container_name: python-client-e2e
+    working_dir: /workspace
+    volumes:
+      - ./tests/e2e/scripts:/scripts
+      - ./tests/e2e/workspace:/workspace
+    environment:
+      - PROXYND_HOST=proxynd
+      - PROXYND_PORT=8080
+    command: tail -f /dev/null
+    networks:
+      - proxynd-test
+    depends_on:
+      - proxynd
+
+  # Docker-in-Docker 테스트용 클라이언트
+  docker-client:
+    image: docker:24-dind
+    container_name: docker-client-e2e
+    privileged: true
+    volumes:
+      - ./tests/e2e/scripts:/scripts
+      - docker_data:/var/lib/docker
+    environment:
+      - PROXYND_HOST=proxynd
+      - PROXYND_PORT=8080
+    command: dockerd-entrypoint.sh
+    networks:
+      - proxynd-test
+    depends_on:
+      - proxynd
+
+  # 테스트 러너
+  test-runner:
+    build:
+      context: .
+      dockerfile: tests/e2e/Dockerfile.test
+    container_name: test-runner-e2e
+    volumes:
+      - ./tests/e2e:/tests
+      - ./:/src
+    working_dir: /tests
+    environment:
+      - PROXYND_HOST=proxynd
+      - PROXYND_PORT=8080
+      - MINIO_HOST=minio
+      - MINIO_PORT=9000
+    networks:
+      - proxynd-test
+    depends_on:
+      - proxynd
+      - minio
+      - nginx-upstream
+    profiles:
+      - test
+
+networks:
+  proxynd-test:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  proxynd_storage:
+  proxynd_cache:
+  minio_data:
+  docker_data:

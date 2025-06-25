@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"sync"
@@ -9,18 +10,21 @@ import (
 
 // Manager 캐시 매니저
 type Manager struct {
-	backend CacheBackend
-	options CacheOptions
-	stats   CacheStats
-	mu      sync.RWMutex
+	backend  CacheBackend
+	options  CacheOptions
+	stats    CacheStats
+	evictor  *CacheEvictor
+	mu       sync.RWMutex
 }
 
 // NewManager 새 캐시 매니저 생성
 func NewManager(backend CacheBackend, options CacheOptions) *Manager {
+	evictor := NewCacheEvictor(backend, &LRUEvictionPolicy{}, options)
 	return &Manager{
 		backend: backend,
 		options: options,
 		stats:   CacheStats{},
+		evictor: evictor,
 	}
 }
 
@@ -65,11 +69,15 @@ func (m *Manager) Put(key string, data []byte, ttl time.Duration) error {
 		ttl = m.options.DefaultTTL
 	}
 	
-	// 캐시 크기 체크
+	// 캐시 크기 체크 및 정리
 	currentSize, _ := m.backend.Size()
 	if m.options.MaxSize > 0 && currentSize+int64(len(data)) > m.options.MaxSize {
-		// LRU 정책으로 오래된 항목 삭제 (간단한 구현)
-		m.evictOldItems(int64(len(data)))
+		// 필요한 공간 계산
+		requiredSpace := currentSize + int64(len(data)) - m.options.MaxSize
+		if err := m.evictor.evictByPolicy(requiredSpace); err != nil {
+			// 정리 실패 시 로그 출력하고 계속 진행
+			// 로그는 단순화
+		}
 	}
 	
 	// 데이터 저장
@@ -114,15 +122,19 @@ func (m *Manager) GetCachePath(proxyType, requestPath string) string {
 	return fmt.Sprintf("%s/%s/%s", m.options.BasePath, proxyType, requestPath)
 }
 
-// evictOldItems 오래된 항목 삭제 (간단한 LRU 구현)
-func (m *Manager) evictOldItems(requiredSpace int64) {
-	// TODO: 실제 LRU 구현
-	// 현재는 전체 캐시의 10%를 삭제하는 간단한 방식
-	currentSize, _ := m.backend.Size()
-	if currentSize > 0 {
-		// 구현 단순화를 위해 일부만 삭제
-		// 실제로는 메타데이터를 사용하여 LRU 구현 필요
-	}
+// StartEviction 캐시 정리 프로세스 시작
+func (m *Manager) StartEviction(ctx context.Context, interval time.Duration) {
+	m.evictor.Start(ctx, interval)
+}
+
+// StopEviction 캐시 정리 프로세스 중지
+func (m *Manager) StopEviction() {
+	m.evictor.Stop()
+}
+
+// ForceEviction 강제 캐시 정리 수행
+func (m *Manager) ForceEviction() error {
+	return m.evictor.performEviction()
 }
 
 // bytesReader []byte를 io.Reader로 변환

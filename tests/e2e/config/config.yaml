@@ -1,0 +1,70 @@
+# E2E 테스트용 ProxyND 설정
+server:
+  host: "0.0.0.0"
+  port: 8080
+  read_timeout: 30s
+  write_timeout: 30s
+
+# 지원 레지스트리 설정
+registries:
+  npm:
+    enabled: true
+    upstream: "http://nginx-upstream/npm"
+    cache_ttl: 3600
+  
+  pip:
+    enabled: true
+    upstream: "http://nginx-upstream/pip"
+    cache_ttl: 3600
+  
+  apt:
+    enabled: true
+    upstream: "http://nginx-upstream/apt"
+    cache_ttl: 7200
+  
+  docker:
+    enabled: true
+    upstream: "http://nginx-upstream/docker"
+    cache_ttl: 3600
+
+# 캐시 설정
+cache:
+  backend: filesystem
+  filesystem:
+    path: /cache
+  options:
+    default_ttl: 3600
+    max_size: 1073741824  # 1GB
+    cleanup_interval: 300  # 5분
+
+# 인증 설정 (테스트용)
+auth:
+  enabled: false
+  basic_auth:
+    users:
+      admin: admin123
+      user: user123
+  
+# 보안 설정
+security:
+  ip_filter:
+    enabled: false
+    allowed_ips: []
+    allowed_cidrs: []
+  
+  hash_verification:
+    enabled: false
+  
+  package_filter:
+    enabled: false
+    allowed_packages: {}
+
+# 로깅 설정
+logging:
+  level: debug
+  format: json
+  access_log:
+    enabled: true
+    file: /storage/access.log
+    format: json
+    rotate_daily: true
