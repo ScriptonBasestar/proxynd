@@ -20,7 +20,7 @@ ProxyND 프로젝트의 **최초 릴리스(MVP)** 에 반드시 포함되어야 
 
 ## 📦 지원 레지스트리 타입 (1차 릴리스)
 
-- [ ] `apt` (Ubuntu, Debian 등 APT 프록시 처리)
+- [x] `apt` (Ubuntu, Debian 등 APT 프록시 처리)
 - [ ] `pip` (PyPI)
 - [ ] `npm` (npmjs)
 - [ ] `docker` (Docker registry v2)
