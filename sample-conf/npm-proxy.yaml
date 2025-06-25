@@ -1,0 +1,11 @@
+path: proxy/npm
+use_cache: true
+
+proxies:
+  default:
+    - name: npmjs
+      url: https://registry.npmjs.org
+    - name: yarn
+      url: https://registry.yarnpkg.com
+    - name: taobao
+      url: https://registry.npm.taobao.org

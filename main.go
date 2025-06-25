@@ -14,9 +14,9 @@ func main() {
 		fmt.Print(e)
 	}
 
-	r := routers.BaseRouter()
-	routers.HealthRouter(r)
-	routers.ProxyRouter(r)
+	app := routers.BaseRouter()
+	routers.HealthRouter(app)
+	routers.ProxyRouter(app)
 
 	port := os.Getenv("SERVER_PORT")
 	if port == "" {
@@ -37,5 +37,5 @@ func main() {
 
 	url := fmt.Sprintf("http://%s:%s", "0.0.0.0", port)
 	fmt.Println(url)
-	r.Run(":" + port)
+	log.Fatal(app.Listen(":" + port))
 }

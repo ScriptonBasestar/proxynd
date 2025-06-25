@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 프록신디(proxynd)는 Go로 작성된 패키지 매니저 프록시/미러 서버입니다. Maven과 APT 패키지 매니저를 지원하며, 기업 환경에서 패키지 다운로드 속도 향상과 대역폭 절약을 위해 사용됩니다.
 
+**웹 프레임워크**: Fiber v2 (고성능 웹 프레임워크)
+
 ## 빌드 및 개발 명령어
 
 ### 개발 환경 설정
@@ -59,10 +61,12 @@ SERVER_PORT=8080       # 서버 포트
 - `/handlers/proxy`: HTTP 요청 핸들러
   - 각 프록시 타입별 컨트롤러 구현
   - 프록시 요청 처리 및 캐싱 로직
+  - Fiber 컨텍스트 기반 핸들러
   
 - `/routers`: HTTP 라우팅 설정
-  - Gin 프레임워크 기반 라우터 설정
+  - Fiber 프레임워크 기반 라우터 설정
   - 헬스체크 엔드포인트: `/healthz`
+  - HTML 템플릿 렌더링 지원
   
 - `/helpers`: 유틸리티 함수
   - URL 조작, YAML 파싱 등 공통 기능
@@ -76,8 +80,11 @@ SERVER_PORT=8080       # 서버 포트
 ### 프록시 추가 패턴
 새로운 프록시 타입 추가 시:
 1. `/configs/`에 설정 구조체 정의 (예: `npm_config.go`)
-2. `/handlers/proxy/`에 핸들러 구현 (예: `npm_handler.go`)
+2. `/handlers/proxy/`에 Fiber 핸들러 구현 (예: `npm_handler.go`)
+   - 핸들러 시그니처: `func(c *fiber.Ctx) error`
+   - 에러 처리: `return c.Status(code).SendString(msg)`
 3. `/routers/proxy_router.go`에 라우팅 추가
+   - 라우트 패턴: `app.Get("/proxy/:type/*", handler)`
 4. `sample-conf/`에 샘플 설정 파일 추가
 
 ## 개발 규칙 (copilot.md 기반)

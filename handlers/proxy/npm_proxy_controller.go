@@ -2,7 +2,7 @@ package proxy
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
+	"github.com/gofiber/fiber/v2"
 	"io"
 	"log"
 	"net/http"
@@ -13,11 +13,11 @@ import (
 	"proxynd/helpers"
 )
 
-func NpmProxy(c *gin.Context) {
+func NpmProxy(c *fiber.Ctx) error {
 	log.Printf("Access proxy npm\n")
 
-	pathOs := c.Param("osType")
-	requestPath := c.Param("requestPath")
+	pathOs := c.Params("osType")
+	requestPath := c.Params("requestPath")
 
 	// fixme di
 	storageDir := helpers.GetStorageDir()
@@ -34,8 +34,8 @@ func NpmProxy(c *gin.Context) {
 		os.MkdirAll(dirpath, os.ModePerm)
 		out, err := os.Create(filefullpath)
 		if err != nil {
-			panic(err)
-			return
+			log.Printf("Error creating file: %v", err)
+			return c.Status(fiber.StatusInternalServerError).SendString("Error creating file")
 		}
 		defer out.Close()
 
@@ -45,24 +45,24 @@ func NpmProxy(c *gin.Context) {
 			fmt.Printf("for moon %d\n", s)
 			resp, err := http.Get(helpers.JoinURL(server.URL, requestPath))
 			if err != nil {
-				log.Fatal(err)
-				return
+				log.Printf("Error fetching from proxy: %v", err)
+				continue
 			}
 			fmt.Println(resp.StatusCode)
 			// Write the body to file
 			_, err = io.Copy(out, resp.Body)
 			if err != nil {
-				log.Fatal(err)
-				return
+				log.Printf("Error copying file: %v", err)
+				return c.Status(fiber.StatusInternalServerError).SendString("Error copying file")
 			}
 			resp.Body.Close()
 			break
 		}
 	}
 
-	c.Header("Content-Description", "File Transfer")
-	c.Header("Content-Transfer-Encoding", "binary")
-	c.Header("Content-Disposition", "attachment; filename="+filename)
-	c.Header("Content-Type", "application/octet-stream")
-	c.File(filefullpath)
+	c.Set("Content-Description", "File Transfer")
+	c.Set("Content-Transfer-Encoding", "binary")
+	c.Set("Content-Disposition", "attachment; filename="+filename)
+	c.Set("Content-Type", "application/octet-stream")
+	return c.SendFile(filefullpath)
 }
