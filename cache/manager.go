@@ -2,6 +2,7 @@ package cache
 
 import (
 	"fmt"
+	"io"
 	"sync"
 	"time"
 )
@@ -139,11 +140,3 @@ func (r *bytesReader) Read(p []byte) (n int, err error) {
 	return n, nil
 }
 
-// io.EOF 정의
-var io struct {
-	EOF error
-}
-
-func init() {
-	io.EOF = fmt.Errorf("EOF")
-}
