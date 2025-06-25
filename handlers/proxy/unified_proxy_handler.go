@@ -44,6 +44,10 @@ func UnifiedProxyHandler(c *fiber.Ctx) error {
 		
 	case "pip":
 		// PIP 설정 확인
+		pipConfig := configs.PipProxyConfig{}
+		if !pipConfig.ConfigExists() {
+			return renderConfigAlert(c, "pip-proxy.yaml")
+		}
 		return PipProxy(c)
 		
 	case "docker":
