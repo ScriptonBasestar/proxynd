@@ -31,7 +31,7 @@ ProxyND 프로젝트의 **최초 릴리스(MVP)** 에 반드시 포함되어야 
 
 ## ⚙️ 캐시 관리
 
-- [ ] 캐시 스토리지 인터페이스 정의 (`CacheBackend`)
+- [x] 캐시 스토리지 인터페이스 정의 (`CacheBackend`)
   - 공통 read/write/delete/isHit API 제공
 - [ ] 로컬 파일 시스템 캐시 드라이버
 - [ ] S3 캐시 드라이버 (버킷 설정 가능)
