@@ -18,7 +18,7 @@ func ProxyRouter(app *fiber.App) {
 	
 	// 프록시 미들웨어 적용
 	proxyGroup.Use(middlewares.ProxyPolicyMiddleware())
-	proxyGroup.Use(middlewares.AccessLogMiddleware())
+	proxyGroup.Use(middlewares.DefaultAccessLogMiddleware())
 	
 	// 통합 프록시 핸들러로 모든 프록시 타입 처리
 	proxyGroup.Get("/:type/*", proxynd.UnifiedProxyHandler)

@@ -1,0 +1,11 @@
+#proxy:
+#  http: 192.168.11.99:3128
+#  https: 192.168.11.99:3129
+
+cache:
+  ttl: 3600
+
+#if storage_dir set? proxy, mirror relative
+#storage_dir: ~/tmp/proxynd
+#proxy_root: ~/tmp/proxy
+#mirror_root: ~/tmp/mirror

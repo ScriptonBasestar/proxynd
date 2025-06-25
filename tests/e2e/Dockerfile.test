@@ -1,0 +1,47 @@
+# E2E 테스트 러너용 Dockerfile
+
+FROM golang:1.22-alpine AS builder
+
+# 필요한 패키지 설치
+RUN apk add --no-cache \
+    curl \
+    jq \
+    bash \
+    git \
+    make
+
+# 테스트 도구 설치
+RUN go install github.com/onsi/ginkgo/v2/ginkgo@latest
+
+WORKDIR /app
+
+# Go 모듈 복사 및 의존성 다운로드
+COPY go.mod go.sum ./
+RUN go mod download
+
+# 소스 코드 복사
+COPY . .
+
+# 테스트 바이너리 빌드
+RUN go test -c ./tests/e2e -o e2e.test
+
+FROM alpine:latest
+
+# 필요한 런타임 패키지 설치
+RUN apk add --no-cache \
+    curl \
+    jq \
+    bash \
+    ca-certificates
+
+# 테스트 도구 복사
+COPY --from=builder /go/bin/ginkgo /usr/local/bin/
+COPY --from=builder /app/e2e.test /usr/local/bin/
+
+# 테스트 스크립트 복사
+COPY tests/e2e/scripts/ /scripts/
+
+WORKDIR /tests
+
+# 기본 명령어
+CMD ["/scripts/run-e2e-tests.sh"]
