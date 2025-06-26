@@ -95,7 +95,7 @@ ProxyND 프로젝트의 **최초 릴리스(MVP)** 에 반드시 포함되어야 
 
 ## 📄 문서화
 
-- [ ] README.md (기능, 설치법, 아키텍처 설명)
+- [x] README.md (기능, 설치법, 아키텍처 설명)
 - [ ] `conf/config.example.yaml`
 - [ ] REF.md: APT/PIP/NPM 패키지 흐름 및 헤더 구조 설명
 - [ ] 패키지별 설정 예시 (APT sources.list 등)
