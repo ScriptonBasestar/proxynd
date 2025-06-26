@@ -1,15 +1,39 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"github.com/joho/godotenv"
 	"log"
+	"net/http"
 	"os"
 	"proxynd/logging"
 	"proxynd/routers"
 )
 
 func main() {
+	// 헬스체크 플래그 파싱
+	healthCheck := flag.Bool("health", false, "Run health check and exit")
+	flag.Parse()
+
+	// 헬스체크 모드
+	if *healthCheck {
+		port := os.Getenv("SERVER_PORT")
+		if port == "" {
+			port = "8080"
+		}
+		resp, err := http.Get(fmt.Sprintf("http://localhost:%s/healthz", port))
+		if err != nil {
+			os.Exit(1)
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			os.Exit(1)
+		}
+		os.Exit(0)
+	}
+
+	// 일반 실행 모드
 	e := godotenv.Load()
 	if e != nil {
 		fmt.Print(e)
