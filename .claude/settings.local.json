@@ -12,7 +12,8 @@
       "Bash(chmod:*)",
       "Bash(git commit:*)",
       "Bash(rg:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(grep:*)"
     ],
     "deny": []
   }

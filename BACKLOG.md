@@ -1,9 +1,70 @@
 # 🧭 BACKLOG.md
 
-이 문서는 ProxyND의 향후 버전에 도입될 기능들을 정리한 백로그입니다.  
+이 문서는 ProxyND의 향후 버전에 도입될 기능들과 완료된 MVP 작업 이력을 정리한 백로그입니다.  
 우선순위와 개발 시점은 실제 사용 피드백 및 운영 환경에 따라 조정될 수 있습니다.
 
 ---
+
+## ✅ 완료된 MVP 기능 (v1.0.0)
+
+**이 섹션은 이미 완료되어 FEATURES.md에 문서화된 기능들입니다.**
+
+### 🧭 핵심 구조
+- ✅ 프록시 요청 라우터 구성 (`/proxy/:type/*path`)
+- ✅ 프록시 정책 처리 미들웨어 (캐시 hit/miss, 인증, 정책 적용)
+
+### 📦 지원 레지스트리 타입 (1차 릴리스)  
+- ✅ APT (Ubuntu, Debian 등 APT 프록시 처리)
+- ✅ PIP (PyPI)
+- ✅ NPM (npmjs)
+- ✅ Docker (Docker registry v2)
+
+### ⚙️ 캐시 관리
+- ✅ 캐시 스토리지 인터페이스 정의 (CacheBackend)
+- ✅ 로컬 파일 시스템 캐시 드라이버
+- ✅ S3 캐시 드라이버 (버킷 설정 가능)
+- ✅ TTL/만료 정책: LRU, max size 기반 정리 기능
+
+### 🔐 인증/인가/접근 제어
+- ✅ IP 화이트리스트 + CIDR 기반 필터
+- ✅ BasicAuth (설정파일 기반)
+- ✅ 사용자별 권한 정책 (읽기/쓰기/삭제 허용)
+- ✅ 허용된 패키지 목록 기반 필터 (AllowList)
+
+### 🛡️ 보안 및 검증
+- ✅ SHA256 해시 검증 (패키지 메타와 비교)
+- ✅ 요청 응답 기록 로깅 (access.log)
+- ✅ 패키지 검증 실패 시 차단/알림
+
+### 🧪 테스트 프레임워크
+- ✅ 통합 테스트: 실제 패키지 요청을 모사하는 시나리오 테스트
+- ✅ 단위 테스트: 라우팅, 캐시 hit, 인증 등
+- ✅ 로컬 e2e 테스트용 Docker Compose 환경 제공
+
+### 📚 설정 및 구성 관리
+- ✅ config.yaml 구조 정의 (서버, 레지스트리, 인증, 캐시 설정)
+- ✅ 환경 변수 오버라이드 지원
+- ✅ 핫리로드 지원 (SIGHUP)
+
+### 🧰 운영 및 관측
+- ✅ /metrics 엔드포인트 (Prometheus 포맷)
+- ✅ /healthz 상태 체크 API  
+- ✅ structured logging (JSON + leveled log)
+
+### 🐳 실행 및 배포
+- ✅ 다중 아키텍처 Docker 이미지 빌드 (amd64, arm64)
+- ✅ CI 파이프라인에서 자동 테스트 & 빌드
+- ✅ Helm chart or systemd 서비스 템플릿 제공
+
+### 📄 문서화
+- ✅ README.md (기능, 설치법, 아키텍처 설명)
+- ✅ conf/config.example.yaml
+- ✅ REF.md: APT/PIP/NPM 패키지 흐름 및 헤더 구조 설명
+- ✅ 패키지별 설정 예시 (APT sources.list 등)
+
+---
+
+## 🚀 향후 개발 계획
 
 ## 📦 추가 지원 레지스트리
 
