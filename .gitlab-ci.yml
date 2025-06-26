@@ -1,0 +1,247 @@
+stages:
+  - lint
+  - test
+  - build
+  - docker
+  - deploy
+
+variables:
+  GO_VERSION: "1.22"
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: "/certs"
+  FF_USE_FASTZIP: "true"
+  ARTIFACT_COMPRESSION_LEVEL: "fast"
+  CACHE_COMPRESSION_LEVEL: "fast"
+  DOCKER_REGISTRY: $CI_REGISTRY
+  IMAGE_NAME: $CI_REGISTRY_IMAGE
+
+# 캐시 설정
+.go-cache:
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - .go/pkg/mod/
+      - .go/build-cache/
+    policy: pull-push
+
+before_script:
+  - mkdir -p .go
+  - export GOPATH=${CI_PROJECT_DIR}/.go
+  - export GOCACHE=${CI_PROJECT_DIR}/.go/build-cache
+  - export PATH=$PATH:$GOPATH/bin
+
+# Lint Stage
+golangci-lint:
+  stage: lint
+  image: golang:${GO_VERSION}
+  extends: .go-cache
+  script:
+    - curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.55.2
+    - golangci-lint run --timeout=5m
+  only:
+    - branches
+    - merge_requests
+    - tags
+
+go-fmt:
+  stage: lint
+  image: golang:${GO_VERSION}
+  script:
+    - |
+      fmt_files=$(gofmt -l .)
+      if [ -n "$fmt_files" ]; then
+        echo "The following files need formatting:"
+        echo "$fmt_files"
+        exit 1
+      fi
+  only:
+    - branches
+    - merge_requests
+    - tags
+
+# Test Stage
+unit-tests:
+  stage: test
+  image: golang:${GO_VERSION}
+  extends: .go-cache
+  coverage: '/total:\s+\(statements\)\s+(\d+.\d+)%/'
+  script:
+    - go mod download
+    - go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+    - go tool cover -func=coverage.txt
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+    paths:
+      - coverage.txt
+    expire_in: 1 week
+  only:
+    - branches
+    - merge_requests
+    - tags
+
+integration-tests:
+  stage: test
+  image: golang:${GO_VERSION}
+  services:
+    - redis:7-alpine
+  variables:
+    REDIS_HOST: redis
+    REDIS_PORT: 6379
+  script:
+    - cd tests/integration
+    - make test
+  only:
+    - branches
+    - merge_requests
+    - tags
+
+# Build Stage
+build-binaries:
+  stage: build
+  image: golang:${GO_VERSION}
+  extends: .go-cache
+  parallel:
+    matrix:
+      - GOOS: linux
+        GOARCH: amd64
+      - GOOS: linux
+        GOARCH: arm64
+      - GOOS: darwin
+        GOARCH: amd64
+      - GOOS: darwin
+        GOARCH: arm64
+      - GOOS: windows
+        GOARCH: amd64
+  script:
+    - |
+      output_name=proxynd-${CI_COMMIT_TAG:-$CI_COMMIT_SHORT_SHA}-${GOOS}-${GOARCH}
+      if [ "$GOOS" = "windows" ]; then
+        output_name="${output_name}.exe"
+      fi
+      CGO_ENABLED=0 go build -ldflags="-w -s" -trimpath -o dist/${output_name} main.go
+  artifacts:
+    paths:
+      - dist/
+    expire_in: 1 week
+  only:
+    - branches
+    - merge_requests
+    - tags
+
+# Docker Stage
+docker-build:
+  stage: docker
+  image: docker:24-dind
+  services:
+    - docker:24-dind
+  variables:
+    DOCKER_BUILDKIT: 1
+    BUILDKIT_PROGRESS: plain
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+    - docker buildx create --use --name multiarch-builder
+  script:
+    - |
+      if [ "$CI_COMMIT_TAG" ]; then
+        TAGS="--tag $IMAGE_NAME:$CI_COMMIT_TAG --tag $IMAGE_NAME:latest"
+      else
+        TAGS="--tag $IMAGE_NAME:$CI_COMMIT_SHORT_SHA"
+      fi
+      
+      docker buildx build \
+        --platform linux/amd64,linux/arm64 \
+        --file Dockerfile.multiarch \
+        --cache-from type=registry,ref=$IMAGE_NAME:buildcache \
+        --cache-to type=registry,ref=$IMAGE_NAME:buildcache,mode=max \
+        --push \
+        $TAGS \
+        .
+  only:
+    - main
+    - master
+    - develop
+    - tags
+
+# Security scanning
+container-scanning:
+  stage: test
+  needs: ["docker-build"]
+  image: docker:24-dind
+  services:
+    - docker:24-dind
+  variables:
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: ""
+    CS_IMAGE: $IMAGE_NAME:$CI_COMMIT_SHORT_SHA
+  script:
+    - apk add --no-cache curl
+    - |
+      curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+      trivy image --exit-code 0 --format json --output trivy-report.json $CS_IMAGE
+      trivy image --exit-code 1 --severity CRITICAL --format table $CS_IMAGE
+  artifacts:
+    reports:
+      container_scanning: trivy-report.json
+    paths:
+      - trivy-report.json
+    expire_in: 1 week
+  only:
+    - main
+    - master
+    - develop
+    - tags
+
+# Deploy Stage (Example for Kubernetes)
+.deploy:
+  stage: deploy
+  image: bitnami/kubectl:latest
+  script:
+    - kubectl set image deployment/proxynd proxynd=$IMAGE_NAME:$CI_COMMIT_TAG -n $KUBE_NAMESPACE
+    - kubectl rollout status deployment/proxynd -n $KUBE_NAMESPACE
+  when: manual
+
+deploy-staging:
+  extends: .deploy
+  environment:
+    name: staging
+    url: https://staging.proxynd.example.com
+  variables:
+    KUBE_NAMESPACE: staging
+  only:
+    - develop
+
+deploy-production:
+  extends: .deploy
+  environment:
+    name: production
+    url: https://proxynd.example.com
+  variables:
+    KUBE_NAMESPACE: production
+  only:
+    - tags
+
+# Package Helm chart
+helm-package:
+  stage: build
+  image: alpine/helm:latest
+  script:
+    - |
+      if [ "$CI_COMMIT_TAG" ]; then
+        VERSION=${CI_COMMIT_TAG#v}
+      else
+        VERSION="0.0.0-${CI_COMMIT_SHORT_SHA}"
+      fi
+      sed -i "s/^version:.*/version: $VERSION/" helm/Chart.yaml
+      sed -i "s/^appVersion:.*/appVersion: $VERSION/" helm/Chart.yaml
+    - helm package helm/
+  artifacts:
+    paths:
+      - proxynd-*.tgz
+    expire_in: 1 week
+  only:
+    - branches
+    - tags
