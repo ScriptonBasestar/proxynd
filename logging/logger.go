@@ -194,11 +194,13 @@ func InitLogger(config LogConfig) error {
 func GetLogger() Logger {
 	once.Do(func() {
 		// 기본 설정으로 초기화
-		InitLogger(LogConfig{
+		if err := InitLogger(LogConfig{
 			Level:  LevelInfo,
 			Format: "json",
 			Output: "stdout",
-		})
+		}); err != nil {
+			// 기본 로거 초기화 실패 시에도 전역 로거는 사용 가능하도록 유지
+		}
 	})
 	return globalLogger
 }

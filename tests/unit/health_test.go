@@ -2,9 +2,12 @@ package unit
 
 import (
 	"context"
+	"fmt"
 	"io"
+	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 	"time"
 	
@@ -261,9 +264,3 @@ func TestCacheBackendChecker(t *testing.T) {
 	assert.Equal(t, true, strings.Contains(result2.Message, "connection failed"))
 }
 
-// 필요한 import 추가
-import (
-	"fmt"
-	"net/http"
-	"strings"
-)
