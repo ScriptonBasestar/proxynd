@@ -10,11 +10,11 @@ import (
 
 // Manager 캐시 매니저
 type Manager struct {
-	backend  CacheBackend
-	options  CacheOptions
-	stats    CacheStats
-	evictor  *CacheEvictor
-	mu       sync.RWMutex
+	backend CacheBackend
+	options CacheOptions
+	stats   CacheStats
+	evictor *CacheEvictor
+	mu      sync.RWMutex
 }
 
 // NewManager 새 캐시 매니저 생성
@@ -32,17 +32,17 @@ func NewManager(backend CacheBackend, options CacheOptions) *Manager {
 func (m *Manager) Get(key string) ([]byte, bool) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	
+
 	reader, err := m.backend.Get(key)
 	if err != nil {
 		m.stats.Misses++
 		return nil, false
 	}
 	defer reader.Close()
-	
+
 	// 읽기 성공
 	m.stats.Hits++
-	
+
 	// io.ReadAll을 사용하여 데이터 읽기
 	data := make([]byte, 0)
 	buf := make([]byte, 1024)
@@ -55,7 +55,7 @@ func (m *Manager) Get(key string) ([]byte, bool) {
 			break
 		}
 	}
-	
+
 	return data, true
 }
 
@@ -63,12 +63,12 @@ func (m *Manager) Get(key string) ([]byte, bool) {
 func (m *Manager) Put(key string, data []byte, ttl time.Duration) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	
+
 	// 기본 TTL 사용
 	if ttl == 0 {
 		ttl = m.options.DefaultTTL
 	}
-	
+
 	// 캐시 크기 체크 및 정리
 	currentSize, _ := m.backend.Size()
 	if m.options.MaxSize > 0 && currentSize+int64(len(data)) > m.options.MaxSize {
@@ -79,7 +79,7 @@ func (m *Manager) Put(key string, data []byte, ttl time.Duration) error {
 			// 로그는 단순화
 		}
 	}
-	
+
 	// 데이터 저장
 	reader := &bytesReader{data: data}
 	return m.backend.Put(key, reader, ttl)
@@ -94,7 +94,7 @@ func (m *Manager) Exists(key string) bool {
 func (m *Manager) Delete(key string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	
+
 	return m.backend.Delete(key)
 }
 
@@ -102,7 +102,7 @@ func (m *Manager) Delete(key string) error {
 func (m *Manager) Clear() error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	
+
 	m.stats.LastClear = time.Now()
 	return m.backend.Clear()
 }
@@ -111,7 +111,7 @@ func (m *Manager) Clear() error {
 func (m *Manager) GetStats() CacheStats {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	
+
 	stats := m.stats
 	stats.Size, _ = m.backend.Size()
 	return stats
@@ -151,4 +151,3 @@ func (r *bytesReader) Read(p []byte) (n int, err error) {
 	r.pos += n
 	return n, nil
 }
-

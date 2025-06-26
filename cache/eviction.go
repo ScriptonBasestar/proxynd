@@ -13,7 +13,7 @@ import (
 type EvictionPolicy interface {
 	// ShouldEvict 제거가 필요한지 확인
 	ShouldEvict(currentSize, maxSize int64, item *CacheMetadata) bool
-	
+
 	// SelectEvictionCandidates 제거할 항목 선택
 	SelectEvictionCandidates(items []*CacheMetadata, requiredSpace int64) []string
 }
@@ -26,7 +26,7 @@ func (p *LRUEvictionPolicy) ShouldEvict(currentSize, maxSize int64, item *CacheM
 	if item.TTL > 0 && time.Since(item.CreatedAt) > item.TTL {
 		return true
 	}
-	
+
 	// 크기 초과 확인
 	return currentSize > maxSize
 }
@@ -35,27 +35,27 @@ func (p *LRUEvictionPolicy) SelectEvictionCandidates(items []*CacheMetadata, req
 	// 접근 시간 기준으로 정렬
 	h := &metadataHeap{items: items}
 	heap.Init(h)
-	
+
 	var candidates []string
 	var freedSpace int64
-	
+
 	for h.Len() > 0 && freedSpace < requiredSpace {
 		item := heap.Pop(h).(*CacheMetadata)
 		candidates = append(candidates, item.Key)
 		freedSpace += item.Size
 	}
-	
+
 	return candidates
 }
 
 // CacheEvictor 캐시 제거 관리자
 type CacheEvictor struct {
-	backend  CacheBackend
-	policy   EvictionPolicy
-	options  CacheOptions
-	mu       sync.Mutex
-	stopCh   chan struct{}
-	wg       sync.WaitGroup
+	backend CacheBackend
+	policy  EvictionPolicy
+	options CacheOptions
+	mu      sync.Mutex
+	stopCh  chan struct{}
+	wg      sync.WaitGroup
 }
 
 // NewCacheEvictor 새 캐시 제거 관리자 생성
@@ -83,10 +83,10 @@ func (e *CacheEvictor) Stop() {
 // evictionLoop 주기적 캐시 정리
 func (e *CacheEvictor) evictionLoop(ctx context.Context, interval time.Duration) {
 	defer e.wg.Done()
-	
+
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
-	
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -105,19 +105,19 @@ func (e *CacheEvictor) evictionLoop(ctx context.Context, interval time.Duration)
 func (e *CacheEvictor) performEviction() error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
-	
+
 	// 현재 캐시 크기 확인
 	currentSize, err := e.backend.Size()
 	if err != nil {
 		return fmt.Errorf("failed to get cache size: %w", err)
 	}
-	
+
 	// 크기 제한 확인
 	if e.options.MaxSize > 0 && currentSize <= e.options.MaxSize {
 		// TTL 만료 항목만 확인
 		return e.evictExpiredItems()
 	}
-	
+
 	// 크기 초과 시 LRU 정책 적용
 	requiredSpace := currentSize - int64(float64(e.options.MaxSize)*0.9) // 90%로 줄이기
 	return e.evictByPolicy(requiredSpace)
@@ -129,12 +129,12 @@ func (e *CacheEvictor) evictExpiredItems() error {
 	if fsBackend, ok := e.backend.(*FileSystemBackend); ok {
 		return e.evictExpiredFromFileSystem(fsBackend)
 	}
-	
+
 	// S3Backend인 경우 메타데이터 스캔
 	if s3Backend, ok := e.backend.(*S3Backend); ok {
 		return e.evictExpiredFromS3(s3Backend)
 	}
-	
+
 	return nil
 }
 
@@ -143,20 +143,20 @@ func (e *CacheEvictor) evictExpiredFromFileSystem(backend *FileSystemBackend) er
 	// 구현 간소화를 위해 샘플 키 목록만 확인
 	// 실제로는 전체 디렉토리 스캔 필요
 	sampleKeys := []string{} // TODO: 디렉토리 스캔으로 키 목록 가져오기
-	
+
 	for _, key := range sampleKeys {
 		meta, err := backend.GetMetadata(key)
 		if err != nil {
 			continue
 		}
-		
+
 		if e.policy.ShouldEvict(0, 0, meta) {
 			if err := backend.Delete(key); err != nil {
 				log.Printf("Failed to delete expired key %s: %v", key, err)
 			}
 		}
 	}
-	
+
 	return nil
 }
 
@@ -171,20 +171,20 @@ func (e *CacheEvictor) evictExpiredFromS3(backend *S3Backend) error {
 func (e *CacheEvictor) evictByPolicy(requiredSpace int64) error {
 	// 모든 캐시 메타데이터 수집
 	var allMetadata []*CacheMetadata
-	
+
 	// 실제로는 백엔드에서 모든 메타데이터를 가져와야 함
 	// 구현 간소화를 위해 샘플 데이터 사용
-	
+
 	// 제거 후보 선택
 	candidates := e.policy.SelectEvictionCandidates(allMetadata, requiredSpace)
-	
+
 	// 캐시 항목 제거
 	for _, key := range candidates {
 		if err := e.backend.Delete(key); err != nil {
 			log.Printf("Failed to evict key %s: %v", key, err)
 		}
 	}
-	
+
 	return nil
 }
 
@@ -192,7 +192,7 @@ func (e *CacheEvictor) evictByPolicy(requiredSpace int64) error {
 func (e *CacheEvictor) EvictKey(key string) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
-	
+
 	return e.backend.Delete(key)
 }
 
