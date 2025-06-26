@@ -1,7 +1,21 @@
 apiVersion: v2
 name: proxynd
-description: ㅇㅣ것은 프록신디
-
+description: A lightweight multi-format package registry proxy server
 type: application
 version: 0.1.3
 appVersion: "0.1.3"
+keywords:
+  - proxy
+  - package-manager
+  - npm
+  - pip
+  - apt
+  - docker
+  - registry
+home: https://github.com/scriptonbasestar/proxynd
+sources:
+  - https://github.com/scriptonbasestar/proxynd
+maintainers:
+  - name: scriptonbasestar
+    email: archmagece@gmail.com
+icon: https://raw.githubusercontent.com/scriptonbasestar/proxynd/main/icon.png

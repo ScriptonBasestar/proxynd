@@ -1,0 +1,80 @@
+{{- if not .Values.proxynd.existingConfigmap }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "helm.fullname" . }}
+  labels:
+    {{- include "helm.labels" . | nindent 4 }}
+data:
+  config.yaml: |
+    server:
+      port: {{ .Values.proxynd.serverPort }}
+      host: "0.0.0.0"
+    
+    logging:
+      level: {{ .Values.proxynd.logLevel }}
+      format: {{ .Values.proxynd.logFormat }}
+    
+    cache:
+      type: {{ .Values.proxynd.cache.type }}
+      ttl: {{ .Values.proxynd.cache.ttl }}
+      maxSize: {{ .Values.proxynd.cache.maxSize }}
+      {{- if eq .Values.proxynd.cache.type "s3" }}
+      s3:
+        bucket: {{ .Values.proxynd.cache.s3.bucket }}
+        region: {{ .Values.proxynd.cache.s3.region }}
+        {{- if .Values.proxynd.cache.s3.endpoint }}
+        endpoint: {{ .Values.proxynd.cache.s3.endpoint }}
+        {{- end }}
+      {{- end }}
+    
+    {{- if .Values.proxynd.auth.enabled }}
+    auth:
+      enabled: true
+      type: {{ .Values.proxynd.auth.type }}
+      {{- if eq .Values.proxynd.auth.type "basic" }}
+      users:
+        {{- range .Values.proxynd.auth.basicAuth.users }}
+        - username: {{ .username }}
+          password: {{ .password }}
+          permissions:
+            {{- range .permissions }}
+            - {{ . }}
+            {{- end }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+    
+    proxies:
+      {{- if .Values.proxynd.proxies.npm.enabled }}
+      npm:
+        enabled: true
+        upstream: {{ .Values.proxynd.proxies.npm.upstream }}
+      {{- end }}
+      
+      {{- if .Values.proxynd.proxies.pip.enabled }}
+      pip:
+        enabled: true
+        upstream: {{ .Values.proxynd.proxies.pip.upstream }}
+      {{- end }}
+      
+      {{- if .Values.proxynd.proxies.apt.enabled }}
+      apt:
+        enabled: true
+        distributions:
+          {{- range .Values.proxynd.proxies.apt.distributions }}
+          - name: {{ .name }}
+            upstream: {{ .upstream }}
+            architectures:
+              {{- range .architectures }}
+              - {{ . }}
+              {{- end }}
+          {{- end }}
+      {{- end }}
+      
+      {{- if .Values.proxynd.proxies.docker.enabled }}
+      docker:
+        enabled: true
+        upstream: {{ .Values.proxynd.proxies.docker.upstream }}
+      {{- end }}
+{{- end }}
