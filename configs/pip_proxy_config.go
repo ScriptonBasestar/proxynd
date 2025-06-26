@@ -11,9 +11,9 @@ type PipProxyServer struct {
 }
 
 type PipProxyConfig struct {
-	Path      string           `yaml:"path,omitempty"`
-	UseCache  bool             `yaml:"use_cache,omitempty" default:"true"`
-	Proxies   []PipProxyServer `yaml:"proxies"`
+	Path     string           `yaml:"path,omitempty"`
+	UseCache bool             `yaml:"use_cache,omitempty" default:"true"`
+	Proxies  []PipProxyServer `yaml:"proxies"`
 }
 
 func (cfg *PipProxyConfig) ConfigExists() bool {

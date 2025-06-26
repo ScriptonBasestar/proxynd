@@ -28,7 +28,7 @@ func TestNpmYamlMake(t *testing.T) {
 				Name: "Center",
 				URL:  "https://repo.npm.com",
 			},
-				{
+			{
 				Name: "npm-github-packages",
 				URL:  "https://repo.jmaven.com",
 			},

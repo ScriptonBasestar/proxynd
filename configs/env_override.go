@@ -25,30 +25,30 @@ var envOverrides = []EnvOverride{
 	{EnvVar: "SERVER_READ_TIMEOUT", Path: "server.read_timeout", Type: "duration"},
 	{EnvVar: "SERVER_WRITE_TIMEOUT", Path: "server.write_timeout", Type: "duration"},
 	{EnvVar: "SERVER_IDLE_TIMEOUT", Path: "server.idle_timeout", Type: "duration"},
-	
+
 	// TLS 설정
 	{EnvVar: "TLS_ENABLED", Path: "server.tls.enabled", Type: "bool"},
 	{EnvVar: "TLS_CERT_FILE", Path: "server.tls.cert_file", Type: "string"},
 	{EnvVar: "TLS_KEY_FILE", Path: "server.tls.key_file", Type: "string"},
-	
+
 	// 캐시 설정
 	{EnvVar: "CACHE_BACKEND", Path: "cache.backend", Type: "string"},
 	{EnvVar: "CACHE_TTL", Path: "cache.ttl", Type: "duration"},
 	{EnvVar: "CACHE_MAX_SIZE", Path: "cache.max_size", Type: "string"},
 	{EnvVar: "STORAGE_DIR", Path: "cache.file.directory", Type: "string"},
-	
+
 	// S3 캐시 설정
 	{EnvVar: "S3_ENDPOINT", Path: "cache.s3.endpoint", Type: "string"},
 	{EnvVar: "S3_BUCKET", Path: "cache.s3.bucket", Type: "string"},
 	{EnvVar: "S3_REGION", Path: "cache.s3.region", Type: "string"},
 	{EnvVar: "AWS_ACCESS_KEY_ID", Path: "cache.s3.access_key_id", Type: "string"},
 	{EnvVar: "AWS_SECRET_ACCESS_KEY", Path: "cache.s3.secret_access_key", Type: "string"},
-	
+
 	// Redis 캐시 설정
 	{EnvVar: "REDIS_ADDRESS", Path: "cache.redis.address", Type: "string"},
 	{EnvVar: "REDIS_PASSWORD", Path: "cache.redis.password", Type: "string"},
 	{EnvVar: "REDIS_DB", Path: "cache.redis.db", Type: "int"},
-	
+
 	// 레지스트리 설정
 	{EnvVar: "NPM_ENABLED", Path: "registries.npm.enabled", Type: "bool"},
 	{EnvVar: "NPM_UPSTREAM", Path: "registries.npm.upstream", Type: "string"},
@@ -57,12 +57,12 @@ var envOverrides = []EnvOverride{
 	{EnvVar: "APT_ENABLED", Path: "registries.apt.enabled", Type: "bool"},
 	{EnvVar: "DOCKER_ENABLED", Path: "registries.docker.enabled", Type: "bool"},
 	{EnvVar: "MAVEN_ENABLED", Path: "registries.maven.enabled", Type: "bool"},
-	
+
 	// 보안 설정
 	{EnvVar: "AUTH_ENABLED", Path: "security.authentication.basic_auth.enabled", Type: "bool"},
 	{EnvVar: "AUTH_USERS_FILE", Path: "security.authentication.basic_auth.users_file", Type: "string"},
 	{EnvVar: "IP_WHITELIST_ENABLED", Path: "security.access_control.ip_whitelist.enabled", Type: "bool"},
-	
+
 	// 로깅 설정
 	{EnvVar: "LOG_LEVEL", Path: "logging.level", Type: "string"},
 	{EnvVar: "LOG_FORMAT", Path: "logging.format", Type: "string"},
@@ -70,21 +70,21 @@ var envOverrides = []EnvOverride{
 	{EnvVar: "LOG_FILE", Path: "logging.file.path", Type: "string"},
 	{EnvVar: "ACCESS_LOG_ENABLED", Path: "logging.access_log.enabled", Type: "bool"},
 	{EnvVar: "ACCESS_LOG_PATH", Path: "logging.access_log.path", Type: "string"},
-	
+
 	// 메트릭 설정
 	{EnvVar: "METRICS_ENABLED", Path: "metrics.enabled", Type: "bool"},
 	{EnvVar: "METRICS_PATH", Path: "metrics.path", Type: "string"},
 	{EnvVar: "METRICS_PORT", Path: "metrics.port", Type: "int"},
-	
+
 	// 검증 설정
 	{EnvVar: "VERIFICATION_ENABLED", Path: "verification.strict_mode", Type: "bool"},
 	{EnvVar: "VERIFICATION_BLOCK", Path: "verification.block_on_failure", Type: "bool"},
 	{EnvVar: "VERIFICATION_ALERT", Path: "verification.alert_on_failure", Type: "bool"},
-	
+
 	// 알림 설정
 	{EnvVar: "ALERTS_ENABLED", Path: "alerts.enabled", Type: "bool"},
 	{EnvVar: "WEBHOOK_URL", Path: "alerts.channels[1].config.url", Type: "string"},
-	
+
 	// 고급 설정
 	{EnvVar: "MAX_CONNECTIONS", Path: "advanced.performance.max_connections", Type: "int"},
 	{EnvVar: "CONNECTION_TIMEOUT", Path: "advanced.performance.connection_timeout", Type: "duration"},
@@ -98,26 +98,26 @@ func ApplyEnvironmentOverrides(config interface{}) error {
 	if configValue.Kind() == reflect.Ptr {
 		configValue = configValue.Elem()
 	}
-	
+
 	for _, override := range envOverrides {
 		// 환경 변수 값 확인
 		value := os.Getenv(override.EnvVar)
 		if value == "" {
 			continue
 		}
-		
+
 		// 경로로 필드 찾기
 		field, err := getFieldByPath(configValue, override.Path)
 		if err != nil {
 			continue
 		}
-		
+
 		// 값 설정
 		if err := setFieldValue(field, value, override.Type); err != nil {
 			return err
 		}
 	}
-	
+
 	return nil
 }
 
@@ -125,7 +125,7 @@ func ApplyEnvironmentOverrides(config interface{}) error {
 func getFieldByPath(v reflect.Value, path string) (reflect.Value, error) {
 	parts := strings.Split(path, ".")
 	current := v
-	
+
 	for _, part := range parts {
 		// 배열 인덱스 처리
 		if strings.Contains(part, "[") && strings.Contains(part, "]") {
@@ -135,13 +135,13 @@ func getFieldByPath(v reflect.Value, path string) (reflect.Value, error) {
 			if err != nil {
 				return reflect.Value{}, err
 			}
-			
+
 			// 필드 가져오기
 			field := current.FieldByName(strings.Title(strings.Replace(fieldName, "_", "", -1)))
 			if !field.IsValid() {
 				return reflect.Value{}, nil
 			}
-			
+
 			// 슬라이스 요소 접근
 			if field.Kind() == reflect.Slice && field.Len() > index {
 				current = field.Index(index)
@@ -158,7 +158,7 @@ func getFieldByPath(v reflect.Value, path string) (reflect.Value, error) {
 			current = field
 		}
 	}
-	
+
 	return current, nil
 }
 
@@ -167,7 +167,7 @@ func setFieldValue(field reflect.Value, value string, valueType string) error {
 	if !field.CanSet() {
 		return nil
 	}
-	
+
 	switch valueType {
 	case "string":
 		field.SetString(expandPath(value))
@@ -184,7 +184,7 @@ func setFieldValue(field reflect.Value, value string, valueType string) error {
 			field.Set(reflect.ValueOf(d))
 		}
 	}
-	
+
 	return nil
 }
 
@@ -205,23 +205,23 @@ func expandPath(path string) string {
 			path = strings.Replace(path, "~", home, 1)
 		}
 	}
-	
+
 	// 환경 변수 확장
 	path = os.ExpandEnv(path)
-	
+
 	return path
 }
 
 // GetEnvironmentOverrides 현재 설정된 환경 변수 오버라이드 목록 반환
 func GetEnvironmentOverrides() map[string]string {
 	overrides := make(map[string]string)
-	
+
 	for _, override := range envOverrides {
 		if value := os.Getenv(override.EnvVar); value != "" {
 			overrides[override.EnvVar] = value
 		}
 	}
-	
+
 	return overrides
 }
 
@@ -229,29 +229,29 @@ func GetEnvironmentOverrides() map[string]string {
 func PrintEnvironmentVariables() {
 	println("Available environment variables for ProxyND:")
 	println("===========================================")
-	
+
 	categories := map[string][]EnvOverride{
-		"Server": {},
-		"Cache": {},
+		"Server":     {},
+		"Cache":      {},
 		"Registries": {},
-		"Security": {},
-		"Logging": {},
-		"Metrics": {},
-		"Advanced": {},
+		"Security":   {},
+		"Logging":    {},
+		"Metrics":    {},
+		"Advanced":   {},
 	}
-	
+
 	// 카테고리별로 분류
 	for _, override := range envOverrides {
 		switch {
 		case strings.HasPrefix(override.EnvVar, "SERVER_") || strings.HasPrefix(override.EnvVar, "TLS_"):
 			categories["Server"] = append(categories["Server"], override)
-		case strings.HasPrefix(override.EnvVar, "CACHE_") || strings.HasPrefix(override.EnvVar, "STORAGE_") || 
-		     strings.HasPrefix(override.EnvVar, "S3_") || strings.HasPrefix(override.EnvVar, "REDIS_"):
+		case strings.HasPrefix(override.EnvVar, "CACHE_") || strings.HasPrefix(override.EnvVar, "STORAGE_") ||
+			strings.HasPrefix(override.EnvVar, "S3_") || strings.HasPrefix(override.EnvVar, "REDIS_"):
 			categories["Cache"] = append(categories["Cache"], override)
 		case strings.Contains(override.EnvVar, "_ENABLED") || strings.Contains(override.EnvVar, "_UPSTREAM"):
 			categories["Registries"] = append(categories["Registries"], override)
 		case strings.HasPrefix(override.EnvVar, "AUTH_") || strings.HasPrefix(override.EnvVar, "IP_") ||
-		     strings.HasPrefix(override.EnvVar, "VERIFICATION_"):
+			strings.HasPrefix(override.EnvVar, "VERIFICATION_"):
 			categories["Security"] = append(categories["Security"], override)
 		case strings.HasPrefix(override.EnvVar, "LOG_") || strings.HasPrefix(override.EnvVar, "ACCESS_LOG_"):
 			categories["Logging"] = append(categories["Logging"], override)
@@ -261,7 +261,7 @@ func PrintEnvironmentVariables() {
 			categories["Advanced"] = append(categories["Advanced"], override)
 		}
 	}
-	
+
 	// 카테고리별 출력
 	for category, overrides := range categories {
 		if len(overrides) > 0 {
