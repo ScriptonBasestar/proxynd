@@ -13,7 +13,12 @@
       "Bash(git commit:*)",
       "Bash(rg:*)",
       "Bash(pkill:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(make:*)",
+      "Bash(air)",
+      "Bash(lsof:*)",
+      "Bash(unset CONFIG_DIR STORAGE_DIR)",
+      "Bash(curl:*)"
     ],
     "deny": []
   }

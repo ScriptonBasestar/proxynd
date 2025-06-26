@@ -2,15 +2,15 @@ ENV=develop
 DOCKER_REGISTRY=scriptonbasestar
 VERSION?=latest
 
-.EXPORT_ALL_VARIABLES:
-STORAGE_DIR=~/tmp/storage/
-CONFIG_DIR=~/tmp/config/
+# Override only for specific targets that need these paths
+PROD_STORAGE_DIR=~/tmp/storage/
+PROD_CONFIG_DIR=~/tmp/config/
 
 .PHONY: setup
 setup:
-	mkdir -p ~/tmp/config
-	mkdir -p ~/tmp/storage
-	cp -r sample-conf/* ~/tmp/config/.
+	mkdir -p $(PROD_CONFIG_DIR)
+	mkdir -p $(PROD_STORAGE_DIR)
+	cp -r sample-conf/* $(PROD_CONFIG_DIR)
 
 .PHONY: docker-build
 docker-build:
@@ -67,13 +67,23 @@ dev-prepare:
 
 .PHONY: dev-setup
 dev-setup:
-	@echo "Setting up..."
-	@mkdir -p ~/tmp/config
-	@cp -r sample-conf/* ~/tmp/config/.
+	@echo "Setting up development environment..."
+	@mkdir -p ./tmp/storage
+	@cp .env.dev .env
+	@echo "Development environment ready!"
+	@echo "Config dir: ./sample-conf"
+	@echo "Storage dir: ./tmp/storage"
+	@echo "Environment variables:"
+	@grep -E "^[A-Z_]+" .env || true
 
 .PHONY: dev-run
-dev-run:
-	@echo "Running..."
+dev-run: dev-setup
+	@echo "Running with Air (hot reload)..."
+	air
+
+.PHONY: dev-run-direct
+dev-run-direct: dev-setup
+	@echo "Running directly with go run..."
 	go run main.go
 
 .PHONY: dev-test
