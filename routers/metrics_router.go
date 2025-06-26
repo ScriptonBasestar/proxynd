@@ -3,7 +3,7 @@ package routers
 import (
 	"net/http"
 	"strconv"
-	
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/basicauth"
 	"github.com/prometheus/client_golang/prometheus"
@@ -17,22 +17,22 @@ import (
 func MetricsRouter(app *fiber.App, config *configs.UnifiedConfig) {
 	// 메트릭 초기화
 	metrics.InitMetrics()
-	
+
 	// 커스텀 수집기 등록
 	prometheus.MustRegister(metrics.NewCustomCollector())
-	
+
 	// 메트릭 미들웨어 적용 (전체 앱에 적용)
 	app.Use(metrics.PrometheusMiddleware())
-	
+
 	// 메트릭 엔드포인트 설정
 	metricsPath := "/metrics"
 	if config != nil && config.Metrics.Path != "" {
 		metricsPath = config.Metrics.Path
 	}
-	
+
 	// 메트릭 그룹 생성
 	metricsGroup := app.Group(metricsPath)
-	
+
 	// 기본 인증 적용 (설정된 경우)
 	if config != nil && config.Metrics.BasicAuth {
 		metricsGroup.Use(basicauth.New(basicauth.Config{
@@ -44,10 +44,10 @@ func MetricsRouter(app *fiber.App, config *configs.UnifiedConfig) {
 			},
 		}))
 	}
-	
+
 	// Prometheus 핸들러 어댑터
 	metricsGroup.Get("", adaptor(promhttp.Handler()))
-	
+
 	// 추가 메트릭 엔드포인트들
 	setupAdditionalMetrics(app, config)
 }
@@ -66,10 +66,10 @@ func getMetricsUsers(config *configs.UnifiedConfig) map[string]string {
 	users := map[string]string{
 		"metrics": "prometheus", // 기본 사용자
 	}
-	
+
 	// TODO: 설정에서 사용자 정보 로드
 	// config.Security.Authentication.BasicAuth에서 메트릭 사용자 추출
-	
+
 	return users
 }
 
@@ -78,73 +78,73 @@ func setupAdditionalMetrics(app *fiber.App, config *configs.UnifiedConfig) {
 	// 캐시 통계 엔드포인트
 	app.Get("/api/metrics/cache", func(c *fiber.Ctx) error {
 		m := metrics.GetMetrics()
-		
+
 		// 캐시 통계 수집
 		stats := fiber.Map{
-			"npm": getCacheStatsForRegistry("npm", m),
-			"pypi": getCacheStatsForRegistry("pypi", m),
-			"apt": getCacheStatsForRegistry("apt", m),
+			"npm":    getCacheStatsForRegistry("npm", m),
+			"pypi":   getCacheStatsForRegistry("pypi", m),
+			"apt":    getCacheStatsForRegistry("apt", m),
 			"docker": getCacheStatsForRegistry("docker", m),
-			"maven": getCacheStatsForRegistry("maven", m),
+			"maven":  getCacheStatsForRegistry("maven", m),
 		}
-		
+
 		return c.JSON(stats)
 	})
-	
+
 	// 프록시 통계 엔드포인트
 	app.Get("/api/metrics/proxy", func(c *fiber.Ctx) error {
 		m := metrics.GetMetrics()
-		
+
 		stats := fiber.Map{
 			"total_requests": getMetricValue(m.ProxyRequestsTotal),
-			"total_errors": getMetricValue(m.ProxyErrorsTotal),
+			"total_errors":   getMetricValue(m.ProxyErrorsTotal),
 			"bytes_transferred": fiber.Map{
-				"upload": getMetricValueWithLabel(m.ProxyBytesTransferred, "direction", "upload"),
+				"upload":   getMetricValueWithLabel(m.ProxyBytesTransferred, "direction", "upload"),
 				"download": getMetricValueWithLabel(m.ProxyBytesTransferred, "direction", "download"),
 			},
 		}
-		
+
 		return c.JSON(stats)
 	})
-	
+
 	// 시스템 메트릭 엔드포인트
 	app.Get("/api/metrics/system", func(c *fiber.Ctx) error {
 		systemMetrics := metrics.GetSystemMetrics()
-		
+
 		stats := fiber.Map{
 			"cpu": fiber.Map{
 				"usage": systemMetrics["cpu_usage"],
 			},
 			"memory": fiber.Map{
-				"total_kb": systemMetrics["memory_total_kb"],
+				"total_kb":     systemMetrics["memory_total_kb"],
 				"available_kb": systemMetrics["memory_available_kb"],
-				"usage": systemMetrics["memory_usage"],
+				"usage":        systemMetrics["memory_usage"],
 			},
 			"load": fiber.Map{
-				"1m": systemMetrics["load_1m"],
-				"5m": systemMetrics["load_5m"],
+				"1m":  systemMetrics["load_1m"],
+				"5m":  systemMetrics["load_5m"],
 				"15m": systemMetrics["load_15m"],
 			},
 			"uptime_seconds": getMetricValue(metrics.GetMetrics().UptimeSeconds),
 		}
-		
+
 		return c.JSON(stats)
 	})
-	
+
 	// 건강 상태 메트릭 (Prometheus 형식)
 	app.Get("/api/metrics/health", func(c *fiber.Ctx) error {
 		c.Set("Content-Type", "text/plain; version=0.0.4")
-		
+
 		// 간단한 건강 상태 메트릭
 		health := 1.0
 		if !isHealthy() {
 			health = 0.0
 		}
-		
+
 		response := "# HELP proxynd_health Current health status (1 = healthy, 0 = unhealthy)\n"
 		response += "# TYPE proxynd_health gauge\n"
 		response += "proxynd_health " + strconv.FormatFloat(health, 'f', 1, 64) + "\n"
-		
+
 		return c.SendString(response)
 	})
 }
@@ -153,22 +153,22 @@ func setupAdditionalMetrics(app *fiber.App, config *configs.UnifiedConfig) {
 func getCacheStatsForRegistry(registryType string, m *metrics.Metrics) fiber.Map {
 	// TODO: 실제 메트릭에서 값 추출
 	// 현재는 예시 값
-	
+
 	hits := getMetricValueWithLabel(m.CacheHitsTotal, "registry_type", registryType)
 	misses := getMetricValueWithLabel(m.CacheMissesTotal, "registry_type", registryType)
 	total := hits + misses
-	
+
 	hitRate := 0.0
 	if total > 0 {
 		hitRate = hits / total
 	}
-	
+
 	return fiber.Map{
-		"hits": hits,
-		"misses": misses,
-		"hit_rate": hitRate,
-		"size_bytes": getMetricValueWithLabel(m.CacheSizeBytes, "registry_type", registryType),
-		"items_count": getMetricValueWithLabel(m.CacheItemsCount, "registry_type", registryType),
+		"hits":                  hits,
+		"misses":                misses,
+		"hit_rate":              hitRate,
+		"size_bytes":            getMetricValueWithLabel(m.CacheSizeBytes, "registry_type", registryType),
+		"items_count":           getMetricValueWithLabel(m.CacheItemsCount, "registry_type", registryType),
 		"bandwidth_saved_bytes": getMetricValueWithLabel(m.CacheBandwidthSaved, "registry_type", registryType),
 	}
 }
@@ -194,4 +194,3 @@ func isHealthy() bool {
 	// - 디스크 공간
 	return true
 }
-

@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"hash"
 	"strings"
-	
+
 	"github.com/gofiber/fiber/v2"
 	"proxynd/alerts"
 )
@@ -43,10 +43,10 @@ type PackageVerifier struct {
 
 // VerifierConfig 검증기 설정
 type VerifierConfig struct {
-	StrictMode           bool                       `yaml:"strict_mode" json:"strict_mode"`
-	BlockOnFailure       bool                       `yaml:"block_on_failure" json:"block_on_failure"`
-	AlertOnFailure       bool                       `yaml:"alert_on_failure" json:"alert_on_failure"`
-	PackageTypeConfigs   map[string]PackageConfig   `yaml:"package_types" json:"package_types"`
+	StrictMode         bool                     `yaml:"strict_mode" json:"strict_mode"`
+	BlockOnFailure     bool                     `yaml:"block_on_failure" json:"block_on_failure"`
+	AlertOnFailure     bool                     `yaml:"alert_on_failure" json:"alert_on_failure"`
+	PackageTypeConfigs map[string]PackageConfig `yaml:"package_types" json:"package_types"`
 }
 
 // PackageConfig 패키지 타입별 설정
@@ -82,7 +82,7 @@ func (pv *PackageVerifier) VerifyPackage(
 			Message: "Package type verification not enabled",
 		}, nil
 	}
-	
+
 	// 검증 제외 패턴 확인
 	if pv.shouldSkipVerification(packagePath, pkgConfig.SkipVerification) {
 		return &VerificationResult{
@@ -90,11 +90,11 @@ func (pv *PackageVerifier) VerifyPackage(
 			Message: "Package verification skipped by configuration",
 		}, nil
 	}
-	
+
 	// 패키지 타입별 검증 수행
 	var result *VerificationResult
 	var err error
-	
+
 	switch packageType {
 	case "npm":
 		result, err = pv.verifyNpmPackage(ctx, packagePath, data, metadata)
@@ -112,14 +112,14 @@ func (pv *PackageVerifier) VerifyPackage(
 			Message: fmt.Sprintf("Unknown package type: %s", packageType),
 		}
 	}
-	
+
 	// 검증 실패 시 알림 전송
 	if err != nil || (result != nil && !result.Valid) {
 		if pv.config.AlertOnFailure && pv.alertManager != nil {
 			pv.sendVerificationAlert(ctx, packageType, packagePath, result, metadata)
 		}
 	}
-	
+
 	return result, err
 }
 
@@ -138,12 +138,12 @@ func (pv *PackageVerifier) verifyNpmPackage(
 			Message: "No integrity field provided",
 		}, nil
 	}
-	
+
 	// integrity 형식: "sha512-..."
 	if strings.HasPrefix(integrity, "sha512-") {
 		expectedHash := strings.TrimPrefix(integrity, "sha512-")
 		actualHash := pv.calculateHash(data, HashTypeSHA512)
-		
+
 		if actualHash != expectedHash {
 			return &VerificationResult{
 				Valid:        false,
@@ -154,7 +154,7 @@ func (pv *PackageVerifier) verifyNpmPackage(
 			}, nil
 		}
 	}
-	
+
 	return &VerificationResult{
 		Valid:   true,
 		Message: "NPM package verified successfully",
@@ -179,14 +179,14 @@ func (pv *PackageVerifier) verifyPipPackage(
 			}
 		}
 	}
-	
+
 	if expectedHash == "" {
 		return &VerificationResult{
 			Valid:   true,
 			Message: "No SHA256 hash provided",
 		}, nil
 	}
-	
+
 	actualHash := pv.calculateHash(data, HashTypeSHA256)
 	if actualHash != expectedHash {
 		return &VerificationResult{
@@ -197,7 +197,7 @@ func (pv *PackageVerifier) verifyPipPackage(
 			Message:      "PyPI package hash verification failed",
 		}, nil
 	}
-	
+
 	return &VerificationResult{
 		Valid:    true,
 		HashType: HashTypeSHA256,
@@ -214,7 +214,7 @@ func (pv *PackageVerifier) verifyAptPackage(
 ) (*VerificationResult, error) {
 	// APT는 Release 파일의 SHA256 사용
 	// TODO: GPG 서명 검증 구현
-	
+
 	expectedHash := metadata["sha256sum"]
 	if expectedHash == "" {
 		return &VerificationResult{
@@ -222,7 +222,7 @@ func (pv *PackageVerifier) verifyAptPackage(
 			Message: "No SHA256 sum provided for APT package",
 		}, nil
 	}
-	
+
 	actualHash := pv.calculateHash(data, HashTypeSHA256)
 	if actualHash != expectedHash {
 		return &VerificationResult{
@@ -233,7 +233,7 @@ func (pv *PackageVerifier) verifyAptPackage(
 			Message:      "APT package checksum verification failed",
 		}, nil
 	}
-	
+
 	return &VerificationResult{
 		Valid:    true,
 		HashType: HashTypeSHA256,
@@ -259,18 +259,18 @@ func (pv *PackageVerifier) verifyDockerPackage(
 			}
 		}
 	}
-	
+
 	if digest == "" {
 		return &VerificationResult{
 			Valid:   true,
 			Message: "No content digest provided",
 		}, nil
 	}
-	
+
 	// "sha256:" 프리픽스 제거
 	expectedHash := strings.TrimPrefix(digest, "sha256:")
 	actualHash := pv.calculateHash(data, HashTypeSHA256)
-	
+
 	if actualHash != expectedHash {
 		return &VerificationResult{
 			Valid:        false,
@@ -280,7 +280,7 @@ func (pv *PackageVerifier) verifyDockerPackage(
 			Message:      "Docker content digest verification failed",
 		}, nil
 	}
-	
+
 	return &VerificationResult{
 		Valid:    true,
 		HashType: HashTypeSHA256,
@@ -298,7 +298,7 @@ func (pv *PackageVerifier) verifyMavenPackage(
 	// Maven은 SHA1이 기본, SHA256도 지원
 	sha1Expected := metadata["sha1"]
 	sha256Expected := metadata["sha256"]
-	
+
 	// SHA256 우선
 	if sha256Expected != "" {
 		actualHash := pv.calculateHash(data, HashTypeSHA256)
@@ -317,7 +317,7 @@ func (pv *PackageVerifier) verifyMavenPackage(
 			Message:  "Maven artifact verified successfully",
 		}, nil
 	}
-	
+
 	// SHA1 검증
 	if sha1Expected != "" {
 		actualHash := pv.calculateHash(data, HashTypeSHA1)
@@ -336,7 +336,7 @@ func (pv *PackageVerifier) verifyMavenPackage(
 			Message:  "Maven artifact verified successfully",
 		}, nil
 	}
-	
+
 	return &VerificationResult{
 		Valid:   true,
 		Message: "No checksum provided for Maven artifact",
@@ -346,7 +346,7 @@ func (pv *PackageVerifier) verifyMavenPackage(
 // calculateHash 해시 계산
 func (pv *PackageVerifier) calculateHash(data []byte, hashType HashType) string {
 	var h hash.Hash
-	
+
 	switch hashType {
 	case HashTypeSHA1:
 		h = sha1.New()
@@ -357,7 +357,7 @@ func (pv *PackageVerifier) calculateHash(data []byte, hashType HashType) string 
 	default:
 		return ""
 	}
-	
+
 	h.Write(data)
 	return hex.EncodeToString(h.Sum(nil))
 }
@@ -387,26 +387,26 @@ func (pv *PackageVerifier) sendVerificationAlert(
 		Name:    extractPackageName(packagePath, packageType),
 		Version: metadata["version"],
 	}
-	
+
 	if result != nil {
 		packageInfo.ExpectedHash = result.ExpectedHash
 		packageInfo.ActualHash = result.ActualHash
 	}
-	
+
 	// 알림 이벤트 생성
 	event := &alerts.AlertEvent{
-		Level:   alerts.AlertLevelCritical,
-		Type:    "package_verification_failed",
-		Title:   "Package Verification Failed",
-		Message: fmt.Sprintf("Verification failed for %s package: %s", packageType, packagePath),
-		Source:  "package_verifier",
+		Level:       alerts.AlertLevelCritical,
+		Type:        "package_verification_failed",
+		Title:       "Package Verification Failed",
+		Message:     fmt.Sprintf("Verification failed for %s package: %s", packageType, packagePath),
+		Source:      "package_verifier",
 		PackageInfo: packageInfo,
 		Metadata: map[string]interface{}{
-			"strict_mode":    pv.strictMode,
+			"strict_mode":         pv.strictMode,
 			"verification_result": result,
 		},
 	}
-	
+
 	// 알림 전송
 	if err := pv.alertManager.Send(ctx, event); err != nil {
 		// 알림 전송 실패는 로그만 남기고 계속 진행
@@ -443,7 +443,7 @@ func extractPackageName(path string, packageType string) string {
 			return parts[len(parts)-3]
 		}
 	}
-	
+
 	// 기본: 마지막 경로 요소
 	parts := strings.Split(path, "/")
 	if len(parts) > 0 {
@@ -459,15 +459,15 @@ func VerificationMiddleware(verifier *PackageVerifier) fiber.Handler {
 		if !strings.HasPrefix(c.Path(), "/proxy/") {
 			return c.Next()
 		}
-		
+
 		// 패키지 타입과 경로 추출
 		proxyType := c.Params("type")
 		packagePath := c.Params("*")
-		
+
 		if proxyType == "" || packagePath == "" {
 			return c.Next()
 		}
-		
+
 		// 다운로드 응답인 경우 검증 수행
 		if c.Method() == "GET" && c.Response().StatusCode() == fiber.StatusOK {
 			// 응답 본문 읽기
@@ -478,21 +478,21 @@ func VerificationMiddleware(verifier *PackageVerifier) fiber.Handler {
 				metadata["content-type"] = string(c.Response().Header.ContentType())
 				metadata["etag"] = string(c.Response().Header.Peek("ETag"))
 				metadata["docker-content-digest"] = string(c.Response().Header.Peek("Docker-Content-Digest"))
-				
+
 				// 검증 수행
 				ctx := c.Context()
 				result, err := verifier.VerifyPackage(ctx, proxyType, packagePath, body, metadata)
-				
+
 				if err != nil || (result != nil && !result.Valid) {
 					// 엄격 모드인 경우 차단
 					if verifier.config.BlockOnFailure {
 						return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-							"error": "Package verification failed",
+							"error":   "Package verification failed",
 							"details": result,
 						})
 					}
 				}
-				
+
 				// 검증 결과를 헤더에 추가
 				if result != nil {
 					c.Response().Header.Set("X-Package-Verified", fmt.Sprintf("%v", result.Valid))
@@ -502,7 +502,7 @@ func VerificationMiddleware(verifier *PackageVerifier) fiber.Handler {
 				}
 			}
 		}
-		
+
 		return c.Next()
 	}
 }

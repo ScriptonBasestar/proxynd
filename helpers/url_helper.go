@@ -27,7 +27,7 @@ func CleanPath(p string) string {
 // ParsePackageName 패키지 경로에서 이름과 버전을 추출합니다
 func ParsePackageName(packagePath string) (name, version string) {
 	parts := strings.Split(packagePath, "/")
-	
+
 	// 스코프 패키지인 경우 (@types/node)
 	if len(parts) >= 2 && strings.HasPrefix(parts[0], "@") {
 		name = parts[0] + "/" + parts[1]
@@ -36,7 +36,7 @@ func ParsePackageName(packagePath string) (name, version string) {
 		}
 		return
 	}
-	
+
 	// 일반 패키지인 경우
 	if len(parts) > 0 {
 		name = parts[0]
@@ -44,7 +44,7 @@ func ParsePackageName(packagePath string) (name, version string) {
 			version = parts[1]
 		}
 	}
-	
+
 	return
 }
 
@@ -53,12 +53,12 @@ func IsValidURL(rawURL string) bool {
 	if rawURL == "" {
 		return false
 	}
-	
+
 	u, err := url.Parse(rawURL)
 	if err != nil {
 		return false
 	}
-	
+
 	return u.Scheme == "http" || u.Scheme == "https"
 }
 
