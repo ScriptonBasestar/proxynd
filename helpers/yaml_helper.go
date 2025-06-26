@@ -28,12 +28,12 @@ func ReadYamlSafe(path string, out interface{}) error {
 	if err != nil {
 		return err
 	}
-	
+
 	err = yaml.Unmarshal(yamlFile, out)
 	if err != nil {
 		return err
 	}
-	
+
 	return nil
 }
 
@@ -43,7 +43,7 @@ func WriteYaml(path string, data interface{}) error {
 	if err != nil {
 		return err
 	}
-	
+
 	return os.WriteFile(path, yamlData, 0644)
 }
 
