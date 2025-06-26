@@ -1,11 +1,14 @@
 package routers
 
 import (
+	"net/http"
+	"strconv"
+	
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/basicauth"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"net/http"
+	"github.com/valyala/fasthttp/fasthttpadaptor"
 	"proxynd/configs"
 	"proxynd/metrics"
 )
@@ -52,12 +55,7 @@ func MetricsRouter(app *fiber.App, config *configs.UnifiedConfig) {
 // adaptor Prometheus HTTP 핸들러를 Fiber 핸들러로 변환
 func adaptor(h http.Handler) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		// FastHTTP 요청/응답을 net/http로 변환
-		c.Context().Request.Header.VisitAll(func(key, value []byte) {
-			c.Request().Header.Set(string(key), string(value))
-		})
-		
-		h.ServeHTTP(c.Context(), c.Context())
+		fasthttpadaptor.NewFastHTTPHandler(h)(c.Context())
 		return nil
 	}
 }
@@ -197,5 +195,3 @@ func isHealthy() bool {
 	return true
 }
 
-// 필요한 import 추가
-import "strconv"

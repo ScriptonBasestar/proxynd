@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -395,5 +396,3 @@ func ValidateConfig(config *UnifiedConfig) []string {
 	return errors
 }
 
-// 필요한 import 추가
-import "regexp"
