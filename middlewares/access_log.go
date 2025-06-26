@@ -72,7 +72,10 @@ func NewAccessLogger(config AccessLogConfig) *AccessLogger {
 // initLogFile 로그 파일 초기화
 func (l *AccessLogger) initLogFile() {
 	// 로그 디렉토리 생성
-	os.MkdirAll(l.config.LogDir, os.ModePerm)
+	if err := os.MkdirAll(l.config.LogDir, os.ModePerm); err != nil {
+		// 디렉토리 생성 실패 시 에러 무시 (파일 로깅 비활성화)
+		return
+	}
 
 	// 로그 파일명 결정
 	filename := l.config.LogFile
@@ -148,8 +151,12 @@ func (l *AccessLogger) Log(entry AccessLogEntry) {
 
 	// 파일 기록
 	if l.logFile != nil {
-		l.logFile.WriteString(logLine)
-		l.logFile.Sync() // 즉시 디스크에 기록
+		if _, err := l.logFile.WriteString(logLine); err != nil {
+			// 로그 쓰기 실패 시 에러 무시 (로그가 중요하지 않은 경우)
+		}
+		if err := l.logFile.Sync(); err != nil {
+			// 파일 동기화 실패 시 에러 무시
+		}
 	}
 }
 

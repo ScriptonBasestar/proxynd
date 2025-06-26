@@ -19,5 +19,8 @@ func Message(status int, message string) map[string]interface{} {
 //Respond returns basic response structure
 func Respond(w http.ResponseWriter, data map[string]interface{}) {
 	w.Header().Add("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(data)
+	if err := json.NewEncoder(w).Encode(data); err != nil {
+		// JSON 인코딩 실패 시 HTTP 500 응답
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
 }

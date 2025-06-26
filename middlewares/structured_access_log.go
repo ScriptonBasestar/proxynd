@@ -220,7 +220,10 @@ func MigrateAccessLog(config AccessLogConfig) fiber.Handler {
 		}
 		
 		// 새 로거 초기화
-		logging.InitLogger(logConfig)
+		if err := logging.InitLogger(logConfig); err != nil {
+			// 로거 초기화 실패 시 기본 로거 사용
+			logger = logging.GetLogger()
+		}
 		logger = logging.GetLogger()
 	}
 	

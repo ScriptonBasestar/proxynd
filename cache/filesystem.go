@@ -274,5 +274,7 @@ func (fs *FileSystemBackend) updateAccessTime(key string) {
 	}
 	
 	meta.AccessedAt = time.Now()
-	fs.saveMetadata(key, meta)
+	if err := fs.saveMetadata(key, meta); err != nil {
+		// 메타데이터 저장 실패 시 에러 무시 (액세스 시간 업데이트는 선택적)
+	}
 }

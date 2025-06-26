@@ -85,7 +85,11 @@ func (s *S3Backend) Get(key string) (io.ReadCloser, error) {
 	// TTL 확인
 	if meta.TTL > 0 && time.Since(meta.CreatedAt) > meta.TTL {
 		// 만료된 캐시 삭제
-		go s.Delete(key)
+		go func() {
+			if err := s.Delete(key); err != nil {
+				// 만료된 캐시 삭제 실패 시 로그 (백그라운드 작업이므로 에러 무시)
+			}
+		}()
 		return nil, fmt.Errorf("cache expired")
 	}
 	
@@ -360,5 +364,7 @@ func (s *S3Backend) updateAccessTime(key string) {
 	}
 	
 	meta.AccessedAt = time.Now()
-	s.putMetadata(ctx, key, meta)
+	if err := s.putMetadata(ctx, key, meta); err != nil {
+		// 메타데이터 업데이트 실패 시 에러 무시 (액세스 시간 업데이트는 선택적)
+	}
 }
