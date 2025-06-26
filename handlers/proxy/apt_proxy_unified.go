@@ -21,14 +21,14 @@ func AptProxyUnified(c *fiber.Ctx) error {
 	// 전체 경로에서 osType과 실제 요청 경로 분리
 	fullPath := c.Params("*")
 	pathParts := strings.SplitN(fullPath, "/", 2)
-	
+
 	if len(pathParts) < 2 {
 		return c.Status(fiber.StatusBadRequest).SendString("Invalid APT proxy path format. Expected: /proxy/apt/{osType}/{path}")
 	}
-	
+
 	osType := pathParts[0]
 	requestPath := pathParts[1]
-	
+
 	log.Printf("APT proxy - osType: %s, path: %s\n", osType, requestPath)
 
 	// fixme di
@@ -56,7 +56,7 @@ func AptProxyUnified(c *fiber.Ctx) error {
 		if proxy == nil {
 			return c.Status(fiber.StatusNotFound).SendString(fmt.Sprintf("No proxy configuration found for OS type: %s", osType))
 		}
-		
+
 		for s, server := range proxy {
 			fmt.Printf("for moon %d\n", s)
 			resp, err := http.Get(helpers.JoinURL(server.URL, requestPath))
@@ -80,13 +80,13 @@ func AptProxyUnified(c *fiber.Ctx) error {
 	// APT 파일 타입에 따른 적절한 Content-Type 설정
 	contentType := getAptContentType(filename)
 	c.Set("Content-Type", contentType)
-	
+
 	// 특정 파일은 inline으로 전송
 	if isInlineFile(filename) {
 		c.Set("Content-Disposition", "inline; filename="+filename)
 	} else {
 		c.Set("Content-Disposition", "attachment; filename="+filename)
 	}
-	
+
 	return c.SendFile(filefullpath)
 }

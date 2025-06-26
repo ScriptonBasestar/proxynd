@@ -127,17 +127,17 @@ func NpmProxy(c *fiber.Ctx) error {
 func isNpmMetadataRequest(path string) bool {
 	// 패키지 메타데이터는 패키지명만 있거나 @scope/package 형태
 	parts := strings.Split(path, "/")
-	
+
 	// .tgz, .tar.gz 등 패키지 파일이 아닌 경우
 	if strings.Contains(path, ".tgz") || strings.Contains(path, ".tar.gz") {
 		return false
 	}
-	
+
 	// /-/ 를 포함하는 특수 경로가 아닌 경우
 	if strings.Contains(path, "/-/") {
 		return false
 	}
-	
+
 	// 일반 패키지명 또는 스코프 패키지명
 	return len(parts) == 1 || (len(parts) == 2 && strings.HasPrefix(parts[0], "@"))
 }
@@ -184,7 +184,7 @@ func getNpmContentType(filename, path string) string {
 	if isNpmMetadataRequest(path) {
 		return "application/json; charset=utf-8"
 	}
-	
+
 	// 패키지 파일
 	switch {
 	case strings.HasSuffix(filename, ".tgz"):

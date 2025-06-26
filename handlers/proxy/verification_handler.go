@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"log"
 	"strings"
-	
+
 	"github.com/gofiber/fiber/v2"
 	"proxynd/alerts"
-	"proxynd/verification"
 	"proxynd/configs"
+	"proxynd/verification"
 )
 
 // VerificationHandler 검증 핸들러
@@ -26,10 +26,10 @@ func NewVerificationHandler(
 ) *VerificationHandler {
 	// 검증 설정 로드
 	verifierConfig := loadVerifierConfig(globalConfig)
-	
+
 	// 패키지 검증기 생성
 	verifier := verification.NewPackageVerifier(verifierConfig, alertManager)
-	
+
 	return &VerificationHandler{
 		verifier:     verifier,
 		alertManager: alertManager,
@@ -46,48 +46,48 @@ func (vh *VerificationHandler) VerifyDownloadedPackage(
 	headers map[string]string,
 ) error {
 	ctx := context.Background()
-	
+
 	// 메타데이터 수집
 	metadata := make(map[string]string)
 	for k, v := range headers {
 		metadata[strings.ToLower(k)] = v
 	}
-	
+
 	// 추가 메타데이터
 	metadata["client_ip"] = c.IP()
 	metadata["user_agent"] = c.Get("User-Agent")
-	
+
 	// 패키지 검증 수행
 	result, err := vh.verifier.VerifyPackage(ctx, packageType, packagePath, content, metadata)
 	if err != nil {
 		log.Printf("Package verification error: %v", err)
-		
+
 		// 오류 알림 전송
 		vh.sendErrorAlert(ctx, packageType, packagePath, err, metadata)
-		
+
 		// 엄격 모드에서는 차단
 		if vh.isStrictMode() {
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": "Package verification error",
+				"error":   "Package verification error",
 				"message": err.Error(),
 			})
 		}
-		
+
 		return nil
 	}
-	
+
 	// 검증 실패 처리
 	if result != nil && !result.Valid {
 		log.Printf("Package verification failed: %s", result.Message)
-		
+
 		// 차단 모드 확인
 		if vh.shouldBlockOnFailure() {
 			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-				"error": "Package verification failed",
+				"error":   "Package verification failed",
 				"details": result,
 			})
 		}
-		
+
 		// 검증 실패를 헤더로 표시
 		c.Set("X-Package-Verification", "failed")
 		c.Set("X-Verification-Message", result.Message)
@@ -98,7 +98,7 @@ func (vh *VerificationHandler) VerifyDownloadedPackage(
 			c.Set("X-Verified-Hash-Type", string(result.HashType))
 		}
 	}
-	
+
 	return nil
 }
 
@@ -113,7 +113,7 @@ func (vh *VerificationHandler) VerifyUploadedPackage(
 	if len(body) == 0 {
 		return nil
 	}
-	
+
 	// 헤더에서 해시 정보 추출
 	metadata := make(map[string]string)
 	metadata["content-sha256"] = c.Get("Content-SHA256")
@@ -121,43 +121,43 @@ func (vh *VerificationHandler) VerifyUploadedPackage(
 	metadata["digest"] = c.Get("Digest")
 	metadata["client_ip"] = c.IP()
 	metadata["user_agent"] = c.Get("User-Agent")
-	
+
 	// 사용자 정보 추가
 	if username := c.Locals("username"); username != nil {
 		metadata["username"] = username.(string)
 	}
-	
+
 	ctx := context.Background()
-	
+
 	// 패키지 검증 수행
 	result, err := vh.verifier.VerifyPackage(ctx, packageType, packagePath, body, metadata)
 	if err != nil {
 		log.Printf("Upload verification error: %v", err)
-		
+
 		// 오류 알림 전송
 		vh.sendErrorAlert(ctx, packageType, packagePath, err, metadata)
-		
+
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Package verification error",
+			"error":   "Package verification error",
 			"message": err.Error(),
 		})
 	}
-	
+
 	// 검증 실패 처리
 	if result != nil && !result.Valid {
 		log.Printf("Upload verification failed: %s", result.Message)
-		
+
 		// 업로드는 항상 검증 실패 시 차단
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Package verification failed",
+			"error":   "Package verification failed",
 			"details": result,
 		})
 	}
-	
+
 	// 검증 성공 정보를 컨텍스트에 저장
 	c.Locals("packageVerified", true)
 	c.Locals("verificationResult", result)
-	
+
 	return nil
 }
 
@@ -172,7 +172,7 @@ func (vh *VerificationHandler) sendErrorAlert(
 	if vh.alertManager == nil {
 		return
 	}
-	
+
 	event := &alerts.AlertEvent{
 		Level:   alerts.AlertLevelError,
 		Type:    "package_verification_error",
@@ -184,11 +184,11 @@ func (vh *VerificationHandler) sendErrorAlert(
 			Path: packagePath,
 		},
 		Metadata: map[string]interface{}{
-			"error": err.Error(),
+			"error":            err.Error(),
 			"request_metadata": metadata,
 		},
 	}
-	
+
 	if err := vh.alertManager.Send(ctx, event); err != nil {
 		log.Printf("Failed to send error alert: %v", err)
 	}
@@ -243,9 +243,9 @@ func loadVerifierConfig(globalConfig *configs.GlobalConfig) *verification.Verifi
 			},
 		},
 	}
-	
+
 	// TODO: 실제 설정 파일에서 로드
-	
+
 	return config
 }
 
@@ -256,27 +256,27 @@ func (vh *VerificationHandler) VerificationMiddleware() fiber.Handler {
 		if !strings.HasPrefix(c.Path(), "/proxy/") {
 			return c.Next()
 		}
-		
+
 		// 패키지 타입과 경로 추출
 		proxyType := c.Params("type")
 		packagePath := c.Params("*")
-		
+
 		if proxyType == "" || packagePath == "" {
 			return c.Next()
 		}
-		
+
 		// 업로드 요청 검증 (POST, PUT)
 		if c.Method() == "POST" || c.Method() == "PUT" {
 			if err := vh.VerifyUploadedPackage(c, proxyType, packagePath); err != nil {
 				return err
 			}
 		}
-		
+
 		// 다음 핸들러 실행
 		if err := c.Next(); err != nil {
 			return err
 		}
-		
+
 		// 다운로드 응답 검증 (GET)
 		if c.Method() == "GET" && c.Response().StatusCode() == fiber.StatusOK {
 			body := c.Response().Body()
@@ -286,14 +286,14 @@ func (vh *VerificationHandler) VerificationMiddleware() fiber.Handler {
 				c.Response().Header.VisitAll(func(key, value []byte) {
 					headers[string(key)] = string(value)
 				})
-				
+
 				// 검증 수행
 				if err := vh.VerifyDownloadedPackage(c, proxyType, packagePath, body, headers); err != nil {
 					return err
 				}
 			}
 		}
-		
+
 		return nil
 	}
 }
