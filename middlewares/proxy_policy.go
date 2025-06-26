@@ -17,30 +17,30 @@ func ProxyPolicyMiddleware() fiber.Handler {
 		// 프록시 타입과 경로 추출
 		proxyType := c.Params("type")
 		requestPath := c.Params("*")
-		
+
 		log.Printf("ProxyPolicy middleware - type: %s, path: %s\n", proxyType, requestPath)
-		
+
 		// 1. 요청 허용/차단 정책 체크
 		if !isProxyTypeAllowed(proxyType) {
 			return c.Status(fiber.StatusForbidden).SendString("Proxy type not allowed: " + proxyType)
 		}
-		
+
 		// 2. 인증/허가 체크 (현재는 기본 구현)
 		if !isAuthenticated(c) {
 			return c.Status(fiber.StatusUnauthorized).SendString("Authentication required")
 		}
-		
+
 		// 3. 캐시 hit/miss 판단
 		cacheInfo := checkCache(proxyType, requestPath)
 		c.Locals("cache_hit", cacheInfo.Hit)
 		c.Locals("cache_path", cacheInfo.Path)
-		
+
 		if cacheInfo.Hit {
 			log.Printf("Cache HIT for %s/%s\n", proxyType, requestPath)
 		} else {
 			log.Printf("Cache MISS for %s/%s\n", proxyType, requestPath)
 		}
-		
+
 		// 다음 핸들러로 진행
 		return c.Next()
 	}
@@ -73,7 +73,7 @@ func isAuthenticated(c *fiber.Ctx) bool {
 // checkCache 캐시 존재 여부 확인
 func checkCache(proxyType, requestPath string) CacheInfo {
 	storageDir := helpers.GetStorageDir()
-	
+
 	// 프록시 타입별 설정 읽기
 	var cachePath string
 	switch proxyType {
@@ -81,7 +81,7 @@ func checkCache(proxyType, requestPath string) CacheInfo {
 		config := configs.MavenProxyConfig{}
 		config.ReadConfig()
 		cachePath = path.Join(storageDir, config.Path, requestPath)
-		
+
 	case "apt":
 		config := configs.AptProxyConfig{}
 		config.ReadConfig()
@@ -92,26 +92,26 @@ func checkCache(proxyType, requestPath string) CacheInfo {
 		} else {
 			cachePath = path.Join(storageDir, config.Path, requestPath)
 		}
-		
+
 	case "npm":
 		config := configs.NpmProxyConfig{}
 		config.ReadConfig()
 		cachePath = path.Join(storageDir, config.Path, requestPath)
-		
+
 	case "pip":
 		config := configs.PipProxyConfig{}
 		config.ReadConfig()
 		cachePath = path.Join(storageDir, config.Path, requestPath)
-		
+
 	case "docker":
 		config := configs.DockerProxyConfig{}
 		config.ReadConfig()
 		cachePath = path.Join(storageDir, config.Path, requestPath)
-		
+
 	default:
 		cachePath = path.Join(storageDir, "proxy", proxyType, requestPath)
 	}
-	
+
 	// 파일 존재 여부 확인
 	if _, err := os.Stat(cachePath); err == nil {
 		return CacheInfo{
@@ -119,7 +119,7 @@ func checkCache(proxyType, requestPath string) CacheInfo {
 			Path: cachePath,
 		}
 	}
-	
+
 	return CacheInfo{
 		Hit:  false,
 		Path: cachePath,

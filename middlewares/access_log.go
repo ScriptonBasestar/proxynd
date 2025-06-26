@@ -13,20 +13,20 @@ import (
 
 // AccessLogEntry 액세스 로그 항목 구조체
 type AccessLogEntry struct {
-	Timestamp      time.Time `json:"timestamp"`
-	ClientIP       string    `json:"client_ip"`
-	Method         string    `json:"method"`
-	Path           string    `json:"path"`
-	StatusCode     int       `json:"status_code"`
-	ResponseTime   int64     `json:"response_time_ms"`
-	CacheStatus    string    `json:"cache_status"`
-	ProxyType      string    `json:"proxy_type,omitempty"`
-	PackagePath    string    `json:"package_path,omitempty"`
-	UserAgent      string    `json:"user_agent,omitempty"`
-	ContentLength  int64     `json:"content_length"`
-	Username       string    `json:"username,omitempty"`
-	HashVerified   bool      `json:"hash_verified,omitempty"`
-	ErrorMessage   string    `json:"error_message,omitempty"`
+	Timestamp     time.Time `json:"timestamp"`
+	ClientIP      string    `json:"client_ip"`
+	Method        string    `json:"method"`
+	Path          string    `json:"path"`
+	StatusCode    int       `json:"status_code"`
+	ResponseTime  int64     `json:"response_time_ms"`
+	CacheStatus   string    `json:"cache_status"`
+	ProxyType     string    `json:"proxy_type,omitempty"`
+	PackagePath   string    `json:"package_path,omitempty"`
+	UserAgent     string    `json:"user_agent,omitempty"`
+	ContentLength int64     `json:"content_length"`
+	Username      string    `json:"username,omitempty"`
+	HashVerified  bool      `json:"hash_verified,omitempty"`
+	ErrorMessage  string    `json:"error_message,omitempty"`
 }
 
 // AccessLogConfig 액세스 로그 설정
