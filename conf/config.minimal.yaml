@@ -1,0 +1,40 @@
+# ProxyND 최소 설정 파일
+# 기본 기능만 활성화된 간단한 설정
+
+# 서버 설정
+server:
+  port: 8080
+  host: "0.0.0.0"
+
+# 로깅 설정
+logging:
+  level: info
+  format: json
+
+# 캐시 설정
+cache:
+  type: filesystem
+  ttl: 3600
+  maxSize: 5368709120  # 5GB
+
+# NPM 프록시
+npm:
+  enabled: true
+  upstream: "https://registry.npmjs.org"
+  useCache: true
+
+# PyPI 프록시
+pip:
+  enabled: true
+  upstream: "https://pypi.org/simple"
+  useCache: true
+
+# 메트릭 (기본 활성화)
+metrics:
+  enabled: true
+  path: "/metrics"
+
+# 헬스체크 (기본 활성화)
+health:
+  enabled: true
+  path: "/healthz"
