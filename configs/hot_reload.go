@@ -9,7 +9,7 @@ import (
 	"sync"
 	"syscall"
 	"time"
-	
+
 	"github.com/fsnotify/fsnotify"
 )
 
@@ -33,15 +33,15 @@ type ReloadHandler interface {
 // NewHotReloadManager 새 핫리로드 관리자 생성
 func NewHotReloadManager(configPath string) (*HotReloadManager, error) {
 	loader := NewConfigLoader(configPath)
-	
+
 	// 초기 설정 로드
 	config, err := loader.Load()
 	if err != nil {
 		return nil, fmt.Errorf("failed to load initial config: %w", err)
 	}
-	
+
 	ctx, cancel := context.WithCancel(context.Background())
-	
+
 	manager := &HotReloadManager{
 		configLoader:   loader,
 		config:         config,
@@ -49,7 +49,7 @@ func NewHotReloadManager(configPath string) (*HotReloadManager, error) {
 		ctx:            ctx,
 		cancel:         cancel,
 	}
-	
+
 	return manager, nil
 }
 
@@ -74,33 +74,33 @@ func (m *HotReloadManager) Start() error {
 		return fmt.Errorf("failed to create file watcher: %w", err)
 	}
 	m.watcher = watcher
-	
+
 	// 설정 파일 감시 추가
 	if err := watcher.Add(m.configLoader.configPath); err != nil {
 		return fmt.Errorf("failed to watch config file: %w", err)
 	}
-	
+
 	// 시그널 핸들러 설정
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGHUP)
-	
+
 	// 감시 고루틴 시작
 	go m.watchLoop(sigChan)
-	
+
 	log.Printf("Hot reload manager started. Watching: %s", m.configLoader.configPath)
 	log.Println("Send SIGHUP signal or modify config file to reload configuration")
-	
+
 	return nil
 }
 
 // Stop 핫리로드 중지
 func (m *HotReloadManager) Stop() error {
 	m.cancel()
-	
+
 	if m.watcher != nil {
 		return m.watcher.Close()
 	}
-	
+
 	return nil
 }
 
@@ -109,12 +109,12 @@ func (m *HotReloadManager) watchLoop(sigChan <-chan os.Signal) {
 	// 디바운싱을 위한 타이머
 	var debounceTimer *time.Timer
 	debounce := 500 * time.Millisecond
-	
+
 	for {
 		select {
 		case <-m.ctx.Done():
 			return
-			
+
 		case sig := <-sigChan:
 			if sig == syscall.SIGHUP {
 				log.Println("Received SIGHUP signal, reloading configuration...")
@@ -122,19 +122,19 @@ func (m *HotReloadManager) watchLoop(sigChan <-chan os.Signal) {
 					log.Printf("Failed to reload config: %v", err)
 				}
 			}
-			
+
 		case event, ok := <-m.watcher.Events:
 			if !ok {
 				return
 			}
-			
+
 			// 파일 쓰기 또는 생성 이벤트만 처리
 			if event.Op&fsnotify.Write == fsnotify.Write || event.Op&fsnotify.Create == fsnotify.Create {
 				// 디바운싱: 짧은 시간 내 여러 이벤트를 하나로 처리
 				if debounceTimer != nil {
 					debounceTimer.Stop()
 				}
-				
+
 				debounceTimer = time.AfterFunc(debounce, func() {
 					log.Printf("Config file changed: %s, reloading...", event.Name)
 					if err := m.reload(); err != nil {
@@ -142,7 +142,7 @@ func (m *HotReloadManager) watchLoop(sigChan <-chan os.Signal) {
 					}
 				})
 			}
-			
+
 		case err, ok := <-m.watcher.Errors:
 			if !ok {
 				return
@@ -159,24 +159,24 @@ func (m *HotReloadManager) reload() error {
 	if err != nil {
 		return fmt.Errorf("failed to load new config: %w", err)
 	}
-	
+
 	// 현재 설정 백업
 	m.configMutex.RLock()
 	oldConfig := m.config
 	m.configMutex.RUnlock()
-	
+
 	// 설정 변경 사항 확인
 	changes := m.detectChanges(oldConfig, newConfig)
 	if len(changes) == 0 {
 		log.Println("No configuration changes detected")
 		return nil
 	}
-	
+
 	log.Printf("Detected %d configuration changes:", len(changes))
 	for _, change := range changes {
 		log.Printf("  - %s: %s -> %s", change.Path, change.OldValue, change.NewValue)
 	}
-	
+
 	// 핸들러들에게 설정 변경 알림
 	for _, handler := range m.reloadHandlers {
 		if err := handler.OnConfigReload(oldConfig, newConfig); err != nil {
@@ -186,12 +186,12 @@ func (m *HotReloadManager) reload() error {
 		}
 		log.Printf("Handler %s reloaded successfully", handler.Name())
 	}
-	
+
 	// 새 설정 적용
 	m.configMutex.Lock()
 	m.config = newConfig
 	m.configMutex.Unlock()
-	
+
 	log.Println("Configuration reloaded successfully")
 	return nil
 }
@@ -206,7 +206,7 @@ type ConfigChange struct {
 // detectChanges 설정 변경 사항 감지
 func (m *HotReloadManager) detectChanges(oldConfig, newConfig *UnifiedConfig) []ConfigChange {
 	changes := []ConfigChange{}
-	
+
 	// 간단한 변경 감지 (주요 필드만)
 	if oldConfig.Server.Port != newConfig.Server.Port {
 		changes = append(changes, ConfigChange{
@@ -215,7 +215,7 @@ func (m *HotReloadManager) detectChanges(oldConfig, newConfig *UnifiedConfig) []
 			NewValue: fmt.Sprintf("%d", newConfig.Server.Port),
 		})
 	}
-	
+
 	if oldConfig.Logging.Level != newConfig.Logging.Level {
 		changes = append(changes, ConfigChange{
 			Path:     "logging.level",
@@ -223,7 +223,7 @@ func (m *HotReloadManager) detectChanges(oldConfig, newConfig *UnifiedConfig) []
 			NewValue: newConfig.Logging.Level,
 		})
 	}
-	
+
 	if oldConfig.Cache.Backend != newConfig.Cache.Backend {
 		changes = append(changes, ConfigChange{
 			Path:     "cache.backend",
@@ -231,7 +231,7 @@ func (m *HotReloadManager) detectChanges(oldConfig, newConfig *UnifiedConfig) []
 			NewValue: newConfig.Cache.Backend,
 		})
 	}
-	
+
 	if oldConfig.Metrics.Enabled != newConfig.Metrics.Enabled {
 		changes = append(changes, ConfigChange{
 			Path:     "metrics.enabled",
@@ -239,9 +239,9 @@ func (m *HotReloadManager) detectChanges(oldConfig, newConfig *UnifiedConfig) []
 			NewValue: fmt.Sprintf("%v", newConfig.Metrics.Enabled),
 		})
 	}
-	
+
 	// TODO: 더 상세한 변경 감지 구현
-	
+
 	return changes
 }
 
@@ -258,13 +258,13 @@ func (h *LoggingReloadHandler) OnConfigReload(oldConfig, newConfig *UnifiedConfi
 		log.Printf("Changing log level from %s to %s", oldConfig.Logging.Level, newConfig.Logging.Level)
 		// TODO: 실제 로거의 레벨 변경
 	}
-	
+
 	if oldConfig.Logging.Format != newConfig.Logging.Format {
 		// 로그 포맷 변경
 		log.Printf("Changing log format from %s to %s", oldConfig.Logging.Format, newConfig.Logging.Format)
 		// TODO: 실제 로거의 포맷 변경
 	}
-	
+
 	return nil
 }
 
@@ -282,13 +282,13 @@ func (h *CacheReloadHandler) OnConfigReload(oldConfig, newConfig *UnifiedConfig)
 		// 캐시 백엔드 변경은 재시작 필요
 		return fmt.Errorf("cache backend change requires restart")
 	}
-	
+
 	if oldConfig.Cache.TTL != newConfig.Cache.TTL {
 		// TTL 변경
 		log.Printf("Updating cache TTL from %s to %s", oldConfig.Cache.TTL, newConfig.Cache.TTL)
 		// TODO: 캐시 매니저의 TTL 업데이트
 	}
-	
+
 	return nil
 }
 
@@ -311,7 +311,7 @@ func (h *MetricsReloadHandler) OnConfigReload(oldConfig, newConfig *UnifiedConfi
 			// TODO: 메트릭 서버 중지
 		}
 	}
-	
+
 	return nil
 }
 
@@ -330,7 +330,7 @@ func (h *SecurityReloadHandler) OnConfigReload(oldConfig, newConfig *UnifiedConf
 		log.Printf("Reloading users from: %s", newConfig.Security.Authentication.BasicAuth.UsersFile)
 		// TODO: 사용자 파일 리로드
 	}
-	
+
 	// IP 화이트리스트 업데이트
 	if oldConfig.Security.AccessControl.IPWhitelist.Enabled != newConfig.Security.AccessControl.IPWhitelist.Enabled {
 		if newConfig.Security.AccessControl.IPWhitelist.Enabled {
@@ -340,7 +340,7 @@ func (h *SecurityReloadHandler) OnConfigReload(oldConfig, newConfig *UnifiedConf
 		}
 		// TODO: IP 화이트리스트 업데이트
 	}
-	
+
 	return nil
 }
 

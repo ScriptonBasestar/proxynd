@@ -6,8 +6,8 @@ import (
 )
 
 type DockerProxyServer struct {
-	Name string `yaml:"name,omitempty"`
-	URL  string `yaml:"url,omitempty"`
+	Name string     `yaml:"name,omitempty"`
+	URL  string     `yaml:"url,omitempty"`
 	Auth DockerAuth `yaml:"auth,omitempty"`
 }
 
@@ -17,9 +17,9 @@ type DockerAuth struct {
 }
 
 type DockerProxyConfig struct {
-	Path      string              `yaml:"path,omitempty"`
-	UseCache  bool                `yaml:"use_cache,omitempty" default:"true"`
-	Proxies   []DockerProxyServer `yaml:"proxies"`
+	Path     string              `yaml:"path,omitempty"`
+	UseCache bool                `yaml:"use_cache,omitempty" default:"true"`
+	Proxies  []DockerProxyServer `yaml:"proxies"`
 }
 
 func (cfg *DockerProxyConfig) ConfigExists() bool {

@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	
+
 	"gopkg.in/yaml.v3"
 )
 
@@ -30,38 +30,38 @@ func NewConfigLoader(configPath string) *ConfigLoader {
 func (cl *ConfigLoader) Load() (*UnifiedConfig, error) {
 	// 기본 설정으로 초기화
 	config := cl.newDefaultConfig()
-	
+
 	// 설정 파일이 없으면 기본값 사용
 	if _, err := os.Stat(cl.configPath); os.IsNotExist(err) {
 		cl.config = config
 		return config, nil
 	}
-	
+
 	// YAML 파일 읽기
 	data, err := os.ReadFile(cl.configPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read config file: %w", err)
 	}
-	
+
 	// 환경 변수 치환
 	data = cl.expandEnvironmentVariables(data)
-	
+
 	// YAML 파싱
 	if err := yaml.Unmarshal(data, config); err != nil {
 		return nil, fmt.Errorf("failed to parse config: %w", err)
 	}
-	
+
 	// 환경 변수 오버라이드 적용
 	cl.applyEnvironmentOverrides(config)
-	
+
 	// 기본값 적용
 	cl.applyDefaults(config)
-	
+
 	// 설정 검증
 	if err := config.Validate(); err != nil {
 		return nil, fmt.Errorf("invalid config: %w", err)
 	}
-	
+
 	cl.config = config
 	return config, nil
 }
@@ -72,7 +72,7 @@ func (cl *ConfigLoader) Reload() error {
 	if err != nil {
 		return err
 	}
-	
+
 	cl.config = newConfig
 	return nil
 }
@@ -109,10 +109,10 @@ func (cl *ConfigLoader) newDefaultConfig() *UnifiedConfig {
 		},
 		Cache: CacheConfig{
 			Backend:         "file",
-			TTL:            3600 * time.Second,
-			MaxSize:        "10GB",
+			TTL:             3600 * time.Second,
+			MaxSize:         "10GB",
 			CleanupInterval: time.Hour,
-			EvictionPolicy: "lru",
+			EvictionPolicy:  "lru",
 			File: FileCacheConfig{
 				Directory:   getDefaultCacheDir(),
 				MaxFileSize: "1GB",
@@ -161,8 +161,8 @@ func (cl *ConfigLoader) newDefaultConfig() *UnifiedConfig {
 				MaxConnections:     1000,
 				MaxIdleConnections: 100,
 				ConnectionTimeout:  30 * time.Second,
-				KeepAlive:         30 * time.Second,
-				BufferSize:        4096,
+				KeepAlive:          30 * time.Second,
+				BufferSize:         4096,
 			},
 			Retry: RetryConfig{
 				MaxAttempts:  3,
@@ -173,7 +173,7 @@ func (cl *ConfigLoader) newDefaultConfig() *UnifiedConfig {
 			CircuitBreaker: CircuitBreakerConfig{
 				FailureThreshold: 5,
 				SuccessThreshold: 2,
-				Timeout:         60 * time.Second,
+				Timeout:          60 * time.Second,
 			},
 		},
 	}
@@ -182,7 +182,7 @@ func (cl *ConfigLoader) newDefaultConfig() *UnifiedConfig {
 // expandEnvironmentVariables 환경 변수 치환
 func (cl *ConfigLoader) expandEnvironmentVariables(data []byte) []byte {
 	content := string(data)
-	
+
 	// ${VAR} 형식의 환경 변수 치환
 	re := regexp.MustCompile(`\$\{([^}]+)\}`)
 	content = re.ReplaceAllStringFunc(content, func(match string) string {
@@ -192,7 +192,7 @@ func (cl *ConfigLoader) expandEnvironmentVariables(data []byte) []byte {
 		}
 		return match
 	})
-	
+
 	return []byte(content)
 }
 
@@ -207,7 +207,7 @@ func (cl *ConfigLoader) applyEnvironmentOverrides(config *UnifiedConfig) {
 			config.Server.Port = p
 		}
 	}
-	
+
 	// 캐시 설정
 	if dir := os.Getenv("STORAGE_DIR"); dir != "" {
 		config.Cache.File.Directory = expandHomePath(dir)
@@ -215,7 +215,7 @@ func (cl *ConfigLoader) applyEnvironmentOverrides(config *UnifiedConfig) {
 	if backend := os.Getenv("CACHE_BACKEND"); backend != "" {
 		config.Cache.Backend = backend
 	}
-	
+
 	// 로깅 설정
 	if level := os.Getenv("LOG_LEVEL"); level != "" {
 		config.Logging.Level = level
@@ -223,7 +223,7 @@ func (cl *ConfigLoader) applyEnvironmentOverrides(config *UnifiedConfig) {
 	if format := os.Getenv("LOG_FORMAT"); format != "" {
 		config.Logging.Format = format
 	}
-	
+
 	// TLS 설정
 	if certFile := os.Getenv("TLS_CERT_FILE"); certFile != "" {
 		config.Server.TLS.CertFile = certFile
@@ -232,7 +232,7 @@ func (cl *ConfigLoader) applyEnvironmentOverrides(config *UnifiedConfig) {
 	if keyFile := os.Getenv("TLS_KEY_FILE"); keyFile != "" {
 		config.Server.TLS.KeyFile = keyFile
 	}
-	
+
 	// 메트릭 설정
 	if enabled := os.Getenv("METRICS_ENABLED"); enabled == "true" {
 		config.Metrics.Enabled = true
@@ -253,18 +253,18 @@ func (cl *ConfigLoader) applyDefaults(config *UnifiedConfig) {
 // applyDefaultsRecursive 재귀적으로 기본값 적용
 func (cl *ConfigLoader) applyDefaultsRecursive(v reflect.Value) {
 	t := v.Type()
-	
+
 	for i := 0; i < v.NumField(); i++ {
 		field := v.Field(i)
 		fieldType := t.Field(i)
-		
+
 		// 기본값 태그 확인
 		if defaultTag := fieldType.Tag.Get("default"); defaultTag != "" {
 			if cl.isZeroValue(field) {
 				cl.setDefaultValue(field, defaultTag, fieldType.Type)
 			}
 		}
-		
+
 		// 중첩된 구조체 처리
 		if field.Kind() == reflect.Struct && fieldType.Type.String() != "time.Duration" {
 			cl.applyDefaultsRecursive(field)
@@ -351,12 +351,12 @@ func (cl *ConfigLoader) WatchConfig(callback func(*UnifiedConfig)) error {
 // ValidateConfig 설정 검증 헬퍼
 func ValidateConfig(config *UnifiedConfig) []string {
 	var errors []string
-	
+
 	// 서버 포트 검증
 	if config.Server.Port < 1 || config.Server.Port > 65535 {
 		errors = append(errors, fmt.Sprintf("invalid server port: %d", config.Server.Port))
 	}
-	
+
 	// TLS 설정 검증
 	if config.Server.TLS.Enabled {
 		if config.Server.TLS.CertFile == "" {
@@ -366,7 +366,7 @@ func ValidateConfig(config *UnifiedConfig) []string {
 			errors = append(errors, "TLS enabled but key file not specified")
 		}
 	}
-	
+
 	// 캐시 백엔드 검증
 	validBackends := []string{"file", "s3", "redis"}
 	backendValid := false
@@ -379,7 +379,7 @@ func ValidateConfig(config *UnifiedConfig) []string {
 	if !backendValid {
 		errors = append(errors, fmt.Sprintf("invalid cache backend: %s", config.Cache.Backend))
 	}
-	
+
 	// 로그 레벨 검증
 	validLevels := []string{"debug", "info", "warn", "error"}
 	levelValid := false
@@ -392,7 +392,6 @@ func ValidateConfig(config *UnifiedConfig) []string {
 	if !levelValid {
 		errors = append(errors, fmt.Sprintf("invalid log level: %s", config.Logging.Level))
 	}
-	
+
 	return errors
 }
-
