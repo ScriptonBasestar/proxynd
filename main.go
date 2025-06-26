@@ -71,7 +71,7 @@ func main() {
 
 	url := fmt.Sprintf("http://%s:%s", "0.0.0.0", port)
 	logger.Info("Server starting", logging.F("url", url), logging.F("port", port))
-	
+
 	logger.Info("Attempting to start server", logging.F("port", port))
 	if err := app.Listen(":" + port); err != nil {
 		logger.Fatal("Server failed to start", logging.F("error", err.Error()), logging.F("port", port))

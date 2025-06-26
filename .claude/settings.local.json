@@ -18,7 +18,8 @@
       "Bash(air)",
       "Bash(lsof:*)",
       "Bash(unset CONFIG_DIR STORAGE_DIR)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(go fmt:*)"
     ],
     "deny": []
   }
