@@ -1,15 +1,194 @@
-.idea
+# ─────────────────────────────────────────────
+# 🔐 환경 설정 및 민감 정보
+# ─────────────────────────────────────────────
 .env
+.env.*
+*.key
+*.pem
+*.crt
+lib/firebase_options.dart
 
-# go
+# ─────────────────────────────────────────────
+# 🧑‍💻 IDE / Editor 설정
+# ─────────────────────────────────────────────
+.idea/
+*.iml
+*.ipr
+*.iws
+
+.vscode/
+.vscode/settings.json
+.vscode/launch.json
+
+.atom/
+.history
+
+# ─────────────────────────────────────────────
+# 🪟 운영체제(OS) 생성 파일
+# ─────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ─────────────────────────────────────────────
+# 🧪 테스트 및 커버리지
+# ─────────────────────────────────────────────
+*.test
+*.out
+coverage.txt
+coverage.html
+.coverage/
+coverage/
+lcov.info
+
+# ─────────────────────────────────────────────
+# 🏗️ 프로젝트 빌드 아티팩트
+# ─────────────────────────────────────────────
+build/
+**/build/
+**/doc/api/
+bin/
+dist/
+generated/
+gen/
+main
+
+# ─────────────────────────────────────────────
+# 🔁 코드 생성 파일
+# ─────────────────────────────────────────────
+*.g.dart
+*.freezed.dart
+*.gr.dart
+
+# ─────────────────────────────────────────────
+# 🐹 Go 관련 파일
+# ─────────────────────────────────────────────
 vendor/
-/main
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
 
-# test
+# ─────────────────────────────────────────────
+# 🛠️ Flutter / Dart 관련
+# ─────────────────────────────────────────────
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+.flutter-plugins
+.flutter-plugins-dependencies
+.fvm/
+.melos_tool/
+**/.plugin_symlinks/
+app.*.symbols
+app.*.map.json
+
+# ─────────────────────────────────────────────
+# 📱 Android / iOS 관련
+# ─────────────────────────────────────────────
+android/.gradle/
+android/.idea/
+android/local.properties
+android/app/build/
+android/app/debug/
+android/app/profile/
+android/app/release/
+android/app/google-services.json
+
+ios/Flutter/Generated.xcconfig
+ios/Flutter/flutter_export_environment.sh
+ios/Flutter/ephemeral/
+ios/Pods/
+ios/.symlinks/
+ios/Podfile.lock
+ios/Runner.xcworkspace
+ios/Runner/GeneratedPluginRegistrant.*
+ios/firebase_app_id_file.json
+
+# ─────────────────────────────────────────────
+# 🪟 데스크탑 (Windows / macOS / Linux)
+# ─────────────────────────────────────────────
+windows/ephemeral/
+windows/build/
+windows/Flutter/GeneratedPluginRegistrant.*
+windows/flutter/generated_plugin_registrant.*
+windows/flutter/generated_plugins.cmake
+
+macos/Flutter/ephemeral/
+macos/Flutter/GeneratedPluginRegistrant.swift
+macos/build/
+
+linux/ephemeral/
+linux/build/
+linux/Flutter/GeneratedPluginRegistrant.*
+linux/flutter/generated_plugin_registrant.*
+linux/flutter/generated_plugins.cmake
+
+# ─────────────────────────────────────────────
+# 📄 로그 / 런타임 / 임시 파일
+# ─────────────────────────────────────────────
+*.log
+*.logs
+logs/
 tmp/
-~tmp/
-~/
-tmpconf/
+temp/
+.air.toml
+air_tmp/
+debug
+debug.test
+pprof/
+
+# ─────────────────────────────────────────────
+# 🗃️ DB / 캐시 / 백업 파일
+# ─────────────────────────────────────────────
+*.db
+*.sqlite
+*.sqlite3
+*.sqlite*
+*.bak
+*.backup
+*.old
+
+# ─────────────────────────────────────────────
+# 🗃️ Redis 관련 파일
+# ─────────────────────────────────────────────
+redis-cluster/
+redis-sentinel/master/
+redis-sentinel/slave*/
+redis-sentinel/sentinel*/
+
+# ─────────────────────────────────────────────
+# 🛠️ Docker 관련
+# ─────────────────────────────────────────────
+.dockerignore
+
+# ─────────────────────────────────────────────
+# 🗃️ 버전 관리용 / 임시 설정 파일
+# ─────────────────────────────────────────────
 *-test.yaml
 *-test.yml
 *-test.json
+~tmp/
+~/
+tmpconf/
+
+# ─────────────────────────────────────────────
+# 🧹 기타 불필요한 임시/에디터 파일
+# ─────────────────────────────────────────────
+*.class
+*.pyc
+*.swp
+*.swo
+*.tmp
+*.temp
+*.bak
+*.orig
+.migrate_working_dir/
+.buildlog/
+.svn/
