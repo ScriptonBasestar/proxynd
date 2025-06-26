@@ -2,9 +2,9 @@ package routers
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/template/html/v2"
 	"proxynd/configs"
+	"proxynd/logging"
 )
 
 // BaseRouter function will perform all route operations
@@ -17,8 +17,11 @@ func BaseRouter() *fiber.App {
 		Views: engine,
 	})
 
-	// 로거 미들웨어 사용
-	app.Use(logger.New())
+	// 구조화된 로깅 미들웨어 사용
+	app.Use(logging.RequestLogger())
+	app.Use(logging.New())
+	app.Use(logging.ErrorLogger())
+	app.Use(logging.RecoveryLogger())
 
 	//Giving access to storage folder
 	//app.Static("/storage", "./storage")

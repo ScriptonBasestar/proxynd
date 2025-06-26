@@ -81,7 +81,7 @@ ProxyND 프로젝트의 **최초 릴리스(MVP)** 에 반드시 포함되어야 
 - [x] `/metrics` 엔드포인트 (Prometheus 포맷)
   - 요청 수, 캐시 hit/miss, 인증 실패 수
 - [x] `/healthz` 상태 체크 API
-- [ ] structured logging (JSON + leveled log)
+- [x] structured logging (JSON + leveled log)
 
 ---
 
