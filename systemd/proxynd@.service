@@ -1,0 +1,52 @@
+[Unit]
+Description=ProxyND - Multi-format Package Registry Proxy Server (Instance %i)
+Documentation=https://github.com/scriptonbasestar/proxynd
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=proxynd
+Group=proxynd
+WorkingDirectory=/opt/proxynd
+
+# 인스턴스별 환경 변수 설정
+Environment="INSTANCE_ID=%i"
+Environment="CONFIG_DIR=/etc/proxynd/%i"
+Environment="STORAGE_DIR=/var/lib/proxynd/%i"
+Environment="LOG_LEVEL=info"
+Environment="LOG_FORMAT=json"
+
+# 인스턴스별 환경 파일
+EnvironmentFile=-/etc/default/proxynd-%i
+
+# 인스턴스별 포트 설정 (베이스 포트 8080 + 인스턴스 번호)
+ExecStartPre=/bin/bash -c 'echo SERVER_PORT=$((8080 + %i)) > /run/proxynd-%i.env'
+EnvironmentFile=-/run/proxynd-%i.env
+
+# 실행 명령
+ExecStart=/opt/proxynd/proxynd
+ExecReload=/bin/kill -HUP $MAINPID
+ExecStopPost=/bin/rm -f /run/proxynd-%i.env
+Restart=on-failure
+RestartSec=10
+
+# 보안 설정
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/proxynd/%i /var/log/proxynd /run
+ReadOnlyPaths=/etc/proxynd/%i
+
+# 리소스 제한
+LimitNOFILE=65536
+LimitNPROC=4096
+
+# 로깅
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=proxynd-%i
+
+[Install]
+WantedBy=multi-user.target

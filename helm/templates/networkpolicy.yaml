@@ -1,0 +1,62 @@
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "helm.fullname" . }}
+  labels:
+    {{- include "helm.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "helm.selectorLabels" . | nindent 6 }}
+  policyTypes:
+    - Ingress
+    - Egress
+  {{- if .Values.networkPolicy.ingress }}
+  ingress:
+    {{- if .Values.networkPolicy.allowExternal }}
+    - {}
+    {{- else }}
+    - from:
+        - podSelector:
+            matchLabels:
+              {{ include "helm.fullname" . }}-client: "true"
+        {{- if .Values.networkPolicy.ingressRules }}
+        {{- range .Values.networkPolicy.ingressRules }}
+        - {{ . | toYaml | nindent 10 }}
+        {{- end }}
+        {{- end }}
+      ports:
+        - protocol: TCP
+          port: {{ .Values.service.port }}
+    {{- end }}
+  {{- end }}
+  {{- if .Values.networkPolicy.egress }}
+  egress:
+    # Allow DNS resolution
+    - to:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+    # Allow outbound connections for proxying
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 169.254.169.254/32
+      ports:
+        - protocol: TCP
+          port: 80
+        - protocol: TCP
+          port: 443
+    {{- with .Values.networkPolicy.egressRules }}
+    {{- range . }}
+    - {{ . | toYaml | nindent 6 }}
+    {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}
