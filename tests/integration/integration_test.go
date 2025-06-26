@@ -22,11 +22,11 @@ import (
 // IntegrationTestSuite 통합 테스트 스위트
 type IntegrationTestSuite struct {
 	suite.Suite
-	app       *fiber.App
-	server    *http.Server
-	baseURL   string
-	cacheDir  string
-	logDir    string
+	app      *fiber.App
+	server   *http.Server
+	baseURL  string
+	cacheDir string
+	logDir   string
 }
 
 // SetupSuite 테스트 스위트 초기화
@@ -34,7 +34,7 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	// 임시 디렉토리 생성
 	s.cacheDir = filepath.Join(os.TempDir(), "proxynd-test-cache")
 	s.logDir = filepath.Join(os.TempDir(), "proxynd-test-logs")
-	
+
 	os.MkdirAll(s.cacheDir, 0755)
 	os.MkdirAll(s.logDir, 0755)
 
@@ -53,7 +53,7 @@ func (s *IntegrationTestSuite) SetupSuite() {
 
 	// 테스트 서버 시작
 	s.baseURL = "http://localhost:8082"
-	
+
 	go func() {
 		if err := s.app.Listen(":8082"); err != nil {
 			panic(err)
@@ -69,7 +69,7 @@ func (s *IntegrationTestSuite) TearDownSuite() {
 	if s.app != nil {
 		s.app.Shutdown()
 	}
-	
+
 	// 임시 디렉토리 정리
 	os.RemoveAll(s.cacheDir)
 	os.RemoveAll(s.logDir)
@@ -82,14 +82,14 @@ func (s *IntegrationTestSuite) TestHealthCheck() {
 	defer resp.Body.Close()
 
 	assert.Equal(s.T(), http.StatusOK, resp.StatusCode)
-	
+
 	body, err := io.ReadAll(resp.Body)
 	require.NoError(s.T(), err)
-	
+
 	var healthResp map[string]interface{}
 	err = json.Unmarshal(body, &healthResp)
 	require.NoError(s.T(), err)
-	
+
 	assert.Equal(s.T(), "ok", healthResp["status"])
 }
 
@@ -121,7 +121,7 @@ func (s *IntegrationTestSuite) TestNpmProxyScenario() {
 	for _, tc := range testCases {
 		s.T().Run(tc.name, func(t *testing.T) {
 			url := fmt.Sprintf("%s/proxy/npm/%s", s.baseURL, tc.packagePath)
-			
+
 			// 첫 번째 요청 (캐시 미스)
 			resp1, err := http.Get(url)
 			require.NoError(t, err)
@@ -161,7 +161,7 @@ func (s *IntegrationTestSuite) TestPipProxyScenario() {
 	for _, tc := range testCases {
 		s.T().Run(tc.name, func(t *testing.T) {
 			url := fmt.Sprintf("%s/proxy/pip/%s", s.baseURL, tc.packagePath)
-			
+
 			resp, err := http.Get(url)
 			require.NoError(t, err)
 			defer resp.Body.Close()
@@ -199,7 +199,7 @@ func (s *IntegrationTestSuite) TestAptProxyScenario() {
 	for _, tc := range testCases {
 		s.T().Run(tc.name, func(t *testing.T) {
 			url := fmt.Sprintf("%s/proxy/apt/%s", s.baseURL, tc.packagePath)
-			
+
 			resp, err := http.Get(url)
 			require.NoError(t, err)
 			defer resp.Body.Close()
@@ -241,13 +241,13 @@ func (s *IntegrationTestSuite) TestDockerProxyScenario() {
 	for _, tc := range testCases {
 		s.T().Run(tc.name, func(t *testing.T) {
 			url := fmt.Sprintf("%s/proxy/docker/%s", s.baseURL, tc.packagePath)
-			
+
 			req, err := http.NewRequest(tc.method, url, nil)
 			require.NoError(t, err)
-			
+
 			// Docker registry 헤더 설정
 			req.Header.Set("Accept", "application/vnd.docker.distribution.manifest.v2+json")
-			
+
 			client := &http.Client{}
 			resp, err := client.Do(req)
 			require.NoError(t, err)
@@ -281,7 +281,7 @@ func (s *IntegrationTestSuite) TestCacheScenario() {
 
 	// 두 번째 요청이 더 빨라야 함 (캐시 효과)
 	s.T().Logf("First request: %v, Second request: %v", duration1, duration2)
-	
+
 	// 응답 상태는 동일해야 함
 	assert.Equal(s.T(), resp1.StatusCode, resp2.StatusCode)
 }
@@ -318,7 +318,7 @@ func (s *IntegrationTestSuite) TestSecurityScenario() {
 
 	req, err := http.NewRequest("POST", url, bytes.NewReader(testData))
 	require.NoError(s.T(), err)
-	
+
 	// 해시 헤더 설정
 	req.Header.Set("Content-SHA256", "invalid-hash")
 	req.Header.Set("Content-Type", "application/octet-stream")
@@ -338,14 +338,14 @@ func (s *IntegrationTestSuite) TestLoadScenario() {
 	const requests = 10
 
 	url := fmt.Sprintf("%s/proxy/npm/express", s.baseURL)
-	
+
 	// 동시 요청 테스트
 	done := make(chan bool, concurrent)
-	
+
 	for i := 0; i < concurrent; i++ {
 		go func(id int) {
 			defer func() { done <- true }()
-			
+
 			for j := 0; j < requests; j++ {
 				resp, err := http.Get(url)
 				if err != nil {
@@ -361,7 +361,7 @@ func (s *IntegrationTestSuite) TestLoadScenario() {
 	for i := 0; i < concurrent; i++ {
 		<-done
 	}
-	
+
 	s.T().Logf("Load test completed: %d goroutines × %d requests", concurrent, requests)
 }
 
@@ -376,18 +376,18 @@ func BenchmarkProxyRequests(b *testing.B) {
 	app := fiber.New(fiber.Config{
 		DisableStartupMessage: true,
 	})
-	
+
 	routers.ProxyRouter(app)
-	
+
 	go func() {
 		app.Listen(":8083")
 	}()
-	
+
 	time.Sleep(100 * time.Millisecond)
 	defer app.Shutdown()
 
 	url := "http://localhost:8083/proxy/npm/express"
-	
+
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {

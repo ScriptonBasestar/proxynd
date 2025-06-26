@@ -203,10 +203,10 @@ func TestCacheManager(t *testing.T) {
 	t.Run("Cache Path Generation", func(t *testing.T) {
 		proxyType := "npm"
 		requestPath := "express/4.18.2"
-		
+
 		expectedPath := "cache/npm/express/4.18.2"
 		actualPath := manager.GetCachePath(proxyType, requestPath)
-		
+
 		assert.Equal(t, expectedPath, actualPath)
 	})
 
@@ -256,11 +256,11 @@ func TestCacheEviction(t *testing.T) {
 		// TTL 만료 테스트
 		now := time.Now()
 		expiredMeta := &cache.CacheMetadata{
-			Key:        "expired",
-			CreatedAt:  now.Add(-2 * time.Hour),
-			TTL:        time.Hour,
+			Key:       "expired",
+			CreatedAt: now.Add(-2 * time.Hour),
+			TTL:       time.Hour,
 		}
-		
+
 		shouldEvict := policy.ShouldEvict(100, 200, expiredMeta)
 		assert.True(t, shouldEvict, "TTL 만료된 항목은 제거되어야 함")
 
@@ -270,7 +270,7 @@ func TestCacheEviction(t *testing.T) {
 			CreatedAt: now,
 			TTL:       time.Hour,
 		}
-		
+
 		shouldEvict = policy.ShouldEvict(300, 200, validMeta)
 		assert.True(t, shouldEvict, "크기 초과 시 제거되어야 함")
 
@@ -304,10 +304,10 @@ func TestCacheEviction(t *testing.T) {
 
 		// 200 바이트 공간이 필요한 경우
 		candidates := policy.SelectEvictionCandidates(items, 200)
-		
+
 		// 가장 오래된 항목부터 선택되어야 함
 		assert.Contains(t, candidates, "oldest")
-		
+
 		// 필요한 공간이 확보될 때까지 선택
 		totalFreed := int64(0)
 		for _, candidate := range candidates {

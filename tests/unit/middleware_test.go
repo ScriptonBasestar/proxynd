@@ -32,7 +32,7 @@ func TestIPFilterMiddleware(t *testing.T) {
 		// 허용된 IP에서 요청
 		req := httptest.NewRequest("GET", "/test", nil)
 		req.Header.Set("X-Real-IP", "127.0.0.1")
-		
+
 		resp, err := app.Test(req)
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
@@ -40,7 +40,7 @@ func TestIPFilterMiddleware(t *testing.T) {
 		// 허용되지 않은 IP에서 요청
 		req = httptest.NewRequest("GET", "/test", nil)
 		req.Header.Set("X-Real-IP", "10.0.0.1")
-		
+
 		resp, err = app.Test(req)
 		require.NoError(t, err)
 		assert.Equal(t, 403, resp.StatusCode)
@@ -48,7 +48,7 @@ func TestIPFilterMiddleware(t *testing.T) {
 
 	t.Run("Allow CIDR Range", func(t *testing.T) {
 		app := fiber.New()
-		
+
 		config := middlewares.IPFilterConfig{
 			AllowedCIDRs: []string{"192.168.1.0/24", "10.0.0.0/8"},
 			DenyAll:      true,
@@ -62,7 +62,7 @@ func TestIPFilterMiddleware(t *testing.T) {
 		// CIDR 범위 내 IP
 		req := httptest.NewRequest("GET", "/test", nil)
 		req.Header.Set("X-Real-IP", "192.168.1.50")
-		
+
 		resp, err := app.Test(req)
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
@@ -70,7 +70,7 @@ func TestIPFilterMiddleware(t *testing.T) {
 		// CIDR 범위 외 IP
 		req = httptest.NewRequest("GET", "/test", nil)
 		req.Header.Set("X-Real-IP", "172.16.0.1")
-		
+
 		resp, err = app.Test(req)
 		require.NoError(t, err)
 		assert.Equal(t, 403, resp.StatusCode)
@@ -78,7 +78,7 @@ func TestIPFilterMiddleware(t *testing.T) {
 
 	t.Run("Default Allow Mode", func(t *testing.T) {
 		app := fiber.New()
-		
+
 		config := middlewares.IPFilterConfig{
 			AllowedIPs: []string{"127.0.0.1"},
 			DenyAll:    false, // 기본적으로 허용
@@ -92,7 +92,7 @@ func TestIPFilterMiddleware(t *testing.T) {
 		// 허용되지 않은 IP도 통과해야 함
 		req := httptest.NewRequest("GET", "/test", nil)
 		req.Header.Set("X-Real-IP", "10.0.0.1")
-		
+
 		resp, err := app.Test(req)
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
@@ -103,7 +103,7 @@ func TestIPFilterMiddleware(t *testing.T) {
 func TestBasicAuthMiddleware(t *testing.T) {
 	t.Run("Valid Credentials", func(t *testing.T) {
 		app := fiber.New()
-		
+
 		config := middlewares.BasicAuthConfig{
 			Users: map[string]string{
 				"admin": "password123",
@@ -122,7 +122,7 @@ func TestBasicAuthMiddleware(t *testing.T) {
 		credentials := base64.StdEncoding.EncodeToString([]byte("admin:password123"))
 		req := httptest.NewRequest("GET", "/protected", nil)
 		req.Header.Set("Authorization", "Basic "+credentials)
-		
+
 		resp, err := app.Test(req)
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
@@ -134,7 +134,7 @@ func TestBasicAuthMiddleware(t *testing.T) {
 
 	t.Run("Invalid Credentials", func(t *testing.T) {
 		app := fiber.New()
-		
+
 		config := middlewares.BasicAuthConfig{
 			Users: map[string]string{
 				"admin": "password123",
@@ -150,7 +150,7 @@ func TestBasicAuthMiddleware(t *testing.T) {
 		credentials := base64.StdEncoding.EncodeToString([]byte("admin:wrongpassword"))
 		req := httptest.NewRequest("GET", "/protected", nil)
 		req.Header.Set("Authorization", "Basic "+credentials)
-		
+
 		resp, err := app.Test(req)
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode)
@@ -159,7 +159,7 @@ func TestBasicAuthMiddleware(t *testing.T) {
 
 	t.Run("No Authorization Header", func(t *testing.T) {
 		app := fiber.New()
-		
+
 		config := middlewares.BasicAuthConfig{
 			Users: map[string]string{"admin": "password123"},
 		}
@@ -170,7 +170,7 @@ func TestBasicAuthMiddleware(t *testing.T) {
 		})
 
 		req := httptest.NewRequest("GET", "/protected", nil)
-		
+
 		resp, err := app.Test(req)
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode)
@@ -178,7 +178,7 @@ func TestBasicAuthMiddleware(t *testing.T) {
 
 	t.Run("Invalid Authorization Format", func(t *testing.T) {
 		app := fiber.New()
-		
+
 		config := middlewares.BasicAuthConfig{
 			Users: map[string]string{"admin": "password123"},
 		}
@@ -191,7 +191,7 @@ func TestBasicAuthMiddleware(t *testing.T) {
 		// Bearer 토큰 (Basic이 아님)
 		req := httptest.NewRequest("GET", "/protected", nil)
 		req.Header.Set("Authorization", "Bearer some-token")
-		
+
 		resp, err := app.Test(req)
 		require.NoError(t, err)
 		assert.Equal(t, 401, resp.StatusCode)
@@ -202,7 +202,7 @@ func TestBasicAuthMiddleware(t *testing.T) {
 func TestPermissionMiddleware(t *testing.T) {
 	t.Run("Read Permission", func(t *testing.T) {
 		app := fiber.New()
-		
+
 		config := middlewares.PermissionConfig{
 			UserPermissions: map[string]middlewares.Permission{
 				"reader": middlewares.PermissionRead,
@@ -230,7 +230,7 @@ func TestPermissionMiddleware(t *testing.T) {
 
 	t.Run("Write Permission Denied", func(t *testing.T) {
 		app := fiber.New()
-		
+
 		config := middlewares.PermissionConfig{
 			UserPermissions: map[string]middlewares.Permission{
 				"reader": middlewares.PermissionRead,
@@ -257,7 +257,7 @@ func TestPermissionMiddleware(t *testing.T) {
 
 	t.Run("Default Permission", func(t *testing.T) {
 		app := fiber.New()
-		
+
 		config := middlewares.PermissionConfig{
 			UserPermissions:   map[string]middlewares.Permission{},
 			DefaultPermission: middlewares.PermissionRead,
@@ -280,7 +280,7 @@ func TestPermissionMiddleware(t *testing.T) {
 func TestPackageFilterMiddleware(t *testing.T) {
 	t.Run("Allowed Package", func(t *testing.T) {
 		app := fiber.New()
-		
+
 		config := middlewares.PackageFilter{
 			AllowedPackages: map[string][]string{
 				"npm": {"express", "lodash", "@types/*"},
@@ -309,7 +309,7 @@ func TestPackageFilterMiddleware(t *testing.T) {
 
 	t.Run("Denied Package", func(t *testing.T) {
 		app := fiber.New()
-		
+
 		config := middlewares.PackageFilter{
 			AllowedPackages: map[string][]string{
 				"npm": {"express"},
@@ -337,7 +337,7 @@ func TestPackageFilterMiddleware(t *testing.T) {
 
 	t.Run("Default Allow Mode", func(t *testing.T) {
 		app := fiber.New()
-		
+
 		config := middlewares.PackageFilter{
 			AllowedPackages: map[string][]string{
 				"npm": {"express"},
@@ -362,7 +362,7 @@ func TestPackageFilterMiddleware(t *testing.T) {
 func TestSecurityMiddleware(t *testing.T) {
 	t.Run("Valid Hash", func(t *testing.T) {
 		app := fiber.New()
-		
+
 		config := middlewares.SecurityConfig{
 			EnableHashVerification: true,
 			RequiredHashHeaders:    []string{"Content-SHA256"},
@@ -381,10 +381,10 @@ func TestSecurityMiddleware(t *testing.T) {
 		// 올바른 해시가 포함된 요청
 		data := []byte("test data")
 		expectedHash := "916f0027a575074ce72a331777c3478d6513f786a591bd892da1a577bf2335f9" // SHA256 of "test data"
-		
+
 		req := httptest.NewRequest("POST", "/upload", bytes.NewReader(data))
 		req.Header.Set("Content-SHA256", expectedHash)
-		
+
 		resp, err := app.Test(req)
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
@@ -392,7 +392,7 @@ func TestSecurityMiddleware(t *testing.T) {
 
 	t.Run("Invalid Hash", func(t *testing.T) {
 		app := fiber.New()
-		
+
 		config := middlewares.SecurityConfig{
 			EnableHashVerification: true,
 			RequiredHashHeaders:    []string{"Content-SHA256"},
@@ -407,10 +407,10 @@ func TestSecurityMiddleware(t *testing.T) {
 		// 잘못된 해시가 포함된 요청
 		data := []byte("test data")
 		wrongHash := "invalid-hash"
-		
+
 		req := httptest.NewRequest("POST", "/upload", bytes.NewReader(data))
 		req.Header.Set("Content-SHA256", wrongHash)
-		
+
 		resp, err := app.Test(req)
 		require.NoError(t, err)
 		assert.Equal(t, 400, resp.StatusCode)
@@ -418,7 +418,7 @@ func TestSecurityMiddleware(t *testing.T) {
 
 	t.Run("No Hash Header", func(t *testing.T) {
 		app := fiber.New()
-		
+
 		config := middlewares.SecurityConfig{
 			EnableHashVerification: true,
 			FailOnHashMismatch:     false, // 해시 없어도 통과
@@ -432,7 +432,7 @@ func TestSecurityMiddleware(t *testing.T) {
 		// 해시 헤더 없는 요청
 		data := []byte("test data")
 		req := httptest.NewRequest("POST", "/upload", bytes.NewReader(data))
-		
+
 		resp, err := app.Test(req)
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
@@ -440,7 +440,7 @@ func TestSecurityMiddleware(t *testing.T) {
 
 	t.Run("Digest Header Format", func(t *testing.T) {
 		app := fiber.New()
-		
+
 		config := middlewares.SecurityConfig{
 			EnableHashVerification: true,
 			RequiredHashHeaders:    []string{"Digest"},
@@ -455,10 +455,10 @@ func TestSecurityMiddleware(t *testing.T) {
 		// Digest 헤더 형식의 해시
 		data := []byte("test data")
 		expectedHash := "916f0027a575074ce72a331777c3478d6513f786a591bd892da1a577bf2335f9"
-		
+
 		req := httptest.NewRequest("POST", "/upload", bytes.NewReader(data))
 		req.Header.Set("Digest", "SHA-256="+expectedHash)
-		
+
 		resp, err := app.Test(req)
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
@@ -466,7 +466,7 @@ func TestSecurityMiddleware(t *testing.T) {
 
 	t.Run("GET Request Skip", func(t *testing.T) {
 		app := fiber.New()
-		
+
 		config := middlewares.SecurityConfig{
 			EnableHashVerification: true,
 			FailOnHashMismatch:     true,
@@ -479,7 +479,7 @@ func TestSecurityMiddleware(t *testing.T) {
 
 		// GET 요청은 해시 검증을 건너뛰어야 함
 		req := httptest.NewRequest("GET", "/data", nil)
-		
+
 		resp, err := app.Test(req)
 		require.NoError(t, err)
 		assert.Equal(t, 200, resp.StatusCode)
