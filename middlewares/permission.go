@@ -23,8 +23,8 @@ type UserPermissions struct {
 
 // PermissionConfig 권한 설정
 type PermissionConfig struct {
-	UserPermissions map[string]Permission // username -> permissions 매핑
-	DefaultPermission Permission          // 기본 권한 (인증되지 않은 사용자)
+	UserPermissions   map[string]Permission // username -> permissions 매핑
+	DefaultPermission Permission            // 기본 권한 (인증되지 않은 사용자)
 }
 
 // PermissionMiddleware 사용자별 권한 체크 미들웨어
@@ -32,7 +32,7 @@ func PermissionMiddleware(config PermissionConfig) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		// HTTP 메서드에 따른 필요 권한 결정
 		requiredPermission := getRequiredPermission(c.Method())
-		
+
 		// 인증된 사용자명 확인
 		username, ok := c.Locals("username").(string)
 		if !ok || username == "" {
@@ -131,7 +131,7 @@ func matchesPattern(path, pattern string) bool {
 	if pattern == "*" {
 		return true
 	}
-	
+
 	if strings.Contains(pattern, "*") {
 		// 와일드카드 패턴 처리
 		parts := strings.Split(pattern, "*")
@@ -140,7 +140,7 @@ func matchesPattern(path, pattern string) bool {
 			return strings.HasPrefix(path, prefix) && strings.HasSuffix(path, suffix)
 		}
 	}
-	
+
 	// 정확한 일치 또는 프리픽스 일치
 	return path == pattern || strings.HasPrefix(path, pattern+"/")
 }
