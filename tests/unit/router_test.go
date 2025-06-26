@@ -78,18 +78,18 @@ func TestProxyRouter(t *testing.T) {
 	defer os.Unsetenv("CONFIG_DIR")
 
 	app := fiber.New()
-	
+
 	// 프록시 라우터 설정 (실제 구현에서는 설정 파일이 필요)
 	// 여기서는 단순히 라우팅만 테스트
 	app.Get("/proxy/:type/*", func(c *fiber.Ctx) error {
 		proxyType := c.Params("type")
 		path := c.Params("*")
-		
+
 		// 파라미터 검증
 		if proxyType == "" {
 			return c.Status(400).SendString("Missing proxy type")
 		}
-		
+
 		return c.JSON(fiber.Map{
 			"proxy_type": proxyType,
 			"path":       path,
@@ -206,10 +206,10 @@ func TestRouterParameterExtraction(t *testing.T) {
 	app.Get("/proxy/:type/*", func(c *fiber.Ctx) error {
 		proxyType := c.Params("type")
 		path := c.Params("*")
-		
+
 		// URL 인코딩된 파라미터 처리
 		decodedPath := c.Params("*", "")
-		
+
 		return c.JSON(fiber.Map{
 			"proxy_type":   proxyType,
 			"path":         path,
@@ -275,7 +275,7 @@ func TestRouterParameterExtraction(t *testing.T) {
 
 		assert.Contains(t, string(body), `"proxy_type":"npm"`)
 		// 빈 경로도 처리되어야 함
-		assert.Contains(t, string(body), `"path":""`) 
+		assert.Contains(t, string(body), `"path":""`)
 	})
 }
 
@@ -303,11 +303,11 @@ func TestRouterMiddlewareChain(t *testing.T) {
 	// 핸들러
 	app.Get("/proxy/:type/*", func(c *fiber.Ctx) error {
 		executionOrder = append(executionOrder, "handler")
-		
+
 		// 미들웨어가 설정한 로컬 값 확인
 		m1 := c.Locals("middleware1")
 		m2 := c.Locals("middleware2")
-		
+
 		return c.JSON(fiber.Map{
 			"middleware1_executed": m1 != nil,
 			"middleware2_executed": m2 != nil,
@@ -331,7 +331,7 @@ func TestRouterMiddlewareChain(t *testing.T) {
 		// 미들웨어가 모두 실행되었는지 확인
 		assert.Contains(t, string(body), `"middleware1_executed":true`)
 		assert.Contains(t, string(body), `"middleware2_executed":true`)
-		
+
 		// 실행 순서 확인
 		assert.Contains(t, string(body), `"execution_order":["middleware1","middleware2","handler"]`)
 	})

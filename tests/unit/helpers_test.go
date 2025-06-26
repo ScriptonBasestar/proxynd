@@ -105,11 +105,11 @@ name: test
 				} `yaml:"tls"`
 			} `yaml:"server"`
 			Database struct {
-				Type       string   `yaml:"type"`
-				Host       string   `yaml:"host"`
-				Port       int      `yaml:"port"`
-				Name       string   `yaml:"name"`
-				Users      []string `yaml:"users"`
+				Type       string                 `yaml:"type"`
+				Host       string                 `yaml:"host"`
+				Port       int                    `yaml:"port"`
+				Name       string                 `yaml:"name"`
+				Users      []string               `yaml:"users"`
 				Parameters map[string]interface{} `yaml:"parameters"`
 			} `yaml:"database"`
 		}
