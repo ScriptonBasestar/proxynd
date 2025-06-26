@@ -26,7 +26,7 @@ func (s *StdLogger) Write(p []byte) (n int, err error) {
 	if len(msg) > 0 && msg[len(msg)-1] == '\n' {
 		msg = msg[:len(msg)-1]
 	}
-	
+
 	// 로그 레벨 추측
 	switch {
 	case contains(msg, "ERROR", "error", "Error"):
@@ -42,7 +42,7 @@ func (s *StdLogger) Write(p []byte) (n int, err error) {
 	default:
 		s.logger.Info(msg)
 	}
-	
+
 	return len(p), nil
 }
 
@@ -161,22 +161,22 @@ func MigrateEnvConfig() LogConfig {
 			Compress:   true,
 		},
 	}
-	
+
 	// 로그 레벨
 	if level := os.Getenv("LOG_LEVEL"); level != "" {
 		config.Level = LogLevel(strings.ToLower(level))
 	}
-	
+
 	// 로그 포맷
 	if format := os.Getenv("LOG_FORMAT"); format != "" {
 		config.Format = strings.ToLower(format)
 	}
-	
+
 	// 로그 출력
 	if output := os.Getenv("LOG_OUTPUT"); output != "" {
 		config.Output = strings.ToLower(output)
 	}
-	
+
 	// 파일 로그 설정
 	if logFile := os.Getenv("LOG_FILE"); logFile != "" {
 		config.File.Path = logFile
@@ -184,22 +184,22 @@ func MigrateEnvConfig() LogConfig {
 			config.Output = "both" // 파일과 콘솔 모두 출력
 		}
 	}
-	
+
 	// 기본 필드 설정
 	config.DefaultFields = map[string]interface{}{
 		"service": "proxynd",
 	}
-	
+
 	// 환경 정보 추가
 	if env := os.Getenv("ENVIRONMENT"); env != "" {
 		config.DefaultFields["environment"] = env
 	}
-	
+
 	// 버전 정보 추가
 	if version := os.Getenv("VERSION"); version != "" {
 		config.DefaultFields["version"] = version
 	}
-	
+
 	return config
 }
 
@@ -208,4 +208,3 @@ func InitFromEnv() error {
 	config := MigrateEnvConfig()
 	return InitLogger(config)
 }
-

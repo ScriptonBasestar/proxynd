@@ -15,11 +15,11 @@ func getFileDescriptorCounts() (open int, max int) {
 	// 현재 프로세스의 열린 파일 디스크립터 수
 	pid := os.Getpid()
 	fdPath := filepath.Join("/proc", strconv.Itoa(pid), "fd")
-	
+
 	if entries, err := os.ReadDir(fdPath); err == nil {
 		open = len(entries)
 	}
-	
+
 	// 최대 파일 디스크립터 수
 	limitsPath := filepath.Join("/proc", strconv.Itoa(pid), "limits")
 	if data, err := os.ReadFile(limitsPath); err == nil {
@@ -36,19 +36,19 @@ func getFileDescriptorCounts() (open int, max int) {
 			}
 		}
 	}
-	
+
 	// 기본값
 	if max == 0 {
 		max = 1024
 	}
-	
+
 	return open, max
 }
 
 // GetSystemMetrics 시스템 메트릭 수집 (Linux 전용)
 func GetSystemMetrics() map[string]float64 {
 	metrics := make(map[string]float64)
-	
+
 	// CPU 사용률 (간단한 버전)
 	if stat, err := os.ReadFile("/proc/stat"); err == nil {
 		lines := strings.Split(string(stat), "\n")
@@ -68,12 +68,12 @@ func GetSystemMetrics() map[string]float64 {
 			}
 		}
 	}
-	
+
 	// 메모리 사용률
 	if meminfo, err := os.ReadFile("/proc/meminfo"); err == nil {
 		lines := strings.Split(string(meminfo), "\n")
 		var memTotal, memAvailable float64
-		
+
 		for _, line := range lines {
 			fields := strings.Fields(line)
 			if len(fields) >= 2 {
@@ -85,14 +85,14 @@ func GetSystemMetrics() map[string]float64 {
 				}
 			}
 		}
-		
+
 		if memTotal > 0 {
 			metrics["memory_total_kb"] = memTotal
 			metrics["memory_available_kb"] = memAvailable
 			metrics["memory_usage"] = 1.0 - (memAvailable / memTotal)
 		}
 	}
-	
+
 	// 로드 평균
 	if loadavg, err := os.ReadFile("/proc/loadavg"); err == nil {
 		fields := strings.Fields(string(loadavg))
@@ -100,45 +100,45 @@ func GetSystemMetrics() map[string]float64 {
 			load1, _ := strconv.ParseFloat(fields[0], 64)
 			load5, _ := strconv.ParseFloat(fields[1], 64)
 			load15, _ := strconv.ParseFloat(fields[2], 64)
-			
+
 			metrics["load_1m"] = load1
 			metrics["load_5m"] = load5
 			metrics["load_15m"] = load15
 		}
 	}
-	
+
 	return metrics
 }
 
 // GetNetworkMetrics 네트워크 메트릭 수집 (Linux 전용)
 func GetNetworkMetrics() map[string]map[string]float64 {
 	metrics := make(map[string]map[string]float64)
-	
+
 	if netdev, err := os.ReadFile("/proc/net/dev"); err == nil {
 		lines := strings.Split(string(netdev), "\n")
-		
+
 		for i, line := range lines {
 			if i < 2 { // 헤더 건너뛰기
 				continue
 			}
-			
+
 			fields := strings.Fields(line)
 			if len(fields) >= 17 {
 				iface := strings.TrimSuffix(fields[0], ":")
 				if iface == "lo" { // 루프백 인터페이스 제외
 					continue
 				}
-				
+
 				rxBytes, _ := strconv.ParseFloat(fields[1], 64)
 				rxPackets, _ := strconv.ParseFloat(fields[2], 64)
 				rxErrors, _ := strconv.ParseFloat(fields[3], 64)
 				rxDropped, _ := strconv.ParseFloat(fields[4], 64)
-				
+
 				txBytes, _ := strconv.ParseFloat(fields[9], 64)
 				txPackets, _ := strconv.ParseFloat(fields[10], 64)
 				txErrors, _ := strconv.ParseFloat(fields[11], 64)
 				txDropped, _ := strconv.ParseFloat(fields[12], 64)
-				
+
 				metrics[iface] = map[string]float64{
 					"rx_bytes":   rxBytes,
 					"rx_packets": rxPackets,
@@ -152,16 +152,16 @@ func GetNetworkMetrics() map[string]map[string]float64 {
 			}
 		}
 	}
-	
+
 	return metrics
 }
 
 // GetDiskMetrics 디스크 메트릭 수집 (Linux 전용)
 func GetDiskMetrics() map[string]map[string]float64 {
 	metrics := make(map[string]map[string]float64)
-	
+
 	// df 명령어 대신 /proc/mounts와 statfs 시스템 콜 사용
 	// 간단한 구현을 위해 여기서는 생략
-	
+
 	return metrics
 }

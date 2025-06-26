@@ -4,27 +4,27 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	
+
 	"github.com/gofiber/fiber/v2"
 )
 
 // PrometheusMiddleware Prometheus 메트릭 수집 미들웨어
 func PrometheusMiddleware() fiber.Handler {
 	metrics := GetMetrics()
-	
+
 	return func(c *fiber.Ctx) error {
 		// /metrics 엔드포인트는 제외
 		if c.Path() == "/metrics" {
 			return c.Next()
 		}
-		
+
 		// 활성 요청 수 증가
 		metrics.HTTPActiveRequests.Inc()
 		defer metrics.HTTPActiveRequests.Dec()
-		
+
 		// 시작 시간 기록
 		start := time.Now()
-		
+
 		// 요청 크기 기록
 		if c.Request().Header.ContentLength() > 0 {
 			size := float64(c.Request().Header.ContentLength())
@@ -35,16 +35,16 @@ func PrometheusMiddleware() fiber.Handler {
 				registryType,
 			).Observe(size)
 		}
-		
+
 		// 다음 핸들러 실행
 		err := c.Next()
-		
+
 		// 응답 처리
 		duration := time.Since(start).Seconds()
 		status := strconv.Itoa(c.Response().StatusCode())
 		path := normalizePath(c.Path())
 		registryType := extractRegistryType(c)
-		
+
 		// HTTP 메트릭 기록
 		metrics.HTTPRequestsTotal.WithLabelValues(
 			c.Method(),
@@ -52,14 +52,14 @@ func PrometheusMiddleware() fiber.Handler {
 			status,
 			registryType,
 		).Inc()
-		
+
 		metrics.HTTPRequestDuration.WithLabelValues(
 			c.Method(),
 			path,
 			status,
 			registryType,
 		).Observe(duration)
-		
+
 		// 응답 크기 기록
 		if size := len(c.Response().Body()); size > 0 {
 			metrics.HTTPResponseSize.WithLabelValues(
@@ -69,19 +69,19 @@ func PrometheusMiddleware() fiber.Handler {
 				registryType,
 			).Observe(float64(size))
 		}
-		
+
 		// 캐시 메트릭 업데이트
 		updateCacheMetrics(c, metrics, registryType)
-		
+
 		// 프록시 메트릭 업데이트
 		updateProxyMetrics(c, metrics, registryType)
-		
+
 		// 인증 메트릭 업데이트
 		updateAuthMetrics(c, metrics)
-		
+
 		// 검증 메트릭 업데이트
 		updateVerificationMetrics(c, metrics, registryType)
-		
+
 		return err
 	}
 }
@@ -91,12 +91,12 @@ func updateCacheMetrics(c *fiber.Ctx, metrics *Metrics, registryType string) {
 	// 캐시 히트/미스 확인
 	cacheHit := c.Locals("cache_hit")
 	cacheBackend := getCacheBackend(c)
-	
+
 	if cacheHit != nil {
 		if hit, ok := cacheHit.(bool); ok {
 			if hit {
 				metrics.CacheHitsTotal.WithLabelValues(registryType, cacheBackend).Inc()
-				
+
 				// 대역폭 절약량 계산
 				if size := len(c.Response().Body()); size > 0 {
 					metrics.CacheBandwidthSaved.WithLabelValues(registryType).Add(float64(size))
@@ -106,7 +106,7 @@ func updateCacheMetrics(c *fiber.Ctx, metrics *Metrics, registryType string) {
 			}
 		}
 	}
-	
+
 	// 캐시 제거 이벤트
 	if evicted := c.Locals("cache_evicted"); evicted != nil {
 		if reason, ok := evicted.(string); ok {
@@ -121,16 +121,16 @@ func updateProxyMetrics(c *fiber.Ctx, metrics *Metrics, registryType string) {
 	if !strings.HasPrefix(c.Path(), "/proxy/") {
 		return
 	}
-	
+
 	upstream := getUpstream(c, registryType)
-	
+
 	// 프록시 요청 카운트
 	metrics.ProxyRequestsTotal.WithLabelValues(
 		registryType,
 		upstream,
 		c.Method(),
 	).Inc()
-	
+
 	// 프록시 오류
 	if c.Response().StatusCode() >= 400 {
 		errorType := getErrorType(c.Response().StatusCode())
@@ -140,7 +140,7 @@ func updateProxyMetrics(c *fiber.Ctx, metrics *Metrics, registryType string) {
 			errorType,
 		).Inc()
 	}
-	
+
 	// 업스트림 요청 시간
 	if upstreamDuration := c.Locals("upstream_duration"); upstreamDuration != nil {
 		if duration, ok := upstreamDuration.(time.Duration); ok {
@@ -150,7 +150,7 @@ func updateProxyMetrics(c *fiber.Ctx, metrics *Metrics, registryType string) {
 			).Observe(duration.Seconds())
 		}
 	}
-	
+
 	// 전송 바이트 수
 	if c.Method() == "GET" || c.Method() == "HEAD" {
 		// 다운로드
@@ -180,9 +180,9 @@ func updateAuthMetrics(c *fiber.Ctx, metrics *Metrics) {
 			if c.Response().StatusCode() == 401 || c.Response().StatusCode() == 403 {
 				authResult = "failure"
 			}
-			
+
 			metrics.AuthAttemptsTotal.WithLabelValues(method, authResult).Inc()
-			
+
 			// 인증 실패
 			if authResult == "failure" {
 				reason := "invalid_credentials"
@@ -203,9 +203,9 @@ func updateVerificationMetrics(c *fiber.Ctx, metrics *Metrics, registryType stri
 		if !verified.(bool) {
 			result = "failure"
 		}
-		
+
 		metrics.PackageVerifications.WithLabelValues(registryType, result).Inc()
-		
+
 		// 검증 실패 상세
 		if result == "failure" {
 			if failureType := c.Locals("verificationFailureType"); failureType != nil {
@@ -214,7 +214,7 @@ func updateVerificationMetrics(c *fiber.Ctx, metrics *Metrics, registryType stri
 				}
 			}
 		}
-		
+
 		// 검증 소요 시간
 		if verificationDuration := c.Locals("verificationDuration"); verificationDuration != nil {
 			if duration, ok := verificationDuration.(time.Duration); ok {
@@ -233,14 +233,14 @@ func extractRegistryType(c *fiber.Ctx) string {
 			return parts[2]
 		}
 	}
-	
+
 	// Locals에서 확인
 	if registryType := c.Locals("registry_type"); registryType != nil {
 		if rt, ok := registryType.(string); ok {
 			return rt
 		}
 	}
-	
+
 	return "unknown"
 }
 
@@ -254,7 +254,7 @@ func normalizePath(path string) string {
 			return "/proxy/" + registryType + "/*"
 		}
 	}
-	
+
 	// 기타 공통 패턴
 	switch {
 	case path == "/":
@@ -287,7 +287,7 @@ func getUpstream(c *fiber.Ctx, registryType string) string {
 			return u
 		}
 	}
-	
+
 	// 레지스트리 타입별 기본 업스트림
 	switch registryType {
 	case "npm":

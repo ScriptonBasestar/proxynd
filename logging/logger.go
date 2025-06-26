@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"sync"
 	"time"
-	
+
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -34,11 +34,11 @@ type Logger interface {
 	Error(msg string, fields ...Field)
 	Fatal(msg string, fields ...Field)
 	Panic(msg string, fields ...Field)
-	
+
 	WithContext(ctx context.Context) Logger
 	WithFields(fields ...Field) Logger
 	WithField(key string, value interface{}) Logger
-	
+
 	// 기존 log.Logger와의 호환성
 	Printf(format string, v ...interface{})
 }
@@ -73,13 +73,13 @@ type LogConfig struct {
 	Format     string   `json:"format" yaml:"format"` // json, text
 	Output     string   `json:"output" yaml:"output"` // stdout, stderr, file
 	TimeFormat string   `json:"time_format" yaml:"time_format"`
-	
+
 	// 파일 출력 설정
 	File FileConfig `json:"file" yaml:"file"`
-	
+
 	// 컨텍스트 필드
 	DefaultFields map[string]interface{} `json:"default_fields" yaml:"default_fields"`
-	
+
 	// 샘플링 설정
 	Sampling SamplingConfig `json:"sampling" yaml:"sampling"`
 }
@@ -87,37 +87,37 @@ type LogConfig struct {
 // FileConfig 파일 로그 설정
 type FileConfig struct {
 	Path       string `json:"path" yaml:"path"`
-	MaxSize    int    `json:"max_size" yaml:"max_size"`       // MB
+	MaxSize    int    `json:"max_size" yaml:"max_size"` // MB
 	MaxBackups int    `json:"max_backups" yaml:"max_backups"`
-	MaxAge     int    `json:"max_age" yaml:"max_age"`         // days
+	MaxAge     int    `json:"max_age" yaml:"max_age"` // days
 	Compress   bool   `json:"compress" yaml:"compress"`
 }
 
 // SamplingConfig 로그 샘플링 설정
 type SamplingConfig struct {
-	Enabled bool `json:"enabled" yaml:"enabled"`
-	Initial int  `json:"initial" yaml:"initial"`
-	Thereafter int `json:"thereafter" yaml:"thereafter"`
+	Enabled    bool `json:"enabled" yaml:"enabled"`
+	Initial    int  `json:"initial" yaml:"initial"`
+	Thereafter int  `json:"thereafter" yaml:"thereafter"`
 }
 
 // InitLogger 로거 초기화
 func InitLogger(config LogConfig) error {
 	var logger zerolog.Logger
-	
+
 	// 로그 레벨 설정
 	level := parseLevel(config.Level)
 	zerolog.SetGlobalLevel(level)
-	
+
 	// 시간 포맷 설정
 	if config.TimeFormat != "" {
 		zerolog.TimeFieldFormat = config.TimeFormat
 	} else {
 		zerolog.TimeFieldFormat = time.RFC3339
 	}
-	
+
 	// 출력 설정
 	var writers []io.Writer
-	
+
 	switch config.Output {
 	case "stderr":
 		writers = append(writers, os.Stderr)
@@ -136,14 +136,14 @@ func InitLogger(config LogConfig) error {
 	default: // stdout
 		writers = append(writers, os.Stdout)
 	}
-	
+
 	var output io.Writer
 	if len(writers) == 1 {
 		output = writers[0]
 	} else {
 		output = io.MultiWriter(writers...)
 	}
-	
+
 	// 포맷 설정
 	if config.Format == "text" || config.Format == "console" {
 		output = zerolog.ConsoleWriter{
@@ -152,41 +152,41 @@ func InitLogger(config LogConfig) error {
 			NoColor:    false,
 		}
 	}
-	
+
 	// 기본 컨텍스트 설정
 	ctx := zerolog.New(output).With().Timestamp()
-	
+
 	// 기본 필드 추가
 	if config.DefaultFields != nil {
 		for k, v := range config.DefaultFields {
 			ctx = ctx.Interface(k, v)
 		}
 	}
-	
+
 	// 호스트 정보 추가
 	if hostname, err := os.Hostname(); err == nil {
 		ctx = ctx.Str("hostname", hostname)
 	}
-	
+
 	// 프로세스 정보 추가
 	ctx = ctx.Int("pid", os.Getpid())
-	
+
 	logger = ctx.Logger()
-	
+
 	// 샘플링 설정
 	if config.Sampling.Enabled {
 		logger = logger.Sample(&zerolog.BasicSampler{
 			N: uint32(config.Sampling.Initial),
 		})
 	}
-	
+
 	// 전역 로거 설정
 	log.Logger = logger
 	globalLogger = &ZeroLogger{
 		logger: logger,
 		fields: make(map[string]interface{}),
 	}
-	
+
 	return nil
 }
 
@@ -238,13 +238,13 @@ func createFileWriter(config FileConfig) io.Writer {
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		log.Error().Err(err).Str("path", dir).Msg("Failed to create log directory")
 	}
-	
+
 	// lumberjack을 사용한 로그 로테이션
 	return &lumberjack.Logger{
 		Filename:   config.Path,
-		MaxSize:    config.MaxSize,    // megabytes
+		MaxSize:    config.MaxSize, // megabytes
 		MaxBackups: config.MaxBackups,
-		MaxAge:     config.MaxAge,      // days
+		MaxAge:     config.MaxAge, // days
 		Compress:   config.Compress,
 		LocalTime:  true,
 	}
@@ -291,17 +291,17 @@ func (zl *ZeroLogger) Panic(msg string, fields ...Field) {
 func (zl *ZeroLogger) WithContext(ctx context.Context) Logger {
 	// 컨텍스트에서 값 추출
 	newLogger := zl.logger.With().Logger()
-	
+
 	// Request ID 추출
 	if reqID := ctx.Value("request_id"); reqID != nil {
 		newLogger = newLogger.With().Str("request_id", fmt.Sprintf("%v", reqID)).Logger()
 	}
-	
+
 	// User ID 추출
 	if userID := ctx.Value("user_id"); userID != nil {
 		newLogger = newLogger.With().Str("user_id", fmt.Sprintf("%v", userID)).Logger()
 	}
-	
+
 	return &ZeroLogger{
 		logger: newLogger,
 		fields: zl.copyFields(),
@@ -311,12 +311,12 @@ func (zl *ZeroLogger) WithContext(ctx context.Context) Logger {
 func (zl *ZeroLogger) WithFields(fields ...Field) Logger {
 	newLogger := zl.logger.With().Logger()
 	newFields := zl.copyFields()
-	
+
 	for _, field := range fields {
 		newFields[field.Key] = field.Value
 		newLogger = newLogger.With().Interface(field.Key, field.Value).Logger()
 	}
-	
+
 	return &ZeroLogger{
 		logger: newLogger,
 		fields: newFields,
@@ -339,7 +339,7 @@ func (zl *ZeroLogger) applyFields(event *zerolog.Event, fields ...Field) {
 		event = event.Interface(k, v)
 	}
 	zl.mu.RUnlock()
-	
+
 	// 새 필드 적용
 	for _, field := range fields {
 		event = event.Interface(field.Key, field.Value)
@@ -350,7 +350,7 @@ func (zl *ZeroLogger) applyFields(event *zerolog.Event, fields ...Field) {
 func (zl *ZeroLogger) copyFields() map[string]interface{} {
 	zl.mu.RLock()
 	defer zl.mu.RUnlock()
-	
+
 	copied := make(map[string]interface{})
 	for k, v := range zl.fields {
 		copied[k] = v
