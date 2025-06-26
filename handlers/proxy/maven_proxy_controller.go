@@ -55,11 +55,11 @@ func MavenProxy(c *fiber.Ctx) error {
 	// 미들웨어에서 전달된 캐시 정보 확인
 	cacheHit, _ := c.Locals("cache_hit").(bool)
 	cachePath, _ := c.Locals("cache_path").(string)
-	
+
 	var responseContent []byte
 	var filefullpath string
 	var filename string
-	
+
 	// 캐시 경로가 있으면 사용, 없으면 기본 경로 생성
 	if cachePath != "" {
 		filefullpath = cachePath
@@ -68,7 +68,7 @@ func MavenProxy(c *fiber.Ctx) error {
 		filefullpath = path.Join(storageDir, config.Path, requestPath)
 		filename = filepath.Base(filefullpath)
 	}
-	
+
 	// 캐시가 히트하지 않았을 때만 다운로드
 	if !cacheHit {
 		dirpath := filepath.Dir(filefullpath)

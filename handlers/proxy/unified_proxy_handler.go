@@ -11,9 +11,9 @@ import (
 func UnifiedProxyHandler(c *fiber.Ctx) error {
 	proxyType := c.Params("type")
 	path := c.Params("*")
-	
+
 	log.Printf("Access unified proxy - type: %s, path: %s\n", proxyType, path)
-	
+
 	// 프록시 타입별로 적절한 핸들러로 라우팅
 	switch proxyType {
 	case "maven":
@@ -23,7 +23,7 @@ func UnifiedProxyHandler(c *fiber.Ctx) error {
 			return renderConfigAlert(c, "maven-proxy.yaml")
 		}
 		return MavenProxy(c)
-		
+
 	case "apt":
 		// APT 설정 확인
 		aptConfig := configs.AptProxyConfig{}
@@ -33,7 +33,7 @@ func UnifiedProxyHandler(c *fiber.Ctx) error {
 		// APT는 경로에서 osType을 추출해야 함
 		// 경로 형식: /proxy/apt/ubuntu/... 또는 /proxy/apt/debian/...
 		return AptProxyUnified(c)
-		
+
 	case "npm":
 		// NPM 설정 확인
 		npmConfig := configs.NpmProxyConfig{}
@@ -41,7 +41,7 @@ func UnifiedProxyHandler(c *fiber.Ctx) error {
 			return renderConfigAlert(c, "npm-proxy.yaml")
 		}
 		return NpmProxy(c)
-		
+
 	case "pip":
 		// PIP 설정 확인
 		pipConfig := configs.PipProxyConfig{}
@@ -49,7 +49,7 @@ func UnifiedProxyHandler(c *fiber.Ctx) error {
 			return renderConfigAlert(c, "pip-proxy.yaml")
 		}
 		return PipProxy(c)
-		
+
 	case "docker":
 		// Docker 설정 확인
 		dockerConfig := configs.DockerProxyConfig{}
@@ -57,7 +57,7 @@ func UnifiedProxyHandler(c *fiber.Ctx) error {
 			return renderConfigAlert(c, "docker-proxy.yaml")
 		}
 		return DockerProxy(c)
-		
+
 	default:
 		return c.Status(fiber.StatusBadRequest).SendString("Unknown proxy type: " + proxyType)
 	}

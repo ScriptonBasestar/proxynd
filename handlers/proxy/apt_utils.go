@@ -43,7 +43,7 @@ func isInlineFile(filename string) bool {
 		"Sources.bz2",
 		"Sources.xz",
 	}
-	
+
 	for _, f := range inlineFiles {
 		if filename == f {
 			return true
