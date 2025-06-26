@@ -37,7 +37,7 @@ func NewWebhookAlerter(config WebhookAlerterConfig) (*WebhookAlerter, error) {
 	if config.URL == "" {
 		return nil, fmt.Errorf("webhook URL is required")
 	}
-	
+
 	// 기본값 설정
 	if config.Method == "" {
 		config.Method = "POST"
@@ -45,7 +45,7 @@ func NewWebhookAlerter(config WebhookAlerterConfig) (*WebhookAlerter, error) {
 	if config.RetryCount <= 0 {
 		config.RetryCount = 3
 	}
-	
+
 	// 타임아웃 파싱
 	timeout := 30 * time.Second
 	if config.Timeout != "" {
@@ -53,7 +53,7 @@ func NewWebhookAlerter(config WebhookAlerterConfig) (*WebhookAlerter, error) {
 			timeout = d
 		}
 	}
-	
+
 	// 재시도 간격 파싱
 	retryInterval := 5 * time.Second
 	if config.RetryInterval != "" {
@@ -61,7 +61,7 @@ func NewWebhookAlerter(config WebhookAlerterConfig) (*WebhookAlerter, error) {
 			retryInterval = d
 		}
 	}
-	
+
 	wa := &WebhookAlerter{
 		enabled:       config.Enabled,
 		url:           config.URL,
@@ -74,7 +74,7 @@ func NewWebhookAlerter(config WebhookAlerterConfig) (*WebhookAlerter, error) {
 			Timeout: timeout,
 		},
 	}
-	
+
 	return wa, nil
 }
 
@@ -85,7 +85,7 @@ func (wa *WebhookAlerter) Send(ctx context.Context, event *AlertEvent) error {
 	if err != nil {
 		return fmt.Errorf("failed to create payload: %w", err)
 	}
-	
+
 	// 재시도 로직과 함께 전송
 	var lastErr error
 	for i := 0; i <= wa.retryCount; i++ {
@@ -96,15 +96,15 @@ func (wa *WebhookAlerter) Send(ctx context.Context, event *AlertEvent) error {
 			case <-time.After(wa.retryInterval):
 			}
 		}
-		
+
 		if err := wa.sendRequest(ctx, payload); err != nil {
 			lastErr = err
 			continue
 		}
-		
+
 		return nil
 	}
-	
+
 	return fmt.Errorf("failed after %d retries: %w", wa.retryCount, lastErr)
 }
 
@@ -121,7 +121,7 @@ func (wa *WebhookAlerter) createPayload(event *AlertEvent) ([]byte, error) {
 		"timestamp": event.Timestamp.Unix(),
 		"metadata":  event.Metadata,
 	}
-	
+
 	// 패키지 정보 추가
 	if event.PackageInfo != nil {
 		payload["package"] = map[string]interface{}{
@@ -134,7 +134,7 @@ func (wa *WebhookAlerter) createPayload(event *AlertEvent) ([]byte, error) {
 			"remote_url":    event.PackageInfo.RemoteURL,
 		}
 	}
-	
+
 	return json.Marshal(payload)
 }
 
@@ -144,25 +144,25 @@ func (wa *WebhookAlerter) sendRequest(ctx context.Context, payload []byte) error
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
-	
+
 	// 헤더 설정
 	req.Header.Set("Content-Type", "application/json")
 	for k, v := range wa.headers {
 		req.Header.Set(k, v)
 	}
-	
+
 	// 요청 전송
 	resp, err := wa.client.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to send request: %w", err)
 	}
 	defer resp.Body.Close()
-	
+
 	// 응답 상태 확인
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return fmt.Errorf("webhook returned status %d", resp.StatusCode)
 	}
-	
+
 	return nil
 }
 
@@ -170,16 +170,16 @@ func (wa *WebhookAlerter) sendRequest(ctx context.Context, payload []byte) error
 func (wa *WebhookAlerter) SendBatch(ctx context.Context, events []*AlertEvent) error {
 	// 배치 페이로드 생성
 	batchPayload := map[string]interface{}{
-		"batch_id":   fmt.Sprintf("batch_%d", time.Now().Unix()),
+		"batch_id":    fmt.Sprintf("batch_%d", time.Now().Unix()),
 		"event_count": len(events),
-		"events":     events,
+		"events":      events,
 	}
-	
+
 	payload, err := json.Marshal(batchPayload)
 	if err != nil {
 		return fmt.Errorf("failed to create batch payload: %w", err)
 	}
-	
+
 	// 재시도 로직과 함께 전송
 	var lastErr error
 	for i := 0; i <= wa.retryCount; i++ {
@@ -190,15 +190,15 @@ func (wa *WebhookAlerter) SendBatch(ctx context.Context, events []*AlertEvent) e
 			case <-time.After(wa.retryInterval):
 			}
 		}
-		
+
 		if err := wa.sendRequest(ctx, payload); err != nil {
 			lastErr = err
 			continue
 		}
-		
+
 		return nil
 	}
-	
+
 	return fmt.Errorf("failed after %d retries: %w", wa.retryCount, lastErr)
 }
 

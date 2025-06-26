@@ -25,18 +25,18 @@ type AlertEvent struct {
 	Source      string                 `json:"source"`
 	Timestamp   time.Time              `json:"timestamp"`
 	Metadata    map[string]interface{} `json:"metadata,omitempty"`
-	PackageInfo *PackageInfo          `json:"package_info,omitempty"`
+	PackageInfo *PackageInfo           `json:"package_info,omitempty"`
 }
 
 // PackageInfo 패키지 정보
 type PackageInfo struct {
-	Type         string `json:"type"`         // npm, pip, apt, docker
-	Name         string `json:"name"`         // 패키지 이름
-	Version      string `json:"version"`      // 패키지 버전
-	Path         string `json:"path"`         // 요청 경로
+	Type         string `json:"type"`          // npm, pip, apt, docker
+	Name         string `json:"name"`          // 패키지 이름
+	Version      string `json:"version"`       // 패키지 버전
+	Path         string `json:"path"`          // 요청 경로
 	ExpectedHash string `json:"expected_hash"` // 예상 해시
-	ActualHash   string `json:"actual_hash"`  // 실제 해시
-	RemoteURL    string `json:"remote_url"`   // 원격 저장소 URL
+	ActualHash   string `json:"actual_hash"`   // 실제 해시
+	RemoteURL    string `json:"remote_url"`    // 원격 저장소 URL
 }
 
 // Alerter 알림 전송 인터페이스
@@ -67,10 +67,10 @@ type AlertManager interface {
 
 // AlertConfig 알림 설정
 type AlertConfig struct {
-	Enabled       bool              `yaml:"enabled" json:"enabled"`
-	Channels      []ChannelConfig   `yaml:"channels" json:"channels"`
-	RateLimit     RateLimitConfig   `yaml:"rate_limit" json:"rate_limit"`
-	FilterRules   []FilterRule      `yaml:"filter_rules" json:"filter_rules"`
+	Enabled     bool            `yaml:"enabled" json:"enabled"`
+	Channels    []ChannelConfig `yaml:"channels" json:"channels"`
+	RateLimit   RateLimitConfig `yaml:"rate_limit" json:"rate_limit"`
+	FilterRules []FilterRule    `yaml:"filter_rules" json:"filter_rules"`
 }
 
 // ChannelConfig 채널별 설정
@@ -83,19 +83,19 @@ type ChannelConfig struct {
 
 // RateLimitConfig 속도 제한 설정
 type RateLimitConfig struct {
-	Enabled      bool          `yaml:"enabled" json:"enabled"`
-	MaxPerMinute int           `yaml:"max_per_minute" json:"max_per_minute"`
-	MaxPerHour   int           `yaml:"max_per_hour" json:"max_per_hour"`
-	BurstSize    int           `yaml:"burst_size" json:"burst_size"`
+	Enabled      bool `yaml:"enabled" json:"enabled"`
+	MaxPerMinute int  `yaml:"max_per_minute" json:"max_per_minute"`
+	MaxPerHour   int  `yaml:"max_per_hour" json:"max_per_hour"`
+	BurstSize    int  `yaml:"burst_size" json:"burst_size"`
 }
 
 // FilterRule 필터 규칙
 type FilterRule struct {
-	Name       string     `yaml:"name" json:"name"`
-	Enabled    bool       `yaml:"enabled" json:"enabled"`
-	Levels     []AlertLevel `yaml:"levels" json:"levels"`
-	Types      []string   `yaml:"types" json:"types"`
+	Name       string                 `yaml:"name" json:"name"`
+	Enabled    bool                   `yaml:"enabled" json:"enabled"`
+	Levels     []AlertLevel           `yaml:"levels" json:"levels"`
+	Types      []string               `yaml:"types" json:"types"`
 	Conditions map[string]interface{} `yaml:"conditions" json:"conditions"`
-	Action     string     `yaml:"action" json:"action"` // allow, deny, redirect
-	Target     string     `yaml:"target" json:"target"` // 리다이렉트 대상 채널
+	Action     string                 `yaml:"action" json:"action"` // allow, deny, redirect
+	Target     string                 `yaml:"target" json:"target"` // 리다이렉트 대상 채널
 }
