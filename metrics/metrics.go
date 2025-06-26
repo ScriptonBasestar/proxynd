@@ -8,40 +8,40 @@ import (
 // Metrics 구조체 - 모든 메트릭을 포함
 type Metrics struct {
 	// HTTP 요청 관련 메트릭
-	HTTPRequestsTotal      *prometheus.CounterVec
-	HTTPRequestDuration    *prometheus.HistogramVec
-	HTTPRequestSize        *prometheus.HistogramVec
-	HTTPResponseSize       *prometheus.HistogramVec
-	HTTPActiveRequests     prometheus.Gauge
-	
+	HTTPRequestsTotal   *prometheus.CounterVec
+	HTTPRequestDuration *prometheus.HistogramVec
+	HTTPRequestSize     *prometheus.HistogramVec
+	HTTPResponseSize    *prometheus.HistogramVec
+	HTTPActiveRequests  prometheus.Gauge
+
 	// 캐시 관련 메트릭
-	CacheHitsTotal         *prometheus.CounterVec
-	CacheMissesTotal       *prometheus.CounterVec
-	CacheEvictionsTotal    *prometheus.CounterVec
-	CacheSizeBytes         *prometheus.GaugeVec
-	CacheItemsCount        *prometheus.GaugeVec
-	CacheBandwidthSaved    *prometheus.CounterVec
-	
+	CacheHitsTotal      *prometheus.CounterVec
+	CacheMissesTotal    *prometheus.CounterVec
+	CacheEvictionsTotal *prometheus.CounterVec
+	CacheSizeBytes      *prometheus.GaugeVec
+	CacheItemsCount     *prometheus.GaugeVec
+	CacheBandwidthSaved *prometheus.CounterVec
+
 	// 프록시 관련 메트릭
-	ProxyRequestsTotal     *prometheus.CounterVec
-	ProxyErrorsTotal       *prometheus.CounterVec
-	ProxyUpstreamDuration  *prometheus.HistogramVec
-	ProxyBytesTransferred  *prometheus.CounterVec
-	
+	ProxyRequestsTotal    *prometheus.CounterVec
+	ProxyErrorsTotal      *prometheus.CounterVec
+	ProxyUpstreamDuration *prometheus.HistogramVec
+	ProxyBytesTransferred *prometheus.CounterVec
+
 	// 인증 관련 메트릭
-	AuthAttemptsTotal      *prometheus.CounterVec
-	AuthFailuresTotal      *prometheus.CounterVec
-	ActiveSessions         prometheus.Gauge
-	
+	AuthAttemptsTotal *prometheus.CounterVec
+	AuthFailuresTotal *prometheus.CounterVec
+	ActiveSessions    prometheus.Gauge
+
 	// 패키지 검증 관련 메트릭
-	PackageVerifications   *prometheus.CounterVec
-	VerificationFailures   *prometheus.CounterVec
-	VerificationDuration   *prometheus.HistogramVec
-	
+	PackageVerifications *prometheus.CounterVec
+	VerificationFailures *prometheus.CounterVec
+	VerificationDuration *prometheus.HistogramVec
+
 	// 시스템 관련 메트릭
-	ConfigReloads          prometheus.Counter
-	ConfigReloadFailures   prometheus.Counter
-	UptimeSeconds          prometheus.Counter
+	ConfigReloads        prometheus.Counter
+	ConfigReloadFailures prometheus.Counter
+	UptimeSeconds        prometheus.Counter
 }
 
 // NewMetrics 새 메트릭 인스턴스 생성
@@ -55,7 +55,7 @@ func NewMetrics() *Metrics {
 			},
 			[]string{"method", "path", "status", "registry_type"},
 		),
-		
+
 		HTTPRequestDuration: promauto.NewHistogramVec(
 			prometheus.HistogramOpts{
 				Name:    "proxynd_http_request_duration_seconds",
@@ -64,7 +64,7 @@ func NewMetrics() *Metrics {
 			},
 			[]string{"method", "path", "status", "registry_type"},
 		),
-		
+
 		HTTPRequestSize: promauto.NewHistogramVec(
 			prometheus.HistogramOpts{
 				Name:    "proxynd_http_request_size_bytes",
@@ -73,7 +73,7 @@ func NewMetrics() *Metrics {
 			},
 			[]string{"method", "path", "registry_type"},
 		),
-		
+
 		HTTPResponseSize: promauto.NewHistogramVec(
 			prometheus.HistogramOpts{
 				Name:    "proxynd_http_response_size_bytes",
@@ -82,14 +82,14 @@ func NewMetrics() *Metrics {
 			},
 			[]string{"method", "path", "status", "registry_type"},
 		),
-		
+
 		HTTPActiveRequests: promauto.NewGauge(
 			prometheus.GaugeOpts{
 				Name: "proxynd_http_active_requests",
 				Help: "Number of active HTTP requests",
 			},
 		),
-		
+
 		// 캐시 메트릭
 		CacheHitsTotal: promauto.NewCounterVec(
 			prometheus.CounterOpts{
@@ -98,7 +98,7 @@ func NewMetrics() *Metrics {
 			},
 			[]string{"registry_type", "cache_backend"},
 		),
-		
+
 		CacheMissesTotal: promauto.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "proxynd_cache_misses_total",
@@ -106,7 +106,7 @@ func NewMetrics() *Metrics {
 			},
 			[]string{"registry_type", "cache_backend"},
 		),
-		
+
 		CacheEvictionsTotal: promauto.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "proxynd_cache_evictions_total",
@@ -114,7 +114,7 @@ func NewMetrics() *Metrics {
 			},
 			[]string{"registry_type", "cache_backend", "reason"},
 		),
-		
+
 		CacheSizeBytes: promauto.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Name: "proxynd_cache_size_bytes",
@@ -122,7 +122,7 @@ func NewMetrics() *Metrics {
 			},
 			[]string{"registry_type", "cache_backend"},
 		),
-		
+
 		CacheItemsCount: promauto.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Name: "proxynd_cache_items_count",
@@ -130,7 +130,7 @@ func NewMetrics() *Metrics {
 			},
 			[]string{"registry_type", "cache_backend"},
 		),
-		
+
 		CacheBandwidthSaved: promauto.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "proxynd_cache_bandwidth_saved_bytes",
@@ -138,7 +138,7 @@ func NewMetrics() *Metrics {
 			},
 			[]string{"registry_type"},
 		),
-		
+
 		// 프록시 메트릭
 		ProxyRequestsTotal: promauto.NewCounterVec(
 			prometheus.CounterOpts{
@@ -147,7 +147,7 @@ func NewMetrics() *Metrics {
 			},
 			[]string{"registry_type", "upstream", "method"},
 		),
-		
+
 		ProxyErrorsTotal: promauto.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "proxynd_proxy_errors_total",
@@ -155,7 +155,7 @@ func NewMetrics() *Metrics {
 			},
 			[]string{"registry_type", "upstream", "error_type"},
 		),
-		
+
 		ProxyUpstreamDuration: promauto.NewHistogramVec(
 			prometheus.HistogramOpts{
 				Name:    "proxynd_proxy_upstream_duration_seconds",
@@ -164,7 +164,7 @@ func NewMetrics() *Metrics {
 			},
 			[]string{"registry_type", "upstream"},
 		),
-		
+
 		ProxyBytesTransferred: promauto.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "proxynd_proxy_bytes_transferred_total",
@@ -172,7 +172,7 @@ func NewMetrics() *Metrics {
 			},
 			[]string{"registry_type", "direction"}, // direction: upload, download
 		),
-		
+
 		// 인증 메트릭
 		AuthAttemptsTotal: promauto.NewCounterVec(
 			prometheus.CounterOpts{
@@ -181,7 +181,7 @@ func NewMetrics() *Metrics {
 			},
 			[]string{"method", "result"},
 		),
-		
+
 		AuthFailuresTotal: promauto.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "proxynd_auth_failures_total",
@@ -189,14 +189,14 @@ func NewMetrics() *Metrics {
 			},
 			[]string{"method", "reason"},
 		),
-		
+
 		ActiveSessions: promauto.NewGauge(
 			prometheus.GaugeOpts{
 				Name: "proxynd_active_sessions",
 				Help: "Number of active authenticated sessions",
 			},
 		),
-		
+
 		// 패키지 검증 메트릭
 		PackageVerifications: promauto.NewCounterVec(
 			prometheus.CounterOpts{
@@ -205,7 +205,7 @@ func NewMetrics() *Metrics {
 			},
 			[]string{"registry_type", "result"},
 		),
-		
+
 		VerificationFailures: promauto.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "proxynd_verification_failures_total",
@@ -213,7 +213,7 @@ func NewMetrics() *Metrics {
 			},
 			[]string{"registry_type", "failure_type"},
 		),
-		
+
 		VerificationDuration: promauto.NewHistogramVec(
 			prometheus.HistogramOpts{
 				Name:    "proxynd_verification_duration_seconds",
@@ -222,7 +222,7 @@ func NewMetrics() *Metrics {
 			},
 			[]string{"registry_type"},
 		),
-		
+
 		// 시스템 메트릭
 		ConfigReloads: promauto.NewCounter(
 			prometheus.CounterOpts{
@@ -230,14 +230,14 @@ func NewMetrics() *Metrics {
 				Help: "Total number of configuration reloads",
 			},
 		),
-		
+
 		ConfigReloadFailures: promauto.NewCounter(
 			prometheus.CounterOpts{
 				Name: "proxynd_config_reload_failures_total",
 				Help: "Total number of configuration reload failures",
 			},
 		),
-		
+
 		UptimeSeconds: promauto.NewCounter(
 			prometheus.CounterOpts{
 				Name: "proxynd_uptime_seconds",
