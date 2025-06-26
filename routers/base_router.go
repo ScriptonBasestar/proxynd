@@ -53,5 +53,8 @@ func BaseRouter() *fiber.App {
 	//	return c.Next()
 	//})
 
+	// 메트릭 라우터 추가 (설정이 없으면 기본값 사용)
+	MetricsRouter(app, nil)
+
 	return app
 }
