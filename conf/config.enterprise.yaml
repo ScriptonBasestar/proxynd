@@ -1,0 +1,227 @@
+# ProxyND 엔터프라이즈 설정 파일
+# 보안, 인증, 모니터링이 강화된 프로덕션 환경용 설정
+
+# 서버 설정
+server:
+  port: 8080
+  host: "0.0.0.0"
+  readTimeout: 30s
+  writeTimeout: 30s
+  idleTimeout: 60s
+  maxConnections: 1000
+  
+  # HTTPS 설정
+  tls:
+    enabled: true
+    certFile: "/etc/ssl/certs/proxynd.crt"
+    keyFile: "/etc/ssl/private/proxynd.key"
+    minVersion: "1.2"
+
+# 로깅 설정
+logging:
+  level: info
+  format: json
+  output: both
+  file:
+    path: "/var/log/proxynd/proxynd.log"
+    maxSize: 100
+    maxBackups: 30
+    maxAge: 90
+    compress: true
+  
+  defaultFields:
+    service: "proxynd"
+    environment: "production"
+    datacenter: "dc1"
+  
+  accessLog:
+    enabled: true
+    path: "/var/log/proxynd/access.log"
+    format: json
+
+# S3 캐시 설정
+cache:
+  type: s3
+  ttl: 7200  # 2시간
+  maxSize: 107374182400  # 100GB
+  
+  s3:
+    bucket: "proxynd-cache-prod"
+    region: "ap-northeast-2"
+    prefix: "cache/"
+    storageClass: "STANDARD_IA"
+
+# 인증 설정
+auth:
+  enabled: true
+  type: basic
+  users:
+    - username: admin
+      password: "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy"
+      permissions: ["read", "write", "delete", "admin"]
+      allowedProxies: ["*"]
+    
+    - username: developer
+      password: "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy"
+      permissions: ["read", "write"]
+      allowedProxies: ["npm", "pip", "docker"]
+    
+    - username: ci-system
+      password: "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy"
+      permissions: ["read"]
+      allowedProxies: ["npm", "pip", "docker"]
+
+# IP 필터링
+ipFilter:
+  enabled: true
+  allowedNetworks:
+    - "10.0.0.0/8"        # 내부 네트워크
+    - "192.168.0.0/16"    # 사설 네트워크
+    - "172.16.0.0/12"     # Docker 네트워크
+  
+  trustedProxies:
+    - "10.0.1.0/24"       # 로드 밸런서
+
+# NPM 프록시 설정
+npm:
+  enabled: true
+  upstream: "https://registry.npmjs.org"
+  useCache: true
+  
+  # 허용된 패키지 (보안 정책)
+  allowedPackages:
+    - "@company/*"        # 회사 스코프 패키지
+    - "react*"            # React 관련 패키지
+    - "express"           # 특정 패키지
+    - "@types/*"          # TypeScript 타입 정의
+  
+  # 차단된 패키지
+  blockedPackages:
+    - "*malicious*"       # 악성 패키지 패턴
+    - "deprecated-*"      # 폐기된 패키지
+
+# PyPI 프록시 설정
+pip:
+  enabled: true
+  upstream: "https://pypi.org/simple"
+  useCache: true
+  
+  allowedPackages:
+    - "django*"
+    - "flask*"
+    - "requests*"
+    - "numpy*"
+    - "pandas*"
+
+# APT 프록시 설정
+apt:
+  enabled: true
+  useCache: true
+  
+  distributions:
+    - name: ubuntu
+      upstream: "http://archive.ubuntu.com/ubuntu"
+      releases: ["jammy", "focal"]
+      components: ["main", "universe"]
+      architectures: ["amd64", "arm64"]
+
+# Docker 프록시 설정
+docker:
+  enabled: true
+  upstream: "https://registry-1.docker.io"
+  useCache: true
+  
+  allowedImages:
+    - "nginx*"
+    - "alpine*"
+    - "ubuntu:*"
+    - "node:*"
+    - "python:*"
+    - "company/*"         # 회사 이미지
+
+# 패키지 검증
+verification:
+  enabled: true
+  hashVerification:
+    enabled: true
+    algorithms: ["sha256", "sha1"]
+  
+  sizeVerification:
+    enabled: true
+    tolerance: 0.05  # 5% 허용 오차
+  
+  onFailure:
+    action: "block"
+    notify: true
+
+# 알림 설정
+alerts:
+  enabled: true
+  
+  log:
+    enabled: true
+    level: "error"
+  
+  webhook:
+    enabled: true
+    url: "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK"
+    timeout: 10s
+    retries: 3
+
+# 메트릭 설정
+metrics:
+  enabled: true
+  path: "/metrics"
+  
+  auth:
+    enabled: true
+    username: "prometheus"
+    password: "metrics-secret"
+  
+  labels:
+    instance: "proxynd-prod-01"
+    datacenter: "dc1"
+    environment: "production"
+
+# 헬스체크 설정
+health:
+  enabled: true
+  path: "/healthz"
+  readinessPath: "/health/ready"
+  livenessPath: "/health/live"
+  
+  checks:
+    diskUsage:
+      enabled: true
+      threshold: 85
+      paths: ["/var/lib/proxynd", "/tmp"]
+    
+    memoryUsage:
+      enabled: true
+      threshold: 80
+    
+    upstream:
+      enabled: true
+      timeout: 10s
+      urls:
+        - "https://registry.npmjs.org"
+        - "https://pypi.org"
+
+# 성능 튜닝
+performance:
+  workers: 0  # CPU 코어 수만큼
+  
+  connectionPool:
+    maxIdleConns: 200
+    maxIdleConnsPerHost: 20
+    idleConnTimeout: 90s
+  
+  compression:
+    enabled: true
+    level: 6
+    minSize: 1024
+  
+  rateLimit:
+    enabled: true
+    requestsPerSecond: 1000
+    burstSize: 2000
