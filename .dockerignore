@@ -1,10 +1,69 @@
+# Git files
 .git/
-.idea/
-.env*
-.env_default
+.gitignore
 
-README.md
-REF.md
+# Documentation
 *.md
+docs/
+LICENSE
 
+# Development files
+.env
+.env.*
+.env_default
+*.log
+logs/
+
+# Test files
+*_test.go
+tests/
+test-data/
+coverage.*
+
+# Build artifacts
+proxynd
+*.exe
+*.dll
+*.so
+*.dylib
+dist/
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker files (for build context)
+Dockerfile
+Dockerfile.*
+docker-compose*.yml
+.dockerignore
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Local data
+storage/
+config/
+tmp/
+temp/
+
+# Scripts (except build scripts)
+scripts/*_test.sh
+
+# Helm charts
+helm/
+
+# Makefile (not needed for Docker build)
 Makefile
+
+# Vendor (if using go modules)
+vendor/

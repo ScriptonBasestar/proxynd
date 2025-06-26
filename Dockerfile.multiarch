@@ -1,0 +1,60 @@
+# Multi-architecture Dockerfile for ProxyND
+# Supports: linux/amd64, linux/arm64
+
+# Build stage
+FROM --platform=$BUILDPLATFORM golang:1.22-alpine AS builder
+
+# 빌드 플랫폼과 타겟 플랫폼 변수
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
+ARG TARGETOS
+ARG TARGETARCH
+
+# 빌드 디렉토리 설정
+WORKDIR /build
+
+# 의존성 캐싱을 위해 go.mod와 go.sum 먼저 복사
+COPY go.mod go.sum ./
+RUN go mod download
+
+# 소스 코드 복사
+COPY . .
+
+# 크로스 컴파일 설정 및 빌드
+ENV CGO_ENABLED=0
+ENV GOOS=$TARGETOS
+ENV GOARCH=$TARGETARCH
+
+# 빌드 최적화 플래그와 함께 컴파일
+RUN go build -ldflags="-w -s" -trimpath -o proxynd main.go
+
+# 실행 단계 - distroless 이미지 사용으로 보안 강화
+FROM gcr.io/distroless/static:nonroot
+
+# 앱 디렉토리
+WORKDIR /app
+
+# 환경 변수 설정
+ENV STORAGE_DIR=/storage
+ENV CONFIG_DIR=/config
+ENV SERVER_PORT=8080
+
+# 빌더에서 바이너리와 템플릿 복사
+COPY --from=builder /build/proxynd /app/proxynd
+COPY --from=builder /build/templates /app/templates
+
+# 볼륨 설정
+VOLUME ["/storage", "/config"]
+
+# 포트 노출
+EXPOSE 8080
+
+# 헬스체크
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD ["/app/proxynd", "-health"]
+
+# nonroot 사용자로 실행
+USER nonroot:nonroot
+
+# 엔트리포인트
+ENTRYPOINT ["/app/proxynd"]

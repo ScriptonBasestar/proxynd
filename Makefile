@@ -1,5 +1,6 @@
 ENV=develop
 DOCKER_REGISTRY=scriptonbasestar
+VERSION?=latest
 
 .EXPORT_ALL_VARIABLES:
 STORAGE_DIR=~/tmp/storage/
@@ -16,7 +17,27 @@ docker-build:
 	@echo "Building..."
 	docker compose build --no-cache
 
-.PHONY: docker-
+.PHONY: docker-build-multiarch
+docker-build-multiarch:
+	@echo "Building multi-architecture images..."
+	./scripts/build-multiarch.sh --registry ${DOCKER_REGISTRY} --version ${VERSION}
+
+.PHONY: docker-build-multiarch-push
+docker-build-multiarch-push:
+	@echo "Building and pushing multi-architecture images..."
+	./scripts/build-multiarch.sh --registry ${DOCKER_REGISTRY} --version ${VERSION} --push
+
+.PHONY: docker-build-amd64
+docker-build-amd64:
+	@echo "Building AMD64 image..."
+	./scripts/build-multiarch.sh --registry ${DOCKER_REGISTRY} --version ${VERSION} --platforms linux/amd64 --load
+
+.PHONY: docker-build-arm64
+docker-build-arm64:
+	@echo "Building ARM64 image..."
+	./scripts/build-multiarch.sh --registry ${DOCKER_REGISTRY} --version ${VERSION} --platforms linux/arm64 --load
+
+.PHONY: docker-push
 docker-push:
 	docker tag 'local_dev/proxynd' ${DOCKER_REGISTRY}/proxynd:latest
 	docker push ${DOCKER_REGISTRY}/proxynd:latest
