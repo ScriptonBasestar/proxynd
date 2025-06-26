@@ -35,27 +35,27 @@ func NewLogAlerter(config LogAlerterConfig) (*LogAlerter, error) {
 		logFile:    config.LogFile,
 		jsonFormat: config.JSONFormat,
 	}
-	
+
 	if config.LogFile != "" {
 		// 로그 디렉토리 생성
 		dir := filepath.Dir(config.LogFile)
 		if err := os.MkdirAll(dir, 0755); err != nil {
 			return nil, fmt.Errorf("failed to create log directory: %w", err)
 		}
-		
+
 		// 로그 파일 열기
 		file, err := os.OpenFile(config.LogFile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
 		if err != nil {
 			return nil, fmt.Errorf("failed to open log file: %w", err)
 		}
-		
+
 		la.file = file
 		la.logger = log.New(file, "", 0)
 	} else {
 		// 표준 출력 사용
 		la.logger = log.New(os.Stdout, "[ALERT] ", log.LstdFlags)
 	}
-	
+
 	return la, nil
 }
 
@@ -63,7 +63,7 @@ func NewLogAlerter(config LogAlerterConfig) (*LogAlerter, error) {
 func (la *LogAlerter) Send(ctx context.Context, event *AlertEvent) error {
 	la.mutex.Lock()
 	defer la.mutex.Unlock()
-	
+
 	if la.jsonFormat {
 		return la.sendJSON(event)
 	}
@@ -76,7 +76,7 @@ func (la *LogAlerter) sendJSON(event *AlertEvent) error {
 	if err != nil {
 		return fmt.Errorf("failed to marshal event: %w", err)
 	}
-	
+
 	la.logger.Println(string(data))
 	return nil
 }
@@ -90,7 +90,7 @@ func (la *LogAlerter) sendText(event *AlertEvent) error {
 		event.Title,
 		event.Message,
 	)
-	
+
 	// 패키지 정보 추가
 	if event.PackageInfo != nil {
 		pkg := event.PackageInfo
@@ -105,7 +105,7 @@ func (la *LogAlerter) sendText(event *AlertEvent) error {
 			msg += fmt.Sprintf("\n  Remote URL: %s", pkg.RemoteURL)
 		}
 	}
-	
+
 	// 메타데이터 추가
 	if len(event.Metadata) > 0 {
 		msg += "\n  Metadata:"
@@ -113,7 +113,7 @@ func (la *LogAlerter) sendText(event *AlertEvent) error {
 			msg += fmt.Sprintf("\n    %s: %v", k, v)
 		}
 	}
-	
+
 	la.logger.Println(msg)
 	return nil
 }
@@ -142,7 +142,7 @@ func (la *LogAlerter) Name() string {
 func (la *LogAlerter) Close() error {
 	la.mutex.Lock()
 	defer la.mutex.Unlock()
-	
+
 	if la.file != nil {
 		return la.file.Close()
 	}

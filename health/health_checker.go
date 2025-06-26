@@ -63,11 +63,11 @@ func (hs *HealthService) RegisterChecker(checker HealthChecker) {
 func (hs *HealthService) Start(ctx context.Context) {
 	// 초기 체크
 	hs.runChecks(ctx)
-	
+
 	// 주기적 체크
 	ticker := time.NewTicker(hs.checkInterval)
 	defer ticker.Stop()
-	
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -81,24 +81,24 @@ func (hs *HealthService) Start(ctx context.Context) {
 // runChecks 모든 체크 실행
 func (hs *HealthService) runChecks(ctx context.Context) {
 	var wg sync.WaitGroup
-	
+
 	for _, checker := range hs.checkers {
 		wg.Add(1)
 		go func(c HealthChecker) {
 			defer wg.Done()
-			
+
 			// 타임아웃 설정
 			checkCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 			defer cancel()
-			
+
 			result := c.Check(checkCtx)
-			
+
 			hs.resultsMutex.Lock()
 			hs.results[c.Name()] = result
 			hs.resultsMutex.Unlock()
 		}(checker)
 	}
-	
+
 	wg.Wait()
 }
 
@@ -106,16 +106,16 @@ func (hs *HealthService) runChecks(ctx context.Context) {
 func (hs *HealthService) GetStatus() (Status, map[string]*CheckResult) {
 	hs.resultsMutex.RLock()
 	defer hs.resultsMutex.RUnlock()
-	
+
 	// 결과 복사
 	results := make(map[string]*CheckResult)
 	overallStatus := StatusHealthy
 	unhealthyCount := 0
 	degradedCount := 0
-	
+
 	for name, result := range hs.results {
 		results[name] = result
-		
+
 		switch result.Status {
 		case StatusUnhealthy:
 			unhealthyCount++
@@ -123,14 +123,14 @@ func (hs *HealthService) GetStatus() (Status, map[string]*CheckResult) {
 			degradedCount++
 		}
 	}
-	
+
 	// 전체 상태 결정
 	if unhealthyCount > 0 {
 		overallStatus = StatusUnhealthy
 	} else if degradedCount > 0 {
 		overallStatus = StatusDegraded
 	}
-	
+
 	return overallStatus, results
 }
 
@@ -162,7 +162,7 @@ func (ec *EnvironmentChecker) Check(ctx context.Context) *CheckResult {
 		LastChecked: time.Now(),
 		Details:     make(map[string]interface{}),
 	}
-	
+
 	missingVars := []string{}
 	for _, varName := range ec.requiredVars {
 		value := os.Getenv(varName)
@@ -171,23 +171,23 @@ func (ec *EnvironmentChecker) Check(ctx context.Context) *CheckResult {
 			missingVars = append(missingVars, varName)
 		}
 	}
-	
+
 	if len(missingVars) > 0 {
 		result.Status = StatusUnhealthy
 		result.Message = fmt.Sprintf("Missing environment variables: %v", missingVars)
 	} else {
 		result.Message = "All required environment variables are set"
 	}
-	
+
 	result.Duration = time.Since(start)
 	return result
 }
 
 // DiskSpaceChecker 디스크 공간 체커
 type DiskSpaceChecker struct {
-	path            string
-	minFreeBytes    uint64
-	minFreePercent  float64
+	path           string
+	minFreeBytes   uint64
+	minFreePercent float64
 }
 
 func NewDiskSpaceChecker(path string, minFreeBytes uint64, minFreePercent float64) *DiskSpaceChecker {
@@ -210,7 +210,7 @@ func (dc *DiskSpaceChecker) Check(ctx context.Context) *CheckResult {
 		LastChecked: time.Now(),
 		Details:     make(map[string]interface{}),
 	}
-	
+
 	// 디스크 사용량 확인
 	stats, err := getDiskUsage(dc.path)
 	if err != nil {
@@ -219,26 +219,26 @@ func (dc *DiskSpaceChecker) Check(ctx context.Context) *CheckResult {
 		result.Duration = time.Since(start)
 		return result
 	}
-	
+
 	result.Details["path"] = dc.path
 	result.Details["total_bytes"] = stats.Total
 	result.Details["free_bytes"] = stats.Free
 	result.Details["used_bytes"] = stats.Used
 	result.Details["free_percent"] = stats.FreePercent
-	
+
 	// 최소 공간 체크
 	if stats.Free < dc.minFreeBytes {
 		result.Status = StatusUnhealthy
-		result.Message = fmt.Sprintf("Insufficient disk space: %d bytes free (minimum: %d)", 
+		result.Message = fmt.Sprintf("Insufficient disk space: %d bytes free (minimum: %d)",
 			stats.Free, dc.minFreeBytes)
 	} else if stats.FreePercent < dc.minFreePercent {
 		result.Status = StatusDegraded
-		result.Message = fmt.Sprintf("Low disk space: %.1f%% free (minimum: %.1f%%)", 
+		result.Message = fmt.Sprintf("Low disk space: %.1f%% free (minimum: %.1f%%)",
 			stats.FreePercent, dc.minFreePercent)
 	} else {
 		result.Message = fmt.Sprintf("Disk space OK: %.1f%% free", stats.FreePercent)
 	}
-	
+
 	result.Duration = time.Since(start)
 	return result
 }
@@ -266,7 +266,7 @@ func (wc *WritableChecker) Check(ctx context.Context) *CheckResult {
 			"path": wc.path,
 		},
 	}
-	
+
 	// 디렉토리 존재 확인
 	info, err := os.Stat(wc.path)
 	if err != nil {
@@ -290,7 +290,7 @@ func (wc *WritableChecker) Check(ctx context.Context) *CheckResult {
 		result.Duration = time.Since(start)
 		return result
 	}
-	
+
 	// 쓰기 테스트
 	testFile := filepath.Join(wc.path, ".health_check")
 	if err := os.WriteFile(testFile, []byte("test"), 0644); err != nil {
@@ -300,7 +300,7 @@ func (wc *WritableChecker) Check(ctx context.Context) *CheckResult {
 		os.Remove(testFile)
 		result.Message = "Directory is writable"
 	}
-	
+
 	result.Duration = time.Since(start)
 	return result
 }
@@ -338,7 +338,7 @@ func (hc *HTTPChecker) Check(ctx context.Context) *CheckResult {
 			"url": hc.url,
 		},
 	}
-	
+
 	req, err := http.NewRequestWithContext(ctx, "GET", hc.url, nil)
 	if err != nil {
 		result.Status = StatusUnhealthy
@@ -346,7 +346,7 @@ func (hc *HTTPChecker) Check(ctx context.Context) *CheckResult {
 		result.Duration = time.Since(start)
 		return result
 	}
-	
+
 	resp, err := hc.client.Do(req)
 	if err != nil {
 		result.Status = StatusUnhealthy
@@ -355,16 +355,16 @@ func (hc *HTTPChecker) Check(ctx context.Context) *CheckResult {
 		return result
 	}
 	defer resp.Body.Close()
-	
+
 	result.Details["status_code"] = resp.StatusCode
-	
+
 	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
 		result.Message = fmt.Sprintf("Endpoint is healthy (status: %d)", resp.StatusCode)
 	} else {
 		result.Status = StatusUnhealthy
 		result.Message = fmt.Sprintf("Endpoint returned status %d", resp.StatusCode)
 	}
-	
+
 	result.Duration = time.Since(start)
 	return result
 }
@@ -396,14 +396,14 @@ func (cc *CacheBackendChecker) Check(ctx context.Context) *CheckResult {
 			"backend": cc.backendType,
 		},
 	}
-	
+
 	if err := cc.checkFunc(ctx); err != nil {
 		result.Status = StatusUnhealthy
 		result.Message = fmt.Sprintf("Cache backend check failed: %v", err)
 	} else {
 		result.Message = "Cache backend is healthy"
 	}
-	
+
 	result.Duration = time.Since(start)
 	return result
 }
