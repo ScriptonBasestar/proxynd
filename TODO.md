@@ -19,7 +19,7 @@
 - [ ] Alpine 버전별 미러 자동 선택 기능 구현
 
 ### 🛠️ ProxyND CLI 도구 (proxyndctl)
-- [ ] CLI 도구 요구사항 정의 (주요 명령어 목록, 사용자 시나리오 정리)
+- [x] CLI 도구 요구사항 정의 (주요 명령어 목록, 사용자 시나리오 정리)
 - [ ] `/cmd/proxyndctl/main.go` 기본 구조 생성 (cobra/urfave 라이브러리 선택)
 - [ ] 캐시 관리 명령어 구현 (`cache list`, `cache clear`, `cache size`)
 - [ ] 설정 검증 명령어 구현 (`config validate`, `config show`)
