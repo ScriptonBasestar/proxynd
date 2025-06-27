@@ -20,7 +20,12 @@
       "Bash(unset CONFIG_DIR STORAGE_DIR)",
       "Bash(curl:*)",
       "Bash(go fmt:*)",
-      "Bash(./bin/proxyndctl:*)"
+      "Bash(./bin/proxyndctl:*)",
+      "Bash(export SERVER_PORT=8080)",
+      "Bash(export STORAGE_DIR=./storage)",
+      "Bash(export CONFIG_DIR=./config)",
+      "Bash(timeout:*)",
+      "Bash(true)"
     ],
     "deny": []
   }

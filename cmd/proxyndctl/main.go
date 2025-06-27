@@ -35,12 +35,8 @@ var rootCmd = &cobra.Command{
 // cacheCmd는 캐시 관리 명령어 그룹 (commands 패키지에서 가져옴)
 var cacheCmd = commands.NewCacheCmd()
 
-// configCmd는 설정 관리 명령어 그룹
-var configCmd = &cobra.Command{
-	Use:   "config",
-	Short: "설정 관리 명령어",
-	Long:  "ProxyND 서버의 설정을 관리합니다. 설정 검증 및 조회 기능을 제공합니다.",
-}
+// configCmd는 설정 관리 명령어 그룹 (commands 패키지에서 가져옴)
+var configCmd = commands.NewConfigCmd()
 
 // userCmd는 사용자 관리 명령어 그룹
 var userCmd = &cobra.Command{
