@@ -11,7 +11,7 @@
 ### 🏔️ Alpine APK 프록시 지원
 - [x] APK 프록시 요구사항 정리 (APK 레포지토리 구조 분석, APKINDEX 포맷 이해)
 - [x] `/configs/apk_proxy_config.go` 설정 구조체 구현
-- [ ] `/handlers/proxy/apk_proxy_controller.go` 핸들러 구현 (APKINDEX.tar.gz 처리 포함)
+- [x] `/handlers/proxy/apk_proxy_controller.go` 핸들러 구현 (APKINDEX.tar.gz 처리 포함)
 - [ ] 통합 프록시 핸들러에 APK 라우팅 추가
 - [ ] `/sample-conf/apk-proxy.yaml` 샘플 설정 작성 (main, community, testing 저장소)
 - [ ] `/docs/APK-CLIENT-SETUP.md` 클라이언트 설정 가이드 작성
