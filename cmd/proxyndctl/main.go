@@ -41,12 +41,8 @@ var configCmd = commands.NewConfigCmd()
 // userCmd는 사용자 관리 명령어 그룹 (commands 패키지에서 가져옴)
 var userCmd = commands.NewUserCmd()
 
-// testCmd는 프록시 테스트 명령어 그룹
-var testCmd = &cobra.Command{
-	Use:   "test",
-	Short: "프록시 기능 테스트 명령어",
-	Long:  "ProxyND 서버의 프록시 기능을 테스트합니다. 각 패키지 매니저별 연결성을 확인합니다.",
-}
+// testCmd는 프록시 테스트 명령어 그룹 (commands 패키지에서 가져옴)
+var testCmd = commands.NewTestCmd()
 
 // statusCmd는 서버 상태 확인 명령어 (commands 패키지에서 가져옴)
 var statusCmd = commands.NewStatusCmd()

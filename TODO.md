@@ -25,7 +25,7 @@
 - [x] 설정 검증 명령어 구현 (`config validate`, `config show`)
 - [x] 서버 상태 확인 명령어 구현 (`status`, `health`, `metrics`)
 - [x] 사용자 관리 명령어 구현 (`user add`, `user delete`, `user list`)
-- [ ] 프록시 테스트 명령어 구현 (`test apt`, `test npm` 등)
+- [x] 프록시 테스트 명령어 구현 (`test apt`, `test npm` 등)
 - [ ] 자동완성 스크립트 생성 (bash, zsh, fish)
 - [ ] man page 및 help 문서 작성
 - [ ] 바이너리 배포 워크플로우 구성 (GitHub Releases)
