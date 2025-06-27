@@ -58,6 +58,14 @@ func UnifiedProxyHandler(c *fiber.Ctx) error {
 		}
 		return DockerProxy(c)
 
+	case "yum":
+		// YUM 설정 확인
+		yumConfig := configs.YumProxyConfig{}
+		if !yumConfig.ConfigExists() {
+			return renderConfigAlert(c, "yum-proxy.yaml")
+		}
+		return YumProxyHandler(c)
+
 	default:
 		return c.Status(fiber.StatusBadRequest).SendString("Unknown proxy type: " + proxyType)
 	}
