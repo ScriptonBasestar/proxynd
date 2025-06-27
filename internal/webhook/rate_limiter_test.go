@@ -82,9 +82,13 @@ func TestTokenBucketLimiterWait(t *testing.T) {
 
 // TestTokenBucketLimiterWaitTimeout Wait 타임아웃 테스트
 func TestTokenBucketLimiterWaitTimeout(t *testing.T) {
-	limiter, err := NewTokenBucketLimiter(1, 0) // 토큰 없음
+	limiter, err := NewTokenBucketLimiter(1, 1) // 용량 1
 	assert.Equal(t, err, nil)
 	defer limiter.Stop()
+
+	// 토큰 소진
+	limiter.Allow()
+	assert.Equal(t, limiter.Tokens(), 0)
 
 	// 타임아웃이 있는 컨텍스트
 	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*100)
@@ -93,7 +97,7 @@ func TestTokenBucketLimiterWaitTimeout(t *testing.T) {
 	// 타임아웃 발생
 	err = limiter.Wait(ctx)
 	assert.NotEqual(t, err, nil)
-	assert.Equal(t, err, context.DeadlineExceeded)
+	assert.Equal(t, true, err == context.DeadlineExceeded)
 }
 
 // TestSlidingWindowLimiter 슬라이딩 윈도우 제한기 테스트

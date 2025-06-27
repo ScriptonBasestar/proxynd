@@ -19,7 +19,7 @@ func TestNewWebhookSender(t *testing.T) {
 	assert.Equal(t, err, nil)
 	assert.NotEqual(t, sender, nil)
 	assert.Equal(t, sender.config.Enabled, true)
-	assert.Equal(t, len(sender.adapters), 1) // generic adapter
+	assert.Equal(t, len(sender.adapters), 3) // generic, slack, discord adapters
 	assert.NotEqual(t, sender.queue, nil)
 	assert.NotEqual(t, sender.rateLimiter, nil)
 }
@@ -222,16 +222,17 @@ func TestAdapterRegistration(t *testing.T) {
 	sender, err := NewWebhookSender(config)
 	assert.Equal(t, err, nil)
 
-	// 초기 어댑터 확인
-	assert.Equal(t, len(sender.adapters), 1) // generic
+	// 초기 어댑터 확인 (generic, slack, discord)
+	assert.Equal(t, len(sender.adapters), 3)
 
-	// Slack 어댑터 등록
-	slackAdapter := NewSlackWebhookAdapter()
-	sender.RegisterAdapter(slackAdapter)
-
-	assert.Equal(t, len(sender.adapters), 2)
+	// 어댑터들이 등록되어 있는지 확인
+	assert.NotEqual(t, sender.adapters["generic"], nil)
 	assert.NotEqual(t, sender.adapters["slack"], nil)
+	assert.NotEqual(t, sender.adapters["discord"], nil)
+
+	assert.Equal(t, sender.adapters["generic"].Name(), "generic")
 	assert.Equal(t, sender.adapters["slack"].Name(), "slack")
+	assert.Equal(t, sender.adapters["discord"].Name(), "discord")
 }
 
 // TestMetrics 메트릭 테스트

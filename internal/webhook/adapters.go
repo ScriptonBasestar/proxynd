@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"proxynd/alerts"
@@ -208,6 +209,14 @@ func (gwa *GenericWebhookAdapter) setOAuth2Token(req *http.Request, creds config
 	return nil
 }
 
+// WebhookAdapter 인터페이스 정의
+type WebhookAdapter interface {
+	Name() string
+	SupportedFormats() []string
+	Send(ctx context.Context, event *alerts.AlertEvent, endpoint configs.WebhookEndpointConfig) error
+	FormatMessage(event *alerts.AlertEvent, format string) (interface{}, error)
+}
+
 // SlackWebhookAdapter Slack 전용 웹훅 어댑터
 type SlackWebhookAdapter struct {
 	client *http.Client
@@ -229,13 +238,13 @@ func (swa *SlackWebhookAdapter) Name() string {
 
 // SupportedFormats 지원하는 포맷 목록 반환
 func (swa *SlackWebhookAdapter) SupportedFormats() []string {
-	return []string{"slack"}
+	return []string{"slack", "slack-blocks", "slack-text"}
 }
 
 // Send Slack 웹훅 전송
 func (swa *SlackWebhookAdapter) Send(ctx context.Context, event *alerts.AlertEvent, endpoint configs.WebhookEndpointConfig) error {
 	// Slack 메시지 포맷팅
-	payload, err := swa.FormatMessage(event, "slack")
+	payload, err := swa.FormatMessage(event, endpoint.Format)
 	if err != nil {
 		return fmt.Errorf("failed to format Slack message: %w", err)
 	}
@@ -253,6 +262,7 @@ func (swa *SlackWebhookAdapter) Send(ctx context.Context, event *alerts.AlertEve
 	}
 
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", "ProxyND-Webhook/1.0")
 
 	// 요청 전송
 	resp, err := swa.client.Do(req)
@@ -270,11 +280,25 @@ func (swa *SlackWebhookAdapter) Send(ctx context.Context, event *alerts.AlertEve
 
 // FormatMessage Slack 메시지 포맷팅
 func (swa *SlackWebhookAdapter) FormatMessage(event *alerts.AlertEvent, format string) (interface{}, error) {
+	switch format {
+	case "slack", "":
+		return swa.formatAttachment(event), nil
+	case "slack-blocks":
+		return swa.formatBlocks(event), nil
+	case "slack-text":
+		return swa.formatText(event), nil
+	default:
+		return swa.formatAttachment(event), nil
+	}
+}
+
+// formatAttachment Slack 어태치먼트 포맷 (레거시)
+func (swa *SlackWebhookAdapter) formatAttachment(event *alerts.AlertEvent) map[string]interface{} {
 	// 레벨에 따른 색상 결정
-	color := swa.getColorForLevel(event.Level)
+	color := swa.getSlackColorForLevel(event.Level)
 
 	// 이모지 추가
-	emoji := swa.getEmojiForType(event.Type)
+	emoji := swa.getSlackEmojiForType(event.Type)
 
 	attachment := map[string]interface{}{
 		"color":     color,
@@ -312,13 +336,52 @@ func (swa *SlackWebhookAdapter) FormatMessage(event *alerts.AlertEvent, format s
 	}
 
 	return map[string]interface{}{
-		"text":        fmt.Sprintf("🚨 ProxyND Alert"),
+		"text":        "🚨 ProxyND Alert",
 		"attachments": []interface{}{attachment},
-	}, nil
+	}
 }
 
-// getColorForLevel 레벨에 따른 색상 반환
-func (swa *SlackWebhookAdapter) getColorForLevel(level alerts.AlertLevel) string {
+// formatBlocks Slack 블록 킷 포맷 (신규)
+func (swa *SlackWebhookAdapter) formatBlocks(event *alerts.AlertEvent) map[string]interface{} {
+	emoji := swa.getSlackEmojiForType(event.Type)
+
+	blocks := []interface{}{
+		map[string]interface{}{
+			"type": "header",
+			"text": map[string]interface{}{
+				"type": "plain_text",
+				"text": fmt.Sprintf("%s ProxyND Alert", emoji),
+			},
+		},
+		map[string]interface{}{
+			"type": "section",
+			"text": map[string]interface{}{
+				"type": "mrkdwn",
+				"text": fmt.Sprintf("*%s*\n%s", event.Title, event.Message),
+			},
+		},
+	}
+
+	return map[string]interface{}{
+		"blocks": blocks,
+	}
+}
+
+// formatText 단순 텍스트 포맷
+func (swa *SlackWebhookAdapter) formatText(event *alerts.AlertEvent) map[string]interface{} {
+	emoji := swa.getSlackEmojiForType(event.Type)
+
+	text := fmt.Sprintf("%s *ProxyND Alert*\n\n", emoji)
+	text += fmt.Sprintf("*%s*\n", event.Title)
+	text += fmt.Sprintf("%s\n\n", event.Message)
+
+	return map[string]interface{}{
+		"text": text,
+	}
+}
+
+// getSlackColorForLevel 레벨에 따른 색상 반환
+func (swa *SlackWebhookAdapter) getSlackColorForLevel(level alerts.AlertLevel) string {
 	switch level {
 	case alerts.AlertLevelInfo:
 		return "good"
@@ -333,18 +396,162 @@ func (swa *SlackWebhookAdapter) getColorForLevel(level alerts.AlertLevel) string
 	}
 }
 
-// getEmojiForType 이벤트 타입에 따른 이모지 반환
-func (swa *SlackWebhookAdapter) getEmojiForType(eventType string) string {
+// getSlackEmojiForType 이벤트 타입에 따른 이모지 반환
+func (swa *SlackWebhookAdapter) getSlackEmojiForType(eventType string) string {
 	switch {
-	case eventType == "auth.failure":
+	case strings.HasPrefix(eventType, "auth."):
 		return "🔒"
-	case eventType == "cache.error":
+	case strings.HasPrefix(eventType, "cache."):
 		return "💾"
-	case eventType == "server.down":
+	case strings.HasPrefix(eventType, "server."):
 		return "🚨"
-	case eventType == "security.threat":
+	case strings.HasPrefix(eventType, "security."):
 		return "🛡️"
-	case eventType == "package.corrupted":
+	case strings.HasPrefix(eventType, "package."):
+		return "📦"
+	default:
+		return "ℹ️"
+	}
+}
+
+// DiscordWebhookAdapter Discord 전용 웹훅 어댑터
+type DiscordWebhookAdapter struct {
+	client *http.Client
+}
+
+// NewDiscordWebhookAdapter 새로운 Discord 어댑터 생성
+func NewDiscordWebhookAdapter() *DiscordWebhookAdapter {
+	return &DiscordWebhookAdapter{
+		client: &http.Client{
+			Timeout: time.Second * 30,
+		},
+	}
+}
+
+// Name 어댑터 이름 반환
+func (dwa *DiscordWebhookAdapter) Name() string {
+	return "discord"
+}
+
+// SupportedFormats 지원하는 포맷 목록 반환
+func (dwa *DiscordWebhookAdapter) SupportedFormats() []string {
+	return []string{"discord", "discord-embed", "discord-text"}
+}
+
+// Send Discord 웹훅 전송
+func (dwa *DiscordWebhookAdapter) Send(ctx context.Context, event *alerts.AlertEvent, endpoint configs.WebhookEndpointConfig) error {
+	// Discord 메시지 포맷팅
+	payload, err := dwa.FormatMessage(event, endpoint.Format)
+	if err != nil {
+		return fmt.Errorf("failed to format Discord message: %w", err)
+	}
+
+	// JSON 직렬화
+	jsonData, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("failed to marshal Discord payload: %w", err)
+	}
+
+	// HTTP 요청 생성
+	req, err := http.NewRequestWithContext(ctx, "POST", endpoint.URL, bytes.NewReader(jsonData))
+	if err != nil {
+		return fmt.Errorf("failed to create Discord request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", "ProxyND-Webhook/1.0")
+
+	// 요청 전송
+	resp, err := dwa.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to send Discord request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Discord는 204 No Content를 반환
+	if resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("Discord webhook returned status %d", resp.StatusCode)
+	}
+
+	return nil
+}
+
+// FormatMessage Discord 메시지 포맷팅
+func (dwa *DiscordWebhookAdapter) FormatMessage(event *alerts.AlertEvent, format string) (interface{}, error) {
+	switch format {
+	case "discord", "discord-embed", "":
+		return dwa.formatEmbed(event), nil
+	case "discord-text":
+		return dwa.formatDiscordText(event), nil
+	default:
+		return dwa.formatEmbed(event), nil
+	}
+}
+
+// formatEmbed Discord 임베드 포맷
+func (dwa *DiscordWebhookAdapter) formatEmbed(event *alerts.AlertEvent) map[string]interface{} {
+	// 색상 결정
+	color := dwa.getDiscordColorForLevel(event.Level)
+
+	// 이모지 추가
+	emoji := dwa.getDiscordEmojiForType(event.Type)
+
+	embed := map[string]interface{}{
+		"title":       fmt.Sprintf("%s %s", emoji, event.Title),
+		"description": event.Message,
+		"color":       color,
+		"timestamp":   event.Timestamp.Format(time.RFC3339),
+		"footer": map[string]interface{}{
+			"text": fmt.Sprintf("ProxyND Alert • ID: %s", event.ID),
+		},
+	}
+
+	return map[string]interface{}{
+		"embeds": []interface{}{embed},
+	}
+}
+
+// formatDiscordText 단순 텍스트 포맷
+func (dwa *DiscordWebhookAdapter) formatDiscordText(event *alerts.AlertEvent) map[string]interface{} {
+	emoji := dwa.getDiscordEmojiForType(event.Type)
+
+	content := fmt.Sprintf("%s **ProxyND Alert**\n\n", emoji)
+	content += fmt.Sprintf("**%s**\n", event.Title)
+	content += fmt.Sprintf("%s", event.Message)
+
+	return map[string]interface{}{
+		"content": content,
+	}
+}
+
+// getDiscordColorForLevel 레벨에 따른 색상 반환 (Discord 임베드용 십진수 색상)
+func (dwa *DiscordWebhookAdapter) getDiscordColorForLevel(level alerts.AlertLevel) int {
+	switch level {
+	case alerts.AlertLevelInfo:
+		return 0x00ff00 // 녹색
+	case alerts.AlertLevelWarning:
+		return 0xffff00 // 노란색
+	case alerts.AlertLevelError:
+		return 0xff6600 // 주황색
+	case alerts.AlertLevelCritical:
+		return 0xff0000 // 빨간색
+	default:
+		return 0x808080 // 회색
+	}
+}
+
+// getDiscordEmojiForType 이벤트 타입에 따른 이모지 반환
+func (dwa *DiscordWebhookAdapter) getDiscordEmojiForType(eventType string) string {
+	switch {
+	case strings.HasPrefix(eventType, "auth."):
+		return "🔒"
+	case strings.HasPrefix(eventType, "cache."):
+		return "💾"
+	case strings.HasPrefix(eventType, "server."):
+		return "🚨"
+	case strings.HasPrefix(eventType, "security."):
+		return "🛡️"
+	case strings.HasPrefix(eventType, "package."):
 		return "📦"
 	default:
 		return "ℹ️"

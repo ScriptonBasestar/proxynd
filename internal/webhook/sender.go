@@ -88,14 +88,6 @@ type SenderMetrics struct {
 	mu           sync.RWMutex
 }
 
-// WebhookAdapter 웹훅 어댑터 인터페이스
-type WebhookAdapter interface {
-	Send(ctx context.Context, event *alerts.AlertEvent, endpoint configs.WebhookEndpointConfig) error
-	FormatMessage(event *alerts.AlertEvent, format string) (interface{}, error)
-	Name() string
-	SupportedFormats() []string
-}
-
 // NewWebhookSender 새로운 웹훅 전송기 생성
 func NewWebhookSender(config configs.WebhookConfig) (*WebhookSender, error) {
 	logger := logging.GetLogger()
@@ -127,7 +119,9 @@ func NewWebhookSender(config configs.WebhookConfig) (*WebhookSender, error) {
 	}
 
 	// 기본 어댑터 등록
-	sender.RegisterAdapter(&GenericWebhookAdapter{})
+	sender.RegisterAdapter(NewGenericWebhookAdapter())
+	sender.RegisterAdapter(NewSlackWebhookAdapter())
+	sender.RegisterAdapter(NewDiscordWebhookAdapter())
 
 	return sender, nil
 }
