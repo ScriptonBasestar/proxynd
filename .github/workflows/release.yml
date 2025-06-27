@@ -6,8 +6,8 @@ on:
       - 'v*'
   workflow_dispatch:
     inputs:
-      version:
-        description: 'Release version'
+      tag:
+        description: 'Release tag (e.g., v1.0.0)'
         required: true
         type: string
 
@@ -36,6 +36,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -43,29 +45,41 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
           cache: true
 
+      - name: Install dependencies
+        run: go mod download
+
       - name: Get version
         id: version
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ github.event.inputs.version }}"
+            VERSION="${{ github.event.inputs.tag }}"
           else
             VERSION=${GITHUB_REF#refs/tags/}
           fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
+          
+          BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          echo "build_time=$BUILD_TIME" >> $GITHUB_OUTPUT
+          
+          COMMIT_SHA=${GITHUB_SHA::8}
+          echo "commit_sha=$COMMIT_SHA" >> $GITHUB_OUTPUT
 
-      - name: Build binary
+      - name: Create dist directory
+        run: mkdir -p dist
+
+      - name: Build ProxyND server
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: 0
         run: |
           VERSION=${{ steps.version.outputs.version }}
-          BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          COMMIT_SHA=${GITHUB_SHA::8}
+          BUILD_TIME=${{ steps.version.outputs.build_time }}
+          COMMIT_SHA=${{ steps.version.outputs.commit_sha }}
           
-          output_name=proxynd-${VERSION}-${{ matrix.goos }}-${{ matrix.goarch }}
+          output_name=proxynd
           if [ "${{ matrix.goos }}" = "windows" ]; then
-            output_name="${output_name}.exe"
+            output_name="proxynd.exe"
           fi
           
           go build \
@@ -74,20 +88,53 @@ jobs:
             -o dist/${output_name} \
             main.go
 
+      - name: Build ProxyND CLI
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 0
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          BUILD_TIME=${{ steps.version.outputs.build_time }}
+          COMMIT_SHA=${{ steps.version.outputs.commit_sha }}
+          
+          output_name=proxyndctl
+          if [ "${{ matrix.goos }}" = "windows" ]; then
+            output_name="proxyndctl.exe"
+          fi
+          
+          go build \
+            -ldflags="-w -s -X main.Version=${VERSION} -X main.BuildTime=${BUILD_TIME} -X main.CommitSHA=${COMMIT_SHA}" \
+            -trimpath \
+            -o dist/${output_name} \
+            ./cmd/proxyndctl/main.go
+
       - name: Create archive
         run: |
           cd dist
           if [ "${{ matrix.goos }}" = "windows" ]; then
-            zip proxynd-${{ steps.version.outputs.version }}-${{ matrix.goos }}-${{ matrix.goarch }}.zip proxynd-*
+            # Windows용 ZIP 아카이브
+            zip proxynd-${{ steps.version.outputs.version }}-${{ matrix.goos }}-${{ matrix.goarch }}.zip proxynd.exe proxyndctl.exe
+            zip proxyndctl-${{ steps.version.outputs.version }}-${{ matrix.goos }}-${{ matrix.goarch }}.zip proxyndctl.exe
           else
-            tar czf proxynd-${{ steps.version.outputs.version }}-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz proxynd-*
+            # Unix용 tar.gz 아카이브
+            tar czf proxynd-${{ steps.version.outputs.version }}-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz proxynd proxyndctl
+            tar czf proxyndctl-${{ steps.version.outputs.version }}-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz proxyndctl
           fi
+
+      - name: Generate checksums
+        run: |
+          cd dist
+          sha256sum *.tar.gz *.zip > checksums-${{ matrix.goos }}-${{ matrix.goarch }}.txt 2>/dev/null || true
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: proxynd-${{ matrix.goos }}-${{ matrix.goarch }}
-          path: dist/*.tar.gz,dist/*.zip
+          name: binaries-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: |
+            dist/*.tar.gz
+            dist/*.zip
+            dist/checksums-*.txt
 
   docker-release:
     name: Docker Release
@@ -123,7 +170,7 @@ jobs:
         id: version
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ github.event.inputs.version }}"
+            VERSION="${{ github.event.inputs.tag }}"
           else
             VERSION=${GITHUB_REF#refs/tags/}
           fi
@@ -176,49 +223,89 @@ jobs:
         id: version
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ github.event.inputs.version }}"
+            VERSION="${{ github.event.inputs.tag }}"
           else
             VERSION=${GITHUB_REF#refs/tags/}
           fi
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
+      - name: Organize release assets
+        run: |
+          mkdir -p release
+          find dist -type f \( -name "*.tar.gz" -o -name "*.zip" -o -name "checksums-*" \) -exec cp {} release/ \;
+          
+          # 전체 체크섬 파일 생성
+          cd release
+          sha256sum *.tar.gz *.zip > checksums.txt
+
       - name: Generate changelog
         id: changelog
         run: |
-          # 간단한 changelog 생성 (실제로는 더 정교한 스크립트 사용)
-          echo "## What's Changed" > changelog.md
-          echo "" >> changelog.md
+          VERSION=${{ steps.version.outputs.version }}
           
-          # 이전 태그 찾기
-          PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-          if [ -n "$PREV_TAG" ]; then
-            git log --pretty=format:"* %s (%an)" ${PREV_TAG}..HEAD >> changelog.md
-          else
-            git log --pretty=format:"* %s (%an)" -10 >> changelog.md
+          # 릴리스 노트 생성
+          cat > release_notes.md << EOF
+          ## ProxyND ${VERSION} 릴리스
+
+          ### 🚀 새로운 기능
+          - 패키지 매니저 프록시/미러 서버
+          - Maven, APT, NPM, Docker, Pip, Yum, APK 프록시 지원
+          - 웹 기반 관리 인터페이스
+          - CLI 관리 도구 (proxyndctl)
+          - 자동 캐싱 및 TTL 관리
+          - 다중 아키텍처 지원 (amd64, arm64)
+
+          ### 📦 지원 플랫폼
+          - Linux (amd64, arm64)
+          - macOS (amd64, arm64)
+          - Windows (amd64)
+
+          ### 🐳 Docker 이미지
+          \`\`\`bash
+          # GitHub Container Registry
+          docker pull ghcr.io/${{ github.repository }}:${VERSION#v}
+          
+          # Docker Hub
+          docker pull scriptonbasestar/proxynd:${VERSION#v}
+          \`\`\`
+
+          ### 📥 바이너리 다운로드
+          아래 Assets에서 해당 플랫폼의 바이너리를 다운로드하세요:
+          - \`proxynd-${VERSION}-{os}-{arch}.{tar.gz|zip}\` - 서버 + CLI 번들
+          - \`proxyndctl-${VERSION}-{os}-{arch}.{tar.gz|zip}\` - CLI 도구만
+
+          ### 🔧 설치 방법
+          \`\`\`bash
+          # Linux/macOS 예제
+          curl -L https://github.com/${{ github.repository }}/releases/download/${VERSION}/proxynd-${VERSION}-linux-amd64.tar.gz | tar xz
+          sudo mv proxynd /usr/local/bin/
+          sudo mv proxyndctl /usr/local/bin/
+          \`\`\`
+
+          자세한 설치 및 설정 방법은 [README.md](https://github.com/${{ github.repository }}/blob/main/README.md)를 참조하세요.
+
+          ### 📝 변경사항
+          EOF
+          
+          # Git 로그에서 변경사항 추출
+          PREV_TAG=\$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -n "\$PREV_TAG" ]; then
+            echo "" >> release_notes.md
+            git log --pretty=format:"- %s (%an)" \${PREV_TAG}..HEAD >> release_notes.md
           fi
-          
-          echo "" >> changelog.md
-          echo "## Docker Images" >> changelog.md
-          echo "" >> changelog.md
-          echo "\`\`\`bash" >> changelog.md
-          echo "# GitHub Container Registry" >> changelog.md
-          echo "docker pull ghcr.io/${{ github.repository }}:${{ steps.version.outputs.version }}" >> changelog.md
-          echo "" >> changelog.md
-          echo "# Docker Hub (if available)" >> changelog.md
-          echo "docker pull scriptonbasestar/proxynd:${{ steps.version.outputs.version }}" >> changelog.md
-          echo "\`\`\`" >> changelog.md
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.version.outputs.version }}
-          name: Release ${{ steps.version.outputs.version }}
-          body_path: changelog.md
+          name: ProxyND ${{ steps.version.outputs.version }}
+          body_path: release_notes.md
           draft: false
-          prerelease: false
+          prerelease: ${{ contains(steps.version.outputs.version, '-') }}
           files: |
-            dist/**/*.tar.gz
-            dist/**/*.zip
+            release/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   helm-release:
     name: Helm Chart Release
@@ -238,7 +325,7 @@ jobs:
         id: version
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ github.event.inputs.version }}"
+            VERSION="${{ github.event.inputs.tag }}"
           else
             VERSION=${GITHUB_REF#refs/tags/}
           fi
