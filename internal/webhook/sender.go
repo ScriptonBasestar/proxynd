@@ -38,17 +38,18 @@ type RateLimiter interface {
 
 // WebhookSender 웹훅 전송 핵심 엔진
 type WebhookSender struct {
-	config      configs.WebhookConfig
-	logger      logging.Logger
-	queue       EventQueue
-	rateLimiter RateLimiter
-	adapters    map[string]WebhookAdapter
-	workers     []*Worker
-	metrics     *SenderMetrics
-	stopCh      chan struct{}
-	wg          sync.WaitGroup
-	mu          sync.RWMutex
-	started     bool
+	config       configs.WebhookConfig
+	logger       logging.Logger
+	queue        EventQueue
+	rateLimiter  RateLimiter
+	adapters     map[string]WebhookAdapter
+	workers      []*Worker
+	batchManager *BatchManager
+	metrics      *SenderMetrics
+	stopCh       chan struct{}
+	wg           sync.WaitGroup
+	mu           sync.RWMutex
+	started      bool
 }
 
 // Worker 이벤트 처리 워커
@@ -85,6 +86,7 @@ type SenderMetrics struct {
 	TotalRetries int64
 	QueueSize    int64
 	WorkerCount  int64
+	BatchStats   map[string]interface{} // 배치 통계
 	mu           sync.RWMutex
 }
 
@@ -122,6 +124,9 @@ func NewWebhookSender(config configs.WebhookConfig) (*WebhookSender, error) {
 	sender.RegisterAdapter(NewGenericWebhookAdapter())
 	sender.RegisterAdapter(NewSlackWebhookAdapter())
 	sender.RegisterAdapter(NewDiscordWebhookAdapter())
+
+	// 배치 관리자 초기화
+	sender.batchManager = NewBatchManager(config.Batching, sender)
 
 	return sender, nil
 }
@@ -183,11 +188,17 @@ func (ws *WebhookSender) Start(ctx context.Context) error {
 		go ws.metricsCollector(ctx)
 	}
 
+	// 배치 관리자 시작
+	if ws.config.Batching.Enabled && ws.batchManager != nil {
+		ws.batchManager.Start(ctx)
+	}
+
 	ws.started = true
 	ws.logger.Info("웹훅 전송기 시작됨",
 		logging.F("workers", workerCount),
 		logging.F("endpoints", len(ws.config.Endpoints)),
-		logging.F("buffering", ws.config.Buffering.Enabled))
+		logging.F("buffering", ws.config.Buffering.Enabled),
+		logging.F("batching", ws.config.Batching.Enabled))
 
 	return nil
 }
@@ -202,6 +213,13 @@ func (ws *WebhookSender) Stop(ctx context.Context) error {
 	}
 
 	ws.logger.Info("웹훅 전송기 중지 중...")
+
+	// 배치 관리자 중지
+	if ws.config.Batching.Enabled && ws.batchManager != nil {
+		if err := ws.batchManager.Stop(ctx); err != nil {
+			ws.logger.Error("배치 관리자 중지 실패", logging.F("error", err))
+		}
+	}
 
 	// 모든 워커 중지
 	for _, worker := range ws.workers {
@@ -255,7 +273,17 @@ func (ws *WebhookSender) SendEvent(event *alerts.AlertEvent) error {
 		return nil
 	}
 
-	// 큐에 추가
+	// 배치 전송이 활성화된 경우 배치 관리자로 전달
+	if ws.config.Batching.Enabled && ws.batchManager != nil {
+		for _, endpoint := range ws.config.Endpoints {
+			if endpoint.Enabled && ws.matchesEndpointFilter(event, endpoint) {
+				ws.batchManager.AddEvent(event, endpoint)
+			}
+		}
+		return nil
+	}
+
+	// 배치가 비활성화된 경우 기존 방식으로 큐에 추가
 	if err := ws.queue.Push(event); err != nil {
 		ws.logger.Error("이벤트 큐 추가 실패",
 			logging.F("error", err.Error()),
@@ -561,13 +589,24 @@ func (ws *WebhookSender) GetMetrics() *SenderMetrics {
 	ws.metrics.mu.RLock()
 	defer ws.metrics.mu.RUnlock()
 
-	return &SenderMetrics{
+	metrics := &SenderMetrics{
 		TotalSent:    ws.metrics.TotalSent,
 		TotalFailed:  ws.metrics.TotalFailed,
 		TotalRetries: ws.metrics.TotalRetries,
 		QueueSize:    int64(ws.queue.Size()),
 		WorkerCount:  int64(len(ws.workers)),
 	}
+
+	// 배치 통계 추가
+	if ws.config.Batching.Enabled && ws.batchManager != nil {
+		metrics.BatchStats = ws.batchManager.GetStats()
+	} else {
+		metrics.BatchStats = map[string]interface{}{
+			"enabled": false,
+		}
+	}
+
+	return metrics
 }
 
 // queueMonitor 큐 모니터링 고루틴

@@ -2,6 +2,7 @@ package webhook
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -22,6 +23,7 @@ func TestNewWebhookSender(t *testing.T) {
 	assert.Equal(t, len(sender.adapters), 3) // generic, slack, discord adapters
 	assert.NotEqual(t, sender.queue, nil)
 	assert.NotEqual(t, sender.rateLimiter, nil)
+	assert.NotEqual(t, sender.batchManager, nil)
 }
 
 // TestWebhookSenderStartStop 시작/중지 테스트
@@ -56,6 +58,7 @@ func TestWebhookSenderStartStop(t *testing.T) {
 func TestSendEvent(t *testing.T) {
 	config := configs.GetDefaultWebhookConfig()
 	config.Enabled = true
+	config.Batching.Enabled = false // 배치 비활성화하여 큐 테스트
 
 	sender, err := NewWebhookSender(config)
 	assert.Equal(t, err, nil)
@@ -283,4 +286,69 @@ func TestBackoffDelay(t *testing.T) {
 	// 최대 지연 시간 확인
 	delay10 := sender.calculateBackoffDelay(10, policy)
 	assert.Equal(t, delay10, time.Minute) // 최대 지연 시간으로 제한
+}
+
+// TestWebhookSenderBatching 배치 전송 테스트
+func TestWebhookSenderBatching(t *testing.T) {
+	config := configs.GetDefaultWebhookConfig()
+	config.Enabled = true
+	config.Batching.Enabled = true
+	config.Batching.MaxSize = 3
+	config.Batching.MaxWaitTime = "1s"
+
+	sender, err := NewWebhookSender(config)
+	assert.Equal(t, err, nil)
+
+	ctx := context.Background()
+	err = sender.Start(ctx)
+	assert.Equal(t, err, nil)
+	defer sender.Stop(ctx)
+
+	// 테스트 이벤트들 전송
+	for i := 0; i < 5; i++ {
+		event := alerts.CreateWebhookEvent(
+			alerts.EventCacheExpiry,
+			alerts.AlertLevelInfo,
+			fmt.Sprintf("테스트 %d", i+1),
+			fmt.Sprintf("테스트 메시지 %d", i+1),
+		)
+
+		err = sender.SendEvent(event)
+		assert.Equal(t, err, nil)
+	}
+
+	// 배치 관리자 통계 확인
+	stats := sender.batchManager.GetStats()
+	assert.Equal(t, stats["enabled"], true)
+
+	// 잠시 대기하여 배치 처리 시간 확보
+	time.Sleep(100 * time.Millisecond)
+}
+
+// TestWebhookSenderGetMetricsWithBatch 배치 통계가 포함된 메트릭 테스트
+func TestWebhookSenderGetMetricsWithBatch(t *testing.T) {
+	config := configs.GetDefaultWebhookConfig()
+	config.Enabled = true
+	config.Batching.Enabled = true
+
+	sender, err := NewWebhookSender(config)
+	assert.Equal(t, err, nil)
+
+	metrics := sender.GetMetrics()
+	assert.NotEqual(t, metrics.BatchStats, nil)
+	assert.Equal(t, metrics.BatchStats["enabled"], true)
+}
+
+// TestWebhookSenderBatchingDisabled 배치 비활성화 테스트
+func TestWebhookSenderBatchingDisabled(t *testing.T) {
+	config := configs.GetDefaultWebhookConfig()
+	config.Enabled = true
+	config.Batching.Enabled = false
+
+	sender, err := NewWebhookSender(config)
+	assert.Equal(t, err, nil)
+
+	metrics := sender.GetMetrics()
+	assert.NotEqual(t, metrics.BatchStats, nil)
+	assert.Equal(t, metrics.BatchStats["enabled"], false)
 }
