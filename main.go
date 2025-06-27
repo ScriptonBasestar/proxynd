@@ -51,6 +51,7 @@ func main() {
 	app := routers.BaseRouter()
 	routers.HealthRouter(app)
 	routers.ProxyRouter(app)
+	routers.CacheRouter(app)
 
 	port := os.Getenv("SERVER_PORT")
 	if port == "" {

@@ -29,4 +29,3 @@ func (y *YumProxyConfig) ReadConfig() {
 	confDir := helpers.GetConfigDir()
 	helpers.ReadYaml(path.Join(confDir, "yum-proxy.yaml"), y)
 }
-
