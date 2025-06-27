@@ -13,7 +13,7 @@
 - [x] `/configs/apk_proxy_config.go` 설정 구조체 구현
 - [x] `/handlers/proxy/apk_proxy_controller.go` 핸들러 구현 (APKINDEX.tar.gz 처리 포함)
 - [x] 통합 프록시 핸들러에 APK 라우팅 추가
-- [ ] `/sample-conf/apk-proxy.yaml` 샘플 설정 작성 (main, community, testing 저장소)
+- [x] `/sample-conf/apk-proxy.yaml` 샘플 설정 작성 (main, community, testing 저장소)
 - [ ] `/docs/APK-CLIENT-SETUP.md` 클라이언트 설정 가이드 작성
 - [ ] APK 서명 검증 로직 구현 (`.SIGN.RSA.*` 파일 처리)
 - [ ] Alpine 버전별 미러 자동 선택 기능 구현

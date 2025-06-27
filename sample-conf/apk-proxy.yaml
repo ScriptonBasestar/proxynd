@@ -1,0 +1,32 @@
+# APK 프록시 설정
+# Alpine Linux의 APK 패키지 매니저를 위한 프록시 설정
+
+# 캐시 저장 경로 (STORAGE_DIR 기준 상대 경로)
+path: proxy/apk
+
+# 캐시 사용 여부
+use_cache: true
+
+# 업스트림 프록시 서버 목록
+proxies:
+  # Alpine 공식 메인 저장소
+  - name: alpine-official
+    url: https://dl-cdn.alpinelinux.org/alpine
+  
+  # 카카오 미러 (한국)
+  - name: kakao
+    url: https://mirror.kakao.com/alpine
+  
+  # 네이버 미러 (한국)
+  - name: naver
+    url: https://mirror.navercorp.com/alpine
+  
+  # 글로벌 미러들
+  - name: fastly
+    url: https://alpine.global.ssl.fastly.net/alpine
+  
+  - name: dotsrc
+    url: https://mirrors.dotsrc.org/alpine
+  
+  - name: tuna-tsinghua
+    url: https://mirrors.tuna.tsinghua.edu.cn/alpine
