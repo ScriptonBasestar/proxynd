@@ -1,0 +1,277 @@
+# ProxyND Webhook 알림 시스템 설정
+# 다양한 이벤트에 대한 웹훅 알림을 설정할 수 있습니다.
+
+# 웹훅 시스템 전역 설정
+enabled: true
+
+# 웹훅 엔드포인트 목록
+endpoints:
+  # Slack 웹훅 예제
+  - name: "slack-alerts"
+    url: "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK"
+    enabled: true
+    method: "POST"
+    timeout: "30s"
+    format: "slack"
+    headers:
+      Content-Type: "application/json"
+      User-Agent: "ProxyND-Webhook/1.0"
+    
+    # 구독할 이벤트 타입 (빈 배열이면 모든 이벤트)
+    event_types:
+      - "auth.failure"
+      - "security.*"
+      - "server.*"
+      - "policy.violation"
+      - "cache.error"
+    
+    # 인증 정보 (Slack은 URL에 토큰이 포함되어 있어서 불필요)
+    credentials:
+      type: "none"
+    
+    # 필터 설정
+    filters:
+      min_level: "WARNING"  # WARNING 이상만 전송
+      exclude_types:
+        - "cache.miss"      # 캐시 미스는 제외 (너무 빈번함)
+      package_types:
+        - "npm"
+        - "pip"
+        - "apt"
+
+  # Discord 웹훅 예제
+  - name: "discord-security"
+    url: "https://discord.com/api/webhooks/YOUR/DISCORD/WEBHOOK"
+    enabled: false
+    method: "POST"
+    timeout: "30s"
+    format: "discord"
+    
+    # 보안 관련 이벤트만 구독
+    event_types:
+      - "security.*"
+      - "auth.failure"
+      - "auth.blocked"
+      - "policy.violation"
+    
+    credentials:
+      type: "none"
+    
+    filters:
+      min_level: "ERROR"
+
+  # 사용자 정의 웹훅 예제 (일반적인 JSON 형식)
+  - name: "custom-monitoring"
+    url: "https://your-monitoring-system.com/webhooks/proxynd"
+    enabled: false
+    method: "POST"
+    timeout: "45s"
+    format: "json"
+    
+    # 모든 이벤트 구독
+    event_types: ["*"]
+    
+    # Bearer 토큰 인증
+    credentials:
+      type: "bearer"
+      token: "your-bearer-token-here"
+    
+    # 추가 헤더
+    headers:
+      X-Source: "proxynd"
+      X-Environment: "production"
+    
+    filters:
+      min_level: "INFO"
+
+  # Microsoft Teams 웹훅 예제
+  - name: "teams-admin"
+    url: "https://your-org.webhook.office.com/webhookb2/YOUR-TEAMS-WEBHOOK"
+    enabled: false
+    method: "POST"
+    timeout: "30s"
+    format: "teams"
+    
+    # 관리자 관련 이벤트만
+    event_types:
+      - "server.*"
+      - "admin.*"
+      - "system.*"
+      - "user.*"
+    
+    credentials:
+      type: "none"
+    
+    filters:
+      min_level: "INFO"
+
+  # HMAC 서명 인증 웹훅 예제
+  - name: "secure-webhook"
+    url: "https://your-secure-endpoint.com/webhook"
+    enabled: false
+    method: "POST"
+    timeout: "30s"
+    format: "json"
+    
+    event_types: ["*"]
+    
+    # HMAC 서명 인증
+    credentials:
+      type: "hmac"
+      secret: "your-hmac-secret-key"
+      algorithm: "sha256"
+    
+    headers:
+      X-Signature-Header: "X-Hub-Signature-256"
+    
+    filters:
+      min_level: "INFO"
+
+# 전역 속도 제한 설정
+rate_limit:
+  enabled: true
+  max_per_second: 10        # 초당 최대 10개 요청
+  max_per_minute: 100       # 분당 최대 100개 요청
+  max_per_hour: 1000        # 시간당 최대 1000개 요청
+  burst_size: 20            # 버스트 허용 크기
+  window_duration: "1m"     # 슬라이딩 윈도우 기간
+  backoff_strategy: "exponential"  # 백오프 전략
+  max_backoff_delay: "5m"   # 최대 백오프 지연
+
+# 재시도 설정
+retry:
+  enabled: true
+  max_attempts: 3           # 최대 재시도 횟수
+  initial_delay: "1s"       # 초기 지연 시간
+  max_delay: "30s"          # 최대 지연 시간
+  backoff_factor: 2.0       # 백오프 배수 (지수적 증가)
+  
+  # 재시도 가능한 HTTP 상태 코드
+  retryable_status:
+    - 408  # Request Timeout
+    - 429  # Too Many Requests
+    - 500  # Internal Server Error
+    - 502  # Bad Gateway
+    - 503  # Service Unavailable
+    - 504  # Gateway Timeout
+  
+  persist_failures: true    # 실패한 이벤트 로컬 저장
+  dead_letter_queue: "/var/log/proxynd/webhook-failures.log"
+
+# 이벤트 필터링 설정
+event_filter:
+  enabled: true
+  default_level: "INFO"     # 기본 알림 레벨
+  
+  # 이벤트 타입별 레벨 오버라이드
+  level_overrides:
+    "security.*": "WARNING"
+    "system.disk_full": "CRITICAL"
+    "system.memory_high": "ERROR"
+    "auth.failure": "WARNING"
+    "cache.miss": "DEBUG"    # 캐시 미스는 DEBUG 레벨로
+  
+  # 이벤트 집계 설정 (선택사항)
+  aggregation:
+    enabled: false
+    window_size: "5m"        # 5분 윈도우로 집계
+    max_events: 100          # 윈도우당 최대 100개 이벤트
+    group_by:
+      - "type"
+      - "level"
+    strategies:
+      "cache.*": "count"     # 캐시 이벤트는 개수만 집계
+      "auth.*": "sample"     # 인증 이벤트는 샘플링
+      "security.*": "merge"  # 보안 이벤트는 병합
+    flush_triggers:
+      - "time"               # 시간 기반 플러시
+      - "critical"           # CRITICAL 이벤트 발생 시 즉시 플러시
+  
+  # 중복 제거 설정
+  deduplication:
+    enabled: true
+    window_size: "1m"        # 1분 윈도우에서 중복 제거
+    key_fields:
+      - "type"
+      - "source"
+      - "message"
+    strategy: "count"        # 중복 횟수 기록
+    max_count: 5             # 최대 5회까지 중복 허용
+
+# 버퍼링 설정
+buffering:
+  enabled: true
+  buffer_size: 1000         # 버퍼 크기
+  flush_interval: "10s"     # 10초마다 플러시
+  flush_threshold: 100      # 100개 이벤트가 쌓이면 플러시
+  batch_size: 50            # 배치당 50개 이벤트
+  persist_buffer: true      # 서버 재시작 시 버퍼 보존
+  buffer_path: "/tmp/proxynd-webhook-buffer"
+
+# 보안 설정
+security:
+  enable_tls: true          # TLS 연결 사용
+  verify_ssl: true          # SSL 인증서 검증
+  max_payload_size: 1048576 # 최대 페이로드 크기 (1MB)
+  
+  # 허용/차단 호스트 목록
+  allowed_hosts: []         # 빈 배열이면 모든 호스트 허용
+  blocked_hosts:            # 차단할 호스트 목록
+    - "malicious-site.com"
+  
+  # 페이로드 암호화/서명 (선택사항)
+  encrypt_payload: false    # 페이로드 암호화
+  sign_payload: false       # 페이로드 서명
+  signing_algorithm: "sha256"
+
+# 모니터링 설정
+monitoring:
+  enabled: true
+  metrics_interval: "30s"   # 메트릭 수집 간격
+  enable_histogram: true    # 히스토그램 메트릭 활성화
+  
+  # 히스토그램 버킷 (응답 시간 분포)
+  histogram_buckets:
+    - 0.001
+    - 0.005
+    - 0.01
+    - 0.025
+    - 0.05
+    - 0.1
+    - 0.25
+    - 0.5
+    - 1.0
+    - 2.5
+    - 5.0
+    - 10.0
+  
+  log_successful: false     # 성공한 요청은 로깅하지 않음
+  log_failed: true          # 실패한 요청만 로깅
+  log_level: "INFO"
+  stats_retention: "24h"    # 통계 24시간 보관
+  
+  # 웹훅 엔드포인트 헬스체크 (선택사항)
+  health_check_interval: "5m"
+  alert_on_failure_rate: 0.1  # 10% 실패율에서 알림
+
+# 이벤트 규칙 예제 (고급 사용자용)
+# event_filter:
+#   event_rules:
+#     - name: "critical-security-alert"
+#       enabled: true
+#       priority: 1
+#       conditions:
+#         type: "security.*"
+#         level: "CRITICAL"
+#       actions:
+#         - "route"
+#       target: "slack-alerts"
+#     
+#     - name: "filter-cache-noise"
+#       enabled: true
+#       priority: 2
+#       conditions:
+#         type: "cache.miss"
+#         metadata.frequency: "> 100"
+#       actions:
+#         - "deny"
