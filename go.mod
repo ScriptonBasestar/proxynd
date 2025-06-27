@@ -42,6 +42,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gofiber/template v1.8.3 // indirect
 	github.com/gofiber/utils v1.1.0 // indirect
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
@@ -53,6 +54,8 @@ require (
 	github.com/prometheus/common v0.62.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
+	github.com/spf13/cobra v1.9.1 // indirect
+	github.com/spf13/pflag v1.0.6 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect
 	golang.org/x/sys v0.30.0 // indirect
