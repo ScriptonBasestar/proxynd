@@ -53,12 +53,18 @@ var healthCmd = commands.NewHealthCmd()
 // metricsCmd는 메트릭 조회 명령어 (commands 패키지에서 가져옴)
 var metricsCmd = commands.NewMetricsCmd()
 
+// completionCmd는 자동완성 스크립트 생성 명령어
+var completionCmd *cobra.Command
+
 func init() {
 	// 글로벌 플래그 설정
 	rootCmd.PersistentFlags().StringVar(&serverURL, "server", "http://localhost:8080", "ProxyND 서버 URL")
 	rootCmd.PersistentFlags().StringVar(&timeout, "timeout", "30s", "요청 타임아웃")
 	rootCmd.PersistentFlags().StringVar(&format, "format", "table", "출력 포맷 (table, json, yaml)")
 	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "상세 출력")
+
+	// 자동완성 명령어 생성 (rootCmd 필요)
+	completionCmd = commands.NewCompletionCmd(rootCmd)
 
 	// 서브커맨드 추가
 	rootCmd.AddCommand(cacheCmd)
@@ -68,6 +74,7 @@ func init() {
 	rootCmd.AddCommand(statusCmd)
 	rootCmd.AddCommand(healthCmd)
 	rootCmd.AddCommand(metricsCmd)
+	rootCmd.AddCommand(completionCmd)
 
 	// 캐시 관리 서브커맨드들 (향후 구현)
 	// cacheCmd.AddCommand(cacheListCmd)

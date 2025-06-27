@@ -252,6 +252,33 @@ cache:
     secretAccessKey: ""  # 환경변수에서 설정 권장
 ```
 
+## 🖥️ CLI 도구 (proxyndctl)
+
+ProxyND는 강력한 명령줄 도구 `proxyndctl`을 제공합니다:
+
+### 주요 기능
+
+- **캐시 관리**: 캐시 목록 조회, 삭제, 크기 확인
+- **설정 검증**: 설정 파일 유효성 검사 및 조회
+- **서버 상태**: 실시간 서버 상태 및 메트릭 조회
+- **사용자 관리**: 사용자 추가/삭제/목록 조회
+- **프록시 테스트**: 각 프록시 타입별 연결성 테스트
+
+### 자동완성 설정
+
+```bash
+# Bash
+source <(proxyndctl completion bash)
+
+# Zsh
+source <(proxyndctl completion zsh)
+
+# Fish
+proxyndctl completion fish > ~/.config/fish/completions/proxyndctl.fish
+```
+
+자세한 내용은 [CLI 자동완성 가이드](docs/CLI_COMPLETION.md)를 참조하세요.
+
 ## 🎯 사용 예제
 
 ### NPM 패키지 프록시
