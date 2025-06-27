@@ -9,7 +9,7 @@
 - [x] `yum` 프록시 지원 추가 (CentOS, RHEL, Rocky Linux 등) ✅
 
 ### 🏔️ Alpine APK 프록시 지원
-- [ ] APK 프록시 요구사항 정리 (APK 레포지토리 구조 분석, APKINDEX 포맷 이해)
+- [x] APK 프록시 요구사항 정리 (APK 레포지토리 구조 분석, APKINDEX 포맷 이해)
 - [ ] `/configs/apk_proxy_config.go` 설정 구조체 구현
 - [ ] `/handlers/proxy/apk_proxy_controller.go` 핸들러 구현 (APKINDEX.tar.gz 처리 포함)
 - [ ] 통합 프록시 핸들러에 APK 라우팅 추가
