@@ -30,3 +30,22 @@ proxies:
   
   - name: tuna-tsinghua
     url: https://mirrors.tuna.tsinghua.edu.cn/alpine
+
+# APK 서명 검증 설정
+verification:
+  # 서명 검증 활성화 여부
+  enabled: false
+  
+  # 신뢰할 수 있는 공개키 디렉토리
+  # Alpine Linux 공식 키들이 저장된 디렉토리 경로
+  key_directory: "/etc/apk/keys"
+  
+  # 서명 검증 실패 시 요청 차단 여부
+  # true: 서명이 유효하지 않은 패키지는 차단
+  # false: 경고만 하고 계속 진행
+  fail_on_invalid: false
+  
+  # 검증된 패키지만 캐시 여부
+  # true: 서명이 검증된 패키지만 캐시에 저장
+  # false: 모든 패키지를 캐시에 저장
+  cache_validated: false
