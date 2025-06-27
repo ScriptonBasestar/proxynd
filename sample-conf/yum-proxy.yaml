@@ -1,0 +1,38 @@
+# YUM 프록시 설정
+# CentOS, RHEL, Rocky Linux 등의 YUM/DNF 패키지 매니저를 위한 프록시 설정
+
+# 캐시 저장 경로 (STORAGE_DIR 기준 상대 경로)
+path: proxy/yum
+
+# 캐시 사용 여부
+use_cache: true
+
+# 업스트림 프록시 서버 목록
+proxies:
+  # CentOS 7
+  - name: centos7
+    url: http://mirror.centos.org/centos/7
+  
+  # CentOS 8 Stream
+  - name: centos8-stream
+    url: http://mirror.centos.org/centos/8-stream
+  
+  # Rocky Linux 8
+  - name: rocky8
+    url: https://download.rockylinux.org/pub/rocky/8
+  
+  # Rocky Linux 9
+  - name: rocky9
+    url: https://download.rockylinux.org/pub/rocky/9
+  
+  # EPEL (Extra Packages for Enterprise Linux)
+  - name: epel
+    url: https://download.fedoraproject.org/pub/epel
+  
+  # 카카오 미러 (한국)
+  - name: kakao
+    url: https://mirror.kakao.com/centos
+  
+  # 네이버 미러 (한국)
+  - name: naver
+    url: https://mirror.navercorp.com/centos

@@ -8,6 +8,7 @@ ProxyND는 기업 환경에서 패키지 다운로드 속도 향상과 대역폭
 
 ### 멀티 레지스트리 프록시
 - **APT 패키지**: Ubuntu, Debian 등 데비안 계열 리눅스 패키지 관리
+- **YUM/DNF 패키지**: CentOS, RHEL, Rocky Linux 등 RedHat 계열 리눅스 패키지 관리
 - **NPM 패키지**: Node.js 패키지 레지스트리 (npmjs, yarn, taobao 미러 지원)  
 - **Python PyPI**: Python 패키지 인덱스 (PyPI, douban, aliyun 미러 지원)
 - **Docker 레지스트리**: Docker Hub, GCR, Quay 등 컨테이너 이미지 저장소
