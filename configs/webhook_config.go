@@ -13,6 +13,7 @@ type WebhookConfig struct {
 	Retry       WebhookRetryConfig      `yaml:"retry" json:"retry"`               // 재시도 설정
 	EventFilter WebhookEventFilter      `yaml:"event_filter" json:"event_filter"` // 이벤트 필터링
 	Buffering   WebhookBufferingConfig  `yaml:"buffering" json:"buffering"`       // 버퍼링 설정
+	Batching    WebhookBatchingConfig   `yaml:"batching" json:"batching"`         // 배치 전송 설정
 	Security    WebhookSecurityConfig   `yaml:"security" json:"security"`         // 보안 설정
 	Monitoring  WebhookMonitoringConfig `yaml:"monitoring" json:"monitoring"`     // 모니터링 설정
 }
@@ -120,6 +121,17 @@ type WebhookDeduplicationConfig struct {
 	KeyFields  []string `yaml:"key_fields" json:"key_fields"`   // 중복 검사 키 필드
 	Strategy   string   `yaml:"strategy" json:"strategy"`       // 중복 제거 전략 (first, last, merge, count)
 	MaxCount   int      `yaml:"max_count" json:"max_count"`     // 최대 중복 허용 횟수
+}
+
+// WebhookBatchingConfig 배치 전송 설정
+type WebhookBatchingConfig struct {
+	Enabled           bool   `yaml:"enabled" json:"enabled"`                       // 배치 전송 활성화
+	MaxSize           int    `yaml:"max_size" json:"max_size"`                     // 배치 최대 크기
+	MaxWaitTime       string `yaml:"max_wait_time" json:"max_wait_time"`           // 최대 대기 시간
+	FlushInterval     string `yaml:"flush_interval" json:"flush_interval"`         // 강제 플러시 간격
+	GroupBy           string `yaml:"group_by" json:"group_by"`                     // 그룹화 기준 (endpoint, type, level)
+	CompressionFormat string `yaml:"compression_format" json:"compression_format"` // 압축 포맷 (none, gzip, zstd)
+	RetryFailedBatch  bool   `yaml:"retry_failed_batch" json:"retry_failed_batch"` // 실패한 배치 재시도
 }
 
 // WebhookBufferingConfig 이벤트 버퍼링 설정
@@ -263,6 +275,15 @@ func GetDefaultWebhookConfig() WebhookConfig {
 			BatchSize:      50,
 			PersistBuffer:  true,
 			BufferPath:     "/tmp/proxynd-webhook-buffer",
+		},
+		Batching: WebhookBatchingConfig{
+			Enabled:           true,
+			MaxSize:           10,
+			MaxWaitTime:       "5s",
+			FlushInterval:     "30s",
+			GroupBy:           "endpoint",
+			CompressionFormat: "gzip",
+			RetryFailedBatch:  true,
 		},
 		Security: WebhookSecurityConfig{
 			EnableTLS:        true,

@@ -31,12 +31,12 @@
 - [x] 바이너리 배포 워크플로우 구성 (GitHub Releases)
 
 ### 🔔 Webhook 알림 시스템
-- [ ] Webhook 이벤트 타입 정의 (캐시 만료, 인증 실패, 정책 위반, 서버 상태 변경 등)
-- [ ] `/configs/webhook_config.go` 설정 구조체 구현 (URL, 이벤트 필터, 재시도 정책)
-- [ ] `/internal/webhook/sender.go` 핵심 전송 로직 구현 (비동기 큐, 재시도 메커니즘)
-- [ ] Slack webhook 어댑터 구현 (`/internal/webhook/adapters/slack.go`)
-- [ ] Discord webhook 어댑터 구현 (`/internal/webhook/adapters/discord.go`)
-- [ ] Generic webhook 어댑터 구현 (커스텀 JSON 포맷)
+- [x] Webhook 이벤트 타입 정의 (캐시 만료, 인증 실패, 정책 위반, 서버 상태 변경 등)
+- [x] `/configs/webhook_config.go` 설정 구조체 구현 (URL, 이벤트 필터, 재시도 정책)
+- [x] `/internal/webhook/sender.go` 핵심 전송 로직 구현 (비동기 큐, 재시도 메커니즘)
+- [x] Slack webhook 어댑터 구현 (`/internal/webhook/adapters/slack.go`)
+- [x] Discord webhook 어댑터 구현 (`/internal/webhook/adapters/discord.go`)
+- [x] Generic webhook 어댑터 구현 (커스텀 JSON 포맷)
 - [ ] 이벤트 버퍼링 및 배치 전송 기능 구현 (rate limiting 대응)
 - [ ] Webhook 전송 실패 시 로컬 저장 및 재시도 큐 구현
 - [ ] Webhook 설정 테스트 엔드포인트 추가 (`/api/webhook/test`)
