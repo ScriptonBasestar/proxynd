@@ -11,11 +11,20 @@ type ApkProxy struct {
 	Url  string `yaml:"url"`
 }
 
+// ApkVerificationConfig APK 서명 검증 설정
+type ApkVerificationConfig struct {
+	Enabled        bool   `yaml:"enabled"`         // 서명 검증 활성화 여부
+	KeyDirectory   string `yaml:"key_directory"`   // 신뢰할 수 있는 키 디렉토리
+	FailOnInvalid  bool   `yaml:"fail_on_invalid"` // 서명 검증 실패 시 요청 차단 여부
+	CacheValidated bool   `yaml:"cache_validated"` // 검증된 패키지만 캐시 여부
+}
+
 // ApkProxyConfig APK 프록시 설정 구조체
 type ApkProxyConfig struct {
-	Path     string     `yaml:"path"`
-	UseCache bool       `yaml:"use_cache"`
-	Proxies  []ApkProxy `yaml:"proxies"`
+	Path         string                `yaml:"path"`
+	UseCache     bool                  `yaml:"use_cache"`
+	Proxies      []ApkProxy            `yaml:"proxies"`
+	Verification ApkVerificationConfig `yaml:"verification"`
 }
 
 // ConfigExists APK 프록시 설정 파일 존재 여부 확인

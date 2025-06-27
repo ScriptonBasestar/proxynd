@@ -59,5 +59,8 @@ func BaseRouter() *fiber.App {
 	// 메트릭 라우터 추가 (설정이 없으면 기본값 사용)
 	MetricsRouter(app, nil)
 
+	// APK 서명 검증 라우터 추가
+	APKVerificationRouter(app)
+
 	return app
 }

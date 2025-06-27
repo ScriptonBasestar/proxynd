@@ -28,7 +28,7 @@
 - [x] 프록시 테스트 명령어 구현 (`test apt`, `test npm` 등)
 - [x] 자동완성 스크립트 생성 (bash, zsh, fish)
 - [x] man page 및 help 문서 작성
-- [ ] 바이너리 배포 워크플로우 구성 (GitHub Releases)
+- [x] 바이너리 배포 워크플로우 구성 (GitHub Releases)
 
 ### 🔔 Webhook 알림 시스템
 - [ ] Webhook 이벤트 타입 정의 (캐시 만료, 인증 실패, 정책 위반, 서버 상태 변경 등)
