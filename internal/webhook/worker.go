@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"proxynd/alerts"
+	"proxynd/configs"
 	"proxynd/logging"
 )
 
