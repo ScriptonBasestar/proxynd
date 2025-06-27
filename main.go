@@ -55,6 +55,7 @@ func main() {
 	routers.ConfigRouter(app)
 	routers.StatusRouter(app)
 	routers.UserRouter(app)
+	routers.TestRouter(app)
 
 	port := os.Getenv("SERVER_PORT")
 	if port == "" {
