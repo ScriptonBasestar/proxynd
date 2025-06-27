@@ -52,38 +52,14 @@ var testCmd = &cobra.Command{
 	Long:  "ProxyND 서버의 프록시 기능을 테스트합니다. 각 패키지 매니저별 연결성을 확인합니다.",
 }
 
-// statusCmd는 서버 상태 확인 명령어
-var statusCmd = &cobra.Command{
-	Use:   "status",
-	Short: "서버 상태 확인",
-	Long:  "ProxyND 서버의 전반적인 상태를 확인합니다.",
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("서버 상태 확인 기능을 구현 예정입니다.")
-		// TODO: 실제 상태 확인 로직 구현
-	},
-}
+// statusCmd는 서버 상태 확인 명령어 (commands 패키지에서 가져옴)
+var statusCmd = commands.NewStatusCmd()
 
-// healthCmd는 헬스체크 명령어
-var healthCmd = &cobra.Command{
-	Use:   "health",
-	Short: "헬스체크 수행",
-	Long:  "ProxyND 서버의 헬스체크를 수행하고 업스트림 연결 상태를 확인합니다.",
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("헬스체크 기능을 구현 예정입니다.")
-		// TODO: 실제 헬스체크 로직 구현
-	},
-}
+// healthCmd는 헬스체크 명령어 (commands 패키지에서 가져옴)
+var healthCmd = commands.NewHealthCmd()
 
-// metricsCmd는 메트릭 조회 명령어
-var metricsCmd = &cobra.Command{
-	Use:   "metrics",
-	Short: "메트릭 조회",
-	Long:  "ProxyND 서버의 Prometheus 메트릭을 사용자 친화적 형태로 조회합니다.",
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("메트릭 조회 기능을 구현 예정입니다.")
-		// TODO: 실제 메트릭 조회 로직 구현
-	},
-}
+// metricsCmd는 메트릭 조회 명령어 (commands 패키지에서 가져옴)
+var metricsCmd = commands.NewMetricsCmd()
 
 func init() {
 	// 글로벌 플래그 설정
