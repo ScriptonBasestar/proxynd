@@ -26,7 +26,9 @@
       "Bash(export CONFIG_DIR=./config)",
       "Bash(timeout:*)",
       "Bash(true)",
-      "Bash(./proxyndctl:*)"
+      "Bash(./proxyndctl:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)"
     ],
     "deny": []
   }

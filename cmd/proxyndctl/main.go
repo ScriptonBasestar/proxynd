@@ -30,6 +30,20 @@ var rootCmd = &cobra.Command{
 - 사용자 관리
 - 프록시 기능 테스트`,
 	Version: "1.0.0",
+	Example: `  # 서버 상태 확인
+  proxyndctl status
+
+  # 캐시 목록 조회 (JSON 형식)
+  proxyndctl cache list --format json
+
+  # 다른 서버에 대한 헬스체크
+  proxyndctl --server http://proxy.example.com:8080 health
+
+  # 사용자 추가 (대화형)
+  proxyndctl user add -i
+
+  # 모든 프록시 테스트
+  proxyndctl test all --details`,
 }
 
 // cacheCmd는 캐시 관리 명령어 그룹 (commands 패키지에서 가져옴)
@@ -56,6 +70,9 @@ var metricsCmd = commands.NewMetricsCmd()
 // completionCmd는 자동완성 스크립트 생성 명령어
 var completionCmd *cobra.Command
 
+// docsCmd는 문서 생성 명령어
+var docsCmd *cobra.Command
+
 func init() {
 	// 글로벌 플래그 설정
 	rootCmd.PersistentFlags().StringVar(&serverURL, "server", "http://localhost:8080", "ProxyND 서버 URL")
@@ -65,6 +82,9 @@ func init() {
 
 	// 자동완성 명령어 생성 (rootCmd 필요)
 	completionCmd = commands.NewCompletionCmd(rootCmd)
+	
+	// 문서 생성 명령어 생성 (rootCmd 필요)
+	docsCmd = commands.NewDocsCmd(rootCmd)
 
 	// 서브커맨드 추가
 	rootCmd.AddCommand(cacheCmd)
@@ -75,6 +95,7 @@ func init() {
 	rootCmd.AddCommand(healthCmd)
 	rootCmd.AddCommand(metricsCmd)
 	rootCmd.AddCommand(completionCmd)
+	rootCmd.AddCommand(docsCmd)
 
 	// 캐시 관리 서브커맨드들 (향후 구현)
 	// cacheCmd.AddCommand(cacheListCmd)
