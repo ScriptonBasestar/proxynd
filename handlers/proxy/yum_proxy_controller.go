@@ -124,4 +124,3 @@ func isYumInlineFile(filename string) bool {
 	}
 	return false
 }
-

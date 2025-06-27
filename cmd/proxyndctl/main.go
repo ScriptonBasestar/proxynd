@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"proxynd/cmd/proxyndctl/commands"
 )
 
 var (
@@ -31,12 +32,8 @@ var rootCmd = &cobra.Command{
 	Version: "1.0.0",
 }
 
-// cacheCmd는 캐시 관리 명령어 그룹
-var cacheCmd = &cobra.Command{
-	Use:   "cache",
-	Short: "캐시 관리 명령어",
-	Long:  "ProxyND 서버의 캐시를 관리합니다. 캐시 조회, 정리, 통계를 제공합니다.",
-}
+// cacheCmd는 캐시 관리 명령어 그룹 (commands 패키지에서 가져옴)
+var cacheCmd = commands.NewCacheCmd()
 
 // configCmd는 설정 관리 명령어 그룹
 var configCmd = &cobra.Command{

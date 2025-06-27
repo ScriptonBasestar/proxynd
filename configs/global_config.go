@@ -10,10 +10,14 @@ type Cache struct {
 }
 
 type GlobalConfig struct {
-	//StorageDir string `yaml:"storage_dir,omitempty"`
-	//ConfigDir string `yaml:"config_dir,omitempty"`
-	//ProxyName
-	Cache Cache `yaml:"cache,omitempty"`
+	StorageDir string `yaml:"storage_dir,omitempty"`
+	ConfigDir  string `yaml:"config_dir,omitempty"`
+	Cache      Cache  `yaml:"cache,omitempty"`
+}
+
+func (cfg *GlobalConfig) ConfigExists() bool {
+	confDir := helpers.GetConfigDir()
+	return helpers.FileExists(path.Join(confDir, "global.yaml"))
 }
 
 func (cfg *GlobalConfig) ReadConfig() {
