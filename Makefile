@@ -60,33 +60,48 @@ local-run:
 
 .PHONY: dev-prepare
 dev-prepare:
-	@echo "Preparing..."
-	go mod download
-	go mod vendor
-	go mod tidy
+	@echo "Preparing development dependencies..."
+	GOSUMDB=sum.golang.org go mod download
+	GOSUMDB=sum.golang.org go mod tidy
+	@echo "Installing air for hot reload..."
+	@which air > /dev/null || GOSUMDB=sum.golang.org go install github.com/cosmtrek/air@latest
+	@echo "Development dependencies ready!"
 
 .PHONY: dev-setup
 dev-setup:
 	@echo "Setting up development environment..."
 	@mkdir -p ./tmp/storage
-	@cp .env.dev .env
+	@mkdir -p ./tmp/config
+	@cp -r sample-conf/* ./tmp/config/
+	@echo "Creating .env file..."
+	@echo "CONFIG_DIR=./tmp/config" > .env
+	@echo "STORAGE_DIR=./tmp/storage" >> .env
+	@echo "SERVER_PORT=8080" >> .env
 	@echo "Development environment ready!"
-	@echo "Config dir: ./sample-conf"
+	@echo "Config dir: ./tmp/config"
 	@echo "Storage dir: ./tmp/storage"
 	@echo "Environment variables:"
-	@grep -E "^[A-Z_]+" .env || true
+	@cat .env
 
 .PHONY: dev-run
 dev-run: dev-setup
 	@echo "Running with Air (hot reload)..."
+	@which air > /dev/null || (echo "Air not found. Installing..." && go install github.com/cosmtrek/air@latest)
 	air
 
 .PHONY: dev-run-direct
 dev-run-direct: dev-setup
 	@echo "Running directly with go run..."
-	go run main.go
+	CONFIG_DIR=./tmp/config STORAGE_DIR=./tmp/storage SERVER_PORT=8080 go run main.go
 
 .PHONY: dev-test
 dev-test:
-	@echo "Testing..."
+	@echo "Running tests..."
 	go test -v ./...
+
+.PHONY: dev-teardown
+dev-teardown:
+	@echo "Cleaning up development environment..."
+	@rm -rf ./tmp/
+	@rm -f .env
+	@echo "Development environment cleaned!"
