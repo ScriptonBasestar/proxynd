@@ -66,6 +66,14 @@ func UnifiedProxyHandler(c *fiber.Ctx) error {
 		}
 		return YumProxyHandler(c)
 
+	case "apk":
+		// APK 설정 확인
+		apkConfig := configs.ApkProxyConfig{}
+		if !apkConfig.ConfigExists() {
+			return renderConfigAlert(c, "apk-proxy.yaml")
+		}
+		return ApkProxyHandler(c)
+
 	default:
 		return c.Status(fiber.StatusBadRequest).SendString("Unknown proxy type: " + proxyType)
 	}
