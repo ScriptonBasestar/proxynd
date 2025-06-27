@@ -11,10 +11,26 @@ import (
 	"proxynd/routers"
 )
 
+// 빌드 정보 변수 (릴리스 시 ldflags로 설정됨)
+var (
+	Version   = "dev"
+	BuildTime = "unknown"
+	CommitSHA = "unknown"
+)
+
 func main() {
-	// 헬스체크 플래그 파싱
+	// 플래그 정의
 	healthCheck := flag.Bool("health", false, "Run health check and exit")
+	version := flag.Bool("version", false, "Show version information and exit")
 	flag.Parse()
+
+	// 버전 정보 출력
+	if *version {
+		fmt.Printf("ProxyND %s\n", Version)
+		fmt.Printf("Build Time: %s\n", BuildTime)
+		fmt.Printf("Commit SHA: %s\n", CommitSHA)
+		os.Exit(0)
+	}
 
 	// 헬스체크 모드
 	if *healthCheck {

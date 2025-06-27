@@ -8,6 +8,13 @@ import (
 	"proxynd/cmd/proxyndctl/commands"
 )
 
+// 빌드 정보 변수 (릴리스 시 ldflags로 설정됨)
+var (
+	Version   = "dev"
+	BuildTime = "unknown"
+	CommitSHA = "unknown"
+)
+
 var (
 	// 글로벌 설정 변수들
 	serverURL string
@@ -29,7 +36,7 @@ var rootCmd = &cobra.Command{
 - 서버 상태 모니터링
 - 사용자 관리
 - 프록시 기능 테스트`,
-	Version: "1.0.0",
+	Version: Version,
 	Example: `  # 서버 상태 확인
   proxyndctl status
 
@@ -82,7 +89,7 @@ func init() {
 
 	// 자동완성 명령어 생성 (rootCmd 필요)
 	completionCmd = commands.NewCompletionCmd(rootCmd)
-	
+
 	// 문서 생성 명령어 생성 (rootCmd 필요)
 	docsCmd = commands.NewDocsCmd(rootCmd)
 

@@ -28,7 +28,8 @@
       "Bash(true)",
       "Bash(./proxyndctl:*)",
       "Bash(ls:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(touch:*)"
     ],
     "deny": []
   }
