@@ -32,7 +32,9 @@
       "Bash(touch:*)",
       "Bash(gofmt:*)",
       "Bash(mv:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(echo $GOSUMDB)",
+      "Bash(go env:*)"
     ],
     "deny": []
   }
