@@ -19,12 +19,24 @@ type ApkVerificationConfig struct {
 	CacheValidated bool   `yaml:"cache_validated"` // 검증된 패키지만 캐시 여부
 }
 
+// ApkMirrorSelectionConfig APK 미러 선택 설정
+type ApkMirrorSelectionConfig struct {
+	Enabled             bool     `yaml:"enabled"`               // 미러 자동 선택 활성화
+	HealthCheckInterval string   `yaml:"health_check_interval"` // 헬스체크 간격 (예: "5m")
+	HealthCheckTimeout  string   `yaml:"health_check_timeout"`  // 헬스체크 타임아웃 (예: "10s")
+	PreferredRegions    []string `yaml:"preferred_regions"`     // 선호하는 지역
+	FallbackToGlobal    bool     `yaml:"fallback_to_global"`    // 글로벌 미러로 폴백 여부
+	MaxErrorCount       int      `yaml:"max_error_count"`       // 최대 에러 허용 횟수
+	RegionDetectionMode string   `yaml:"region_detection_mode"` // auto, manual, disabled
+}
+
 // ApkProxyConfig APK 프록시 설정 구조체
 type ApkProxyConfig struct {
-	Path         string                `yaml:"path"`
-	UseCache     bool                  `yaml:"use_cache"`
-	Proxies      []ApkProxy            `yaml:"proxies"`
-	Verification ApkVerificationConfig `yaml:"verification"`
+	Path            string                   `yaml:"path"`
+	UseCache        bool                     `yaml:"use_cache"`
+	Proxies         []ApkProxy               `yaml:"proxies"`
+	Verification    ApkVerificationConfig    `yaml:"verification"`
+	MirrorSelection ApkMirrorSelectionConfig `yaml:"mirror_selection"`
 }
 
 // ConfigExists APK 프록시 설정 파일 존재 여부 확인

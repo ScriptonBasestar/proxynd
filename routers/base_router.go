@@ -62,5 +62,8 @@ func BaseRouter() *fiber.App {
 	// APK 서명 검증 라우터 추가
 	APKVerificationRouter(app)
 
+	// APK 미러 선택 라우터 추가
+	APKMirrorRouter(app)
+
 	return app
 }
