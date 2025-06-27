@@ -9,17 +9,23 @@ import (
 	"path/filepath"
 	"proxynd/configs"
 	"proxynd/helpers"
+	"proxynd/internal/mirror"
 	"proxynd/logging"
 	"proxynd/verification/apk"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 var (
-	apkVerifier     *apk.SignatureVerifier
-	apkVerifierOnce sync.Once
+	apkVerifier        *apk.SignatureVerifier
+	apkVerifierOnce    sync.Once
+	mirrorSelector     *mirror.AlpineMirrorSelector
+	mirrorSelectorOnce sync.Once
+	selectorStarted    bool
+	selectorMutex      sync.Mutex
 )
 
 // getApkVerifier APK 서명 검증기 싱글톤 인스턴스 반환
@@ -28,6 +34,61 @@ func getApkVerifier() *apk.SignatureVerifier {
 		apkVerifier = apk.NewSignatureVerifier()
 	})
 	return apkVerifier
+}
+
+// getMirrorSelector 미러 선택기 싱글톤 인스턴스 반환
+func getMirrorSelector() *mirror.AlpineMirrorSelector {
+	mirrorSelectorOnce.Do(func() {
+		mirrorSelector = mirror.NewAlpineMirrorSelector()
+	})
+	return mirrorSelector
+}
+
+// initializeMirrorSelector 미러 선택기 초기화 (필요시)
+func initializeMirrorSelector(apkConfig configs.ApkProxyConfig) {
+	if !apkConfig.MirrorSelection.Enabled {
+		return
+	}
+
+	selectorMutex.Lock()
+	defer selectorMutex.Unlock()
+
+	if selectorStarted {
+		return
+	}
+
+	selector := getMirrorSelector()
+	config := convertToMirrorConfig(apkConfig.MirrorSelection)
+	selector.Start(config, apkConfig.Proxies)
+	selectorStarted = true
+}
+
+// convertToMirrorConfig 설정 변환
+func convertToMirrorConfig(config configs.ApkMirrorSelectionConfig) mirror.AlpineMirrorConfig {
+	// 문자열을 time.Duration으로 변환
+	healthCheckInterval, _ := time.ParseDuration(config.HealthCheckInterval)
+	if healthCheckInterval == 0 {
+		healthCheckInterval = 5 * time.Minute
+	}
+
+	healthCheckTimeout, _ := time.ParseDuration(config.HealthCheckTimeout)
+	if healthCheckTimeout == 0 {
+		healthCheckTimeout = 10 * time.Second
+	}
+
+	maxErrorCount := config.MaxErrorCount
+	if maxErrorCount == 0 {
+		maxErrorCount = 3
+	}
+
+	return mirror.AlpineMirrorConfig{
+		HealthCheckInterval: healthCheckInterval,
+		HealthCheckTimeout:  healthCheckTimeout,
+		PreferredRegions:    config.PreferredRegions,
+		FallbackToGlobal:    config.FallbackToGlobal,
+		MaxErrorCount:       maxErrorCount,
+		RegionDetectionMode: config.RegionDetectionMode,
+	}
 }
 
 // ApkProxyHandler APK 프록시 요청 처리 핸들러
@@ -54,6 +115,9 @@ func ApkProxyHandler(c *fiber.Ctx) error {
 			logger.Error("APK 신뢰 키 로드 실패", logging.F("error", err.Error()))
 		}
 	}
+
+	// 미러 선택기 초기화 (필요시)
+	initializeMirrorSelector(apkConfig)
 
 	// 캐시 확인
 	if apkConfig.UseCache && helpers.FileExists(filefullpath) {
@@ -84,8 +148,15 @@ func ApkProxyHandler(c *fiber.Ctx) error {
 		}
 		defer out.Close()
 
-		// 업스트림 서버에서 파일 가져오기
-		for _, proxy := range apkConfig.Proxies {
+		// 미러 선택을 사용하여 업스트림 서버에서 파일 가져오기
+		proxies := apkConfig.Proxies
+		if apkConfig.MirrorSelection.Enabled {
+			selector := getMirrorSelector()
+			proxies = selector.SelectBestMirror(requestPath, apkConfig.Proxies)
+			log.Printf("미러 선택 결과: %d개 미러 선택됨\n", len(proxies))
+		}
+
+		for _, proxy := range proxies {
 			fullURL := helpers.JoinURL(proxy.Url, requestPath)
 			log.Printf("Fetching from upstream %s: %s\n", proxy.Name, fullURL)
 
@@ -103,6 +174,7 @@ func ApkProxyHandler(c *fiber.Ctx) error {
 					log.Printf("Error copying file: %v", err)
 					return c.Status(fiber.StatusInternalServerError).SendString("Error copying file")
 				}
+				log.Printf("Successfully fetched from %s\n", proxy.Name)
 				break
 			}
 			resp.Body.Close()

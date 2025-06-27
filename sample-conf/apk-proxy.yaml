@@ -49,3 +49,34 @@ verification:
   # true: 서명이 검증된 패키지만 캐시에 저장
   # false: 모든 패키지를 캐시에 저장
   cache_validated: false
+
+# APK 미러 자동 선택 설정
+mirror_selection:
+  # 미러 자동 선택 활성화 여부
+  enabled: true
+  
+  # 헬스체크 간격 (예: "5m", "10m", "1h")
+  health_check_interval: "5m"
+  
+  # 헬스체크 타임아웃 (예: "10s", "30s")
+  health_check_timeout: "10s"
+  
+  # 선호하는 지역 목록 (우선순위 순)
+  preferred_regions:
+    - "korea"      # 한국
+    - "japan"      # 일본
+    - "asia"       # 아시아
+    - "official"   # 공식
+    - "global"     # 글로벌
+  
+  # 지역 미러가 모두 실패할 경우 글로벌 미러로 폴백
+  fallback_to_global: true
+  
+  # 미러를 비활성화하기 전 최대 허용 에러 횟수
+  max_error_count: 3
+  
+  # 지역 감지 모드
+  # auto: 자동 감지 (URL 패턴 기반)
+  # manual: 수동 설정
+  # disabled: 지역 감지 비활성화
+  region_detection_mode: "auto"
