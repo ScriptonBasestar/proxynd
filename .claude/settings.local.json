@@ -19,7 +19,8 @@
       "Bash(lsof:*)",
       "Bash(unset CONFIG_DIR STORAGE_DIR)",
       "Bash(curl:*)",
-      "Bash(go fmt:*)"
+      "Bash(go fmt:*)",
+      "Bash(./bin/proxyndctl:*)"
     ],
     "deny": []
   }
