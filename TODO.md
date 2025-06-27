@@ -23,7 +23,7 @@
 - [x] `/cmd/proxyndctl/main.go` 기본 구조 생성 (cobra/urfave 라이브러리 선택)
 - [x] 캐시 관리 명령어 구현 (`cache list`, `cache clear`, `cache size`)
 - [x] 설정 검증 명령어 구현 (`config validate`, `config show`)
-- [ ] 서버 상태 확인 명령어 구현 (`status`, `health`, `metrics`)
+- [x] 서버 상태 확인 명령어 구현 (`status`, `health`, `metrics`)
 - [ ] 사용자 관리 명령어 구현 (`user add`, `user delete`, `user list`)
 - [ ] 프록시 테스트 명령어 구현 (`test apt`, `test npm` 등)
 - [ ] 자동완성 스크립트 생성 (bash, zsh, fish)

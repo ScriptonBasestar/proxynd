@@ -53,6 +53,7 @@ func main() {
 	routers.ProxyRouter(app)
 	routers.CacheRouter(app)
 	routers.ConfigRouter(app)
+	routers.StatusRouter(app)
 
 	port := os.Getenv("SERVER_PORT")
 	if port == "" {
