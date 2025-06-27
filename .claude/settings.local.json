@@ -25,7 +25,8 @@
       "Bash(export STORAGE_DIR=./storage)",
       "Bash(export CONFIG_DIR=./config)",
       "Bash(timeout:*)",
-      "Bash(true)"
+      "Bash(true)",
+      "Bash(./proxyndctl:*)"
     ],
     "deny": []
   }

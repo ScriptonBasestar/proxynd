@@ -38,12 +38,8 @@ var cacheCmd = commands.NewCacheCmd()
 // configCmd는 설정 관리 명령어 그룹 (commands 패키지에서 가져옴)
 var configCmd = commands.NewConfigCmd()
 
-// userCmd는 사용자 관리 명령어 그룹
-var userCmd = &cobra.Command{
-	Use:   "user",
-	Short: "사용자 관리 명령어",
-	Long:  "ProxyND 서버의 사용자 계정을 관리합니다. 사용자 추가, 삭제, 조회 기능을 제공합니다.",
-}
+// userCmd는 사용자 관리 명령어 그룹 (commands 패키지에서 가져옴)
+var userCmd = commands.NewUserCmd()
 
 // testCmd는 프록시 테스트 명령어 그룹
 var testCmd = &cobra.Command{
