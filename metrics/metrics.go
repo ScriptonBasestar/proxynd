@@ -38,6 +38,13 @@ type Metrics struct {
 	VerificationFailures *prometheus.CounterVec
 	VerificationDuration *prometheus.HistogramVec
 
+	// TTL 관련 메트릭
+	TTLCalculationsTotal *prometheus.CounterVec
+	TTLSourceTotal       *prometheus.CounterVec
+	CacheTTLGauge        *prometheus.GaugeVec
+	TTLExpirationTotal   *prometheus.CounterVec
+	TTLStatistics        *prometheus.GaugeVec
+
 	// 시스템 관련 메트릭
 	ConfigReloads        prometheus.Counter
 	ConfigReloadFailures prometheus.Counter
@@ -221,6 +228,47 @@ func NewMetrics() *Metrics {
 				Buckets: prometheus.ExponentialBuckets(0.001, 2, 10),
 			},
 			[]string{"registry_type"},
+		),
+
+		// TTL 메트릭
+		TTLCalculationsTotal: promauto.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "proxynd_ttl_calculations_total",
+				Help: "Total number of TTL calculations",
+			},
+			[]string{"registry_type", "package_name", "source"},
+		),
+
+		TTLSourceTotal: promauto.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "proxynd_ttl_source_total",
+				Help: "Total TTL calculations by source type",
+			},
+			[]string{"source_type"}, // pattern, header, package_type, global
+		),
+
+		CacheTTLGauge: promauto.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: "proxynd_cache_ttl_seconds",
+				Help: "Current TTL values for cached items",
+			},
+			[]string{"registry_type", "package_name", "ttl_source"},
+		),
+
+		TTLExpirationTotal: promauto.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "proxynd_ttl_expirations_total",
+				Help: "Total number of TTL expirations",
+			},
+			[]string{"registry_type", "expiration_type"}, // natural, early, stale
+		),
+
+		TTLStatistics: promauto.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: "proxynd_ttl_statistics",
+				Help: "TTL statistics including averages and percentiles",
+			},
+			[]string{"registry_type", "metric_type"}, // avg, min, max, p50, p90, p95, p99
 		),
 
 		// 시스템 메트릭
