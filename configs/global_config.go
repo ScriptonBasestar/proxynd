@@ -16,6 +16,8 @@ type Cache struct {
 	UseCacheHeaders    bool                   `yaml:"use_cache_headers,omitempty"`
 	MaxCacheHeaderTTL  int                    `yaml:"max_cache_header_ttl,omitempty" default:"86400"`
 	MinCacheHeaderTTL  int                    `yaml:"min_cache_header_ttl,omitempty" default:"300"`
+	StaleWhileRevalidate bool                 `yaml:"stale_while_revalidate,omitempty"`
+	StaleMaxAge        int                    `yaml:"stale_max_age,omitempty" default:"3600"`
 }
 
 // GetDefaultPackageTTLs 패키지 타입별 기본 TTL 반환
@@ -280,3 +282,100 @@ func (c *Cache) GetDynamicTTL(packageName, packageType, cacheControl, expires st
 	// 2. 기존 패키지 기반 TTL 폴백
 	return c.GetTTLForPackage(packageName, packageType)
 }
+
+// CacheEntry 캐시 항목 정보 구조체
+type CacheEntry struct {
+	CachedAt   time.Time // 캐시된 시간
+	TTL        int       // 원본 TTL (초)
+	StaleUntil time.Time // stale 만료 시간
+}
+
+// IsFresh 캐시가 신선한지 확인
+func (c *Cache) IsFresh(entry CacheEntry) bool {
+	now := time.Now()
+	expireTime := entry.CachedAt.Add(time.Duration(entry.TTL) * time.Second)
+	return now.Before(expireTime)
+}
+
+// IsStale 캐시가 만료되었지만 stale 서빙 가능한지 확인
+func (c *Cache) IsStale(entry CacheEntry) bool {
+	if !c.StaleWhileRevalidate {
+		return false
+	}
+	
+	now := time.Now()
+	expireTime := entry.CachedAt.Add(time.Duration(entry.TTL) * time.Second)
+	
+	// TTL은 만료되었지만 stale 기간 내에 있는지 확인
+	return now.After(expireTime) && now.Before(entry.StaleUntil)
+}
+
+// IsExpired 캐시가 완전히 만료되었는지 확인
+func (c *Cache) IsExpired(entry CacheEntry) bool {
+	now := time.Now()
+	
+	if c.StaleWhileRevalidate {
+		// stale-while-revalidate 사용 시 stale 기간도 고려
+		return now.After(entry.StaleUntil)
+	}
+	
+	// 일반적인 TTL 만료 확인
+	expireTime := entry.CachedAt.Add(time.Duration(entry.TTL) * time.Second)
+	return now.After(expireTime)
+}
+
+// CreateCacheEntry 캐시 항목 생성
+func (c *Cache) CreateCacheEntry(ttl int) CacheEntry {
+	now := time.Now()
+	entry := CacheEntry{
+		CachedAt: now,
+		TTL:      ttl,
+	}
+	
+	if c.StaleWhileRevalidate {
+		staleMaxAge := c.StaleMaxAge
+		if staleMaxAge <= 0 {
+			staleMaxAge = 3600 // 기본값 1시간
+		}
+		
+		// stale 기간은 원본 TTL 만료 후 추가로 설정된 시간
+		entry.StaleUntil = now.Add(time.Duration(ttl+staleMaxAge) * time.Second)
+	} else {
+		// stale-while-revalidate 미사용 시 TTL과 동일
+		entry.StaleUntil = now.Add(time.Duration(ttl) * time.Second)
+	}
+	
+	return entry
+}
+
+// ShouldRevalidate 백그라운드에서 재검증해야 하는지 확인
+func (c *Cache) ShouldRevalidate(entry CacheEntry) bool {
+	if !c.StaleWhileRevalidate {
+		return false
+	}
+	
+	// TTL이 만료되었지만 stale 서빙 중인 경우 재검증 필요
+	return !c.IsFresh(entry) && c.IsStale(entry)
+}
+
+// GetCacheStrategy 캐시 전략 결정
+func (c *Cache) GetCacheStrategy(entry CacheEntry) CacheStrategy {
+	if c.IsFresh(entry) {
+		return CacheStrategyServe
+	}
+	
+	if c.IsStale(entry) {
+		return CacheStrategyStaleWhileRevalidate
+	}
+	
+	return CacheStrategyRevalidate
+}
+
+// CacheStrategy 캐시 전략 타입
+type CacheStrategy int
+
+const (
+	CacheStrategyServe CacheStrategy = iota                // 신선한 캐시 서빙
+	CacheStrategyStaleWhileRevalidate                      // 만료된 캐시 서빙 + 백그라운드 갱신
+	CacheStrategyRevalidate                                // 캐시 재검증 필요
+)

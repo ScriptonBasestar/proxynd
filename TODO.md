@@ -47,7 +47,7 @@
 - [x] 패키지 패턴별 TTL 오버라이드 설정 구현 (`*-SNAPSHOT: 300`, `*-dev: 600`)
 - [x] 메타데이터 파일 전용 TTL 설정 (`repomd.xml: 300`, `Packages.gz: 600`)
 - [x] 캐시 헤더 기반 동적 TTL 계산 로직 구현 (Cache-Control, Expires 헤더 파싱)
-- [ ] TTL 만료 시 백그라운드 갱신 옵션 추가 (stale-while-revalidate)
+- [x] TTL 만료 시 백그라운드 갱신 옵션 추가 (stale-while-revalidate)
 - [ ] `/api/cache/ttl` 엔드포인트로 현재 TTL 정책 조회 API 구현
 - [ ] TTL 통계 메트릭 수집 (평균 TTL, 조기 만료율 등)
 
