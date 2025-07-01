@@ -2,6 +2,7 @@ package configs
 
 import (
 	"testing"
+	"time"
 )
 
 func TestGetDefaultPackageTTLs(t *testing.T) {
@@ -352,6 +353,341 @@ func TestCache_matchesPattern(t *testing.T) {
 			if result != tt.expected {
 				t.Errorf("Pattern '%s' with package '%s': expected %t, got %t", 
 					tt.pattern, tt.packageName, tt.expected, result)
+			}
+		})
+	}
+}
+
+func TestCache_GetTTLFromCacheHeaders(t *testing.T) {
+	tests := []struct {
+		name         string
+		cache        Cache
+		cacheControl string
+		expires      string
+		expected     int
+	}{
+		{
+			name:         "Cache headers disabled",
+			cache:        Cache{UseCacheHeaders: false},
+			cacheControl: "max-age=3600",
+			expires:      "",
+			expected:     0,
+		},
+		{
+			name:         "Max-age directive",
+			cache:        Cache{UseCacheHeaders: true, MinCacheHeaderTTL: 300, MaxCacheHeaderTTL: 86400},
+			cacheControl: "max-age=1800",
+			expires:      "",
+			expected:     1800,
+		},
+		{
+			name:         "S-maxage directive (higher priority)",
+			cache:        Cache{UseCacheHeaders: true, MinCacheHeaderTTL: 300, MaxCacheHeaderTTL: 86400},
+			cacheControl: "max-age=1800, s-maxage=3600",
+			expires:      "",
+			expected:     3600,
+		},
+		{
+			name:         "Multiple directives with s-maxage",
+			cache:        Cache{UseCacheHeaders: true, MinCacheHeaderTTL: 300, MaxCacheHeaderTTL: 86400},
+			cacheControl: "public, max-age=1800, s-maxage=2400, must-revalidate",
+			expires:      "",
+			expected:     2400,
+		},
+		{
+			name:         "TTL below minimum gets enforced",
+			cache:        Cache{UseCacheHeaders: true, MinCacheHeaderTTL: 600, MaxCacheHeaderTTL: 86400},
+			cacheControl: "max-age=300",
+			expires:      "",
+			expected:     600,
+		},
+		{
+			name:         "TTL above maximum gets enforced",
+			cache:        Cache{UseCacheHeaders: true, MinCacheHeaderTTL: 300, MaxCacheHeaderTTL: 3600},
+			cacheControl: "max-age=7200",
+			expires:      "",
+			expected:     3600,
+		},
+		{
+			name:         "Expires header fallback",
+			cache:        Cache{UseCacheHeaders: true, MinCacheHeaderTTL: 300, MaxCacheHeaderTTL: 86400},
+			cacheControl: "",
+			expires:      time.Now().Add(2 * time.Hour).Format(time.RFC1123),
+			expected:     7200, // approximately 2 hours
+		},
+		{
+			name:         "No cache headers",
+			cache:        Cache{UseCacheHeaders: true, MinCacheHeaderTTL: 300, MaxCacheHeaderTTL: 86400},
+			cacheControl: "",
+			expires:      "",
+			expected:     0,
+		},
+		{
+			name:         "Invalid max-age value",
+			cache:        Cache{UseCacheHeaders: true, MinCacheHeaderTTL: 300, MaxCacheHeaderTTL: 86400},
+			cacheControl: "max-age=invalid",
+			expires:      "",
+			expected:     0,
+		},
+		{
+			name:         "Zero max-age value",
+			cache:        Cache{UseCacheHeaders: true, MinCacheHeaderTTL: 300, MaxCacheHeaderTTL: 86400},
+			cacheControl: "max-age=0",
+			expires:      "",
+			expected:     0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.cache.GetTTLFromCacheHeaders(tt.cacheControl, tt.expires)
+			
+			// Expires 헤더 테스트의 경우 약간의 오차 허용
+			if tt.name == "Expires header fallback" {
+				if result < 7170 || result > 7230 { // ±30초 오차 허용
+					t.Errorf("Expected TTL around 7200, got %d", result)
+				}
+			} else {
+				if result != tt.expected {
+					t.Errorf("Expected TTL %d, got %d", tt.expected, result)
+				}
+			}
+		})
+	}
+}
+
+func TestCache_parseCacheControl(t *testing.T) {
+	cache := Cache{}
+	
+	tests := []struct {
+		name         string
+		cacheControl string
+		expected     int
+	}{
+		{
+			name:         "Simple max-age",
+			cacheControl: "max-age=3600",
+			expected:     3600,
+		},
+		{
+			name:         "Max-age with spaces",
+			cacheControl: "max-age = 1800",
+			expected:     0, // 공백 있는 형식은 파싱 안됨
+		},
+		{
+			name:         "Multiple directives with max-age",
+			cacheControl: "public, max-age=2400, must-revalidate",
+			expected:     2400,
+		},
+		{
+			name:         "S-maxage priority",
+			cacheControl: "max-age=1800, s-maxage=3600",
+			expected:     3600,
+		},
+		{
+			name:         "Case insensitive",
+			cacheControl: "MAX-AGE=1200",
+			expected:     1200,
+		},
+		{
+			name:         "No max-age directive",
+			cacheControl: "public, must-revalidate",
+			expected:     0,
+		},
+		{
+			name:         "Invalid max-age value",
+			cacheControl: "max-age=abc",
+			expected:     0,
+		},
+		{
+			name:         "Negative max-age",
+			cacheControl: "max-age=-300",
+			expected:     0,
+		},
+		{
+			name:         "Zero max-age",
+			cacheControl: "max-age=0",
+			expected:     0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := cache.parseCacheControl(tt.cacheControl)
+			if result != tt.expected {
+				t.Errorf("Expected %d, got %d", tt.expected, result)
+			}
+		})
+	}
+}
+
+func TestCache_parseExpires(t *testing.T) {
+	cache := Cache{}
+	
+	// 미래 시간 생성 (1시간 후)
+	futureTime := time.Now().Add(1 * time.Hour)
+	pastTime := time.Now().Add(-1 * time.Hour)
+	
+	tests := []struct {
+		name     string
+		expires  string
+		expected int
+	}{
+		{
+			name:     "RFC1123 format",
+			expires:  futureTime.Format(time.RFC1123),
+			expected: 3600, // approximately 1 hour
+		},
+		{
+			name:     "RFC822 format",
+			expires:  futureTime.Format(time.RFC822),
+			expected: 3600,
+		},
+		{
+			name:     "Past time",
+			expires:  pastTime.Format(time.RFC1123),
+			expected: 0,
+		},
+		{
+			name:     "Invalid format",
+			expires:  "invalid-date",
+			expected: 0,
+		},
+		{
+			name:     "Empty expires",
+			expires:  "",
+			expected: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := cache.parseExpires(tt.expires)
+			
+			if tt.expected > 0 {
+				// 시간 기반 테스트는 약간의 오차 허용 (±60초)
+				if result < tt.expected-60 || result > tt.expected+60 {
+					t.Errorf("Expected TTL around %d, got %d", tt.expected, result)
+				}
+			} else {
+				if result != tt.expected {
+					t.Errorf("Expected TTL %d, got %d", tt.expected, result)
+				}
+			}
+		})
+	}
+}
+
+func TestCache_enforceTTLLimits(t *testing.T) {
+	tests := []struct {
+		name     string
+		cache    Cache
+		inputTTL int
+		expected int
+	}{
+		{
+			name:     "TTL within limits",
+			cache:    Cache{MinCacheHeaderTTL: 300, MaxCacheHeaderTTL: 86400},
+			inputTTL: 3600,
+			expected: 3600,
+		},
+		{
+			name:     "TTL below minimum",
+			cache:    Cache{MinCacheHeaderTTL: 600, MaxCacheHeaderTTL: 86400},
+			inputTTL: 300,
+			expected: 600,
+		},
+		{
+			name:     "TTL above maximum",
+			cache:    Cache{MinCacheHeaderTTL: 300, MaxCacheHeaderTTL: 3600},
+			inputTTL: 7200,
+			expected: 3600,
+		},
+		{
+			name:     "Default limits when not set",
+			cache:    Cache{MinCacheHeaderTTL: 0, MaxCacheHeaderTTL: 0},
+			inputTTL: 100,
+			expected: 300, // 기본 최소값
+		},
+		{
+			name:     "Default max limit when not set",
+			cache:    Cache{MinCacheHeaderTTL: 0, MaxCacheHeaderTTL: 0},
+			inputTTL: 100000,
+			expected: 86400, // 기본 최대값
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.cache.enforceTTLLimits(tt.inputTTL)
+			if result != tt.expected {
+				t.Errorf("Expected TTL %d, got %d", tt.expected, result)
+			}
+		})
+	}
+}
+
+func TestCache_GetDynamicTTL(t *testing.T) {
+	cache := Cache{
+		TTL:               3600,
+		UseCacheHeaders:   true,
+		MinCacheHeaderTTL: 300,
+		MaxCacheHeaderTTL: 86400,
+		PackageTTLs: map[string]int{
+			"npm": 1800,
+		},
+		PatternTTLs: map[string]int{
+			"*-SNAPSHOT": 300,
+		},
+	}
+
+	tests := []struct {
+		name         string
+		packageName  string
+		packageType  string
+		cacheControl string
+		expires      string
+		expected     int
+	}{
+		{
+			name:         "Cache header takes priority",
+			packageName:  "my-package",
+			packageType:  "npm",
+			cacheControl: "max-age=2400",
+			expires:      "",
+			expected:     2400,
+		},
+		{
+			name:         "Fallback to pattern TTL",
+			packageName:  "my-package-SNAPSHOT",
+			packageType:  "maven",
+			cacheControl: "",
+			expires:      "",
+			expected:     300,
+		},
+		{
+			name:         "Fallback to package type TTL",
+			packageName:  "regular-package",
+			packageType:  "npm",
+			cacheControl: "",
+			expires:      "",
+			expected:     1800,
+		},
+		{
+			name:         "Cache header overrides pattern",
+			packageName:  "test-SNAPSHOT",
+			packageType:  "maven",
+			cacheControl: "max-age=1200",
+			expires:      "",
+			expected:     1200,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := cache.GetDynamicTTL(tt.packageName, tt.packageType, tt.cacheControl, tt.expires)
+			if result != tt.expected {
+				t.Errorf("Expected TTL %d, got %d", tt.expected, result)
 			}
 		})
 	}

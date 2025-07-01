@@ -6,6 +6,13 @@ cache:
   # 전역 기본 TTL (초)
   ttl: 3600
   
+  # HTTP 캐시 헤더 기반 동적 TTL 사용 여부
+  use_cache_headers: true
+  
+  # 캐시 헤더 기반 TTL 제한값 (초)
+  max_cache_header_ttl: 86400  # 최대 24시간
+  min_cache_header_ttl: 300    # 최소 5분
+  
   # 패키지 타입별 기본 TTL 설정 (초)
   # 설정하지 않으면 내장 기본값 사용
   package_ttls:

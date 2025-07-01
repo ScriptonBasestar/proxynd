@@ -3,13 +3,19 @@ package configs
 import (
 	"path"
 	"proxynd/helpers"
+	"strconv"
+	"strings"
+	"time"
 )
 
 type Cache struct {
-	TTL         int                    `yaml:"ttl,omitempty" default:"3600"`
-	PackageTTLs map[string]int         `yaml:"package_ttls,omitempty"`
-	PatternTTLs map[string]int         `yaml:"pattern_ttls,omitempty"`
-	MetadataTTLs map[string]int        `yaml:"metadata_ttls,omitempty"`
+	TTL                int                    `yaml:"ttl,omitempty" default:"3600"`
+	PackageTTLs        map[string]int         `yaml:"package_ttls,omitempty"`
+	PatternTTLs        map[string]int         `yaml:"pattern_ttls,omitempty"`
+	MetadataTTLs       map[string]int         `yaml:"metadata_ttls,omitempty"`
+	UseCacheHeaders    bool                   `yaml:"use_cache_headers,omitempty"`
+	MaxCacheHeaderTTL  int                    `yaml:"max_cache_header_ttl,omitempty" default:"86400"`
+	MinCacheHeaderTTL  int                    `yaml:"min_cache_header_ttl,omitempty" default:"300"`
 }
 
 // GetDefaultPackageTTLs 패키지 타입별 기본 TTL 반환
@@ -159,4 +165,118 @@ func (cfg *GlobalConfig) ConfigExists() bool {
 func (cfg *GlobalConfig) ReadConfig() {
 	confDir := helpers.GetConfigDir()
 	helpers.ReadYaml(path.Join(confDir, "global.yaml"), cfg)
+}
+
+// GetTTLFromCacheHeaders HTTP 캐시 헤더에서 TTL 계산
+func (c *Cache) GetTTLFromCacheHeaders(cacheControl, expires string) int {
+	if !c.UseCacheHeaders {
+		return 0 // 캐시 헤더 사용 안함
+	}
+
+	// Cache-Control 헤더 우선 처리
+	if cacheControl != "" {
+		if ttl := c.parseCacheControl(cacheControl); ttl > 0 {
+			return c.enforceTTLLimits(ttl)
+		}
+	}
+
+	// Expires 헤더 처리
+	if expires != "" {
+		if ttl := c.parseExpires(expires); ttl > 0 {
+			return c.enforceTTLLimits(ttl)
+		}
+	}
+
+	return 0 // 유효한 헤더 없음
+}
+
+// parseCacheControl Cache-Control 헤더 파싱
+func (c *Cache) parseCacheControl(cacheControl string) int {
+	directives := strings.Split(strings.ToLower(cacheControl), ",")
+	
+	var maxAge int
+	var sMaxAge int
+	
+	for _, directive := range directives {
+		directive = strings.TrimSpace(directive)
+		
+		// s-maxage 지시어 처리 (공유 캐시용, 우선순위 높음) - 먼저 확인
+		if strings.HasPrefix(directive, "s-maxage=") {
+			sMaxAgeStr := strings.TrimPrefix(directive, "s-maxage=")
+			if parsed, err := strconv.Atoi(sMaxAgeStr); err == nil && parsed > 0 {
+				sMaxAge = parsed
+			}
+		} else if strings.HasPrefix(directive, "max-age=") {
+			// max-age 지시어 처리
+			maxAgeStr := strings.TrimPrefix(directive, "max-age=")
+			if parsed, err := strconv.Atoi(maxAgeStr); err == nil && parsed > 0 {
+				maxAge = parsed
+			}
+		}
+	}
+	
+	// s-maxage가 있으면 우선 반환
+	if sMaxAge > 0 {
+		return sMaxAge
+	}
+	
+	// 그렇지 않으면 max-age 반환
+	return maxAge
+}
+
+// parseExpires Expires 헤더 파싱
+func (c *Cache) parseExpires(expires string) int {
+	// RFC 1123 형식 파싱 시도
+	layouts := []string{
+		time.RFC1123,
+		time.RFC1123Z,
+		time.RFC822,
+		time.RFC822Z,
+		"Mon, 02 Jan 2006 15:04:05 MST",
+	}
+	
+	for _, layout := range layouts {
+		if expiresTime, err := time.Parse(layout, expires); err == nil {
+			ttl := int(time.Until(expiresTime).Seconds())
+			if ttl > 0 {
+				return ttl
+			}
+			break
+		}
+	}
+	
+	return 0
+}
+
+// enforceTTLLimits TTL 최소/최대값 강제 적용
+func (c *Cache) enforceTTLLimits(ttl int) int {
+	minTTL := c.MinCacheHeaderTTL
+	if minTTL <= 0 {
+		minTTL = 300 // 기본 최소값 5분
+	}
+	
+	maxTTL := c.MaxCacheHeaderTTL
+	if maxTTL <= 0 {
+		maxTTL = 86400 // 기본 최대값 24시간
+	}
+	
+	if ttl < minTTL {
+		return minTTL
+	}
+	if ttl > maxTTL {
+		return maxTTL
+	}
+	
+	return ttl
+}
+
+// GetDynamicTTL 동적 TTL 계산 (헤더 기반 + 폴백)
+func (c *Cache) GetDynamicTTL(packageName, packageType, cacheControl, expires string) int {
+	// 1. 캐시 헤더 기반 TTL 우선 시도
+	if headerTTL := c.GetTTLFromCacheHeaders(cacheControl, expires); headerTTL > 0 {
+		return headerTTL
+	}
+	
+	// 2. 기존 패키지 기반 TTL 폴백
+	return c.GetTTLForPackage(packageName, packageType)
 }
