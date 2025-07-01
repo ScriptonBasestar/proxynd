@@ -75,6 +75,90 @@ func getMetricsUsers(config *configs.UnifiedConfig) map[string]string {
 
 // setupAdditionalMetrics 추가 메트릭 엔드포인트 설정
 func setupAdditionalMetrics(app *fiber.App, config *configs.UnifiedConfig) {
+	// TTL 통계 엔드포인트
+	app.Get("/api/metrics/ttl", func(c *fiber.Ctx) error {
+		collector := metrics.GetTTLCollector()
+		registryType := c.Query("registry_type", "")
+		
+		if registryType != "" {
+			stats := collector.GetStats(registryType)
+			return c.JSON(fiber.Map{
+				"registry_type": registryType,
+				"statistics":    stats,
+			})
+		}
+
+		// 모든 통계 반환
+		allStats := collector.GetAllStats()
+		return c.JSON(allStats)
+	})
+
+	// TTL 통계 상세 정보
+	app.Get("/api/metrics/ttl/details", func(c *fiber.Ctx) error {
+		collector := metrics.GetTTLCollector()
+		limitStr := c.Query("limit", "100")
+		
+		limit, err := strconv.Atoi(limitStr)
+		if err != nil {
+			limit = 100
+		}
+
+		recentEntries := collector.GetRecentEntries(limit)
+		allStats := collector.GetAllStats()
+
+		return c.JSON(fiber.Map{
+			"statistics":     allStats,
+			"recent_entries": recentEntries,
+			"entry_count":    len(recentEntries),
+		})
+	})
+
+	// TTL 패턴 분석
+	app.Get("/api/metrics/ttl/patterns", func(c *fiber.Ctx) error {
+		collector := metrics.GetTTLCollector()
+		recentEntries := collector.GetRecentEntries(1000)
+
+		// 소스별 분포 계산
+		sourceDistribution := make(map[string]int)
+		packageTypeDistribution := make(map[string]int)
+		ttlRanges := map[string]int{
+			"<5min":     0,  // < 300초
+			"5-30min":   0,  // 300-1800초
+			"30min-2h":  0,  // 1800-7200초
+			"2h-12h":    0,  // 7200-43200초
+			"12h-24h":   0,  // 43200-86400초
+			">24h":      0,  // > 86400초
+		}
+
+		for _, entry := range recentEntries {
+			sourceDistribution[entry.Source]++
+			packageTypeDistribution[entry.PackageType]++
+
+			// TTL 범위 분류
+			ttl := entry.CalculatedTTL
+			switch {
+			case ttl < 300:
+				ttlRanges["<5min"]++
+			case ttl < 1800:
+				ttlRanges["5-30min"]++
+			case ttl < 7200:
+				ttlRanges["30min-2h"]++
+			case ttl < 43200:
+				ttlRanges["2h-12h"]++
+			case ttl < 86400:
+				ttlRanges["12h-24h"]++
+			default:
+				ttlRanges[">24h"]++
+			}
+		}
+
+		return c.JSON(fiber.Map{
+			"source_distribution":       sourceDistribution,
+			"package_type_distribution": packageTypeDistribution,
+			"ttl_ranges":               ttlRanges,
+			"total_analyzed":           len(recentEntries),
+		})
+	})
 	// 캐시 통계 엔드포인트
 	app.Get("/api/metrics/cache", func(c *fiber.Ctx) error {
 		m := metrics.GetMetrics()
