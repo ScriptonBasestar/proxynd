@@ -52,7 +52,7 @@
 - [x] TTL 통계 메트릭 수집 (평균 TTL, 조기 만료율 등)
 
 ### 🔐 OAuth2 인증 시스템
-- [ ] OAuth2 인증 플로우 설계 문서 작성 (Authorization Code, Client Credentials 플로우 선택)
+- [x] OAuth2 인증 플로우 설계 문서 작성 (Authorization Code, Client Credentials 플로우 선택)
 - [ ] `/configs/oauth2_config.go` 설정 구조체 구현 (provider 정보, client ID/secret, 콜백 URL)
 - [ ] `/internal/auth/oauth2/provider.go` 공통 인터페이스 정의
 - [ ] GitHub OAuth2 프로바이더 구현 (`/internal/auth/oauth2/github.go`)
