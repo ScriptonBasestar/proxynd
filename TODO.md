@@ -58,7 +58,7 @@
 - [x] GitHub OAuth2 프로바이더 구현 (`/internal/auth/oauth2/github.go`)
 - [x] GitLab OAuth2 프로바이더 구현 (`/internal/auth/oauth2/gitlab.go`)
 - [x] Google OAuth2 프로바이더 구현 (`/internal/auth/oauth2/google.go`)
-- [ ] OAuth2 콜백 핸들러 구현 (`/auth/callback/:provider`)
+- [x] OAuth2 콜백 핸들러 구현 (`/auth/callback/:provider`)
 - [ ] JWT 토큰 발급 및 검증 로직 구현 (access/refresh token)
 - [ ] 기존 BasicAuth와 OAuth2 통합 미들웨어 구현
 - [ ] OAuth2 사용자 정보 매핑 및 권한 동기화 로직 구현
