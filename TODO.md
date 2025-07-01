@@ -44,8 +44,8 @@
 
 ### ⏱️ 패키지별 TTL 고도화
 - [x] 글로벌 설정에 패키지 타입별 기본 TTL 추가 (`apt: 3600`, `npm: 1800` 등)
-- [ ] 패키지 패턴별 TTL 오버라이드 설정 구현 (`*-SNAPSHOT: 300`, `*-dev: 600`)
-- [ ] 메타데이터 파일 전용 TTL 설정 (`repomd.xml: 300`, `Packages.gz: 600`)
+- [x] 패키지 패턴별 TTL 오버라이드 설정 구현 (`*-SNAPSHOT: 300`, `*-dev: 600`)
+- [x] 메타데이터 파일 전용 TTL 설정 (`repomd.xml: 300`, `Packages.gz: 600`)
 - [ ] 캐시 헤더 기반 동적 TTL 계산 로직 구현 (Cache-Control, Expires 헤더 파싱)
 - [ ] TTL 만료 시 백그라운드 갱신 옵션 추가 (stale-while-revalidate)
 - [ ] `/api/cache/ttl` 엔드포인트로 현재 TTL 정책 조회 API 구현
