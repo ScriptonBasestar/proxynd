@@ -323,8 +323,16 @@ func (c *OAuth2Config) ReadConfig() error {
 	confDir := helpers.GetConfigDir()
 	configPath := path.Join(confDir, "oauth2.yaml")
 	
-	if err := helpers.ReadYaml(configPath, c); err != nil {
-		return err
+	// 설정 파일이 없으면 기본값으로 초기화
+	if !helpers.FileExists(configPath) {
+		c.Enabled = false
+		c.MergeWithDefaults()
+		return nil
+	}
+	
+	// 안전한 YAML 읽기 사용
+	if err := helpers.ReadYamlSafe(configPath, c); err != nil {
+		return helpers.NewConfigError("failed to read OAuth2 config: " + err.Error())
 	}
 	
 	// 기본값과 병합
