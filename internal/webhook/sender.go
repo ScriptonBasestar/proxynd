@@ -46,6 +46,7 @@ type WebhookSender struct {
 	workers      []*Worker
 	batchManager *BatchManager
 	metrics      *SenderMetrics
+	failureQueue *PersistentFailureQueue // 영속성 실패 큐 추가
 	stopCh       chan struct{}
 	wg           sync.WaitGroup
 	mu           sync.RWMutex
@@ -109,15 +110,26 @@ func NewWebhookSender(config configs.WebhookConfig) (*WebhookSender, error) {
 		return nil, fmt.Errorf("failed to create rate limiter: %w", err)
 	}
 
+	// 영속성 실패 큐 초기화
+	failureQueue, err := NewPersistentFailureQueue(
+		config.FailureStorage.StorageDir,
+		config.Retry.MaxAttempts,
+		time.Duration(config.FailureStorage.RetentionHours)*time.Hour,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create failure queue: %w", err)
+	}
+
 	sender := &WebhookSender{
-		config:      config,
-		logger:      logger,
-		queue:       queue,
-		rateLimiter: rateLimiter,
-		adapters:    make(map[string]WebhookAdapter),
-		workers:     make([]*Worker, 0),
-		metrics:     &SenderMetrics{},
-		stopCh:      make(chan struct{}),
+		config:       config,
+		logger:       logger,
+		queue:        queue,
+		rateLimiter:  rateLimiter,
+		adapters:     make(map[string]WebhookAdapter),
+		workers:      make([]*Worker, 0),
+		metrics:      &SenderMetrics{},
+		failureQueue: failureQueue,
+		stopCh:       make(chan struct{}),
 	}
 
 	// 기본 어댑터 등록
@@ -246,6 +258,11 @@ func (ws *WebhookSender) Stop(ctx context.Context) error {
 	// 큐 정리
 	if ws.queue != nil {
 		ws.queue.Close()
+	}
+
+	// 영속성 실패 큐 정리
+	if ws.failureQueue != nil {
+		ws.failureQueue.Close()
 	}
 
 	ws.started = false
@@ -553,6 +570,16 @@ func (ws *WebhookSender) sendToEndpoint(ctx context.Context, event *alerts.Alert
 		}
 	}
 
+	// 모든 재시도 실패 시 영속성 큐에 저장
+	if ws.failureQueue != nil && ws.isRetryableError(lastErr) {
+		if err := ws.failureQueue.AddFailedEvent(event, endpoint.Name, lastErr); err != nil {
+			ws.logger.Error("실패 이벤트 영속성 저장 실패",
+				logging.F("event_id", event.ID),
+				logging.F("endpoint", endpoint.Name),
+				logging.F("error", err))
+		}
+	}
+
 	return fmt.Errorf("failed after %d attempts: %w", retryPolicy.MaxAttempts, lastErr)
 }
 
@@ -604,6 +631,12 @@ func (ws *WebhookSender) GetMetrics() *SenderMetrics {
 		metrics.BatchStats = map[string]interface{}{
 			"enabled": false,
 		}
+	}
+
+	// 영속성 큐 통계 추가
+	if ws.failureQueue != nil {
+		failureStats := ws.failureQueue.GetStats()
+		metrics.BatchStats["failure_queue"] = failureStats
 	}
 
 	return metrics
@@ -669,6 +702,9 @@ func (ws *WebhookSender) retryScheduler(ctx context.Context) {
 	ticker := time.NewTicker(time.Minute)
 	defer ticker.Stop()
 
+	cleanupTicker := time.NewTicker(time.Hour) // 만료된 항목 정리
+	defer cleanupTicker.Stop()
+
 	for {
 		select {
 		case <-ticker.C:
@@ -676,10 +712,68 @@ func (ws *WebhookSender) retryScheduler(ctx context.Context) {
 			for _, worker := range ws.workers {
 				worker.retryQ.processRetries(ctx, ws)
 			}
+
+			// 영속성 큐의 재시도 가능한 항목들 처리
+			if ws.failureQueue != nil {
+				ws.processPersistentRetries(ctx)
+			}
+
+		case <-cleanupTicker.C:
+			// 만료된 실패 항목들 정리
+			if ws.failureQueue != nil {
+				expiredCount := ws.failureQueue.RemoveExpiredItems()
+				if expiredCount > 0 {
+					ws.logger.Info("만료된 실패 항목들 정리 완료",
+						logging.F("removed_count", expiredCount))
+				}
+			}
+
 		case <-ws.stopCh:
 			return
 		case <-ctx.Done():
 			return
+		}
+	}
+}
+
+// processPersistentRetries 영속성 큐의 재시도 처리
+func (ws *WebhookSender) processPersistentRetries(ctx context.Context) {
+	retryableItems := ws.failureQueue.GetRetryableItems()
+
+	for _, item := range retryableItems {
+		// 엔드포인트 찾기
+		var endpoint *configs.WebhookEndpointConfig
+		for _, ep := range ws.config.Endpoints {
+			if ep.Name == item.Endpoint {
+				endpoint = &ep
+				break
+			}
+		}
+
+		if endpoint == nil {
+			ws.logger.Warn("엔드포인트를 찾을 수 없음",
+				logging.F("endpoint", item.Endpoint),
+				logging.F("item_id", item.ID))
+			continue
+		}
+
+		// 재시도 전송
+		err := ws.sendToEndpoint(ctx, item.Event, *endpoint)
+		success := err == nil
+
+		// 결과에 따라 영속성 큐 업데이트
+		if updateErr := ws.failureQueue.UpdateRetryAttempt(item.ID, success, err); updateErr != nil {
+			ws.logger.Error("재시도 결과 업데이트 실패",
+				logging.F("item_id", item.ID),
+				logging.F("error", updateErr))
+		}
+
+		if success {
+			ws.logger.Info("영속성 큐 재시도 성공",
+				logging.F("item_id", item.ID),
+				logging.F("event_id", item.Event.ID),
+				logging.F("endpoint", item.Endpoint),
+				logging.F("attempts", item.Attempts))
 		}
 	}
 }
