@@ -72,6 +72,7 @@ func main() {
 	routers.StatusRouter(app)
 	routers.UserRouter(app)
 	routers.TestRouter(app)
+	routers.WebhookRouter(app)
 
 	port := os.Getenv("SERVER_PORT")
 	if port == "" {
