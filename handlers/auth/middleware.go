@@ -8,10 +8,11 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"proxynd/configs"
+	"proxynd/internal/auth/jwt"
 	"proxynd/logging"
 )
 
-// RequireAuth 인증 필수 미들웨어
+// RequireAuth 인증 필수 미들웨어 (세션 기반)
 func RequireAuth() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		sess, err := getSession(c)
@@ -33,6 +34,83 @@ func RequireAuth() fiber.Handler {
 		
 		return c.Next()
 	}
+}
+
+// RequireJWTAuth JWT 토큰 기반 인증 미들웨어
+func RequireJWTAuth() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		// Authorization 헤더에서 Bearer 토큰 추출
+		authHeader := c.Get("Authorization")
+		if authHeader == "" {
+			// 헤더가 없으면 세션에서 JWT 토큰 확인
+			return requireJWTFromSession(c)
+		}
+		
+		if !strings.HasPrefix(authHeader, "Bearer ") {
+			return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
+				"error": "Invalid authorization header format",
+			})
+		}
+		
+		token := strings.TrimPrefix(authHeader, "Bearer ")
+		return validateJWTToken(c, token)
+	}
+}
+
+// requireJWTFromSession 세션에서 JWT 토큰 확인
+func requireJWTFromSession(c *fiber.Ctx) error {
+	sess, err := getSession(c)
+	if err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to get session",
+		})
+	}
+	
+	jwtAccessToken, exists := sess["jwt_access_token"]
+	if !exists || jwtAccessToken == nil {
+		return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Authentication required",
+		})
+	}
+	
+	return validateJWTToken(c, jwtAccessToken.(string))
+}
+
+// validateJWTToken JWT 토큰 검증
+func validateJWTToken(c *fiber.Ctx, token string) error {
+	// OAuth2 설정 로드
+	oauth2Config := &configs.OAuth2Config{}
+	if err := oauth2Config.ReadConfig(); err != nil {
+		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Authentication configuration not available",
+		})
+	}
+	
+	// JWT 서비스 생성
+	jwtService := jwt.NewJWTService(oauth2Config)
+	
+	// 토큰 검증
+	claims, err := jwtService.ValidateAccessToken(token)
+	if err != nil {
+		logging.GetLogger().Warn("JWT token validation failed", 
+			logging.F("error", err),
+			logging.F("ip", c.IP()))
+		return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Invalid or expired token",
+		})
+	}
+	
+	// 토큰이 곧 만료되는지 확인
+	if jwtService.IsTokenExpiringSoon(claims) {
+		c.Set("X-Token-Expires-Soon", "true")
+	}
+	
+	// 사용자 정보를 컨텍스트에 저장
+	userInfo := jwtService.ExtractUserInfo(claims)
+	c.Locals("user", userInfo)
+	c.Locals("jwt_claims", claims)
+	
+	return c.Next()
 }
 
 // RequireRole 역할 기반 접근 제어 미들웨어
@@ -221,16 +299,11 @@ func DeveloperOrAbove() fiber.Handler {
 
 // 유틸리티 함수들
 
-// autoRefreshToken 자동 토큰 갱신
+// autoRefreshToken 자동 JWT 토큰 갱신
 func autoRefreshToken(c *fiber.Ctx, sess fiber.Map, userMap fiber.Map) error {
-	refreshToken, exists := sess["refresh_token"]
-	if !exists || refreshToken == nil {
-		return errors.New("no refresh token available")
-	}
-	
-	providerName, ok := userMap["provider"].(string)
-	if !ok {
-		return errors.New("provider information not found")
+	jwtRefreshToken, exists := sess["jwt_refresh_token"]
+	if !exists || jwtRefreshToken == nil {
+		return errors.New("no JWT refresh token available")
 	}
 	
 	// OAuth2 설정 로드
@@ -239,18 +312,40 @@ func autoRefreshToken(c *fiber.Ctx, sess fiber.Map, userMap fiber.Map) error {
 		return err
 	}
 	
-	providerConfig, exists := oauth2Config.GetProvider(providerName)
-	if !exists {
-		return errors.New("provider not configured")
+	// JWT 서비스 생성
+	jwtService := jwt.NewJWTService(oauth2Config)
+	
+	// JWT 토큰 갱신
+	newTokenPair, err := jwtService.RefreshAccessToken(jwtRefreshToken.(string))
+	if err != nil {
+		return errors.New("failed to refresh JWT token: " + err.Error())
 	}
 	
-	// 실제 토큰 갱신 로직은 RefreshToken 함수와 동일
-	// 여기서는 간단히 만료 시간만 연장
-	userMap["expires_at"] = time.Now().Add(1 * time.Hour)
-	sess["user"] = userMap
+	// 새 JWT 토큰으로 사용자 정보 추출
+	newAccessClaims, err := jwtService.ValidateAccessToken(newTokenPair.AccessToken)
+	if err != nil {
+		return errors.New("failed to validate new access token: " + err.Error())
+	}
 	
-	// 미사용 변수 경고 제거
-	_ = providerConfig
+	// 세션 업데이트
+	newSessionData := jwtService.ExtractUserInfo(newAccessClaims)
+	// 기존 정보 보존 (avatar, login_time, oauth2 토큰 등)
+	if avatar, ok := userMap["avatar"]; ok {
+		newSessionData["avatar"] = avatar
+	}
+	if loginTime, ok := userMap["login_time"]; ok {
+		newSessionData["login_time"] = loginTime
+	}
+	if oauth2AccessToken, ok := userMap["oauth2_access_token"]; ok {
+		newSessionData["oauth2_access_token"] = oauth2AccessToken
+	}
+	if oauth2RefreshToken, ok := userMap["oauth2_refresh_token"]; ok {
+		newSessionData["oauth2_refresh_token"] = oauth2RefreshToken
+	}
+	
+	sess["user"] = newSessionData
+	sess["jwt_access_token"] = newTokenPair.AccessToken
+	sess["jwt_refresh_token"] = newTokenPair.RefreshToken
 	
 	return nil
 }
