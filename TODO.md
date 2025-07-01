@@ -48,7 +48,7 @@
 - [x] 메타데이터 파일 전용 TTL 설정 (`repomd.xml: 300`, `Packages.gz: 600`)
 - [x] 캐시 헤더 기반 동적 TTL 계산 로직 구현 (Cache-Control, Expires 헤더 파싱)
 - [x] TTL 만료 시 백그라운드 갱신 옵션 추가 (stale-while-revalidate)
-- [ ] `/api/cache/ttl` 엔드포인트로 현재 TTL 정책 조회 API 구현
+- [x] `/api/cache/ttl` 엔드포인트로 현재 TTL 정책 조회 API 구현
 - [ ] TTL 통계 메트릭 수집 (평균 TTL, 조기 만료율 등)
 
 ### 🔐 OAuth2 인증 시스템

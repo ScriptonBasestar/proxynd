@@ -57,6 +57,32 @@ type ProxyTypeInfo struct {
 	ProxyCount int    `json:"proxy_count"`
 }
 
+// TTLPolicyResponse TTL 정책 조회 응답 구조체
+type TTLPolicyResponse struct {
+	GlobalTTL              int                    `json:"global_ttl"`
+	PackageTTLs            map[string]int         `json:"package_ttls"`
+	PatternTTLs            map[string]int         `json:"pattern_ttls"`
+	MetadataTTLs           map[string]int         `json:"metadata_ttls"`
+	UseCacheHeaders        bool                   `json:"use_cache_headers"`
+	MaxCacheHeaderTTL      int                    `json:"max_cache_header_ttl"`
+	MinCacheHeaderTTL      int                    `json:"min_cache_header_ttl"`
+	StaleWhileRevalidate   bool                   `json:"stale_while_revalidate"`
+	StaleMaxAge            int                    `json:"stale_max_age"`
+	DefaultPackageTTLs     map[string]int         `json:"default_package_ttls"`
+	LastUpdated            time.Time              `json:"last_updated"`
+	ConfigurationSource    string                 `json:"configuration_source"`
+}
+
+// TTLCalculationExample TTL 계산 예제
+type TTLCalculationExample struct {
+	PackageName    string `json:"package_name"`
+	PackageType    string `json:"package_type"`
+	CalculatedTTL  int    `json:"calculated_ttl"`
+	Source         string `json:"source"`
+	CacheControl   string `json:"cache_control,omitempty"`
+	Expires        string `json:"expires,omitempty"`
+}
+
 // CacheRouter 캐시 관리 API 라우터 설정
 func CacheRouter(app *fiber.App) {
 	api := app.Group("/api/cache")
@@ -78,6 +104,9 @@ func CacheRouter(app *fiber.App) {
 
 	// 캐시 통계 조회
 	api.Get("/stats", getCacheStats)
+
+	// TTL 정책 조회
+	api.Get("/ttl", getTTLPolicy)
 }
 
 // getCacheList 캐시 목록 조회 핸들러
@@ -359,6 +388,98 @@ func getStorageDir(globalConfig configs.GlobalConfig) string {
 		return storageDir
 	}
 	return "./storage"
+}
+
+// getTTLPolicy TTL 정책 조회 핸들러
+func getTTLPolicy(c *fiber.Ctx) error {
+	logger := logging.GetLogger()
+
+	// 글로벌 설정 로드
+	globalConfig := configs.GlobalConfig{}
+	if !globalConfig.ConfigExists() {
+		logger.Error("Global configuration not found")
+		return c.Status(500).JSON(fiber.Map{
+			"error": "Configuration not available",
+		})
+	}
+
+	globalConfig.ReadConfig()
+	cache := globalConfig.Cache
+
+	// 설정되지 않은 값들을 기본값으로 설정
+	if cache.MaxCacheHeaderTTL == 0 {
+		cache.MaxCacheHeaderTTL = 86400
+	}
+	if cache.MinCacheHeaderTTL == 0 {
+		cache.MinCacheHeaderTTL = 300
+	}
+	if cache.StaleMaxAge == 0 {
+		cache.StaleMaxAge = 3600
+	}
+
+	// TTL 계산 예제 생성
+	examples := []TTLCalculationExample{
+		{
+			PackageName:   "express",
+			PackageType:   "npm",
+			CalculatedTTL: cache.GetTTLForPackage("express", "npm"),
+			Source:        "package_type_default",
+		},
+		{
+			PackageName:   "spring-boot-SNAPSHOT",
+			PackageType:   "maven",
+			CalculatedTTL: cache.GetTTLForPackage("spring-boot-SNAPSHOT", "maven"),
+			Source:        "pattern_match",
+		},
+		{
+			PackageName:   "Packages.gz",
+			PackageType:   "apt",
+			CalculatedTTL: cache.GetTTLForMetadata("Packages.gz", "apt"),
+			Source:        "metadata_file",
+		},
+	}
+
+	// 캐시 헤더 기반 계산 예제 추가
+	if cache.UseCacheHeaders {
+		examples = append(examples, TTLCalculationExample{
+			PackageName:   "react",
+			PackageType:   "npm",
+			CalculatedTTL: cache.GetDynamicTTL("react", "npm", "max-age=7200", ""),
+			Source:        "cache_header",
+			CacheControl:  "max-age=7200",
+		})
+	}
+
+	// 응답 생성
+	response := TTLPolicyResponse{
+		GlobalTTL:              cache.TTL,
+		PackageTTLs:            cache.PackageTTLs,
+		PatternTTLs:            cache.PatternTTLs,
+		MetadataTTLs:           cache.MetadataTTLs,
+		UseCacheHeaders:        cache.UseCacheHeaders,
+		MaxCacheHeaderTTL:      cache.MaxCacheHeaderTTL,
+		MinCacheHeaderTTL:      cache.MinCacheHeaderTTL,
+		StaleWhileRevalidate:   cache.StaleWhileRevalidate,
+		StaleMaxAge:            cache.StaleMaxAge,
+		DefaultPackageTTLs:     configs.GetDefaultPackageTTLs(),
+		LastUpdated:            time.Now(),
+		ConfigurationSource:    "global.yaml",
+	}
+
+	logger.Info("TTL policy requested",
+		logging.F("global_ttl", cache.TTL),
+		logging.F("use_cache_headers", cache.UseCacheHeaders),
+		logging.F("stale_while_revalidate", cache.StaleWhileRevalidate))
+
+	// examples 쿼리 파라미터가 있으면 계산 예제도 포함
+	if c.Query("examples") == "true" {
+		return c.JSON(fiber.Map{
+			"policy":   response,
+			"examples": examples,
+		})
+	}
+
+	return c.JSON(response)
 }
 
 // formatBytes 바이트를 인간이 읽기 쉬운 형태로 변환
