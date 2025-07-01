@@ -1,4 +1,4 @@
-package apihelpers
+package dtos
 
 const (
 	//Success as constant

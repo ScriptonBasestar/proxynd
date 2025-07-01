@@ -38,19 +38,20 @@ type RateLimiter interface {
 
 // WebhookSender 웹훅 전송 핵심 엔진
 type WebhookSender struct {
-	config       configs.WebhookConfig
-	logger       logging.Logger
-	queue        EventQueue
-	rateLimiter  RateLimiter
-	adapters     map[string]WebhookAdapter
-	workers      []*Worker
-	batchManager *BatchManager
-	metrics      *SenderMetrics
-	failureQueue *PersistentFailureQueue // 영속성 실패 큐 추가
-	stopCh       chan struct{}
-	wg           sync.WaitGroup
-	mu           sync.RWMutex
-	started      bool
+	config         configs.WebhookConfig
+	logger         logging.Logger
+	queue          EventQueue
+	rateLimiter    RateLimiter
+	adapters       map[string]WebhookAdapter
+	workers        []*Worker
+	batchManager   *BatchManager
+	metrics        *SenderMetrics
+	failureQueue   *PersistentFailureQueue // 영속성 실패 큐 추가
+	historyManager *WebhookHistoryManager  // 이력 관리자 추가
+	stopCh         chan struct{}
+	wg             sync.WaitGroup
+	mu             sync.RWMutex
+	started        bool
 }
 
 // Worker 이벤트 처리 워커
@@ -120,16 +121,24 @@ func NewWebhookSender(config configs.WebhookConfig) (*WebhookSender, error) {
 		return nil, fmt.Errorf("failed to create failure queue: %w", err)
 	}
 
+	// 이력 관리자 초기화
+	historyManager := NewWebhookHistoryManager(
+		config.FailureStorage.StorageDir+"/history",
+		10000, // 최대 10,000개 이력 보관
+		7*24*time.Hour, // 7일 보관
+	)
+
 	sender := &WebhookSender{
-		config:       config,
-		logger:       logger,
-		queue:        queue,
-		rateLimiter:  rateLimiter,
-		adapters:     make(map[string]WebhookAdapter),
-		workers:      make([]*Worker, 0),
-		metrics:      &SenderMetrics{},
-		failureQueue: failureQueue,
-		stopCh:       make(chan struct{}),
+		config:         config,
+		logger:         logger,
+		queue:          queue,
+		rateLimiter:    rateLimiter,
+		adapters:       make(map[string]WebhookAdapter),
+		workers:        make([]*Worker, 0),
+		metrics:        &SenderMetrics{},
+		failureQueue:   failureQueue,
+		historyManager: historyManager,
+		stopCh:         make(chan struct{}),
 	}
 
 	// 기본 어댑터 등록
@@ -505,6 +514,8 @@ func (ws *WebhookSender) matchesPattern(value, pattern string) bool {
 
 // sendToEndpoint 특정 엔드포인트로 전송
 func (ws *WebhookSender) sendToEndpoint(ctx context.Context, event *alerts.AlertEvent, endpoint configs.WebhookEndpointConfig) error {
+	startTime := time.Now()
+	
 	// 어댑터 선택
 	adapterName := "generic"
 	if endpoint.Format == "slack" {
@@ -528,9 +539,15 @@ func (ws *WebhookSender) sendToEndpoint(ctx context.Context, event *alerts.Alert
 
 	// 재시도 로직과 함께 전송
 	var lastErr error
+	var finalAttempt int
+	
 	for attempt := 1; attempt <= retryPolicy.MaxAttempts; attempt++ {
+		finalAttempt = attempt
+		
 		// 속도 제한 확인
 		if err := ws.rateLimiter.Wait(ctx); err != nil {
+			// 이력 기록 (속도 제한 오류)
+			ws.recordHistory(event, endpoint, "failed", time.Since(startTime), 0, err.Error(), finalAttempt-1)
 			return fmt.Errorf("rate limit wait failed: %w", err)
 		}
 
@@ -541,6 +558,8 @@ func (ws *WebhookSender) sendToEndpoint(ctx context.Context, event *alerts.Alert
 
 			// 재시도 가능한 오류인지 확인
 			if !ws.isRetryableError(err) {
+				// 이력 기록 (재시도 불가능한 오류)
+				ws.recordHistory(event, endpoint, "failed", time.Since(startTime), 0, err.Error(), finalAttempt-1)
 				return fmt.Errorf("non-retryable error: %w", err)
 			}
 
@@ -557,6 +576,8 @@ func (ws *WebhookSender) sendToEndpoint(ctx context.Context, event *alerts.Alert
 					ws.metrics.incrementRetries()
 					continue
 				case <-ctx.Done():
+					// 이력 기록 (컨텍스트 취소)
+					ws.recordHistory(event, endpoint, "failed", time.Since(startTime), 0, "context cancelled", finalAttempt-1)
 					return ctx.Err()
 				}
 			}
@@ -566,6 +587,9 @@ func (ws *WebhookSender) sendToEndpoint(ctx context.Context, event *alerts.Alert
 			ws.logger.Debug("웹훅 전송 성공",
 				logging.F("endpoint", endpoint.Name),
 				logging.F("event_id", event.ID))
+			
+			// 이력 기록 (성공)
+			ws.recordHistory(event, endpoint, "success", time.Since(startTime), 200, "", finalAttempt-1)
 			return nil
 		}
 	}
@@ -580,7 +604,41 @@ func (ws *WebhookSender) sendToEndpoint(ctx context.Context, event *alerts.Alert
 		}
 	}
 
+	// 이력 기록 (최종 실패)
+	ws.recordHistory(event, endpoint, "failed", time.Since(startTime), 0, lastErr.Error(), finalAttempt-1)
 	return fmt.Errorf("failed after %d attempts: %w", retryPolicy.MaxAttempts, lastErr)
+}
+
+// recordHistory 웹훅 전송 이력 기록
+func (ws *WebhookSender) recordHistory(event *alerts.AlertEvent, endpoint configs.WebhookEndpointConfig, status string, responseTime time.Duration, statusCode int, errorMessage string, retryCount int) {
+	if ws.historyManager == nil {
+		return
+	}
+
+	historyItem := &WebhookHistoryItem{
+		EndpointName: endpoint.Name,
+		URL:          endpoint.URL,
+		EventID:      event.ID,
+		EventType:    event.Type,
+		Status:       status,
+		Timestamp:    time.Now(),
+		ResponseTime: responseTime,
+		StatusCode:   statusCode,
+		ErrorMessage: errorMessage,
+		RetryCount:   retryCount,
+		Metadata: map[string]interface{}{
+			"event_level":   event.Level,
+			"event_source":  event.Source,
+			"event_message": event.Message,
+		},
+	}
+
+	if err := ws.historyManager.AddHistory(historyItem); err != nil {
+		ws.logger.Error("웹훅 이력 기록 실패",
+			logging.F("endpoint", endpoint.Name),
+			logging.F("event_id", event.ID),
+			logging.F("error", err))
+	}
 }
 
 // calculateBackoffDelay 백오프 지연 시간 계산
@@ -831,4 +889,9 @@ func (sm *SenderMetrics) incrementRetries() {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
 	sm.TotalRetries++
+}
+
+// GetHistoryManager 히스토리 매니저 반환
+func (ws *WebhookSender) GetHistoryManager() *WebhookHistoryManager {
+	return ws.historyManager
 }

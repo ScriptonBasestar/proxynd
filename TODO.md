@@ -39,8 +39,8 @@
 - [x] Generic webhook 어댑터 구현 (커스텀 JSON 포맷)
 - [x] 이벤트 버퍼링 및 배치 전송 기능 구현 (rate limiting 대응)
 - [x] Webhook 전송 실패 시 로컬 저장 및 재시도 큐 구현
-- [ ] Webhook 설정 테스트 엔드포인트 추가 (`/api/webhook/test`)
-- [ ] Webhook 전송 이력 및 통계 API 구현
+- [x] Webhook 설정 테스트 엔드포인트 추가 (`/api/webhook/test`)
+- [x] Webhook 전송 이력 및 통계 API 구현
 
 ### ⏱️ 패키지별 TTL 고도화
 - [ ] 글로벌 설정에 패키지 타입별 기본 TTL 추가 (`apt: 3600`, `npm: 1800` 등)
