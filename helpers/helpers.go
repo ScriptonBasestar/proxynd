@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"errors"
 	"log"
 	"os"
 	"strconv"
@@ -60,4 +61,9 @@ func FileExists(join string) bool {
 		return false
 	}
 	return true
+}
+
+// NewConfigError 설정 에러 생성
+func NewConfigError(message string) error {
+	return errors.New("config error: " + message)
 }
