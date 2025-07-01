@@ -34,7 +34,8 @@
       "Bash(mv:*)",
       "Bash(rm:*)",
       "Bash(echo $GOSUMDB)",
-      "Bash(go env:*)"
+      "Bash(go env:*)",
+      "Bash(CONFIG_DIR=/tmp STORAGE_DIR=/tmp go test -v ./handlers/auth/...)"
     ],
     "deny": []
   }
