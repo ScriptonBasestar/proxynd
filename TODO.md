@@ -43,7 +43,7 @@
 - [x] Webhook 전송 이력 및 통계 API 구현
 
 ### ⏱️ 패키지별 TTL 고도화
-- [ ] 글로벌 설정에 패키지 타입별 기본 TTL 추가 (`apt: 3600`, `npm: 1800` 등)
+- [x] 글로벌 설정에 패키지 타입별 기본 TTL 추가 (`apt: 3600`, `npm: 1800` 등)
 - [ ] 패키지 패턴별 TTL 오버라이드 설정 구현 (`*-SNAPSHOT: 300`, `*-dev: 600`)
 - [ ] 메타데이터 파일 전용 TTL 설정 (`repomd.xml: 300`, `Packages.gz: 600`)
 - [ ] 캐시 헤더 기반 동적 TTL 계산 로직 구현 (Cache-Control, Expires 헤더 파싱)
