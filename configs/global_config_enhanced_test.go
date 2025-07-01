@@ -692,3 +692,351 @@ func TestCache_GetDynamicTTL(t *testing.T) {
 		})
 	}
 }
+
+func TestCache_CreateCacheEntry(t *testing.T) {
+	tests := []struct {
+		name  string
+		cache Cache
+		ttl   int
+	}{
+		{
+			name:  "Without stale-while-revalidate",
+			cache: Cache{StaleWhileRevalidate: false},
+			ttl:   3600,
+		},
+		{
+			name:  "With stale-while-revalidate default",
+			cache: Cache{StaleWhileRevalidate: true, StaleMaxAge: 0},
+			ttl:   3600,
+		},
+		{
+			name:  "With stale-while-revalidate custom",
+			cache: Cache{StaleWhileRevalidate: true, StaleMaxAge: 1800},
+			ttl:   3600,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			beforeCreate := time.Now()
+			entry := tt.cache.CreateCacheEntry(tt.ttl)
+			afterCreate := time.Now()
+			
+			// CachedAt 시간이 생성 전후 범위에 있는지 확인
+			if entry.CachedAt.Before(beforeCreate) || entry.CachedAt.After(afterCreate) {
+				t.Errorf("CachedAt time %v is not within expected range", entry.CachedAt)
+			}
+			
+			// TTL이 올바르게 설정되었는지 확인
+			if entry.TTL != tt.ttl {
+				t.Errorf("Expected TTL %d, got %d", tt.ttl, entry.TTL)
+			}
+			
+			// StaleUntil 시간 확인
+			expectedStaleUntil := entry.CachedAt.Add(time.Duration(tt.ttl) * time.Second)
+			if tt.cache.StaleWhileRevalidate {
+				staleMaxAge := tt.cache.StaleMaxAge
+				if staleMaxAge <= 0 {
+					staleMaxAge = 3600
+				}
+				expectedStaleUntil = entry.CachedAt.Add(time.Duration(tt.ttl+staleMaxAge) * time.Second)
+			}
+			
+			if !entry.StaleUntil.Equal(expectedStaleUntil) {
+				t.Errorf("Expected StaleUntil %v, got %v", expectedStaleUntil, entry.StaleUntil)
+			}
+		})
+	}
+}
+
+func TestCache_IsFresh(t *testing.T) {
+	cache := Cache{}
+	now := time.Now()
+	
+	tests := []struct {
+		name     string
+		entry    CacheEntry
+		expected bool
+	}{
+		{
+			name: "Fresh cache",
+			entry: CacheEntry{
+				CachedAt: now.Add(-30 * time.Minute), // 30분 전 캐시
+				TTL:      3600,                       // 1시간 TTL
+			},
+			expected: true,
+		},
+		{
+			name: "Expired cache",
+			entry: CacheEntry{
+				CachedAt: now.Add(-2 * time.Hour), // 2시간 전 캐시
+				TTL:      3600,                    // 1시간 TTL
+			},
+			expected: false,
+		},
+		{
+			name: "Just expired cache",
+			entry: CacheEntry{
+				CachedAt: now.Add(-61 * time.Minute), // 61분 전 캐시
+				TTL:      3600,                       // 1시간 TTL
+			},
+			expected: false,
+		},
+		{
+			name: "Just fresh cache",
+			entry: CacheEntry{
+				CachedAt: now.Add(-59 * time.Minute), // 59분 전 캐시
+				TTL:      3600,                       // 1시간 TTL
+			},
+			expected: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := cache.IsFresh(tt.entry)
+			if result != tt.expected {
+				t.Errorf("Expected %t, got %t", tt.expected, result)
+			}
+		})
+	}
+}
+
+func TestCache_IsStale(t *testing.T) {
+	now := time.Now()
+	
+	tests := []struct {
+		name     string
+		cache    Cache
+		entry    CacheEntry
+		expected bool
+	}{
+		{
+			name:  "Stale-while-revalidate disabled",
+			cache: Cache{StaleWhileRevalidate: false},
+			entry: CacheEntry{
+				CachedAt:   now.Add(-2 * time.Hour), // 2시간 전 캐시
+				TTL:        3600,                    // 1시간 TTL
+				StaleUntil: now.Add(30 * time.Minute), // 아직 stale 기간 내
+			},
+			expected: false, // 기능이 비활성화되면 false
+		},
+		{
+			name:  "Cache is still fresh",
+			cache: Cache{StaleWhileRevalidate: true},
+			entry: CacheEntry{
+				CachedAt:   now.Add(-30 * time.Minute), // 30분 전 캐시
+				TTL:        3600,                       // 1시간 TTL
+				StaleUntil: now.Add(90 * time.Minute),  // stale 기간 내
+			},
+			expected: false, // 아직 신선함
+		},
+		{
+			name:  "Cache is stale but within stale period",
+			cache: Cache{StaleWhileRevalidate: true},
+			entry: CacheEntry{
+				CachedAt:   now.Add(-2 * time.Hour),   // 2시간 전 캐시
+				TTL:        3600,                      // 1시간 TTL (만료됨)
+				StaleUntil: now.Add(30 * time.Minute), // 아직 stale 기간 내
+			},
+			expected: true, // stale 서빙 가능
+		},
+		{
+			name:  "Cache is completely expired",
+			cache: Cache{StaleWhileRevalidate: true},
+			entry: CacheEntry{
+				CachedAt:   now.Add(-3 * time.Hour),    // 3시간 전 캐시
+				TTL:        3600,                       // 1시간 TTL (만료됨)
+				StaleUntil: now.Add(-30 * time.Minute), // stale 기간도 만료
+			},
+			expected: false, // 완전 만료
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.cache.IsStale(tt.entry)
+			if result != tt.expected {
+				t.Errorf("Expected %t, got %t", tt.expected, result)
+			}
+		})
+	}
+}
+
+func TestCache_IsExpired(t *testing.T) {
+	now := time.Now()
+	
+	tests := []struct {
+		name     string
+		cache    Cache
+		entry    CacheEntry
+		expected bool
+	}{
+		{
+			name:  "Fresh cache without stale-while-revalidate",
+			cache: Cache{StaleWhileRevalidate: false},
+			entry: CacheEntry{
+				CachedAt: now.Add(-30 * time.Minute), // 30분 전 캐시
+				TTL:      3600,                       // 1시간 TTL
+			},
+			expected: false,
+		},
+		{
+			name:  "Expired cache without stale-while-revalidate",
+			cache: Cache{StaleWhileRevalidate: false},
+			entry: CacheEntry{
+				CachedAt: now.Add(-2 * time.Hour), // 2시간 전 캐시
+				TTL:      3600,                    // 1시간 TTL
+			},
+			expected: true,
+		},
+		{
+			name:  "Fresh cache with stale-while-revalidate",
+			cache: Cache{StaleWhileRevalidate: true},
+			entry: CacheEntry{
+				CachedAt:   now.Add(-30 * time.Minute), // 30분 전 캐시
+				TTL:        3600,                       // 1시간 TTL
+				StaleUntil: now.Add(90 * time.Minute),  // stale 기간 내
+			},
+			expected: false,
+		},
+		{
+			name:  "Stale cache with stale-while-revalidate",
+			cache: Cache{StaleWhileRevalidate: true},
+			entry: CacheEntry{
+				CachedAt:   now.Add(-2 * time.Hour),   // 2시간 전 캐시
+				TTL:        3600,                      // 1시간 TTL (만료됨)
+				StaleUntil: now.Add(30 * time.Minute), // 아직 stale 기간 내
+			},
+			expected: false, // stale 기간 내이므로 아직 만료 아님
+		},
+		{
+			name:  "Completely expired cache with stale-while-revalidate",
+			cache: Cache{StaleWhileRevalidate: true},
+			entry: CacheEntry{
+				CachedAt:   now.Add(-3 * time.Hour),    // 3시간 전 캐시
+				TTL:        3600,                       // 1시간 TTL (만료됨)
+				StaleUntil: now.Add(-30 * time.Minute), // stale 기간도 만료
+			},
+			expected: true, // 완전 만료
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.cache.IsExpired(tt.entry)
+			if result != tt.expected {
+				t.Errorf("Expected %t, got %t", tt.expected, result)
+			}
+		})
+	}
+}
+
+func TestCache_ShouldRevalidate(t *testing.T) {
+	now := time.Now()
+	
+	tests := []struct {
+		name     string
+		cache    Cache
+		entry    CacheEntry
+		expected bool
+	}{
+		{
+			name:  "Stale-while-revalidate disabled",
+			cache: Cache{StaleWhileRevalidate: false},
+			entry: CacheEntry{
+				CachedAt:   now.Add(-2 * time.Hour), // 2시간 전 캐시
+				TTL:        3600,                    // 1시간 TTL (만료됨)
+				StaleUntil: now.Add(30 * time.Minute), // stale 기간 내
+			},
+			expected: false, // 기능 비활성화
+		},
+		{
+			name:  "Fresh cache",
+			cache: Cache{StaleWhileRevalidate: true},
+			entry: CacheEntry{
+				CachedAt:   now.Add(-30 * time.Minute), // 30분 전 캐시
+				TTL:        3600,                       // 1시간 TTL
+				StaleUntil: now.Add(90 * time.Minute),  // stale 기간 내
+			},
+			expected: false, // 아직 신선함
+		},
+		{
+			name:  "Stale cache - should revalidate",
+			cache: Cache{StaleWhileRevalidate: true},
+			entry: CacheEntry{
+				CachedAt:   now.Add(-2 * time.Hour),   // 2시간 전 캐시
+				TTL:        3600,                      // 1시간 TTL (만료됨)
+				StaleUntil: now.Add(30 * time.Minute), // 아직 stale 기간 내
+			},
+			expected: true, // 백그라운드 재검증 필요
+		},
+		{
+			name:  "Completely expired cache",
+			cache: Cache{StaleWhileRevalidate: true},
+			entry: CacheEntry{
+				CachedAt:   now.Add(-3 * time.Hour),    // 3시간 전 캐시
+				TTL:        3600,                       // 1시간 TTL (만료됨)
+				StaleUntil: now.Add(-30 * time.Minute), // stale 기간도 만료
+			},
+			expected: false, // 완전 만료 (재검증 아닌 새로 가져와야 함)
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := tt.cache.ShouldRevalidate(tt.entry)
+			if result != tt.expected {
+				t.Errorf("Expected %t, got %t", tt.expected, result)
+			}
+		})
+	}
+}
+
+func TestCache_GetCacheStrategy(t *testing.T) {
+	now := time.Now()
+	cache := Cache{StaleWhileRevalidate: true}
+	
+	tests := []struct {
+		name     string
+		entry    CacheEntry
+		expected CacheStrategy
+	}{
+		{
+			name: "Fresh cache - serve directly",
+			entry: CacheEntry{
+				CachedAt:   now.Add(-30 * time.Minute), // 30분 전 캐시
+				TTL:        3600,                       // 1시간 TTL
+				StaleUntil: now.Add(90 * time.Minute),  // stale 기간 내
+			},
+			expected: CacheStrategyServe,
+		},
+		{
+			name: "Stale cache - serve while revalidating",
+			entry: CacheEntry{
+				CachedAt:   now.Add(-2 * time.Hour),   // 2시간 전 캐시
+				TTL:        3600,                      // 1시간 TTL (만료됨)
+				StaleUntil: now.Add(30 * time.Minute), // 아직 stale 기간 내
+			},
+			expected: CacheStrategyStaleWhileRevalidate,
+		},
+		{
+			name: "Completely expired cache - revalidate",
+			entry: CacheEntry{
+				CachedAt:   now.Add(-3 * time.Hour),    // 3시간 전 캐시
+				TTL:        3600,                       // 1시간 TTL (만료됨)
+				StaleUntil: now.Add(-30 * time.Minute), // stale 기간도 만료
+			},
+			expected: CacheStrategyRevalidate,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := cache.GetCacheStrategy(tt.entry)
+			if result != tt.expected {
+				t.Errorf("Expected strategy %d, got %d", tt.expected, result)
+			}
+		})
+	}
+}
