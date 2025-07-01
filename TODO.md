@@ -53,11 +53,11 @@
 
 ### 🔐 OAuth2 인증 시스템
 - [x] OAuth2 인증 플로우 설계 문서 작성 (Authorization Code, Client Credentials 플로우 선택)
-- [ ] `/configs/oauth2_config.go` 설정 구조체 구현 (provider 정보, client ID/secret, 콜백 URL)
-- [ ] `/internal/auth/oauth2/provider.go` 공통 인터페이스 정의
-- [ ] GitHub OAuth2 프로바이더 구현 (`/internal/auth/oauth2/github.go`)
-- [ ] GitLab OAuth2 프로바이더 구현 (`/internal/auth/oauth2/gitlab.go`)
-- [ ] Google OAuth2 프로바이더 구현 (`/internal/auth/oauth2/google.go`)
+- [x] `/configs/oauth2_config.go` 설정 구조체 구현 (provider 정보, client ID/secret, 콜백 URL)
+- [x] `/internal/auth/oauth2/provider.go` 공통 인터페이스 정의
+- [x] GitHub OAuth2 프로바이더 구현 (`/internal/auth/oauth2/github.go`)
+- [x] GitLab OAuth2 프로바이더 구현 (`/internal/auth/oauth2/gitlab.go`)
+- [x] Google OAuth2 프로바이더 구현 (`/internal/auth/oauth2/google.go`)
 - [ ] OAuth2 콜백 핸들러 구현 (`/auth/callback/:provider`)
 - [ ] JWT 토큰 발급 및 검증 로직 구현 (access/refresh token)
 - [ ] 기존 BasicAuth와 OAuth2 통합 미들웨어 구현
