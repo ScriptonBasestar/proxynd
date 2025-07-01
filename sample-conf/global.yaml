@@ -20,19 +20,27 @@ cache:
     go: 1800      # Go 모듈 (30분)
     helm: 3600    # Helm 차트 (1시간)
   
-  # 패키지 패턴별 TTL 오버라이드 (향후 구현)
-  # pattern_ttls:
-  #   "*-SNAPSHOT": 300    # Maven SNAPSHOT 버전 (5분)
-  #   "*-dev": 600         # 개발 버전 (10분)
-  #   "*-alpha": 900       # 알파 버전 (15분)
-  #   "*-beta": 1200       # 베타 버전 (20분)
+  # 패키지 패턴별 TTL 오버라이드
+  pattern_ttls:
+    "*-SNAPSHOT": 300    # Maven SNAPSHOT 버전 (5분)
+    "*-dev": 600         # 개발 버전 (10분)
+    "*-alpha": 900       # 알파 버전 (15분)
+    "*-beta": 1200       # 베타 버전 (20분)
+    "*-rc": 1800         # Release Candidate (30분)
+    "test-*": 300        # 테스트 패키지 (5분)
+    "*debug*": 450       # 디버그 빌드 (7.5분)
+    "*experimental*": 180 # 실험적 버전 (3분)
   
-  # 메타데이터 파일별 TTL 설정 (향후 구현)
-  # metadata_ttls:
-  #   "repomd.xml": 300      # YUM 메타데이터 (5분)
-  #   "Packages.gz": 600     # APT 패키지 목록 (10분)
-  #   "package.json": 300    # NPM 패키지 정보 (5분)
-  #   "index.yaml": 900      # Helm 인덱스 (15분)
+  # 메타데이터 파일별 TTL 설정
+  metadata_ttls:
+    "repomd.xml": 300      # YUM 메타데이터 (5분)
+    "Packages.gz": 600     # APT 패키지 목록 (10분)
+    "package.json": 300    # NPM 패키지 정보 (5분)
+    "index.yaml": 900      # Helm 인덱스 (15분)
+    "Release": 900         # APT Release 파일 (15분)
+    "InRelease": 900       # APT InRelease 파일 (15분)
+    "maven-metadata.xml": 600  # Maven 메타데이터 (10분)
+    "APKINDEX.tar.gz": 450     # Alpine 패키지 인덱스 (7.5분)
 
 #if storage_dir set? proxy, mirror relative
 #storage_dir: ~/tmp/proxynd
