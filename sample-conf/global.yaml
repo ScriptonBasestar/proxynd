@@ -3,7 +3,36 @@
 #  https: 192.168.11.99:3129
 
 cache:
+  # 전역 기본 TTL (초)
   ttl: 3600
+  
+  # 패키지 타입별 기본 TTL 설정 (초)
+  # 설정하지 않으면 내장 기본값 사용
+  package_ttls:
+    apt: 3600     # APT 패키지 (1시간)
+    npm: 1800     # NPM 패키지 (30분)
+    pip: 2400     # PIP 패키지 (40분)
+    docker: 7200  # Docker 이미지 (2시간)
+    maven: 5400   # Maven 아티팩트 (1.5시간)
+    yum: 3600     # YUM 패키지 (1시간)
+    apk: 1800     # Alpine APK 패키지 (30분)
+    cargo: 3600   # Rust Cargo 크레이트 (1시간)
+    go: 1800      # Go 모듈 (30분)
+    helm: 3600    # Helm 차트 (1시간)
+  
+  # 패키지 패턴별 TTL 오버라이드 (향후 구현)
+  # pattern_ttls:
+  #   "*-SNAPSHOT": 300    # Maven SNAPSHOT 버전 (5분)
+  #   "*-dev": 600         # 개발 버전 (10분)
+  #   "*-alpha": 900       # 알파 버전 (15분)
+  #   "*-beta": 1200       # 베타 버전 (20분)
+  
+  # 메타데이터 파일별 TTL 설정 (향후 구현)
+  # metadata_ttls:
+  #   "repomd.xml": 300      # YUM 메타데이터 (5분)
+  #   "Packages.gz": 600     # APT 패키지 목록 (10분)
+  #   "package.json": 300    # NPM 패키지 정보 (5분)
+  #   "index.yaml": 900      # Helm 인덱스 (15분)
 
 #if storage_dir set? proxy, mirror relative
 #storage_dir: ~/tmp/proxynd
