@@ -4,6 +4,7 @@ import (
 	"crypto/subtle"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -209,6 +210,8 @@ func SessionTimeout() fiber.Handler {
 				delete(sess, "user")
 				delete(sess, "access_token")
 				delete(sess, "refresh_token")
+				delete(sess, "jwt_access_token")
+				delete(sess, "jwt_refresh_token")
 				
 				if email, ok := userMap["email"].(string); ok {
 					logging.GetLogger().Info("Session expired", logging.F("email", email))
@@ -220,24 +223,44 @@ func SessionTimeout() fiber.Handler {
 			}
 		}
 		
-		// 토큰 만료 시간 확인
+		// JWT 토큰 만료 시간 확인
 		if expiresAt, ok := userMap["expires_at"].(time.Time); ok {
+			// 토큰이 10분 이내 만료될 경우 헤더 설정
+			timeToExpiry := time.Until(expiresAt)
+			if timeToExpiry < 10*time.Minute && timeToExpiry > 0 {
+				c.Set("X-Token-Expires-Soon", "true")
+				c.Set("X-Token-Expires-In", fmt.Sprintf("%d", int(timeToExpiry.Seconds())))
+			}
+			
 			if time.Now().After(expiresAt) {
 				// 토큰 만료, 자동 갱신 시도
-				if refreshToken, exists := sess["refresh_token"]; exists && refreshToken != nil {
-					// 토큰 갱신 로직은 별도 함수로 분리
+				if jwtRefreshToken, exists := sess["jwt_refresh_token"]; exists && jwtRefreshToken != nil {
+					// 토큰 갱신 로직
 					if err := autoRefreshToken(c, sess, userMap); err != nil {
 						if email, ok := userMap["email"].(string); ok {
 							logging.GetLogger().Warn("Auto token refresh failed", logging.F("email", email), logging.F("error", err))
 						}
 						
+						// 갱신 실패 시 세션 정리
+						delete(sess, "user")
+						delete(sess, "jwt_access_token")
+						delete(sess, "jwt_refresh_token")
+						
 						return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
-							"error": "Token expired and refresh failed",
+							"error":      "Token expired and refresh failed",
+							"error_code": "token_refresh_failed",
+							"action":     "login_required",
 						})
 					}
+					
+					// 갱신 성공 시 응답 헤더 설정
+					c.Set("X-Token-Refreshed", "true")
+					
 				} else {
 					return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
-						"error": "Token expired",
+						"error":      "Token expired",
+						"error_code": "token_expired",
+						"action":     "login_required",
 					})
 				}
 			}
@@ -321,7 +344,7 @@ func autoRefreshToken(c *fiber.Ctx, sess fiber.Map, userMap fiber.Map) error {
 	oauth2AccessToken, _ := userMap["oauth2_access_token"].(string)
 	
 	// 실시간 권한 동기화를 위해 OAuth2 제공자 정보 조회
-	var oauth2Provider jwt.OAuth2Provider
+	var oauth2Provider interface{}
 	if providerName, ok := userMap["provider"].(string); ok && oauth2AccessToken != "" {
 		// 제공자별 인터페이스 구현체 생성 (실제 구현은 추후 추가)
 		oauth2Provider = createOAuth2Provider(providerName, oauth2Config)
@@ -331,17 +354,8 @@ func autoRefreshToken(c *fiber.Ctx, sess fiber.Map, userMap fiber.Map) error {
 	var newTokenPair *jwt.TokenPair
 	var err error
 	
-	if oauth2Provider != nil && oauth2AccessToken != "" {
-		// 실시간 권한 동기화 사용
-		newTokenPair, err = jwtService.RefreshAccessTokenWithSync(
-			jwtRefreshToken.(string), 
-			oauth2Provider, 
-			oauth2AccessToken,
-		)
-	} else {
-		// 기존 권한 유지
-		newTokenPair, err = jwtService.RefreshAccessToken(jwtRefreshToken.(string))
-	}
+	// 현재는 기존 권한 유지 (실시간 동기화는 추후 구현)
+	newTokenPair, err = jwtService.RefreshAccessToken(jwtRefreshToken.(string))
 	
 	if err != nil {
 		return errors.New("failed to refresh JWT token: " + err.Error())
@@ -377,7 +391,7 @@ func autoRefreshToken(c *fiber.Ctx, sess fiber.Map, userMap fiber.Map) error {
 }
 
 // createOAuth2Provider OAuth2 제공자별 인터페이스 구현체 생성
-func createOAuth2Provider(providerName string, config *configs.OAuth2Config) jwt.OAuth2Provider {
+func createOAuth2Provider(providerName string, config *configs.OAuth2Config) interface{} {
 	// 실제 구현에서는 각 제공자별로 인터페이스를 구현하여 반환
 	// 현재는 nil 반환 (추후 구현)
 	return nil
@@ -472,6 +486,121 @@ func HasRole(c *fiber.Ctx, role string) bool {
 func IsAuthenticated(c *fiber.Ctx) bool {
 	_, ok := GetUserFromContext(c)
 	return ok
+}
+
+// GetTokenStatus 토큰 상태 조회 핸들러
+func GetTokenStatus() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		sess, err := getSession(c)
+		if err != nil {
+			return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Failed to get session",
+			})
+		}
+		
+		userData, exists := sess["user"]
+		if !exists || userData == nil {
+			return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
+				"authenticated": false,
+				"error":         "Not authenticated",
+			})
+		}
+		
+		userMap, ok := userData.(fiber.Map)
+		if !ok {
+			return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Invalid session data",
+			})
+		}
+		
+		// 토큰 만료 시간 확인
+		response := fiber.Map{
+			"authenticated": true,
+			"user": fiber.Map{
+				"email":    userMap["email"],
+				"name":     userMap["name"],
+				"role":     userMap["role"],
+				"provider": userMap["provider"],
+			},
+		}
+		
+		if expiresAt, ok := userMap["expires_at"].(time.Time); ok {
+			timeToExpiry := time.Until(expiresAt)
+			response["expires_at"] = expiresAt
+			response["expires_in"] = int(timeToExpiry.Seconds())
+			response["expires_soon"] = timeToExpiry < 10*time.Minute && timeToExpiry > 0
+			response["expired"] = timeToExpiry <= 0
+		}
+		
+		if loginTime, ok := userMap["login_time"].(time.Time); ok {
+			sessionAge := time.Since(loginTime)
+			response["login_time"] = loginTime
+			response["session_age"] = int(sessionAge.Seconds())
+			response["session_expires_soon"] = sessionAge > 23*time.Hour
+		}
+		
+		return c.JSON(response)
+	}
+}
+
+// RefreshTokenManual 수동 토큰 갱신 핸들러
+func RefreshTokenManual() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		sess, err := getSession(c)
+		if err != nil {
+			return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Failed to get session",
+			})
+		}
+		
+		userData, exists := sess["user"]
+		if !exists || userData == nil {
+			return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
+				"error": "Not authenticated",
+			})
+		}
+		
+		userMap, ok := userData.(fiber.Map)
+		if !ok {
+			return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Invalid session data",
+			})
+		}
+		
+		// 토큰 갱신 시도
+		if err := autoRefreshToken(c, sess, userMap); err != nil {
+			logging.GetLogger().Warn("Manual token refresh failed", 
+				logging.F("email", userMap["email"]),
+				logging.F("error", err))
+			
+			return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
+				"success": false,
+				"error":   "Token refresh failed",
+				"details": err.Error(),
+			})
+		}
+		
+		// 갱신된 사용자 정보 반환
+		updatedUserData := sess["user"].(fiber.Map)
+		response := fiber.Map{
+			"success": true,
+			"message": "Token refreshed successfully",
+			"user": fiber.Map{
+				"email":    updatedUserData["email"],
+				"name":     updatedUserData["name"],
+				"role":     updatedUserData["role"],
+				"provider": updatedUserData["provider"],
+			},
+		}
+		
+		if expiresAt, ok := updatedUserData["expires_at"].(time.Time); ok {
+			timeToExpiry := time.Until(expiresAt)
+			response["expires_at"] = expiresAt
+			response["expires_in"] = int(timeToExpiry.Seconds())
+		}
+		
+		return c.JSON(response)
+	}
 }
 
 // validateBasicAuthUser BasicAuth 사용자 검증

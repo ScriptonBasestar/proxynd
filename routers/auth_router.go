@@ -25,6 +25,21 @@ func AuthRouter(app *fiber.App) {
 	// 현재 사용자 정보 조회
 	authGroup.Get("/me", auth.GetCurrentUser)
 	
-	// 인증 상태 확인
+	// 인증 상태 확인 (기존 호환성)
 	authGroup.Get("/status", auth.GetAuthStatus)
+	
+	// 토큰 상태 관련 새로운 엔드포인트들
+	tokenGroup := authGroup.Group("/token")
+	
+	// 토큰 상태 상세 조회
+	tokenGroup.Get("/status", auth.GetTokenStatus)
+	
+	// 토큰 유효성 검증
+	tokenGroup.Post("/validate", auth.ValidateTokenEndpoint)
+	
+	// 토큰 갱신 후 상태 조회
+	tokenGroup.Post("/refresh-status", auth.RefreshTokenStatus)
+	
+	// 배치 토큰 검증
+	tokenGroup.Post("/batch-validate", auth.BatchTokenValidation)
 }
