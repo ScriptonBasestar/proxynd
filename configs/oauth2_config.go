@@ -2,6 +2,7 @@ package configs
 
 import (
 	"path"
+	"path/filepath"
 	"proxynd/helpers"
 )
 
@@ -180,16 +181,28 @@ func (u *UserMappingConfig) ValidateUserMapping() error {
 	return nil
 }
 
-// GetUserRole 사용자 역할 결정
+// GetUserRole 사용자 역할 결정 (기존 호환성 유지)
 func (u *UserMappingConfig) GetUserRole(email string, organizations []string) string {
-	// 관리자 사용자 확인
+	return u.GetUserRoleWithPattern(email, organizations)
+}
+
+// GetUserRoleWithPattern 이메일 패턴 매핑을 포함한 사용자 역할 결정
+func (u *UserMappingConfig) GetUserRoleWithPattern(email string, organizations []string) string {
+	// 1. 관리자 사용자 확인 (정확한 이메일 매치)
 	for _, adminEmail := range u.AdminUsers {
 		if email == adminEmail {
 			return "admin"
 		}
 	}
 	
-	// 관리자 조직 확인
+	// 2. 이메일 패턴 기반 역할 매핑
+	for pattern, role := range u.RoleMapping {
+		if matched, _ := filepath.Match(pattern, email); matched {
+			return role
+		}
+	}
+	
+	// 3. 관리자 조직 확인
 	for _, org := range organizations {
 		for _, adminOrg := range u.AdminOrganizations {
 			if org == adminOrg {
@@ -198,14 +211,14 @@ func (u *UserMappingConfig) GetUserRole(email string, organizations []string) st
 		}
 	}
 	
-	// 조직 기반 역할 매핑
+	// 4. 조직 기반 역할 매핑
 	for _, org := range organizations {
 		if role, exists := u.OrganizationMapping[org]; exists {
 			return role
 		}
 	}
 	
-	// 기본 역할 반환
+	// 5. 기본 역할 반환
 	return u.DefaultRole
 }
 

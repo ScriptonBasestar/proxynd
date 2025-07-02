@@ -1,10 +1,12 @@
 package jwt
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -186,7 +188,12 @@ func (s *JWTService) ValidateRefreshToken(tokenString string) (*Claims, error) {
 	return claims, nil
 }
 
-// RefreshAccessToken 리프레시 토큰으로 새 액세스 토큰 생성
+// OAuth2Provider OAuth2 제공자 인터페이스 (순환 import 방지를 위한 인터페이스)
+type OAuth2Provider interface {
+	GetUserOrganizations(ctx context.Context, accessToken string) ([]string, error)
+}
+
+// RefreshAccessToken 리프레시 토큰으로 새 액세스 토큰 생성 (기존 권한 유지)
 func (s *JWTService) RefreshAccessToken(refreshTokenString string) (*TokenPair, error) {
 	// 리프레시 토큰 검증
 	refreshClaims, err := s.ValidateRefreshToken(refreshTokenString)
@@ -194,7 +201,7 @@ func (s *JWTService) RefreshAccessToken(refreshTokenString string) (*TokenPair, 
 		return nil, fmt.Errorf("invalid refresh token: %w", err)
 	}
 	
-	// 새 토큰 쌍 생성
+	// 새 토큰 쌍 생성 (기존 권한 유지)
 	newTokenPair, err := s.GenerateTokenPair(
 		refreshClaims.UserID,
 		refreshClaims.Email,
@@ -211,6 +218,72 @@ func (s *JWTService) RefreshAccessToken(refreshTokenString string) (*TokenPair, 
 	s.logger.Info("Access token refreshed", 
 		logging.F("user_id", refreshClaims.UserID),
 		logging.F("email", refreshClaims.Email))
+	
+	return newTokenPair, nil
+}
+
+// RefreshAccessTokenWithSync 리프레시 토큰으로 새 액세스 토큰 생성 (권한 동기화)
+func (s *JWTService) RefreshAccessTokenWithSync(refreshTokenString string, oauth2Provider OAuth2Provider, oauth2AccessToken string) (*TokenPair, error) {
+	// 리프레시 토큰 검증
+	refreshClaims, err := s.ValidateRefreshToken(refreshTokenString)
+	if err != nil {
+		return nil, fmt.Errorf("invalid refresh token: %w", err)
+	}
+	
+	// OAuth2 제공자에서 최신 조직 정보 조회 (옵션)
+	var updatedOrganizations []string
+	if oauth2Provider != nil && oauth2AccessToken != "" {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		
+		orgs, err := oauth2Provider.GetUserOrganizations(ctx, oauth2AccessToken)
+		if err != nil {
+			// 에러 시 기존 조직 정보 사용 (fallback)
+			s.logger.Warn("Failed to sync organization info, using cached data", 
+				logging.F("user_id", refreshClaims.UserID),
+				logging.F("error", err))
+			updatedOrganizations = refreshClaims.Organizations
+		} else {
+			updatedOrganizations = orgs
+			s.logger.Debug("Organization info synced", 
+				logging.F("user_id", refreshClaims.UserID),
+				logging.F("organizations", orgs))
+		}
+	} else {
+		// OAuth2 제공자 정보가 없으면 기존 정보 사용
+		updatedOrganizations = refreshClaims.Organizations
+	}
+	
+	// 최신 조직 정보로 역할 재계산
+	updatedRole := s.config.UserMapping.GetUserRoleWithPattern(refreshClaims.Email, updatedOrganizations)
+	
+	// 역할이 변경되었다면 로그 기록
+	if updatedRole != refreshClaims.Role {
+		s.logger.Info("User role updated during token refresh", 
+			logging.F("user_id", refreshClaims.UserID),
+			logging.F("email", refreshClaims.Email),
+			logging.F("old_role", refreshClaims.Role),
+			logging.F("new_role", updatedRole))
+	}
+	
+	// 새 토큰 쌍 생성 (업데이트된 권한 적용)
+	newTokenPair, err := s.GenerateTokenPair(
+		refreshClaims.UserID,
+		refreshClaims.Email,
+		refreshClaims.Name,
+		refreshClaims.Username,
+		updatedRole,
+		refreshClaims.Provider,
+		updatedOrganizations,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate new tokens: %w", err)
+	}
+	
+	s.logger.Info("Access token refreshed with role sync", 
+		logging.F("user_id", refreshClaims.UserID),
+		logging.F("email", refreshClaims.Email),
+		logging.F("role", updatedRole))
 	
 	return newTokenPair, nil
 }
