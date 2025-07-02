@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"crypto/subtle"
+	"encoding/base64"
 	"errors"
 	"net/http"
 	"strings"
@@ -352,20 +354,61 @@ func autoRefreshToken(c *fiber.Ctx, sess fiber.Map, userMap fiber.Map) error {
 
 // handleBasicAuth BasicAuth 처리
 func handleBasicAuth(c *fiber.Ctx) error {
-	// 기존 BasicAuth 로직
-	// 실제 구현은 프로젝트의 기존 인증 시스템에 따라 달라짐
-	return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
-		"error": "BasicAuth not implemented in this example",
-	})
+	authHeader := c.Get("Authorization")
+	if !strings.HasPrefix(authHeader, "Basic ") {
+		return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Invalid Basic Auth format",
+		})
+	}
+
+	// Base64 디코딩
+	payload := authHeader[6:] // "Basic " 제거
+	decoded, err := base64.StdEncoding.DecodeString(payload)
+	if err != nil {
+		return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Invalid Base64 encoding",
+		})
+	}
+
+	// username:password 분리
+	credentials := string(decoded)
+	parts := strings.SplitN(credentials, ":", 2)
+	if len(parts) != 2 {
+		return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Invalid credentials format",
+		})
+	}
+
+	username := parts[0]
+	password := parts[1]
+
+	// BasicAuth 사용자 인증 (설정에서 로드)
+	if err := validateBasicAuthUser(username, password); err != nil {
+		logging.GetLogger().Warn("BasicAuth failed", 
+			logging.F("username", username),
+			logging.F("ip", c.IP()),
+			logging.F("error", err))
+		return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Invalid credentials",
+		})
+	}
+
+	// 인증 성공 - 사용자 정보를 컨텍스트에 저장 (OAuth2와 호환되는 형태)
+	userInfo := fiber.Map{
+		"email":    username,
+		"username": username,
+		"role":     "viewer", // BasicAuth 사용자는 기본적으로 viewer 역할
+		"auth_type": "basic",
+		"login_time": time.Now(),
+	}
+
+	c.Locals("user", userInfo)
+	return c.Next()
 }
 
 // handleBearerToken Bearer 토큰 처리
 func handleBearerToken(c *fiber.Ctx, token string) error {
-	// JWT 토큰 검증 로직
-	// 실제 구현은 JWT 라이브러리를 사용하여 토큰 검증
-	return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
-		"error": "Bearer token validation not implemented in this example",
-	})
+	return validateJWTToken(c, token)
 }
 
 // GetUserFromContext 컨텍스트에서 사용자 정보 추출
@@ -398,4 +441,31 @@ func HasRole(c *fiber.Ctx, role string) bool {
 func IsAuthenticated(c *fiber.Ctx) bool {
 	_, ok := GetUserFromContext(c)
 	return ok
+}
+
+// validateBasicAuthUser BasicAuth 사용자 검증
+func validateBasicAuthUser(username, password string) error {
+	// 글로벌 설정에서 BasicAuth 사용자 정보 로드
+	globalConfig := &configs.GlobalConfig{}
+	if err := globalConfig.ReadConfig(); err != nil {
+		return errors.New("failed to load configuration")
+	}
+
+	// BasicAuth 설정이 있는지 확인
+	if globalConfig.Authentication == nil || globalConfig.Authentication.BasicAuth == nil {
+		return errors.New("BasicAuth not configured")
+	}
+
+	// 사용자 존재 확인
+	expectedPassword, exists := globalConfig.Authentication.BasicAuth.Users[username]
+	if !exists {
+		return errors.New("user not found")
+	}
+
+	// 타이밍 공격 방지를 위한 constant time 비교
+	if subtle.ConstantTimeCompare([]byte(password), []byte(expectedPassword)) != 1 {
+		return errors.New("invalid password")
+	}
+
+	return nil
 }

@@ -153,10 +153,21 @@ func indexOfSubstring(s, substr string) int {
 	return -1
 }
 
+type BasicAuthConfig struct {
+	Users map[string]string `yaml:"users,omitempty"`
+	Realm string            `yaml:"realm,omitempty" default:"Restricted"`
+}
+
+type AuthenticationConfig struct {
+	BasicAuth *BasicAuthConfig `yaml:"basic_auth,omitempty"`
+	OAuth2    *OAuth2Config    `yaml:"oauth2,omitempty"`
+}
+
 type GlobalConfig struct {
-	StorageDir string `yaml:"storage_dir,omitempty"`
-	ConfigDir  string `yaml:"config_dir,omitempty"`
-	Cache      Cache  `yaml:"cache,omitempty"`
+	StorageDir     string                `yaml:"storage_dir,omitempty"`
+	ConfigDir      string                `yaml:"config_dir,omitempty"`
+	Cache          Cache                 `yaml:"cache,omitempty"`
+	Authentication *AuthenticationConfig `yaml:"authentication,omitempty"`
 }
 
 func (cfg *GlobalConfig) ConfigExists() bool {
@@ -164,9 +175,9 @@ func (cfg *GlobalConfig) ConfigExists() bool {
 	return helpers.FileExists(path.Join(confDir, "global.yaml"))
 }
 
-func (cfg *GlobalConfig) ReadConfig() {
+func (cfg *GlobalConfig) ReadConfig() error {
 	confDir := helpers.GetConfigDir()
-	helpers.ReadYaml(path.Join(confDir, "global.yaml"), cfg)
+	return helpers.ReadYamlSafe(path.Join(confDir, "global.yaml"), cfg)
 }
 
 // GetTTLFromCacheHeaders HTTP 캐시 헤더에서 TTL 계산

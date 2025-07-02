@@ -57,3 +57,18 @@ cache:
 #storage_dir: ~/tmp/proxynd
 #proxy_root: ~/tmp/proxy
 #mirror_root: ~/tmp/mirror
+
+# 인증 설정
+authentication:
+  # BasicAuth 설정
+  basic_auth:
+    realm: "ProxyND Restricted Area"
+    users:
+      admin: "admin123"          # 관리자 계정
+      developer: "dev123"        # 개발자 계정  
+      viewer: "view123"          # 뷰어 계정
+      # 추가 사용자는 여기에 username: password 형태로 추가
+  
+  # OAuth2 설정 (별도 oauth2.yaml 파일 사용 권장)
+  # oauth2:
+  #   enabled: true

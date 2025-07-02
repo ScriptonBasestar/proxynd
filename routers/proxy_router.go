@@ -4,6 +4,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"proxynd/alerts"
 	"proxynd/configs"
+	authHandlers "proxynd/handlers/auth"
 	proxynd "proxynd/handlers/proxy"
 	"proxynd/middlewares"
 )
@@ -36,6 +37,10 @@ func ProxyRouter(app *fiber.App) {
 	// 프록시 미들웨어 적용
 	proxyGroup.Use(middlewares.ProxyPolicyMiddleware())
 	proxyGroup.Use(middlewares.DefaultAccessLogMiddleware())
+
+	// 통합 인증 미들웨어 적용 (JWT 토큰 우선, BasicAuth 폴백)
+	proxyGroup.Use(authHandlers.OptionalAuth())         // 선택적 OAuth2/JWT 인증
+	proxyGroup.Use(authHandlers.BasicAuthFallback())    // BasicAuth 폴백
 
 	// 패키지 검증 미들웨어 추가
 	proxyGroup.Use(verificationHandler.VerificationMiddleware())
