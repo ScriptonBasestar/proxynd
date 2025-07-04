@@ -1,3 +1,6 @@
+// Package health provides health checking functionality for ProxyND.
+// It includes interfaces and implementations for monitoring various system components
+// and exposing their health status through HTTP endpoints.
 package health
 
 import (
@@ -10,16 +13,19 @@ import (
 	"time"
 )
 
-// Status 건강 상태
+// Status represents the health status of a component.
 type Status string
 
 const (
-	StatusHealthy   Status = "healthy"
-	StatusDegraded  Status = "degraded"
+	// StatusHealthy indicates the component is functioning normally
+	StatusHealthy Status = "healthy"
+	// StatusDegraded indicates the component is functioning but with issues
+	StatusDegraded Status = "degraded"
+	// StatusUnhealthy indicates the component is not functioning properly
 	StatusUnhealthy Status = "unhealthy"
 )
 
-// CheckResult 체크 결과
+// CheckResult contains the result of a health check.
 type CheckResult struct {
 	Name        string                 `json:"name"`
 	Status      Status                 `json:"status"`
@@ -29,13 +35,13 @@ type CheckResult struct {
 	LastChecked time.Time              `json:"last_checked"`
 }
 
-// HealthChecker 건강 상태 체크 인터페이스
+// HealthChecker is the interface that health check implementations must satisfy.
 type HealthChecker interface {
 	Check(ctx context.Context) *CheckResult
 	Name() string
 }
 
-// HealthService 건강 상태 서비스
+// HealthService manages multiple health checkers and provides aggregated health status.
 type HealthService struct {
 	checkers      []HealthChecker
 	checkInterval time.Duration
@@ -44,7 +50,8 @@ type HealthService struct {
 	startTime     time.Time
 }
 
-// NewHealthService 새 건강 상태 서비스 생성
+// NewHealthService creates a new health service with the specified check interval.
+// The service will periodically run all registered health checks.
 func NewHealthService(checkInterval time.Duration) *HealthService {
 	return &HealthService{
 		checkers:      make([]HealthChecker, 0),

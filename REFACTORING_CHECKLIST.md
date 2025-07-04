@@ -129,38 +129,38 @@
   - 📁 Files: New `internal/testutil/` package
 
 ### 7. Tooling & Automation
-- [ ] **Configure golangci-lint**
+- [x] **Configure golangci-lint**
   - 📌 Why: No linting currently configured
   - 🧠 How: Add `.golangci.yml` with appropriate rules
   - 📁 Files: Project root configuration
 
-- [ ] **Add pre-commit hooks**
+- [x] **Add pre-commit hooks**
   - 📌 Why: No automated quality checks before commit
   - 🧠 How: Use pre-commit framework with Go hooks
   - 📁 Files: `.pre-commit-config.yaml`
 
-- [ ] **Update Makefile with quality targets**
+- [x] **Update Makefile with quality targets**
   - 📌 Why: Missing lint, fmt, test-coverage targets
   - 🧠 How: Add standard Go development targets
   - 📁 Files: `Makefile`
 
-- [ ] **Set up CI/CD pipeline enhancements**
+- [x] **Set up CI/CD pipeline enhancements**
   - 📌 Why: Build process could be more automated
   - 🧠 How: Add GitHub Actions for tests, linting, coverage
   - 📁 Files: `.github/workflows/`
 
 ### 8. Documentation
-- [ ] **Add godoc comments to all exported types**
+- [x] **Add godoc comments to all exported types**
   - 📌 Why: Missing API documentation
   - 🧠 How: Follow godoc conventions for all public APIs
   - 📁 Files: All exported functions and types
 
-- [ ] **Create architecture decision records (ADRs)**
+- [x] **Create architecture decision records (ADRs)**
   - 📌 Why: No documented design decisions
   - 🧠 How: Use ADR template in `docs/adr/`
   - 📁 Files: New `docs/adr/` directory
 
-- [ ] **Update example configurations**
+- [x] **Update example configurations**
   - 📌 Why: Sample configs may not reflect all options
   - 🧠 How: Generate from config structs with comments
   - 📁 Files: `sample-conf/*.yaml`

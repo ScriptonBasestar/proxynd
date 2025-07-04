@@ -1,3 +1,6 @@
+// Package alerts provides alerting and webhook functionality for ProxyND.
+// It defines event types, alert levels, and webhook notification structures
+// for monitoring and alerting on various system events.
 package alerts
 
 import (
@@ -5,49 +8,49 @@ import (
 	"time"
 )
 
-// WebhookEventType 웹훅 이벤트 타입 정의
+// WebhookEventType represents the type of event that triggers a webhook notification.
 type WebhookEventType string
 
 const (
-	// 캐시 관련 이벤트
-	EventCacheExpiry     WebhookEventType = "cache.expiry"     // 캐시 만료
-	EventCacheMiss       WebhookEventType = "cache.miss"       // 캐시 미스
-	EventCacheEviction   WebhookEventType = "cache.eviction"   // 캐시 축출
-	EventCacheFull       WebhookEventType = "cache.full"       // 캐시 용량 초과
-	EventCacheError      WebhookEventType = "cache.error"      // 캐시 오류
-	EventCacheCleared    WebhookEventType = "cache.cleared"    // 캐시 정리
-	EventCacheCorruption WebhookEventType = "cache.corruption" // 캐시 손상
+	// Cache-related events
+	EventCacheExpiry     WebhookEventType = "cache.expiry"     // Cache entry expired
+	EventCacheMiss       WebhookEventType = "cache.miss"       // Cache miss occurred
+	EventCacheEviction   WebhookEventType = "cache.eviction"   // Cache entry evicted
+	EventCacheFull       WebhookEventType = "cache.full"       // Cache capacity exceeded
+	EventCacheError      WebhookEventType = "cache.error"      // Cache operation error
+	EventCacheCleared    WebhookEventType = "cache.cleared"    // Cache cleared
+	EventCacheCorruption WebhookEventType = "cache.corruption" // Cache corruption detected
 
-	// 인증 및 권한 관련 이벤트
-	EventAuthFailure        WebhookEventType = "auth.failure"           // 인증 실패
-	EventAuthSuccess        WebhookEventType = "auth.success"           // 인증 성공
-	EventAuthBlocked        WebhookEventType = "auth.blocked"           // 인증 차단
-	EventAuthRateLimit      WebhookEventType = "auth.rate_limit"        // 인증 속도 제한
-	EventPermissionDenied   WebhookEventType = "auth.permission_denied" // 권한 거부
-	EventUnauthorizedAccess WebhookEventType = "auth.unauthorized"      // 무권한 접근
+	// Authentication and authorization events
+	EventAuthFailure        WebhookEventType = "auth.failure"           // Authentication failed
+	EventAuthSuccess        WebhookEventType = "auth.success"           // Authentication succeeded
+	EventAuthBlocked        WebhookEventType = "auth.blocked"           // Authentication blocked
+	EventAuthRateLimit      WebhookEventType = "auth.rate_limit"        // Authentication rate limited
+	EventPermissionDenied   WebhookEventType = "auth.permission_denied" // Permission denied
+	EventUnauthorizedAccess WebhookEventType = "auth.unauthorized"      // Unauthorized access attempt
 
-	// 정책 위반 관련 이벤트
-	EventPolicyViolation WebhookEventType = "policy.violation"       // 정책 위반
-	EventPackageBlocked  WebhookEventType = "policy.package_blocked" // 패키지 차단
-	EventSizeExceeded    WebhookEventType = "policy.size_exceeded"   // 크기 제한 초과
-	EventRateLimited     WebhookEventType = "policy.rate_limited"    // 속도 제한
-	EventIPBlocked       WebhookEventType = "policy.ip_blocked"      // IP 차단
-	EventQuotaExceeded   WebhookEventType = "policy.quota_exceeded"  // 할당량 초과
+	// Policy violation events
+	EventPolicyViolation WebhookEventType = "policy.violation"       // Policy violation detected
+	EventPackageBlocked  WebhookEventType = "policy.package_blocked" // Package blocked by policy
+	EventSizeExceeded    WebhookEventType = "policy.size_exceeded"   // Size limit exceeded
+	EventRateLimited     WebhookEventType = "policy.rate_limited"    // Rate limit exceeded
+	EventIPBlocked       WebhookEventType = "policy.ip_blocked"      // IP address blocked
+	EventQuotaExceeded   WebhookEventType = "policy.quota_exceeded"  // Quota exceeded
 
-	// 서버 상태 변경 이벤트
-	EventServerStarted     WebhookEventType = "server.started"         // 서버 시작
-	EventServerStopped     WebhookEventType = "server.stopped"         // 서버 중지
-	EventServerRestarted   WebhookEventType = "server.restarted"       // 서버 재시작
-	EventHealthCheckFailed WebhookEventType = "server.health_failed"   // 헬스체크 실패
-	EventHealthCheckPassed WebhookEventType = "server.health_passed"   // 헬스체크 성공
-	EventConfigReloaded    WebhookEventType = "server.config_reloaded" // 설정 재로드
-	EventConfigError       WebhookEventType = "server.config_error"    // 설정 오류
+	// Server state change events
+	EventServerStarted     WebhookEventType = "server.started"         // Server started
+	EventServerStopped     WebhookEventType = "server.stopped"         // Server stopped
+	EventServerRestarted   WebhookEventType = "server.restarted"       // Server restarted
+	EventHealthCheckFailed WebhookEventType = "server.health_failed"   // Health check failed
+	EventHealthCheckPassed WebhookEventType = "server.health_passed"   // Health check passed
+	EventConfigReloaded    WebhookEventType = "server.config_reloaded" // Configuration reloaded
+	EventConfigError       WebhookEventType = "server.config_error"    // Configuration error
 
-	// 패키지 관련 이벤트
-	EventPackageDownloaded       WebhookEventType = "package.downloaded"        // 패키지 다운로드
-	EventPackageUploaded         WebhookEventType = "package.uploaded"          // 패키지 업로드
-	EventPackageCorrupted        WebhookEventType = "package.corrupted"         // 패키지 손상
-	EventPackageVerifyFailed     WebhookEventType = "package.verify_failed"     // 패키지 검증 실패
+	// Package-related events
+	EventPackageDownloaded       WebhookEventType = "package.downloaded"        // Package downloaded
+	EventPackageUploaded         WebhookEventType = "package.uploaded"          // Package uploaded
+	EventPackageCorrupted        WebhookEventType = "package.corrupted"         // Package corrupted
+	EventPackageVerifyFailed     WebhookEventType = "package.verify_failed"     // Package verification failed
 	EventPackageSignatureInvalid WebhookEventType = "package.signature_invalid" // 서명 무효
 	EventPackageHashMismatch     WebhookEventType = "package.hash_mismatch"     // 해시 불일치
 

@@ -1,3 +1,5 @@
+// Package proxy provides HTTP handlers for various package manager proxies.
+// It includes handlers for APT, Maven, NPM, Docker, and other package managers.
 package proxy
 
 import (
@@ -15,6 +17,9 @@ import (
 	"proxynd/helpers"
 )
 
+// AptProxy handles APT package manager proxy requests.
+// It caches Debian/Ubuntu packages and metadata locally to improve download speeds.
+// The handler supports multiple upstream mirrors with failover capability.
 func AptProxy(c *fiber.Ctx) error {
 	log.Printf("Access proxy apt\n")
 

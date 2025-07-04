@@ -1,74 +1,256 @@
-#proxy:
-#  http: 192.168.11.99:3128
-#  https: 192.168.11.99:3129
+# ProxyND Global Configuration
+# This file contains global settings that apply to all proxy types.
+# For proxy-specific settings, see the individual proxy configuration files.
 
+# =============================================================================
+# Storage Configuration
+# =============================================================================
+# Base directory for all storage (caches, mirrors, etc.)
+# If not set, uses STORAGE_DIR environment variable
+# storage_dir: /var/lib/proxynd
+
+# Configuration directory
+# If not set, uses CONFIG_DIR environment variable
+# config_dir: /etc/proxynd
+
+# Cache directory (defaults to {storage_dir}/cache if not set)
+# cache_dir: /var/lib/proxynd/cache
+
+# Maximum cache size in bytes (0 = unlimited)
+# max_cache_size: 107374182400  # 100GB
+
+# =============================================================================
+# Cache Configuration
+# =============================================================================
 cache:
-  # 전역 기본 TTL (초)
-  ttl: 3600
+  # Global default TTL in seconds (0 = no caching)
+  # Range: 0-604800 (up to 7 days)
+  ttl: 3600  # 1 hour
   
-  # HTTP 캐시 헤더 기반 동적 TTL 사용 여부
+  # HTTP Cache Headers Support
+  # When enabled, respects Cache-Control and Expires headers from upstream
   use_cache_headers: true
   
-  # 캐시 헤더 기반 TTL 제한값 (초)
-  max_cache_header_ttl: 86400  # 최대 24시간
-  min_cache_header_ttl: 300    # 최소 5분
+  # Limits for cache headers (prevents excessive caching)
+  max_cache_header_ttl: 86400  # Maximum 24 hours
+  min_cache_header_ttl: 300    # Minimum 5 minutes
   
-  # stale-while-revalidate 설정
-  stale_while_revalidate: true # 만료된 캐시를 서빙하며 백그라운드에서 갱신
-  stale_max_age: 3600         # stale 캐시 최대 서빙 시간 (초)
+  # Stale-While-Revalidate Support
+  # Serves stale content while fetching fresh content in background
+  stale_while_revalidate: true
+  stale_max_age: 3600  # Maximum time to serve stale content (1 hour)
   
-  # 패키지 타입별 기본 TTL 설정 (초)
-  # 설정하지 않으면 내장 기본값 사용
+  # Package Type Specific TTLs (seconds)
+  # These override the global TTL for specific package types
   package_ttls:
-    apt: 3600     # APT 패키지 (1시간)
-    npm: 1800     # NPM 패키지 (30분)
-    pip: 2400     # PIP 패키지 (40분)
-    docker: 7200  # Docker 이미지 (2시간)
-    maven: 5400   # Maven 아티팩트 (1.5시간)
-    yum: 3600     # YUM 패키지 (1시간)
-    apk: 1800     # Alpine APK 패키지 (30분)
-    cargo: 3600   # Rust Cargo 크레이트 (1시간)
-    go: 1800      # Go 모듈 (30분)
-    helm: 3600    # Helm 차트 (1시간)
+    apt: 3600      # Debian/Ubuntu packages
+    npm: 1800      # Node.js packages (more frequent updates)
+    pip: 2400      # Python packages
+    docker: 7200   # Docker images (larger, less frequent updates)
+    maven: 5400    # Java artifacts
+    yum: 3600      # RedHat/CentOS packages
+    apk: 1800      # Alpine Linux packages
+    cargo: 3600    # Rust crates
+    go: 1800       # Go modules
+    helm: 3600     # Kubernetes Helm charts
+    vagrant: 7200  # Vagrant boxes
+    github: 900    # GitHub releases
   
-  # 패키지 패턴별 TTL 오버라이드
+  # Pattern-based TTL Overrides
+  # Patterns support wildcards: *, prefix-*, *-suffix, *substring*
   pattern_ttls:
-    "*-SNAPSHOT": 300    # Maven SNAPSHOT 버전 (5분)
-    "*-dev": 600         # 개발 버전 (10분)
-    "*-alpha": 900       # 알파 버전 (15분)
-    "*-beta": 1200       # 베타 버전 (20분)
-    "*-rc": 1800         # Release Candidate (30분)
-    "test-*": 300        # 테스트 패키지 (5분)
-    "*debug*": 450       # 디버그 빌드 (7.5분)
-    "*experimental*": 180 # 실험적 버전 (3분)
+    "*-SNAPSHOT": 300        # Maven SNAPSHOT versions (5 min)
+    "*-SNAPSHOT.jar": 300    # Maven SNAPSHOT JARs
+    "*-dev": 600            # Development versions (10 min)
+    "*-alpha": 900          # Alpha versions (15 min)
+    "*-beta": 1200          # Beta versions (20 min)
+    "*-rc": 1800            # Release candidates (30 min)
+    "*-RC*": 1800           # Alternative RC format
+    "test-*": 300           # Test packages (5 min)
+    "*debug*": 450          # Debug builds (7.5 min)
+    "*experimental*": 180   # Experimental versions (3 min)
+    "*.sha1": 86400         # Checksums (24 hours)
+    "*.md5": 86400          # MD5 checksums
+    "*.asc": 86400          # GPG signatures
+    "*-latest": 600         # Latest tags (10 min)
+    "nightly-*": 300        # Nightly builds (5 min)
   
-  # 메타데이터 파일별 TTL 설정
+  # Metadata File TTLs
+  # Critical metadata files that change frequently
   metadata_ttls:
-    "repomd.xml": 300      # YUM 메타데이터 (5분)
-    "Packages.gz": 600     # APT 패키지 목록 (10분)
-    "package.json": 300    # NPM 패키지 정보 (5분)
-    "index.yaml": 900      # Helm 인덱스 (15분)
-    "Release": 900         # APT Release 파일 (15분)
-    "InRelease": 900       # APT InRelease 파일 (15분)
-    "maven-metadata.xml": 600  # Maven 메타데이터 (10분)
-    "APKINDEX.tar.gz": 450     # Alpine 패키지 인덱스 (7.5분)
+    # APT/Debian
+    "Packages": 600          # Package lists (10 min)
+    "Packages.gz": 600       # Compressed package lists
+    "Packages.bz2": 600      # Bzip2 compressed
+    "Packages.xz": 600       # XZ compressed
+    "Release": 900           # Release files (15 min)
+    "Release.gpg": 900       # Signed release
+    "InRelease": 900         # Inline signed release
+    "Sources": 600           # Source package lists
+    "Sources.gz": 600        # Compressed sources
+    
+    # YUM/RPM
+    "repomd.xml": 300        # Repository metadata (5 min)
+    "primary.xml": 600       # Primary metadata
+    "primary.xml.gz": 600    # Compressed primary
+    "filelists.xml": 1800    # File lists (30 min)
+    "filelists.xml.gz": 1800 # Compressed filelists
+    "other.xml": 1800        # Other metadata
+    "other.xml.gz": 1800     # Compressed other
+    
+    # NPM
+    "package.json": 300      # Package metadata (5 min)
+    "npm-shrinkwrap.json": 600  # Lock files (10 min)
+    
+    # Maven
+    "maven-metadata.xml": 600     # Repository metadata (10 min)
+    "maven-metadata.xml.sha1": 3600  # Checksums (1 hour)
+    "maven-metadata.xml.md5": 3600   # MD5 checksums
+    
+    # Docker
+    "manifest.json": 600     # Image manifests (10 min)
+    "_catalog": 300          # Registry catalog (5 min)
+    
+    # Alpine APK
+    "APKINDEX.tar.gz": 450   # Package index (7.5 min)
+    
+    # Helm
+    "index.yaml": 900        # Chart repository index (15 min)
+    
+    # Python
+    "simple": 300            # PyPI simple index (5 min)
 
-#if storage_dir set? proxy, mirror relative
-#storage_dir: ~/tmp/proxynd
-#proxy_root: ~/tmp/proxy
-#mirror_root: ~/tmp/mirror
-
-# 인증 설정
+# =============================================================================
+# Authentication Configuration
+# =============================================================================
 authentication:
-  # BasicAuth 설정
+  # Basic Authentication
+  # Simple username/password authentication
   basic_auth:
+    # Realm shown in authentication prompts
     realm: "ProxyND Restricted Area"
+    
+    # User credentials (username: password)
+    # IMPORTANT: Use strong passwords in production!
+    # Consider using environment variables or external auth
     users:
-      admin: "admin123"          # 관리자 계정
-      developer: "dev123"        # 개발자 계정  
-      viewer: "view123"          # 뷰어 계정
-      # 추가 사용자는 여기에 username: password 형태로 추가
+      # admin: "$2a$10$..."  # Use bcrypt hashed passwords in production
+      admin: "changeme"       # Example only - change this!
+      developer: "devpass"    # Example only - change this!
+      readonly: "viewer"      # Example only - change this!
   
-  # OAuth2 설정 (별도 oauth2.yaml 파일 사용 권장)
+  # OAuth2 Configuration (see oauth2.yaml for detailed example)
   # oauth2:
   #   enabled: true
+  #   config_file: oauth2.yaml
+
+# =============================================================================
+# Proxy Settings (Optional)
+# =============================================================================
+# Configure if ProxyND needs to use an upstream proxy
+# proxy:
+#   # HTTP proxy for non-HTTPS requests
+#   http: "http://corporate-proxy.example.com:3128"
+#   
+#   # HTTPS proxy for HTTPS requests
+#   https: "http://corporate-proxy.example.com:3128"
+#   
+#   # Comma-separated list of hosts to bypass proxy
+#   no_proxy: "localhost,127.0.0.1,internal.domain.com"
+#   
+#   # Proxy authentication (if required)
+#   username: "proxy_user"
+#   password: "proxy_pass"
+
+# =============================================================================
+# Server Configuration
+# =============================================================================
+# server:
+#   # Server port (default: 8080, can be overridden by SERVER_PORT env var)
+#   port: 8080
+#   
+#   # Bind address (default: 0.0.0.0)
+#   host: "0.0.0.0"
+#   
+#   # Request timeout in seconds
+#   timeout: 300
+#   
+#   # Maximum request body size
+#   max_body_size: "1GB"
+
+# =============================================================================
+# Logging Configuration
+# =============================================================================
+# logging:
+#   # Log level: debug, info, warn, error, fatal
+#   level: "info"
+#   
+#   # Log format: json, text
+#   format: "json"
+#   
+#   # Log output: stdout, stderr, file
+#   output: "stdout"
+#   
+#   # File logging configuration
+#   file:
+#     path: "/var/log/proxynd/proxynd.log"
+#     max_size: 100    # MB
+#     max_backups: 10
+#     max_age: 30      # days
+#     compress: true
+
+# =============================================================================
+# Performance Tuning
+# =============================================================================
+# performance:
+#   # Number of concurrent downloads
+#   max_concurrent_downloads: 10
+#   
+#   # Download retry configuration
+#   retry_count: 3
+#   retry_delay: 5  # seconds
+#   
+#   # Connection pool settings
+#   max_idle_conns: 100
+#   max_conns_per_host: 10
+#   idle_conn_timeout: 90  # seconds
+
+# =============================================================================
+# Security Configuration
+# =============================================================================
+# security:
+#   # Enable HTTPS
+#   enable_tls: false
+#   
+#   # TLS certificate and key paths
+#   tls_cert: "/etc/proxynd/certs/server.crt"
+#   tls_key: "/etc/proxynd/certs/server.key"
+#   
+#   # Minimum TLS version
+#   min_tls_version: "1.2"
+#   
+#   # Rate limiting
+#   rate_limit:
+#     enabled: true
+#     requests_per_minute: 100
+#     burst: 20
+
+# =============================================================================
+# Webhook Configuration (see webhook.yaml for detailed example)
+# =============================================================================
+# webhooks:
+#   enabled: false
+#   config_file: webhook.yaml
+
+# =============================================================================
+# Health Check Configuration
+# =============================================================================
+# health:
+#   # Health check endpoint path
+#   path: "/healthz"
+#   
+#   # Detailed health check with component status
+#   detailed: true
+#   
+#   # Health check interval for internal monitoring
+#   check_interval: 30  # seconds

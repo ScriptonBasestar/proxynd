@@ -1,0 +1,224 @@
+# GoReleaser configuration
+# Documentation at https://goreleaser.com
+
+before:
+  hooks:
+    - go mod tidy
+    - go generate ./...
+
+builds:
+  - id: proxynd
+    main: ./main.go
+    binary: proxynd
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+      - arm
+    goarm:
+      - "7"
+    ignore:
+      - goos: windows
+        goarch: arm64
+      - goos: windows
+        goarch: arm
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+      - -X main.builtBy=goreleaser
+
+  - id: proxyndctl
+    main: ./cmd/proxyndctl/main.go
+    binary: proxyndctl
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+
+archives:
+  - id: proxynd
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - README.md
+      - LICENSE
+      - sample-conf/**/*
+
+checksum:
+  name_template: 'checksums.txt'
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^chore:'
+      - Merge pull request
+      - Merge branch
+  groups:
+    - title: '🚀 Features'
+      regexp: "^.*feat[(\\w)]*:+.*$"
+      order: 0
+    - title: '🐛 Bug Fixes'
+      regexp: "^.*fix[(\\w)]*:+.*$"
+      order: 1
+    - title: '🔨 Refactoring'
+      regexp: "^.*refactor[(\\w)]*:+.*$"
+      order: 2
+    - title: '⚡ Performance'
+      regexp: "^.*perf[(\\w)]*:+.*$"
+      order: 3
+    - title: '🔒 Security'
+      regexp: "^.*security[(\\w)]*:+.*$"
+      order: 4
+    - title: '📝 Documentation'
+      regexp: "^.*docs[(\\w)]*:+.*$"
+      order: 5
+    - title: 'Other changes'
+      order: 999
+
+dockers:
+  - id: proxynd-amd64
+    goos: linux
+    goarch: amd64
+    image_templates:
+      - "ghcr.io/{{ .Env.GITHUB_REPOSITORY }}:{{ .Version }}-amd64"
+      - "ghcr.io/{{ .Env.GITHUB_REPOSITORY }}:latest-amd64"
+    dockerfile: Dockerfile.goreleaser
+    use: buildx
+    build_flag_templates:
+      - "--platform=linux/amd64"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--label=org.opencontainers.image.source={{.GitURL}}"
+
+  - id: proxynd-arm64
+    goos: linux
+    goarch: arm64
+    image_templates:
+      - "ghcr.io/{{ .Env.GITHUB_REPOSITORY }}:{{ .Version }}-arm64"
+      - "ghcr.io/{{ .Env.GITHUB_REPOSITORY }}:latest-arm64"
+    dockerfile: Dockerfile.goreleaser
+    use: buildx
+    build_flag_templates:
+      - "--platform=linux/arm64"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--label=org.opencontainers.image.source={{.GitURL}}"
+
+docker_manifests:
+  - name_template: "ghcr.io/{{ .Env.GITHUB_REPOSITORY }}:{{ .Version }}"
+    image_templates:
+      - "ghcr.io/{{ .Env.GITHUB_REPOSITORY }}:{{ .Version }}-amd64"
+      - "ghcr.io/{{ .Env.GITHUB_REPOSITORY }}:{{ .Version }}-arm64"
+  
+  - name_template: "ghcr.io/{{ .Env.GITHUB_REPOSITORY }}:latest"
+    image_templates:
+      - "ghcr.io/{{ .Env.GITHUB_REPOSITORY }}:latest-amd64"
+      - "ghcr.io/{{ .Env.GITHUB_REPOSITORY }}:latest-arm64"
+
+nfpms:
+  - id: packages
+    package_name: proxynd
+    vendor: ProxyND Project
+    homepage: https://github.com/{{ .Env.GITHUB_REPOSITORY }}
+    maintainer: ProxyND Maintainers <maintainers@proxynd.io>
+    description: |-
+      ProxyND is a high-performance package manager proxy/mirror server
+      supporting Maven and APT package managers.
+    license: MIT
+    formats:
+      - deb
+      - rpm
+      - apk
+    dependencies:
+      - git
+    recommends:
+      - redis
+    contents:
+      - src: ./sample-conf
+        dst: /etc/proxynd
+        type: config
+      - src: ./scripts/proxynd.service
+        dst: /lib/systemd/system/proxynd.service
+        type: config
+    scripts:
+      postinstall: ./scripts/postinstall.sh
+      preremove: ./scripts/preremove.sh
+
+brews:
+  - name: proxynd
+    tap:
+      owner: "{{ .Env.GITHUB_REPOSITORY_OWNER }}"
+      name: homebrew-tap
+      branch: main
+    folder: Formula
+    homepage: https://github.com/{{ .Env.GITHUB_REPOSITORY }}
+    description: High-performance package manager proxy/mirror server
+    license: MIT
+    test: |
+      system "#{bin}/proxynd", "--version"
+    install: |
+      bin.install "proxynd"
+      bin.install "proxyndctl"
+      
+      # Install sample configuration
+      etc.install "sample-conf" => "proxynd"
+
+release:
+  github:
+    owner: "{{ .Env.GITHUB_REPOSITORY_OWNER }}"
+    name: "{{ .Env.GITHUB_REPOSITORY_NAME }}"
+  
+  header: |
+    ## ProxyND v{{ .Version }}
+    
+    High-performance package manager proxy/mirror server.
+  
+  footer: |
+    ## Thanks!
+    
+    Thank you to all contributors who made this release possible!
+    
+    **Full Changelog**: https://github.com/{{ .Env.GITHUB_REPOSITORY }}/compare/{{ .PreviousTag }}...{{ .Tag }}
+  
+  name_template: "v{{.Version}}"
+  
+announce:
+  slack:
+    enabled: false
+    message_template: 'ProxyND {{ .Version }} is out! Check it out: {{ .ReleaseURL }}'
+    
+  discord:
+    enabled: false
+    message_template: 'ProxyND {{ .Version }} is out! Check it out: {{ .ReleaseURL }}'

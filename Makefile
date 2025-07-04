@@ -149,6 +149,32 @@ fmt:
 	goimports -w -local proxynd .
 	@echo "Code formatting complete!"
 
+.PHONY: install-golangci-lint
+install-golangci-lint:
+	@echo "Installing golangci-lint..."
+	@which golangci-lint > /dev/null || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
+	@echo "golangci-lint installed!"
+
+.PHONY: lint
+lint: install-golangci-lint
+	@echo "Running golangci-lint..."
+	golangci-lint run ./...
+
+.PHONY: lint-fix
+lint-fix: install-golangci-lint
+	@echo "Running golangci-lint with auto-fix..."
+	golangci-lint run --fix ./...
+
+.PHONY: lint-new
+lint-new: install-golangci-lint
+	@echo "Running golangci-lint on new code only..."
+	golangci-lint run --new-from-rev=HEAD~ ./...
+
+.PHONY: lint-ci
+lint-ci:
+	@echo "Running golangci-lint for CI..."
+	golangci-lint run --out-format=github-actions ./...
+
 .PHONY: install-mockery
 install-mockery:
 	@echo "Installing mockery..."
@@ -177,3 +203,218 @@ dev-teardown:
 	@rm -rf ./tmp/
 	@rm -f .env
 	@echo "Development environment cleaned!"
+
+# Quality Assurance Targets
+.PHONY: quality
+quality: fmt lint test-coverage
+	@echo "✅ All quality checks passed!"
+
+.PHONY: quality-fix
+quality-fix: fmt lint-fix
+	@echo "✅ Code quality fixes applied!"
+
+.PHONY: check
+check: lint test-unit
+	@echo "✅ Quick checks passed!"
+
+.PHONY: check-all
+check-all: lint test-all test-coverage
+	@echo "✅ All checks passed!"
+
+# Security & Vulnerability Scanning
+.PHONY: security
+security: security-deps security-code
+	@echo "✅ Security checks completed!"
+
+.PHONY: security-deps
+security-deps:
+	@echo "Checking dependencies for vulnerabilities..."
+	@which nancy > /dev/null || go install github.com/sonatype-nexus-community/nancy@latest
+	go list -json -deps ./... | nancy sleuth
+
+.PHONY: security-code
+security-code:
+	@echo "Running security code analysis..."
+	@which gosec > /dev/null || go install github.com/securego/gosec/v2/cmd/gosec@latest
+	gosec -fmt=json -out=gosec-report.json ./... || true
+	@echo "Security report generated: gosec-report.json"
+
+# Code Generation
+.PHONY: generate
+generate:
+	@echo "Running code generation..."
+	go generate ./...
+	@echo "Code generation complete!"
+
+# Dependency Management
+.PHONY: deps
+deps:
+	@echo "Managing dependencies..."
+	go mod download
+	go mod tidy
+	go mod verify
+	@echo "Dependencies verified!"
+
+.PHONY: deps-update
+deps-update:
+	@echo "Updating dependencies..."
+	go get -u ./...
+	go mod tidy
+	@echo "Dependencies updated!"
+
+.PHONY: deps-graph
+deps-graph:
+	@echo "Generating dependency graph..."
+	@which godepgraph > /dev/null || go install github.com/kisielk/godepgraph@latest
+	godepgraph -s ./... | dot -Tpng -o deps-graph.png
+	@echo "Dependency graph saved to deps-graph.png"
+
+# Code Analysis
+.PHONY: analyze
+analyze: analyze-complexity analyze-unused
+	@echo "✅ Code analysis complete!"
+
+.PHONY: analyze-complexity
+analyze-complexity:
+	@echo "Analyzing code complexity..."
+	@which gocyclo > /dev/null || go install github.com/fzipp/gocyclo/cmd/gocyclo@latest
+	gocyclo -over 10 .
+
+.PHONY: analyze-unused
+analyze-unused:
+	@echo "Finding unused code..."
+	@which unused > /dev/null || go install honnef.co/go/tools/cmd/unused@latest
+	unused ./...
+
+# Documentation
+.PHONY: docs
+docs: docs-generate docs-serve
+
+.PHONY: docs-generate
+docs-generate:
+	@echo "Generating documentation..."
+	@which godoc > /dev/null || go install golang.org/x/tools/cmd/godoc@latest
+	@echo "Documentation can be viewed at http://localhost:6060/pkg/proxynd/"
+
+.PHONY: docs-serve
+docs-serve:
+	@echo "Starting documentation server..."
+	godoc -http=:6060
+
+# Cleanup
+.PHONY: clean
+clean: clean-mocks dev-teardown
+	@echo "Cleaning build artifacts..."
+	@rm -f proxynd
+	@rm -f coverage.out coverage.html
+	@rm -f gosec-report.json
+	@rm -f deps-graph.png
+	@rm -rf dist/
+	@echo "Clean complete!"
+
+# Development Workflow Helpers
+.PHONY: dev
+dev: dev-prepare dev-setup
+	@echo "Development environment ready!"
+
+.PHONY: ci
+ci: deps lint test-coverage
+	@echo "CI checks passed!"
+
+# Build targets
+.PHONY: build
+build:
+	@echo "Building proxynd..."
+	go build -v -o proxynd .
+	@echo "Build complete: ./proxynd"
+
+.PHONY: build-all
+build-all:
+	@echo "Building for all platforms..."
+	@mkdir -p dist
+	GOOS=linux GOARCH=amd64 go build -o dist/proxynd-linux-amd64 .
+	GOOS=linux GOARCH=arm64 go build -o dist/proxynd-linux-arm64 .
+	GOOS=darwin GOARCH=amd64 go build -o dist/proxynd-darwin-amd64 .
+	GOOS=darwin GOARCH=arm64 go build -o dist/proxynd-darwin-arm64 .
+	@echo "Multi-platform build complete!"
+
+# Version management
+.PHONY: version
+version:
+	@git describe --tags --always --dirty
+
+# Help target
+.PHONY: help
+help:
+	@echo "ProxyND Makefile Commands:"
+	@echo ""
+	@echo "Development:"
+	@echo "  make dev          - Prepare development environment"
+	@echo "  make dev-run      - Run with hot reload (Air)"
+	@echo "  make dev-test     - Run all tests"
+	@echo ""
+	@echo "Quality:"
+	@echo "  make quality      - Run all quality checks"
+	@echo "  make quality-fix  - Apply automatic fixes"
+	@echo "  make check        - Quick lint and test"
+	@echo "  make check-all    - Comprehensive checks"
+	@echo ""
+	@echo "Testing:"
+	@echo "  make test-unit    - Run unit tests"
+	@echo "  make test-coverage - Generate coverage report"
+	@echo "  make test-race    - Run tests with race detector"
+	@echo ""
+	@echo "Code:"
+	@echo "  make fmt          - Format code"
+	@echo "  make lint         - Run linters"
+	@echo "  make lint-fix     - Fix linting issues"
+	@echo ""
+	@echo "Security:"
+	@echo "  make security     - Run security scans"
+	@echo "  make analyze      - Analyze code complexity"
+	@echo ""
+	@echo "Build:"
+	@echo "  make build        - Build binary"
+	@echo "  make docker-build - Build Docker image"
+	@echo ""
+	@echo "Other:"
+	@echo "  make clean        - Clean artifacts"
+	@echo "  make deps         - Manage dependencies"
+	@echo "  make docs         - Generate documentation"
+	@echo "  make help         - Show this help"
+
+# Default target
+.DEFAULT_GOAL := help
+
+.PHONY: pre-commit-install
+pre-commit-install:
+	@echo "Setting up pre-commit hooks..."
+	@./scripts/setup_precommit.sh
+
+.PHONY: pre-commit-run
+pre-commit-run:
+	@echo "Running pre-commit on all files..."
+	pre-commit run --all-files
+
+.PHONY: pre-commit-update
+pre-commit-update:
+	@echo "Updating pre-commit hooks..."
+	pre-commit autoupdate
+
+# Validate targets
+.PHONY: validate
+validate: validate-config validate-modules
+	@echo "✅ Validation complete!"
+
+.PHONY: validate-config
+validate-config:
+	@echo "Validating configuration files..."
+	@for file in sample-conf/*.yaml; do \
+		echo "Checking $$file..."; \
+		yamllint $$file || true; \
+	done
+
+.PHONY: validate-modules
+validate-modules:
+	@echo "Validating Go modules..."
+	go mod verify

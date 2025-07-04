@@ -1,3 +1,6 @@
+// Package main provides the entry point for the ProxyND server.
+// ProxyND is a high-performance package manager proxy/mirror server
+// supporting multiple package managers including APT, Maven, NPM, and others.
 package main
 
 import (
@@ -11,8 +14,11 @@ import (
 
 // Build information variables (set by ldflags at release)
 var (
-	Version   = "dev"
+	// Version is the semantic version of ProxyND (e.g., "1.2.3")
+	Version = "dev"
+	// BuildTime is the timestamp when the binary was built
 	BuildTime = "unknown"
+	// CommitSHA is the git commit SHA at build time
 	CommitSHA = "unknown"
 )
 

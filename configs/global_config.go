@@ -1,3 +1,6 @@
+// Package configs provides configuration structures and utilities for ProxyND.
+// It includes global configuration, cache settings, authentication options,
+// and various proxy-specific configurations.
 package configs
 
 import (
@@ -9,6 +12,8 @@ import (
 	"proxynd/helpers"
 )
 
+// Cache represents the caching configuration for ProxyND.
+// It controls TTL values, cache headers handling, and stale-while-revalidate behavior.
 type Cache struct {
 	TTL                  int            `yaml:"ttl,omitempty" default:"3600" validate:"min=0,max=604800"`
 	PackageTTLs          map[string]int `yaml:"package_ttls,omitempty"`
@@ -21,7 +26,9 @@ type Cache struct {
 	StaleMaxAge          int            `yaml:"stale_max_age,omitempty" default:"3600" validate:"min=0,max=86400"`
 }
 
-// GetDefaultPackageTTLs 패키지 타입별 기본 TTL 반환
+// GetDefaultPackageTTLs returns default TTL values for each package type.
+// These values are used when specific TTLs are not configured.
+// Returns a map with package types as keys and TTL in seconds as values.
 func GetDefaultPackageTTLs() map[string]int {
 	return map[string]int{
 		"apt":    3600, // 1 hour
@@ -37,7 +44,9 @@ func GetDefaultPackageTTLs() map[string]int {
 	}
 }
 
-// GetTTLForPackageType 패키지 타입별 TTL 조회
+// GetTTLForPackageType returns the TTL for a specific package type.
+// It checks custom package TTLs first, then defaults, and finally uses the global TTL.
+// If no TTL is configured, it returns 3600 seconds (1 hour) as the default.
 func (c *Cache) GetTTLForPackageType(packageType string) int {
 	// 설정된 패키지별 TTL이 있으면 사용
 	if c.PackageTTLs != nil {
@@ -61,7 +70,8 @@ func (c *Cache) GetTTLForPackageType(packageType string) int {
 	return 3600
 }
 
-// GetTTLForPackage 패키지명과 타입에 따른 TTL 조회 (패턴 매칭 포함)
+// GetTTLForPackage returns the TTL for a specific package based on its name and type.
+// It supports pattern matching for package names and falls back to package type TTL.
 func (c *Cache) GetTTLForPackage(packageName, packageType string) int {
 	// 1. 패턴별 TTL 우선 확인
 	if c.PatternTTLs != nil {
@@ -76,7 +86,9 @@ func (c *Cache) GetTTLForPackage(packageName, packageType string) int {
 	return c.GetTTLForPackageType(packageType)
 }
 
-// GetTTLForMetadata 메타데이터 파일에 대한 TTL 조회
+// GetTTLForMetadata returns the TTL for metadata files.
+// Metadata typically has shorter TTL than packages (1/3 of package TTL by default).
+// Minimum TTL for metadata is 300 seconds (5 minutes).
 func (c *Cache) GetTTLForMetadata(filename, packageType string) int {
 	// 1. 메타데이터별 TTL 우선 확인
 	if c.MetadataTTLs != nil {
@@ -97,7 +109,8 @@ func (c *Cache) GetTTLForMetadata(filename, packageType string) int {
 	return metadataTTL
 }
 
-// matchesPattern 패키지명이 패턴과 일치하는지 확인
+// matchesPattern checks if a package name matches the given pattern.
+// Supports wildcards: "*" matches any string, "prefix-*", "*-suffix", and "*substring*".
 func (c *Cache) matchesPattern(packageName, pattern string) bool {
 	// 간단한 와일드카드 패턴 매칭 구현
 	// "*"는 임의의 문자열과 매치
@@ -129,7 +142,8 @@ func (c *Cache) matchesPattern(packageName, pattern string) bool {
 	return packageName == pattern
 }
 
-// contains 문자열 포함 여부 확인 (Go 1.18 이전 호환)
+// contains checks if a string contains a substring.
+// This is a compatibility function for Go versions before 1.18.
 func contains(s, substr string) bool {
 	return len(substr) == 0 || len(s) >= len(substr) && (s == substr ||
 		(len(s) > len(substr) && (s[:len(substr)] == substr ||
@@ -137,7 +151,8 @@ func contains(s, substr string) bool {
 			indexOfSubstring(s, substr) >= 0)))
 }
 
-// indexOfSubstring 부분 문자열 인덱스 찾기
+// indexOfSubstring finds the index of a substring within a string.
+// Returns -1 if the substring is not found.
 func indexOfSubstring(s, substr string) int {
 	if len(substr) == 0 {
 		return 0
@@ -154,16 +169,22 @@ func indexOfSubstring(s, substr string) int {
 	return -1
 }
 
+// BasicAuthConfig represents HTTP Basic Authentication configuration.
+// It contains a map of username/password pairs and an optional realm.
 type BasicAuthConfig struct {
 	Users map[string]string `yaml:"users,omitempty" validate:"dive,keys,min=1,endkeys,min=1"`
 	Realm string            `yaml:"realm,omitempty" default:"Restricted" validate:"min=1,max=100"`
 }
 
+// AuthenticationConfig represents the authentication configuration for ProxyND.
+// It supports both Basic Authentication and OAuth2.
 type AuthenticationConfig struct {
 	BasicAuth *BasicAuthConfig `yaml:"basic_auth,omitempty"`
 	OAuth2    *OAuth2Config    `yaml:"oauth2,omitempty"`
 }
 
+// GlobalConfig represents the global configuration for ProxyND.
+// It includes storage paths, cache settings, and authentication configuration.
 type GlobalConfig struct {
 	StorageDir     string                `yaml:"storage_dir,omitempty" validate:"omitempty,path"`
 	ConfigDir      string                `yaml:"config_dir,omitempty" validate:"omitempty,path"`
@@ -174,11 +195,16 @@ type GlobalConfig struct {
 	MaxCacheSize   int64                 `yaml:"max_cache_size,omitempty" validate:"min=0"`
 }
 
+// ConfigExists checks if the global configuration file exists.
+// Returns true if the global.yaml file is present in the config directory.
 func (cfg *GlobalConfig) ConfigExists() bool {
 	confDir := helpers.GetConfigDir()
 	return helpers.FileExists(path.Join(confDir, "global.yaml"))
 }
 
+// ReadConfig loads the global configuration from global.yaml file.
+// It reads the file, unmarshals the YAML content, and validates the configuration.
+// Returns an error if the file cannot be read or validation fails.
 func (cfg *GlobalConfig) ReadConfig() error {
 	confDir := helpers.GetConfigDir()
 	if err := helpers.ReadYamlSafe(path.Join(confDir, "global.yaml"), cfg); err != nil {
@@ -187,7 +213,9 @@ func (cfg *GlobalConfig) ReadConfig() error {
 	return cfg.Validate()
 }
 
-// Validate validates the global configuration
+// Validate validates the global configuration.
+// It checks struct tags, ensures min/max values are consistent,
+// and validates nested configurations like OAuth2.
 func (cfg *GlobalConfig) Validate() error {
 	// Validate struct tags
 	if err := ValidateStruct(cfg); err != nil {
@@ -209,7 +237,9 @@ func (cfg *GlobalConfig) Validate() error {
 	return nil
 }
 
-// GetTTLFromCacheHeaders HTTP 캐시 헤더에서 TTL 계산
+// GetTTLFromCacheHeaders calculates TTL from HTTP cache headers.
+// It parses Cache-Control and Expires headers to determine cache duration.
+// Returns 0 if cache headers are disabled or no valid headers are found.
 func (c *Cache) GetTTLFromCacheHeaders(cacheControl, expires string) int {
 	if !c.UseCacheHeaders {
 		return 0 // 캐시 헤더 사용 안함
@@ -232,7 +262,9 @@ func (c *Cache) GetTTLFromCacheHeaders(cacheControl, expires string) int {
 	return 0 // 유효한 헤더 없음
 }
 
-// parseCacheControl Cache-Control 헤더 파싱
+// parseCacheControl parses the Cache-Control header to extract TTL.
+// It supports max-age and s-maxage directives, with s-maxage taking precedence.
+// Returns the TTL in seconds or 0 if no valid directive is found.
 func (c *Cache) parseCacheControl(cacheControl string) int {
 	directives := strings.Split(strings.ToLower(cacheControl), ",")
 
@@ -266,7 +298,9 @@ func (c *Cache) parseCacheControl(cacheControl string) int {
 	return maxAge
 }
 
-// parseExpires Expires 헤더 파싱
+// parseExpires parses the Expires header to calculate TTL.
+// It supports multiple date formats including RFC1123 and RFC822.
+// Returns the TTL in seconds or 0 if the header cannot be parsed.
 func (c *Cache) parseExpires(expires string) int {
 	// RFC 1123 형식 파싱 시도
 	layouts := []string{
@@ -290,7 +324,9 @@ func (c *Cache) parseExpires(expires string) int {
 	return 0
 }
 
-// enforceTTLLimits TTL 최소/최대값 강제 적용
+// enforceTTLLimits enforces minimum and maximum TTL limits.
+// Default minimum is 300 seconds (5 minutes) and maximum is 86400 seconds (24 hours).
+// Returns the adjusted TTL value within the configured limits.
 func (c *Cache) enforceTTLLimits(ttl int) int {
 	minTTL := c.MinCacheHeaderTTL
 	if minTTL <= 0 {
@@ -312,7 +348,9 @@ func (c *Cache) enforceTTLLimits(ttl int) int {
 	return ttl
 }
 
-// GetDynamicTTL 동적 TTL 계산 (헤더 기반 + 폴백)
+// GetDynamicTTL calculates TTL dynamically based on HTTP headers with fallback.
+// It first tries to use cache headers, then falls back to package-based TTL.
+// This allows for adaptive caching based on upstream server directives.
 func (c *Cache) GetDynamicTTL(packageName, packageType, cacheControl, expires string) int {
 	// 1. 캐시 헤더 기반 TTL 우선 시도
 	if headerTTL := c.GetTTLFromCacheHeaders(cacheControl, expires); headerTTL > 0 {
@@ -323,21 +361,25 @@ func (c *Cache) GetDynamicTTL(packageName, packageType, cacheControl, expires st
 	return c.GetTTLForPackage(packageName, packageType)
 }
 
-// CacheEntry 캐시 항목 정보 구조체
+// CacheEntry represents a cached item with its metadata.
+// It tracks when the item was cached, its TTL, and stale expiration time.
 type CacheEntry struct {
 	CachedAt   time.Time // 캐시된 시간
 	TTL        int       // 원본 TTL (초)
 	StaleUntil time.Time // stale 만료 시간
 }
 
-// IsFresh 캐시가 신선한지 확인
+// IsFresh checks if the cache entry is still fresh (within its TTL).
+// Returns true if the current time is before the expiration time.
 func (c *Cache) IsFresh(entry CacheEntry) bool {
 	now := time.Now()
 	expireTime := entry.CachedAt.Add(time.Duration(entry.TTL) * time.Second)
 	return now.Before(expireTime)
 }
 
-// IsStale 캐시가 만료되었지만 stale 서빙 가능한지 확인
+// IsStale checks if the cache entry is expired but can still be served stale.
+// This is only applicable when stale-while-revalidate is enabled.
+// Returns true if the entry is within the stale serving period.
 func (c *Cache) IsStale(entry CacheEntry) bool {
 	if !c.StaleWhileRevalidate {
 		return false
@@ -350,7 +392,9 @@ func (c *Cache) IsStale(entry CacheEntry) bool {
 	return now.After(expireTime) && now.Before(entry.StaleUntil)
 }
 
-// IsExpired 캐시가 완전히 만료되었는지 확인
+// IsExpired checks if the cache entry is completely expired.
+// When stale-while-revalidate is enabled, it checks against the stale deadline.
+// Otherwise, it checks against the normal TTL expiration.
 func (c *Cache) IsExpired(entry CacheEntry) bool {
 	now := time.Now()
 
@@ -364,7 +408,9 @@ func (c *Cache) IsExpired(entry CacheEntry) bool {
 	return now.After(expireTime)
 }
 
-// CreateCacheEntry 캐시 항목 생성
+// CreateCacheEntry creates a new cache entry with the given TTL.
+// It calculates both the normal expiration and stale expiration times.
+// The stale period is added on top of the normal TTL when stale-while-revalidate is enabled.
 func (c *Cache) CreateCacheEntry(ttl int) CacheEntry {
 	now := time.Now()
 	entry := CacheEntry{
@@ -388,7 +434,9 @@ func (c *Cache) CreateCacheEntry(ttl int) CacheEntry {
 	return entry
 }
 
-// ShouldRevalidate 백그라운드에서 재검증해야 하는지 확인
+// ShouldRevalidate checks if the cache entry should be revalidated in the background.
+// This is true when the entry is expired but still within the stale serving period.
+// Returns false if stale-while-revalidate is not enabled.
 func (c *Cache) ShouldRevalidate(entry CacheEntry) bool {
 	if !c.StaleWhileRevalidate {
 		return false
@@ -398,7 +446,9 @@ func (c *Cache) ShouldRevalidate(entry CacheEntry) bool {
 	return !c.IsFresh(entry) && c.IsStale(entry)
 }
 
-// GetCacheStrategy 캐시 전략 결정
+// GetCacheStrategy determines the appropriate caching strategy for an entry.
+// It returns CacheStrategyServe for fresh entries, CacheStrategyStaleWhileRevalidate
+// for stale but servable entries, or CacheStrategyRevalidate for expired entries.
 func (c *Cache) GetCacheStrategy(entry CacheEntry) CacheStrategy {
 	if c.IsFresh(entry) {
 		return CacheStrategyServe
@@ -411,11 +461,14 @@ func (c *Cache) GetCacheStrategy(entry CacheEntry) CacheStrategy {
 	return CacheStrategyRevalidate
 }
 
-// CacheStrategy 캐시 전략 타입
+// CacheStrategy represents the caching strategy to use for a request.
 type CacheStrategy int
 
 const (
-	CacheStrategyServe                CacheStrategy = iota // 신선한 캐시 서빙
-	CacheStrategyStaleWhileRevalidate                      // 만료된 캐시 서빙 + 백그라운드 갱신
-	CacheStrategyRevalidate                                // 캐시 재검증 필요
+	// CacheStrategyServe indicates the cache is fresh and can be served directly
+	CacheStrategyServe CacheStrategy = iota
+	// CacheStrategyStaleWhileRevalidate indicates the cache is stale but can be served while revalidating in background
+	CacheStrategyStaleWhileRevalidate
+	// CacheStrategyRevalidate indicates the cache must be revalidated before serving
+	CacheStrategyRevalidate
 )

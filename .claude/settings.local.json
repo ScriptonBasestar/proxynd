@@ -39,7 +39,8 @@
       "Bash(CONFIG_DIR=/tmp STORAGE_DIR=/tmp go test -v ./internal/auth/jwt/...)",
       "Bash(goimports:*)",
       "Bash(go install:*)",
-      "Bash(mockery:*)"
+      "Bash(mockery:*)",
+      "Bash(go run:*)"
     ],
     "deny": []
   }

@@ -4,12 +4,6 @@ on:
   push:
     tags:
       - 'v*'
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: 'Release tag (e.g., v1.0.0)'
-        required: true
-        type: string
 
 env:
   GO_VERSION: '1.22'
@@ -17,22 +11,12 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  build-binaries:
-    name: Build Release Binaries
+  goreleaser:
+    name: GoReleaser
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        include:
-          - goos: linux
-            goarch: amd64
-          - goos: linux
-            goarch: arm64
-          - goos: darwin
-            goarch: amd64
-          - goos: darwin
-            goarch: arm64
-          - goos: windows
-            goarch: amd64
+    permissions:
+      contents: write
+      packages: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -45,96 +29,14 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
           cache: true
 
-      - name: Install dependencies
-        run: go mod download
-
-      - name: Get version
-        id: version
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ github.event.inputs.tag }}"
-          else
-            VERSION=${GITHUB_REF#refs/tags/}
-          fi
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          
-          BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          echo "build_time=$BUILD_TIME" >> $GITHUB_OUTPUT
-          
-          COMMIT_SHA=${GITHUB_SHA::8}
-          echo "commit_sha=$COMMIT_SHA" >> $GITHUB_OUTPUT
-
-      - name: Create dist directory
-        run: mkdir -p dist
-
-      - name: Build ProxyND server
-        env:
-          GOOS: ${{ matrix.goos }}
-          GOARCH: ${{ matrix.goarch }}
-          CGO_ENABLED: 0
-        run: |
-          VERSION=${{ steps.version.outputs.version }}
-          BUILD_TIME=${{ steps.version.outputs.build_time }}
-          COMMIT_SHA=${{ steps.version.outputs.commit_sha }}
-          
-          output_name=proxynd
-          if [ "${{ matrix.goos }}" = "windows" ]; then
-            output_name="proxynd.exe"
-          fi
-          
-          go build \
-            -ldflags="-w -s -X main.Version=${VERSION} -X main.BuildTime=${BUILD_TIME} -X main.CommitSHA=${COMMIT_SHA}" \
-            -trimpath \
-            -o dist/${output_name} \
-            main.go
-
-      - name: Build ProxyND CLI
-        env:
-          GOOS: ${{ matrix.goos }}
-          GOARCH: ${{ matrix.goarch }}
-          CGO_ENABLED: 0
-        run: |
-          VERSION=${{ steps.version.outputs.version }}
-          BUILD_TIME=${{ steps.version.outputs.build_time }}
-          COMMIT_SHA=${{ steps.version.outputs.commit_sha }}
-          
-          output_name=proxyndctl
-          if [ "${{ matrix.goos }}" = "windows" ]; then
-            output_name="proxyndctl.exe"
-          fi
-          
-          go build \
-            -ldflags="-w -s -X main.Version=${VERSION} -X main.BuildTime=${BUILD_TIME} -X main.CommitSHA=${COMMIT_SHA}" \
-            -trimpath \
-            -o dist/${output_name} \
-            ./cmd/proxyndctl/main.go
-
-      - name: Create archive
-        run: |
-          cd dist
-          if [ "${{ matrix.goos }}" = "windows" ]; then
-            # Windows용 ZIP 아카이브
-            zip proxynd-${{ steps.version.outputs.version }}-${{ matrix.goos }}-${{ matrix.goarch }}.zip proxynd.exe proxyndctl.exe
-            zip proxyndctl-${{ steps.version.outputs.version }}-${{ matrix.goos }}-${{ matrix.goarch }}.zip proxyndctl.exe
-          else
-            # Unix용 tar.gz 아카이브
-            tar czf proxynd-${{ steps.version.outputs.version }}-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz proxynd proxyndctl
-            tar czf proxyndctl-${{ steps.version.outputs.version }}-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz proxyndctl
-          fi
-
-      - name: Generate checksums
-        run: |
-          cd dist
-          sha256sum *.tar.gz *.zip > checksums-${{ matrix.goos }}-${{ matrix.goarch }}.txt 2>/dev/null || true
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+      - name: Run GoReleaser
+        uses: goreleaser/goreleaser-action@v5
         with:
-          name: binaries-${{ matrix.goos }}-${{ matrix.goarch }}
-          path: |
-            dist/*.tar.gz
-            dist/*.zip
-            dist/checksums-*.txt
+          distribution: goreleaser
+          version: latest
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   docker-release:
     name: Docker Release
@@ -160,21 +62,11 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Log in to Docker Hub
-        if: github.repository_owner == 'scriptonbasestar'
+        if: ${{ secrets.DOCKERHUB_USERNAME != '' }}
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Get version
-        id: version
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ github.event.inputs.tag }}"
-          else
-            VERSION=${GITHUB_REF#refs/tags/}
-          fi
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Extract metadata
         id: meta
@@ -182,168 +74,111 @@ jobs:
         with:
           images: |
             ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}
-            ${{ github.repository_owner == 'scriptonbasestar' && 'docker.io/scriptonbasestar/proxynd' || '' }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/proxynd
           tags: |
-            type=semver,pattern={{version}},value=${{ steps.version.outputs.version }}
-            type=semver,pattern={{major}}.{{minor}},value=${{ steps.version.outputs.version }}
-            type=semver,pattern={{major}},value=${{ steps.version.outputs.version }}
-            type=raw,value=latest
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           file: ./Dockerfile.multiarch
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          build-args: |
-            VERSION=${{ steps.version.outputs.version }}
-            BUILD_DATE=${{ steps.meta.outputs.created }}
 
-  create-release:
-    name: Create GitHub Release
+  helm-release:
+    name: Helm Chart Release
     runs-on: ubuntu-latest
-    needs: [build-binaries, docker-release]
+    needs: [docker-release]
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Install Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: v3.13.0
+
+      - name: Update Chart Version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          sed -i "s/version: .*/version: $VERSION/" helm/Chart.yaml
+          sed -i "s/appVersion: .*/appVersion: $VERSION/" helm/Chart.yaml
+
+      - name: Package Helm Chart
+        run: |
+          helm package helm/ -d .deploy
+
+      - name: Update Helm Repository Index
+        run: |
+          helm repo index .deploy --url https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}
+
+      - name: Upload Helm Chart
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            .deploy/*.tgz
+            .deploy/index.yaml
+
+  create-release-notes:
+    name: Create Release Notes
+    runs-on: ubuntu-latest
+    needs: [goreleaser, docker-release, helm-release]
     permissions:
       contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Download artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: dist
-
-      - name: Get version
-        id: version
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ github.event.inputs.tag }}"
-          else
-            VERSION=${GITHUB_REF#refs/tags/}
-          fi
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-
-      - name: Organize release assets
-        run: |
-          mkdir -p release
-          find dist -type f \( -name "*.tar.gz" -o -name "*.zip" -o -name "checksums-*" \) -exec cp {} release/ \;
-          
-          # 전체 체크섬 파일 생성
-          cd release
-          sha256sum *.tar.gz *.zip > checksums.txt
-
       - name: Generate changelog
         id: changelog
-        run: |
-          VERSION=${{ steps.version.outputs.version }}
-          
-          # 릴리스 노트 생성
-          cat > release_notes.md << EOF
-          ## ProxyND ${VERSION} 릴리스
-
-          ### 🚀 새로운 기능
-          - 패키지 매니저 프록시/미러 서버
-          - Maven, APT, NPM, Docker, Pip, Yum, APK 프록시 지원
-          - 웹 기반 관리 인터페이스
-          - CLI 관리 도구 (proxyndctl)
-          - 자동 캐싱 및 TTL 관리
-          - 다중 아키텍처 지원 (amd64, arm64)
-
-          ### 📦 지원 플랫폼
-          - Linux (amd64, arm64)
-          - macOS (amd64, arm64)
-          - Windows (amd64)
-
-          ### 🐳 Docker 이미지
-          \`\`\`bash
-          # GitHub Container Registry
-          docker pull ghcr.io/${{ github.repository }}:${VERSION#v}
-          
-          # Docker Hub
-          docker pull scriptonbasestar/proxynd:${VERSION#v}
-          \`\`\`
-
-          ### 📥 바이너리 다운로드
-          아래 Assets에서 해당 플랫폼의 바이너리를 다운로드하세요:
-          - \`proxynd-${VERSION}-{os}-{arch}.{tar.gz|zip}\` - 서버 + CLI 번들
-          - \`proxyndctl-${VERSION}-{os}-{arch}.{tar.gz|zip}\` - CLI 도구만
-
-          ### 🔧 설치 방법
-          \`\`\`bash
-          # Linux/macOS 예제
-          curl -L https://github.com/${{ github.repository }}/releases/download/${VERSION}/proxynd-${VERSION}-linux-amd64.tar.gz | tar xz
-          sudo mv proxynd /usr/local/bin/
-          sudo mv proxyndctl /usr/local/bin/
-          \`\`\`
-
-          자세한 설치 및 설정 방법은 [README.md](https://github.com/${{ github.repository }}/blob/main/README.md)를 참조하세요.
-
-          ### 📝 변경사항
-          EOF
-          
-          # Git 로그에서 변경사항 추출
-          PREV_TAG=\$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
-          if [ -n "\$PREV_TAG" ]; then
-            echo "" >> release_notes.md
-            git log --pretty=format:"- %s (%an)" \${PREV_TAG}..HEAD >> release_notes.md
-          fi
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: mikepenz/release-changelog-builder-action@v4
         with:
-          tag_name: ${{ steps.version.outputs.version }}
-          name: ProxyND ${{ steps.version.outputs.version }}
-          body_path: release_notes.md
-          draft: false
-          prerelease: ${{ contains(steps.version.outputs.version, '-') }}
-          files: |
-            release/*
+          configuration: ".github/changelog-config.json"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  helm-release:
-    name: Helm Chart Release
-    runs-on: ubuntu-latest
-    needs: [docker-release]
-    if: github.repository_owner == 'scriptonbasestar'
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install Helm
-        uses: azure/setup-helm@v4
+      - name: Update release
+        uses: softprops/action-gh-release@v1
         with:
-          version: 'latest'
-
-      - name: Get version
-        id: version
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION="${{ github.event.inputs.tag }}"
-          else
-            VERSION=${GITHUB_REF#refs/tags/}
-          fi
-          # Helm 버전은 v 접두사 제거
-          HELM_VERSION=${VERSION#v}
-          echo "version=$HELM_VERSION" >> $GITHUB_OUTPUT
-
-      - name: Update Chart version
-        run: |
-          sed -i "s/^version:.*/version: ${{ steps.version.outputs.version }}/" helm/Chart.yaml
-          sed -i "s/^appVersion:.*/appVersion: ${{ steps.version.outputs.version }}/" helm/Chart.yaml
-
-      - name: Package Helm chart
-        run: |
-          helm package helm/
-
-      - name: Upload Helm chart artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: helm-chart
-          path: proxynd-*.tgz
+          body: |
+            ## What's Changed
+            ${{ steps.changelog.outputs.changelog }}
+            
+            ## Docker Images
+            
+            ```bash
+            # GitHub Container Registry
+            docker pull ghcr.io/${{ github.repository }}:${{ github.ref_name }}
+            
+            # Docker Hub (if configured)
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/proxynd:${{ github.ref_name }}
+            ```
+            
+            ## Helm Installation
+            
+            ```bash
+            helm repo add proxynd https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}
+            helm repo update
+            helm install proxynd proxynd/proxynd
+            ```
+            
+            ## Binary Downloads
+            
+            See the Assets section below for pre-compiled binaries for your platform.

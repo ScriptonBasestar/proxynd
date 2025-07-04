@@ -1,3 +1,6 @@
+// Package logging provides structured logging capabilities for ProxyND.
+// It uses zerolog under the hood and supports JSON/text output formats,
+// log rotation, context-aware logging, and various log levels.
 package logging
 
 import (
@@ -14,19 +17,26 @@ import (
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
-// LogLevel 로그 레벨
+// LogLevel represents the severity level of a log message.
 type LogLevel string
 
 const (
+	// LevelDebug is for debug-level messages
 	LevelDebug LogLevel = "debug"
-	LevelInfo  LogLevel = "info"
-	LevelWarn  LogLevel = "warn"
+	// LevelInfo is for informational messages
+	LevelInfo LogLevel = "info"
+	// LevelWarn is for warning messages
+	LevelWarn LogLevel = "warn"
+	// LevelError is for error messages
 	LevelError LogLevel = "error"
+	// LevelFatal is for fatal errors (causes program exit)
 	LevelFatal LogLevel = "fatal"
+	// LevelPanic is for panic situations
 	LevelPanic LogLevel = "panic"
 )
 
-// Logger 구조화된 로거 인터페이스
+// Logger is the interface for structured logging in ProxyND.
+// It provides methods for different log levels and context/field management.
 type Logger interface {
 	Debug(msg string, fields ...Field)
 	Info(msg string, fields ...Field)
@@ -43,18 +53,18 @@ type Logger interface {
 	Printf(format string, v ...interface{})
 }
 
-// Field 로그 필드
+// Field represents a key-value pair for structured logging.
 type Field struct {
 	Key   string
 	Value interface{}
 }
 
-// F 필드 생성 헬퍼
+// F is a helper function to create a Field for structured logging.
 func F(key string, value interface{}) Field {
 	return Field{Key: key, Value: value}
 }
 
-// ZeroLogger zerolog 기반 로거 구현
+// ZeroLogger is the zerolog-based implementation of the Logger interface.
 type ZeroLogger struct {
 	logger zerolog.Logger
 	fields map[string]interface{}
@@ -67,7 +77,7 @@ var (
 	once         sync.Once
 )
 
-// LogConfig 로그 설정
+// LogConfig contains all configuration options for the logging system.
 type LogConfig struct {
 	Level      LogLevel `json:"level" yaml:"level"`
 	Format     string   `json:"format" yaml:"format"` // json, text
@@ -84,7 +94,7 @@ type LogConfig struct {
 	Sampling SamplingConfig `json:"sampling" yaml:"sampling"`
 }
 
-// FileConfig 파일 로그 설정
+// FileConfig contains configuration for file-based logging with rotation.
 type FileConfig struct {
 	Path       string `json:"path" yaml:"path"`
 	MaxSize    int    `json:"max_size" yaml:"max_size"` // MB
@@ -93,14 +103,16 @@ type FileConfig struct {
 	Compress   bool   `json:"compress" yaml:"compress"`
 }
 
-// SamplingConfig 로그 샘플링 설정
+// SamplingConfig controls log sampling to reduce volume in high-throughput scenarios.
 type SamplingConfig struct {
 	Enabled    bool `json:"enabled" yaml:"enabled"`
 	Initial    int  `json:"initial" yaml:"initial"`
 	Thereafter int  `json:"thereafter" yaml:"thereafter"`
 }
 
-// InitLogger 로거 초기화
+// InitLogger initializes the global logger with the provided configuration.
+// It sets up output destinations, formatting, log levels, and optional features like sampling.
+// Returns an error if initialization fails.
 func InitLogger(config LogConfig) error {
 	var logger zerolog.Logger
 
@@ -190,7 +202,8 @@ func InitLogger(config LogConfig) error {
 	return nil
 }
 
-// GetLogger 전역 로거 반환
+// GetLogger returns the global logger instance.
+// If not initialized, it creates a default logger with INFO level and JSON format.
 func GetLogger() Logger {
 	once.Do(func() {
 		// 기본 설정으로 초기화
@@ -205,13 +218,14 @@ func GetLogger() Logger {
 	return globalLogger
 }
 
-// NewLogger 새 로거 생성
+// NewLogger creates a new logger with the specified component name.
+// The returned logger includes a "component" field with the given name.
 func NewLogger(name string) Logger {
 	baseLogger := GetLogger()
 	return baseLogger.WithField("component", name)
 }
 
-// parseLevel 로그 레벨 파싱
+// parseLevel converts LogLevel to zerolog.Level.
 func parseLevel(level LogLevel) zerolog.Level {
 	switch level {
 	case LevelDebug:
@@ -231,7 +245,8 @@ func parseLevel(level LogLevel) zerolog.Level {
 	}
 }
 
-// createFileWriter 파일 라이터 생성
+// createFileWriter creates a file writer with log rotation support.
+// It uses lumberjack for automatic log rotation based on size, age, and backup count.
 func createFileWriter(config FileConfig) io.Writer {
 	// 디렉토리 생성
 	dir := filepath.Dir(config.Path)
@@ -331,7 +346,7 @@ func (zl *ZeroLogger) Printf(format string, v ...interface{}) {
 	zl.logger.Info().Msgf(format, v...)
 }
 
-// applyFields 이벤트에 필드 적용
+// applyFields applies both stored and new fields to a log event.
 func (zl *ZeroLogger) applyFields(event *zerolog.Event, fields ...Field) {
 	// 기존 필드 적용
 	zl.mu.RLock()
@@ -346,7 +361,7 @@ func (zl *ZeroLogger) applyFields(event *zerolog.Event, fields ...Field) {
 	}
 }
 
-// copyFields 필드 복사
+// copyFields creates a copy of the logger's fields map.
 func (zl *ZeroLogger) copyFields() map[string]interface{} {
 	zl.mu.RLock()
 	defer zl.mu.RUnlock()
@@ -360,47 +375,48 @@ func (zl *ZeroLogger) copyFields() map[string]interface{} {
 
 // 편의 함수들
 
-// Debug 디버그 로그
+// Debug logs a message at debug level using the global logger.
 func Debug(msg string, fields ...Field) {
 	GetLogger().Debug(msg, fields...)
 }
 
-// Info 정보 로그
+// Info logs a message at info level using the global logger.
 func Info(msg string, fields ...Field) {
 	GetLogger().Info(msg, fields...)
 }
 
-// Warn 경고 로그
+// Warn logs a message at warning level using the global logger.
 func Warn(msg string, fields ...Field) {
 	GetLogger().Warn(msg, fields...)
 }
 
-// Error 오류 로그
+// Error logs a message at error level using the global logger.
 func Error(msg string, fields ...Field) {
 	GetLogger().Error(msg, fields...)
 }
 
-// Fatal 치명적 오류 로그 (프로그램 종료)
+// Fatal logs a message at fatal level using the global logger and exits the program.
 func Fatal(msg string, fields ...Field) {
 	GetLogger().Fatal(msg, fields...)
 }
 
-// Panic 패닉 로그
+// Panic logs a message at panic level using the global logger and panics.
 func Panic(msg string, fields ...Field) {
 	GetLogger().Panic(msg, fields...)
 }
 
-// WithContext 컨텍스트 포함 로거
+// WithContext returns a logger that extracts values from the context.
+// It looks for "request_id" and "user_id" in the context.
 func WithContext(ctx context.Context) Logger {
 	return GetLogger().WithContext(ctx)
 }
 
-// WithFields 필드 포함 로거
+// WithFields returns a logger with additional fields.
 func WithFields(fields ...Field) Logger {
 	return GetLogger().WithFields(fields...)
 }
 
-// WithField 단일 필드 포함 로거
+// WithField returns a logger with a single additional field.
 func WithField(key string, value interface{}) Logger {
 	return GetLogger().WithField(key, value)
 }
