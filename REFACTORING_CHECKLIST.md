@@ -45,22 +45,22 @@
   - 📁 Files: Reorganize existing proxy logic into domain packages
 
 ### 3. Interface Design & Dependency Management
-- [ ] **Define unified Proxy interface**
+- [x] **Define unified Proxy interface**
   - 📌 Why: Multiple proxy types without common abstraction
   - 🧠 How: Create `pkg/types/proxy.go` with ProxyHandler interface
   - 📁 Files: New interface file, update all proxy implementations
 
-- [ ] **Implement dependency injection container**
+- [x] **Implement dependency injection container**
   - 📌 Why: Handlers directly instantiate configs (e.g., `mvnSite.ReadConfig()`)
   - 🧠 How: Use Wire or manual DI container in `internal/app/wire.go`
   - 📁 Files: All handlers, main.go, new DI setup
 
-- [ ] **Remove global state access**
+- [x] **Remove global state access**
   - 📌 Why: Direct config file reading throughout codebase
   - 🧠 How: Pass dependencies through constructors
   - 📁 Files: `configs/*.go`, all handlers
 
-- [ ] **Create service interfaces for testability**
+- [x] **Create service interfaces for testability**
   - 📌 Why: Tight coupling prevents effective unit testing
   - 🧠 How: Define interfaces for CacheService, ConfigService, ProxyService
   - 📁 Files: New interface definitions, update implementations
