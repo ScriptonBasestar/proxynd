@@ -15,13 +15,13 @@ func TestNewGitLabProvider(t *testing.T) {
 		ClientSecret: "test_client_secret",
 		RedirectURI:  "https://example.com/callback",
 	}
-	
+
 	provider := NewGitLabProvider(config)
-	
+
 	if provider.GetName() != "gitlab" {
 		t.Errorf("Expected provider name 'gitlab', got '%s'", provider.GetName())
 	}
-	
+
 	// GitLab 기본값이 설정되었는지 확인
 	gitlabProvider := provider.(*GitLabProvider)
 	if gitlabProvider.config.AuthURL != "https://gitlab.com/oauth/authorize" {
@@ -36,7 +36,7 @@ func TestNewGitLabProvider(t *testing.T) {
 	if gitlabProvider.config.RevokeURL != "https://gitlab.com/oauth/revoke" {
 		t.Error("GitLab RevokeURL should be set to default value")
 	}
-	
+
 	expectedScopes := []string{"read_user"}
 	scopes := provider.GetScopes()
 	if len(scopes) != len(expectedScopes) {
@@ -73,28 +73,28 @@ func TestGitLabProvider_GetUserInfo(t *testing.T) {
 		}
 	}))
 	defer server.Close()
-	
+
 	config := ProviderConfig{
 		Name:        "gitlab",
 		UserInfoURL: server.URL + "/api/v4/user",
 	}
-	
+
 	provider := NewGitLabProvider(config)
-	
+
 	// 원래 HTTP 클라이언트 백업
 	originalClient := DefaultHTTPClient
 	defer func() { DefaultHTTPClient = originalClient }()
-	
+
 	// 테스트용 클라이언트로 교체
 	DefaultHTTPClient = &http.Client{}
-	
+
 	ctx := context.Background()
 	userInfo, err := provider.GetUserInfo(ctx, "test_token")
-	
+
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
-	
+
 	if userInfo.ID != "123456" {
 		t.Errorf("Expected ID '123456', got '%s'", userInfo.ID)
 	}
@@ -131,17 +131,17 @@ func TestGitLabProvider_GetUserOrganizations(t *testing.T) {
 		}
 	}))
 	defer server.Close()
-	
+
 	config := ProviderConfig{
 		Name: "gitlab",
 	}
-	
+
 	provider := NewGitLabProvider(config)
-	
+
 	// 원래 HTTP 클라이언트 백업
 	originalClient := DefaultHTTPClient
 	defer func() { DefaultHTTPClient = originalClient }()
-	
+
 	// Mock 서버 URL을 사용하도록 설정
 	DefaultHTTPClient = &MockHTTPClient{
 		DoFunc: func(req *http.Request) (*http.Response, error) {
@@ -152,19 +152,19 @@ func TestGitLabProvider_GetUserOrganizations(t *testing.T) {
 			return http.DefaultClient.Do(req)
 		},
 	}
-	
+
 	ctx := context.Background()
 	organizations, err := provider.GetUserOrganizations(ctx, "test_token")
-	
+
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
-	
+
 	expectedOrgs := []string{"gitlab-inc", "open-source"}
 	if len(organizations) != len(expectedOrgs) {
 		t.Errorf("Expected %d organizations, got %d", len(expectedOrgs), len(organizations))
 	}
-	
+
 	for i, org := range organizations {
 		if org != expectedOrgs[i] {
 			t.Errorf("Expected organization '%s', got '%s'", expectedOrgs[i], org)
@@ -187,29 +187,29 @@ func TestGitLabProvider_ValidateToken(t *testing.T) {
 		}
 	}))
 	defer server.Close()
-	
+
 	config := ProviderConfig{
 		Name:        "gitlab",
 		UserInfoURL: server.URL + "/api/v4/user",
 		Scopes:      []string{"read_user"},
 	}
-	
+
 	provider := NewGitLabProvider(config)
-	
+
 	// 원래 HTTP 클라이언트 백업
 	originalClient := DefaultHTTPClient
 	defer func() { DefaultHTTPClient = originalClient }()
-	
+
 	// 테스트용 클라이언트로 교체
 	DefaultHTTPClient = &http.Client{}
-	
+
 	ctx := context.Background()
 	tokenInfo, err := provider.ValidateToken(ctx, "valid_token")
-	
+
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
-	
+
 	if !tokenInfo.Valid {
 		t.Error("Expected token to be valid")
 	}
@@ -226,28 +226,28 @@ func TestGitLabProvider_ValidateToken_Invalid(t *testing.T) {
 		w.WriteHeader(http.StatusUnauthorized)
 	}))
 	defer server.Close()
-	
+
 	config := ProviderConfig{
 		Name:        "gitlab",
 		UserInfoURL: server.URL + "/api/v4/user",
 	}
-	
+
 	provider := NewGitLabProvider(config)
-	
+
 	// 원래 HTTP 클라이언트 백업
 	originalClient := DefaultHTTPClient
 	defer func() { DefaultHTTPClient = originalClient }()
-	
+
 	// 테스트용 클라이언트로 교체
 	DefaultHTTPClient = &http.Client{}
-	
+
 	ctx := context.Background()
 	tokenInfo, err := provider.ValidateToken(ctx, "invalid_token")
-	
+
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
-	
+
 	if tokenInfo.Valid {
 		t.Error("Expected token to be invalid")
 	}
@@ -282,17 +282,17 @@ func TestGitLabProvider_GetUserProjects(t *testing.T) {
 		}
 	}))
 	defer server.Close()
-	
+
 	config := ProviderConfig{
 		Name: "gitlab",
 	}
-	
+
 	provider := NewGitLabProvider(config).(*GitLabProvider)
-	
+
 	// 원래 HTTP 클라이언트 백업
 	originalClient := DefaultHTTPClient
 	defer func() { DefaultHTTPClient = originalClient }()
-	
+
 	// Mock 서버 URL을 사용하도록 설정
 	DefaultHTTPClient = &MockHTTPClient{
 		DoFunc: func(req *http.Request) (*http.Response, error) {
@@ -303,18 +303,18 @@ func TestGitLabProvider_GetUserProjects(t *testing.T) {
 			return http.DefaultClient.Do(req)
 		},
 	}
-	
+
 	ctx := context.Background()
 	projects, err := provider.GetUserProjects(ctx, "test_token")
-	
+
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
-	
+
 	if len(projects) != 2 {
 		t.Errorf("Expected 2 projects, got %d", len(projects))
 	}
-	
+
 	expectedProjects := []string{"awesome-project", "public-lib"}
 	for i, project := range projects {
 		if project.Name != expectedProjects[i] {
@@ -338,17 +338,17 @@ func TestGitLabProvider_CheckProjectAccess(t *testing.T) {
 		}
 	}))
 	defer server.Close()
-	
+
 	config := ProviderConfig{
 		Name: "gitlab",
 	}
-	
+
 	provider := NewGitLabProvider(config).(*GitLabProvider)
-	
+
 	// 원래 HTTP 클라이언트 백업
 	originalClient := DefaultHTTPClient
 	defer func() { DefaultHTTPClient = originalClient }()
-	
+
 	// Mock 서버 URL을 사용하도록 설정
 	DefaultHTTPClient = &MockHTTPClient{
 		DoFunc: func(req *http.Request) (*http.Response, error) {
@@ -360,9 +360,9 @@ func TestGitLabProvider_CheckProjectAccess(t *testing.T) {
 			return http.DefaultClient.Do(req)
 		},
 	}
-	
+
 	ctx := context.Background()
-	
+
 	// 접근 가능한 프로젝트 테스트
 	hasAccess, err := provider.CheckProjectAccess(ctx, "test_token", "testuser/accessible-project")
 	if err != nil {
@@ -371,7 +371,7 @@ func TestGitLabProvider_CheckProjectAccess(t *testing.T) {
 	if !hasAccess {
 		t.Error("Expected access to accessible project")
 	}
-	
+
 	// 접근 불가능한 프로젝트 테스트
 	hasAccess, err = provider.CheckProjectAccess(ctx, "test_token", "testuser/private-project")
 	if err != nil {
@@ -405,17 +405,17 @@ func TestGitLabProvider_GetGroupMembers(t *testing.T) {
 		}
 	}))
 	defer server.Close()
-	
+
 	config := ProviderConfig{
 		Name: "gitlab",
 	}
-	
+
 	provider := NewGitLabProvider(config).(*GitLabProvider)
-	
+
 	// 원래 HTTP 클라이언트 백업
 	originalClient := DefaultHTTPClient
 	defer func() { DefaultHTTPClient = originalClient }()
-	
+
 	// Mock 서버 URL을 사용하도록 설정
 	DefaultHTTPClient = &MockHTTPClient{
 		DoFunc: func(req *http.Request) (*http.Response, error) {
@@ -427,23 +427,23 @@ func TestGitLabProvider_GetGroupMembers(t *testing.T) {
 			return http.DefaultClient.Do(req)
 		},
 	}
-	
+
 	ctx := context.Background()
 	members, err := provider.GetGroupMembers(ctx, "test_token", "testgroup")
-	
+
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
-	
+
 	if len(members) != 2 {
 		t.Errorf("Expected 2 members, got %d", len(members))
 	}
-	
+
 	// 첫 번째 멤버 확인
 	if username, ok := members[0]["username"].(string); !ok || username != "user1" {
 		t.Errorf("Expected first member username 'user1', got '%v'", members[0]["username"])
 	}
-	
+
 	if accessLevel, ok := members[0]["access_level"].(float64); !ok || accessLevel != 50 {
 		t.Errorf("Expected first member access level 50, got '%v'", members[0]["access_level"])
 	}
@@ -462,11 +462,11 @@ func TestMapGitLabAccessLevel(t *testing.T) {
 		{0, "guest"},   // 알 수 없는 레벨은 guest로
 		{100, "guest"}, // 알 수 없는 레벨은 guest로
 	}
-	
+
 	for _, tt := range tests {
 		result := mapGitLabAccessLevel(tt.accessLevel)
 		if result != tt.expected {
-			t.Errorf("Expected access level %d to map to '%s', got '%s'", 
+			t.Errorf("Expected access level %d to map to '%s', got '%s'",
 				tt.accessLevel, tt.expected, result)
 		}
 	}
@@ -493,18 +493,18 @@ func TestGitLabProvider_CheckAdminStatus(t *testing.T) {
 		}
 	}))
 	defer server.Close()
-	
+
 	config := ProviderConfig{
 		Name:        "gitlab",
 		UserInfoURL: server.URL + "/api/v4/user",
 	}
-	
+
 	provider := NewGitLabProvider(config).(*GitLabProvider)
-	
+
 	// 원래 HTTP 클라이언트 백업
 	originalClient := DefaultHTTPClient
 	defer func() { DefaultHTTPClient = originalClient }()
-	
+
 	// Mock 서버 URL을 사용하도록 설정
 	DefaultHTTPClient = &MockHTTPClient{
 		DoFunc: func(req *http.Request) (*http.Response, error) {
@@ -516,14 +516,14 @@ func TestGitLabProvider_CheckAdminStatus(t *testing.T) {
 			return http.DefaultClient.Do(req)
 		},
 	}
-	
+
 	ctx := context.Background()
 	isAdmin, err := provider.CheckAdminStatus(ctx, "admin_token")
-	
+
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
-	
+
 	if !isAdmin {
 		t.Error("Expected user to be admin")
 	}
@@ -532,15 +532,15 @@ func TestGitLabProvider_CheckAdminStatus(t *testing.T) {
 func TestParseGitLabTime(t *testing.T) {
 	testTime := "2015-01-01T00:00:00.000Z"
 	parsedTime, ok := parseGitLabTime(testTime)
-	
+
 	if !ok {
 		t.Error("Expected GitLab time to be parsed successfully")
 	}
-	
+
 	if parsedTime == nil {
 		t.Error("Expected parsed time to not be nil")
 	}
-	
+
 	// 빈 문자열 테스트
 	_, ok = parseGitLabTime("")
 	if ok {
@@ -551,7 +551,7 @@ func TestParseGitLabTime(t *testing.T) {
 func TestGitLabProvider_Registration(t *testing.T) {
 	// GitLab 제공자가 자동으로 등록되었는지 확인
 	providers := GetRegisteredProviders()
-	
+
 	found := false
 	for _, name := range providers {
 		if name == "gitlab" {
@@ -559,11 +559,11 @@ func TestGitLabProvider_Registration(t *testing.T) {
 			break
 		}
 	}
-	
+
 	if !found {
 		t.Error("Expected GitLab provider to be automatically registered")
 	}
-	
+
 	// 제공자 생성 테스트
 	config := ProviderConfig{
 		Name:         "gitlab",
@@ -571,17 +571,17 @@ func TestGitLabProvider_Registration(t *testing.T) {
 		ClientSecret: "test_secret",
 		RedirectURI:  "https://example.com/callback",
 	}
-	
+
 	provider := CreateProvider("gitlab", config)
 	if provider == nil {
 		t.Error("Expected GitLab provider to be created")
 	}
-	
+
 	gitlabProvider, ok := provider.(*GitLabProvider)
 	if !ok {
 		t.Error("Expected provider to be GitLabProvider instance")
 	}
-	
+
 	if gitlabProvider.GetName() != "gitlab" {
 		t.Errorf("Expected provider name 'gitlab', got '%s'", gitlabProvider.GetName())
 	}

@@ -3,15 +3,17 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/joho/godotenv"
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/joho/godotenv"
+
 	"proxynd/logging"
 	"proxynd/routers"
 )
 
-// 빌드 정보 변수 (릴리스 시 ldflags로 설정됨)
+// Build information variables (set by ldflags at release)
 var (
 	Version   = "dev"
 	BuildTime = "unknown"
@@ -19,12 +21,12 @@ var (
 )
 
 func main() {
-	// 플래그 정의
+	// Define flags
 	healthCheck := flag.Bool("health", false, "Run health check and exit")
 	version := flag.Bool("version", false, "Show version information and exit")
 	flag.Parse()
 
-	// 버전 정보 출력
+	// Print version information
 	if *version {
 		fmt.Printf("ProxyND %s\n", Version)
 		fmt.Printf("Build Time: %s\n", BuildTime)
@@ -32,7 +34,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	// 헬스체크 모드
+	// Health check mode
 	if *healthCheck {
 		port := os.Getenv("SERVER_PORT")
 		if port == "" {
@@ -49,18 +51,18 @@ func main() {
 		os.Exit(0)
 	}
 
-	// 일반 실행 모드
+	// Normal execution mode
 	e := godotenv.Load()
 	if e != nil {
 		fmt.Print(e)
 	}
 
-	// 구조화된 로깅 시스템 초기화
+	// Initialize structured logging system
 	if err := logging.SetupLogging(); err != nil {
 		log.Fatalf("Failed to setup logging: %v", err)
 	}
 
-	// 로거 가져오기
+	// Get logger
 	logger := logging.GetLogger()
 	logger.Info("Starting ProxyND server")
 
@@ -85,10 +87,6 @@ func main() {
 		if reqPort != "" {
 			port = reqPort
 		}
-	}
-
-	type Job interface {
-		Run()
 	}
 
 	url := fmt.Sprintf("http://%s:%s", "0.0.0.0", port)

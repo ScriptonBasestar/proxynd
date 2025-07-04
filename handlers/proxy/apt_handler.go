@@ -2,13 +2,15 @@ package proxy
 
 import (
 	"fmt"
-	"github.com/gofiber/fiber/v2"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"path"
 	"path/filepath"
+
+	"github.com/gofiber/fiber/v2"
+
 	"proxynd/configs"
 	"proxynd/helpers"
 )
@@ -25,15 +27,6 @@ func AptProxy(c *fiber.Ctx) error {
 	globalConfig.ReadConfig()
 	config := configs.AptProxyConfig{}
 	config.ReadConfig()
-
-	//basedir := os.Getenv("STORAGE_DIR")
-	//if basedir == "" {
-	//	var err error
-	//	basedir, err = homedir.Dir()
-	//	if err != nil {
-	//		log.Fatal(err)
-	//	}
-	//}
 
 	// Create the file
 	filefullpath := path.Join(storageDir, config.Path, requestPath)

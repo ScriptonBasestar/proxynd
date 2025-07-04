@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+
 	"proxynd/configs"
 	"proxynd/internal/auth/jwt"
 	"proxynd/internal/auth/oauth2"
@@ -31,7 +32,7 @@ var stateStore = make(map[string]*OAuth2State)
 func StartOAuth2Login(c *fiber.Ctx) error {
 	providerName := c.Params("provider")
 	redirectURL := c.Query("redirect", "/")
-	
+
 	// OAuth2 설정 로드
 	oauth2Config := &configs.OAuth2Config{}
 	if err := oauth2Config.ReadConfig(); err != nil {
@@ -40,13 +41,13 @@ func StartOAuth2Login(c *fiber.Ctx) error {
 			"error": "OAuth2 configuration not available",
 		})
 	}
-	
+
 	if !oauth2Config.IsEnabled() {
 		return c.Status(http.StatusServiceUnavailable).JSON(fiber.Map{
 			"error": "OAuth2 authentication is not enabled",
 		})
 	}
-	
+
 	// 제공자 설정 확인
 	providerConfig, exists := oauth2Config.GetProvider(providerName)
 	if !exists {
@@ -54,7 +55,7 @@ func StartOAuth2Login(c *fiber.Ctx) error {
 			"error": fmt.Sprintf("OAuth2 provider '%s' not configured", providerName),
 		})
 	}
-	
+
 	// OAuth2 제공자 생성
 	provider := oauth2.CreateProvider(providerName, oauth2.ProviderConfig{
 		Name:         providerName,
@@ -67,7 +68,7 @@ func StartOAuth2Login(c *fiber.Ctx) error {
 		UserInfoURL:  providerConfig.UserInfoURL,
 		EnablePKCE:   providerConfig.EnablePKCE,
 	})
-	
+
 	// 상태 생성 (CSRF 방지)
 	state, err := generateRandomString(32)
 	if err != nil {
@@ -76,16 +77,16 @@ func StartOAuth2Login(c *fiber.Ctx) error {
 			"error": "Failed to generate authentication state",
 		})
 	}
-	
+
 	oauth2State := &OAuth2State{
 		State:       state,
 		Provider:    providerName,
 		RedirectURL: redirectURL,
 		CreatedAt:   time.Now(),
 	}
-	
+
 	var authURL string
-	
+
 	// PKCE 지원 확인
 	if providerConfig.EnablePKCE {
 		codeVerifier, err := generateRandomString(64)
@@ -95,27 +96,27 @@ func StartOAuth2Login(c *fiber.Ctx) error {
 				"error": "Failed to generate PKCE parameters",
 			})
 		}
-		
+
 		codeChallenge := generateCodeChallenge(codeVerifier)
 		oauth2State.CodeVerifier = codeVerifier
 		oauth2State.CodeChallenge = codeChallenge
-		
+
 		authURL = provider.GetAuthURL(state, codeChallenge)
 	} else {
 		authURL = provider.GetAuthURL(state, "")
 	}
-	
+
 	// 상태 저장 (5분 TTL)
 	stateStore[state] = oauth2State
-	
+
 	// 5분 후 자동 정리
 	go func() {
 		time.Sleep(5 * time.Minute)
 		delete(stateStore, state)
 	}()
-	
+
 	logging.GetLogger().Info("OAuth2 login started", logging.F("provider", providerName), logging.F("ip", c.IP()))
-	
+
 	// 인증 URL로 리다이렉트
 	return c.Redirect(authURL)
 }
@@ -126,7 +127,7 @@ func HandleOAuth2Callback(c *fiber.Ctx) error {
 	code := c.Query("code")
 	state := c.Query("state")
 	errorParam := c.Query("error")
-	
+
 	// 에러 처리
 	if errorParam != "" {
 		errorDesc := c.Query("error_description", "Unknown error")
@@ -136,14 +137,14 @@ func HandleOAuth2Callback(c *fiber.Ctx) error {
 			"error_description": errorDesc,
 		})
 	}
-	
+
 	// 필수 파라미터 확인
 	if code == "" || state == "" {
 		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
 			"error": "Missing authorization code or state parameter",
 		})
 	}
-	
+
 	// 상태 검증 (CSRF 방지)
 	oauth2State, exists := stateStore[state]
 	if !exists {
@@ -152,7 +153,7 @@ func HandleOAuth2Callback(c *fiber.Ctx) error {
 			"error": "Invalid or expired authentication state",
 		})
 	}
-	
+
 	// 상태 만료 확인 (5분)
 	if time.Since(oauth2State.CreatedAt) > 5*time.Minute {
 		delete(stateStore, state)
@@ -160,7 +161,7 @@ func HandleOAuth2Callback(c *fiber.Ctx) error {
 			"error": "Authentication state has expired",
 		})
 	}
-	
+
 	// 제공자 일치 확인
 	if oauth2State.Provider != providerName {
 		delete(stateStore, state)
@@ -168,7 +169,7 @@ func HandleOAuth2Callback(c *fiber.Ctx) error {
 			"error": "Provider mismatch in authentication state",
 		})
 	}
-	
+
 	// OAuth2 설정 로드
 	oauth2Config := &configs.OAuth2Config{}
 	if err := oauth2Config.ReadConfig(); err != nil {
@@ -178,7 +179,7 @@ func HandleOAuth2Callback(c *fiber.Ctx) error {
 			"error": "OAuth2 configuration not available",
 		})
 	}
-	
+
 	// 제공자 설정 확인
 	providerConfig, exists := oauth2Config.GetProvider(providerName)
 	if !exists {
@@ -187,7 +188,7 @@ func HandleOAuth2Callback(c *fiber.Ctx) error {
 			"error": fmt.Sprintf("OAuth2 provider '%s' not configured", providerName),
 		})
 	}
-	
+
 	// OAuth2 제공자 생성
 	provider := oauth2.CreateProvider(providerName, oauth2.ProviderConfig{
 		Name:         providerName,
@@ -200,7 +201,7 @@ func HandleOAuth2Callback(c *fiber.Ctx) error {
 		UserInfoURL:  providerConfig.UserInfoURL,
 		EnablePKCE:   providerConfig.EnablePKCE,
 	})
-	
+
 	// 인증 코드를 액세스 토큰으로 교환
 	tokenResp, err := provider.ExchangeCode(c.Context(), code, oauth2State.CodeVerifier)
 	if err != nil {
@@ -210,7 +211,7 @@ func HandleOAuth2Callback(c *fiber.Ctx) error {
 			"error": "Failed to exchange authorization code for token",
 		})
 	}
-	
+
 	// 사용자 정보 조회
 	userInfo, err := provider.GetUserInfo(c.Context(), tokenResp.AccessToken)
 	if err != nil {
@@ -220,20 +221,20 @@ func HandleOAuth2Callback(c *fiber.Ctx) error {
 			"error": "Failed to retrieve user information",
 		})
 	}
-	
+
 	// 사용자 조직/그룹 정보 조회 (선택사항)
 	organizations, _ := provider.GetUserOrganizations(c.Context(), tokenResp.AccessToken)
-	
+
 	// 사용자 역할 결정
 	userRole := oauth2Config.UserMapping.GetUserRole(userInfo.Email, organizations)
-	
+
 	// JWT 서비스 생성
 	jwtService := jwt.NewJWTService(oauth2Config)
-	
+
 	// JWT 토큰 쌍 생성
 	tokenPair, err := jwtService.GenerateTokenPair(
 		userInfo.ID,
-		userInfo.Email, 
+		userInfo.Email,
 		userInfo.Name,
 		userInfo.Username,
 		userRole,
@@ -247,7 +248,7 @@ func HandleOAuth2Callback(c *fiber.Ctx) error {
 			"error": "Failed to generate authentication tokens",
 		})
 	}
-	
+
 	// 세션에 사용자 정보와 JWT 토큰 저장
 	sess, err := getSession(c)
 	if err != nil {
@@ -257,7 +258,7 @@ func HandleOAuth2Callback(c *fiber.Ctx) error {
 			"error": "Failed to create user session",
 		})
 	}
-	
+
 	// JWT 클레임에서 사용자 정보 추출
 	accessClaims, err := jwtService.ValidateAccessToken(tokenPair.AccessToken)
 	if err != nil {
@@ -267,28 +268,28 @@ func HandleOAuth2Callback(c *fiber.Ctx) error {
 			"error": "Failed to validate authentication tokens",
 		})
 	}
-	
+
 	sessionData := jwtService.ExtractUserInfo(accessClaims)
 	sessionData["avatar"] = userInfo.Avatar
 	sessionData["login_time"] = time.Now()
-	sessionData["oauth2_access_token"] = tokenResp.AccessToken  // OAuth2 제공자 토큰
+	sessionData["oauth2_access_token"] = tokenResp.AccessToken // OAuth2 제공자 토큰
 	sessionData["oauth2_refresh_token"] = tokenResp.RefreshToken
-	
+
 	sess["user"] = sessionData
 	sess["jwt_access_token"] = tokenPair.AccessToken
 	sess["jwt_refresh_token"] = tokenPair.RefreshToken
-	
+
 	// 상태 정리
 	delete(stateStore, state)
-	
+
 	logging.GetLogger().Info("OAuth2 login successful", logging.F("email", userInfo.Email), logging.F("name", userInfo.Name), logging.F("provider", providerName))
-	
+
 	// 원래 요청한 페이지로 리다이렉트
 	redirectURL := oauth2State.RedirectURL
 	if redirectURL == "" {
 		redirectURL = "/"
 	}
-	
+
 	return c.Redirect(redirectURL)
 }
 
@@ -300,7 +301,7 @@ func HandleLogout(c *fiber.Ctx) error {
 			"error": "Failed to get session",
 		})
 	}
-	
+
 	// 세션에서 사용자 정보 가져오기
 	if userData, exists := sess["user"]; exists && userData != nil {
 		if userMap, ok := userData.(fiber.Map); ok {
@@ -309,12 +310,12 @@ func HandleLogout(c *fiber.Ctx) error {
 			}
 		}
 	}
-	
+
 	// 세션 파기 (맵 초기화)
 	for key := range sess {
 		delete(sess, key)
 	}
-	
+
 	return c.JSON(fiber.Map{
 		"message": "Logged out successfully",
 	})
@@ -328,14 +329,14 @@ func RefreshToken(c *fiber.Ctx) error {
 			"error": "Failed to get session",
 		})
 	}
-	
+
 	jwtRefreshToken, exists := sess["jwt_refresh_token"]
 	if !exists || jwtRefreshToken == nil {
 		return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
 			"error": "No JWT refresh token available",
 		})
 	}
-	
+
 	// OAuth2 설정 로드
 	oauth2Config := &configs.OAuth2Config{}
 	if err := oauth2Config.ReadConfig(); err != nil {
@@ -343,10 +344,10 @@ func RefreshToken(c *fiber.Ctx) error {
 			"error": "OAuth2 configuration not available",
 		})
 	}
-	
+
 	// JWT 서비스 생성
 	jwtService := jwt.NewJWTService(oauth2Config)
-	
+
 	// JWT 토큰 갱신
 	newTokenPair, err := jwtService.RefreshAccessToken(jwtRefreshToken.(string))
 	if err != nil {
@@ -355,7 +356,7 @@ func RefreshToken(c *fiber.Ctx) error {
 			"error": "Failed to refresh token",
 		})
 	}
-	
+
 	// 새 JWT 토큰으로 사용자 정보 추출
 	newAccessClaims, err := jwtService.ValidateAccessToken(newTokenPair.AccessToken)
 	if err != nil {
@@ -364,7 +365,7 @@ func RefreshToken(c *fiber.Ctx) error {
 			"error": "Failed to validate new token",
 		})
 	}
-	
+
 	// 세션 업데이트
 	newSessionData := jwtService.ExtractUserInfo(newAccessClaims)
 	if userData, exists := sess["user"]; exists {
@@ -384,13 +385,13 @@ func RefreshToken(c *fiber.Ctx) error {
 			}
 		}
 	}
-	
+
 	sess["user"] = newSessionData
 	sess["jwt_access_token"] = newTokenPair.AccessToken
 	sess["jwt_refresh_token"] = newTokenPair.RefreshToken
-	
+
 	logging.GetLogger().Info("JWT token refreshed", logging.F("email", newAccessClaims.Email))
-	
+
 	return c.JSON(fiber.Map{
 		"message":      "Token refreshed successfully",
 		"access_token": newTokenPair.AccessToken,
@@ -407,14 +408,14 @@ func GetCurrentUser(c *fiber.Ctx) error {
 			"error": "Failed to get session",
 		})
 	}
-	
+
 	userData, exists := sess["user"]
 	if !exists || userData == nil {
 		return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
 			"error": "Not authenticated",
 		})
 	}
-	
+
 	return c.JSON(fiber.Map{
 		"user": userData,
 	})
@@ -428,14 +429,14 @@ func GetAuthStatus(c *fiber.Ctx) error {
 			"error": "Failed to get session",
 		})
 	}
-	
+
 	userData, exists := sess["user"]
 	isAuthenticated := exists && userData != nil
-	
+
 	result := fiber.Map{
 		"authenticated": isAuthenticated,
 	}
-	
+
 	if isAuthenticated {
 		if userMap, ok := userData.(fiber.Map); ok {
 			result["user"] = fiber.Map{
@@ -445,7 +446,7 @@ func GetAuthStatus(c *fiber.Ctx) error {
 				"role":     userMap["role"],
 				"provider": userMap["provider"],
 			}
-			
+
 			// 토큰 만료 시간 확인
 			if expiresAt, ok := userMap["expires_at"].(time.Time); ok {
 				result["expires_at"] = expiresAt
@@ -453,7 +454,7 @@ func GetAuthStatus(c *fiber.Ctx) error {
 			}
 		}
 	}
-	
+
 	// OAuth2 설정 로드하여 활성화된 제공자 목록 반환
 	oauth2Config := &configs.OAuth2Config{}
 	if err := oauth2Config.ReadConfig(); err == nil && oauth2Config.IsEnabled() {
@@ -462,7 +463,7 @@ func GetAuthStatus(c *fiber.Ctx) error {
 	} else {
 		result["oauth2_enabled"] = false
 	}
-	
+
 	return c.JSON(result)
 }
 
@@ -500,10 +501,10 @@ func getSession(c *fiber.Ctx) (fiber.Map, error) {
 		c.Locals("session", newSession)
 		return newSession, nil
 	}
-	
+
 	if session, ok := sessionData.(fiber.Map); ok {
 		return session, nil
 	}
-	
+
 	return nil, fmt.Errorf("invalid session data type")
 }

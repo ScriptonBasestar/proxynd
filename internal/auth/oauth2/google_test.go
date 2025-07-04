@@ -16,13 +16,13 @@ func TestNewGoogleProvider(t *testing.T) {
 		ClientSecret: "test_client_secret",
 		RedirectURI:  "https://example.com/callback",
 	}
-	
+
 	provider := NewGoogleProvider(config)
-	
+
 	if provider.GetName() != "google" {
 		t.Errorf("Expected provider name 'google', got '%s'", provider.GetName())
 	}
-	
+
 	// Google 기본값이 설정되었는지 확인
 	googleProvider := provider.(*GoogleProvider)
 	if googleProvider.config.AuthURL != "https://accounts.google.com/o/oauth2/v2/auth" {
@@ -37,7 +37,7 @@ func TestNewGoogleProvider(t *testing.T) {
 	if googleProvider.config.RevokeURL != "https://oauth2.googleapis.com/revoke" {
 		t.Error("Google RevokeURL should be set to default value")
 	}
-	
+
 	expectedScopes := []string{"openid", "email", "profile"}
 	scopes := provider.GetScopes()
 	if len(scopes) != len(expectedScopes) {
@@ -69,28 +69,28 @@ func TestGoogleProvider_GetUserInfo(t *testing.T) {
 		}
 	}))
 	defer server.Close()
-	
+
 	config := ProviderConfig{
 		Name:        "google",
 		UserInfoURL: server.URL + "/oauth2/v2/userinfo",
 	}
-	
+
 	provider := NewGoogleProvider(config)
-	
+
 	// 원래 HTTP 클라이언트 백업
 	originalClient := DefaultHTTPClient
 	defer func() { DefaultHTTPClient = originalClient }()
-	
+
 	// 테스트용 클라이언트로 교체
 	DefaultHTTPClient = &http.Client{}
-	
+
 	ctx := context.Background()
 	userInfo, err := provider.GetUserInfo(ctx, "test_token")
-	
+
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
-	
+
 	if userInfo.ID != "123456789" {
 		t.Errorf("Expected ID '123456789', got '%s'", userInfo.ID)
 	}
@@ -109,8 +109,8 @@ func TestGoogleProvider_GetUserInfo_NameFromParts(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/oauth2/v2/userinfo" {
 			userResponse := GoogleUser{
-				ID:            "123456789",
-				Email:         "test@example.com",
+				ID:    "123456789",
+				Email: "test@example.com",
 				// Name이 비어있고 GivenName과 FamilyName만 있는 경우
 				GivenName:     "John",
 				FamilyName:    "Doe",
@@ -123,28 +123,28 @@ func TestGoogleProvider_GetUserInfo_NameFromParts(t *testing.T) {
 		}
 	}))
 	defer server.Close()
-	
+
 	config := ProviderConfig{
 		Name:        "google",
 		UserInfoURL: server.URL + "/oauth2/v2/userinfo",
 	}
-	
+
 	provider := NewGoogleProvider(config)
-	
+
 	// 원래 HTTP 클라이언트 백업
 	originalClient := DefaultHTTPClient
 	defer func() { DefaultHTTPClient = originalClient }()
-	
+
 	// 테스트용 클라이언트로 교체
 	DefaultHTTPClient = &http.Client{}
-	
+
 	ctx := context.Background()
 	userInfo, err := provider.GetUserInfo(ctx, "test_token")
-	
+
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
-	
+
 	if userInfo.Name != "John Doe" {
 		t.Errorf("Expected name 'John Doe', got '%s'", userInfo.Name)
 	}
@@ -154,16 +154,16 @@ func TestGoogleProvider_GetUserOrganizations(t *testing.T) {
 	config := ProviderConfig{
 		Name: "google",
 	}
-	
+
 	provider := NewGoogleProvider(config)
 	ctx := context.Background()
-	
+
 	// Google은 조직 개념이 없으므로 빈 배열 반환
 	organizations, err := provider.GetUserOrganizations(ctx, "test_token")
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
-	
+
 	if len(organizations) != 0 {
 		t.Errorf("Expected empty organizations list, got: %v", organizations)
 	}
@@ -185,18 +185,18 @@ func TestGoogleProvider_ValidateToken(t *testing.T) {
 		}
 	}))
 	defer server.Close()
-	
+
 	config := ProviderConfig{
 		Name:     "google",
 		ClientID: "test_client_id",
 	}
-	
+
 	provider := NewGoogleProvider(config)
-	
+
 	// 원래 HTTP 클라이언트 백업
 	originalClient := DefaultHTTPClient
 	defer func() { DefaultHTTPClient = originalClient }()
-	
+
 	// Mock 서버 URL을 사용하도록 설정
 	DefaultHTTPClient = &MockHTTPClient{
 		DoFunc: func(req *http.Request) (*http.Response, error) {
@@ -207,14 +207,14 @@ func TestGoogleProvider_ValidateToken(t *testing.T) {
 			return http.DefaultClient.Do(req)
 		},
 	}
-	
+
 	ctx := context.Background()
 	tokenInfo, err := provider.ValidateToken(ctx, "valid_token")
-	
+
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
-	
+
 	if !tokenInfo.Valid {
 		t.Error("Expected token to be valid")
 	}
@@ -241,18 +241,18 @@ func TestGoogleProvider_ValidateToken_WrongAudience(t *testing.T) {
 		}
 	}))
 	defer server.Close()
-	
+
 	config := ProviderConfig{
 		Name:     "google",
 		ClientID: "test_client_id",
 	}
-	
+
 	provider := NewGoogleProvider(config)
-	
+
 	// 원래 HTTP 클라이언트 백업
 	originalClient := DefaultHTTPClient
 	defer func() { DefaultHTTPClient = originalClient }()
-	
+
 	// Mock 서버 URL을 사용하도록 설정
 	DefaultHTTPClient = &MockHTTPClient{
 		DoFunc: func(req *http.Request) (*http.Response, error) {
@@ -263,14 +263,14 @@ func TestGoogleProvider_ValidateToken_WrongAudience(t *testing.T) {
 			return http.DefaultClient.Do(req)
 		},
 	}
-	
+
 	ctx := context.Background()
 	tokenInfo, err := provider.ValidateToken(ctx, "invalid_token")
-	
+
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
-	
+
 	if tokenInfo.Valid {
 		t.Error("Expected token to be invalid due to wrong audience")
 	}
@@ -285,18 +285,18 @@ func TestGoogleProvider_ValidateToken_Invalid(t *testing.T) {
 		})
 	}))
 	defer server.Close()
-	
+
 	config := ProviderConfig{
 		Name:     "google",
 		ClientID: "test_client_id",
 	}
-	
+
 	provider := NewGoogleProvider(config)
-	
+
 	// 원래 HTTP 클라이언트 백업
 	originalClient := DefaultHTTPClient
 	defer func() { DefaultHTTPClient = originalClient }()
-	
+
 	// Mock 서버 URL을 사용하도록 설정
 	DefaultHTTPClient = &MockHTTPClient{
 		DoFunc: func(req *http.Request) (*http.Response, error) {
@@ -307,14 +307,14 @@ func TestGoogleProvider_ValidateToken_Invalid(t *testing.T) {
 			return http.DefaultClient.Do(req)
 		},
 	}
-	
+
 	ctx := context.Background()
 	tokenInfo, err := provider.ValidateToken(ctx, "invalid_token")
-	
+
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
-	
+
 	if tokenInfo.Valid {
 		t.Error("Expected token to be invalid")
 	}
@@ -324,19 +324,19 @@ func TestGoogleProvider_VerifyIDToken(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/tokeninfo" {
 			tokenInfo := GoogleTokenInfo{
-				Issuer:           "https://accounts.google.com",
-				Audience:         "test_client_id",
-				Subject:          "123456789",
-				Email:            "test@example.com",
-				EmailVerified:    true,
-				Name:             "Test User",
-				Picture:          "https://lh3.googleusercontent.com/photo.jpg",
-				GivenName:        "Test",
-				FamilyName:       "User",
-				Locale:           "en",
-				IssuedAt:         time.Now().Unix(),
-				ExpirationTime:   time.Now().Add(time.Hour).Unix(),
-				HostedDomain:     "example.com",
+				Issuer:         "https://accounts.google.com",
+				Audience:       "test_client_id",
+				Subject:        "123456789",
+				Email:          "test@example.com",
+				EmailVerified:  true,
+				Name:           "Test User",
+				Picture:        "https://lh3.googleusercontent.com/photo.jpg",
+				GivenName:      "Test",
+				FamilyName:     "User",
+				Locale:         "en",
+				IssuedAt:       time.Now().Unix(),
+				ExpirationTime: time.Now().Add(time.Hour).Unix(),
+				HostedDomain:   "example.com",
 			}
 			json.NewEncoder(w).Encode(tokenInfo)
 		} else {
@@ -344,18 +344,18 @@ func TestGoogleProvider_VerifyIDToken(t *testing.T) {
 		}
 	}))
 	defer server.Close()
-	
+
 	config := ProviderConfig{
 		Name:     "google",
 		ClientID: "test_client_id",
 	}
-	
+
 	provider := NewGoogleProvider(config).(*GoogleProvider)
-	
+
 	// 원래 HTTP 클라이언트 백업
 	originalClient := DefaultHTTPClient
 	defer func() { DefaultHTTPClient = originalClient }()
-	
+
 	// Mock 서버 URL을 사용하도록 설정
 	DefaultHTTPClient = &MockHTTPClient{
 		DoFunc: func(req *http.Request) (*http.Response, error) {
@@ -366,14 +366,14 @@ func TestGoogleProvider_VerifyIDToken(t *testing.T) {
 			return http.DefaultClient.Do(req)
 		},
 	}
-	
+
 	ctx := context.Background()
 	tokenInfo, err := provider.VerifyIDToken(ctx, "valid_id_token")
-	
+
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
-	
+
 	if tokenInfo.Subject != "123456789" {
 		t.Errorf("Expected subject '123456789', got '%s'", tokenInfo.Subject)
 	}
@@ -400,18 +400,18 @@ func TestGoogleProvider_VerifyIDToken_WrongIssuer(t *testing.T) {
 		}
 	}))
 	defer server.Close()
-	
+
 	config := ProviderConfig{
 		Name:     "google",
 		ClientID: "test_client_id",
 	}
-	
+
 	provider := NewGoogleProvider(config).(*GoogleProvider)
-	
+
 	// 원래 HTTP 클라이언트 백업
 	originalClient := DefaultHTTPClient
 	defer func() { DefaultHTTPClient = originalClient }()
-	
+
 	// Mock 서버 URL을 사용하도록 설정
 	DefaultHTTPClient = &MockHTTPClient{
 		DoFunc: func(req *http.Request) (*http.Response, error) {
@@ -422,14 +422,14 @@ func TestGoogleProvider_VerifyIDToken_WrongIssuer(t *testing.T) {
 			return http.DefaultClient.Do(req)
 		},
 	}
-	
+
 	ctx := context.Background()
 	_, err := provider.VerifyIDToken(ctx, "invalid_id_token")
-	
+
 	if err == nil {
 		t.Error("Expected error for wrong issuer")
 	}
-	
+
 	if !contains(err.Error(), "issuer mismatch") {
 		t.Errorf("Expected issuer mismatch error, got: %v", err)
 	}
@@ -451,18 +451,18 @@ func TestGoogleProvider_GetHostedDomain(t *testing.T) {
 		}
 	}))
 	defer server.Close()
-	
+
 	config := ProviderConfig{
 		Name:     "google",
 		ClientID: "test_client_id",
 	}
-	
+
 	provider := NewGoogleProvider(config).(*GoogleProvider)
-	
+
 	// 원래 HTTP 클라이언트 백업
 	originalClient := DefaultHTTPClient
 	defer func() { DefaultHTTPClient = originalClient }()
-	
+
 	// Mock 서버 URL을 사용하도록 설정
 	DefaultHTTPClient = &MockHTTPClient{
 		DoFunc: func(req *http.Request) (*http.Response, error) {
@@ -473,14 +473,14 @@ func TestGoogleProvider_GetHostedDomain(t *testing.T) {
 			return http.DefaultClient.Do(req)
 		},
 	}
-	
+
 	ctx := context.Background()
 	domain, err := provider.GetHostedDomain(ctx, "valid_id_token")
-	
+
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
-	
+
 	if domain != "example.com" {
 		t.Errorf("Expected domain 'example.com', got '%s'", domain)
 	}
@@ -502,18 +502,18 @@ func TestGoogleProvider_CheckGSuiteUser(t *testing.T) {
 		}
 	}))
 	defer server.Close()
-	
+
 	config := ProviderConfig{
 		Name:     "google",
 		ClientID: "test_client_id",
 	}
-	
+
 	provider := NewGoogleProvider(config).(*GoogleProvider)
-	
+
 	// 원래 HTTP 클라이언트 백업
 	originalClient := DefaultHTTPClient
 	defer func() { DefaultHTTPClient = originalClient }()
-	
+
 	// Mock 서버 URL을 사용하도록 설정
 	DefaultHTTPClient = &MockHTTPClient{
 		DoFunc: func(req *http.Request) (*http.Response, error) {
@@ -524,14 +524,14 @@ func TestGoogleProvider_CheckGSuiteUser(t *testing.T) {
 			return http.DefaultClient.Do(req)
 		},
 	}
-	
+
 	ctx := context.Background()
 	isGSuite, err := provider.CheckGSuiteUser(ctx, "valid_id_token")
-	
+
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
-	
+
 	if !isGSuite {
 		t.Error("Expected user to be G Suite user")
 	}
@@ -553,18 +553,18 @@ func TestGoogleProvider_GetUserDomains(t *testing.T) {
 		}
 	}))
 	defer server.Close()
-	
+
 	config := ProviderConfig{
 		Name:     "google",
 		ClientID: "test_client_id",
 	}
-	
+
 	provider := NewGoogleProvider(config).(*GoogleProvider)
-	
+
 	// 원래 HTTP 클라이언트 백업
 	originalClient := DefaultHTTPClient
 	defer func() { DefaultHTTPClient = originalClient }()
-	
+
 	// Mock 서버 URL을 사용하도록 설정
 	DefaultHTTPClient = &MockHTTPClient{
 		DoFunc: func(req *http.Request) (*http.Response, error) {
@@ -575,19 +575,19 @@ func TestGoogleProvider_GetUserDomains(t *testing.T) {
 			return http.DefaultClient.Do(req)
 		},
 	}
-	
+
 	ctx := context.Background()
 	domains, err := provider.GetUserDomains(ctx, "valid_id_token")
-	
+
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
-	
+
 	expectedDomains := []string{"company.com"}
 	if len(domains) != len(expectedDomains) {
 		t.Errorf("Expected %d domains, got %d", len(expectedDomains), len(domains))
 	}
-	
+
 	for i, domain := range domains {
 		if domain != expectedDomains[i] {
 			t.Errorf("Expected domain '%s', got '%s'", expectedDomains[i], domain)
@@ -598,7 +598,7 @@ func TestGoogleProvider_GetUserDomains(t *testing.T) {
 func TestGoogleProvider_Registration(t *testing.T) {
 	// Google 제공자가 자동으로 등록되었는지 확인
 	providers := GetRegisteredProviders()
-	
+
 	found := false
 	for _, name := range providers {
 		if name == "google" {
@@ -606,11 +606,11 @@ func TestGoogleProvider_Registration(t *testing.T) {
 			break
 		}
 	}
-	
+
 	if !found {
 		t.Error("Expected Google provider to be automatically registered")
 	}
-	
+
 	// 제공자 생성 테스트
 	config := ProviderConfig{
 		Name:         "google",
@@ -618,17 +618,17 @@ func TestGoogleProvider_Registration(t *testing.T) {
 		ClientSecret: "test_secret",
 		RedirectURI:  "https://example.com/callback",
 	}
-	
+
 	provider := CreateProvider("google", config)
 	if provider == nil {
 		t.Error("Expected Google provider to be created")
 	}
-	
+
 	googleProvider, ok := provider.(*GoogleProvider)
 	if !ok {
 		t.Error("Expected provider to be GoogleProvider instance")
 	}
-	
+
 	if googleProvider.GetName() != "google" {
 		t.Errorf("Expected provider name 'google', got '%s'", googleProvider.GetName())
 	}

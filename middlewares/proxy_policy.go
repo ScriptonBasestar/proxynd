@@ -1,13 +1,15 @@
 package middlewares
 
 import (
-	"github.com/gofiber/fiber/v2"
 	"log"
 	"os"
 	"path"
+	"strings"
+
+	"github.com/gofiber/fiber/v2"
+
 	"proxynd/configs"
 	"proxynd/helpers"
-	"strings"
 )
 
 // ProxyPolicyMiddleware 프록시 정책 처리 미들웨어

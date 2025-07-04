@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+
 	"proxynd/configs"
 	"proxynd/health"
 )

@@ -2,21 +2,22 @@ package configs
 
 import (
 	"path"
+
 	"proxynd/helpers"
 )
 
 // WebhookConfig 웹훅 알림 시스템 전체 설정
 type WebhookConfig struct {
-	Enabled        bool                       `yaml:"enabled" json:"enabled"`                 // 웹훅 시스템 활성화 여부
-	Endpoints      []WebhookEndpointConfig    `yaml:"endpoints" json:"endpoints"`             // 웹훅 엔드포인트 목록
-	RateLimit      WebhookRateLimitConfig     `yaml:"rate_limit" json:"rate_limit"`           // 속도 제한 설정
-	Retry          WebhookRetryConfig         `yaml:"retry" json:"retry"`                     // 재시도 설정
+	Enabled        bool                        `yaml:"enabled" json:"enabled"`                 // 웹훅 시스템 활성화 여부
+	Endpoints      []WebhookEndpointConfig     `yaml:"endpoints" json:"endpoints"`             // 웹훅 엔드포인트 목록
+	RateLimit      WebhookRateLimitConfig      `yaml:"rate_limit" json:"rate_limit"`           // 속도 제한 설정
+	Retry          WebhookRetryConfig          `yaml:"retry" json:"retry"`                     // 재시도 설정
 	FailureStorage WebhookFailureStorageConfig `yaml:"failure_storage" json:"failure_storage"` // 실패 저장소 설정
-	EventFilter    WebhookEventFilter         `yaml:"event_filter" json:"event_filter"`       // 이벤트 필터링
-	Buffering      WebhookBufferingConfig     `yaml:"buffering" json:"buffering"`             // 버퍼링 설정
-	Batching       WebhookBatchingConfig      `yaml:"batching" json:"batching"`               // 배치 전송 설정
-	Security       WebhookSecurityConfig      `yaml:"security" json:"security"`               // 보안 설정
-	Monitoring     WebhookMonitoringConfig    `yaml:"monitoring" json:"monitoring"`           // 모니터링 설정
+	EventFilter    WebhookEventFilter          `yaml:"event_filter" json:"event_filter"`       // 이벤트 필터링
+	Buffering      WebhookBufferingConfig      `yaml:"buffering" json:"buffering"`             // 버퍼링 설정
+	Batching       WebhookBatchingConfig       `yaml:"batching" json:"batching"`               // 배치 전송 설정
+	Security       WebhookSecurityConfig       `yaml:"security" json:"security"`               // 보안 설정
+	Monitoring     WebhookMonitoringConfig     `yaml:"monitoring" json:"monitoring"`           // 모니터링 설정
 }
 
 // WebhookEndpointConfig 개별 웹훅 엔드포인트 설정
@@ -86,14 +87,14 @@ type WebhookRetryConfig struct {
 
 // WebhookFailureStorageConfig 웹훅 실패 저장소 설정
 type WebhookFailureStorageConfig struct {
-	Enabled        bool   `yaml:"enabled" json:"enabled"`                 // 실패 저장소 활성화
-	StorageDir     string `yaml:"storage_dir" json:"storage_dir"`         // 실패 이벤트 저장 디렉토리
-	RetentionHours int    `yaml:"retention_hours" json:"retention_hours"` // 실패 이벤트 보관 시간 (시간)
-	MaxFileSize    int64  `yaml:"max_file_size" json:"max_file_size"`     // 최대 파일 크기 (바이트)
-	MaxFiles       int    `yaml:"max_files" json:"max_files"`             // 최대 파일 수
+	Enabled         bool   `yaml:"enabled" json:"enabled"`                   // 실패 저장소 활성화
+	StorageDir      string `yaml:"storage_dir" json:"storage_dir"`           // 실패 이벤트 저장 디렉토리
+	RetentionHours  int    `yaml:"retention_hours" json:"retention_hours"`   // 실패 이벤트 보관 시간 (시간)
+	MaxFileSize     int64  `yaml:"max_file_size" json:"max_file_size"`       // 최대 파일 크기 (바이트)
+	MaxFiles        int    `yaml:"max_files" json:"max_files"`               // 최대 파일 수
 	CleanupInterval string `yaml:"cleanup_interval" json:"cleanup_interval"` // 정리 작업 간격
-	CompressOld    bool   `yaml:"compress_old" json:"compress_old"`       // 오래된 파일 압축 여부
-	EncryptStorage bool   `yaml:"encrypt_storage" json:"encrypt_storage"` // 저장소 암호화 여부
+	CompressOld     bool   `yaml:"compress_old" json:"compress_old"`         // 오래된 파일 압축 여부
+	EncryptStorage  bool   `yaml:"encrypt_storage" json:"encrypt_storage"`   // 저장소 암호화 여부
 }
 
 // WebhookEventFilter 이벤트 필터링 설정
@@ -256,7 +257,7 @@ func GetDefaultWebhookConfig() WebhookConfig {
 		FailureStorage: WebhookFailureStorageConfig{
 			Enabled:         true,
 			StorageDir:      "/tmp/proxynd-webhook-failures",
-			RetentionHours:  72, // 3일
+			RetentionHours:  72,      // 3일
 			MaxFileSize:     1048576, // 1MB
 			MaxFiles:        1000,
 			CleanupInterval: "1h",

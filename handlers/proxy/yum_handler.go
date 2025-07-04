@@ -7,9 +7,10 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
+
 	"proxynd/configs"
 	"proxynd/helpers"
-	"strings"
 
 	"github.com/gofiber/fiber/v2"
 )

@@ -124,7 +124,7 @@ func NewWebhookSender(config configs.WebhookConfig) (*WebhookSender, error) {
 	// 이력 관리자 초기화
 	historyManager := NewWebhookHistoryManager(
 		config.FailureStorage.StorageDir+"/history",
-		10000, // 최대 10,000개 이력 보관
+		10000,          // 최대 10,000개 이력 보관
 		7*24*time.Hour, // 7일 보관
 	)
 
@@ -515,7 +515,7 @@ func (ws *WebhookSender) matchesPattern(value, pattern string) bool {
 // sendToEndpoint 특정 엔드포인트로 전송
 func (ws *WebhookSender) sendToEndpoint(ctx context.Context, event *alerts.AlertEvent, endpoint configs.WebhookEndpointConfig) error {
 	startTime := time.Now()
-	
+
 	// 어댑터 선택
 	adapterName := "generic"
 	if endpoint.Format == "slack" {
@@ -540,10 +540,10 @@ func (ws *WebhookSender) sendToEndpoint(ctx context.Context, event *alerts.Alert
 	// 재시도 로직과 함께 전송
 	var lastErr error
 	var finalAttempt int
-	
+
 	for attempt := 1; attempt <= retryPolicy.MaxAttempts; attempt++ {
 		finalAttempt = attempt
-		
+
 		// 속도 제한 확인
 		if err := ws.rateLimiter.Wait(ctx); err != nil {
 			// 이력 기록 (속도 제한 오류)
@@ -587,7 +587,7 @@ func (ws *WebhookSender) sendToEndpoint(ctx context.Context, event *alerts.Alert
 			ws.logger.Debug("웹훅 전송 성공",
 				logging.F("endpoint", endpoint.Name),
 				logging.F("event_id", event.ID))
-			
+
 			// 이력 기록 (성공)
 			ws.recordHistory(event, endpoint, "success", time.Since(startTime), 200, "", finalAttempt-1)
 			return nil

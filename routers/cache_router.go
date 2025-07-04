@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+
 	"proxynd/configs"
 	"proxynd/logging"
 )
@@ -59,28 +60,28 @@ type ProxyTypeInfo struct {
 
 // TTLPolicyResponse TTL 정책 조회 응답 구조체
 type TTLPolicyResponse struct {
-	GlobalTTL              int                    `json:"global_ttl"`
-	PackageTTLs            map[string]int         `json:"package_ttls"`
-	PatternTTLs            map[string]int         `json:"pattern_ttls"`
-	MetadataTTLs           map[string]int         `json:"metadata_ttls"`
-	UseCacheHeaders        bool                   `json:"use_cache_headers"`
-	MaxCacheHeaderTTL      int                    `json:"max_cache_header_ttl"`
-	MinCacheHeaderTTL      int                    `json:"min_cache_header_ttl"`
-	StaleWhileRevalidate   bool                   `json:"stale_while_revalidate"`
-	StaleMaxAge            int                    `json:"stale_max_age"`
-	DefaultPackageTTLs     map[string]int         `json:"default_package_ttls"`
-	LastUpdated            time.Time              `json:"last_updated"`
-	ConfigurationSource    string                 `json:"configuration_source"`
+	GlobalTTL            int            `json:"global_ttl"`
+	PackageTTLs          map[string]int `json:"package_ttls"`
+	PatternTTLs          map[string]int `json:"pattern_ttls"`
+	MetadataTTLs         map[string]int `json:"metadata_ttls"`
+	UseCacheHeaders      bool           `json:"use_cache_headers"`
+	MaxCacheHeaderTTL    int            `json:"max_cache_header_ttl"`
+	MinCacheHeaderTTL    int            `json:"min_cache_header_ttl"`
+	StaleWhileRevalidate bool           `json:"stale_while_revalidate"`
+	StaleMaxAge          int            `json:"stale_max_age"`
+	DefaultPackageTTLs   map[string]int `json:"default_package_ttls"`
+	LastUpdated          time.Time      `json:"last_updated"`
+	ConfigurationSource  string         `json:"configuration_source"`
 }
 
 // TTLCalculationExample TTL 계산 예제
 type TTLCalculationExample struct {
-	PackageName    string `json:"package_name"`
-	PackageType    string `json:"package_type"`
-	CalculatedTTL  int    `json:"calculated_ttl"`
-	Source         string `json:"source"`
-	CacheControl   string `json:"cache_control,omitempty"`
-	Expires        string `json:"expires,omitempty"`
+	PackageName   string `json:"package_name"`
+	PackageType   string `json:"package_type"`
+	CalculatedTTL int    `json:"calculated_ttl"`
+	Source        string `json:"source"`
+	CacheControl  string `json:"cache_control,omitempty"`
+	Expires       string `json:"expires,omitempty"`
 }
 
 // CacheRouter 캐시 관리 API 라우터 설정
@@ -452,18 +453,18 @@ func getTTLPolicy(c *fiber.Ctx) error {
 
 	// 응답 생성
 	response := TTLPolicyResponse{
-		GlobalTTL:              cache.TTL,
-		PackageTTLs:            cache.PackageTTLs,
-		PatternTTLs:            cache.PatternTTLs,
-		MetadataTTLs:           cache.MetadataTTLs,
-		UseCacheHeaders:        cache.UseCacheHeaders,
-		MaxCacheHeaderTTL:      cache.MaxCacheHeaderTTL,
-		MinCacheHeaderTTL:      cache.MinCacheHeaderTTL,
-		StaleWhileRevalidate:   cache.StaleWhileRevalidate,
-		StaleMaxAge:            cache.StaleMaxAge,
-		DefaultPackageTTLs:     configs.GetDefaultPackageTTLs(),
-		LastUpdated:            time.Now(),
-		ConfigurationSource:    "global.yaml",
+		GlobalTTL:            cache.TTL,
+		PackageTTLs:          cache.PackageTTLs,
+		PatternTTLs:          cache.PatternTTLs,
+		MetadataTTLs:         cache.MetadataTTLs,
+		UseCacheHeaders:      cache.UseCacheHeaders,
+		MaxCacheHeaderTTL:    cache.MaxCacheHeaderTTL,
+		MinCacheHeaderTTL:    cache.MinCacheHeaderTTL,
+		StaleWhileRevalidate: cache.StaleWhileRevalidate,
+		StaleMaxAge:          cache.StaleMaxAge,
+		DefaultPackageTTLs:   configs.GetDefaultPackageTTLs(),
+		LastUpdated:          time.Now(),
+		ConfigurationSource:  "global.yaml",
 	}
 
 	logger.Info("TTL policy requested",

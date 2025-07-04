@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+
 	"proxynd/configs"
 	"proxynd/internal/auth/jwt"
 	"proxynd/logging"
@@ -29,7 +30,7 @@ func GetTokenStatus(c *fiber.Ctx) error {
 			"error": "Failed to get session",
 		})
 	}
-	
+
 	// JWT 액세스 토큰 확인
 	jwtAccessToken, exists := sess["jwt_access_token"]
 	if !exists || jwtAccessToken == nil {
@@ -39,7 +40,7 @@ func GetTokenStatus(c *fiber.Ctx) error {
 			RefreshEndpoint: "/auth/refresh",
 		})
 	}
-	
+
 	// OAuth2 설정 로드
 	oauth2Config := &configs.OAuth2Config{}
 	if err := oauth2Config.ReadConfig(); err != nil {
@@ -47,34 +48,34 @@ func GetTokenStatus(c *fiber.Ctx) error {
 			"error": "OAuth2 configuration not available",
 		})
 	}
-	
+
 	// JWT 서비스 생성
 	jwtService := jwt.NewJWTService(oauth2Config)
-	
+
 	// 토큰 검증
 	claims, err := jwtService.ValidateAccessToken(jwtAccessToken.(string))
 	if err != nil {
 		logging.GetLogger().Debug("Token validation failed", logging.F("error", err))
-		
+
 		return c.JSON(TokenStatusResponse{
 			Valid:           false,
 			RefreshRequired: true,
 			RefreshEndpoint: "/auth/refresh",
 		})
 	}
-	
+
 	// 토큰 만료 시간 계산
 	now := time.Now()
 	expiresAt := claims.ExpiresAt.Time
 	timeUntilExpiry := expiresAt.Sub(now)
-	
+
 	// 토큰이 곧 만료되는지 확인 (10분 이내)
 	expiresSoon := timeUntilExpiry < 10*time.Minute
 	refreshRequired := timeUntilExpiry <= 0
-	
+
 	// 사용자 정보 추출
 	userInfo := jwtService.ExtractUserInfo(claims)
-	
+
 	// 세션에서 추가 정보 가져오기
 	if userData, exists := sess["user"]; exists {
 		if userMap, ok := userData.(fiber.Map); ok {
@@ -86,7 +87,7 @@ func GetTokenStatus(c *fiber.Ctx) error {
 			}
 		}
 	}
-	
+
 	response := TokenStatusResponse{
 		Valid:           !refreshRequired,
 		ExpiresAt:       expiresAt,
@@ -96,14 +97,14 @@ func GetTokenStatus(c *fiber.Ctx) error {
 		RefreshEndpoint: "/auth/refresh",
 		UserInfo:        userInfo,
 	}
-	
+
 	// 토큰이 곧 만료되는 경우 헤더에도 표시
 	if expiresSoon {
 		c.Set("X-Token-Expires-Soon", "true")
 		c.Set("X-Token-Expires-In", timeUntilExpiry.String())
 		c.Set("X-Refresh-Endpoint", "/auth/refresh")
 	}
-	
+
 	return c.JSON(response)
 }
 
@@ -114,18 +115,18 @@ func ValidateTokenEndpoint(c *fiber.Ctx) error {
 	if token == "" {
 		token = c.Query("token")
 	}
-	
+
 	if token == "" {
 		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
 			"error": "Token is required",
 		})
 	}
-	
+
 	// Bearer 토큰 형식 처리
 	if len(token) > 7 && token[:7] == "Bearer " {
 		token = token[7:]
 	}
-	
+
 	// OAuth2 설정 로드
 	oauth2Config := &configs.OAuth2Config{}
 	if err := oauth2Config.ReadConfig(); err != nil {
@@ -133,10 +134,10 @@ func ValidateTokenEndpoint(c *fiber.Ctx) error {
 			"error": "OAuth2 configuration not available",
 		})
 	}
-	
+
 	// JWT 서비스 생성
 	jwtService := jwt.NewJWTService(oauth2Config)
-	
+
 	// 토큰 검증
 	claims, err := jwtService.ValidateAccessToken(token)
 	if err != nil {
@@ -145,12 +146,12 @@ func ValidateTokenEndpoint(c *fiber.Ctx) error {
 			"error": "Invalid or expired token",
 		})
 	}
-	
+
 	// 토큰 만료 시간 계산
 	now := time.Now()
 	expiresAt := claims.ExpiresAt.Time
 	timeUntilExpiry := expiresAt.Sub(now)
-	
+
 	return c.JSON(fiber.Map{
 		"valid":        true,
 		"expires_at":   expiresAt,
@@ -168,7 +169,7 @@ func RefreshTokenStatus(c *fiber.Ctx) error {
 	if err := RefreshToken(c); err != nil {
 		return err
 	}
-	
+
 	// 갱신 후 상태 조회
 	return GetTokenStatus(c)
 }
@@ -178,26 +179,26 @@ func BatchTokenValidation(c *fiber.Ctx) error {
 	type BatchRequest struct {
 		Tokens []string `json:"tokens"`
 	}
-	
+
 	var req BatchRequest
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid request body",
 		})
 	}
-	
+
 	if len(req.Tokens) == 0 {
 		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
 			"error": "No tokens provided",
 		})
 	}
-	
+
 	if len(req.Tokens) > 10 {
 		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
 			"error": "Too many tokens (max 10)",
 		})
 	}
-	
+
 	// OAuth2 설정 로드
 	oauth2Config := &configs.OAuth2Config{}
 	if err := oauth2Config.ReadConfig(); err != nil {
@@ -205,12 +206,12 @@ func BatchTokenValidation(c *fiber.Ctx) error {
 			"error": "OAuth2 configuration not available",
 		})
 	}
-	
+
 	// JWT 서비스 생성
 	jwtService := jwt.NewJWTService(oauth2Config)
-	
+
 	results := make([]fiber.Map, len(req.Tokens))
-	
+
 	for i, token := range req.Tokens {
 		claims, err := jwtService.ValidateAccessToken(token)
 		if err != nil {
@@ -220,12 +221,12 @@ func BatchTokenValidation(c *fiber.Ctx) error {
 			}
 			continue
 		}
-		
+
 		// 토큰 만료 시간 계산
 		now := time.Now()
 		expiresAt := claims.ExpiresAt.Time
 		timeUntilExpiry := expiresAt.Sub(now)
-		
+
 		results[i] = fiber.Map{
 			"valid":        true,
 			"expires_at":   expiresAt,
@@ -236,7 +237,7 @@ func BatchTokenValidation(c *fiber.Ctx) error {
 			"role":         claims.Role,
 		}
 	}
-	
+
 	return c.JSON(fiber.Map{
 		"results": results,
 	})

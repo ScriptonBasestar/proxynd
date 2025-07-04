@@ -2,22 +2,23 @@ package configs
 
 import (
 	"path"
-	"proxynd/helpers"
 	"strconv"
 	"strings"
 	"time"
+
+	"proxynd/helpers"
 )
 
 type Cache struct {
-	TTL                int                    `yaml:"ttl,omitempty" default:"3600"`
-	PackageTTLs        map[string]int         `yaml:"package_ttls,omitempty"`
-	PatternTTLs        map[string]int         `yaml:"pattern_ttls,omitempty"`
-	MetadataTTLs       map[string]int         `yaml:"metadata_ttls,omitempty"`
-	UseCacheHeaders    bool                   `yaml:"use_cache_headers,omitempty"`
-	MaxCacheHeaderTTL  int                    `yaml:"max_cache_header_ttl,omitempty" default:"86400"`
-	MinCacheHeaderTTL  int                    `yaml:"min_cache_header_ttl,omitempty" default:"300"`
-	StaleWhileRevalidate bool                 `yaml:"stale_while_revalidate,omitempty"`
-	StaleMaxAge        int                    `yaml:"stale_max_age,omitempty" default:"3600"`
+	TTL                  int            `yaml:"ttl,omitempty" default:"3600"`
+	PackageTTLs          map[string]int `yaml:"package_ttls,omitempty"`
+	PatternTTLs          map[string]int `yaml:"pattern_ttls,omitempty"`
+	MetadataTTLs         map[string]int `yaml:"metadata_ttls,omitempty"`
+	UseCacheHeaders      bool           `yaml:"use_cache_headers,omitempty"`
+	MaxCacheHeaderTTL    int            `yaml:"max_cache_header_ttl,omitempty" default:"86400"`
+	MinCacheHeaderTTL    int            `yaml:"min_cache_header_ttl,omitempty" default:"300"`
+	StaleWhileRevalidate bool           `yaml:"stale_while_revalidate,omitempty"`
+	StaleMaxAge          int            `yaml:"stale_max_age,omitempty" default:"3600"`
 }
 
 // GetDefaultPackageTTLs 패키지 타입별 기본 TTL 반환
@@ -44,18 +45,18 @@ func (c *Cache) GetTTLForPackageType(packageType string) int {
 			return ttl
 		}
 	}
-	
+
 	// 기본 패키지별 TTL 사용
 	defaults := GetDefaultPackageTTLs()
 	if ttl, exists := defaults[packageType]; exists {
 		return ttl
 	}
-	
+
 	// 전역 기본 TTL 사용
 	if c.TTL > 0 {
 		return c.TTL
 	}
-	
+
 	// 최종 기본값
 	return 3600
 }
@@ -70,7 +71,7 @@ func (c *Cache) GetTTLForPackage(packageName, packageType string) int {
 			}
 		}
 	}
-	
+
 	// 2. 패키지 타입별 TTL 사용
 	return c.GetTTLForPackageType(packageType)
 }
@@ -83,16 +84,16 @@ func (c *Cache) GetTTLForMetadata(filename, packageType string) int {
 			return ttl
 		}
 	}
-	
+
 	// 2. 패키지 타입별 TTL 사용 (메타데이터는 일반적으로 더 짧은 TTL)
 	baseTTL := c.GetTTLForPackageType(packageType)
-	
+
 	// 메타데이터는 기본적으로 패키지 TTL의 1/3 사용
 	metadataTTL := baseTTL / 3
 	if metadataTTL < 300 { // 최소 5분
 		metadataTTL = 300
 	}
-	
+
 	return metadataTTL
 }
 
@@ -103,37 +104,37 @@ func (c *Cache) matchesPattern(packageName, pattern string) bool {
 	if pattern == "*" {
 		return true
 	}
-	
+
 	// "*-suffix" 패턴 처리
 	if len(pattern) > 1 && pattern[0] == '*' && pattern[1] == '-' {
 		suffix := pattern[2:]
-		return len(packageName) >= len(suffix) && 
-			   packageName[len(packageName)-len(suffix):] == suffix
+		return len(packageName) >= len(suffix) &&
+			packageName[len(packageName)-len(suffix):] == suffix
 	}
-	
+
 	// "prefix-*" 패턴 처리
 	if len(pattern) > 1 && pattern[len(pattern)-1] == '*' && pattern[len(pattern)-2] == '-' {
 		prefix := pattern[:len(pattern)-2]
-		return len(packageName) >= len(prefix) && 
-			   packageName[:len(prefix)] == prefix
+		return len(packageName) >= len(prefix) &&
+			packageName[:len(prefix)] == prefix
 	}
-	
+
 	// "*substring*" 패턴 처리
 	if len(pattern) >= 2 && pattern[0] == '*' && pattern[len(pattern)-1] == '*' {
 		substring := pattern[1 : len(pattern)-1]
 		return len(substring) == 0 || contains(packageName, substring)
 	}
-	
+
 	// 정확한 일치
 	return packageName == pattern
 }
 
 // contains 문자열 포함 여부 확인 (Go 1.18 이전 호환)
 func contains(s, substr string) bool {
-	return len(substr) == 0 || len(s) >= len(substr) && (s == substr || 
-		   (len(s) > len(substr) && (s[:len(substr)] == substr || 
-		    s[len(s)-len(substr):] == substr || 
-		    indexOfSubstring(s, substr) >= 0)))
+	return len(substr) == 0 || len(s) >= len(substr) && (s == substr ||
+		(len(s) > len(substr) && (s[:len(substr)] == substr ||
+			s[len(s)-len(substr):] == substr ||
+			indexOfSubstring(s, substr) >= 0)))
 }
 
 // indexOfSubstring 부분 문자열 인덱스 찾기
@@ -144,7 +145,7 @@ func indexOfSubstring(s, substr string) int {
 	if len(s) < len(substr) {
 		return -1
 	}
-	
+
 	for i := 0; i <= len(s)-len(substr); i++ {
 		if s[i:i+len(substr)] == substr {
 			return i
@@ -206,13 +207,13 @@ func (c *Cache) GetTTLFromCacheHeaders(cacheControl, expires string) int {
 // parseCacheControl Cache-Control 헤더 파싱
 func (c *Cache) parseCacheControl(cacheControl string) int {
 	directives := strings.Split(strings.ToLower(cacheControl), ",")
-	
+
 	var maxAge int
 	var sMaxAge int
-	
+
 	for _, directive := range directives {
 		directive = strings.TrimSpace(directive)
-		
+
 		// s-maxage 지시어 처리 (공유 캐시용, 우선순위 높음) - 먼저 확인
 		if strings.HasPrefix(directive, "s-maxage=") {
 			sMaxAgeStr := strings.TrimPrefix(directive, "s-maxage=")
@@ -227,12 +228,12 @@ func (c *Cache) parseCacheControl(cacheControl string) int {
 			}
 		}
 	}
-	
+
 	// s-maxage가 있으면 우선 반환
 	if sMaxAge > 0 {
 		return sMaxAge
 	}
-	
+
 	// 그렇지 않으면 max-age 반환
 	return maxAge
 }
@@ -247,7 +248,7 @@ func (c *Cache) parseExpires(expires string) int {
 		time.RFC822Z,
 		"Mon, 02 Jan 2006 15:04:05 MST",
 	}
-	
+
 	for _, layout := range layouts {
 		if expiresTime, err := time.Parse(layout, expires); err == nil {
 			ttl := int(time.Until(expiresTime).Seconds())
@@ -257,7 +258,7 @@ func (c *Cache) parseExpires(expires string) int {
 			break
 		}
 	}
-	
+
 	return 0
 }
 
@@ -267,19 +268,19 @@ func (c *Cache) enforceTTLLimits(ttl int) int {
 	if minTTL <= 0 {
 		minTTL = 300 // 기본 최소값 5분
 	}
-	
+
 	maxTTL := c.MaxCacheHeaderTTL
 	if maxTTL <= 0 {
 		maxTTL = 86400 // 기본 최대값 24시간
 	}
-	
+
 	if ttl < minTTL {
 		return minTTL
 	}
 	if ttl > maxTTL {
 		return maxTTL
 	}
-	
+
 	return ttl
 }
 
@@ -289,7 +290,7 @@ func (c *Cache) GetDynamicTTL(packageName, packageType, cacheControl, expires st
 	if headerTTL := c.GetTTLFromCacheHeaders(cacheControl, expires); headerTTL > 0 {
 		return headerTTL
 	}
-	
+
 	// 2. 기존 패키지 기반 TTL 폴백
 	return c.GetTTLForPackage(packageName, packageType)
 }
@@ -313,10 +314,10 @@ func (c *Cache) IsStale(entry CacheEntry) bool {
 	if !c.StaleWhileRevalidate {
 		return false
 	}
-	
+
 	now := time.Now()
 	expireTime := entry.CachedAt.Add(time.Duration(entry.TTL) * time.Second)
-	
+
 	// TTL은 만료되었지만 stale 기간 내에 있는지 확인
 	return now.After(expireTime) && now.Before(entry.StaleUntil)
 }
@@ -324,12 +325,12 @@ func (c *Cache) IsStale(entry CacheEntry) bool {
 // IsExpired 캐시가 완전히 만료되었는지 확인
 func (c *Cache) IsExpired(entry CacheEntry) bool {
 	now := time.Now()
-	
+
 	if c.StaleWhileRevalidate {
 		// stale-while-revalidate 사용 시 stale 기간도 고려
 		return now.After(entry.StaleUntil)
 	}
-	
+
 	// 일반적인 TTL 만료 확인
 	expireTime := entry.CachedAt.Add(time.Duration(entry.TTL) * time.Second)
 	return now.After(expireTime)
@@ -342,20 +343,20 @@ func (c *Cache) CreateCacheEntry(ttl int) CacheEntry {
 		CachedAt: now,
 		TTL:      ttl,
 	}
-	
+
 	if c.StaleWhileRevalidate {
 		staleMaxAge := c.StaleMaxAge
 		if staleMaxAge <= 0 {
 			staleMaxAge = 3600 // 기본값 1시간
 		}
-		
+
 		// stale 기간은 원본 TTL 만료 후 추가로 설정된 시간
 		entry.StaleUntil = now.Add(time.Duration(ttl+staleMaxAge) * time.Second)
 	} else {
 		// stale-while-revalidate 미사용 시 TTL과 동일
 		entry.StaleUntil = now.Add(time.Duration(ttl) * time.Second)
 	}
-	
+
 	return entry
 }
 
@@ -364,7 +365,7 @@ func (c *Cache) ShouldRevalidate(entry CacheEntry) bool {
 	if !c.StaleWhileRevalidate {
 		return false
 	}
-	
+
 	// TTL이 만료되었지만 stale 서빙 중인 경우 재검증 필요
 	return !c.IsFresh(entry) && c.IsStale(entry)
 }
@@ -374,11 +375,11 @@ func (c *Cache) GetCacheStrategy(entry CacheEntry) CacheStrategy {
 	if c.IsFresh(entry) {
 		return CacheStrategyServe
 	}
-	
+
 	if c.IsStale(entry) {
 		return CacheStrategyStaleWhileRevalidate
 	}
-	
+
 	return CacheStrategyRevalidate
 }
 
@@ -386,7 +387,7 @@ func (c *Cache) GetCacheStrategy(entry CacheEntry) CacheStrategy {
 type CacheStrategy int
 
 const (
-	CacheStrategyServe CacheStrategy = iota                // 신선한 캐시 서빙
+	CacheStrategyServe                CacheStrategy = iota // 신선한 캐시 서빙
 	CacheStrategyStaleWhileRevalidate                      // 만료된 캐시 서빙 + 백그라운드 갱신
 	CacheStrategyRevalidate                                // 캐시 재검증 필요
 )

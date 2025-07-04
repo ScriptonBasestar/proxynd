@@ -6,24 +6,24 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"path/filepath"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+
 	"proxynd/configs"
 	"proxynd/logging"
 )
 
 // Claims JWT 클레임 구조체
 type Claims struct {
-	UserID       string   `json:"user_id"`
-	Email        string   `json:"email"`
-	Name         string   `json:"name"`
-	Username     string   `json:"username"`
-	Role         string   `json:"role"`
-	Provider     string   `json:"provider"`
+	UserID        string   `json:"user_id"`
+	Email         string   `json:"email"`
+	Name          string   `json:"name"`
+	Username      string   `json:"username"`
+	Role          string   `json:"role"`
+	Provider      string   `json:"provider"`
 	Organizations []string `json:"organizations,omitempty"`
-	TokenType    string   `json:"token_type"` // "access" 또는 "refresh"
+	TokenType     string   `json:"token_type"` // "access" 또는 "refresh"
 	jwt.RegisteredClaims
 }
 
@@ -53,19 +53,19 @@ func NewJWTService(config *configs.OAuth2Config) *JWTService {
 // GenerateTokenPair 액세스 토큰과 리프레시 토큰 쌍 생성
 func (s *JWTService) GenerateTokenPair(userID, email, name, username, role, provider string, organizations []string) (*TokenPair, error) {
 	now := time.Now()
-	
+
 	// 액세스 토큰 생성
 	accessToken, accessExpiresAt, err := s.generateToken(userID, email, name, username, role, provider, organizations, "access", now, time.Duration(s.config.JWT.AccessTokenTTL)*time.Second)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate access token: %w", err)
 	}
-	
+
 	// 리프레시 토큰 생성
 	refreshToken, _, err := s.generateToken(userID, email, name, username, role, provider, organizations, "refresh", now, time.Duration(s.config.JWT.RefreshTokenTTL)*time.Second)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate refresh token: %w", err)
 	}
-	
+
 	return &TokenPair{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
@@ -78,22 +78,22 @@ func (s *JWTService) GenerateTokenPair(userID, email, name, username, role, prov
 // generateToken 개별 토큰 생성
 func (s *JWTService) generateToken(userID, email, name, username, role, provider string, organizations []string, tokenType string, issuedAt time.Time, duration time.Duration) (string, time.Time, error) {
 	expiresAt := issuedAt.Add(duration)
-	
+
 	// JWT ID 생성
 	jti, err := s.generateJTI()
 	if err != nil {
 		return "", time.Time{}, fmt.Errorf("failed to generate JTI: %w", err)
 	}
-	
+
 	claims := &Claims{
-		UserID:       userID,
-		Email:        email,
-		Name:         name,
-		Username:     username,
-		Role:         role,
-		Provider:     provider,
+		UserID:        userID,
+		Email:         email,
+		Name:          name,
+		Username:      username,
+		Role:          role,
+		Provider:      provider,
 		Organizations: organizations,
-		TokenType:    tokenType,
+		TokenType:     tokenType,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ID:        jti,
 			Issuer:    s.config.JWT.Issuer,
@@ -104,9 +104,9 @@ func (s *JWTService) generateToken(userID, email, name, username, role, provider
 			NotBefore: jwt.NewNumericDate(issuedAt),
 		},
 	}
-	
+
 	token := jwt.NewWithClaims(jwt.GetSigningMethod(s.config.JWT.Algorithm), claims)
-	
+
 	// 알고리즘에 따라 적절한 키 사용
 	var signingKey interface{}
 	if s.config.JWT.Algorithm == "HS256" || s.config.JWT.Algorithm == "HS384" || s.config.JWT.Algorithm == "HS512" {
@@ -115,12 +115,12 @@ func (s *JWTService) generateToken(userID, email, name, username, role, provider
 		// RS256, ES256 등을 위해서는 개인키가 필요하지만, 현재는 HMAC만 지원
 		return "", time.Time{}, errors.New("unsupported signing algorithm")
 	}
-	
+
 	tokenString, err := token.SignedString(signingKey)
 	if err != nil {
 		return "", time.Time{}, fmt.Errorf("failed to sign token: %w", err)
 	}
-	
+
 	return tokenString, expiresAt, nil
 }
 
@@ -132,31 +132,31 @@ func (s *JWTService) ValidateToken(tokenString string) (*Claims, error) {
 		if token.Method.Alg() != s.config.JWT.Algorithm {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		
+
 		// HMAC 키 반환
 		if s.config.JWT.Algorithm == "HS256" || s.config.JWT.Algorithm == "HS384" || s.config.JWT.Algorithm == "HS512" {
 			return []byte(s.config.JWT.Secret), nil
 		}
-		
+
 		return nil, errors.New("unsupported signing algorithm")
 	})
-	
+
 	if err != nil {
 		s.logger.Warn("Token validation failed", logging.F("error", err))
 		return nil, fmt.Errorf("invalid token: %w", err)
 	}
-	
+
 	// 클레임 추출
 	claims, ok := token.Claims.(*Claims)
 	if !ok || !token.Valid {
 		return nil, errors.New("invalid token claims")
 	}
-	
+
 	// 추가 검증
 	if err := s.validateClaims(claims); err != nil {
 		return nil, fmt.Errorf("claim validation failed: %w", err)
 	}
-	
+
 	return claims, nil
 }
 
@@ -166,11 +166,11 @@ func (s *JWTService) ValidateAccessToken(tokenString string) (*Claims, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	if claims.TokenType != "access" {
 		return nil, errors.New("not an access token")
 	}
-	
+
 	return claims, nil
 }
 
@@ -180,11 +180,11 @@ func (s *JWTService) ValidateRefreshToken(tokenString string) (*Claims, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	if claims.TokenType != "refresh" {
 		return nil, errors.New("not a refresh token")
 	}
-	
+
 	return claims, nil
 }
 
@@ -200,7 +200,7 @@ func (s *JWTService) RefreshAccessToken(refreshTokenString string) (*TokenPair, 
 	if err != nil {
 		return nil, fmt.Errorf("invalid refresh token: %w", err)
 	}
-	
+
 	// 새 토큰 쌍 생성 (기존 권한 유지)
 	newTokenPair, err := s.GenerateTokenPair(
 		refreshClaims.UserID,
@@ -214,11 +214,11 @@ func (s *JWTService) RefreshAccessToken(refreshTokenString string) (*TokenPair, 
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate new tokens: %w", err)
 	}
-	
-	s.logger.Info("Access token refreshed", 
+
+	s.logger.Info("Access token refreshed",
 		logging.F("user_id", refreshClaims.UserID),
 		logging.F("email", refreshClaims.Email))
-	
+
 	return newTokenPair, nil
 }
 
@@ -229,23 +229,23 @@ func (s *JWTService) RefreshAccessTokenWithSync(refreshTokenString string, oauth
 	if err != nil {
 		return nil, fmt.Errorf("invalid refresh token: %w", err)
 	}
-	
+
 	// OAuth2 제공자에서 최신 조직 정보 조회 (옵션)
 	var updatedOrganizations []string
 	if oauth2Provider != nil && oauth2AccessToken != "" {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
-		
+
 		orgs, err := oauth2Provider.GetUserOrganizations(ctx, oauth2AccessToken)
 		if err != nil {
 			// 에러 시 기존 조직 정보 사용 (fallback)
-			s.logger.Warn("Failed to sync organization info, using cached data", 
+			s.logger.Warn("Failed to sync organization info, using cached data",
 				logging.F("user_id", refreshClaims.UserID),
 				logging.F("error", err))
 			updatedOrganizations = refreshClaims.Organizations
 		} else {
 			updatedOrganizations = orgs
-			s.logger.Debug("Organization info synced", 
+			s.logger.Debug("Organization info synced",
 				logging.F("user_id", refreshClaims.UserID),
 				logging.F("organizations", orgs))
 		}
@@ -253,19 +253,19 @@ func (s *JWTService) RefreshAccessTokenWithSync(refreshTokenString string, oauth
 		// OAuth2 제공자 정보가 없으면 기존 정보 사용
 		updatedOrganizations = refreshClaims.Organizations
 	}
-	
+
 	// 최신 조직 정보로 역할 재계산
 	updatedRole := s.config.UserMapping.GetUserRoleWithPattern(refreshClaims.Email, updatedOrganizations)
-	
+
 	// 역할이 변경되었다면 로그 기록
 	if updatedRole != refreshClaims.Role {
-		s.logger.Info("User role updated during token refresh", 
+		s.logger.Info("User role updated during token refresh",
 			logging.F("user_id", refreshClaims.UserID),
 			logging.F("email", refreshClaims.Email),
 			logging.F("old_role", refreshClaims.Role),
 			logging.F("new_role", updatedRole))
 	}
-	
+
 	// 새 토큰 쌍 생성 (업데이트된 권한 적용)
 	newTokenPair, err := s.GenerateTokenPair(
 		refreshClaims.UserID,
@@ -279,12 +279,12 @@ func (s *JWTService) RefreshAccessTokenWithSync(refreshTokenString string, oauth
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate new tokens: %w", err)
 	}
-	
-	s.logger.Info("Access token refreshed with role sync", 
+
+	s.logger.Info("Access token refreshed with role sync",
 		logging.F("user_id", refreshClaims.UserID),
 		logging.F("email", refreshClaims.Email),
 		logging.F("role", updatedRole))
-	
+
 	return newTokenPair, nil
 }
 
@@ -317,35 +317,35 @@ func (s *JWTService) validateClaims(claims *Claims) error {
 	if claims.Issuer != s.config.JWT.Issuer {
 		return fmt.Errorf("invalid issuer: expected %s, got %s", s.config.JWT.Issuer, claims.Issuer)
 	}
-	
+
 	// 대상 확인
 	expectedAudience := s.config.JWT.Audience
 	if len(claims.Audience) == 0 || (len(claims.Audience) == 1 && claims.Audience[0] != expectedAudience) {
 		return fmt.Errorf("invalid audience: expected %s", expectedAudience)
 	}
-	
+
 	// 필수 필드 확인
 	if claims.UserID == "" {
 		return errors.New("missing user_id claim")
 	}
-	
+
 	if claims.Email == "" {
 		return errors.New("missing email claim")
 	}
-	
+
 	if claims.Role == "" {
 		return errors.New("missing role claim")
 	}
-	
+
 	if claims.TokenType == "" {
 		return errors.New("missing token_type claim")
 	}
-	
+
 	// 토큰 타입 확인
 	if claims.TokenType != "access" && claims.TokenType != "refresh" {
 		return fmt.Errorf("invalid token_type: %s", claims.TokenType)
 	}
-	
+
 	return nil
 }
 

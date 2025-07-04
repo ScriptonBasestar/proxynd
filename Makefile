@@ -99,6 +99,15 @@ dev-test:
 	@echo "Running tests..."
 	go test -v ./...
 
+.PHONY: fmt
+fmt:
+	@echo "Formatting code..."
+	go fmt ./...
+	@echo "Organizing imports..."
+	@which goimports > /dev/null || (echo "Installing goimports..." && go install golang.org/x/tools/cmd/goimports@latest)
+	goimports -w -local proxynd .
+	@echo "Code formatting complete!"
+
 .PHONY: dev-teardown
 dev-teardown:
 	@echo "Cleaning up development environment..."

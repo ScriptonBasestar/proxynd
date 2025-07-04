@@ -2,6 +2,7 @@ package routers
 
 import (
 	"github.com/gofiber/fiber/v2"
+
 	"proxynd/alerts"
 	"proxynd/configs"
 	authHandlers "proxynd/handlers/auth"
@@ -10,15 +11,15 @@ import (
 )
 
 func ProxyRouter(app *fiber.App) {
-	// 전역 설정 읽기
+	// Read global configuration
 	globalConfig := configs.GlobalConfig{}
 	globalConfig.ReadConfig()
 
-	// 알림 관리자 초기화
+	// Initialize alert manager
 	alertConfig := loadAlertConfig()
 	alertManager := alerts.NewAlertManager(alertConfig)
 
-	// 로그 알림 채널 등록
+	// Register log alert channel
 	if logAlerter, err := alerts.NewLogAlerter(alerts.LogAlerterConfig{
 		Enabled:    true,
 		LogFile:    "./logs/verification-alerts.log",
@@ -27,36 +28,36 @@ func ProxyRouter(app *fiber.App) {
 		alertManager.RegisterAlerter(logAlerter)
 	}
 
-	// 검증 핸들러 생성
+	// Create verification handler
 	verificationHandler := proxynd.NewVerificationHandler(&globalConfig, alertManager)
 
-	// 통합 프록시 라우터 설정
-	// /proxy/:type/*path 형식으로 모든 프록시 요청을 처리
+	// Setup unified proxy router
+	// Handle all proxy requests with /proxy/:type/*path format
 	proxyGroup := app.Group("/proxy")
 
-	// 프록시 미들웨어 적용
+	// Apply proxy middleware
 	proxyGroup.Use(middlewares.ProxyPolicyMiddleware())
 	proxyGroup.Use(middlewares.DefaultAccessLogMiddleware())
 
-	// 통합 인증 미들웨어 적용 (JWT 토큰 우선, BasicAuth 폴백)
-	proxyGroup.Use(authHandlers.OptionalAuth())         // 선택적 OAuth2/JWT 인증
-	proxyGroup.Use(authHandlers.BasicAuthFallback())    // BasicAuth 폴백
+	// Apply unified auth middleware (JWT token first, BasicAuth fallback)
+	proxyGroup.Use(authHandlers.OptionalAuth())      // Optional OAuth2/JWT authentication
+	proxyGroup.Use(authHandlers.BasicAuthFallback()) // BasicAuth fallback
 
-	// 패키지 검증 미들웨어 추가
+	// Add package verification middleware
 	proxyGroup.Use(verificationHandler.VerificationMiddleware())
 
-	// 통합 프록시 핸들러로 모든 프록시 타입 처리
+	// Handle all proxy types with unified proxy handler
 	proxyGroup.Get("/:type/*", proxynd.UnifiedProxyHandler)
 	proxyGroup.Post("/:type/*", proxynd.UnifiedProxyHandler)
 	proxyGroup.Put("/:type/*", proxynd.UnifiedProxyHandler)
 
-	// 기존 개별 라우트는 하위 호환성을 위해 유지 (선택사항)
-	// 향후 제거 가능
+	// Keep existing individual routes for backward compatibility (optional)
+	// Can be removed in the future
 }
 
-// loadAlertConfig 알림 설정 로드
+// loadAlertConfig loads alert configuration
 func loadAlertConfig() *alerts.AlertConfig {
-	// 기본 설정
+	// Default configuration
 	return &alerts.AlertConfig{
 		Enabled: true,
 		RateLimit: alerts.RateLimitConfig{

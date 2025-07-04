@@ -2,16 +2,18 @@ package proxy
 
 import (
 	"fmt"
-	"github.com/gofiber/fiber/v2"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
+
+	"github.com/gofiber/fiber/v2"
+
 	"proxynd/configs"
 	"proxynd/helpers"
-	"strings"
 )
 
 func responseHandler(c *fiber.Ctx, responseContent []byte, filename string) error {
@@ -19,7 +21,6 @@ func responseHandler(c *fiber.Ctx, responseContent []byte, filename string) erro
 	// text or octetstream
 	if ext == "pom" || ext == "xml" {
 		c.Set("Content-Type", "application/xml")
-		//c.Set("Last-Modified", "date")
 		c.Set("Content-Disposition", "inline; filename="+filename)
 		return c.Status(fiber.StatusOK).Send(responseContent)
 	} else {
@@ -43,16 +44,7 @@ func MavenProxy(c *fiber.Ctx) error {
 	config := configs.MavenProxyConfig{}
 	config.ReadConfig()
 
-	//basedir := helpers.GetEnv("STORAGE_DIR", "./tmp")
-	//if basedir == "" {
-	//	var err error
-	//	basedir, err = homedir.Dir()
-	//	if err != nil {
-	//		log.Fatal(err)
-	//	}
-	//}
-
-	// 미들웨어에서 전달된 캐시 정보 확인
+	// Check cache information from middleware
 	cacheHit, _ := c.Locals("cache_hit").(bool)
 	cachePath, _ := c.Locals("cache_path").(string)
 
@@ -60,7 +52,7 @@ func MavenProxy(c *fiber.Ctx) error {
 	var filefullpath string
 	var filename string
 
-	// 캐시 경로가 있으면 사용, 없으면 기본 경로 생성
+	// Use cache path if available, otherwise create default path
 	if cachePath != "" {
 		filefullpath = cachePath
 		filename = filepath.Base(filefullpath)
@@ -69,7 +61,7 @@ func MavenProxy(c *fiber.Ctx) error {
 		filename = filepath.Base(filefullpath)
 	}
 
-	// 캐시가 히트하지 않았을 때만 다운로드
+	// Download only when cache miss
 	if !cacheHit {
 		dirpath := filepath.Dir(filefullpath)
 		os.MkdirAll(dirpath, 0766)

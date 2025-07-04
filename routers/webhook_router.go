@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+
 	"proxynd/configs"
 	"proxynd/dtos"
 	"proxynd/internal/webhook"
@@ -28,7 +29,7 @@ func WebhookRouter(app *fiber.App) {
 	// 웹훅 sender 및 테스터 초기화
 	var sender *webhook.WebhookSender
 	var historyManager *webhook.WebhookHistoryManager
-	
+
 	if webhookConfig.Enabled {
 		if s, err := webhook.NewWebhookSender(webhookConfig); err == nil {
 			sender = s
@@ -37,7 +38,7 @@ func WebhookRouter(app *fiber.App) {
 			logger.Error("웹훅 sender 초기화 실패", logging.F("error", err))
 		}
 	}
-	
+
 	tester := webhook.NewWebhookTester(webhookConfig, sender)
 
 	// API 그룹 생성
@@ -304,12 +305,12 @@ func getWebhookHistory(historyManager *webhook.WebhookHistoryManager, logger log
 		// 쿼리 파라미터 파싱
 		limitStr := c.Query("limit", "50")
 		offsetStr := c.Query("offset", "0")
-		
+
 		limit, err := strconv.Atoi(limitStr)
 		if err != nil || limit <= 0 || limit > 500 {
 			limit = 50
 		}
-		
+
 		offset, err := strconv.Atoi(offsetStr)
 		if err != nil || offset < 0 {
 			offset = 0
@@ -373,12 +374,12 @@ func getWebhookHistoryByEndpoint(historyManager *webhook.WebhookHistoryManager, 
 		// 쿼리 파라미터 파싱
 		limitStr := c.Query("limit", "50")
 		offsetStr := c.Query("offset", "0")
-		
+
 		limit, err := strconv.Atoi(limitStr)
 		if err != nil || limit <= 0 || limit > 500 {
 			limit = 50
 		}
-		
+
 		offset, err := strconv.Atoi(offsetStr)
 		if err != nil || offset < 0 {
 			offset = 0

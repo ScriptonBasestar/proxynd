@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+
 	"proxynd/configs"
 	"proxynd/internal/auth/jwt"
 	"proxynd/logging"
@@ -24,17 +25,17 @@ func RequireAuth() fiber.Handler {
 				"error": "Failed to get session",
 			})
 		}
-		
+
 		userData, exists := sess["user"]
 		if !exists || userData == nil {
 			return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
 				"error": "Authentication required",
 			})
 		}
-		
+
 		// 사용자 정보를 컨텍스트에 저장
 		c.Locals("user", userData)
-		
+
 		return c.Next()
 	}
 }
@@ -48,13 +49,13 @@ func RequireJWTAuth() fiber.Handler {
 			// 헤더가 없으면 세션에서 JWT 토큰 확인
 			return requireJWTFromSession(c)
 		}
-		
+
 		if !strings.HasPrefix(authHeader, "Bearer ") {
 			return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
 				"error": "Invalid authorization header format",
 			})
 		}
-		
+
 		token := strings.TrimPrefix(authHeader, "Bearer ")
 		return validateJWTToken(c, token)
 	}
@@ -68,14 +69,14 @@ func requireJWTFromSession(c *fiber.Ctx) error {
 			"error": "Failed to get session",
 		})
 	}
-	
+
 	jwtAccessToken, exists := sess["jwt_access_token"]
 	if !exists || jwtAccessToken == nil {
 		return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
 			"error": "Authentication required",
 		})
 	}
-	
+
 	return validateJWTToken(c, jwtAccessToken.(string))
 }
 
@@ -88,31 +89,31 @@ func validateJWTToken(c *fiber.Ctx, token string) error {
 			"error": "Authentication configuration not available",
 		})
 	}
-	
+
 	// JWT 서비스 생성
 	jwtService := jwt.NewJWTService(oauth2Config)
-	
+
 	// 토큰 검증
 	claims, err := jwtService.ValidateAccessToken(token)
 	if err != nil {
-		logging.GetLogger().Warn("JWT token validation failed", 
+		logging.GetLogger().Warn("JWT token validation failed",
 			logging.F("error", err),
 			logging.F("ip", c.IP()))
 		return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
 			"error": "Invalid or expired token",
 		})
 	}
-	
+
 	// 토큰이 곧 만료되는지 확인
 	if jwtService.IsTokenExpiringSoon(claims) {
 		c.Set("X-Token-Expires-Soon", "true")
 	}
-	
+
 	// 사용자 정보를 컨텍스트에 저장
 	userInfo := jwtService.ExtractUserInfo(claims)
 	c.Locals("user", userInfo)
 	c.Locals("jwt_claims", claims)
-	
+
 	return c.Next()
 }
 
@@ -125,42 +126,42 @@ func RequireRole(requiredRoles ...string) fiber.Handler {
 				"error": "Authentication required",
 			})
 		}
-		
+
 		userMap, ok := userData.(fiber.Map)
 		if !ok {
 			return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
 				"error": "Invalid user session data",
 			})
 		}
-		
+
 		userRole, ok := userMap["role"].(string)
 		if !ok {
 			return c.Status(http.StatusForbidden).JSON(fiber.Map{
 				"error": "User role not found",
 			})
 		}
-		
+
 		// 역할 확인
 		for _, role := range requiredRoles {
 			if userRole == role {
 				return c.Next()
 			}
 		}
-		
+
 		// admin 역할은 모든 권한을 가짐
 		if userRole == "admin" {
 			return c.Next()
 		}
-		
-		logging.GetLogger().Warn("Access denied", 
-			logging.F("email", userMap["email"].(string)), 
-			logging.F("role", userRole), 
+
+		logging.GetLogger().Warn("Access denied",
+			logging.F("email", userMap["email"].(string)),
+			logging.F("role", userRole),
 			logging.F("path", c.Path()))
-		
+
 		return c.Status(http.StatusForbidden).JSON(fiber.Map{
-			"error": "Insufficient privileges",
+			"error":          "Insufficient privileges",
 			"required_roles": requiredRoles,
-			"user_role": userRole,
+			"user_role":      userRole,
 		})
 	}
 }
@@ -173,13 +174,13 @@ func OptionalAuth() fiber.Handler {
 			// 세션 오류가 있어도 계속 진행
 			return c.Next()
 		}
-		
+
 		userData, exists := sess["user"]
 		if exists && userData != nil {
 			// 사용자 정보를 컨텍스트에 저장
 			c.Locals("user", userData)
 		}
-		
+
 		return c.Next()
 	}
 }
@@ -191,17 +192,17 @@ func SessionTimeout() fiber.Handler {
 		if err != nil {
 			return c.Next()
 		}
-		
+
 		userData, exists := sess["user"]
 		if !exists || userData == nil {
 			return c.Next()
 		}
-		
+
 		userMap, ok := userData.(fiber.Map)
 		if !ok {
 			return c.Next()
 		}
-		
+
 		// 로그인 시간 확인
 		if loginTime, ok := userMap["login_time"].(time.Time); ok {
 			// 24시간 세션 타임아웃
@@ -212,17 +213,17 @@ func SessionTimeout() fiber.Handler {
 				delete(sess, "refresh_token")
 				delete(sess, "jwt_access_token")
 				delete(sess, "jwt_refresh_token")
-				
+
 				if email, ok := userMap["email"].(string); ok {
 					logging.GetLogger().Info("Session expired", logging.F("email", email))
 				}
-				
+
 				return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
 					"error": "Session expired",
 				})
 			}
 		}
-		
+
 		// JWT 토큰 만료 시간 확인
 		if expiresAt, ok := userMap["expires_at"].(time.Time); ok {
 			// 토큰이 10분 이내 만료될 경우 헤더 설정
@@ -231,7 +232,7 @@ func SessionTimeout() fiber.Handler {
 				c.Set("X-Token-Expires-Soon", "true")
 				c.Set("X-Token-Expires-In", fmt.Sprintf("%d", int(timeToExpiry.Seconds())))
 			}
-			
+
 			if time.Now().After(expiresAt) {
 				// 토큰 만료, 자동 갱신 시도
 				if jwtRefreshToken, exists := sess["jwt_refresh_token"]; exists && jwtRefreshToken != nil {
@@ -240,22 +241,22 @@ func SessionTimeout() fiber.Handler {
 						if email, ok := userMap["email"].(string); ok {
 							logging.GetLogger().Warn("Auto token refresh failed", logging.F("email", email), logging.F("error", err))
 						}
-						
+
 						// 갱신 실패 시 세션 정리
 						delete(sess, "user")
 						delete(sess, "jwt_access_token")
 						delete(sess, "jwt_refresh_token")
-						
+
 						return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
 							"error":      "Token expired and refresh failed",
 							"error_code": "token_refresh_failed",
 							"action":     "login_required",
 						})
 					}
-					
+
 					// 갱신 성공 시 응답 헤더 설정
 					c.Set("X-Token-Refreshed", "true")
-					
+
 				} else {
 					return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
 						"error":      "Token expired",
@@ -265,7 +266,7 @@ func SessionTimeout() fiber.Handler {
 				}
 			}
 		}
-		
+
 		return c.Next()
 	}
 }
@@ -279,7 +280,7 @@ func BasicAuthFallback() fiber.Handler {
 			// 이미 OAuth2로 인증됨
 			return c.Next()
 		}
-		
+
 		// Authorization 헤더 확인
 		authHeader := c.Get("Authorization")
 		if authHeader == "" {
@@ -287,20 +288,20 @@ func BasicAuthFallback() fiber.Handler {
 				"error": "Authorization required",
 			})
 		}
-		
+
 		// Basic Auth 처리
 		if strings.HasPrefix(authHeader, "Basic ") {
 			// 기존 BasicAuth 로직 호출
 			// 여기서는 간단한 예제만 제공
 			return handleBasicAuth(c)
 		}
-		
+
 		// Bearer 토큰 처리 (JWT 등)
 		if strings.HasPrefix(authHeader, "Bearer ") {
 			token := strings.TrimPrefix(authHeader, "Bearer ")
 			return handleBearerToken(c, token)
 		}
-		
+
 		return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
 			"error": "Invalid authorization header format",
 		})
@@ -330,43 +331,43 @@ func autoRefreshToken(c *fiber.Ctx, sess fiber.Map, userMap fiber.Map) error {
 	if !exists || jwtRefreshToken == nil {
 		return errors.New("no JWT refresh token available")
 	}
-	
+
 	// OAuth2 설정 로드
 	oauth2Config := &configs.OAuth2Config{}
 	if err := oauth2Config.ReadConfig(); err != nil {
 		return err
 	}
-	
+
 	// JWT 서비스 생성
 	jwtService := jwt.NewJWTService(oauth2Config)
-	
+
 	// OAuth2 토큰이 있는 경우 권한 동기화를 위해 사용
 	oauth2AccessToken, _ := userMap["oauth2_access_token"].(string)
-	
+
 	// 실시간 권한 동기화를 위해 OAuth2 제공자 정보 조회
 	var oauth2Provider interface{}
 	if providerName, ok := userMap["provider"].(string); ok && oauth2AccessToken != "" {
 		// 제공자별 인터페이스 구현체 생성 (실제 구현은 추후 추가)
 		oauth2Provider = createOAuth2Provider(providerName, oauth2Config)
 	}
-	
+
 	// JWT 토큰 갱신 (권한 동기화 포함)
 	var newTokenPair *jwt.TokenPair
 	var err error
-	
+
 	// 현재는 기존 권한 유지 (실시간 동기화는 추후 구현)
 	newTokenPair, err = jwtService.RefreshAccessToken(jwtRefreshToken.(string))
-	
+
 	if err != nil {
 		return errors.New("failed to refresh JWT token: " + err.Error())
 	}
-	
+
 	// 새 JWT 토큰으로 사용자 정보 추출
 	newAccessClaims, err := jwtService.ValidateAccessToken(newTokenPair.AccessToken)
 	if err != nil {
 		return errors.New("failed to validate new access token: " + err.Error())
 	}
-	
+
 	// 세션 업데이트
 	newSessionData := jwtService.ExtractUserInfo(newAccessClaims)
 	// 기존 정보 보존 (avatar, login_time, oauth2 토큰 등)
@@ -382,11 +383,11 @@ func autoRefreshToken(c *fiber.Ctx, sess fiber.Map, userMap fiber.Map) error {
 	if oauth2RefreshToken, ok := userMap["oauth2_refresh_token"]; ok {
 		newSessionData["oauth2_refresh_token"] = oauth2RefreshToken
 	}
-	
+
 	sess["user"] = newSessionData
 	sess["jwt_access_token"] = newTokenPair.AccessToken
 	sess["jwt_refresh_token"] = newTokenPair.RefreshToken
-	
+
 	return nil
 }
 
@@ -429,7 +430,7 @@ func handleBasicAuth(c *fiber.Ctx) error {
 
 	// BasicAuth 사용자 인증 (설정에서 로드)
 	if err := validateBasicAuthUser(username, password); err != nil {
-		logging.GetLogger().Warn("BasicAuth failed", 
+		logging.GetLogger().Warn("BasicAuth failed",
 			logging.F("username", username),
 			logging.F("ip", c.IP()),
 			logging.F("error", err))
@@ -440,10 +441,10 @@ func handleBasicAuth(c *fiber.Ctx) error {
 
 	// 인증 성공 - 사용자 정보를 컨텍스트에 저장 (OAuth2와 호환되는 형태)
 	userInfo := fiber.Map{
-		"email":    username,
-		"username": username,
-		"role":     "viewer", // BasicAuth 사용자는 기본적으로 viewer 역할
-		"auth_type": "basic",
+		"email":      username,
+		"username":   username,
+		"role":       "viewer", // BasicAuth 사용자는 기본적으로 viewer 역할
+		"auth_type":  "basic",
 		"login_time": time.Now(),
 	}
 
@@ -462,7 +463,7 @@ func GetUserFromContext(c *fiber.Ctx) (fiber.Map, bool) {
 	if userData == nil {
 		return nil, false
 	}
-	
+
 	userMap, ok := userData.(fiber.Map)
 	return userMap, ok
 }
@@ -473,12 +474,12 @@ func HasRole(c *fiber.Ctx, role string) bool {
 	if !ok {
 		return false
 	}
-	
+
 	userRole, ok := userMap["role"].(string)
 	if !ok {
 		return false
 	}
-	
+
 	return userRole == role || userRole == "admin"
 }
 
@@ -487,7 +488,6 @@ func IsAuthenticated(c *fiber.Ctx) bool {
 	_, ok := GetUserFromContext(c)
 	return ok
 }
-
 
 // validateBasicAuthUser BasicAuth 사용자 검증
 func validateBasicAuthUser(username, password string) error {

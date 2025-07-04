@@ -30,41 +30,41 @@ func exchangeCodeGeneric(ctx context.Context, config ProviderConfig, code string
 	data.Set("client_secret", config.ClientSecret)
 	data.Set("code", code)
 	data.Set("redirect_uri", config.RedirectURI)
-	
+
 	// PKCE 지원
 	if config.EnablePKCE && codeVerifier != "" {
 		data.Set("code_verifier", codeVerifier)
 	}
-	
+
 	req, err := http.NewRequestWithContext(ctx, "POST", config.TokenURL, strings.NewReader(data.Encode()))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create token request: %w", err)
 	}
-	
+
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Accept", "application/json")
-	
+
 	resp, err := DefaultHTTPClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to exchange code: %w", err)
 	}
 	defer resp.Body.Close()
-	
+
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("token exchange failed with status %d: %s", resp.StatusCode, string(body))
 	}
-	
+
 	var tokenResp TokenResponse
 	if err := json.NewDecoder(resp.Body).Decode(&tokenResp); err != nil {
 		return nil, fmt.Errorf("failed to decode token response: %w", err)
 	}
-	
+
 	// 만료 시간 계산
 	if tokenResp.ExpiresIn > 0 {
 		tokenResp.ExpiresAt = time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second)
 	}
-	
+
 	return &tokenResp, nil
 }
 
@@ -74,29 +74,29 @@ func getUserInfoGeneric(ctx context.Context, config ProviderConfig, accessToken 
 	if err != nil {
 		return nil, fmt.Errorf("failed to create user info request: %w", err)
 	}
-	
+
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 	req.Header.Set("Accept", "application/json")
-	
+
 	resp, err := DefaultHTTPClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user info: %w", err)
 	}
 	defer resp.Body.Close()
-	
+
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("user info request failed with status %d: %s", resp.StatusCode, string(body))
 	}
-	
+
 	var rawUserInfo map[string]interface{}
 	if err := json.NewDecoder(resp.Body).Decode(&rawUserInfo); err != nil {
 		return nil, fmt.Errorf("failed to decode user info: %w", err)
 	}
-	
+
 	// 필드 매핑을 통한 사용자 정보 추출
 	userInfo := &UserInfo{}
-	
+
 	if id, ok := getStringField(rawUserInfo, config.UserIDField); ok {
 		userInfo.ID = id
 	}
@@ -112,7 +112,7 @@ func getUserInfoGeneric(ctx context.Context, config ProviderConfig, accessToken 
 	if avatar, ok := getStringField(rawUserInfo, config.AvatarField); ok {
 		userInfo.Avatar = avatar
 	}
-	
+
 	// 추가 정보 추출 (선택사항)
 	if company, ok := getStringField(rawUserInfo, "company"); ok {
 		userInfo.Company = company
@@ -123,7 +123,7 @@ func getUserInfoGeneric(ctx context.Context, config ProviderConfig, accessToken 
 	if bio, ok := getStringField(rawUserInfo, "bio"); ok {
 		userInfo.Bio = bio
 	}
-	
+
 	// 생성/수정 시간 파싱 시도
 	if createdAt, ok := getTimeField(rawUserInfo, "created_at"); ok {
 		userInfo.CreatedAt = createdAt
@@ -131,7 +131,7 @@ func getUserInfoGeneric(ctx context.Context, config ProviderConfig, accessToken 
 	if updatedAt, ok := getTimeField(rawUserInfo, "updated_at"); ok {
 		userInfo.UpdatedAt = updatedAt
 	}
-	
+
 	return userInfo, nil
 }
 
@@ -142,36 +142,36 @@ func refreshTokenGeneric(ctx context.Context, config ProviderConfig, refreshToke
 	data.Set("client_id", config.ClientID)
 	data.Set("client_secret", config.ClientSecret)
 	data.Set("refresh_token", refreshToken)
-	
+
 	req, err := http.NewRequestWithContext(ctx, "POST", config.TokenURL, strings.NewReader(data.Encode()))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create refresh request: %w", err)
 	}
-	
+
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Accept", "application/json")
-	
+
 	resp, err := DefaultHTTPClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to refresh token: %w", err)
 	}
 	defer resp.Body.Close()
-	
+
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("token refresh failed with status %d: %s", resp.StatusCode, string(body))
 	}
-	
+
 	var tokenResp TokenResponse
 	if err := json.NewDecoder(resp.Body).Decode(&tokenResp); err != nil {
 		return nil, fmt.Errorf("failed to decode refresh response: %w", err)
 	}
-	
+
 	// 만료 시간 계산
 	if tokenResp.ExpiresIn > 0 {
 		tokenResp.ExpiresAt = time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second)
 	}
-	
+
 	return &tokenResp, nil
 }
 
@@ -180,31 +180,31 @@ func revokeTokenGeneric(ctx context.Context, config ProviderConfig, token string
 	if config.RevokeURL == "" {
 		return nil // 토큰 취소를 지원하지 않는 제공자
 	}
-	
+
 	data := url.Values{}
 	data.Set("token", token)
 	data.Set("client_id", config.ClientID)
 	data.Set("client_secret", config.ClientSecret)
-	
+
 	req, err := http.NewRequestWithContext(ctx, "POST", config.RevokeURL, strings.NewReader(data.Encode()))
 	if err != nil {
 		return fmt.Errorf("failed to create revoke request: %w", err)
 	}
-	
+
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Accept", "application/json")
-	
+
 	resp, err := DefaultHTTPClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to revoke token: %w", err)
 	}
 	defer resp.Body.Close()
-	
+
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 		body, _ := io.ReadAll(resp.Body)
 		return fmt.Errorf("token revocation failed with status %d: %s", resp.StatusCode, string(body))
 	}
-	
+
 	return nil
 }
 
@@ -216,7 +216,7 @@ func validateTokenGeneric(ctx context.Context, config ProviderConfig, token stri
 	if err != nil {
 		return &TokenInfo{Valid: false}, nil
 	}
-	
+
 	return &TokenInfo{
 		Valid:  true,
 		UserID: userInfo.ID,
@@ -229,12 +229,12 @@ func getStringField(data map[string]interface{}, fieldName string) (string, bool
 	if fieldName == "" {
 		return "", false
 	}
-	
+
 	value, exists := data[fieldName]
 	if !exists {
 		return "", false
 	}
-	
+
 	str, ok := value.(string)
 	return str, ok
 }
@@ -244,12 +244,12 @@ func getTimeField(data map[string]interface{}, fieldName string) (time.Time, boo
 	if fieldName == "" {
 		return time.Time{}, false
 	}
-	
+
 	value, exists := data[fieldName]
 	if !exists {
 		return time.Time{}, false
 	}
-	
+
 	// 문자열로 저장된 시간 파싱 시도
 	if str, ok := value.(string); ok {
 		// ISO 8601 형식 파싱 시도
@@ -268,14 +268,14 @@ func getTimeField(data map[string]interface{}, fieldName string) (time.Time, boo
 			}
 		}
 	}
-	
+
 	return time.Time{}, false
 }
 
 // CreateAPIRequest API 요청 생성 헬퍼
 func CreateAPIRequest(ctx context.Context, method, url string, body interface{}, accessToken string) (*http.Request, error) {
 	var reqBody io.Reader
-	
+
 	if body != nil {
 		jsonBody, err := json.Marshal(body)
 		if err != nil {
@@ -283,34 +283,34 @@ func CreateAPIRequest(ctx context.Context, method, url string, body interface{},
 		}
 		reqBody = bytes.NewReader(jsonBody)
 	}
-	
+
 	req, err := http.NewRequestWithContext(ctx, method, url, reqBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
-	
+
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 	req.Header.Set("Accept", "application/json")
-	
+
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
-	
+
 	return req, nil
 }
 
 // ParseAPIResponse API 응답 파싱 헬퍼
 func ParseAPIResponse(resp *http.Response, target interface{}) error {
 	defer resp.Body.Close()
-	
+
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		body, _ := io.ReadAll(resp.Body)
 		return fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, string(body))
 	}
-	
+
 	if target == nil {
 		return nil
 	}
-	
+
 	return json.NewDecoder(resp.Body).Decode(target)
 }

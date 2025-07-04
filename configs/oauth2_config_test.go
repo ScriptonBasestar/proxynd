@@ -285,9 +285,9 @@ func TestUserMappingConfig_ValidateUserMapping(t *testing.T) {
 
 func TestUserMappingConfig_GetUserRole(t *testing.T) {
 	userMapping := UserMappingConfig{
-		DefaultRole:         "viewer",
-		AdminUsers:          []string{"admin@example.com"},
-		AdminOrganizations:  []string{"admin-org"},
+		DefaultRole:        "viewer",
+		AdminUsers:         []string{"admin@example.com"},
+		AdminOrganizations: []string{"admin-org"},
 		OrganizationMapping: map[string]string{
 			"engineering": "developer",
 			"devops":      "maintainer",

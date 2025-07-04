@@ -1,26 +1,26 @@
 package metrics
 
 import (
-	"sync"
-	"time"
 	"math"
 	"sort"
+	"sync"
+	"time"
 )
 
 // TTLStats TTL 통계 정보
 type TTLStats struct {
-	TotalCalculations     int64   `json:"total_calculations"`
-	AverageTTL           float64 `json:"average_ttl"`
-	MinTTL               int     `json:"min_ttl"`
-	MaxTTL               int     `json:"max_ttl"`
-	MedianTTL            float64 `json:"median_ttl"`
-	P90TTL               float64 `json:"p90_ttl"`
-	P95TTL               float64 `json:"p95_ttl"`
-	P99TTL               float64 `json:"p99_ttl"`
-	EarlyExpirationRate  float64 `json:"early_expiration_rate"`
-	HeaderBasedRate      float64 `json:"header_based_rate"`
-	PatternBasedRate     float64 `json:"pattern_based_rate"`
-	LastUpdated          time.Time `json:"last_updated"`
+	TotalCalculations   int64     `json:"total_calculations"`
+	AverageTTL          float64   `json:"average_ttl"`
+	MinTTL              int       `json:"min_ttl"`
+	MaxTTL              int       `json:"max_ttl"`
+	MedianTTL           float64   `json:"median_ttl"`
+	P90TTL              float64   `json:"p90_ttl"`
+	P95TTL              float64   `json:"p95_ttl"`
+	P99TTL              float64   `json:"p99_ttl"`
+	EarlyExpirationRate float64   `json:"early_expiration_rate"`
+	HeaderBasedRate     float64   `json:"header_based_rate"`
+	PatternBasedRate    float64   `json:"pattern_based_rate"`
+	LastUpdated         time.Time `json:"last_updated"`
 }
 
 // TTLEntry TTL 계산 기록
@@ -209,7 +209,7 @@ func (c *TTLCollector) calculateStats(registryType string) *TTLStats {
 		ttlValues[i] = entry.CalculatedTTL
 		sum += int64(entry.CalculatedTTL)
 		sourceCounts[entry.Source]++
-		
+
 		if entry.IsExpired && entry.ExpiryReason == "early_expiration" {
 			earlyExpirations++
 		}
@@ -235,13 +235,13 @@ func (c *TTLCollector) calculateStats(registryType string) *TTLStats {
 
 	return &TTLStats{
 		TotalCalculations:   total,
-		AverageTTL:         average,
-		MinTTL:             min,
-		MaxTTL:             max,
-		MedianTTL:          median,
-		P90TTL:             p90,
-		P95TTL:             p95,
-		P99TTL:             p99,
+		AverageTTL:          average,
+		MinTTL:              min,
+		MaxTTL:              max,
+		MedianTTL:           median,
+		P90TTL:              p90,
+		P95TTL:              p95,
+		P99TTL:              p99,
 		EarlyExpirationRate: earlyExpirationRate,
 		HeaderBasedRate:     headerBasedRate,
 		PatternBasedRate:    patternBasedRate,

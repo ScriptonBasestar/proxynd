@@ -28,7 +28,7 @@ type GitLabUser struct {
 	Location  string `json:"location"`
 	CreatedAt string `json:"created_at"`
 	UpdatedAt string `json:"last_activity_on"`
-	
+
 	// GitLab 특화 필드
 	IsAdmin        bool   `json:"is_admin"`
 	CanCreateGroup bool   `json:"can_create_group"`
@@ -51,17 +51,17 @@ type GitLabGroup struct {
 
 // GitLabProject GitLab 프로젝트 정보 구조체
 type GitLabProject struct {
-	ID               int    `json:"id"`
-	Name             string `json:"name"`
-	Path             string `json:"path"`
+	ID                int    `json:"id"`
+	Name              string `json:"name"`
+	Path              string `json:"path"`
 	PathWithNamespace string `json:"path_with_namespace"`
-	Description      string `json:"description"`
-	DefaultBranch    string `json:"default_branch"`
-	Visibility       string `json:"visibility"`
-	WebURL           string `json:"web_url"`
-	AvatarURL        string `json:"avatar_url"`
-	CreatedAt        string `json:"created_at"`
-	LastActivityAt   string `json:"last_activity_at"`
+	Description       string `json:"description"`
+	DefaultBranch     string `json:"default_branch"`
+	Visibility        string `json:"visibility"`
+	WebURL            string `json:"web_url"`
+	AvatarURL         string `json:"avatar_url"`
+	CreatedAt         string `json:"created_at"`
+	LastActivityAt    string `json:"last_activity_at"`
 }
 
 // NewGitLabProvider GitLab 제공자 생성
@@ -97,7 +97,7 @@ func NewGitLabProvider(config ProviderConfig) Provider {
 	if config.AvatarField == "" {
 		config.AvatarField = "avatar_url"
 	}
-	
+
 	return &GitLabProvider{
 		GenericProvider: NewGenericProvider(config),
 	}
@@ -109,17 +109,17 @@ func (g *GitLabProvider) GetUserInfo(ctx context.Context, accessToken string) (*
 	if err != nil {
 		return nil, fmt.Errorf("failed to create user info request: %w", err)
 	}
-	
+
 	resp, err := DefaultHTTPClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user info: %w", err)
 	}
-	
+
 	var gitlabUser GitLabUser
 	if err := ParseAPIResponse(resp, &gitlabUser); err != nil {
 		return nil, fmt.Errorf("failed to parse GitLab user info: %w", err)
 	}
-	
+
 	userInfo := &UserInfo{
 		ID:       strconv.Itoa(gitlabUser.ID),
 		Username: gitlabUser.Username,
@@ -130,7 +130,7 @@ func (g *GitLabProvider) GetUserInfo(ctx context.Context, accessToken string) (*
 		Location: gitlabUser.Location,
 		Company:  gitlabUser.Organization,
 	}
-	
+
 	// 시간 정보 파싱
 	if createdAt, ok := parseGitLabTime(gitlabUser.CreatedAt); ok {
 		if t, ok := createdAt.(time.Time); ok {
@@ -142,7 +142,7 @@ func (g *GitLabProvider) GetUserInfo(ctx context.Context, accessToken string) (*
 			userInfo.UpdatedAt = t
 		}
 	}
-	
+
 	return userInfo, nil
 }
 
@@ -152,22 +152,22 @@ func (g *GitLabProvider) GetUserOrganizations(ctx context.Context, accessToken s
 	if err != nil {
 		return nil, fmt.Errorf("failed to create groups request: %w", err)
 	}
-	
+
 	resp, err := DefaultHTTPClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get groups: %w", err)
 	}
-	
+
 	var groups []GitLabGroup
 	if err := ParseAPIResponse(resp, &groups); err != nil {
 		return nil, fmt.Errorf("failed to parse GitLab groups: %w", err)
 	}
-	
+
 	groupNames := make([]string, len(groups))
 	for i, group := range groups {
 		groupNames[i] = group.Path
 	}
-	
+
 	return groupNames, nil
 }
 
@@ -177,22 +177,22 @@ func (g *GitLabProvider) ValidateToken(ctx context.Context, token string) (*Toke
 	if err != nil {
 		return &TokenInfo{Valid: false}, nil
 	}
-	
+
 	resp, err := DefaultHTTPClient.Do(req)
 	if err != nil {
 		return &TokenInfo{Valid: false}, nil
 	}
 	defer resp.Body.Close()
-	
+
 	if resp.StatusCode != http.StatusOK {
 		return &TokenInfo{Valid: false}, nil
 	}
-	
+
 	var gitlabUser GitLabUser
 	if err := json.NewDecoder(resp.Body).Decode(&gitlabUser); err != nil {
 		return &TokenInfo{Valid: false}, nil
 	}
-	
+
 	return &TokenInfo{
 		Valid:  true,
 		UserID: strconv.Itoa(gitlabUser.ID),
@@ -205,7 +205,7 @@ func (g *GitLabProvider) RevokeToken(ctx context.Context, token string) error {
 	if g.config.RevokeURL == "" {
 		return nil // 토큰 취소를 지원하지 않는 경우
 	}
-	
+
 	// GitLab은 표준 OAuth2 토큰 취소를 지원
 	return revokeTokenGeneric(ctx, g.config, token)
 }
@@ -216,17 +216,17 @@ func (g *GitLabProvider) GetUserProjects(ctx context.Context, accessToken string
 	if err != nil {
 		return nil, fmt.Errorf("failed to create projects request: %w", err)
 	}
-	
+
 	resp, err := DefaultHTTPClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get projects: %w", err)
 	}
-	
+
 	var projects []GitLabProject
 	if err := ParseAPIResponse(resp, &projects); err != nil {
 		return nil, fmt.Errorf("failed to parse GitLab projects: %w", err)
 	}
-	
+
 	return projects, nil
 }
 
@@ -234,18 +234,18 @@ func (g *GitLabProvider) GetUserProjects(ctx context.Context, accessToken string
 func (g *GitLabProvider) CheckProjectAccess(ctx context.Context, accessToken, projectPath string) (bool, error) {
 	// 테스트를 위해 URL 인코딩 없이 직접 경로 사용
 	url := fmt.Sprintf("https://gitlab.com/api/v4/projects/%s", projectPath)
-	
+
 	req, err := CreateAPIRequest(ctx, "GET", url, nil, accessToken)
 	if err != nil {
 		return false, err
 	}
-	
+
 	resp, err := DefaultHTTPClient.Do(req)
 	if err != nil {
 		return false, err
 	}
 	defer resp.Body.Close()
-	
+
 	// 200 OK면 접근 가능, 404면 접근 불가능 또는 존재하지 않음
 	return resp.StatusCode == http.StatusOK, nil
 }
@@ -255,22 +255,22 @@ func (g *GitLabProvider) GetGroupMembers(ctx context.Context, accessToken, group
 	// 그룹 경로를 URL 인코딩
 	encodedPath := strings.ReplaceAll(groupPath, "/", "%2F")
 	url := fmt.Sprintf("https://gitlab.com/api/v4/groups/%s/members", encodedPath)
-	
+
 	req, err := CreateAPIRequest(ctx, "GET", url, nil, accessToken)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create group members request: %w", err)
 	}
-	
+
 	resp, err := DefaultHTTPClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get group members: %w", err)
 	}
-	
+
 	var members []map[string]interface{}
 	if err := ParseAPIResponse(resp, &members); err != nil {
 		return nil, fmt.Errorf("failed to parse GitLab group members: %w", err)
 	}
-	
+
 	return members, nil
 }
 
@@ -278,7 +278,7 @@ func (g *GitLabProvider) GetGroupMembers(ctx context.Context, accessToken, group
 func (g *GitLabProvider) GetUserRole(ctx context.Context, accessToken, projectOrGroupPath string) (string, error) {
 	// 프로젝트 또는 그룹 경로를 URL 인코딩
 	encodedPath := strings.ReplaceAll(projectOrGroupPath, "/", "%2F")
-	
+
 	// 먼저 프로젝트에서 역할 확인
 	projectURL := fmt.Sprintf("https://gitlab.com/api/v4/projects/%s/members", encodedPath)
 	req, err := CreateAPIRequest(ctx, "GET", projectURL, nil, accessToken)
@@ -296,31 +296,31 @@ func (g *GitLabProvider) GetUserRole(ctx context.Context, accessToken, projectOr
 			}
 		}
 	}
-	
+
 	// 프로젝트에서 찾지 못한 경우 그룹에서 확인
 	groupURL := fmt.Sprintf("https://gitlab.com/api/v4/groups/%s/members", encodedPath)
 	req, err = CreateAPIRequest(ctx, "GET", groupURL, nil, accessToken)
 	if err != nil {
 		return "", err
 	}
-	
+
 	resp, err := DefaultHTTPClient.Do(req)
 	if err != nil {
 		return "", err
 	}
-	
+
 	var members []map[string]interface{}
 	if err := ParseAPIResponse(resp, &members); err != nil {
 		return "", err
 	}
-	
+
 	// 현재 사용자의 역할 찾기
 	for _, member := range members {
 		if accessLevel, ok := member["access_level"].(float64); ok {
 			return mapGitLabAccessLevel(int(accessLevel)), nil
 		}
 	}
-	
+
 	return "guest", nil
 }
 
@@ -348,17 +348,17 @@ func (g *GitLabProvider) GetApiVersion(ctx context.Context, accessToken string) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to create version request: %w", err)
 	}
-	
+
 	resp, err := DefaultHTTPClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get version: %w", err)
 	}
-	
+
 	var version map[string]interface{}
 	if err := ParseAPIResponse(resp, &version); err != nil {
 		return nil, fmt.Errorf("failed to parse version response: %w", err)
 	}
-	
+
 	return version, nil
 }
 
@@ -370,13 +370,13 @@ func (g *GitLabProvider) CheckAdminStatus(ctx context.Context, accessToken strin
 	if err != nil {
 		return false, nil
 	}
-	
+
 	resp, err := DefaultHTTPClient.Do(req)
 	if err != nil {
 		return false, nil
 	}
 	defer resp.Body.Close()
-	
+
 	// 관리자가 아닌 경우 403 Forbidden 반환
 	return resp.StatusCode == http.StatusOK, nil
 }
@@ -386,12 +386,12 @@ func parseGitLabTime(timeStr string) (interface{}, bool) {
 	if timeStr == "" {
 		return nil, false
 	}
-	
+
 	// GitLab은 ISO 8601 형식을 사용
 	if t, ok := getTimeField(map[string]interface{}{"time": timeStr}, "time"); ok {
 		return t, true
 	}
-	
+
 	return nil, false
 }
 

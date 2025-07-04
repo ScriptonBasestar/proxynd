@@ -101,7 +101,7 @@ func TestTTLCollector_ExpirationTracking(t *testing.T) {
 
 	// 일부 패키지 기록
 	collector.RecordTTLCalculation("test-package", "npm", 1800, "package_type")
-	
+
 	// 만료 기록
 	collector.RecordTTLExpiration("npm", "early")
 
@@ -152,7 +152,7 @@ func TestTTLCollector_ConcurrentAccess(t *testing.T) {
 
 	// 동시에 여러 고루틴에서 기록
 	done := make(chan bool, 10)
-	
+
 	for i := 0; i < 10; i++ {
 		go func(id int) {
 			for j := 0; j < 10; j++ {

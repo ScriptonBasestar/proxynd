@@ -9,6 +9,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/valyala/fasthttp/fasthttpadaptor"
+
 	"proxynd/configs"
 	"proxynd/metrics"
 )
@@ -79,7 +80,7 @@ func setupAdditionalMetrics(app *fiber.App, config *configs.UnifiedConfig) {
 	app.Get("/api/metrics/ttl", func(c *fiber.Ctx) error {
 		collector := metrics.GetTTLCollector()
 		registryType := c.Query("registry_type", "")
-		
+
 		if registryType != "" {
 			stats := collector.GetStats(registryType)
 			return c.JSON(fiber.Map{
@@ -97,7 +98,7 @@ func setupAdditionalMetrics(app *fiber.App, config *configs.UnifiedConfig) {
 	app.Get("/api/metrics/ttl/details", func(c *fiber.Ctx) error {
 		collector := metrics.GetTTLCollector()
 		limitStr := c.Query("limit", "100")
-		
+
 		limit, err := strconv.Atoi(limitStr)
 		if err != nil {
 			limit = 100
@@ -122,12 +123,12 @@ func setupAdditionalMetrics(app *fiber.App, config *configs.UnifiedConfig) {
 		sourceDistribution := make(map[string]int)
 		packageTypeDistribution := make(map[string]int)
 		ttlRanges := map[string]int{
-			"<5min":     0,  // < 300초
-			"5-30min":   0,  // 300-1800초
-			"30min-2h":  0,  // 1800-7200초
-			"2h-12h":    0,  // 7200-43200초
-			"12h-24h":   0,  // 43200-86400초
-			">24h":      0,  // > 86400초
+			"<5min":    0, // < 300초
+			"5-30min":  0, // 300-1800초
+			"30min-2h": 0, // 1800-7200초
+			"2h-12h":   0, // 7200-43200초
+			"12h-24h":  0, // 43200-86400초
+			">24h":     0, // > 86400초
 		}
 
 		for _, entry := range recentEntries {
@@ -155,8 +156,8 @@ func setupAdditionalMetrics(app *fiber.App, config *configs.UnifiedConfig) {
 		return c.JSON(fiber.Map{
 			"source_distribution":       sourceDistribution,
 			"package_type_distribution": packageTypeDistribution,
-			"ttl_ranges":               ttlRanges,
-			"total_analyzed":           len(recentEntries),
+			"ttl_ranges":                ttlRanges,
+			"total_analyzed":            len(recentEntries),
 		})
 	})
 	// 캐시 통계 엔드포인트

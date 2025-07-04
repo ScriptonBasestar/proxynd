@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+
 	"proxynd/configs"
 )
 
@@ -33,18 +34,18 @@ func createTestOAuth2Config() *configs.OAuth2Config {
 			},
 		},
 		JWT: configs.JWTConfig{
-			Secret:           "test-jwt-secret-key-32-characters",
-			AccessTokenTTL:   3600,
-			RefreshTokenTTL:  604800,
-			Algorithm:        "HS256",
-			Issuer:           "proxynd",
-			Audience:         "proxynd-api",
+			Secret:          "test-jwt-secret-key-32-characters",
+			AccessTokenTTL:  3600,
+			RefreshTokenTTL: 604800,
+			Algorithm:       "HS256",
+			Issuer:          "proxynd",
+			Audience:        "proxynd-api",
 		},
 		UserMapping: configs.UserMappingConfig{
-			AutoCreate:      true,
-			DefaultRole:     "viewer",
-			AdminUsers:      []string{"admin@example.com"},
-			RoleMapping:     map[string]string{"*@admin.com": "admin"},
+			AutoCreate:  true,
+			DefaultRole: "viewer",
+			AdminUsers:  []string{"admin@example.com"},
+			RoleMapping: map[string]string{"*@admin.com": "admin"},
 		},
 	}
 }
@@ -52,7 +53,7 @@ func createTestOAuth2Config() *configs.OAuth2Config {
 // 테스트용 Fiber 앱 생성
 func createTestApp() *fiber.App {
 	app := fiber.New()
-	
+
 	// 세션 미들웨어 모킹
 	app.Use(func(c *fiber.Ctx) error {
 		if c.Locals("session") == nil {
@@ -60,7 +61,7 @@ func createTestApp() *fiber.App {
 		}
 		return c.Next()
 	})
-	
+
 	// 라우터 설정
 	app.Get("/auth/login/:provider", StartOAuth2Login)
 	app.Get("/auth/callback/:provider", HandleOAuth2Callback)
@@ -68,25 +69,25 @@ func createTestApp() *fiber.App {
 	app.Post("/auth/refresh", RefreshToken)
 	app.Get("/auth/me", GetCurrentUser)
 	app.Get("/auth/status", GetAuthStatus)
-	
+
 	return app
 }
 
 func TestStartOAuth2Login(t *testing.T) {
 	app := createTestApp()
-	
+
 	// 테스트용 OAuth2 설정 생성
 	_ = createTestOAuth2Config() // 미사용 변수 경고 제거
-	
+
 	// 설정 모킹은 현재 구현에서 지원하지 않음 (파일 기반 설정)
-	
+
 	// OAuth2 로그인 요청 테스트
 	req := httptest.NewRequest("GET", "/auth/login/github", nil)
 	resp, err := app.Test(req)
 	if err != nil {
 		t.Fatalf("Failed to perform request: %v", err)
 	}
-	
+
 	// 리다이렉트 응답 확인
 	if resp.StatusCode != http.StatusFound && resp.StatusCode != http.StatusTemporaryRedirect {
 		body, _ := io.ReadAll(resp.Body)
@@ -101,7 +102,7 @@ func TestStartOAuth2Login(t *testing.T) {
 
 func TestHandleOAuth2Callback_MissingParameters(t *testing.T) {
 	app := createTestApp()
-	
+
 	tests := []struct {
 		name        string
 		queryParams string
@@ -128,7 +129,7 @@ func TestHandleOAuth2Callback_MissingParameters(t *testing.T) {
 			expectCode:  http.StatusBadRequest,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := httptest.NewRequest("GET", "/auth/callback/github"+tt.queryParams, nil)
@@ -136,7 +137,7 @@ func TestHandleOAuth2Callback_MissingParameters(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to perform request: %v", err)
 			}
-			
+
 			if resp.StatusCode != tt.expectCode {
 				body, _ := io.ReadAll(resp.Body)
 				t.Logf("Response body: %s", string(body))
@@ -148,20 +149,20 @@ func TestHandleOAuth2Callback_MissingParameters(t *testing.T) {
 
 func TestHandleOAuth2Callback_InvalidState(t *testing.T) {
 	app := createTestApp()
-	
+
 	req := httptest.NewRequest("GET", "/auth/callback/github?code=test_code&state=invalid_state", nil)
 	resp, err := app.Test(req)
 	if err != nil {
 		t.Fatalf("Failed to perform request: %v", err)
 	}
-	
+
 	if resp.StatusCode != http.StatusBadRequest {
 		t.Errorf("Expected status 400 for invalid state, got %d", resp.StatusCode)
 	}
-	
+
 	var response map[string]interface{}
 	json.NewDecoder(resp.Body).Decode(&response)
-	
+
 	if !strings.Contains(response["error"].(string), "Invalid") {
 		t.Errorf("Expected invalid state error, got: %s", response["error"])
 	}
@@ -169,24 +170,24 @@ func TestHandleOAuth2Callback_InvalidState(t *testing.T) {
 
 func TestGetAuthStatus_NotAuthenticated(t *testing.T) {
 	app := createTestApp()
-	
+
 	req := httptest.NewRequest("GET", "/auth/status", nil)
 	resp, err := app.Test(req)
 	if err != nil {
 		t.Fatalf("Failed to perform request: %v", err)
 	}
-	
+
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
-	
+
 	var response map[string]interface{}
 	json.NewDecoder(resp.Body).Decode(&response)
-	
+
 	if response["authenticated"].(bool) {
 		t.Error("Expected authenticated to be false")
 	}
-	
+
 	if response["oauth2_enabled"].(bool) {
 		t.Error("Expected oauth2_enabled to be false (config not loaded)")
 	}
@@ -194,20 +195,20 @@ func TestGetAuthStatus_NotAuthenticated(t *testing.T) {
 
 func TestGetCurrentUser_NotAuthenticated(t *testing.T) {
 	app := createTestApp()
-	
+
 	req := httptest.NewRequest("GET", "/auth/me", nil)
 	resp, err := app.Test(req)
 	if err != nil {
 		t.Fatalf("Failed to perform request: %v", err)
 	}
-	
+
 	if resp.StatusCode != http.StatusUnauthorized {
 		t.Errorf("Expected status 401, got %d", resp.StatusCode)
 	}
-	
+
 	var response map[string]interface{}
 	json.NewDecoder(resp.Body).Decode(&response)
-	
+
 	if response["error"] != "Not authenticated" {
 		t.Errorf("Expected 'Not authenticated' error, got: %s", response["error"])
 	}
@@ -215,25 +216,25 @@ func TestGetCurrentUser_NotAuthenticated(t *testing.T) {
 
 func TestHandleLogout_WithSession(t *testing.T) {
 	app := createTestApp()
-	
+
 	// 세션에 사용자 정보 설정
 	req := httptest.NewRequest("POST", "/auth/logout", nil)
-	
+
 	// 세션 모킹을 위한 컨텍스트 설정
 	resp, err := app.Test(req)
 	if err != nil {
 		t.Fatalf("Failed to perform request: %v", err)
 	}
-	
+
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
 		t.Logf("Response body: %s", string(body))
 		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
-	
+
 	var response map[string]interface{}
 	json.NewDecoder(resp.Body).Decode(&response)
-	
+
 	if response["message"] != "Logged out successfully" {
 		t.Errorf("Expected logout success message, got: %s", response["message"])
 	}
@@ -241,20 +242,20 @@ func TestHandleLogout_WithSession(t *testing.T) {
 
 func TestRefreshToken_NoRefreshToken(t *testing.T) {
 	app := createTestApp()
-	
+
 	req := httptest.NewRequest("POST", "/auth/refresh", nil)
 	resp, err := app.Test(req)
 	if err != nil {
 		t.Fatalf("Failed to perform request: %v", err)
 	}
-	
+
 	if resp.StatusCode != http.StatusUnauthorized {
 		t.Errorf("Expected status 401, got %d", resp.StatusCode)
 	}
-	
+
 	var response map[string]interface{}
 	json.NewDecoder(resp.Body).Decode(&response)
-	
+
 	if response["error"] != "No refresh token available" {
 		t.Errorf("Expected 'No refresh token available' error, got: %s", response["error"])
 	}
@@ -269,23 +270,23 @@ func TestGenerateRandomString(t *testing.T) {
 		{"Medium string", 32},
 		{"Long string", 64},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			str1, err1 := generateRandomString(tt.length)
 			str2, err2 := generateRandomString(tt.length)
-			
+
 			if err1 != nil {
 				t.Errorf("Failed to generate first random string: %v", err1)
 			}
 			if err2 != nil {
 				t.Errorf("Failed to generate second random string: %v", err2)
 			}
-			
+
 			if len(str1) != tt.length {
 				t.Errorf("Expected length %d, got %d", tt.length, len(str1))
 			}
-			
+
 			if str1 == str2 {
 				t.Error("Generated strings should be different")
 			}
@@ -296,18 +297,18 @@ func TestGenerateRandomString(t *testing.T) {
 func TestGenerateCodeChallenge(t *testing.T) {
 	verifier1 := "test_code_verifier_1"
 	verifier2 := "test_code_verifier_2"
-	
+
 	challenge1 := generateCodeChallenge(verifier1)
 	challenge2 := generateCodeChallenge(verifier2)
-	
+
 	if challenge1 == challenge2 {
 		t.Error("Different verifiers should produce different challenges")
 	}
-	
+
 	if len(challenge1) == 0 {
 		t.Error("Challenge should not be empty")
 	}
-	
+
 	// 같은 verifier는 같은 challenge를 생성해야 함
 	challenge1Again := generateCodeChallenge(verifier1)
 	if challenge1 != challenge1Again {
@@ -324,23 +325,23 @@ func TestOAuth2StateManagement(t *testing.T) {
 		RedirectURL: "/dashboard",
 		CreatedAt:   time.Now(),
 	}
-	
+
 	stateStore[state] = oauth2State
-	
+
 	// 상태 조회 테스트
 	retrievedState, exists := stateStore[state]
 	if !exists {
 		t.Error("State should exist in store")
 	}
-	
+
 	if retrievedState.Provider != "github" {
 		t.Errorf("Expected provider 'github', got '%s'", retrievedState.Provider)
 	}
-	
+
 	if retrievedState.RedirectURL != "/dashboard" {
 		t.Errorf("Expected redirect URL '/dashboard', got '%s'", retrievedState.RedirectURL)
 	}
-	
+
 	// 상태 삭제 테스트
 	delete(stateStore, state)
 	_, exists = stateStore[state]
@@ -351,40 +352,40 @@ func TestOAuth2StateManagement(t *testing.T) {
 
 func TestSessionHelpers(t *testing.T) {
 	app := fiber.New()
-	
+
 	app.Get("/test", func(c *fiber.Ctx) error {
 		// 세션 초기화
 		c.Locals("session", make(fiber.Map))
-		
+
 		sess, err := getSession(c)
 		if err != nil {
 			return c.Status(500).JSON(fiber.Map{"error": err.Error()})
 		}
-		
+
 		// 세션에 데이터 저장
 		sess["test_key"] = "test_value"
-		
+
 		// 세션에서 데이터 조회
 		value := sess["test_key"]
-		
+
 		return c.JSON(fiber.Map{
 			"value": value,
 		})
 	})
-	
+
 	req := httptest.NewRequest("GET", "/test", nil)
 	resp, err := app.Test(req)
 	if err != nil {
 		t.Fatalf("Failed to perform request: %v", err)
 	}
-	
+
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
-	
+
 	var response map[string]interface{}
 	json.NewDecoder(resp.Body).Decode(&response)
-	
+
 	if response["value"] != "test_value" {
 		t.Errorf("Expected 'test_value', got '%s'", response["value"])
 	}
@@ -402,7 +403,7 @@ func BenchmarkGenerateRandomString(b *testing.B) {
 
 func BenchmarkGenerateCodeChallenge(b *testing.B) {
 	verifier := "test_code_verifier_for_benchmark"
-	
+
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = generateCodeChallenge(verifier)
@@ -414,66 +415,66 @@ func TestOAuth2Flow_Integration(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
 	}
-	
+
 	app := createTestApp()
-	
+
 	// 1. 로그인 시작 요청
 	loginReq := httptest.NewRequest("GET", "/auth/login/github?redirect=/dashboard", nil)
 	loginResp, err := app.Test(loginReq)
 	if err != nil {
 		t.Fatalf("Failed to start login: %v", err)
 	}
-	
+
 	// 설정이 없으면 에러가 날 수 있음
 	if loginResp.StatusCode == http.StatusInternalServerError {
 		t.Skip("OAuth2 config not available for integration test")
 	}
-	
+
 	// 2. 리다이렉트 URL 파싱 (실제로는 브라우저가 수행)
 	if loginResp.StatusCode == http.StatusFound || loginResp.StatusCode == http.StatusTemporaryRedirect {
 		location := loginResp.Header.Get("Location")
 		if location == "" {
 			t.Error("Expected redirect location header")
 		}
-		
+
 		// URL에서 state 파라미터 추출
 		parsedURL, err := url.Parse(location)
 		if err != nil {
 			t.Fatalf("Failed to parse redirect URL: %v", err)
 		}
-		
+
 		state := parsedURL.Query().Get("state")
 		if state == "" {
 			t.Error("Expected state parameter in redirect URL")
 		}
-		
+
 		// 3. 콜백 요청 시뮬레이션 (잘못된 상태로)
-		callbackReq := httptest.NewRequest("GET", 
+		callbackReq := httptest.NewRequest("GET",
 			fmt.Sprintf("/auth/callback/github?code=test_code&state=%s", "invalid_state"), nil)
 		callbackResp, err := app.Test(callbackReq)
 		if err != nil {
 			t.Fatalf("Failed to perform callback: %v", err)
 		}
-		
+
 		if callbackResp.StatusCode != http.StatusBadRequest {
 			t.Errorf("Expected 400 for invalid state, got %d", callbackResp.StatusCode)
 		}
 	}
-	
+
 	// 4. 인증 상태 확인
 	statusReq := httptest.NewRequest("GET", "/auth/status", nil)
 	statusResp, err := app.Test(statusReq)
 	if err != nil {
 		t.Fatalf("Failed to check status: %v", err)
 	}
-	
+
 	if statusResp.StatusCode != http.StatusOK {
 		t.Errorf("Expected status 200, got %d", statusResp.StatusCode)
 	}
-	
+
 	var statusResponse map[string]interface{}
 	json.NewDecoder(statusResp.Body).Decode(&statusResponse)
-	
+
 	if statusResponse["authenticated"].(bool) {
 		t.Error("User should not be authenticated after failed callback")
 	}

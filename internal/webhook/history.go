@@ -30,15 +30,15 @@ type WebhookHistoryItem struct {
 
 // WebhookStatistics 웹훅 통계 정보
 type WebhookStatistics struct {
-	TotalSent           int64             `json:"total_sent"`
-	TotalSuccess        int64             `json:"total_success"`
-	TotalFailed         int64             `json:"total_failed"`
-	TotalRetrying       int64             `json:"total_retrying"`
-	SuccessRate         float64           `json:"success_rate"`
-	AverageResponseTime time.Duration     `json:"average_response_time"`
+	TotalSent           int64                          `json:"total_sent"`
+	TotalSuccess        int64                          `json:"total_success"`
+	TotalFailed         int64                          `json:"total_failed"`
+	TotalRetrying       int64                          `json:"total_retrying"`
+	SuccessRate         float64                        `json:"success_rate"`
+	AverageResponseTime time.Duration                  `json:"average_response_time"`
 	EndpointStats       map[string]*EndpointStatistics `json:"endpoint_stats"`
-	LastUpdated         time.Time         `json:"last_updated"`
-	TimeRange           *TimeRangeStats   `json:"time_range,omitempty"`
+	LastUpdated         time.Time                      `json:"last_updated"`
+	TimeRange           *TimeRangeStats                `json:"time_range,omitempty"`
 }
 
 // EndpointStatistics 엔드포인트별 통계
@@ -220,7 +220,7 @@ func (whm *WebhookHistoryManager) GetStatistics(endpointName string, timeRange *
 	// 필요한 날짜 범위의 파일들만 로드
 	current := startTime.Truncate(24 * time.Hour)
 	endTruncated := endTime.Truncate(24 * time.Hour)
-	
+
 	for !current.After(endTruncated) {
 		dateStr := current.Format("2006-01-02")
 		filename := fmt.Sprintf("webhook_history_%s.json", dateStr)
@@ -231,8 +231,8 @@ func (whm *WebhookHistoryManager) GetStatistics(endpointName string, timeRange *
 			if err := json.Unmarshal(data, &histories); err == nil {
 				// 시간 범위 필터링
 				for _, history := range histories {
-					if (history.Timestamp.After(startTime) || history.Timestamp.Equal(startTime)) && 
-					   (history.Timestamp.Before(endTime) || history.Timestamp.Equal(endTime)) {
+					if (history.Timestamp.After(startTime) || history.Timestamp.Equal(startTime)) &&
+						(history.Timestamp.Before(endTime) || history.Timestamp.Equal(endTime)) {
 						if endpointName == "" || history.EndpointName == endpointName {
 							allHistories = append(allHistories, history)
 						}

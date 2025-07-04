@@ -2,16 +2,18 @@ package proxy
 
 import (
 	"encoding/json"
-	"github.com/gofiber/fiber/v2"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
+
+	"github.com/gofiber/fiber/v2"
+
 	"proxynd/configs"
 	"proxynd/helpers"
-	"strings"
 )
 
 // DockerProxy Docker 레지스트리 프록시 핸들러

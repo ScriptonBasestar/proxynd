@@ -24,7 +24,7 @@ type GoogleUser struct {
 	Picture       string `json:"picture"`
 	Locale        string `json:"locale"`
 	VerifiedEmail bool   `json:"verified_email"`
-	
+
 	// Google+ 필드 (선택사항)
 	Gender   string `json:"gender,omitempty"`
 	Birthday string `json:"birthday,omitempty"`
@@ -38,21 +38,21 @@ type GoogleTokenInfo struct {
 	Scope     string `json:"scope"`
 	ExpiresIn int    `json:"expires_in"`
 	Email     string `json:"email"`
-	
+
 	// ID Token 전용 필드
-	Issuer           string `json:"iss,omitempty"`
-	Subject          string `json:"sub,omitempty"`
-	EmailVerified    bool   `json:"email_verified,omitempty"`
-	Name             string `json:"name,omitempty"`
-	Picture          string `json:"picture,omitempty"`
-	GivenName        string `json:"given_name,omitempty"`
-	FamilyName       string `json:"family_name,omitempty"`
-	Locale           string `json:"locale,omitempty"`
-	IssuedAt         int64  `json:"iat,omitempty"`
-	ExpirationTime   int64  `json:"exp,omitempty"`
-	AuthTime         int64  `json:"auth_time,omitempty"`
-	Nonce            string `json:"nonce,omitempty"`
-	HostedDomain     string `json:"hd,omitempty"`
+	Issuer         string `json:"iss,omitempty"`
+	Subject        string `json:"sub,omitempty"`
+	EmailVerified  bool   `json:"email_verified,omitempty"`
+	Name           string `json:"name,omitempty"`
+	Picture        string `json:"picture,omitempty"`
+	GivenName      string `json:"given_name,omitempty"`
+	FamilyName     string `json:"family_name,omitempty"`
+	Locale         string `json:"locale,omitempty"`
+	IssuedAt       int64  `json:"iat,omitempty"`
+	ExpirationTime int64  `json:"exp,omitempty"`
+	AuthTime       int64  `json:"auth_time,omitempty"`
+	Nonce          string `json:"nonce,omitempty"`
+	HostedDomain   string `json:"hd,omitempty"`
 }
 
 // NewGoogleProvider Google 제공자 생성
@@ -85,7 +85,7 @@ func NewGoogleProvider(config ProviderConfig) Provider {
 	if config.AvatarField == "" {
 		config.AvatarField = "picture"
 	}
-	
+
 	return &GoogleProvider{
 		GenericProvider: NewGenericProvider(config),
 	}
@@ -97,31 +97,31 @@ func (g *GoogleProvider) GetUserInfo(ctx context.Context, accessToken string) (*
 	if err != nil {
 		return nil, fmt.Errorf("failed to create user info request: %w", err)
 	}
-	
+
 	resp, err := DefaultHTTPClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user info: %w", err)
 	}
-	
+
 	var googleUser GoogleUser
 	if err := ParseAPIResponse(resp, &googleUser); err != nil {
 		return nil, fmt.Errorf("failed to parse Google user info: %w", err)
 	}
-	
+
 	userInfo := &UserInfo{
 		ID:     googleUser.ID,
 		Email:  googleUser.Email,
 		Name:   googleUser.Name,
 		Avatar: googleUser.Picture,
 	}
-	
+
 	// 이름이 없는 경우 given_name과 family_name 조합
 	if userInfo.Name == "" {
 		if googleUser.GivenName != "" || googleUser.FamilyName != "" {
 			userInfo.Name = strings.TrimSpace(googleUser.GivenName + " " + googleUser.FamilyName)
 		}
 	}
-	
+
 	return userInfo, nil
 }
 
@@ -136,43 +136,43 @@ func (g *GoogleProvider) GetUserOrganizations(ctx context.Context, accessToken s
 func (g *GoogleProvider) ValidateToken(ctx context.Context, token string) (*TokenInfo, error) {
 	// Google OAuth2 토큰 정보 엔드포인트 사용
 	url := fmt.Sprintf("https://oauth2.googleapis.com/tokeninfo?access_token=%s", token)
-	
+
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return &TokenInfo{Valid: false}, nil
 	}
-	
+
 	resp, err := DefaultHTTPClient.Do(req)
 	if err != nil {
 		return &TokenInfo{Valid: false}, nil
 	}
 	defer resp.Body.Close()
-	
+
 	if resp.StatusCode != http.StatusOK {
 		return &TokenInfo{Valid: false}, nil
 	}
-	
+
 	var googleTokenInfo GoogleTokenInfo
 	if err := json.NewDecoder(resp.Body).Decode(&googleTokenInfo); err != nil {
 		return &TokenInfo{Valid: false}, nil
 	}
-	
+
 	// 토큰이 현재 애플리케이션을 대상으로 하는지 확인
 	if googleTokenInfo.Audience != g.config.ClientID {
 		return &TokenInfo{Valid: false}, nil
 	}
-	
+
 	tokenInfo := &TokenInfo{
 		Valid:  true,
 		UserID: googleTokenInfo.UserID,
 		Scope:  googleTokenInfo.Scope,
 	}
-	
+
 	// 만료 시간 설정
 	if googleTokenInfo.ExpiresIn > 0 {
 		tokenInfo.ExpiresAt = time.Now().Add(time.Duration(googleTokenInfo.ExpiresIn) * time.Second)
 	}
-	
+
 	return tokenInfo, nil
 }
 
@@ -181,27 +181,27 @@ func (g *GoogleProvider) RevokeToken(ctx context.Context, token string) error {
 	if g.config.RevokeURL == "" {
 		return nil
 	}
-	
+
 	// Google은 GET 요청으로 토큰 취소
 	url := fmt.Sprintf("%s?token=%s", g.config.RevokeURL, token)
-	
+
 	req, err := http.NewRequestWithContext(ctx, "POST", url, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create revoke request: %w", err)
 	}
-	
+
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	
+
 	resp, err := DefaultHTTPClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to revoke Google token: %w", err)
 	}
 	defer resp.Body.Close()
-	
+
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("Google token revocation failed with status %d", resp.StatusCode)
 	}
-	
+
 	return nil
 }
 
@@ -209,25 +209,25 @@ func (g *GoogleProvider) RevokeToken(ctx context.Context, token string) error {
 func (g *GoogleProvider) GetGoogleProfile(ctx context.Context, accessToken string) (*GoogleUser, error) {
 	// Google+ API는 2019년에 종료되었으므로 People API 사용
 	url := "https://people.googleapis.com/v1/people/me?personFields=names,emailAddresses,photos,locales,genders,birthdays"
-	
+
 	req, err := CreateAPIRequest(ctx, "GET", url, nil, accessToken)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create profile request: %w", err)
 	}
-	
+
 	resp, err := DefaultHTTPClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get profile: %w", err)
 	}
-	
+
 	var profileResp map[string]interface{}
 	if err := ParseAPIResponse(resp, &profileResp); err != nil {
 		return nil, fmt.Errorf("failed to parse Google profile: %w", err)
 	}
-	
+
 	// People API 응답을 GoogleUser 구조체로 변환
 	googleUser := &GoogleUser{}
-	
+
 	if names, ok := profileResp["names"].([]interface{}); ok && len(names) > 0 {
 		if name, ok := names[0].(map[string]interface{}); ok {
 			if displayName, ok := name["displayName"].(string); ok {
@@ -241,7 +241,7 @@ func (g *GoogleProvider) GetGoogleProfile(ctx context.Context, accessToken strin
 			}
 		}
 	}
-	
+
 	if emails, ok := profileResp["emailAddresses"].([]interface{}); ok && len(emails) > 0 {
 		if email, ok := emails[0].(map[string]interface{}); ok {
 			if value, ok := email["value"].(string); ok {
@@ -249,7 +249,7 @@ func (g *GoogleProvider) GetGoogleProfile(ctx context.Context, accessToken strin
 			}
 		}
 	}
-	
+
 	if photos, ok := profileResp["photos"].([]interface{}); ok && len(photos) > 0 {
 		if photo, ok := photos[0].(map[string]interface{}); ok {
 			if url, ok := photo["url"].(string); ok {
@@ -257,7 +257,7 @@ func (g *GoogleProvider) GetGoogleProfile(ctx context.Context, accessToken strin
 			}
 		}
 	}
-	
+
 	if locales, ok := profileResp["locales"].([]interface{}); ok && len(locales) > 0 {
 		if locale, ok := locales[0].(map[string]interface{}); ok {
 			if value, ok := locale["value"].(string); ok {
@@ -265,7 +265,7 @@ func (g *GoogleProvider) GetGoogleProfile(ctx context.Context, accessToken strin
 			}
 		}
 	}
-	
+
 	return googleUser, nil
 }
 
@@ -273,41 +273,41 @@ func (g *GoogleProvider) GetGoogleProfile(ctx context.Context, accessToken strin
 func (g *GoogleProvider) VerifyIDToken(ctx context.Context, idToken string) (*GoogleTokenInfo, error) {
 	// Google의 공개 키로 ID 토큰 검증
 	url := fmt.Sprintf("https://oauth2.googleapis.com/tokeninfo?id_token=%s", idToken)
-	
+
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ID token verification request: %w", err)
 	}
-	
+
 	resp, err := DefaultHTTPClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to verify ID token: %w", err)
 	}
 	defer resp.Body.Close()
-	
+
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("ID token verification failed with status %d", resp.StatusCode)
 	}
-	
+
 	var tokenInfo GoogleTokenInfo
 	if err := json.NewDecoder(resp.Body).Decode(&tokenInfo); err != nil {
 		return nil, fmt.Errorf("failed to decode ID token info: %w", err)
 	}
-	
+
 	// 기본 검증
 	if tokenInfo.Audience != g.config.ClientID {
 		return nil, fmt.Errorf("ID token audience mismatch")
 	}
-	
+
 	if tokenInfo.Issuer != "https://accounts.google.com" && tokenInfo.Issuer != "accounts.google.com" {
 		return nil, fmt.Errorf("ID token issuer mismatch")
 	}
-	
+
 	// 토큰 만료 확인
 	if tokenInfo.ExpirationTime > 0 && time.Now().Unix() > tokenInfo.ExpirationTime {
 		return nil, fmt.Errorf("ID token has expired")
 	}
-	
+
 	return &tokenInfo, nil
 }
 
@@ -317,7 +317,7 @@ func (g *GoogleProvider) GetHostedDomain(ctx context.Context, idToken string) (s
 	if err != nil {
 		return "", err
 	}
-	
+
 	return tokenInfo.HostedDomain, nil
 }
 
@@ -327,7 +327,7 @@ func (g *GoogleProvider) CheckGSuiteUser(ctx context.Context, idToken string) (b
 	if err != nil {
 		return false, err
 	}
-	
+
 	return domain != "", nil
 }
 
@@ -337,11 +337,11 @@ func (g *GoogleProvider) GetUserDomains(ctx context.Context, idToken string) ([]
 	if err != nil {
 		return []string{}, nil // 에러가 있어도 빈 배열 반환
 	}
-	
+
 	if domain == "" {
 		return []string{}, nil
 	}
-	
+
 	return []string{domain}, nil
 }
 

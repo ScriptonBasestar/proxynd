@@ -1,9 +1,10 @@
 package helpers
 
 import (
-	"gopkg.in/yaml.v3"
 	"log"
 	"os"
+
+	"gopkg.in/yaml.v3"
 )
 
 func ReadYaml(path string, out interface{}) {

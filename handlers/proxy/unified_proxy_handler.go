@@ -1,8 +1,10 @@
 package proxy
 
 import (
-	"github.com/gofiber/fiber/v2"
 	"log"
+
+	"github.com/gofiber/fiber/v2"
+
 	"proxynd/configs"
 	"proxynd/helpers"
 )

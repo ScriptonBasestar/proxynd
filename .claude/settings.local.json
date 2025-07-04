@@ -36,7 +36,8 @@
       "Bash(echo $GOSUMDB)",
       "Bash(go env:*)",
       "Bash(CONFIG_DIR=/tmp STORAGE_DIR=/tmp go test -v ./handlers/auth/...)",
-      "Bash(CONFIG_DIR=/tmp STORAGE_DIR=/tmp go test -v ./internal/auth/jwt/...)"
+      "Bash(CONFIG_DIR=/tmp STORAGE_DIR=/tmp go test -v ./internal/auth/jwt/...)",
+      "Bash(goimports:*)"
     ],
     "deny": []
   }

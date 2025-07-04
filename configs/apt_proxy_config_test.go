@@ -2,10 +2,12 @@ package configs
 
 import (
 	"fmt"
-	"github.com/go-playground/assert/v2"
 	"os"
-	"proxynd/helpers"
 	"testing"
+
+	"github.com/go-playground/assert/v2"
+
+	"proxynd/helpers"
 )
 
 func TestAptProxyConfig_ReadConfig(t *testing.T) {

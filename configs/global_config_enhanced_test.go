@@ -7,25 +7,25 @@ import (
 
 func TestGetDefaultPackageTTLs(t *testing.T) {
 	defaults := GetDefaultPackageTTLs()
-	
+
 	// 기본 패키지 타입들이 모두 포함되어 있는지 확인
 	expectedPackages := []string{"apt", "npm", "pip", "docker", "maven", "yum", "apk", "cargo", "go", "helm"}
-	
+
 	for _, pkg := range expectedPackages {
 		if _, exists := defaults[pkg]; !exists {
 			t.Errorf("Expected package type %s to have default TTL", pkg)
 		}
 	}
-	
+
 	// 특정 값들 검증
 	if defaults["apt"] != 3600 {
 		t.Errorf("Expected apt TTL to be 3600, got %d", defaults["apt"])
 	}
-	
+
 	if defaults["npm"] != 1800 {
 		t.Errorf("Expected npm TTL to be 1800, got %d", defaults["npm"])
 	}
-	
+
 	if defaults["docker"] != 7200 {
 		t.Errorf("Expected docker TTL to be 7200, got %d", defaults["docker"])
 	}
@@ -81,7 +81,7 @@ func TestCache_GetTTLForPackageType(t *testing.T) {
 			expected:    3600, // 기본 apt TTL
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := tt.cache.GetTTLForPackageType(tt.packageType)
@@ -95,7 +95,7 @@ func TestCache_GetTTLForPackageType(t *testing.T) {
 func TestCache_GetTTLForPackageType_AllDefaultPackages(t *testing.T) {
 	cache := Cache{}
 	defaults := GetDefaultPackageTTLs()
-	
+
 	for packageType, expectedTTL := range defaults {
 		result := cache.GetTTLForPackageType(packageType)
 		if result != expectedTTL {
@@ -113,20 +113,20 @@ func TestCache_GetTTLForPackageType_ConfiguredOverrides(t *testing.T) {
 			"docker": 10000,
 		},
 	}
-	
+
 	// 설정된 오버라이드 확인
 	if cache.GetTTLForPackageType("apt") != 5000 {
 		t.Errorf("Expected apt TTL to be overridden to 5000")
 	}
-	
+
 	if cache.GetTTLForPackageType("npm") != 2500 {
 		t.Errorf("Expected npm TTL to be overridden to 2500")
 	}
-	
+
 	if cache.GetTTLForPackageType("docker") != 10000 {
 		t.Errorf("Expected docker TTL to be overridden to 10000")
 	}
-	
+
 	// 설정되지 않은 패키지는 기본값 사용
 	if cache.GetTTLForPackageType("pip") != 2400 {
 		t.Errorf("Expected pip to use default TTL 2400")
@@ -147,7 +147,7 @@ func TestCache_GetTTLForPackage(t *testing.T) {
 			"*debug*":    450,
 		},
 	}
-	
+
 	tests := []struct {
 		name        string
 		packageName string
@@ -197,7 +197,7 @@ func TestCache_GetTTLForPackage(t *testing.T) {
 			expected:    1800, // npm default
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := cache.GetTTLForPackage(tt.packageName, tt.packageType)
@@ -221,7 +221,7 @@ func TestCache_GetTTLForMetadata(t *testing.T) {
 			"package.json": 300,
 		},
 	}
-	
+
 	tests := []struct {
 		name        string
 		filename    string
@@ -265,7 +265,7 @@ func TestCache_GetTTLForMetadata(t *testing.T) {
 			expected:    600,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := cache.GetTTLForMetadata(tt.filename, tt.packageType)
@@ -278,7 +278,7 @@ func TestCache_GetTTLForMetadata(t *testing.T) {
 
 func TestCache_matchesPattern(t *testing.T) {
 	cache := Cache{}
-	
+
 	tests := []struct {
 		name        string
 		packageName string
@@ -346,12 +346,12 @@ func TestCache_matchesPattern(t *testing.T) {
 			expected:    true,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := cache.matchesPattern(tt.packageName, tt.pattern)
 			if result != tt.expected {
-				t.Errorf("Pattern '%s' with package '%s': expected %t, got %t", 
+				t.Errorf("Pattern '%s' with package '%s': expected %t, got %t",
 					tt.pattern, tt.packageName, tt.expected, result)
 			}
 		})
@@ -441,7 +441,7 @@ func TestCache_GetTTLFromCacheHeaders(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := tt.cache.GetTTLFromCacheHeaders(tt.cacheControl, tt.expires)
-			
+
 			// Expires 헤더 테스트의 경우 약간의 오차 허용
 			if tt.name == "Expires header fallback" {
 				if result < 7170 || result > 7230 { // ±30초 오차 허용
@@ -458,7 +458,7 @@ func TestCache_GetTTLFromCacheHeaders(t *testing.T) {
 
 func TestCache_parseCacheControl(t *testing.T) {
 	cache := Cache{}
-	
+
 	tests := []struct {
 		name         string
 		cacheControl string
@@ -523,11 +523,11 @@ func TestCache_parseCacheControl(t *testing.T) {
 
 func TestCache_parseExpires(t *testing.T) {
 	cache := Cache{}
-	
+
 	// 미래 시간 생성 (1시간 후)
 	futureTime := time.Now().Add(1 * time.Hour)
 	pastTime := time.Now().Add(-1 * time.Hour)
-	
+
 	tests := []struct {
 		name     string
 		expires  string
@@ -563,7 +563,7 @@ func TestCache_parseExpires(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := cache.parseExpires(tt.expires)
-			
+
 			if tt.expected > 0 {
 				// 시간 기반 테스트는 약간의 오차 허용 (±60초)
 				if result < tt.expected-60 || result > tt.expected+60 {
@@ -721,17 +721,17 @@ func TestCache_CreateCacheEntry(t *testing.T) {
 			beforeCreate := time.Now()
 			entry := tt.cache.CreateCacheEntry(tt.ttl)
 			afterCreate := time.Now()
-			
+
 			// CachedAt 시간이 생성 전후 범위에 있는지 확인
 			if entry.CachedAt.Before(beforeCreate) || entry.CachedAt.After(afterCreate) {
 				t.Errorf("CachedAt time %v is not within expected range", entry.CachedAt)
 			}
-			
+
 			// TTL이 올바르게 설정되었는지 확인
 			if entry.TTL != tt.ttl {
 				t.Errorf("Expected TTL %d, got %d", tt.ttl, entry.TTL)
 			}
-			
+
 			// StaleUntil 시간 확인
 			expectedStaleUntil := entry.CachedAt.Add(time.Duration(tt.ttl) * time.Second)
 			if tt.cache.StaleWhileRevalidate {
@@ -741,7 +741,7 @@ func TestCache_CreateCacheEntry(t *testing.T) {
 				}
 				expectedStaleUntil = entry.CachedAt.Add(time.Duration(tt.ttl+staleMaxAge) * time.Second)
 			}
-			
+
 			if !entry.StaleUntil.Equal(expectedStaleUntil) {
 				t.Errorf("Expected StaleUntil %v, got %v", expectedStaleUntil, entry.StaleUntil)
 			}
@@ -752,7 +752,7 @@ func TestCache_CreateCacheEntry(t *testing.T) {
 func TestCache_IsFresh(t *testing.T) {
 	cache := Cache{}
 	now := time.Now()
-	
+
 	tests := []struct {
 		name     string
 		entry    CacheEntry
@@ -804,7 +804,7 @@ func TestCache_IsFresh(t *testing.T) {
 
 func TestCache_IsStale(t *testing.T) {
 	now := time.Now()
-	
+
 	tests := []struct {
 		name     string
 		cache    Cache
@@ -815,8 +815,8 @@ func TestCache_IsStale(t *testing.T) {
 			name:  "Stale-while-revalidate disabled",
 			cache: Cache{StaleWhileRevalidate: false},
 			entry: CacheEntry{
-				CachedAt:   now.Add(-2 * time.Hour), // 2시간 전 캐시
-				TTL:        3600,                    // 1시간 TTL
+				CachedAt:   now.Add(-2 * time.Hour),   // 2시간 전 캐시
+				TTL:        3600,                      // 1시간 TTL
 				StaleUntil: now.Add(30 * time.Minute), // 아직 stale 기간 내
 			},
 			expected: false, // 기능이 비활성화되면 false
@@ -865,7 +865,7 @@ func TestCache_IsStale(t *testing.T) {
 
 func TestCache_IsExpired(t *testing.T) {
 	now := time.Now()
-	
+
 	tests := []struct {
 		name     string
 		cache    Cache
@@ -934,7 +934,7 @@ func TestCache_IsExpired(t *testing.T) {
 
 func TestCache_ShouldRevalidate(t *testing.T) {
 	now := time.Now()
-	
+
 	tests := []struct {
 		name     string
 		cache    Cache
@@ -945,8 +945,8 @@ func TestCache_ShouldRevalidate(t *testing.T) {
 			name:  "Stale-while-revalidate disabled",
 			cache: Cache{StaleWhileRevalidate: false},
 			entry: CacheEntry{
-				CachedAt:   now.Add(-2 * time.Hour), // 2시간 전 캐시
-				TTL:        3600,                    // 1시간 TTL (만료됨)
+				CachedAt:   now.Add(-2 * time.Hour),   // 2시간 전 캐시
+				TTL:        3600,                      // 1시간 TTL (만료됨)
 				StaleUntil: now.Add(30 * time.Minute), // stale 기간 내
 			},
 			expected: false, // 기능 비활성화
@@ -996,7 +996,7 @@ func TestCache_ShouldRevalidate(t *testing.T) {
 func TestCache_GetCacheStrategy(t *testing.T) {
 	now := time.Now()
 	cache := Cache{StaleWhileRevalidate: true}
-	
+
 	tests := []struct {
 		name     string
 		entry    CacheEntry

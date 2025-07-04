@@ -2,12 +2,14 @@ package configs
 
 import (
 	"fmt"
-	"github.com/go-playground/assert/v2"
-	"gopkg.in/yaml.v3"
 	"log"
 	"os"
-	"proxynd/helpers"
 	"testing"
+
+	"github.com/go-playground/assert/v2"
+	"gopkg.in/yaml.v3"
+
+	"proxynd/helpers"
 )
 
 func TestNpmConfig_NpmProxy(t *testing.T) {

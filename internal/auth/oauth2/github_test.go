@@ -24,13 +24,13 @@ func TestNewGitHubProvider(t *testing.T) {
 		ClientSecret: "test_client_secret",
 		RedirectURI:  "https://example.com/callback",
 	}
-	
+
 	provider := NewGitHubProvider(config)
-	
+
 	if provider.GetName() != "github" {
 		t.Errorf("Expected provider name 'github', got '%s'", provider.GetName())
 	}
-	
+
 	// GitHub 기본값이 설정되었는지 확인
 	githubProvider := provider.(*GitHubProvider)
 	if githubProvider.config.AuthURL != "https://github.com/login/oauth/authorize" {
@@ -42,7 +42,7 @@ func TestNewGitHubProvider(t *testing.T) {
 	if githubProvider.config.UserInfoURL != "https://api.github.com/user" {
 		t.Error("GitHub UserInfoURL should be set to default value")
 	}
-	
+
 	expectedScopes := []string{"user:email"}
 	scopes := provider.GetScopes()
 	if len(scopes) != len(expectedScopes) {
@@ -84,28 +84,28 @@ func TestGitHubProvider_GetUserInfo(t *testing.T) {
 		}
 	}))
 	defer server.Close()
-	
+
 	config := ProviderConfig{
 		Name:        "github",
 		UserInfoURL: server.URL + "/user",
 	}
-	
+
 	provider := NewGitHubProvider(config)
-	
+
 	// 원래 HTTP 클라이언트 백업
 	originalClient := DefaultHTTPClient
 	defer func() { DefaultHTTPClient = originalClient }()
-	
+
 	// 테스트용 클라이언트로 교체
 	DefaultHTTPClient = &http.Client{}
-	
+
 	ctx := context.Background()
 	userInfo, err := provider.GetUserInfo(ctx, "test_token")
-	
+
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
-	
+
 	if userInfo.ID != "123456" {
 		t.Errorf("Expected ID '123456', got '%s'", userInfo.ID)
 	}
@@ -136,20 +136,20 @@ func TestGitHubProvider_GetUserOrganizations(t *testing.T) {
 		}
 	}))
 	defer server.Close()
-	
+
 	config := ProviderConfig{
 		Name: "github",
 	}
-	
+
 	provider := NewGitHubProvider(config)
-	
+
 	// 원래 HTTP 클라이언트 백업
 	originalClient := DefaultHTTPClient
 	defer func() { DefaultHTTPClient = originalClient }()
-	
+
 	// 테스트용 클라이언트로 교체
 	DefaultHTTPClient = &http.Client{}
-	
+
 	// Mock 서버 URL을 사용하도록 설정
 	DefaultHTTPClient = &MockHTTPClient{
 		DoFunc: func(req *http.Request) (*http.Response, error) {
@@ -160,19 +160,19 @@ func TestGitHubProvider_GetUserOrganizations(t *testing.T) {
 			return http.DefaultClient.Do(req)
 		},
 	}
-	
+
 	ctx := context.Background()
 	organizations, err := provider.GetUserOrganizations(ctx, "test_token")
-	
+
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
-	
+
 	expectedOrgs := []string{"github", "octocat"}
 	if len(organizations) != len(expectedOrgs) {
 		t.Errorf("Expected %d organizations, got %d", len(expectedOrgs), len(organizations))
 	}
-	
+
 	for i, org := range organizations {
 		if org != expectedOrgs[i] {
 			t.Errorf("Expected organization '%s', got '%s'", expectedOrgs[i], org)
@@ -195,29 +195,29 @@ func TestGitHubProvider_ValidateToken(t *testing.T) {
 		}
 	}))
 	defer server.Close()
-	
+
 	config := ProviderConfig{
 		Name:        "github",
 		UserInfoURL: server.URL + "/user",
 		Scopes:      []string{"user:email"},
 	}
-	
+
 	provider := NewGitHubProvider(config)
-	
+
 	// 원래 HTTP 클라이언트 백업
 	originalClient := DefaultHTTPClient
 	defer func() { DefaultHTTPClient = originalClient }()
-	
+
 	// 테스트용 클라이언트로 교체
 	DefaultHTTPClient = &http.Client{}
-	
+
 	ctx := context.Background()
 	tokenInfo, err := provider.ValidateToken(ctx, "valid_token")
-	
+
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
-	
+
 	if !tokenInfo.Valid {
 		t.Error("Expected token to be valid")
 	}
@@ -234,28 +234,28 @@ func TestGitHubProvider_ValidateToken_Invalid(t *testing.T) {
 		w.WriteHeader(http.StatusUnauthorized)
 	}))
 	defer server.Close()
-	
+
 	config := ProviderConfig{
 		Name:        "github",
 		UserInfoURL: server.URL + "/user",
 	}
-	
+
 	provider := NewGitHubProvider(config)
-	
+
 	// 원래 HTTP 클라이언트 백업
 	originalClient := DefaultHTTPClient
 	defer func() { DefaultHTTPClient = originalClient }()
-	
+
 	// 테스트용 클라이언트로 교체
 	DefaultHTTPClient = &http.Client{}
-	
+
 	ctx := context.Background()
 	tokenInfo, err := provider.ValidateToken(ctx, "invalid_token")
-	
+
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
-	
+
 	if tokenInfo.Valid {
 		t.Error("Expected token to be invalid")
 	}
@@ -274,20 +274,20 @@ func TestGitHubProvider_GetUserRepositories(t *testing.T) {
 		}
 	}))
 	defer server.Close()
-	
+
 	config := ProviderConfig{
 		Name: "github",
 	}
-	
+
 	provider := NewGitHubProvider(config).(*GitHubProvider)
-	
+
 	// 원래 HTTP 클라이언트 백업
 	originalClient := DefaultHTTPClient
 	defer func() { DefaultHTTPClient = originalClient }()
-	
+
 	// 테스트용 클라이언트로 교체
 	DefaultHTTPClient = &http.Client{}
-	
+
 	// Mock 서버 URL을 사용하도록 설정
 	DefaultHTTPClient = &MockHTTPClient{
 		DoFunc: func(req *http.Request) (*http.Response, error) {
@@ -298,19 +298,19 @@ func TestGitHubProvider_GetUserRepositories(t *testing.T) {
 			return http.DefaultClient.Do(req)
 		},
 	}
-	
+
 	ctx := context.Background()
 	repositories, err := provider.GetUserRepositories(ctx, "test_token")
-	
+
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
-	
+
 	expectedRepos := []string{"testuser/repo1", "testuser/repo2"}
 	if len(repositories) != len(expectedRepos) {
 		t.Errorf("Expected %d repositories, got %d", len(expectedRepos), len(repositories))
 	}
-	
+
 	for i, repo := range repositories {
 		if repo != expectedRepos[i] {
 			t.Errorf("Expected repository '%s', got '%s'", expectedRepos[i], repo)
@@ -332,26 +332,26 @@ func TestGitHubProvider_CheckRepositoryAccess(t *testing.T) {
 		}
 	}))
 	defer server.Close()
-	
+
 	config := ProviderConfig{
 		Name: "github",
 	}
-	
+
 	provider := NewGitHubProvider(config).(*GitHubProvider)
-	
+
 	// 원래 HTTP 클라이언트 백업
 	originalClient := DefaultHTTPClient
 	defer func() { DefaultHTTPClient = originalClient }()
-	
+
 	// 테스트용 클라이언트로 교체
 	DefaultHTTPClient = &http.Client{
 		Transport: &http.Transport{
 			Proxy: http.ProxyFromEnvironment,
 		},
 	}
-	
+
 	ctx := context.Background()
-	
+
 	// Mock 서버 URL로 요청을 리다이렉트하기 위해 클라이언트 교체
 	DefaultHTTPClient = &MockHTTPClient{
 		DoFunc: func(req *http.Request) (*http.Response, error) {
@@ -363,7 +363,7 @@ func TestGitHubProvider_CheckRepositoryAccess(t *testing.T) {
 			return http.DefaultClient.Do(req)
 		},
 	}
-	
+
 	// 접근 가능한 저장소 테스트
 	hasAccess, err := provider.CheckRepositoryAccess(ctx, "test_token", "testuser/accessible-repo")
 	if err != nil {
@@ -372,7 +372,7 @@ func TestGitHubProvider_CheckRepositoryAccess(t *testing.T) {
 	if !hasAccess {
 		t.Error("Expected access to accessible repository")
 	}
-	
+
 	// 접근 불가능한 저장소 테스트
 	hasAccess, err = provider.CheckRepositoryAccess(ctx, "test_token", "testuser/private-repo")
 	if err != nil {
@@ -399,17 +399,17 @@ func TestGitHubProvider_GetRateLimit(t *testing.T) {
 		}
 	}))
 	defer server.Close()
-	
+
 	config := ProviderConfig{
 		Name: "github",
 	}
-	
+
 	provider := NewGitHubProvider(config).(*GitHubProvider)
-	
+
 	// 원래 HTTP 클라이언트 백업
 	originalClient := DefaultHTTPClient
 	defer func() { DefaultHTTPClient = originalClient }()
-	
+
 	// 테스트용 클라이언트로 교체
 	DefaultHTTPClient = &MockHTTPClient{
 		DoFunc: func(req *http.Request) (*http.Response, error) {
@@ -421,23 +421,23 @@ func TestGitHubProvider_GetRateLimit(t *testing.T) {
 			return http.DefaultClient.Do(req)
 		},
 	}
-	
+
 	ctx := context.Background()
 	rateLimit, err := provider.GetRateLimit(ctx, "test_token")
-	
+
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
-	
+
 	if rateLimit == nil {
 		t.Error("Expected rate limit data")
 	}
-	
+
 	rate, ok := rateLimit["rate"].(map[string]interface{})
 	if !ok {
 		t.Error("Expected rate limit structure")
 	}
-	
+
 	if limit, ok := rate["limit"].(float64); !ok || limit != 5000 {
 		t.Errorf("Expected limit 5000, got %v", rate["limit"])
 	}
@@ -446,15 +446,15 @@ func TestGitHubProvider_GetRateLimit(t *testing.T) {
 func TestParseGitHubTime(t *testing.T) {
 	testTime := "2008-01-14T04:33:35Z"
 	parsedTime, ok := parseGitHubTime(testTime)
-	
+
 	if !ok {
 		t.Error("Expected GitHub time to be parsed successfully")
 	}
-	
+
 	if parsedTime == nil {
 		t.Error("Expected parsed time to not be nil")
 	}
-	
+
 	// 빈 문자열 테스트
 	_, ok = parseGitHubTime("")
 	if ok {
@@ -465,7 +465,7 @@ func TestParseGitHubTime(t *testing.T) {
 func TestGitHubProvider_Registration(t *testing.T) {
 	// GitHub 제공자가 자동으로 등록되었는지 확인
 	providers := GetRegisteredProviders()
-	
+
 	found := false
 	for _, name := range providers {
 		if name == "github" {
@@ -473,11 +473,11 @@ func TestGitHubProvider_Registration(t *testing.T) {
 			break
 		}
 	}
-	
+
 	if !found {
 		t.Error("Expected GitHub provider to be automatically registered")
 	}
-	
+
 	// 제공자 생성 테스트
 	config := ProviderConfig{
 		Name:         "github",
@@ -485,17 +485,17 @@ func TestGitHubProvider_Registration(t *testing.T) {
 		ClientSecret: "test_secret",
 		RedirectURI:  "https://example.com/callback",
 	}
-	
+
 	provider := CreateProvider("github", config)
 	if provider == nil {
 		t.Error("Expected GitHub provider to be created")
 	}
-	
+
 	githubProvider, ok := provider.(*GitHubProvider)
 	if !ok {
 		t.Error("Expected provider to be GitHubProvider instance")
 	}
-	
+
 	if githubProvider.GetName() != "github" {
 		t.Errorf("Expected provider name 'github', got '%s'", githubProvider.GetName())
 	}
