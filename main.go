@@ -4,13 +4,9 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 
-	"github.com/joho/godotenv"
-
-	"proxynd/logging"
-	"proxynd/routers"
+	"proxynd/internal/app"
 )
 
 // Build information variables (set by ldflags at release)
@@ -24,6 +20,7 @@ func main() {
 	// Define flags
 	healthCheck := flag.Bool("health", false, "Run health check and exit")
 	version := flag.Bool("version", false, "Show version information and exit")
+	port := flag.String("port", "", "Override server port")
 	flag.Parse()
 
 	// Print version information
@@ -36,64 +33,35 @@ func main() {
 
 	// Health check mode
 	if *healthCheck {
-		port := os.Getenv("SERVER_PORT")
-		if port == "" {
-			port = "8080"
-		}
-		resp, err := http.Get(fmt.Sprintf("http://localhost:%s/healthz", port))
-		if err != nil {
+		if err := app.RunHealthCheck(); err != nil {
+			fmt.Fprintf(os.Stderr, "Health check failed: %v\n", err)
 			os.Exit(1)
 		}
-		defer resp.Body.Close()
-		if resp.StatusCode != http.StatusOK {
-			os.Exit(1)
-		}
+		fmt.Println("Health check passed")
 		os.Exit(0)
 	}
 
-	// Normal execution mode
-	e := godotenv.Load()
-	if e != nil {
-		fmt.Print(e)
+	// Create application config
+	cfg := &app.Config{
+		Version:   Version,
+		BuildTime: BuildTime,
+		CommitSHA: CommitSHA,
 	}
 
-	// Initialize structured logging system
-	if err := logging.SetupLogging(); err != nil {
-		log.Fatalf("Failed to setup logging: %v", err)
+	// Override port if provided via flag or args
+	if *port != "" {
+		cfg.Port = *port
+	} else if len(flag.Args()) > 0 {
+		cfg.Port = flag.Args()[0]
 	}
 
-	// Get logger
-	logger := logging.GetLogger()
-	logger.Info("Starting ProxyND server")
-
-	app := routers.BaseRouter()
-	routers.HealthRouter(app)
-	routers.ProxyRouter(app)
-	routers.CacheRouter(app)
-	routers.ConfigRouter(app)
-	routers.StatusRouter(app)
-	routers.UserRouter(app)
-	routers.TestRouter(app)
-	routers.WebhookRouter(app)
-
-	port := os.Getenv("SERVER_PORT")
-	if port == "" {
-		logger.Fatal("Error: SERVER_PORT environment variable is not set.")
+	// Create and run application
+	application, err := app.New(cfg)
+	if err != nil {
+		log.Fatalf("Failed to create application: %v", err)
 	}
 
-	// For run on requested port
-	if len(os.Args) > 1 {
-		reqPort := os.Args[1]
-		if reqPort != "" {
-			port = reqPort
-		}
-	}
-
-	url := fmt.Sprintf("http://%s:%s", "0.0.0.0", port)
-	logger.Info("Server starting", logging.F("url", url), logging.F("port", port))
-
-	logger.Info("Attempting to start server", logging.F("port", port))
-	if err := app.Listen(":" + port); err != nil {
-		logger.Fatal("Server failed to start", logging.F("error", err.Error()), logging.F("port", port))
+	if err := application.Run(); err != nil {
+		log.Fatalf("Application error: %v", err)
 	}
 }

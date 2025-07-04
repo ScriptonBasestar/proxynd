@@ -24,22 +24,22 @@
   - 📁 Files: All `.go` files
 
 ### 2. Code Structure
-- [ ] **Extract service layer from handlers**
+- [x] **Extract service layer from handlers**
   - 📌 Why: Business logic mixed with HTTP handling in all proxy handlers
   - 🧠 How: Create `internal/services/proxy/` with ProxyService interface
   - 📁 Files: Create new `services/` directory, refactor all handlers
 
-- [ ] **Implement repository pattern for data access**
+- [x] **Implement repository pattern for data access**
   - 📌 Why: Direct file system access from handlers violates SRP
   - 🧠 How: Create `internal/repositories/` for cache and config access
   - 📁 Files: New repository layer, update handlers and services
 
-- [ ] **Isolate main.go to application bootstrap only**
+- [x] **Isolate main.go to application bootstrap only**
   - 📌 Why: main.go contains unused interface definitions and mixed concerns
   - 🧠 How: Move app initialization to `internal/app/app.go`
   - 📁 Files: `main.go`, create `internal/app/`
 
-- [ ] **Create domain packages for each proxy type**
+- [x] **Create domain packages for each proxy type**
   - 📌 Why: No clear domain boundaries between proxy types
   - 🧠 How: Structure as `internal/domain/{apt,maven,npm}/`
   - 📁 Files: Reorganize existing proxy logic into domain packages
