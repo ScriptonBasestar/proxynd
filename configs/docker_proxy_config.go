@@ -7,9 +7,9 @@ import (
 )
 
 type DockerProxyServer struct {
-	Name string     `yaml:"name,omitempty"`
-	URL  string     `yaml:"url,omitempty"`
-	Auth DockerAuth `yaml:"auth,omitempty"`
+	Name string     `yaml:"name,omitempty" validate:"required,min=1,max=100"`
+	URL  string     `yaml:"url,omitempty" validate:"required,url"`
+	Auth DockerAuth `yaml:"auth,omitempty" validate:"dive"`
 }
 
 type DockerAuth struct {
@@ -18,9 +18,15 @@ type DockerAuth struct {
 }
 
 type DockerProxyConfig struct {
-	Path     string              `yaml:"path,omitempty"`
-	UseCache bool                `yaml:"use_cache,omitempty" default:"true"`
-	Proxies  []DockerProxyServer `yaml:"proxies"`
+	Path       string                         `yaml:"path,omitempty" validate:"required,min=1"`
+	UseCache   bool                           `yaml:"use_cache,omitempty" default:"true"`
+	Proxies    []DockerProxyServer            `yaml:"proxies" validate:"required,min=1,dive"`
+	Registries map[string]DockerRegistryConfig `yaml:"registries,omitempty" validate:"dive,keys,min=1,endkeys,dive"`
+}
+
+type DockerRegistryConfig struct {
+	URL  string     `yaml:"url" validate:"required,url"`
+	Auth DockerAuth `yaml:"auth,omitempty" validate:"dive"`
 }
 
 func (cfg *DockerProxyConfig) ConfigExists() bool {
@@ -28,7 +34,15 @@ func (cfg *DockerProxyConfig) ConfigExists() bool {
 	return helpers.FileExists(path.Join(confDir, "docker-proxy.yaml"))
 }
 
-func (cfg *DockerProxyConfig) ReadConfig() {
+func (cfg *DockerProxyConfig) ReadConfig() error {
 	confDir := helpers.GetConfigDir()
-	helpers.ReadYaml(path.Join(confDir, "docker-proxy.yaml"), cfg)
+	if err := helpers.ReadYamlSafe(path.Join(confDir, "docker-proxy.yaml"), cfg); err != nil {
+		return err
+	}
+	return cfg.Validate()
+}
+
+// Validate validates the Docker proxy configuration
+func (cfg *DockerProxyConfig) Validate() error {
+	return ValidateStruct(cfg)
 }

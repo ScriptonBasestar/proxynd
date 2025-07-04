@@ -67,3 +67,8 @@ func FileExists(join string) bool {
 func NewConfigError(message string) error {
 	return errors.New("config error: " + message)
 }
+
+// NewConfigFieldError 설정 필드 에러 생성
+func NewConfigFieldError(configName, message string) error {
+	return errors.New("config error in " + configName + ": " + message)
+}

@@ -8,16 +8,16 @@ import (
 
 // ApkProxy APK 프록시 서버 정보
 type ApkProxy struct {
-	Name string `yaml:"name"`
-	Url  string `yaml:"url"`
+	Name string `yaml:"name" validate:"required,min=1,max=100"`
+	Url  string `yaml:"url" validate:"required,url"`
 }
 
 // ApkVerificationConfig APK 서명 검증 설정
 type ApkVerificationConfig struct {
-	Enabled        bool   `yaml:"enabled"`         // 서명 검증 활성화 여부
-	KeyDirectory   string `yaml:"key_directory"`   // 신뢰할 수 있는 키 디렉토리
-	FailOnInvalid  bool   `yaml:"fail_on_invalid"` // 서명 검증 실패 시 요청 차단 여부
-	CacheValidated bool   `yaml:"cache_validated"` // 검증된 패키지만 캐시 여부
+	Enabled        bool   `yaml:"enabled"`                                         // 서명 검증 활성화 여부
+	KeyDirectory   string `yaml:"key_directory" validate:"omitempty,path"`         // 신뢰할 수 있는 키 디렉토리
+	FailOnInvalid  bool   `yaml:"fail_on_invalid"`                                 // 서명 검증 실패 시 요청 차단 여부
+	CacheValidated bool   `yaml:"cache_validated"`                                 // 검증된 패키지만 캐시 여부
 }
 
 // ApkMirrorSelectionConfig APK 미러 선택 설정
@@ -33,11 +33,11 @@ type ApkMirrorSelectionConfig struct {
 
 // ApkProxyConfig APK 프록시 설정 구조체
 type ApkProxyConfig struct {
-	Path            string                   `yaml:"path"`
-	UseCache        bool                     `yaml:"use_cache"`
-	Proxies         []ApkProxy               `yaml:"proxies"`
-	Verification    ApkVerificationConfig    `yaml:"verification"`
-	MirrorSelection ApkMirrorSelectionConfig `yaml:"mirror_selection"`
+	Path            string                   `yaml:"path" validate:"required,min=1"`
+	UseCache        bool                     `yaml:"use_cache" default:"true"`
+	Proxies         []ApkProxy               `yaml:"proxies" validate:"required,min=1,dive"`
+	Verification    ApkVerificationConfig    `yaml:"verification" validate:"dive"`
+	MirrorSelection ApkMirrorSelectionConfig `yaml:"mirror_selection" validate:"dive"`
 }
 
 // ConfigExists APK 프록시 설정 파일 존재 여부 확인
@@ -47,7 +47,25 @@ func (a *ApkProxyConfig) ConfigExists() bool {
 }
 
 // ReadConfig APK 프록시 설정 파일 읽기
-func (a *ApkProxyConfig) ReadConfig() {
+func (a *ApkProxyConfig) ReadConfig() error {
 	confDir := helpers.GetConfigDir()
-	helpers.ReadYaml(path.Join(confDir, "apk-proxy.yaml"), a)
+	if err := helpers.ReadYamlSafe(path.Join(confDir, "apk-proxy.yaml"), a); err != nil {
+		return err
+	}
+	return a.Validate()
+}
+
+// Validate validates the APK proxy configuration
+func (a *ApkProxyConfig) Validate() error {
+	// Validate struct tags
+	if err := ValidateStruct(a); err != nil {
+		return err
+	}
+	
+	// Additional custom validation
+	if a.Verification.Enabled && a.Verification.KeyDirectory == "" {
+		return helpers.NewConfigFieldError("apk-proxy", "key_directory must be specified when verification is enabled")
+	}
+	
+	return nil
 }

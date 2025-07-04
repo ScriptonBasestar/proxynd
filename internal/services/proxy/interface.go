@@ -1,5 +1,10 @@
 package proxy
 
+//go:generate mockery --name ProxyService --output ./mocks --outpkg mocks --filename proxy_service.go
+//go:generate mockery --name CacheService --output ./mocks --outpkg mocks --filename cache_service.go
+//go:generate mockery --name ConfigService --output ./mocks --outpkg mocks --filename config_service.go
+//go:generate mockery --name UpstreamClient --output ./mocks --outpkg mocks --filename upstream_client.go
+
 import (
 	"context"
 	"io"

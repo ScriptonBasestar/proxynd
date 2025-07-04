@@ -92,38 +92,38 @@
   - 🧠 How: Create ConfigService with startup validation
   - 📁 Files: Create `internal/services/config/`, update main.go
 
-- [ ] **Implement configuration validation**
+- [x] **Implement configuration validation**
   - 📌 Why: Missing required field validation at startup
   - 🧠 How: Use struct tags with `validate` package
   - 📁 Files: All config structs in `configs/`
 
-- [ ] **Separate environment-specific configs**
+- [x] **Separate environment-specific configs**
   - 📌 Why: Environment variables mixed with file configs
   - 🧠 How: Use Viper with clear precedence rules
   - 📁 Files: Configuration loading logic, `.env` handling
 
-- [ ] **Simplify hot reload mechanism**
+- [x] **Simplify hot reload mechanism**
   - 📌 Why: Complex implementation with TODOs indicating incompleteness
   - 🧠 How: Use fsnotify with proper debouncing
   - 📁 Files: `configs/hot_reload.go`
 
 ### 6. Testing
-- [ ] **Add unit tests for all services**
+- [x] **Add unit tests for all services**
   - 📌 Why: Only ~40% test coverage currently
   - 🧠 How: Use testify/assert with table-driven tests
   - 📁 Files: Create `*_test.go` for all service files
 
-- [ ] **Implement integration tests for proxy flows**
+- [x] **Implement integration tests for proxy flows**
   - 📌 Why: Missing end-to-end proxy behavior tests
   - 🧠 How: Use httptest with mock upstream servers
   - 📁 Files: `tests/integration/proxy_test.go`
 
-- [ ] **Add mock generators for interfaces**
+- [x] **Add mock generators for interfaces**
   - 📌 Why: No systematic mocking strategy
   - 🧠 How: Use mockery or gomock with `go generate`
   - 📁 Files: All interface definitions
 
-- [ ] **Create test fixtures and factories**
+- [x] **Create test fixtures and factories**
   - 📌 Why: Repetitive test setup code
   - 🧠 How: Create `testutil` package with builders
   - 📁 Files: New `internal/testutil/` package

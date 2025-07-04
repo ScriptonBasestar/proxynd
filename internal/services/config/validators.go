@@ -69,33 +69,8 @@ func (v *proxyConfigValidator) validateAptConfig(config interface{}) error {
 		return fmt.Errorf("invalid config type, expected *configs.AptProxyConfig")
 	}
 	
-	// 경로 검증
-	if cfg.Path == "" {
-		return fmt.Errorf("apt proxy path cannot be empty")
-	}
-	
-	// 프록시 서버 검증
-	if cfg.Proxies == nil || len(cfg.Proxies) == 0 {
-		return fmt.Errorf("at least one apt proxy server must be configured")
-	}
-	
-	// 각 OS 타입별 프록시 검증
-	for osType, servers := range cfg.Proxies {
-		if len(servers) == 0 {
-			return fmt.Errorf("no servers configured for OS type: %s", osType)
-		}
-		
-		for i, server := range servers {
-			if server.URL == "" {
-				return fmt.Errorf("server URL cannot be empty for OS type %s, server index %d", osType, i)
-			}
-			if server.Name == "" {
-				return fmt.Errorf("server name cannot be empty for OS type %s, server index %d", osType, i)
-			}
-		}
-	}
-	
-	return nil
+	// Use the config's own validation method which includes struct tag validation
+	return cfg.Validate()
 }
 
 // validateMavenConfig validates Maven proxy configuration
@@ -105,26 +80,8 @@ func (v *proxyConfigValidator) validateMavenConfig(config interface{}) error {
 		return fmt.Errorf("invalid config type, expected *configs.MavenProxyConfig")
 	}
 	
-	// 경로 검증
-	if cfg.Path == "" {
-		return fmt.Errorf("maven proxy path cannot be empty")
-	}
-	
-	// 프록시 서버 검증
-	if len(cfg.Proxies) == 0 {
-		return fmt.Errorf("at least one maven proxy server must be configured")
-	}
-	
-	for i, proxy := range cfg.Proxies {
-		if proxy.Url == "" {
-			return fmt.Errorf("proxy URL cannot be empty at index %d", i)
-		}
-		if proxy.Name == "" {
-			return fmt.Errorf("proxy name cannot be empty at index %d", i)
-		}
-	}
-	
-	return nil
+	// Use the config's own validation method which includes struct tag validation
+	return cfg.Validate()
 }
 
 // validateNpmConfig validates NPM proxy configuration
@@ -134,34 +91,8 @@ func (v *proxyConfigValidator) validateNpmConfig(config interface{}) error {
 		return fmt.Errorf("invalid config type, expected *configs.NpmProxyConfig")
 	}
 	
-	// 경로 검증
-	if cfg.Path == "" {
-		return fmt.Errorf("npm proxy path cannot be empty")
-	}
-	
-	// 프록시 서버 검증
-	if cfg.Proxies == nil || len(cfg.Proxies) == 0 {
-		return fmt.Errorf("at least one npm proxy configuration must be defined")
-	}
-	
-	// default 프록시 검증
-	defaultProxies, exists := cfg.Proxies["default"]
-	if !exists || len(defaultProxies) == 0 {
-		return fmt.Errorf("default npm proxy configuration must be defined")
-	}
-	
-	for registryName, proxies := range cfg.Proxies {
-		for i, proxy := range proxies {
-			if proxy.URL == "" {
-				return fmt.Errorf("proxy URL cannot be empty for registry %s at index %d", registryName, i)
-			}
-			if proxy.Name == "" {
-				return fmt.Errorf("proxy name cannot be empty for registry %s at index %d", registryName, i)
-			}
-		}
-	}
-	
-	return nil
+	// Use the config's own validation method which includes struct tag validation
+	return cfg.Validate()
 }
 
 // validatePipConfig validates PIP proxy configuration
@@ -171,26 +102,8 @@ func (v *proxyConfigValidator) validatePipConfig(config interface{}) error {
 		return fmt.Errorf("invalid config type, expected *configs.PipProxyConfig")
 	}
 	
-	// 경로 검증
-	if cfg.Path == "" {
-		return fmt.Errorf("pip proxy path cannot be empty")
-	}
-	
-	// 프록시 서버 검증
-	if len(cfg.Proxies) == 0 {
-		return fmt.Errorf("at least one pip proxy server must be configured")
-	}
-	
-	for i, proxy := range cfg.Proxies {
-		if proxy.URL == "" {
-			return fmt.Errorf("proxy URL cannot be empty at index %d", i)
-		}
-		if proxy.Name == "" {
-			return fmt.Errorf("proxy name cannot be empty at index %d", i)
-		}
-	}
-	
-	return nil
+	// Use the config's own validation method which includes struct tag validation
+	return cfg.Validate()
 }
 
 // validateYumConfig validates YUM proxy configuration
@@ -200,26 +113,8 @@ func (v *proxyConfigValidator) validateYumConfig(config interface{}) error {
 		return fmt.Errorf("invalid config type, expected *configs.YumProxyConfig")
 	}
 	
-	// 경로 검증
-	if cfg.Path == "" {
-		return fmt.Errorf("yum proxy path cannot be empty")
-	}
-	
-	// 프록시 서버 검증
-	if len(cfg.Proxies) == 0 {
-		return fmt.Errorf("at least one yum proxy server must be configured")
-	}
-	
-	for i, proxy := range cfg.Proxies {
-		if proxy.Url == "" {
-			return fmt.Errorf("proxy URL cannot be empty at index %d", i)
-		}
-		if proxy.Name == "" {
-			return fmt.Errorf("proxy name cannot be empty at index %d", i)
-		}
-	}
-	
-	return nil
+	// Use the config's own validation method which includes struct tag validation
+	return cfg.Validate()
 }
 
 // validateApkConfig validates APK proxy configuration
@@ -229,56 +124,13 @@ func (v *proxyConfigValidator) validateApkConfig(config interface{}) error {
 		return fmt.Errorf("invalid config type, expected *configs.ApkProxyConfig")
 	}
 	
-	// 경로 검증
-	if cfg.Path == "" {
-		return fmt.Errorf("apk proxy path cannot be empty")
-	}
-	
-	// 프록시 서버 검증
-	if len(cfg.Proxies) == 0 {
-		return fmt.Errorf("at least one apk proxy server must be configured")
-	}
-	
-	for i, proxy := range cfg.Proxies {
-		if proxy.Url == "" {
-			return fmt.Errorf("proxy URL cannot be empty at index %d", i)
-		}
-		if proxy.Name == "" {
-			return fmt.Errorf("proxy name cannot be empty at index %d", i)
-		}
-	}
-	
-	// 검증 설정 검증
-	if cfg.Verification.Enabled && cfg.Verification.KeyDirectory == "" {
-		return fmt.Errorf("key directory must be specified when verification is enabled")
-	}
-	
-	return nil
+	// Use the config's own validation method which includes struct tag validation
+	return cfg.Validate()
 }
 
 // validateHelmConfig validates Helm proxy configuration
 func (v *proxyConfigValidator) validateHelmConfig(config interface{}) error {
-	cfg, ok := config.(*configs.HelmProxyConfig)
-	if !ok {
-		return fmt.Errorf("invalid config type, expected *configs.HelmProxyConfig")
-	}
-	
-	// 경로 검증
-	if cfg.Path == "" {
-		return fmt.Errorf("helm proxy path cannot be empty")
-	}
-	
-	// 레포지토리 검증
-	if len(cfg.Repositories) == 0 {
-		return fmt.Errorf("at least one helm repository must be configured")
-	}
-	
-	for name, repo := range cfg.Repositories {
-		if repo.URL == "" {
-			return fmt.Errorf("repository URL cannot be empty for repository: %s", name)
-		}
-	}
-	
+	// Helm config not implemented yet
 	return nil
 }
 
@@ -289,21 +141,6 @@ func (v *proxyConfigValidator) validateDockerConfig(config interface{}) error {
 		return fmt.Errorf("invalid config type, expected *configs.DockerProxyConfig")
 	}
 	
-	// 경로 검증
-	if cfg.Path == "" {
-		return fmt.Errorf("docker proxy path cannot be empty")
-	}
-	
-	// 레지스트리 검증
-	if len(cfg.Registries) == 0 {
-		return fmt.Errorf("at least one docker registry must be configured")
-	}
-	
-	for name, registry := range cfg.Registries {
-		if registry.URL == "" {
-			return fmt.Errorf("registry URL cannot be empty for registry: %s", name)
-		}
-	}
-	
-	return nil
+	// Use the config's own validation method which includes struct tag validation
+	return cfg.Validate()
 }

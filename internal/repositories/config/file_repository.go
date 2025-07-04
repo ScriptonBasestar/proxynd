@@ -12,7 +12,6 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"proxynd/configs"
-	"proxynd/helpers"
 	"proxynd/logging"
 )
 
@@ -223,8 +222,8 @@ func (r *FileRepository) ValidateConfig(ctx context.Context, proxyType string, c
 			return fmt.Errorf("invalid config type for global config")
 		}
 		// Add specific validation for global config
-		if globalConfig.Server.Port == 0 {
-			return fmt.Errorf("server port must be specified")
+		if globalConfig.CacheDir == "" && globalConfig.StorageDir == "" {
+			return fmt.Errorf("either cache_dir or storage_dir must be specified")
 		}
 		
 	case "maven", "apt", "npm", "docker", "pip", "yum", "apk":

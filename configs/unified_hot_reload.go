@@ -14,20 +14,6 @@ import (
 	"github.com/spf13/viper"
 )
 
-// ReloadHandler 리로드 핸들러 인터페이스
-type ReloadHandler interface {
-	OnConfigReload(oldConfig, newConfig *UnifiedConfig) error
-	Name() string
-}
-
-// HotReloadManager 핫리로드 관리자 (레거시 호환성을 위한 별칭)
-type HotReloadManager = UnifiedHotReload
-
-// NewHotReloadManager 새 핫리로드 관리자 생성 (레거시 호환성)
-func NewHotReloadManager(configPath string) (*HotReloadManager, error) {
-	return NewUnifiedHotReload(configPath, false)
-}
-
 // UnifiedHotReload 통합 핫 리로드 시스템
 type UnifiedHotReload struct {
 	// 설정 로더 (Viper 또는 레거시)
@@ -104,11 +90,6 @@ func (uhr *UnifiedHotReload) RegisterHandler(handler ReloadHandler) {
 	
 	uhr.handlers = append(uhr.handlers, handler)
 	log.Printf("[UnifiedHotReload] Registered handler: %s", handler.Name())
-}
-
-// RegisterReloadHandler 리로드 핸들러 등록 (레거시 호환성)
-func (uhr *UnifiedHotReload) RegisterReloadHandler(handler ReloadHandler) {
-	uhr.RegisterHandler(handler)
 }
 
 // Start 핫 리로드 시작
@@ -417,94 +398,4 @@ func QuickSetupHotReload(configPath string, useViper bool) (*UnifiedHotReload, e
 	}
 	
 	return hr, nil
-}
-
-// 레거시 리로드 핸들러들 (호환성)
-
-// LoggingReloadHandler 로깅 리로드 핸들러
-type LoggingReloadHandler struct {
-	logger interface{}
-}
-
-func (h *LoggingReloadHandler) OnConfigReload(oldConfig, newConfig *UnifiedConfig) error {
-	if oldConfig.Logging.Level != newConfig.Logging.Level {
-		log.Printf("Changing log level from %s to %s", oldConfig.Logging.Level, newConfig.Logging.Level)
-		// TODO: 실제 로거의 레벨 변경
-	}
-	if oldConfig.Logging.Format != newConfig.Logging.Format {
-		log.Printf("Changing log format from %s to %s", oldConfig.Logging.Format, newConfig.Logging.Format)
-		// TODO: 실제 로거의 포맷 변경
-	}
-	return nil
-}
-
-func (h *LoggingReloadHandler) Name() string {
-	return "LoggingReloadHandler"
-}
-
-// CacheReloadHandler 캐시 리로드 핸들러
-type CacheReloadHandler struct {
-	cacheManager interface{}
-}
-
-func (h *CacheReloadHandler) OnConfigReload(oldConfig, newConfig *UnifiedConfig) error {
-	if oldConfig.Cache.Backend != newConfig.Cache.Backend {
-		return fmt.Errorf("cache backend change requires restart")
-	}
-	if oldConfig.Cache.TTL != newConfig.Cache.TTL {
-		log.Printf("Updating cache TTL from %s to %s", oldConfig.Cache.TTL, newConfig.Cache.TTL)
-		// TODO: 캐시 매니저의 TTL 업데이트
-	}
-	return nil
-}
-
-func (h *CacheReloadHandler) Name() string {
-	return "CacheReloadHandler"
-}
-
-// MetricsReloadHandler 메트릭 리로드 핸들러
-type MetricsReloadHandler struct {
-	metricsServer interface{}
-}
-
-func (h *MetricsReloadHandler) OnConfigReload(oldConfig, newConfig *UnifiedConfig) error {
-	if oldConfig.Metrics.Enabled != newConfig.Metrics.Enabled {
-		if newConfig.Metrics.Enabled {
-			log.Println("Enabling metrics endpoint")
-			// TODO: 메트릭 서버 시작
-		} else {
-			log.Println("Disabling metrics endpoint")
-			// TODO: 메트릭 서버 중지
-		}
-	}
-	return nil
-}
-
-func (h *MetricsReloadHandler) Name() string {
-	return "MetricsReloadHandler"
-}
-
-// SecurityReloadHandler 보안 리로드 핸들러
-type SecurityReloadHandler struct {
-	authManager interface{}
-}
-
-func (h *SecurityReloadHandler) OnConfigReload(oldConfig, newConfig *UnifiedConfig) error {
-	if oldConfig.Security.Authentication.BasicAuth.UsersFile != newConfig.Security.Authentication.BasicAuth.UsersFile {
-		log.Printf("Reloading users from: %s", newConfig.Security.Authentication.BasicAuth.UsersFile)
-		// TODO: 사용자 파일 리로드
-	}
-	if oldConfig.Security.AccessControl.IPWhitelist.Enabled != newConfig.Security.AccessControl.IPWhitelist.Enabled {
-		if newConfig.Security.AccessControl.IPWhitelist.Enabled {
-			log.Println("Enabling IP whitelist")
-		} else {
-			log.Println("Disabling IP whitelist")
-		}
-		// TODO: IP 화이트리스트 업데이트
-	}
-	return nil
-}
-
-func (h *SecurityReloadHandler) Name() string {
-	return "SecurityReloadHandler"
 }

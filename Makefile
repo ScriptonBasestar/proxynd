@@ -99,6 +99,47 @@ dev-test:
 	@echo "Running tests..."
 	go test -v ./...
 
+.PHONY: test-services
+test-services:
+	@echo "Running service tests with coverage..."
+	./scripts/run_service_tests.sh
+
+.PHONY: test-unit
+test-unit:
+	@echo "Running unit tests..."
+	go test -v -short ./...
+
+.PHONY: test-race
+test-race:
+	@echo "Running tests with race detector..."
+	go test -race ./...
+
+.PHONY: test-coverage
+test-coverage:
+	@echo "Generating coverage report..."
+	go test -coverprofile=coverage.out ./...
+	go tool cover -html=coverage.out -o coverage.html
+	@echo "Coverage report generated: coverage.html"
+
+.PHONY: test-benchmark
+test-benchmark:
+	@echo "Running benchmarks..."
+	go test -bench=. -benchmem ./internal/services/...
+
+.PHONY: test-integration
+test-integration:
+	@echo "Running integration tests..."
+	./scripts/run_integration_tests.sh
+
+.PHONY: test-integration-bench
+test-integration-bench:
+	@echo "Running integration tests with benchmarks..."
+	./scripts/run_integration_tests.sh --bench
+
+.PHONY: test-all
+test-all: test-unit test-race test-services
+	@echo "All tests completed!"
+
 .PHONY: fmt
 fmt:
 	@echo "Formatting code..."
@@ -107,6 +148,28 @@ fmt:
 	@which goimports > /dev/null || (echo "Installing goimports..." && go install golang.org/x/tools/cmd/goimports@latest)
 	goimports -w -local proxynd .
 	@echo "Code formatting complete!"
+
+.PHONY: install-mockery
+install-mockery:
+	@echo "Installing mockery..."
+	@which mockery > /dev/null || go install github.com/vektra/mockery/v2@latest
+	@echo "Mockery installed!"
+
+.PHONY: generate-mocks
+generate-mocks: install-mockery
+	@echo "Generating mocks..."
+	mockery --config .mockery.yaml
+	@echo "Mock generation complete!"
+
+.PHONY: clean-mocks
+clean-mocks:
+	@echo "Cleaning generated mocks..."
+	@find . -type d -name "mocks" -exec rm -rf {} + 2>/dev/null || true
+	@echo "Mocks cleaned!"
+
+.PHONY: update-mocks
+update-mocks: clean-mocks generate-mocks
+	@echo "Mocks updated!"
 
 .PHONY: dev-teardown
 dev-teardown:

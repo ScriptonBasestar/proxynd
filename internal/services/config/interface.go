@@ -1,5 +1,9 @@
 package config
 
+//go:generate mockery --name Service --output ./mocks --outpkg mocks --filename service.go
+//go:generate mockery --name Validator --output ./mocks --outpkg mocks --filename validator.go
+//go:generate mockery --name ConfigLoader --output ./mocks --outpkg mocks --filename config_loader.go
+
 import (
 	"context"
 	

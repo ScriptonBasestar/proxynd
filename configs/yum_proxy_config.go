@@ -8,15 +8,15 @@ import (
 
 // YumProxy yum 프록시 서버 정보
 type YumProxy struct {
-	Name string `yaml:"name"`
-	Url  string `yaml:"url"`
+	Name string `yaml:"name" validate:"required,min=1,max=100"`
+	Url  string `yaml:"url" validate:"required,url"`
 }
 
 // YumProxyConfig yum 프록시 설정 구조체
 type YumProxyConfig struct {
-	Path     string     `yaml:"path"`
-	UseCache bool       `yaml:"use_cache"`
-	Proxies  []YumProxy `yaml:"proxies"`
+	Path     string     `yaml:"path" validate:"required,min=1"`
+	UseCache bool       `yaml:"use_cache" default:"true"`
+	Proxies  []YumProxy `yaml:"proxies" validate:"required,min=1,dive"`
 }
 
 // ConfigExists yum 프록시 설정 파일 존재 여부 확인
@@ -26,7 +26,15 @@ func (y *YumProxyConfig) ConfigExists() bool {
 }
 
 // ReadConfig yum 프록시 설정 파일 읽기
-func (y *YumProxyConfig) ReadConfig() {
+func (y *YumProxyConfig) ReadConfig() error {
 	confDir := helpers.GetConfigDir()
-	helpers.ReadYaml(path.Join(confDir, "yum-proxy.yaml"), y)
+	if err := helpers.ReadYamlSafe(path.Join(confDir, "yum-proxy.yaml"), y); err != nil {
+		return err
+	}
+	return y.Validate()
+}
+
+// Validate validates the YUM proxy configuration
+func (y *YumProxyConfig) Validate() error {
+	return ValidateStruct(y)
 }

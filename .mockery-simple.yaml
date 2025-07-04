@@ -1,0 +1,5 @@
+dir: "{{.InterfaceDir}}/mocks"
+mockname: "Mock{{.InterfaceName}}"
+outpkg: "mocks"
+with-expecter: true
+testonly: true

@@ -1,0 +1,71 @@
+quiet: false
+with-expecter: true
+name: "Mock{{.InterfaceName}}"
+dir: "{{.InterfaceDir}}/mocks"
+outpkg: "mocks"
+filename: "{{.InterfaceName | snakecase}}.go"
+mockname: "Mock{{.InterfaceName}}"
+inpackage: false
+testonly: true
+
+packages:
+  # 서비스 인터페이스
+  proxynd/internal/services/config:
+    interfaces:
+      Service:
+      Validator:
+      ConfigLoader:
+  
+  proxynd/internal/services/proxy:
+    interfaces:
+      ProxyService:
+      CacheService:
+      ConfigService:
+      UpstreamClient:
+  
+  # 리포지토리 인터페이스
+  proxynd/internal/repositories/cache:
+    interfaces:
+      Repository:
+  
+  proxynd/internal/repositories/config:
+    interfaces:
+      Repository:
+  
+  # 도메인 인터페이스
+  proxynd/internal/domain/common:
+    interfaces:
+      ProxyHandler:
+      CacheManager:
+      ConfigProvider:
+  
+  # 인프라 인터페이스
+  proxynd/internal/interfaces:
+    config:
+      recursive: true
+      all: true
+  
+  # 기타 인터페이스
+  proxynd/cache:
+    interfaces:
+      Cache:
+      EvictionPolicy:
+  
+  proxynd/health:
+    interfaces:
+      HealthChecker:
+      HealthCheck:
+  
+  proxynd/internal/webhook:
+    interfaces:
+      WebhookSender:
+      WebhookAdapter:
+  
+  proxynd/internal/auth/oauth2:
+    interfaces:
+      OAuthProvider:
+      OAuthClient:
+  
+  proxynd/internal/auth/jwt:
+    interfaces:
+      JWTService:

@@ -10,15 +10,15 @@ import (
 )
 
 type Cache struct {
-	TTL                  int            `yaml:"ttl,omitempty" default:"3600"`
+	TTL                  int            `yaml:"ttl,omitempty" default:"3600" validate:"min=0,max=604800"`
 	PackageTTLs          map[string]int `yaml:"package_ttls,omitempty"`
 	PatternTTLs          map[string]int `yaml:"pattern_ttls,omitempty"`
 	MetadataTTLs         map[string]int `yaml:"metadata_ttls,omitempty"`
 	UseCacheHeaders      bool           `yaml:"use_cache_headers,omitempty"`
-	MaxCacheHeaderTTL    int            `yaml:"max_cache_header_ttl,omitempty" default:"86400"`
-	MinCacheHeaderTTL    int            `yaml:"min_cache_header_ttl,omitempty" default:"300"`
+	MaxCacheHeaderTTL    int            `yaml:"max_cache_header_ttl,omitempty" default:"86400" validate:"min=0,max=604800"`
+	MinCacheHeaderTTL    int            `yaml:"min_cache_header_ttl,omitempty" default:"300" validate:"min=0,max=86400"`
 	StaleWhileRevalidate bool           `yaml:"stale_while_revalidate,omitempty"`
-	StaleMaxAge          int            `yaml:"stale_max_age,omitempty" default:"3600"`
+	StaleMaxAge          int            `yaml:"stale_max_age,omitempty" default:"3600" validate:"min=0,max=86400"`
 }
 
 // GetDefaultPackageTTLs 패키지 타입별 기본 TTL 반환
@@ -155,8 +155,8 @@ func indexOfSubstring(s, substr string) int {
 }
 
 type BasicAuthConfig struct {
-	Users map[string]string `yaml:"users,omitempty"`
-	Realm string            `yaml:"realm,omitempty" default:"Restricted"`
+	Users map[string]string `yaml:"users,omitempty" validate:"dive,keys,min=1,endkeys,min=1"`
+	Realm string            `yaml:"realm,omitempty" default:"Restricted" validate:"min=1,max=100"`
 }
 
 type AuthenticationConfig struct {
@@ -165,10 +165,13 @@ type AuthenticationConfig struct {
 }
 
 type GlobalConfig struct {
-	StorageDir     string                `yaml:"storage_dir,omitempty"`
-	ConfigDir      string                `yaml:"config_dir,omitempty"`
-	Cache          Cache                 `yaml:"cache,omitempty"`
-	Authentication *AuthenticationConfig `yaml:"authentication,omitempty"`
+	StorageDir     string                `yaml:"storage_dir,omitempty" validate:"omitempty,path"`
+	ConfigDir      string                `yaml:"config_dir,omitempty" validate:"omitempty,path"`
+	Cache          Cache                 `yaml:"cache,omitempty" validate:"dive"`
+	Authentication *AuthenticationConfig `yaml:"authentication,omitempty" validate:"omitempty,dive"`
+	CacheDir       string                `yaml:"cache_dir,omitempty" validate:"omitempty,path"`
+	CacheTTL       int                   `yaml:"cache_ttl,omitempty" validate:"min=0,max=604800"`
+	MaxCacheSize   int64                 `yaml:"max_cache_size,omitempty" validate:"min=0"`
 }
 
 func (cfg *GlobalConfig) ConfigExists() bool {
@@ -178,7 +181,32 @@ func (cfg *GlobalConfig) ConfigExists() bool {
 
 func (cfg *GlobalConfig) ReadConfig() error {
 	confDir := helpers.GetConfigDir()
-	return helpers.ReadYamlSafe(path.Join(confDir, "global.yaml"), cfg)
+	if err := helpers.ReadYamlSafe(path.Join(confDir, "global.yaml"), cfg); err != nil {
+		return err
+	}
+	return cfg.Validate()
+}
+
+// Validate validates the global configuration
+func (cfg *GlobalConfig) Validate() error {
+	// Validate struct tags
+	if err := ValidateStruct(cfg); err != nil {
+		return err
+	}
+	
+	// Additional custom validation
+	if cfg.Cache.MinCacheHeaderTTL > cfg.Cache.MaxCacheHeaderTTL {
+		return helpers.NewConfigFieldError("global", "min_cache_header_ttl cannot be greater than max_cache_header_ttl")
+	}
+	
+	// Validate authentication if present
+	if cfg.Authentication != nil && cfg.Authentication.OAuth2 != nil {
+		if err := cfg.Authentication.OAuth2.Validate(); err != nil {
+			return err
+		}
+	}
+	
+	return nil
 }
 
 // GetTTLFromCacheHeaders HTTP 캐시 헤더에서 TTL 계산

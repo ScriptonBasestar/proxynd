@@ -1,5 +1,7 @@
 package cache
 
+//go:generate mockery --name Repository --output ./mocks --outpkg mocks --filename repository.go
+
 import (
 	"context"
 	"io"
