@@ -87,7 +87,7 @@
   - 📁 Files: HTTP client initialization, all proxy handlers
 
 ### 5. Configuration & Environment Separation
-- [ ] **Centralize configuration loading**
+- [x] **Centralize configuration loading**
   - 📌 Why: Configs loaded in multiple places without validation
   - 🧠 How: Create ConfigService with startup validation
   - 📁 Files: Create `internal/services/config/`, update main.go

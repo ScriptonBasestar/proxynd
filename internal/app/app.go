@@ -14,6 +14,7 @@ import (
 	"proxynd/internal/repositories/cache"
 	"proxynd/internal/repositories/config"
 	"proxynd/internal/services/adapters"
+	configService "proxynd/internal/services/config"
 	"proxynd/internal/services/proxy"
 	"proxynd/logging"
 	"proxynd/routers"
@@ -25,6 +26,7 @@ type Application struct {
 	logger         logging.Logger
 	fiberApp       *fiber.App
 	serviceFactory *proxy.ServiceFactory
+	configService  configService.Service
 	configRepo     *config.FileRepository
 	cacheRepo      *cache.FileRepository
 }
@@ -91,6 +93,14 @@ func New(cfg *Config) (*Application, error) {
 		return nil, fmt.Errorf("failed to initialize repositories: %w", err)
 	}
 
+	// Initialize configuration service
+	ctx := context.Background()
+	configService, err := configService.NewService(ctx, cfg.ConfigDir)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize config service: %w", err)
+	}
+	app.configService = configService
+
 	// Initialize services
 	if err := app.initializeServices(); err != nil {
 		return nil, fmt.Errorf("failed to initialize services: %w", err)
@@ -108,10 +118,8 @@ func (app *Application) Run() error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// Watch for configuration changes
-	if err := app.configRepo.WatchConfig(ctx, app.handleConfigChange); err != nil {
-		app.logger.Warn("Failed to start config watcher", logging.F("error", err))
-	}
+	// Configuration changes are now handled by the centralized config service
+	// The service validates configurations on load automatically
 
 	// Setup graceful shutdown
 	quit := make(chan os.Signal, 1)
@@ -186,7 +194,7 @@ func (app *Application) initializeRepositories() error {
 func (app *Application) initializeServices() error {
 	// Create service adapters
 	cacheAdapter := adapters.NewCacheAdapter(app.cacheRepo, app.config.CacheMaxAge)
-	configAdapter := adapters.NewConfigAdapter(app.configRepo)
+	configAdapter := adapters.NewConfigServiceAdapter(app.configService)
 	upstreamClient := adapters.NewHTTPUpstreamClient(30 * time.Second)
 
 	// Create service factory

@@ -32,8 +32,16 @@ type Service interface {
 	// GetApkConfig returns the APK proxy configuration
 	GetApkConfig(ctx context.Context) (*configs.ApkProxyConfig, error)
 	
+	// ValidateAll validates all loaded configurations
+	ValidateAll(ctx context.Context) error
+	
 	// Reload reloads all configurations
 	Reload(ctx context.Context) error
+}
+
+// Validator interface for configuration validation
+type Validator interface {
+	Validate(config interface{}) error
 }
 
 // ConfigLoader is a function that loads a specific configuration

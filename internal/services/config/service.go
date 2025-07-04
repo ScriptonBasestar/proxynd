@@ -14,6 +14,7 @@ import (
 type service struct {
 	configDir   string
 	mu          sync.RWMutex
+	validators  map[string]Validator
 	
 	// Cached configurations
 	globalConfig  *configs.GlobalConfig
@@ -34,11 +35,20 @@ func NewService(ctx context.Context, configDir string) (Service, error) {
 	
 	s := &service{
 		configDir: configDir,
+		validators: make(map[string]Validator),
 	}
+	
+	// Register validators
+	s.registerValidators()
 	
 	// Load initial configurations
 	if err := s.loadAll(ctx); err != nil {
 		return nil, fmt.Errorf("failed to load configurations: %w", err)
+	}
+	
+	// Validate all configurations
+	if err := s.ValidateAll(ctx); err != nil {
+		return nil, fmt.Errorf("configuration validation failed: %w", err)
 	}
 	
 	return s, nil
@@ -209,4 +219,56 @@ func (s *service) loadAll(ctx context.Context) error {
 	s.apkConfig = apkConfig
 	
 	return nil
+}
+
+// ValidateAll validates all loaded configurations
+func (s *service) ValidateAll(ctx context.Context) error {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	
+	// Validate global config
+	if validator, exists := s.validators["global"]; exists && s.globalConfig != nil {
+		if err := validator.Validate(s.globalConfig); err != nil {
+			return fmt.Errorf("global config validation failed: %w", err)
+		}
+	}
+	
+	// Validate proxy configs
+	proxyConfigs := map[string]interface{}{
+		"apt":    s.aptConfig,
+		"maven":  s.mavenConfig,
+		"npm":    s.npmConfig,
+		"pip":    s.pipConfig,
+		"yum":    s.yumConfig,
+		"apk":    s.apkConfig,
+		"docker": s.dockerConfig,
+	}
+	
+	for proxyType, config := range proxyConfigs {
+		if config != nil {
+			if validator, exists := s.validators[proxyType]; exists {
+				if err := validator.Validate(config); err != nil {
+					return fmt.Errorf("%s config validation failed: %w", proxyType, err)
+				}
+			}
+		}
+	}
+	
+	return nil
+}
+
+// registerValidators registers configuration validators
+func (s *service) registerValidators() {
+	// Register global config validator
+	s.validators["global"] = &globalConfigValidator{}
+	
+	// Register proxy config validators
+	s.validators["apt"] = &proxyConfigValidator{proxyType: "apt"}
+	s.validators["maven"] = &proxyConfigValidator{proxyType: "maven"}
+	s.validators["npm"] = &proxyConfigValidator{proxyType: "npm"}
+	s.validators["pip"] = &proxyConfigValidator{proxyType: "pip"}
+	s.validators["yum"] = &proxyConfigValidator{proxyType: "yum"}
+	s.validators["apk"] = &proxyConfigValidator{proxyType: "apk"}
+	s.validators["helm"] = &proxyConfigValidator{proxyType: "helm"}
+	s.validators["docker"] = &proxyConfigValidator{proxyType: "docker"}
 }
