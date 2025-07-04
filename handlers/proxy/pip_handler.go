@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"context"
 	"io"
 	"log"
 	"net/http"
@@ -8,15 +9,21 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 
 	"proxynd/configs"
 	"proxynd/helpers"
+	"proxynd/pkg/httpclient"
 )
 
 // PipProxy pip 패키지 매니저 프록시 핸들러
 func PipProxy(c *fiber.Ctx) error {
+	// 요청 컨텍스트 생성 (45초 타임아웃)
+	ctx, cancel := context.WithTimeout(c.Context(), 45*time.Second)
+	defer cancel()
+
 	log.Printf("Access proxy pip\n")
 
 	requestPath := c.Params("*")
@@ -50,6 +57,9 @@ func PipProxy(c *fiber.Ctx) error {
 		dirpath := filepath.Dir(filefullpath)
 		os.MkdirAll(dirpath, 0766)
 
+		// HTTP 클라이언트 생성 (프록시 최적화 설정)
+		proxyClient := httpclient.NewProxyClient()
+
 		// PyPI API 요청 처리
 		var responseContent []byte
 
@@ -57,12 +67,15 @@ func PipProxy(c *fiber.Ctx) error {
 			log.Printf("Trying pip proxy server %d: %s\n", i, server.Name)
 
 			// PyPI URL 구성
-			url := buildPipURL(server.URL, requestPath)
-			resp, err := http.Get(url)
+			fullURL := buildPipURL(server.URL, requestPath)
+			
+			// 컨텍스트 기반 요청 (재시도 포함)
+			resp, err := proxyClient.GetWithRetry(ctx, fullURL, 2)
 			if err != nil {
 				log.Printf("Error fetching from proxy %s: %v", server.Name, err)
 				continue
 			}
+			defer resp.Body.Close()
 
 			if resp.StatusCode == http.StatusOK {
 				bytes, _ := io.ReadAll(resp.Body)
@@ -71,17 +84,13 @@ func PipProxy(c *fiber.Ctx) error {
 				err = os.WriteFile(filefullpath, bytes, 0766)
 				if err != nil {
 					log.Printf("Error writing file: %v", err)
-					resp.Body.Close()
 					return c.Status(fiber.StatusInternalServerError).SendString("Error writing file")
 				}
 
 				responseContent = bytes
-				resp.Body.Close()
 				log.Printf("Successfully fetched from %s\n", server.Name)
 				break
 			}
-
-			resp.Body.Close()
 		}
 
 		if responseContent == nil {

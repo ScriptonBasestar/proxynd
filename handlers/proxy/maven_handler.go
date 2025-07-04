@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -9,11 +10,13 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 
 	"proxynd/configs"
 	"proxynd/helpers"
+	"proxynd/pkg/httpclient"
 )
 
 func responseHandler(c *fiber.Ctx, responseContent []byte, filename string) error {
@@ -33,6 +36,10 @@ func responseHandler(c *fiber.Ctx, responseContent []byte, filename string) erro
 }
 
 func MavenProxy(c *fiber.Ctx) error {
+	// 요청 컨텍스트 생성 (60초 타임아웃 - Maven은 큰 파일이 많음)
+	ctx, cancel := context.WithTimeout(c.Context(), 60*time.Second)
+	defer cancel()
+
 	log.Printf("Access proxy maven\n")
 
 	requestPath := c.Params("*")
@@ -66,27 +73,47 @@ func MavenProxy(c *fiber.Ctx) error {
 		dirpath := filepath.Dir(filefullpath)
 		os.MkdirAll(dirpath, 0766)
 
+		// HTTP 클라이언트 생성 (프록시 최적화 설정)
+		proxyClient := httpclient.NewProxyClient()
+
 		// Get the data
 		fmt.Println(len(config.Proxies))
 
 		for s, server := range config.Proxies {
 			fmt.Printf("for moon %d\n", s)
-			resp, err := http.Get(helpers.JoinURL(server.Url, requestPath))
+			fullURL := helpers.JoinURL(server.Url, requestPath)
+			
+			// 컨텍스트 기반 요청 (재시도 포함)
+			resp, err := proxyClient.GetWithRetry(ctx, fullURL, 2)
 			if err != nil {
 				log.Printf("Error fetching from proxy: %v", err)
 				continue
 			}
+			// Ensure response body is always closed
+			defer resp.Body.Close()
+			
 			//fmt.Println(resp.Header)
 			fmt.Println(resp.StatusCode)
-			// Writer the body to file
-			//_, err = io.Copy(out, resp.Body)
-			bytes, _ := io.ReadAll(resp.Body)
+			
+			// Check status code before processing
+			if resp.StatusCode != http.StatusOK {
+				log.Printf("Error response from proxy: %d", resp.StatusCode)
+				continue
+			}
+			
+			// Read the body
+			bytes, err := io.ReadAll(resp.Body)
+			if err != nil {
+				log.Printf("Error reading response body: %v", err)
+				continue
+			}
+			
+			// Write to file
 			err = os.WriteFile(filefullpath, bytes, 0766)
 			if err != nil {
 				log.Printf("Error writing file: %v", err)
 				return c.Status(fiber.StatusInternalServerError).SendString("Error writing file")
 			}
-			resp.Body.Close()
 			responseContent = bytes
 			break
 		}

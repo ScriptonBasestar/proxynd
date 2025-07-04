@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	"proxynd/pkg/httpclient"
 )
 
 // WebhookAlerter 웹훅 기반 알림 구현
@@ -62,6 +64,14 @@ func NewWebhookAlerter(config WebhookAlerterConfig) (*WebhookAlerter, error) {
 		}
 	}
 
+	// HTTP 클라이언트 설정
+	clientConfig := httpclient.Config{
+		Timeout:          timeout,
+		ConnectTimeout:   10 * time.Second,
+		KeepAliveTimeout: 30 * time.Second,
+		MaxIdleConns:     10,
+	}
+
 	wa := &WebhookAlerter{
 		enabled:       config.Enabled,
 		url:           config.URL,
@@ -70,9 +80,7 @@ func NewWebhookAlerter(config WebhookAlerterConfig) (*WebhookAlerter, error) {
 		timeout:       timeout,
 		retryCount:    config.RetryCount,
 		retryInterval: retryInterval,
-		client: &http.Client{
-			Timeout: timeout,
-		},
+		client:        httpclient.New(clientConfig),
 	}
 
 	return wa, nil

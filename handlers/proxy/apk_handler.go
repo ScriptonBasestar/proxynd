@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"context"
 	"io"
 	"log"
 	"net/http"
@@ -15,6 +16,7 @@ import (
 	"proxynd/helpers"
 	"proxynd/internal/mirror"
 	"proxynd/logging"
+	"proxynd/pkg/httpclient"
 	"proxynd/verification/apk"
 
 	"github.com/gofiber/fiber/v2"
@@ -94,6 +96,10 @@ func convertToMirrorConfig(config configs.ApkMirrorSelectionConfig) mirror.Alpin
 
 // ApkProxyHandler APK 프록시 요청 처리 핸들러
 func ApkProxyHandler(c *fiber.Ctx) error {
+	// 요청 컨텍스트 생성 (45초 타임아웃)
+	ctx, cancel := context.WithTimeout(c.Context(), 45*time.Second)
+	defer cancel()
+
 	requestPath := c.Params("*")
 	log.Printf("Access proxy apk: %s\n", requestPath)
 
@@ -149,6 +155,9 @@ func ApkProxyHandler(c *fiber.Ctx) error {
 		}
 		defer out.Close()
 
+		// HTTP 클라이언트 생성 (프록시 최적화 설정)
+		proxyClient := httpclient.NewProxyClient()
+
 		// 미러 선택을 사용하여 업스트림 서버에서 파일 가져오기
 		proxies := apkConfig.Proxies
 		if apkConfig.MirrorSelection.Enabled {
@@ -161,16 +170,17 @@ func ApkProxyHandler(c *fiber.Ctx) error {
 			fullURL := helpers.JoinURL(proxy.Url, requestPath)
 			log.Printf("Fetching from upstream %s: %s\n", proxy.Name, fullURL)
 
-			resp, err := http.Get(fullURL)
+			// 컨텍스트 기반 요청 (재시도 포함)
+			resp, err := proxyClient.GetWithRetry(ctx, fullURL, 2)
 			if err != nil {
 				log.Printf("Error fetching from proxy %s: %v\n", proxy.Name, err)
 				continue
 			}
+			defer resp.Body.Close()
 
 			if resp.StatusCode == http.StatusOK {
 				// 파일 저장
 				_, err = io.Copy(out, resp.Body)
-				resp.Body.Close()
 				if err != nil {
 					log.Printf("Error copying file: %v", err)
 					return c.Status(fiber.StatusInternalServerError).SendString("Error copying file")
@@ -178,7 +188,6 @@ func ApkProxyHandler(c *fiber.Ctx) error {
 				log.Printf("Successfully fetched from %s\n", proxy.Name)
 				break
 			}
-			resp.Body.Close()
 			log.Printf("Upstream %s returned status: %d\n", proxy.Name, resp.StatusCode)
 		}
 	}

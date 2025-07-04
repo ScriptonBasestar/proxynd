@@ -27,7 +27,7 @@ type service struct {
 }
 
 // NewService creates a new configuration service
-func NewService(configDir string) (Service, error) {
+func NewService(ctx context.Context, configDir string) (Service, error) {
 	if configDir == "" {
 		configDir = helpers.GetConfigDir()
 	}
@@ -37,7 +37,7 @@ func NewService(configDir string) (Service, error) {
 	}
 	
 	// Load initial configurations
-	if err := s.loadAll(); err != nil {
+	if err := s.loadAll(ctx); err != nil {
 		return nil, fmt.Errorf("failed to load configurations: %w", err)
 	}
 	
@@ -145,64 +145,64 @@ func (s *service) Reload(ctx context.Context) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	
-	return s.loadAll()
+	return s.loadAll(ctx)
 }
 
 // loadAll loads all configurations
-func (s *service) loadAll() error {
+func (s *service) loadAll(ctx context.Context) error {
 	loader := configs.NewLoaderRefactored(s.configDir)
 	
 	// Load global config
-	globalConfig, err := loader.LoadGlobalConfig()
+	globalConfig, err := loader.LoadGlobalConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to load global config: %w", err)
 	}
 	s.globalConfig = globalConfig
 	
 	// Load Maven config
-	mavenConfig, err := loader.LoadMavenProxyConfig()
+	mavenConfig, err := loader.LoadMavenProxyConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to load maven config: %w", err)
 	}
 	s.mavenConfig = mavenConfig
 	
 	// Load APT config
-	aptConfig, err := loader.LoadAptProxyConfig()
+	aptConfig, err := loader.LoadAptProxyConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to load apt config: %w", err)
 	}
 	s.aptConfig = aptConfig
 	
 	// Load NPM config
-	npmConfig, err := loader.LoadNpmProxyConfig()
+	npmConfig, err := loader.LoadNpmProxyConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to load npm config: %w", err)
 	}
 	s.npmConfig = npmConfig
 	
 	// Load Docker config
-	dockerConfig, err := loader.LoadDockerProxyConfig()
+	dockerConfig, err := loader.LoadDockerProxyConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to load docker config: %w", err)
 	}
 	s.dockerConfig = dockerConfig
 	
 	// Load PIP config
-	pipConfig, err := loader.LoadPipProxyConfig()
+	pipConfig, err := loader.LoadPipProxyConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to load pip config: %w", err)
 	}
 	s.pipConfig = pipConfig
 	
 	// Load YUM config
-	yumConfig, err := loader.LoadYumProxyConfig()
+	yumConfig, err := loader.LoadYumProxyConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to load yum config: %w", err)
 	}
 	s.yumConfig = yumConfig
 	
 	// Load APK config
-	apkConfig, err := loader.LoadApkProxyConfig()
+	apkConfig, err := loader.LoadApkProxyConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to load apk config: %w", err)
 	}

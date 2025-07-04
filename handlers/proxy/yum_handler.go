@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"context"
 	"io"
 	"log"
 	"net/http"
@@ -8,15 +9,21 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"proxynd/configs"
 	"proxynd/helpers"
+	"proxynd/pkg/httpclient"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 // YumProxyHandler yum 프록시 요청 처리 핸들러
 func YumProxyHandler(c *fiber.Ctx) error {
+	// 요청 컨텍스트 생성 (60초 타임아웃 - YUM은 큰 파일이 많음)
+	ctx, cancel := context.WithTimeout(c.Context(), 60*time.Second)
+	defer cancel()
+
 	requestPath := c.Params("*")
 	log.Printf("Access proxy yum: %s\n", requestPath)
 
@@ -53,28 +60,31 @@ func YumProxyHandler(c *fiber.Ctx) error {
 		}
 		defer out.Close()
 
+		// HTTP 클라이언트 생성 (프록시 최적화 설정)
+		proxyClient := httpclient.NewProxyClient()
+
 		// 업스트림 서버에서 파일 가져오기
 		for _, proxy := range yumConfig.Proxies {
 			fullURL := helpers.JoinURL(proxy.Url, requestPath)
 			log.Printf("Fetching from upstream %s: %s\n", proxy.Name, fullURL)
 
-			resp, err := http.Get(fullURL)
+			// 컨텍스트 기반 요청 (재시도 포함)
+			resp, err := proxyClient.GetWithRetry(ctx, fullURL, 2)
 			if err != nil {
 				log.Printf("Error fetching from proxy %s: %v\n", proxy.Name, err)
 				continue
 			}
+			defer resp.Body.Close()
 
 			if resp.StatusCode == http.StatusOK {
 				// 파일 저장
 				_, err = io.Copy(out, resp.Body)
-				resp.Body.Close()
 				if err != nil {
 					log.Printf("Error copying file: %v", err)
 					return c.Status(fiber.StatusInternalServerError).SendString("Error copying file")
 				}
 				break
 			}
-			resp.Body.Close()
 			log.Printf("Upstream %s returned status: %d\n", proxy.Name, resp.StatusCode)
 		}
 	}

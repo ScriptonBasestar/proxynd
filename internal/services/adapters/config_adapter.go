@@ -21,19 +21,17 @@ func NewConfigAdapter(repo config.Repository) *ConfigAdapter {
 }
 
 // GetProxyConfig returns configuration for a specific proxy type
-func (a *ConfigAdapter) GetProxyConfig(proxyType string) (interface{}, error) {
-	ctx := context.Background()
+func (a *ConfigAdapter) GetProxyConfig(ctx context.Context, proxyType string) (interface{}, error) {
 	return a.repo.LoadProxyConfig(ctx, proxyType)
 }
 
 // GetGlobalConfig returns global configuration
-func (a *ConfigAdapter) GetGlobalConfig() (interface{}, error) {
-	ctx := context.Background()
+func (a *ConfigAdapter) GetGlobalConfig(ctx context.Context) (interface{}, error) {
 	return a.repo.LoadGlobalConfig(ctx)
 }
 
 // ReloadConfig reloads configuration from disk
-func (a *ConfigAdapter) ReloadConfig() error {
+func (a *ConfigAdapter) ReloadConfig(ctx context.Context) error {
 	// The file repository automatically reloads on access
 	// This could trigger a manual reload if needed
 	return nil

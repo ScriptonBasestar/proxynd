@@ -45,13 +45,16 @@ func NewFileRepository(basePath string, maxSize int64, maxAge time.Duration) (*F
 		maxAge:  maxAge,
 	}
 	
+	// Create a context for initialization
+	ctx := context.Background()
+	
 	// Load existing metadata
-	if err := repo.loadMetadata(); err != nil {
+	if err := repo.loadMetadata(ctx); err != nil {
 		repo.logger.Warn("Failed to load cache metadata", logging.F("error", err))
 	}
 	
 	// Start cleanup goroutine
-	go repo.cleanupRoutine()
+	go repo.cleanupRoutine(ctx)
 	
 	return repo, nil
 }

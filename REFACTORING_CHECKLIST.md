@@ -71,17 +71,17 @@
   - 🧠 How: Add mutex protection or use channels for queue operations
   - 📁 Files: `internal/webhook/worker.go`
 
-- [ ] **Add proper context propagation**
+- [x] **Add proper context propagation**
   - 📌 Why: Long-running operations can't be cancelled
   - 🧠 How: Pass context.Context to all service methods
   - 📁 Files: All service and repository methods
 
-- [ ] **Fix resource cleanup in HTTP handlers**
+- [x] **Fix resource cleanup in HTTP handlers**
   - 📌 Why: Response bodies not closed in error paths
   - 🧠 How: Use `defer` with proper error checking
   - 📁 Files: All proxy handlers making HTTP requests
 
-- [ ] **Implement request timeout handling**
+- [x] **Implement request timeout handling**
   - 📌 Why: No timeout control for upstream requests
   - 🧠 How: Use context with timeout for all HTTP clients
   - 📁 Files: HTTP client initialization, all proxy handlers

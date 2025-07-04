@@ -54,13 +54,13 @@ type CacheService interface {
 // ConfigService defines the interface for configuration operations
 type ConfigService interface {
 	// GetProxyConfig returns configuration for a specific proxy type
-	GetProxyConfig(proxyType string) (interface{}, error)
+	GetProxyConfig(ctx context.Context, proxyType string) (interface{}, error)
 	
 	// GetGlobalConfig returns global configuration
-	GetGlobalConfig() (interface{}, error)
+	GetGlobalConfig(ctx context.Context) (interface{}, error)
 	
 	// ReloadConfig reloads configuration from disk
-	ReloadConfig() error
+	ReloadConfig(ctx context.Context) error
 }
 
 // UpstreamClient defines the interface for upstream requests
