@@ -33,7 +33,7 @@ func ValidateRequiredEnvVars() error {
 	}
 
 	if len(missing) > 0 {
-		return fmt.Errorf("missing required environment variables: %s", 
+		return fmt.Errorf("missing required environment variables: %s",
 			strings.Join(missing, ", "))
 	}
 
@@ -45,15 +45,15 @@ func ValidateConditionalEnvVars() error {
 	// OAuth2 활성화 여부 확인
 	if os.Getenv("OAUTH_ENABLED") == "true" {
 		var missing []string
-		
+
 		for _, env := range ConditionalEnvVars["oauth2_enabled"] {
 			if os.Getenv(env) == "" {
 				missing = append(missing, env)
 			}
 		}
-		
+
 		if len(missing) > 0 {
-			return fmt.Errorf("OAuth2 is enabled but missing required variables: %s", 
+			return fmt.Errorf("OAuth2 is enabled but missing required variables: %s",
 				strings.Join(missing, ", "))
 		}
 	}
@@ -80,9 +80,9 @@ func LoadSecureConfig() error {
 	}
 
 	// 개발 환경에서 기본 비밀번호 사용 확인
-	if strings.Contains(jwtSecret, "your-jwt-secret") || 
-	   strings.Contains(jwtSecret, "default") ||
-	   strings.Contains(jwtSecret, "example") {
+	if strings.Contains(jwtSecret, "your-jwt-secret") ||
+		strings.Contains(jwtSecret, "default") ||
+		strings.Contains(jwtSecret, "example") {
 		return errors.New("please change JWT_SECRET from default value")
 	}
 
@@ -93,14 +93,14 @@ func LoadSecureConfig() error {
 func GenerateSecureKey() (string, error) {
 	// 시간 기반 시드로 랜덤 생성
 	rand.Seed(time.Now().UnixNano())
-	
+
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*"
 	key := make([]byte, 64) // 64자 길이의 키 생성
-	
+
 	for i := range key {
 		key[i] = charset[rand.Intn(len(charset))]
 	}
-	
+
 	return string(key), nil
 }
 
@@ -126,7 +126,7 @@ func validateSecuritySettings() error {
 		if os.Getenv("LOG_LEVEL") == "debug" {
 			return errors.New("production 환경에서는 LOG_LEVEL을 debug로 설정하면 안됩니다")
 		}
-		
+
 		if os.Getenv("TLS_ENABLED") != "true" {
 			return errors.New("production 환경에서는 TLS를 활성화해야 합니다")
 		}
