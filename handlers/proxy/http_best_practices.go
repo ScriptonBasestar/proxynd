@@ -6,9 +6,9 @@ import (
 	"io"
 	"net/http"
 	"time"
-	
+
 	"github.com/gofiber/fiber/v2"
-	
+
 	"proxynd/logging"
 )
 
@@ -39,17 +39,17 @@ func (h *HTTPBestPracticesHandler) HandleWithProperCleanup(c *fiber.Ctx) error {
 	if url == "" {
 		return c.Status(fiber.StatusBadRequest).SendString("URL parameter required")
 	}
-	
+
 	// Create request with context for timeout control
 	ctx, cancel := context.WithTimeout(c.Context(), 15*time.Second)
 	defer cancel()
-	
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		h.logger.Error("Failed to create request", logging.F("error", err))
 		return c.Status(fiber.StatusBadRequest).SendString("Invalid URL")
 	}
-	
+
 	// Execute request
 	resp, err := h.client.Do(req)
 	if err != nil {
@@ -58,7 +58,7 @@ func (h *HTTPBestPracticesHandler) HandleWithProperCleanup(c *fiber.Ctx) error {
 	}
 	// CRITICAL: Always close response body, even on error
 	defer resp.Body.Close()
-	
+
 	// Check response status
 	if resp.StatusCode != http.StatusOK {
 		// Read error body for logging (with limit to prevent memory issues)
@@ -66,14 +66,14 @@ func (h *HTTPBestPracticesHandler) HandleWithProperCleanup(c *fiber.Ctx) error {
 		h.logger.Warn("Non-OK response",
 			logging.F("status", resp.StatusCode),
 			logging.F("body", string(errorBody)))
-		
+
 		return c.Status(resp.StatusCode).SendString("Upstream returned error")
 	}
-	
+
 	// Set response headers
 	c.Set("Content-Type", resp.Header.Get("Content-Type"))
 	c.Set("Content-Length", resp.Header.Get("Content-Length"))
-	
+
 	// Stream response body to client
 	return c.SendStream(resp.Body)
 }
@@ -84,37 +84,37 @@ func (h *HTTPBestPracticesHandler) HandleMultipleRequests(c *fiber.Ctx) error {
 	if urls == "" {
 		return c.Status(fiber.StatusBadRequest).SendString("URLs parameter required")
 	}
-	
+
 	var lastSuccessfulResponse []byte
 	var lastError error
-	
+
 	// Try multiple upstream servers
 	for _, url := range parseURLs(urls) {
 		// Create context for each request
 		ctx, cancel := context.WithTimeout(c.Context(), 10*time.Second)
-		
+
 		// Make request
 		resp, err := h.makeRequest(ctx, url)
 		cancel() // Cancel context after request completes
-		
+
 		if err != nil {
 			lastError = err
-			h.logger.Warn("Request failed", 
+			h.logger.Warn("Request failed",
 				logging.F("url", url),
 				logging.F("error", err))
 			continue
 		}
-		
+
 		// Process successful response
 		lastSuccessfulResponse = resp
 		lastError = nil
 		break
 	}
-	
+
 	if lastError != nil {
 		return c.Status(fiber.StatusBadGateway).SendString("All upstream requests failed")
 	}
-	
+
 	return c.Send(lastSuccessfulResponse)
 }
 
@@ -124,7 +124,7 @@ func (h *HTTPBestPracticesHandler) makeRequest(ctx context.Context, url string) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
-	
+
 	resp, err := h.client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("request failed: %w", err)
@@ -135,17 +135,17 @@ func (h *HTTPBestPracticesHandler) makeRequest(ctx context.Context, url string) 
 		io.Copy(io.Discard, resp.Body)
 		resp.Body.Close()
 	}()
-	
+
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("non-OK status: %d", resp.StatusCode)
 	}
-	
+
 	// Read response with size limit to prevent memory issues
 	body, err := io.ReadAll(io.LimitReader(resp.Body, 10*1024*1024)) // 10MB limit
 	if err != nil {
 		return nil, fmt.Errorf("failed to read body: %w", err)
 	}
-	
+
 	return body, nil
 }
 
@@ -153,28 +153,28 @@ func (h *HTTPBestPracticesHandler) makeRequest(ctx context.Context, url string) 
 func (h *HTTPBestPracticesHandler) HandleWithRetry(c *fiber.Ctx) error {
 	url := c.Query("url")
 	maxRetries := 3
-	
+
 	var lastErr error
 	for attempt := 0; attempt < maxRetries; attempt++ {
 		if attempt > 0 {
 			// Exponential backoff
 			time.Sleep(time.Duration(attempt*attempt) * time.Second)
 		}
-		
+
 		ctx, cancel := context.WithTimeout(c.Context(), 10*time.Second)
 		resp, err := h.makeRequestWithCleanup(ctx, url)
 		cancel()
-		
+
 		if err == nil {
 			return c.Send(resp)
 		}
-		
+
 		lastErr = err
 		h.logger.Warn("Retry attempt failed",
 			logging.F("attempt", attempt+1),
 			logging.F("error", err))
 	}
-	
+
 	return c.Status(fiber.StatusBadGateway).
 		SendString(fmt.Sprintf("Failed after %d attempts: %v", maxRetries, lastErr))
 }
@@ -186,13 +186,13 @@ func (h *HTTPBestPracticesHandler) makeRequestWithCleanup(ctx context.Context, u
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Make request
 	resp, err := h.client.Do(req)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Setup cleanup that always runs
 	cleanup := func() {
 		if resp != nil && resp.Body != nil {
@@ -201,22 +201,22 @@ func (h *HTTPBestPracticesHandler) makeRequestWithCleanup(ctx context.Context, u
 			resp.Body.Close()
 		}
 	}
-	
+
 	// Ensure cleanup runs no matter what
 	defer cleanup()
-	
+
 	// Check status
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("bad status: %d", resp.StatusCode)
 	}
-	
+
 	// Read body with timeout
 	bodyCtx, bodyCancel := context.WithTimeout(ctx, 5*time.Second)
 	defer bodyCancel()
-	
+
 	bodyChan := make(chan []byte, 1)
 	errChan := make(chan error, 1)
-	
+
 	go func() {
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
@@ -225,7 +225,7 @@ func (h *HTTPBestPracticesHandler) makeRequestWithCleanup(ctx context.Context, u
 		}
 		bodyChan <- body
 	}()
-	
+
 	select {
 	case body := <-bodyChan:
 		return body, nil

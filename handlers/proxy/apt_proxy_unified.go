@@ -72,7 +72,7 @@ func AptProxyUnified(c *fiber.Ctx) error {
 		for s, server := range proxy {
 			fmt.Printf("for moon %d\n", s)
 			fullURL := helpers.JoinURL(server.URL, requestPath)
-			
+
 			// 컨텍스트 기반 요청 (재시도 포함)
 			resp, err := proxyClient.GetWithRetry(ctx, fullURL, 2)
 			if err != nil {
@@ -81,16 +81,16 @@ func AptProxyUnified(c *fiber.Ctx) error {
 			}
 			// Ensure response body is always closed
 			defer resp.Body.Close()
-			
+
 			//fmt.Println(resp.Header)
 			fmt.Println(resp.StatusCode)
-			
+
 			// Check status code before processing
 			if resp.StatusCode != http.StatusOK {
 				log.Printf("Error response from proxy: %d", resp.StatusCode)
 				continue
 			}
-			
+
 			// Writer the body to file
 			_, err = io.Copy(out, resp.Body)
 			if err != nil {

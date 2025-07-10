@@ -68,7 +68,7 @@ func PipProxy(c *fiber.Ctx) error {
 
 			// PyPI URL 구성
 			fullURL := buildPipURL(server.URL, requestPath)
-			
+
 			// 컨텍스트 기반 요청 (재시도 포함)
 			resp, err := proxyClient.GetWithRetry(ctx, fullURL, 2)
 			if err != nil {

@@ -57,16 +57,16 @@ func AptProxy(c *fiber.Ctx) error {
 			}
 			// Ensure response body is always closed
 			defer resp.Body.Close()
-			
+
 			//fmt.Println(resp.Header)
 			fmt.Println(resp.StatusCode)
-			
+
 			// Check status code before processing
 			if resp.StatusCode != http.StatusOK {
 				log.Printf("Error response from proxy: %d", resp.StatusCode)
 				continue
 			}
-			
+
 			// Writer the body to file
 			_, err = io.Copy(out, resp.Body)
 			if err != nil {

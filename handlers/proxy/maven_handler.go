@@ -82,7 +82,7 @@ func MavenProxy(c *fiber.Ctx) error {
 		for s, server := range config.Proxies {
 			fmt.Printf("for moon %d\n", s)
 			fullURL := helpers.JoinURL(server.Url, requestPath)
-			
+
 			// 컨텍스트 기반 요청 (재시도 포함)
 			resp, err := proxyClient.GetWithRetry(ctx, fullURL, 2)
 			if err != nil {
@@ -91,23 +91,23 @@ func MavenProxy(c *fiber.Ctx) error {
 			}
 			// Ensure response body is always closed
 			defer resp.Body.Close()
-			
+
 			//fmt.Println(resp.Header)
 			fmt.Println(resp.StatusCode)
-			
+
 			// Check status code before processing
 			if resp.StatusCode != http.StatusOK {
 				log.Printf("Error response from proxy: %d", resp.StatusCode)
 				continue
 			}
-			
+
 			// Read the body
 			bytes, err := io.ReadAll(resp.Body)
 			if err != nil {
 				log.Printf("Error reading response body: %v", err)
 				continue
 			}
-			
+
 			// Write to file
 			err = os.WriteFile(filefullpath, bytes, 0766)
 			if err != nil {

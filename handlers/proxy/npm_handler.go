@@ -78,7 +78,7 @@ func NpmProxy(c *fiber.Ctx) error {
 			log.Printf("Trying npm proxy server %d: %s\n", i, server.Name)
 
 			fullURL := helpers.JoinURL(server.URL, requestPath)
-			
+
 			// 컨텍스트 기반 요청 (재시도 포함)
 			resp, err := proxyClient.GetWithRetry(ctx, fullURL, 2)
 			if err != nil {
