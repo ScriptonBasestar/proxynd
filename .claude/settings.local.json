@@ -41,7 +41,11 @@
       "Bash(go install:*)",
       "Bash(mockery:*)",
       "Bash(go run:*)",
-      "Bash(diff:*)"
+      "Bash(diff:*)",
+      "Bash(go vet:*)",
+      "Bash(./scripts/cleanup-build.sh:*)",
+      "Bash(./.git/hooks/pre-commit:*)",
+      "Bash(git rm:*)"
     ],
     "deny": []
   }
