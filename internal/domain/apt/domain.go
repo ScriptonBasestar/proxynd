@@ -22,21 +22,21 @@ func NewDomain() *Domain {
 		// Pattern for .deb packages: pool/component/p/package/package_version_arch.deb
 		packagePattern: regexp.MustCompile(`pool/[^/]+/[^/]+/[^/]+/([^/]+)_([^_]+)_([^.]+)\.deb$`),
 		metadataFiles: map[string]bool{
-			"Release":          true,
-			"Release.gpg":      true,
-			"InRelease":        true,
-			"Packages":         true,
-			"Packages.gz":      true,
-			"Packages.xz":      true,
-			"Packages.bz2":     true,
-			"Sources":          true,
-			"Sources.gz":       true,
-			"Sources.xz":       true,
-			"Sources.bz2":      true,
-			"Contents":         true,
-			"Contents.gz":      true,
-			"Translation":      true,
-			"Translation.gz":   true,
+			"Release":        true,
+			"Release.gpg":    true,
+			"InRelease":      true,
+			"Packages":       true,
+			"Packages.gz":    true,
+			"Packages.xz":    true,
+			"Packages.bz2":   true,
+			"Sources":        true,
+			"Sources.gz":     true,
+			"Sources.xz":     true,
+			"Sources.bz2":    true,
+			"Contents":       true,
+			"Contents.gz":    true,
+			"Translation":    true,
+			"Translation.gz": true,
 		},
 	}
 }
@@ -46,12 +46,12 @@ func (d *Domain) ParseRequest(ctx context.Context, req *common.ProxyRequest) err
 	if req.Method != "GET" && req.Method != "HEAD" {
 		return fmt.Errorf("unsupported method for APT proxy: %s", req.Method)
 	}
-	
+
 	// Validate path
 	if err := d.ValidatePath(req.Path); err != nil {
 		return err
 	}
-	
+
 	return nil
 }
 
@@ -59,12 +59,12 @@ func (d *Domain) ParseRequest(ctx context.Context, req *common.ProxyRequest) err
 func (d *Domain) BuildUpstreamURL(repo common.Repository, path string) string {
 	// Ensure base URL doesn't end with slash
 	baseURL := strings.TrimRight(repo.URL, "/")
-	
+
 	// Ensure path starts with slash
 	if !strings.HasPrefix(path, "/") {
 		path = "/" + path
 	}
-	
+
 	return baseURL + path
 }
 
@@ -72,44 +72,44 @@ func (d *Domain) BuildUpstreamURL(repo common.Repository, path string) string {
 func (d *Domain) ValidatePath(requestPath string) error {
 	// Remove leading slash for pattern matching
 	cleanPath := strings.TrimPrefix(requestPath, "/")
-	
+
 	// Check if it's a package file
 	if strings.Contains(cleanPath, "/pool/") && strings.HasSuffix(cleanPath, ".deb") {
 		return nil
 	}
-	
+
 	// Check if it's a metadata file
 	if d.isMetadataFile(cleanPath) {
 		return nil
 	}
-	
+
 	// Check for GPG keys
 	if strings.HasSuffix(cleanPath, ".gpg") || strings.HasSuffix(cleanPath, ".key") {
 		return nil
 	}
-	
+
 	// Check for by-hash access
 	if strings.Contains(cleanPath, "/by-hash/") {
 		return nil
 	}
-	
+
 	return fmt.Errorf("invalid APT path: %s", requestPath)
 }
 
 // ExtractMetadata extracts package metadata from the APT request path
 func (d *Domain) ExtractMetadata(requestPath string) (*common.PackageMetadata, error) {
 	cleanPath := strings.TrimPrefix(requestPath, "/")
-	
+
 	// Try to match package pattern
 	matches := d.packagePattern.FindStringSubmatch(cleanPath)
 	if len(matches) != 4 {
 		return nil, fmt.Errorf("cannot extract metadata from path: %s", requestPath)
 	}
-	
+
 	packageName := matches[1]
 	version := matches[2]
 	architecture := matches[3]
-	
+
 	return &common.PackageMetadata{
 		Name:         packageName,
 		Version:      version,
@@ -128,13 +128,13 @@ func (d *Domain) TransformResponse(ctx context.Context, resp *common.ProxyRespon
 func (d *Domain) GetContentType(filename string) string {
 	ext := strings.ToLower(path.Ext(filename))
 	base := path.Base(filename)
-	
+
 	// Check specific files
 	switch base {
 	case "Release", "InRelease", "Packages", "Sources", "Contents":
 		return "text/plain"
 	}
-	
+
 	// Check by extension
 	switch ext {
 	case ".deb":
@@ -158,17 +158,17 @@ func (d *Domain) ShouldCache(requestPath string, resp *common.ProxyResponse) boo
 	if resp.StatusCode >= 400 {
 		return false
 	}
-	
+
 	// Don't cache InRelease files (they change frequently)
 	if strings.HasSuffix(requestPath, "InRelease") {
 		return false
 	}
-	
+
 	// Don't cache Release files
 	if strings.HasSuffix(requestPath, "Release") && !strings.HasSuffix(requestPath, ".gpg") {
 		return false
 	}
-	
+
 	// Cache packages and other files
 	return true
 }
@@ -179,13 +179,13 @@ func (d *Domain) isMetadataFile(path string) bool {
 	if !strings.Contains(path, "/dists/") {
 		return false
 	}
-	
+
 	// Get the filename
 	filename := path
 	if idx := strings.LastIndex(path, "/"); idx >= 0 {
 		filename = path[idx+1:]
 	}
-	
+
 	// Check against known metadata files
 	return d.metadataFiles[filename]
 }
@@ -193,21 +193,21 @@ func (d *Domain) isMetadataFile(path string) bool {
 // ParsePackagePath parses an APT package path into its components
 func (d *Domain) ParsePackagePath(path string) (*PackageInfo, error) {
 	cleanPath := strings.TrimPrefix(path, "/")
-	
+
 	matches := d.packagePattern.FindStringSubmatch(cleanPath)
 	if len(matches) != 4 {
 		return nil, fmt.Errorf("invalid package path: %s", path)
 	}
-	
+
 	// Extract component from path
 	// Format: pool/component/...
 	parts := strings.Split(cleanPath, "/")
 	if len(parts) < 2 {
 		return nil, fmt.Errorf("invalid package path format: %s", path)
 	}
-	
+
 	component := parts[1]
-	
+
 	return &PackageInfo{
 		Name:         matches[1],
 		Version:      matches[2],
@@ -223,10 +223,10 @@ func (d *Domain) ParseDistribution(path string) (*DistInfo, error) {
 	if !strings.Contains(path, "/dists/") {
 		return nil, fmt.Errorf("not a distribution path: %s", path)
 	}
-	
+
 	parts := strings.Split(path, "/")
 	distsIdx := -1
-	
+
 	// Find "dists" in path
 	for i, part := range parts {
 		if part == "dists" {
@@ -234,19 +234,19 @@ func (d *Domain) ParseDistribution(path string) (*DistInfo, error) {
 			break
 		}
 	}
-	
+
 	if distsIdx == -1 || distsIdx+1 >= len(parts) {
 		return nil, fmt.Errorf("invalid distribution path: %s", path)
 	}
-	
+
 	distribution := parts[distsIdx+1]
-	
+
 	// Extract component if present
 	component := ""
 	if distsIdx+2 < len(parts) {
 		component = parts[distsIdx+2]
 	}
-	
+
 	return &DistInfo{
 		Distribution: distribution,
 		Component:    component,

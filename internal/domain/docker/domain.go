@@ -26,11 +26,11 @@ func (d *Domain) ParseRequest(ctx context.Context, req *common.ProxyRequest) err
 		"POST":   true,
 		"DELETE": true,
 	}
-	
+
 	if !validMethods[req.Method] {
 		return fmt.Errorf("unsupported method for Docker proxy: %s", req.Method)
 	}
-	
+
 	return d.ValidatePath(req.Path)
 }
 
@@ -49,12 +49,12 @@ func (d *Domain) ValidatePath(path string) error {
 	if strings.HasPrefix(path, "/v2/") {
 		return nil
 	}
-	
+
 	// Legacy v1 API (deprecated but may still be used)
 	if strings.HasPrefix(path, "/v1/") {
 		return nil
 	}
-	
+
 	return fmt.Errorf("invalid Docker registry path: %s", path)
 }
 
@@ -67,14 +67,14 @@ func (d *Domain) ExtractMetadata(path string) (*common.PackageMetadata, error) {
 		if len(parts) >= 3 && parts[len(parts)-2] == "manifests" {
 			imageName := strings.Join(parts[:len(parts)-2], "/")
 			reference := parts[len(parts)-1]
-			
+
 			return &common.PackageMetadata{
 				Name:    imageName,
 				Version: reference,
 			}, nil
 		}
 	}
-	
+
 	return nil, fmt.Errorf("cannot extract metadata from path: %s", path)
 }
 
@@ -102,22 +102,22 @@ func (d *Domain) ShouldCache(path string, resp *common.ProxyResponse) bool {
 	if resp.StatusCode >= 400 {
 		return false
 	}
-	
+
 	// Cache blobs (immutable)
 	if strings.Contains(path, "/blobs/") {
 		return true
 	}
-	
+
 	// Don't cache manifests tagged as "latest"
 	if strings.Contains(path, "/manifests/latest") {
 		return false
 	}
-	
+
 	// Cache other manifests
 	if strings.Contains(path, "/manifests/") {
 		return true
 	}
-	
+
 	return true
 }
 

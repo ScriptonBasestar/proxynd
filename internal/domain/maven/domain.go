@@ -31,12 +31,12 @@ func (d *Domain) ParseRequest(ctx context.Context, req *common.ProxyRequest) err
 	if req.Method != "GET" && req.Method != "HEAD" && req.Method != "PUT" {
 		return fmt.Errorf("unsupported method for Maven proxy: %s", req.Method)
 	}
-	
+
 	// Validate path
 	if err := d.ValidatePath(req.Path); err != nil {
 		return err
 	}
-	
+
 	return nil
 }
 
@@ -44,12 +44,12 @@ func (d *Domain) ParseRequest(ctx context.Context, req *common.ProxyRequest) err
 func (d *Domain) BuildUpstreamURL(repo common.Repository, path string) string {
 	// Ensure base URL doesn't end with slash
 	baseURL := strings.TrimRight(repo.URL, "/")
-	
+
 	// Ensure path starts with slash
 	if !strings.HasPrefix(path, "/") {
 		path = "/" + path
 	}
-	
+
 	return baseURL + path
 }
 
@@ -57,17 +57,17 @@ func (d *Domain) BuildUpstreamURL(repo common.Repository, path string) string {
 func (d *Domain) ValidatePath(requestPath string) error {
 	// Remove leading slash for pattern matching
 	cleanPath := strings.TrimPrefix(requestPath, "/")
-	
+
 	// Check if it's a valid artifact path
 	if d.artifactPattern.MatchString(cleanPath) {
 		return nil
 	}
-	
+
 	// Check if it's a metadata file
 	if d.metadataPattern.MatchString(cleanPath) {
 		return nil
 	}
-	
+
 	// Check for other valid Maven files
 	if strings.HasSuffix(cleanPath, ".pom") ||
 		strings.HasSuffix(cleanPath, ".jar") ||
@@ -78,28 +78,28 @@ func (d *Domain) ValidatePath(requestPath string) error {
 		strings.HasSuffix(cleanPath, ".asc") {
 		return nil
 	}
-	
+
 	return fmt.Errorf("invalid Maven path: %s", requestPath)
 }
 
 // ExtractMetadata extracts package metadata from the Maven request path
 func (d *Domain) ExtractMetadata(requestPath string) (*common.PackageMetadata, error) {
 	cleanPath := strings.TrimPrefix(requestPath, "/")
-	
+
 	// Try to match artifact pattern
 	matches := d.artifactPattern.FindStringSubmatch(cleanPath)
 	if len(matches) != 5 {
 		return nil, fmt.Errorf("cannot extract metadata from path: %s", requestPath)
 	}
-	
+
 	groupPath := matches[1]
 	artifactId := matches[2]
 	version := matches[3]
 	filename := matches[4]
-	
+
 	// Convert group path to groupId (replace / with .)
 	groupId := strings.ReplaceAll(groupPath, "/", ".")
-	
+
 	return &common.PackageMetadata{
 		Name:    fmt.Sprintf("%s:%s", groupId, artifactId),
 		Version: version,
@@ -117,7 +117,7 @@ func (d *Domain) TransformResponse(ctx context.Context, resp *common.ProxyRespon
 // GetContentType returns the content type for a given Maven file
 func (d *Domain) GetContentType(filename string) string {
 	ext := strings.ToLower(path.Ext(filename))
-	
+
 	switch ext {
 	case ".pom", ".xml":
 		return "application/xml"
@@ -142,17 +142,17 @@ func (d *Domain) ShouldCache(requestPath string, resp *common.ProxyResponse) boo
 	if resp.StatusCode >= 400 {
 		return false
 	}
-	
+
 	// Don't cache SNAPSHOT versions (they can change)
 	if strings.Contains(requestPath, "-SNAPSHOT") {
 		return false
 	}
-	
+
 	// Don't cache metadata files (they can change)
 	if strings.Contains(requestPath, "maven-metadata.xml") {
 		return false
 	}
-	
+
 	// Cache everything else
 	return true
 }
@@ -160,23 +160,23 @@ func (d *Domain) ShouldCache(requestPath string, resp *common.ProxyResponse) boo
 // ParseArtifactPath parses a Maven artifact path into its components
 func (d *Domain) ParseArtifactPath(path string) (*ArtifactInfo, error) {
 	cleanPath := strings.TrimPrefix(path, "/")
-	
+
 	matches := d.artifactPattern.FindStringSubmatch(cleanPath)
 	if len(matches) != 5 {
 		return nil, fmt.Errorf("invalid artifact path: %s", path)
 	}
-	
+
 	groupPath := matches[1]
 	artifactId := matches[2]
 	version := matches[3]
 	filename := matches[4]
-	
+
 	// Convert group path to groupId
 	groupId := strings.ReplaceAll(groupPath, "/", ".")
-	
+
 	// Extract classifier and extension from filename
 	classifier, extension := d.parseFilename(filename, artifactId, version)
-	
+
 	return &ArtifactInfo{
 		GroupId:    groupId,
 		ArtifactId: artifactId,
@@ -191,7 +191,7 @@ func (d *Domain) ParseArtifactPath(path string) (*ArtifactInfo, error) {
 func (d *Domain) parseFilename(filename, artifactId, version string) (classifier, extension string) {
 	// Expected format: artifactId-version[-classifier].extension
 	prefix := fmt.Sprintf("%s-%s", artifactId, version)
-	
+
 	if !strings.HasPrefix(filename, prefix) {
 		// Unexpected format, just return extension
 		ext := path.Ext(filename)
@@ -200,9 +200,9 @@ func (d *Domain) parseFilename(filename, artifactId, version string) (classifier
 		}
 		return "", extension
 	}
-	
+
 	remainder := filename[len(prefix):]
-	
+
 	// If remainder starts with -, we have a classifier
 	if strings.HasPrefix(remainder, "-") {
 		// Find the last dot for extension
@@ -217,7 +217,7 @@ func (d *Domain) parseFilename(filename, artifactId, version string) (classifier
 		// No classifier, just extension
 		extension = remainder[1:]
 	}
-	
+
 	return classifier, extension
 }
 

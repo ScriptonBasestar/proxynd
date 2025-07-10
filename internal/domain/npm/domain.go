@@ -12,9 +12,9 @@ import (
 
 // Domain implements NPM-specific proxy domain logic
 type Domain struct {
-	packagePattern  *regexp.Regexp
-	tarballPattern  *regexp.Regexp
-	scopePattern    *regexp.Regexp
+	packagePattern *regexp.Regexp
+	tarballPattern *regexp.Regexp
+	scopePattern   *regexp.Regexp
 }
 
 // NewDomain creates a new NPM domain instance
@@ -34,12 +34,12 @@ func (d *Domain) ParseRequest(ctx context.Context, req *common.ProxyRequest) err
 	if req.Method != "GET" && req.Method != "HEAD" {
 		return fmt.Errorf("unsupported method for NPM proxy: %s", req.Method)
 	}
-	
+
 	// Validate path
 	if err := d.ValidatePath(req.Path); err != nil {
 		return err
 	}
-	
+
 	return nil
 }
 
@@ -47,12 +47,12 @@ func (d *Domain) ParseRequest(ctx context.Context, req *common.ProxyRequest) err
 func (d *Domain) BuildUpstreamURL(repo common.Repository, path string) string {
 	// Ensure base URL doesn't end with slash
 	baseURL := strings.TrimRight(repo.URL, "/")
-	
+
 	// Ensure path starts with slash
 	if !strings.HasPrefix(path, "/") {
 		path = "/" + path
 	}
-	
+
 	return baseURL + path
 }
 
@@ -60,41 +60,41 @@ func (d *Domain) BuildUpstreamURL(repo common.Repository, path string) string {
 func (d *Domain) ValidatePath(requestPath string) error {
 	// Remove leading slash for pattern matching
 	cleanPath := strings.TrimPrefix(requestPath, "/")
-	
+
 	// Special NPM registry paths
 	if cleanPath == "" || cleanPath == "-/all" || cleanPath == "-/v1/search" {
 		return nil
 	}
-	
+
 	// Check if it's a package metadata request
 	if d.packagePattern.MatchString(cleanPath) {
 		return nil
 	}
-	
+
 	// Check if it's a tarball request
 	if d.tarballPattern.MatchString(cleanPath) {
 		return nil
 	}
-	
+
 	// Check for special NPM endpoints
 	if strings.HasPrefix(cleanPath, "-/") {
 		// Various NPM registry endpoints like -/user, -/package, etc.
 		return nil
 	}
-	
+
 	return fmt.Errorf("invalid NPM path: %s", requestPath)
 }
 
 // ExtractMetadata extracts package metadata from the NPM request path
 func (d *Domain) ExtractMetadata(requestPath string) (*common.PackageMetadata, error) {
 	cleanPath := strings.TrimPrefix(requestPath, "/")
-	
+
 	// Try to match tarball pattern first (more specific)
 	if matches := d.tarballPattern.FindStringSubmatch(cleanPath); len(matches) > 0 {
 		scope := strings.TrimPrefix(matches[1], "@")
 		packageName := matches[2]
 		filename := matches[3]
-		
+
 		// Extract version from filename
 		// Format: package-name-version.tgz
 		version := ""
@@ -105,34 +105,34 @@ func (d *Domain) ExtractMetadata(requestPath string) (*common.PackageMetadata, e
 				version = strings.TrimPrefix(versionPart, packageName+"-")
 			}
 		}
-		
+
 		fullName := packageName
 		if scope != "" {
 			fullName = "@" + scope + "/" + packageName
 		}
-		
+
 		return &common.PackageMetadata{
 			Name:    fullName,
 			Version: version,
 		}, nil
 	}
-	
+
 	// Try to match package pattern
 	if matches := d.packagePattern.FindStringSubmatch(cleanPath); len(matches) > 0 {
 		scope := strings.TrimPrefix(matches[1], "@")
 		packageName := matches[2]
-		
+
 		fullName := packageName
 		if scope != "" {
 			fullName = "@" + scope + "/" + packageName
 		}
-		
+
 		return &common.PackageMetadata{
 			Name: fullName,
 			// Version not available in metadata requests
 		}, nil
 	}
-	
+
 	return nil, fmt.Errorf("cannot extract metadata from path: %s", requestPath)
 }
 
@@ -147,7 +147,7 @@ func (d *Domain) TransformResponse(ctx context.Context, resp *common.ProxyRespon
 // GetContentType returns the content type for a given NPM file
 func (d *Domain) GetContentType(filename string) string {
 	ext := strings.ToLower(path.Ext(filename))
-	
+
 	switch ext {
 	case ".json":
 		return "application/json"
@@ -170,22 +170,22 @@ func (d *Domain) ShouldCache(requestPath string, resp *common.ProxyResponse) boo
 	if resp.StatusCode >= 400 {
 		return false
 	}
-	
+
 	// Don't cache search results
 	if strings.Contains(requestPath, "/-/v1/search") {
 		return false
 	}
-	
+
 	// Don't cache user-specific endpoints
 	if strings.Contains(requestPath, "/-/user") {
 		return false
 	}
-	
+
 	// Cache tarballs (immutable)
 	if strings.HasSuffix(requestPath, ".tgz") {
 		return true
 	}
-	
+
 	// Cache package metadata with short TTL
 	// (handled by cache service TTL settings)
 	return true
@@ -194,7 +194,7 @@ func (d *Domain) ShouldCache(requestPath string, resp *common.ProxyResponse) boo
 // ParsePackageName extracts package name components
 func (d *Domain) ParsePackageName(name string) (*PackageNameInfo, error) {
 	info := &PackageNameInfo{}
-	
+
 	// Check if it's a scoped package
 	if matches := d.scopePattern.FindStringSubmatch(name); len(matches) == 3 {
 		info.Scope = matches[1]
@@ -204,23 +204,23 @@ func (d *Domain) ParsePackageName(name string) (*PackageNameInfo, error) {
 		info.Name = name
 		info.FullName = name
 	}
-	
+
 	return info, nil
 }
 
 // ParseTarballPath parses an NPM tarball path
 func (d *Domain) ParseTarballPath(path string) (*TarballInfo, error) {
 	cleanPath := strings.TrimPrefix(path, "/")
-	
+
 	matches := d.tarballPattern.FindStringSubmatch(cleanPath)
 	if len(matches) == 0 {
 		return nil, fmt.Errorf("invalid tarball path: %s", path)
 	}
-	
+
 	scope := strings.TrimPrefix(matches[1], "@")
 	packageName := matches[2]
 	filename := matches[3]
-	
+
 	// Extract version from filename
 	version := ""
 	if strings.HasSuffix(filename, ".tgz") {
@@ -229,12 +229,12 @@ func (d *Domain) ParseTarballPath(path string) (*TarballInfo, error) {
 			version = strings.TrimPrefix(versionPart, packageName+"-")
 		}
 	}
-	
+
 	fullName := packageName
 	if scope != "" {
 		fullName = "@" + scope + "/" + packageName
 	}
-	
+
 	return &TarballInfo{
 		Scope:       scope,
 		PackageName: packageName,
