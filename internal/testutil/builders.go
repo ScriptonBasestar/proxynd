@@ -78,8 +78,8 @@ type APTConfigBuilder struct {
 func NewAPTConfigBuilder() *APTConfigBuilder {
 	return &APTConfigBuilder{
 		config: &configs.APTConfig{
-			UpstreamURLs: []string{"http://archive.ubuntu.com/ubuntu"},
-			CacheEnabled: true,
+			UpstreamURLs:         []string{"http://archive.ubuntu.com/ubuntu"},
+			CacheEnabled:         true,
 			AllowedArchitectures: []string{"amd64", "arm64"},
 			AllowedDistributions: []string{"jammy", "focal"},
 		},
@@ -161,8 +161,8 @@ type NPMConfigBuilder struct {
 func NewNPMConfigBuilder() *NPMConfigBuilder {
 	return &NPMConfigBuilder{
 		config: &configs.NPMConfig{
-			UpstreamURLs:         []string{"https://registry.npmjs.org"},
-			CacheEnabled:         true,
+			UpstreamURLs:          []string{"https://registry.npmjs.org"},
+			CacheEnabled:          true,
 			ScopedPackagesAllowed: true,
 		},
 	}

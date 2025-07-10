@@ -17,17 +17,17 @@ import (
 func TestExampleUsingFixtures(t *testing.T) {
 	// Create fixtures
 	fixtures := testutil.NewFixtures()
-	
+
 	// Use pre-configured test data
 	globalConfig := fixtures.ValidGlobalConfig()
 	assert.NotNil(t, globalConfig)
 	assert.Equal(t, "/tmp/test-storage", globalConfig.StorageDir)
-	
+
 	// Use proxy request fixtures
 	req := fixtures.ProxyRequest("GET", "/test/path")
 	assert.Equal(t, "GET", req.Method)
 	assert.Equal(t, "/test/path", req.Path)
-	
+
 	// Use response fixtures
 	resp := fixtures.ProxyResponse(200, "test body")
 	assert.Equal(t, 200, resp.StatusCode)
@@ -37,11 +37,11 @@ func TestExampleUsingFixtures(t *testing.T) {
 func TestExampleUsingFactories(t *testing.T) {
 	// Create factory
 	factory := testutil.NewFactory(t)
-	
+
 	// Create test objects with sensible defaults
 	configService := factory.ConfigService()
 	assert.NotNil(t, configService)
-	
+
 	// Create proxy service
 	proxyService := factory.ProxyService("apt")
 	assert.NotNil(t, proxyService)
@@ -56,7 +56,7 @@ func TestExampleUsingBuilders(t *testing.T) {
 		WithCacheTTL(7200).
 		WithMaxCacheSize(1024 * 1024 * 500). // 500MB
 		Build()
-	
+
 	globalConfig := config.(*configs.GlobalConfig)
 	assert.Equal(t, "/custom/storage", globalConfig.StorageDir)
 	assert.Equal(t, "/custom/cache", globalConfig.CacheDir)
@@ -66,7 +66,7 @@ func TestExampleUsingBuilders(t *testing.T) {
 // ExampleUsingAssertions demonstrates custom assertions
 func TestExampleUsingAssertions(t *testing.T) {
 	assertions := testutil.NewAssertions(t)
-	
+
 	// Test headers
 	expected := map[string]string{
 		"Content-Type": "application/json",
@@ -76,7 +76,7 @@ func TestExampleUsingAssertions(t *testing.T) {
 		"Content-Type": "application/json",
 		"X-Cache":      "HIT",
 	}
-	
+
 	assertions.AssertHeadersEqual(expected, actual)
 	assertions.AssertCacheHit(true)
 	assertions.AssertStatusCode(200, 200)
@@ -87,19 +87,19 @@ func TestExampleUsingMatchers(t *testing.T) {
 	// Create mock
 	mockCache := mocks.NewMockCacheService(t)
 	matchers := testutil.NewMatchers()
-	
+
 	// Use custom matchers
 	mockCache.EXPECT().Get(
 		matchers.AnyContext(),
 		matchers.StringHasPrefix("cache:"),
 	).Return(nil, false, nil)
-	
+
 	mockCache.EXPECT().Put(
 		matchers.AnyContext(),
 		matchers.AnyString(),
 		matchers.AnyReader(),
 	).Return(nil)
-	
+
 	// Test with the mock
 	ctx := context.Background()
 	_, _, err := mockCache.Get(ctx, "cache:test-key")
@@ -113,26 +113,26 @@ func TestExampleIntegration(t *testing.T) {
 	fixtures := testutil.NewFixtures()
 	assertions := testutil.NewAssertions(t)
 	matchers := testutil.NewMatchers()
-	
+
 	// Create mocks
 	mockUpstream := mocks.NewMockUpstreamClient(t)
-	
+
 	// Configure mock with custom matchers
 	mockUpstream.EXPECT().Fetch(
 		matchers.AnyContext(),
 		matchers.URLContaining("ubuntu.com"),
 		mock.Anything,
 	).Return(fixtures.ProxyResponse(200, fixtures.SampleAPTPackageMetadata()), nil)
-	
+
 	// Create service with factory
 	cacheService := factory.CacheAdapter()
 	configService := factory.ConfigService()
-	
+
 	// Test with fixtures
 	req := fixtures.ProxyRequestWithHeaders("GET", "/ubuntu/test", map[string]string{
 		"User-Agent": "apt/2.0",
 	})
-	
+
 	// Use custom assertions
 	assertions.AssertNoError(nil)
 	assertions.AssertMapContains(req.Headers, map[string]string{
@@ -143,7 +143,7 @@ func TestExampleIntegration(t *testing.T) {
 // ExampleTableDrivenTest demonstrates table-driven tests with utilities
 func TestExampleTableDriven(t *testing.T) {
 	fixtures := testutil.NewFixtures()
-	
+
 	tests := []struct {
 		name      string
 		request   func() interface{}
@@ -175,7 +175,7 @@ func TestExampleTableDriven(t *testing.T) {
 			wantError: false,
 		},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := tt.request()

@@ -37,13 +37,13 @@ func NewFactory(t *testing.T) *Factory {
 func (f *Factory) ConfigService() config.Service {
 	configDir := filepath.Join(f.tempDir, "config")
 	require.NoError(f.t, os.MkdirAll(configDir, 0755))
-	
+
 	// Create test config files
 	f.createTestConfigFiles(configDir)
-	
+
 	service, err := config.NewService(configDir)
 	require.NoError(f.t, err)
-	
+
 	return service
 }
 
@@ -51,7 +51,7 @@ func (f *Factory) ConfigService() config.Service {
 func (f *Factory) CacheRepository() repocache.Repository {
 	cacheDir := filepath.Join(f.tempDir, "cache")
 	require.NoError(f.t, os.MkdirAll(cacheDir, 0755))
-	
+
 	// Assuming there's a filesystem implementation
 	return &fileSystemCacheRepository{
 		baseDir: cacheDir,
@@ -74,11 +74,11 @@ func (f *Factory) ProxyService(proxyType string) proxy.ProxyService {
 	configService := f.ConfigService()
 	cacheAdapter := f.CacheAdapter()
 	upstreamClient := f.UpstreamClient()
-	
+
 	factory := proxy.NewFactory(configService, cacheAdapter, upstreamClient)
 	service, err := factory.CreateProxy(proxyType)
 	require.NoError(f.t, err)
-	
+
 	return service
 }
 
@@ -168,17 +168,17 @@ func (r *fileSystemCacheRepository) Get(ctx context.Context, key string) (io.Rea
 func (r *fileSystemCacheRepository) Put(ctx context.Context, key string, content io.Reader, ttl time.Duration) error {
 	path := filepath.Join(r.baseDir, key)
 	dir := filepath.Dir(path)
-	
+
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		return err
 	}
-	
+
 	file, err := os.Create(path)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
-	
+
 	_, err = io.Copy(file, content)
 	return err
 }
@@ -202,12 +202,12 @@ func (r *fileSystemCacheRepository) List(ctx context.Context, pattern string) ([
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Remove base directory from paths
 	for i, match := range matches {
 		matches[i], _ = filepath.Rel(r.baseDir, match)
 	}
-	
+
 	return matches, nil
 }
 
@@ -226,7 +226,7 @@ func (r *fileSystemCacheRepository) Clear(ctx context.Context) error {
 
 func (r *fileSystemCacheRepository) Stats(ctx context.Context) (*cache.CacheStats, error) {
 	var stats cache.CacheStats
-	
+
 	err := filepath.Walk(r.baseDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -234,7 +234,7 @@ func (r *fileSystemCacheRepository) Stats(ctx context.Context) (*cache.CacheStat
 		if !info.IsDir() {
 			stats.TotalItems++
 			stats.TotalSize += info.Size()
-			
+
 			if stats.OldestItem.IsZero() || info.ModTime().Before(stats.OldestItem) {
 				stats.OldestItem = info.ModTime()
 			}
@@ -244,6 +244,6 @@ func (r *fileSystemCacheRepository) Stats(ctx context.Context) (*cache.CacheStat
 		}
 		return nil
 	})
-	
+
 	return &stats, err
 }
