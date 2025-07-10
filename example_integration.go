@@ -33,7 +33,7 @@ func setupSecurityMiddlewares(app *fiber.App) {
 	proxy.Get("/:type/*", func(c *fiber.Ctx) error {
 		proxyType := c.Params("type")
 		packagePath := c.Params("*")
-		
+
 		return c.JSON(fiber.Map{
 			"proxy_type": proxyType,
 			"path":       packagePath,
@@ -64,7 +64,7 @@ func main() {
 	log.Println("  GET /api/status")
 	log.Println("  GET /api/proxy/npm/express")
 	log.Println("  GET /api/proxy/maven/org.springframework/spring-core/5.3.0")
-	
+
 	if err := app.Listen(":8080"); err != nil {
 		log.Fatal("Failed to start server:", err)
 	}
