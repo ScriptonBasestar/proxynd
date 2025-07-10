@@ -8,16 +8,16 @@ import (
 type PackageVerifier interface {
 	// VerifyPackage verifies a package based on its type
 	VerifyPackage(ctx context.Context, packageType string, packagePath string, data []byte, metadata map[string]string) (*VerificationResult, error)
-	
+
 	// SetStrictMode enables or disables strict verification mode
 	SetStrictMode(strict bool)
-	
+
 	// IsStrictMode returns whether strict mode is enabled
 	IsStrictMode() bool
-	
+
 	// RegisterVerifier registers a custom verifier for a package type
 	RegisterVerifier(packageType string, verifier TypedPackageVerifier) error
-	
+
 	// GetSupportedTypes returns list of supported package types
 	GetSupportedTypes() []string
 }
@@ -26,7 +26,7 @@ type PackageVerifier interface {
 type TypedPackageVerifier interface {
 	// Verify performs the verification
 	Verify(ctx context.Context, packagePath string, data []byte, metadata map[string]string) (*VerificationResult, error)
-	
+
 	// Type returns the package type this verifier handles
 	Type() string
 }
@@ -44,11 +44,11 @@ type VerificationResult struct {
 
 // VerificationIssue represents an issue found during verification
 type VerificationIssue struct {
-	Severity    IssueSeverity `json:"severity"`
-	Code        string        `json:"code"`
-	Message     string        `json:"message"`
-	Details     string        `json:"details,omitempty"`
-	Suggestion  string        `json:"suggestion,omitempty"`
+	Severity   IssueSeverity `json:"severity"`
+	Code       string        `json:"code"`
+	Message    string        `json:"message"`
+	Details    string        `json:"details,omitempty"`
+	Suggestion string        `json:"suggestion,omitempty"`
 }
 
 // IssueSeverity represents the severity of a verification issue

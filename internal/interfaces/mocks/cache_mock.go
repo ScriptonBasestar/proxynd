@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 	"time"
-	
+
 	"proxynd/internal/interfaces"
 )
 
@@ -14,7 +14,7 @@ type MockCacheManager struct {
 	data       map[string][]byte
 	expiration map[string]time.Time
 	stats      interfaces.CacheStats
-	
+
 	// Behavior control
 	GetFunc    func(ctx context.Context, key string) ([]byte, bool, error)
 	PutFunc    func(ctx context.Context, key string, data []byte, ttl time.Duration) error
@@ -35,23 +35,23 @@ func (m *MockCacheManager) Get(ctx context.Context, key string) ([]byte, bool, e
 	if m.GetFunc != nil {
 		return m.GetFunc(ctx, key)
 	}
-	
+
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	
+
 	// Check expiration
 	if exp, exists := m.expiration[key]; exists && time.Now().After(exp) {
 		m.stats.Misses++
 		return nil, false, nil
 	}
-	
+
 	data, exists := m.data[key]
 	if exists {
 		m.stats.Hits++
 	} else {
 		m.stats.Misses++
 	}
-	
+
 	return data, exists, nil
 }
 
@@ -60,14 +60,14 @@ func (m *MockCacheManager) Put(ctx context.Context, key string, data []byte, ttl
 	if m.PutFunc != nil {
 		return m.PutFunc(ctx, key, data, ttl)
 	}
-	
+
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	
+
 	m.data[key] = data
 	m.expiration[key] = time.Now().Add(ttl)
 	m.stats.ItemCount = int64(len(m.data))
-	
+
 	return nil
 }
 
@@ -75,12 +75,12 @@ func (m *MockCacheManager) Put(ctx context.Context, key string, data []byte, ttl
 func (m *MockCacheManager) Exists(ctx context.Context, key string) (bool, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	
+
 	// Check expiration
 	if exp, exists := m.expiration[key]; exists && time.Now().After(exp) {
 		return false, nil
 	}
-	
+
 	_, exists := m.data[key]
 	return exists, nil
 }
@@ -90,14 +90,14 @@ func (m *MockCacheManager) Delete(ctx context.Context, key string) error {
 	if m.DeleteFunc != nil {
 		return m.DeleteFunc(ctx, key)
 	}
-	
+
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	
+
 	delete(m.data, key)
 	delete(m.expiration, key)
 	m.stats.ItemCount = int64(len(m.data))
-	
+
 	return nil
 }
 
@@ -105,11 +105,11 @@ func (m *MockCacheManager) Delete(ctx context.Context, key string) error {
 func (m *MockCacheManager) Clear(ctx context.Context) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	
+
 	m.data = make(map[string][]byte)
 	m.expiration = make(map[string]time.Time)
 	m.stats.ItemCount = 0
-	
+
 	return nil
 }
 
@@ -117,7 +117,7 @@ func (m *MockCacheManager) Clear(ctx context.Context) error {
 func (m *MockCacheManager) GetStats() interfaces.CacheStats {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	
+
 	return m.stats
 }
 

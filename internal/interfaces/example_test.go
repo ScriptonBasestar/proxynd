@@ -4,10 +4,10 @@ import (
 	"context"
 	"testing"
 	"time"
-	
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	
+
 	"proxynd/internal/interfaces"
 	"proxynd/internal/interfaces/mocks"
 )
@@ -40,57 +40,57 @@ func (s *ExampleService) GetUserData(ctx context.Context, userID string) ([]byte
 	if err != nil {
 		return nil, err
 	}
-	
+
 	if found {
 		return data, nil
 	}
-	
+
 	// If not in cache, fetch from auth service
 	user, err := s.auth.GetUser(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Convert user to JSON (simplified for example)
 	userData := []byte(user.Name)
-	
+
 	// Store in cache for 5 minutes
 	if err := s.cache.Put(ctx, cacheKey, userData, 5*time.Minute); err != nil {
 		// Log error but don't fail the request
 		_ = err
 	}
-	
+
 	return userData, nil
 }
 
 // TestExampleService_GetUserData demonstrates testing with mock interfaces
 func TestExampleService_GetUserData(t *testing.T) {
 	ctx := context.Background()
-	
+
 	t.Run("cache hit", func(t *testing.T) {
 		// Setup mocks
 		mockCache := mocks.NewMockCacheManager()
 		expectedData := []byte("John Doe")
-		
+
 		// Configure mock behavior
 		mockCache.GetFunc = func(ctx context.Context, key string) ([]byte, bool, error) {
 			assert.Equal(t, "user:123", key)
 			return expectedData, true, nil
 		}
-		
+
 		// Create service with mocks
 		service := NewExampleService(mockCache, nil, nil)
-		
+
 		// Test
 		data, err := service.GetUserData(ctx, "123")
 		require.NoError(t, err)
 		assert.Equal(t, expectedData, data)
-		
+
 		// Verify cache stats
 		stats := mockCache.GetStats()
 		assert.Equal(t, int64(1), stats.Hits)
 	})
-	
+
 	t.Run("cache miss", func(t *testing.T) {
 		// Setup mocks
 		mockCache := mocks.NewMockCacheManager()
@@ -102,12 +102,12 @@ func TestExampleService_GetUserData(t *testing.T) {
 				}, nil
 			},
 		}
-		
+
 		// Configure cache to return miss
 		mockCache.GetFunc = func(ctx context.Context, key string) ([]byte, bool, error) {
 			return nil, false, nil
 		}
-		
+
 		putCalled := false
 		mockCache.PutFunc = func(ctx context.Context, key string, data []byte, ttl time.Duration) error {
 			putCalled = true
@@ -116,10 +116,10 @@ func TestExampleService_GetUserData(t *testing.T) {
 			assert.Equal(t, 5*time.Minute, ttl)
 			return nil
 		}
-		
+
 		// Create service with mocks
 		service := NewExampleService(mockCache, mockAuth, nil)
-		
+
 		// Test
 		data, err := service.GetUserData(ctx, "456")
 		require.NoError(t, err)

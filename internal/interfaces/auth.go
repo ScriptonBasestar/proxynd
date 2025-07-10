@@ -9,19 +9,19 @@ import (
 type JWTService interface {
 	// GenerateTokenPair generates access and refresh tokens
 	GenerateTokenPair(userID, email, name, username, role, provider string, organizations []string) (*TokenPair, error)
-	
+
 	// ValidateToken validates any JWT token
 	ValidateToken(tokenString string) (*Claims, error)
-	
+
 	// ValidateAccessToken validates specifically an access token
 	ValidateAccessToken(tokenString string) (*Claims, error)
-	
+
 	// RefreshAccessToken generates new access token from refresh token
 	RefreshAccessToken(refreshTokenString string) (*TokenPair, error)
-	
+
 	// RevokeToken revokes a token
 	RevokeToken(tokenString string) error
-	
+
 	// ExtractClaims extracts claims without validation
 	ExtractClaims(tokenString string) (*Claims, error)
 }
@@ -51,16 +51,16 @@ type Claims struct {
 type AuthService interface {
 	// Authenticate validates credentials and returns user info
 	Authenticate(ctx context.Context, credentials Credentials) (*User, error)
-	
+
 	// AuthorizeRequest checks if request is authorized
 	AuthorizeRequest(ctx context.Context, token string, resource string, action string) (bool, error)
-	
+
 	// GetUser retrieves user information by ID
 	GetUser(ctx context.Context, userID string) (*User, error)
-	
+
 	// CreateUser creates a new user
 	CreateUser(ctx context.Context, user *User) error
-	
+
 	// UpdateUser updates user information
 	UpdateUser(ctx context.Context, userID string, updates map[string]interface{}) error
 }

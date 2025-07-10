@@ -9,25 +9,25 @@ import (
 type HealthService interface {
 	// RegisterChecker registers a health checker
 	RegisterChecker(name string, checker HealthChecker)
-	
+
 	// UnregisterChecker removes a health checker
 	UnregisterChecker(name string)
-	
+
 	// Start begins periodic health checks
 	Start(ctx context.Context)
-	
+
 	// Stop halts health checking
 	Stop()
-	
+
 	// GetStatus returns current health status
 	GetStatus() HealthStatus
-	
+
 	// GetDetailedStatus returns detailed status for all checkers
 	GetDetailedStatus() map[string]CheckResult
-	
+
 	// GetUptime returns service uptime
 	GetUptime() time.Duration
-	
+
 	// ForceCheck forces an immediate health check
 	ForceCheck(ctx context.Context) HealthStatus
 }
@@ -36,10 +36,10 @@ type HealthService interface {
 type HealthChecker interface {
 	// Check performs the health check
 	Check(ctx context.Context) error
-	
+
 	// Name returns the name of the checker
 	Name() string
-	
+
 	// Type returns the type of check (critical, warning, info)
 	Type() CheckType
 }
@@ -49,7 +49,7 @@ type HealthStatus struct {
 	Status      Status                 `json:"status"`
 	Checks      map[string]CheckResult `json:"checks"`
 	Uptime      string                 `json:"uptime"`
-	LastChecked time.Time             `json:"last_checked"`
+	LastChecked time.Time              `json:"last_checked"`
 }
 
 // CheckResult represents the result of a single health check

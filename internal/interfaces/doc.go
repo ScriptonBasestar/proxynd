@@ -11,12 +11,10 @@
 //
 // Usage example:
 //
-//	type MyService struct {
 //	    cache interfaces.CacheManager
 //	    auth  interfaces.AuthService
 //	}
 //
-//	func NewMyService(cache interfaces.CacheManager, auth interfaces.AuthService) *MyService {
 //	    return &MyService{
 //	        cache: cache,
 //	        auth:  auth,
