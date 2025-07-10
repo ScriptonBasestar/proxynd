@@ -20,21 +20,21 @@ func NewNpmService(
 	upstreamClient UpstreamClient,
 ) (*NpmService, error) {
 	base := NewBaseProxyService("npm", cache, configService, upstreamClient)
-	
+
 	// Load NPM-specific configuration
 	configInterface, err := configService.GetProxyConfig("npm")
 	if err != nil {
 		return nil, fmt.Errorf("failed to load npm config: %w", err)
 	}
-	
+
 	npmConfig, ok := configInterface.(*configs.NpmProxyConfig)
 	if !ok {
 		return nil, fmt.Errorf("invalid npm config type")
 	}
-	
+
 	return &NpmService{
 		BaseProxyService: base,
-		config:          npmConfig,
+		config:           npmConfig,
 	}, nil
 }
 

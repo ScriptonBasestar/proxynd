@@ -39,34 +39,34 @@ func (c *HTTPUpstreamClient) Fetch(ctx context.Context, url string, headers map[
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
-	
+
 	// Add headers
 	for key, value := range headers {
 		req.Header.Set(key, value)
 	}
-	
+
 	// Set default User-Agent if not provided
 	if req.Header.Get("User-Agent") == "" {
 		req.Header.Set("User-Agent", "ProxyND/1.0")
 	}
-	
+
 	// Log the request
 	c.logger.Debug("Fetching from upstream",
 		logging.F("url", url),
 		logging.F("headers", len(headers)))
-	
+
 	// Execute request
 	resp, err := c.client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("upstream request failed: %w", err)
 	}
-	
+
 	// Check response status
 	if resp.StatusCode >= 400 {
 		// Read error body
 		body, _ := io.ReadAll(resp.Body)
 		resp.Body.Close()
-		
+
 		return &proxy.ProxyResponse{
 			Body:        io.NopCloser(io.Reader(nil)),
 			StatusCode:  resp.StatusCode,
@@ -75,10 +75,10 @@ func (c *HTTPUpstreamClient) Fetch(ctx context.Context, url string, headers map[
 			Cached:      false,
 		}, fmt.Errorf("upstream returned error: %d - %s", resp.StatusCode, string(body))
 	}
-	
+
 	// Extract filename from Content-Disposition header if available
 	filename := c.extractFilename(resp)
-	
+
 	// Build successful response
 	return &proxy.ProxyResponse{
 		Body:        resp.Body,
@@ -93,7 +93,7 @@ func (c *HTTPUpstreamClient) Fetch(ctx context.Context, url string, headers map[
 // extractHeaders extracts relevant headers from the HTTP response
 func (c *HTTPUpstreamClient) extractHeaders(resp *http.Response) map[string]string {
 	headers := make(map[string]string)
-	
+
 	// Extract commonly needed headers
 	relevantHeaders := []string{
 		"Content-Type",
@@ -104,13 +104,13 @@ func (c *HTTPUpstreamClient) extractHeaders(resp *http.Response) map[string]stri
 		"Content-Disposition",
 		"Content-Encoding",
 	}
-	
+
 	for _, header := range relevantHeaders {
 		if value := resp.Header.Get(header); value != "" {
 			headers[header] = value
 		}
 	}
-	
+
 	return headers
 }
 
@@ -120,7 +120,7 @@ func (c *HTTPUpstreamClient) extractFilename(resp *http.Response) string {
 	if contentDisposition == "" {
 		return ""
 	}
-	
+
 	// Simple extraction - in production, use a proper parser
 	const filenamePrefix = "filename="
 	start := len(contentDisposition) - len(filenamePrefix)
@@ -134,7 +134,7 @@ func (c *HTTPUpstreamClient) extractFilename(resp *http.Response) string {
 			return filename
 		}
 	}
-	
+
 	return ""
 }
 

@@ -177,9 +177,9 @@ func TestProxyServiceFactory_CreateProxyService(t *testing.T) {
 // Table-driven test for all supported proxy types
 func TestProxyServiceFactory_AllProxyTypes(t *testing.T) {
 	ctx := context.Background()
-	
+
 	proxyTypes := []string{"apt", "maven", "npm", "docker", "pip", "yum", "apk", "helm"}
-	
+
 	for _, proxyType := range proxyTypes {
 		t.Run(proxyType, func(t *testing.T) {
 			cache := &MockCacheService{}

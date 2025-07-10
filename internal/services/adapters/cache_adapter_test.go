@@ -71,11 +71,11 @@ func TestCacheAdapter_Get(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name       string
-		key        string
-		setupMock  func(*MockCacheRepository)
-		wantExists bool
-		wantErr    bool
+		name        string
+		key         string
+		setupMock   func(*MockCacheRepository)
+		wantExists  bool
+		wantErr     bool
 		wantContent string
 	}{
 		{
@@ -122,7 +122,7 @@ func TestCacheAdapter_Get(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				assert.Equal(t, tt.wantExists, exists)
-				
+
 				if tt.wantExists {
 					require.NotNil(t, content)
 					data, err := ioutil.ReadAll(content)

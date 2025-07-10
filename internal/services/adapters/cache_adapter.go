@@ -30,7 +30,7 @@ func (a *CacheAdapter) Get(ctx context.Context, key string) (io.ReadCloser, bool
 		// Cache miss is not an error in this context
 		return nil, false, nil
 	}
-	
+
 	return content, true, nil
 }
 

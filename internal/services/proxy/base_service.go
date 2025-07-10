@@ -46,12 +46,12 @@ func (s *BaseProxyService) ValidateRequest(req ProxyRequest) error {
 	if req.Path == "" {
 		return fmt.Errorf("request path cannot be empty")
 	}
-	
+
 	// Prevent directory traversal attacks
 	if strings.Contains(req.Path, "..") {
 		return fmt.Errorf("invalid path: directory traversal detected")
 	}
-	
+
 	return nil
 }
 
@@ -65,11 +65,11 @@ func (s *BaseProxyService) TryCache(ctx context.Context, cacheKey string) (io.Re
 			logging.F("error", err))
 		return nil, false, nil
 	}
-	
+
 	if !exists {
 		return nil, false, nil
 	}
-	
+
 	// Retrieve from cache
 	content, found, err := s.Cache.Get(ctx, cacheKey)
 	if err != nil {
@@ -78,13 +78,13 @@ func (s *BaseProxyService) TryCache(ctx context.Context, cacheKey string) (io.Re
 			logging.F("error", err))
 		return nil, false, err
 	}
-	
+
 	if found {
 		s.Logger.Info("Cache hit",
 			logging.F("proxy_type", s.ProxyType),
 			logging.F("key", cacheKey))
 	}
-	
+
 	return content, found, nil
 }
 
@@ -97,11 +97,11 @@ func (s *BaseProxyService) CacheResponse(ctx context.Context, cacheKey string, c
 			logging.F("error", err))
 		return err
 	}
-	
+
 	s.Logger.Info("Response cached",
 		logging.F("proxy_type", s.ProxyType),
 		logging.F("key", cacheKey))
-	
+
 	return nil
 }
 
@@ -113,7 +113,7 @@ func (s *BaseProxyService) BuildCacheKey(requestPath string) string {
 // DetermineContentType determines content type based on file extension
 func (s *BaseProxyService) DetermineContentType(filename string) string {
 	ext := strings.ToLower(path.Ext(filename))
-	
+
 	switch ext {
 	case ".xml", ".pom":
 		return "application/xml"
@@ -145,7 +145,7 @@ func (s *BaseProxyService) BuildProxyResponse(
 	cached bool,
 ) *ProxyResponse {
 	headers := make(map[string]string)
-	
+
 	if filename != "" {
 		if contentType == "application/xml" || strings.HasSuffix(filename, ".xml") {
 			headers["Content-Disposition"] = fmt.Sprintf("inline; filename=%s", filename)
@@ -153,15 +153,15 @@ func (s *BaseProxyService) BuildProxyResponse(
 			headers["Content-Disposition"] = fmt.Sprintf("attachment; filename=%s", filename)
 		}
 	}
-	
+
 	if cached {
 		headers["X-Cache"] = "HIT"
 	} else {
 		headers["X-Cache"] = "MISS"
 	}
-	
+
 	headers["X-Proxy-Type"] = s.ProxyType
-	
+
 	return &ProxyResponse{
 		Body:        body,
 		StatusCode:  statusCode,

@@ -46,24 +46,24 @@ func (a *ConfigAdapter) WatchConfig(callback func(proxyType string, config inter
 // SaveProxyConfig saves a proxy configuration
 func (a *ConfigAdapter) SaveProxyConfig(proxyType string, config interface{}) error {
 	ctx := context.Background()
-	
+
 	// Validate before saving
 	if err := a.repo.ValidateConfig(ctx, proxyType, config); err != nil {
 		return fmt.Errorf("config validation failed: %w", err)
 	}
-	
+
 	return a.repo.SaveProxyConfig(ctx, proxyType, config)
 }
 
 // SaveGlobalConfig saves the global configuration
 func (a *ConfigAdapter) SaveGlobalConfig(config interface{}) error {
 	ctx := context.Background()
-	
+
 	// Validate before saving
 	if err := a.repo.ValidateConfig(ctx, "global", config); err != nil {
 		return fmt.Errorf("config validation failed: %w", err)
 	}
-	
+
 	return a.repo.SaveGlobalConfig(ctx, config)
 }
 

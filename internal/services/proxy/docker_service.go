@@ -20,21 +20,21 @@ func NewDockerService(
 	upstreamClient UpstreamClient,
 ) (*DockerService, error) {
 	base := NewBaseProxyService("docker", cache, configService, upstreamClient)
-	
+
 	// Load Docker-specific configuration
 	configInterface, err := configService.GetProxyConfig("docker")
 	if err != nil {
 		return nil, fmt.Errorf("failed to load docker config: %w", err)
 	}
-	
+
 	dockerConfig, ok := configInterface.(*configs.DockerProxyConfig)
 	if !ok {
 		return nil, fmt.Errorf("invalid docker config type")
 	}
-	
+
 	return &DockerService{
 		BaseProxyService: base,
-		config:          dockerConfig,
+		config:           dockerConfig,
 	}, nil
 }
 

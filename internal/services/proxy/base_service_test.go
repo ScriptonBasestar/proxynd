@@ -206,12 +206,12 @@ func TestBaseProxyService_FetchFromCacheOrUpstream(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name         string
-		setupMocks   func(*MockCacheService, *MockUpstreamClient)
-		req          ProxyRequest
-		upstreamURL  string
-		wantCached   bool
-		wantErr      bool
+		name        string
+		setupMocks  func(*MockCacheService, *MockUpstreamClient)
+		req         ProxyRequest
+		upstreamURL string
+		wantCached  bool
+		wantErr     bool
 	}{
 		{
 			name: "cache hit",
@@ -230,7 +230,7 @@ func TestBaseProxyService_FetchFromCacheOrUpstream(t *testing.T) {
 			name: "cache miss - fetch from upstream",
 			setupMocks: func(cache *MockCacheService, upstream *MockUpstreamClient) {
 				cache.On("Get", ctx, "test:/test/path").Return(nil, false, nil)
-				
+
 				resp := &ProxyResponse{
 					Body:       ioutil.NopCloser(bytes.NewBufferString("upstream content")),
 					StatusCode: 200,
@@ -249,7 +249,7 @@ func TestBaseProxyService_FetchFromCacheOrUpstream(t *testing.T) {
 			name: "cache error - fallback to upstream",
 			setupMocks: func(cache *MockCacheService, upstream *MockUpstreamClient) {
 				cache.On("Get", ctx, "test:/test/path").Return(nil, false, fmt.Errorf("cache error"))
-				
+
 				resp := &ProxyResponse{
 					Body:       ioutil.NopCloser(bytes.NewBufferString("upstream content")),
 					StatusCode: 200,
@@ -409,7 +409,7 @@ func TestBaseProxyService_HandleError(t *testing.T) {
 
 			assert.NotNil(t, resp)
 			assert.Equal(t, tt.expectedCode, resp.StatusCode)
-			
+
 			// Read the body to check error message
 			body, err := ioutil.ReadAll(resp.Body)
 			require.NoError(t, err)
@@ -424,11 +424,11 @@ func TestBaseProxyService_HandleRequest(t *testing.T) {
 	req := ProxyRequest{Path: "/test"}
 
 	resp, err := service.HandleRequest(ctx, req)
-	
+
 	assert.NoError(t, err)
 	assert.NotNil(t, resp)
 	assert.Equal(t, 501, resp.StatusCode)
-	
+
 	body, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
 	assert.Contains(t, string(body), "not implemented")

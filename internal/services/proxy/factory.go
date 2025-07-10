@@ -37,20 +37,20 @@ func (f *ServiceFactory) GetService(proxyType string) (ProxyService, error) {
 		return service, nil
 	}
 	f.mu.RUnlock()
-	
+
 	// Create new service
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	
+
 	// Double-check after acquiring write lock
 	if service, exists := f.services[proxyType]; exists {
 		return service, nil
 	}
-	
+
 	// Create service based on type
 	var service ProxyService
 	var err error
-	
+
 	switch proxyType {
 	case "maven":
 		service, err = NewMavenService(f.cache, f.config, f.upstreamClient)
@@ -69,14 +69,14 @@ func (f *ServiceFactory) GetService(proxyType string) (ProxyService, error) {
 	default:
 		return nil, fmt.Errorf("unsupported proxy type: %s", proxyType)
 	}
-	
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to create %s service: %w", proxyType, err)
 	}
-	
+
 	// Cache the service instance
 	f.services[proxyType] = service
-	
+
 	return service, nil
 }
 
@@ -84,7 +84,7 @@ func (f *ServiceFactory) GetService(proxyType string) (ProxyService, error) {
 func (f *ServiceFactory) ReloadServices() {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	
+
 	// Clear all cached services
 	f.services = make(map[string]ProxyService)
 }

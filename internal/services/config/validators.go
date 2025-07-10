@@ -14,22 +14,22 @@ func (v *globalConfigValidator) Validate(config interface{}) error {
 	if !ok {
 		return fmt.Errorf("invalid config type, expected *configs.GlobalConfig")
 	}
-	
+
 	// 캐시 디렉토리 검증
 	if cfg.CacheDir == "" {
 		return fmt.Errorf("cache directory cannot be empty")
 	}
-	
+
 	// 캐시 TTL 검증
 	if cfg.CacheTTL < 0 {
 		return fmt.Errorf("cache TTL cannot be negative")
 	}
-	
+
 	// 최대 캐시 크기 검증
 	if cfg.MaxCacheSize < 0 {
 		return fmt.Errorf("max cache size cannot be negative")
 	}
-	
+
 	return nil
 }
 
@@ -68,7 +68,7 @@ func (v *proxyConfigValidator) validateAptConfig(config interface{}) error {
 	if !ok {
 		return fmt.Errorf("invalid config type, expected *configs.AptProxyConfig")
 	}
-	
+
 	// Use the config's own validation method which includes struct tag validation
 	return cfg.Validate()
 }
@@ -79,7 +79,7 @@ func (v *proxyConfigValidator) validateMavenConfig(config interface{}) error {
 	if !ok {
 		return fmt.Errorf("invalid config type, expected *configs.MavenProxyConfig")
 	}
-	
+
 	// Use the config's own validation method which includes struct tag validation
 	return cfg.Validate()
 }
@@ -90,7 +90,7 @@ func (v *proxyConfigValidator) validateNpmConfig(config interface{}) error {
 	if !ok {
 		return fmt.Errorf("invalid config type, expected *configs.NpmProxyConfig")
 	}
-	
+
 	// Use the config's own validation method which includes struct tag validation
 	return cfg.Validate()
 }
@@ -101,7 +101,7 @@ func (v *proxyConfigValidator) validatePipConfig(config interface{}) error {
 	if !ok {
 		return fmt.Errorf("invalid config type, expected *configs.PipProxyConfig")
 	}
-	
+
 	// Use the config's own validation method which includes struct tag validation
 	return cfg.Validate()
 }
@@ -112,7 +112,7 @@ func (v *proxyConfigValidator) validateYumConfig(config interface{}) error {
 	if !ok {
 		return fmt.Errorf("invalid config type, expected *configs.YumProxyConfig")
 	}
-	
+
 	// Use the config's own validation method which includes struct tag validation
 	return cfg.Validate()
 }
@@ -123,7 +123,7 @@ func (v *proxyConfigValidator) validateApkConfig(config interface{}) error {
 	if !ok {
 		return fmt.Errorf("invalid config type, expected *configs.ApkProxyConfig")
 	}
-	
+
 	// Use the config's own validation method which includes struct tag validation
 	return cfg.Validate()
 }
@@ -140,7 +140,7 @@ func (v *proxyConfigValidator) validateDockerConfig(config interface{}) error {
 	if !ok {
 		return fmt.Errorf("invalid config type, expected *configs.DockerProxyConfig")
 	}
-	
+
 	// Use the config's own validation method which includes struct tag validation
 	return cfg.Validate()
 }

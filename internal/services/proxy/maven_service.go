@@ -27,21 +27,21 @@ func NewMavenService(
 	upstreamClient UpstreamClient,
 ) (*MavenService, error) {
 	base := NewBaseProxyService("maven", cache, configService, upstreamClient)
-	
+
 	// Load Maven-specific configuration
 	configInterface, err := configService.GetProxyConfig("maven")
 	if err != nil {
 		return nil, fmt.Errorf("failed to load maven config: %w", err)
 	}
-	
+
 	mavenConfig, ok := configInterface.(*configs.MavenProxyConfig)
 	if !ok {
 		return nil, fmt.Errorf("invalid maven config type")
 	}
-	
+
 	return &MavenService{
 		BaseProxyService: base,
-		config:          mavenConfig,
+		config:           mavenConfig,
 	}, nil
 }
 
@@ -51,22 +51,22 @@ func (s *MavenService) HandleRequest(ctx context.Context, req ProxyRequest) (*Pr
 	if err := s.ValidateRequest(req); err != nil {
 		return s.HandleError(err, http.StatusBadRequest), nil
 	}
-	
+
 	// Build cache key
 	cacheKey := s.BuildCacheKey(req.Path)
-	
+
 	// Try to get from cache first
 	cachedContent, found, err := s.TryCache(ctx, cacheKey)
 	if err != nil {
 		s.Logger.Warn("Cache error, continuing with upstream",
 			logging.F("error", err))
 	}
-	
+
 	if found && cachedContent != nil {
 		// Return cached content
 		filename := filepath.Base(req.Path)
 		contentType := s.DetermineContentType(filename)
-		
+
 		return s.BuildProxyResponse(
 			cachedContent,
 			http.StatusOK,
@@ -75,7 +75,7 @@ func (s *MavenService) HandleRequest(ctx context.Context, req ProxyRequest) (*Pr
 			true,
 		), nil
 	}
-	
+
 	// Not in cache, fetch from upstream
 	response, err := s.fetchFromUpstream(ctx, req)
 	if err != nil {
@@ -84,7 +84,7 @@ func (s *MavenService) HandleRequest(ctx context.Context, req ProxyRequest) (*Pr
 			logging.F("error", err))
 		return s.HandleError(err, http.StatusBadGateway), nil
 	}
-	
+
 	return response, nil
 }
 
@@ -94,17 +94,17 @@ func (s *MavenService) ValidateRequest(req ProxyRequest) error {
 	if err := s.BaseProxyService.ValidateRequest(req); err != nil {
 		return err
 	}
-	
+
 	// Maven-specific validation
 	if req.Method != "GET" && req.Method != "HEAD" {
 		return fmt.Errorf("unsupported method for Maven proxy: %s", req.Method)
 	}
-	
+
 	// Check if path looks like a valid Maven artifact path
 	if !s.isValidMavenPath(req.Path) {
 		return fmt.Errorf("invalid Maven artifact path: %s", req.Path)
 	}
-	
+
 	return nil
 }
 
@@ -115,13 +115,13 @@ func (s *MavenService) fetchFromUpstream(ctx context.Context, req ProxyRequest) 
 		if !proxy.Enabled {
 			continue
 		}
-		
+
 		url := s.buildUpstreamURL(proxy.URL, req.Path)
-		
+
 		s.Logger.Debug("Trying upstream",
 			logging.F("proxy", proxy.Name),
 			logging.F("url", url))
-		
+
 		// Build headers
 		headers := make(map[string]string)
 		if proxy.BasicAuth.Username != "" && proxy.BasicAuth.Password != "" {
@@ -129,7 +129,7 @@ func (s *MavenService) fetchFromUpstream(ctx context.Context, req ProxyRequest) 
 			headers["Authorization"] = fmt.Sprintf("Basic %s",
 				s.encodeBasicAuth(proxy.BasicAuth.Username, proxy.BasicAuth.Password))
 		}
-		
+
 		// Fetch from upstream
 		response, err := s.UpstreamClient.Fetch(ctx, url, headers)
 		if err != nil {
@@ -139,7 +139,7 @@ func (s *MavenService) fetchFromUpstream(ctx context.Context, req ProxyRequest) 
 				logging.F("error", err))
 			continue
 		}
-		
+
 		if response.StatusCode == http.StatusOK {
 			// Success! Cache the response if enabled
 			if s.config.Cache.Enabled {
@@ -151,16 +151,16 @@ func (s *MavenService) fetchFromUpstream(ctx context.Context, req ProxyRequest) 
 						logging.F("error", err))
 				}
 			}
-			
+
 			return response, nil
 		}
-		
+
 		// Close the body if not successful
 		if response.Body != nil {
 			response.Body.Close()
 		}
 	}
-	
+
 	return nil, fmt.Errorf("all upstream proxies failed")
 }
 
@@ -169,16 +169,16 @@ func (s *MavenService) isValidMavenPath(path string) bool {
 	// Basic validation - Maven paths typically contain group/artifact/version structure
 	// This is a simplified check
 	parts := strings.Split(strings.Trim(path, "/"), "/")
-	
+
 	// At minimum, we need group/artifact/version/file
 	if len(parts) < 4 {
 		return false
 	}
-	
+
 	// Check for common Maven file extensions
 	filename := parts[len(parts)-1]
 	validExtensions := []string{".pom", ".jar", ".war", ".ear", ".xml", ".sha1", ".md5", ".asc"}
-	
+
 	hasValidExtension := false
 	for _, ext := range validExtensions {
 		if strings.HasSuffix(filename, ext) {
@@ -186,7 +186,7 @@ func (s *MavenService) isValidMavenPath(path string) bool {
 			break
 		}
 	}
-	
+
 	return hasValidExtension
 }
 

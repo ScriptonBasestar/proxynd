@@ -33,10 +33,10 @@ type ProxyResponse struct {
 type ProxyService interface {
 	// HandleRequest processes a proxy request
 	HandleRequest(ctx context.Context, req ProxyRequest) (*ProxyResponse, error)
-	
+
 	// ValidateRequest validates if the request is valid
 	ValidateRequest(req ProxyRequest) error
-	
+
 	// GetProxyType returns the type of proxy (apt, maven, npm, etc.)
 	GetProxyType() string
 }
@@ -45,13 +45,13 @@ type ProxyService interface {
 type CacheService interface {
 	// Get retrieves content from cache
 	Get(ctx context.Context, key string) (io.ReadCloser, bool, error)
-	
+
 	// Put stores content in cache
 	Put(ctx context.Context, key string, content io.Reader) error
-	
+
 	// Exists checks if a key exists in cache
 	Exists(ctx context.Context, key string) (bool, error)
-	
+
 	// Delete removes content from cache
 	Delete(ctx context.Context, key string) error
 }
@@ -60,10 +60,10 @@ type CacheService interface {
 type ConfigService interface {
 	// GetProxyConfig returns configuration for a specific proxy type
 	GetProxyConfig(ctx context.Context, proxyType string) (interface{}, error)
-	
+
 	// GetGlobalConfig returns global configuration
 	GetGlobalConfig(ctx context.Context) (interface{}, error)
-	
+
 	// ReloadConfig reloads configuration from disk
 	ReloadConfig(ctx context.Context) error
 }

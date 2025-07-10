@@ -48,7 +48,7 @@ cache:
 				createTestConfig(t, dir, "global.yaml", `invalid: yaml: content`)
 			},
 			wantErr: true,
-			errMsg:    "configuration validation failed",
+			errMsg:  "configuration validation failed",
 		},
 	}
 
@@ -89,7 +89,7 @@ cache:
 // TestService_GetGlobalConfig tests retrieving global configuration
 func TestService_GetGlobalConfig(t *testing.T) {
 	ctx := context.Background()
-	
+
 	tests := []struct {
 		name    string
 		setup   func() Service
@@ -229,7 +229,7 @@ func TestService_GetProxyConfigs(t *testing.T) {
 			cfg, err := tt.getter(ctx)
 			assert.NoError(t, err)
 			assert.NotNil(t, cfg)
-			
+
 			// Use reflection to check the Path field
 			switch v := cfg.(type) {
 			case *configs.MavenProxyConfig:
@@ -378,7 +378,7 @@ func TestService_ValidateAll(t *testing.T) {
 // TestService_Reload tests configuration reload
 func TestService_Reload(t *testing.T) {
 	ctx := context.Background()
-	
+
 	// Create temp directory with test configs
 	tempDir := t.TempDir()
 	createTestConfig(t, tempDir, "global.yaml", `

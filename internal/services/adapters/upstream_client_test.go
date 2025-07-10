@@ -34,7 +34,7 @@ func TestNewHTTPUpstreamClient(t *testing.T) {
 			client := NewHTTPUpstreamClient(tt.timeout)
 			assert.NotNil(t, client)
 			assert.NotNil(t, client.client)
-			
+
 			if tt.timeout > 0 {
 				assert.Equal(t, tt.timeout, client.client.Timeout)
 			} else {
@@ -72,7 +72,7 @@ func TestHTTPUpstreamClient_Fetch(t *testing.T) {
 			checkResponse: func(t *testing.T, resp *ProxyResponse) {
 				assert.Equal(t, "text/plain", resp.ContentType)
 				assert.Equal(t, "custom-value", resp.Headers["X-Custom-Header"])
-				
+
 				body, err := ioutil.ReadAll(resp.Body)
 				require.NoError(t, err)
 				assert.Equal(t, "test content", string(body))
@@ -208,7 +208,7 @@ func TestHTTPUpstreamClient_Fetch(t *testing.T) {
 				require.NotNil(t, resp)
 				assert.Equal(t, tt.wantStatusCode, resp.StatusCode)
 				assert.False(t, resp.Cached)
-				
+
 				if tt.checkResponse != nil {
 					tt.checkResponse(t, resp)
 				}
@@ -252,7 +252,7 @@ func TestHTTPUpstreamClient_FetchWithContextCancel(t *testing.T) {
 
 	client := NewHTTPUpstreamClient(0)
 	ctx, cancel := context.WithCancel(context.Background())
-	
+
 	// Cancel context immediately
 	cancel()
 
@@ -264,9 +264,9 @@ func TestHTTPUpstreamClient_FetchWithContextCancel(t *testing.T) {
 
 func TestHTTPUpstreamClient_ParseContentDisposition(t *testing.T) {
 	tests := []struct {
-		name        string
-		header      string
-		wantFile    string
+		name     string
+		header   string
+		wantFile string
 	}{
 		{
 			name:     "simple filename",
