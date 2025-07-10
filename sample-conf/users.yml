@@ -1,20 +1,30 @@
+# 사용자 인증 설정 예제
+# 보안 주의사항: 실제 비밀번호를 이 파일에 하드코딩하지 마세요!
+# 대신 해시된 비밀번호를 사용하거나 OAuth2를 권장합니다.
+
 #users:
 #  - name: admin
-#    password: passw0rd
+#    password_hash: "$2a$10$example.hashed.password.here"  # bcrypt 해시 사용 권장
 #    roles: [ admin ]
-#  - name: user
-#    password: passw0rd
-#    roles: [ user, deploy ]
+#  - name: developer
+#    password_hash: "$2a$10$another.hashed.password.here"
+#    roles: [ developer, deploy ]
 #
+# 비밀번호 해시 생성 방법:
+# go run -c 'fmt.Println(bcrypt.GenerateFromPassword([]byte("your-password"), bcrypt.DefaultCost))'
+#
+# 권장사항: Basic Auth 대신 OAuth2 인증 사용을 권장합니다.
+# OAuth2 설정은 oauth2.yaml 파일을 참조하세요.
+
 #roles:
 #  admin:
 #    permissions:
-#      - *
+#      - "*"  # 모든 권한
 #  developer:
 #    permissions:
-#      - read
-#      - write
-#      - deploy
-#  deployer:
+#      - "read"
+#      - "write"
+#      - "deploy"
+#  viewer:
 #    permissions:
-#      - deploy
+#      - "read"
