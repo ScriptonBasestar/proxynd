@@ -40,7 +40,8 @@
       "Bash(goimports:*)",
       "Bash(go install:*)",
       "Bash(mockery:*)",
-      "Bash(go run:*)"
+      "Bash(go run:*)",
+      "Bash(diff:*)"
     ],
     "deny": []
   }
