@@ -10,28 +10,28 @@ import (
 type Config struct {
 	// Timeout is the maximum time for a complete request
 	Timeout time.Duration
-	
+
 	// ConnectTimeout is the maximum time to establish a connection
 	ConnectTimeout time.Duration
-	
+
 	// KeepAliveTimeout is the keep-alive period for an active network connection
 	KeepAliveTimeout time.Duration
-	
+
 	// MaxIdleConns controls the maximum number of idle connections across all hosts
 	MaxIdleConns int
-	
+
 	// MaxIdleConnsPerHost controls the maximum idle connections to keep per-host
 	MaxIdleConnsPerHost int
-	
+
 	// MaxConnsPerHost limits the total connections per host
 	MaxConnsPerHost int
-	
+
 	// IdleConnTimeout is the maximum time an idle connection remains idle before closing
 	IdleConnTimeout time.Duration
-	
+
 	// DisableCompression disables transport compression
 	DisableCompression bool
-	
+
 	// DisableKeepAlives disables HTTP keep-alives
 	DisableKeepAlives bool
 }
@@ -83,7 +83,7 @@ func New(config Config) *http.Client {
 		DisableCompression:    config.DisableCompression,
 		DisableKeepAlives:     config.DisableKeepAlives,
 	}
-	
+
 	return &http.Client{
 		Transport: transport,
 		Timeout:   config.Timeout,

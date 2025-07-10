@@ -32,7 +32,7 @@ func (c *ContextClient) Get(ctx context.Context, url string) (*http.Response, er
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
-	
+
 	return c.client.Do(req)
 }
 
@@ -40,7 +40,7 @@ func (c *ContextClient) Get(ctx context.Context, url string) (*http.Response, er
 func (c *ContextClient) GetWithTimeout(url string, timeout time.Duration) (*http.Response, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	
+
 	return c.Get(ctx, url)
 }
 
@@ -50,11 +50,11 @@ func (c *ContextClient) Post(ctx context.Context, url string, contentType string
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
-	
+
 	if contentType != "" {
 		req.Header.Set("Content-Type", contentType)
 	}
-	
+
 	return c.client.Do(req)
 }
 
@@ -63,7 +63,7 @@ func (c *ContextClient) Do(req *http.Request) (*http.Response, error) {
 	if req.Context() == nil {
 		return nil, fmt.Errorf("request must have a context")
 	}
-	
+
 	return c.client.Do(req)
 }
 
@@ -71,7 +71,7 @@ func (c *ContextClient) Do(req *http.Request) (*http.Response, error) {
 func (c *ContextClient) DoWithTimeout(req *http.Request, timeout time.Duration) (*http.Response, error) {
 	ctx, cancel := context.WithTimeout(req.Context(), timeout)
 	defer cancel()
-	
+
 	return c.client.Do(req.WithContext(ctx))
 }
 
@@ -92,7 +92,7 @@ func NewProxyClient() *ProxyClient {
 // GetWithRetry performs a GET request with retry logic
 func (p *ProxyClient) GetWithRetry(ctx context.Context, url string, maxRetries int) (*http.Response, error) {
 	var lastErr error
-	
+
 	for attempt := 0; attempt <= maxRetries; attempt++ {
 		if attempt > 0 {
 			// Exponential backoff
@@ -103,24 +103,24 @@ func (p *ProxyClient) GetWithRetry(ctx context.Context, url string, maxRetries i
 				return nil, ctx.Err()
 			}
 		}
-		
+
 		resp, err := p.Get(ctx, url)
 		if err != nil {
 			lastErr = err
 			continue
 		}
-		
+
 		// Success or non-retryable status
 		if resp.StatusCode < 500 {
 			return resp, nil
 		}
-		
+
 		// Close body for retry
 		io.Copy(io.Discard, resp.Body)
 		resp.Body.Close()
 		lastErr = fmt.Errorf("server error: %d", resp.StatusCode)
 	}
-	
+
 	return nil, fmt.Errorf("failed after %d retries: %w", maxRetries, lastErr)
 }
 
