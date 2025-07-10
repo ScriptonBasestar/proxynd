@@ -31,14 +31,14 @@ func NewDocsCmd(rootCmd *cobra.Command) *cobra.Command {
 예제:
   # 현재 디렉토리에 man page 생성
   $ proxyndctl docs man .
-  
+
   # 특정 디렉토리에 생성
   $ proxyndctl docs man /tmp/man
-  
+
   # 시스템에 설치 (관리자 권한 필요)
   $ proxyndctl docs man . && sudo cp ./proxyndctl.1 /usr/share/man/man1/
   $ sudo mandb  # man 데이터베이스 업데이트
-  
+
   # 설치 확인
   $ man proxyndctl`,
 		Args: cobra.MaximumNArgs(1),
@@ -62,7 +62,7 @@ func NewDocsCmd(rootCmd *cobra.Command) *cobra.Command {
 예제:
   # 현재 디렉토리에 markdown 생성
   $ proxyndctl docs markdown .
-  
+
   # docs 디렉토리에 생성
   $ proxyndctl docs markdown ./docs/cli`,
 		Args: cobra.MaximumNArgs(1),
@@ -86,7 +86,7 @@ func NewDocsCmd(rootCmd *cobra.Command) *cobra.Command {
 예제:
   # 현재 디렉토리에 rest 생성
   $ proxyndctl docs rest .
-  
+
   # docs 디렉토리에 생성
   $ proxyndctl docs rest ./docs/source`,
 		Args: cobra.MaximumNArgs(1),
@@ -110,7 +110,7 @@ func NewDocsCmd(rootCmd *cobra.Command) *cobra.Command {
 예제:
   # 현재 디렉토리에 YAML 생성
   $ proxyndctl docs yaml .
-  
+
   # 파일로 저장
   $ proxyndctl docs yaml . > proxyndctl-commands.yaml`,
 		Args: cobra.MaximumNArgs(1),

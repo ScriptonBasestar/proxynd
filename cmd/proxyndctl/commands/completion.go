@@ -30,10 +30,10 @@ bash, zsh, fish, powershell 쉘을 지원합니다.`,
    $ source <(proxyndctl completion bash)
 
 2. 모든 새 세션에서 자동으로 로드하도록 설정:
-   
+
    Linux:
    $ proxyndctl completion bash > /etc/bash_completion.d/proxyndctl
-   
+
    macOS:
    $ proxyndctl completion bash > $(brew --prefix)/etc/bash_completion.d/proxyndctl
 
@@ -64,7 +64,7 @@ bash, zsh, fish, powershell 쉘을 지원합니다.`,
    $ source <(proxyndctl completion zsh)
 
 2. 모든 새 세션에서 자동으로 로드하도록 설정:
-   
+
    Zsh 자동완성 디렉토리에 저장:
    $ proxyndctl completion zsh > "${fpath[1]}/_proxyndctl"
 
