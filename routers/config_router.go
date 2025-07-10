@@ -11,6 +11,7 @@ import (
 
 	"proxynd/configs"
 	"proxynd/helpers"
+	"proxynd/internal/security"
 	"proxynd/logging"
 )
 
@@ -465,20 +466,33 @@ func listConfigFiles(c *fiber.Ctx) error {
 
 // getConfigFile 특정 설정 파일 내용 조회 핸들러
 func getConfigFile(c *fiber.Ctx) error {
+	logger := logging.GetLogger()
 	filename := c.Params("*")
 	configDir := helpers.GetConfigDir()
 	if configDir == "" {
 		configDir = "./config"
 	}
 
-	// 보안: 경로 순회 공격 방지
-	if strings.Contains(filename, "..") || strings.Contains(filename, "/") {
+	// 보안: Path Traversal 방지를 위한 파일명 검증
+	if err := security.ValidateFilename(filename); err != nil {
+		logger.Warn("Invalid config filename",
+			logging.F("filename", filename),
+			logging.F("error", err.Error()))
 		return c.Status(400).JSON(fiber.Map{
 			"error": "Invalid filename",
 		})
 	}
 
-	filePath := filepath.Join(configDir, filename)
+	// 안전한 경로 조합
+	filePath, err := security.SafeJoinPath(configDir, filename)
+	if err != nil {
+		logger.Warn("Path traversal attempt in config",
+			logging.F("filename", filename),
+			logging.F("error", err.Error()))
+		return c.Status(400).JSON(fiber.Map{
+			"error": "Invalid path",
+		})
+	}
 
 	// 파일 존재 확인
 	if !helpers.FileExists(filePath) {

@@ -10,6 +10,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"proxynd/configs"
+	"proxynd/internal/security"
 	"proxynd/logging"
 )
 
@@ -344,7 +345,45 @@ func deleteCacheItem(c *fiber.Ctx) error {
 	logger := logging.GetLogger()
 	itemPath := c.Params("*")
 
-	logger.Info("Deleting cache item", logging.F("path", itemPath))
+	// 보안: Path Traversal 방지를 위한 경로 검증
+	if err := security.ValidateFilename(itemPath); err != nil {
+		logger.Warn("Invalid cache item path",
+			logging.F("path", itemPath),
+			logging.F("error", err.Error()))
+		return c.Status(400).JSON(fiber.Map{
+			"error": "Invalid path",
+		})
+	}
+
+	// 글로벌 설정에서 저장소 디렉토리 가져오기
+	globalConfig := configs.GlobalConfig{}
+	if !globalConfig.ConfigExists() {
+		logger.Error("Global configuration not found")
+		return c.Status(500).JSON(fiber.Map{
+			"error": "Configuration not available",
+		})
+	}
+
+	globalConfig.ReadConfig()
+	storageDir := getStorageDir(globalConfig)
+
+	// 안전한 경로 조합
+	safePath, err := security.SafeJoinPath(storageDir, itemPath)
+	if err != nil {
+		logger.Warn("Path traversal attempt detected",
+			logging.F("path", itemPath),
+			logging.F("error", err.Error()))
+		return c.Status(400).JSON(fiber.Map{
+			"error": "Invalid path",
+		})
+	}
+
+	logger.Info("Deleting cache item",
+		logging.F("original_path", itemPath),
+		logging.F("safe_path", safePath))
+
+	// 실제 파일 삭제는 여기서 구현 (현재는 로깅만)
+	// 예: os.Remove(safePath)
 
 	return c.JSON(fiber.Map{
 		"success":    true,
