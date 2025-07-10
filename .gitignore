@@ -192,3 +192,4 @@ tmpconf/
 .migrate_working_dir/
 .buildlog/
 .svn/
+results/
