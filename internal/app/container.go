@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"proxynd/internal/handlers"
+	"proxynd/handlers"
 	"proxynd/internal/repositories/cache"
 	"proxynd/internal/repositories/config"
 	"proxynd/internal/services/adapters"
@@ -16,24 +16,24 @@ import (
 
 // Container is the dependency injection container
 type Container struct {
-	mu       sync.RWMutex
-	config   *Config
-	logger   logging.Logger
-	
+	mu     sync.RWMutex
+	config *Config
+	logger logging.Logger
+
 	// Repositories
 	cacheRepo  cache.Repository
 	configRepo config.Repository
-	
+
 	// Services
 	cacheService   proxy.CacheService
 	configService  proxy.ConfigService
 	upstreamClient proxy.UpstreamClient
 	serviceFactory *proxy.ServiceFactory
-	
+
 	// Handlers
-	handlerFactory   types.ProxyHandlerFactory
-	unifiedRouter    *handlers.UnifiedProxyRouter
-	
+	handlerFactory types.ProxyHandlerFactory
+	unifiedRouter  *handlers.UnifiedProxyRouter
+
 	// Singleton instances
 	singletons map[string]interface{}
 }
@@ -61,11 +61,11 @@ func (c *Container) GetConfig() *Config {
 func (c *Container) GetCacheRepository() (cache.Repository, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	if c.cacheRepo != nil {
 		return c.cacheRepo, nil
 	}
-	
+
 	// Create cache repository
 	repo, err := cache.NewFileRepository(
 		c.config.StorageDir,
@@ -75,7 +75,7 @@ func (c *Container) GetCacheRepository() (cache.Repository, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create cache repository: %w", err)
 	}
-	
+
 	c.cacheRepo = repo
 	return repo, nil
 }
@@ -84,17 +84,17 @@ func (c *Container) GetCacheRepository() (cache.Repository, error) {
 func (c *Container) GetConfigRepository() (config.Repository, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	if c.configRepo != nil {
 		return c.configRepo, nil
 	}
-	
+
 	// Create config repository
 	repo, err := config.NewFileRepository(c.config.ConfigDir)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create config repository: %w", err)
 	}
-	
+
 	c.configRepo = repo
 	return repo, nil
 }
@@ -103,17 +103,17 @@ func (c *Container) GetConfigRepository() (config.Repository, error) {
 func (c *Container) GetCacheService() (proxy.CacheService, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	if c.cacheService != nil {
 		return c.cacheService, nil
 	}
-	
+
 	// Get cache repository
 	repo, err := c.GetCacheRepository()
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Create cache service adapter
 	c.cacheService = adapters.NewCacheAdapter(repo, c.config.CacheMaxAge)
 	return c.cacheService, nil
@@ -123,17 +123,17 @@ func (c *Container) GetCacheService() (proxy.CacheService, error) {
 func (c *Container) GetConfigService() (proxy.ConfigService, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	if c.configService != nil {
 		return c.configService, nil
 	}
-	
+
 	// Get config repository
 	repo, err := c.GetConfigRepository()
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Create config service adapter
 	c.configService = adapters.NewConfigAdapter(repo)
 	return c.configService, nil
@@ -143,11 +143,11 @@ func (c *Container) GetConfigService() (proxy.ConfigService, error) {
 func (c *Container) GetUpstreamClient() proxy.UpstreamClient {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	if c.upstreamClient != nil {
 		return c.upstreamClient
 	}
-	
+
 	// Create HTTP upstream client
 	c.upstreamClient = adapters.NewHTTPUpstreamClient(30 * time.Second)
 	return c.upstreamClient
@@ -157,31 +157,31 @@ func (c *Container) GetUpstreamClient() proxy.UpstreamClient {
 func (c *Container) GetServiceFactory() (*proxy.ServiceFactory, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	if c.serviceFactory != nil {
 		return c.serviceFactory, nil
 	}
-	
+
 	// Get dependencies
 	cacheService, err := c.GetCacheService()
 	if err != nil {
 		return nil, err
 	}
-	
+
 	configService, err := c.GetConfigService()
 	if err != nil {
 		return nil, err
 	}
-	
+
 	upstreamClient := c.GetUpstreamClient()
-	
+
 	// Create service factory
 	c.serviceFactory = proxy.NewServiceFactory(
 		cacheService,
 		configService,
 		upstreamClient,
 	)
-	
+
 	return c.serviceFactory, nil
 }
 
@@ -189,20 +189,20 @@ func (c *Container) GetServiceFactory() (*proxy.ServiceFactory, error) {
 func (c *Container) GetHandlerFactory() (types.ProxyHandlerFactory, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	if c.handlerFactory != nil {
 		return c.handlerFactory, nil
 	}
-	
+
 	// Get service factory
 	serviceFactory, err := c.GetServiceFactory()
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Create handler factory
 	factory := types.NewStandardProxyHandlerFactory()
-	
+
 	// Register all handlers
 	// Maven
 	if err := factory.RegisterHandler(
@@ -211,7 +211,7 @@ func (c *Container) GetHandlerFactory() (types.ProxyHandlerFactory, error) {
 	); err != nil {
 		return nil, fmt.Errorf("failed to register Maven handler: %w", err)
 	}
-	
+
 	// APT
 	if err := factory.RegisterHandler(
 		types.ProxyTypeAPT,
@@ -219,7 +219,7 @@ func (c *Container) GetHandlerFactory() (types.ProxyHandlerFactory, error) {
 	); err != nil {
 		return nil, fmt.Errorf("failed to register APT handler: %w", err)
 	}
-	
+
 	// NPM
 	if err := factory.RegisterHandler(
 		types.ProxyTypeNPM,
@@ -227,9 +227,9 @@ func (c *Container) GetHandlerFactory() (types.ProxyHandlerFactory, error) {
 	); err != nil {
 		return nil, fmt.Errorf("failed to register NPM handler: %w", err)
 	}
-	
+
 	// TODO: Register other handlers (Docker, PIP, YUM, APK)
-	
+
 	c.handlerFactory = factory
 	return factory, nil
 }
@@ -238,17 +238,17 @@ func (c *Container) GetHandlerFactory() (types.ProxyHandlerFactory, error) {
 func (c *Container) GetUnifiedRouter() (*handlers.UnifiedProxyRouter, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	if c.unifiedRouter != nil {
 		return c.unifiedRouter, nil
 	}
-	
+
 	// Get service factory
 	serviceFactory, err := c.GetServiceFactory()
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Create unified router
 	c.unifiedRouter = handlers.NewUnifiedProxyRouter(serviceFactory)
 	return c.unifiedRouter, nil
@@ -258,7 +258,7 @@ func (c *Container) GetUnifiedRouter() (*handlers.UnifiedProxyRouter, error) {
 func (c *Container) GetSingleton(key string) (interface{}, bool) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	
+
 	instance, exists := c.singletons[key]
 	return instance, exists
 }
@@ -267,7 +267,7 @@ func (c *Container) GetSingleton(key string) (interface{}, bool) {
 func (c *Container) SetSingleton(key string, instance interface{}) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	c.singletons[key] = instance
 }
 
@@ -275,7 +275,7 @@ func (c *Container) SetSingleton(key string, instance interface{}) {
 func (c *Container) Close() error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	
+
 	// Close config repository watcher
 	if c.configRepo != nil {
 		if closer, ok := c.configRepo.(interface{ Close() error }); ok {
@@ -284,7 +284,7 @@ func (c *Container) Close() error {
 			}
 		}
 	}
-	
+
 	// Clear all references
 	c.cacheRepo = nil
 	c.configRepo = nil
@@ -295,6 +295,6 @@ func (c *Container) Close() error {
 	c.handlerFactory = nil
 	c.unifiedRouter = nil
 	c.singletons = make(map[string]interface{})
-	
+
 	return nil
 }
