@@ -106,7 +106,7 @@ func TestInputValidation(t *testing.T) {
 			}
 
 			if resp.StatusCode != tt.expectedStatus {
-				t.Errorf("%s: expected status %d, got %d", 
+				t.Errorf("%s: expected status %d, got %d",
 					tt.description, tt.expectedStatus, resp.StatusCode)
 			}
 		})
@@ -116,7 +116,7 @@ func TestInputValidation(t *testing.T) {
 // TestInputValidationWithConfig 설정이 있는 입력 검증 테스트
 func TestInputValidationWithConfig(t *testing.T) {
 	app := fiber.New()
-	
+
 	// 엄격한 설정 적용
 	strictConfig := ValidationConfig{
 		MaxFileSize:     1024, // 1KB
@@ -125,7 +125,7 @@ func TestInputValidationWithConfig(t *testing.T) {
 		AllowedFileExts: []string{".jar"},
 		EnableLogging:   false, // 테스트에서는 로깅 비활성화
 	}
-	
+
 	app.Use(InputValidation(strictConfig))
 	app.Get("/test/:package", func(c *fiber.Ctx) error {
 		return c.SendString("OK")
@@ -175,11 +175,11 @@ func TestInputValidationWithConfig(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			req := httptest.NewRequest(tt.method, tt.url, nil)
 			req.Header.Set("User-Agent", "test-client/1.0")
-			
+
 			if tt.contentLength > 0 {
 				req.ContentLength = tt.contentLength
 			}
-			
+
 			for key, value := range tt.headers {
 				req.Header.Set(key, value)
 			}
@@ -199,14 +199,14 @@ func TestInputValidationWithConfig(t *testing.T) {
 // TestRateLimit Rate Limiting 미들웨어 테스트
 func TestRateLimit(t *testing.T) {
 	app := fiber.New()
-	
+
 	// 테스트용 낮은 제한 설정
 	rateLimitConfig := RateLimitConfig{
 		RequestsPerWindow: 3,
 		WindowSize:        time.Second * 5,
 		EnableLogging:     false, // 테스트에서는 로깅 비활성화
 	}
-	
+
 	app.Use(RateLimit(rateLimitConfig))
 	app.Get("/test", func(c *fiber.Ctx) error {
 		return c.SendString("OK")
@@ -245,13 +245,13 @@ func TestRateLimit(t *testing.T) {
 // TestRateLimitDifferentIPs 다른 IP에서의 Rate Limiting 테스트
 func TestRateLimitDifferentIPs(t *testing.T) {
 	app := fiber.New()
-	
+
 	rateLimitConfig := RateLimitConfig{
 		RequestsPerWindow: 2,
 		WindowSize:        time.Second * 5,
 		EnableLogging:     false,
 	}
-	
+
 	app.Use(RateLimit(rateLimitConfig))
 	app.Get("/test", func(c *fiber.Ctx) error {
 		return c.SendString("OK")
@@ -299,31 +299,31 @@ func TestSecurityHeaders(t *testing.T) {
 	})
 
 	tests := []struct {
-		name         string
-		url          string
+		name            string
+		url             string
 		expectedHeaders map[string]string
 	}{
 		{
 			name: "Basic security headers",
 			url:  "/test",
 			expectedHeaders: map[string]string{
-				"X-XSS-Protection":      "1; mode=block",
+				"X-XSS-Protection":       "1; mode=block",
 				"X-Content-Type-Options": "nosniff",
-				"X-Frame-Options":       "DENY",
-				"Server":                "ProxyND",
-				"Referrer-Policy":       "strict-origin-when-cross-origin",
+				"X-Frame-Options":        "DENY",
+				"Server":                 "ProxyND",
+				"Referrer-Policy":        "strict-origin-when-cross-origin",
 			},
 		},
 		{
 			name: "Private endpoint with cache headers",
 			url:  "/api/auth/test",
 			expectedHeaders: map[string]string{
-				"X-XSS-Protection":      "1; mode=block",
+				"X-XSS-Protection":       "1; mode=block",
 				"X-Content-Type-Options": "nosniff",
-				"X-Frame-Options":       "DENY",
-				"Cache-Control":         "no-store, no-cache, must-revalidate, private",
-				"Pragma":                "no-cache",
-				"Expires":               "0",
+				"X-Frame-Options":        "DENY",
+				"Cache-Control":          "no-store, no-cache, must-revalidate, private",
+				"Pragma":                 "no-cache",
+				"Expires":                "0",
 			},
 		},
 	}
@@ -344,7 +344,7 @@ func TestSecurityHeaders(t *testing.T) {
 			for expectedHeader, expectedValue := range tt.expectedHeaders {
 				actualValue := resp.Header.Get(expectedHeader)
 				if actualValue != expectedValue {
-					t.Errorf("Header %s: expected '%s', got '%s'", 
+					t.Errorf("Header %s: expected '%s', got '%s'",
 						expectedHeader, expectedValue, actualValue)
 				}
 			}

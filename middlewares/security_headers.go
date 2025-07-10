@@ -9,47 +9,47 @@ import (
 
 // SecurityHeadersConfig 보안 헤더 설정
 type SecurityHeadersConfig struct {
-	EnableXSSProtection     bool   `json:"enable_xss_protection"`
+	EnableXSSProtection      bool   `json:"enable_xss_protection"`
 	EnableContentTypeNoSniff bool   `json:"enable_content_type_nosniff"`
-	EnableFrameOptions      bool   `json:"enable_frame_options"`
-	EnableHSTS              bool   `json:"enable_hsts"`
-	HSTSMaxAge              int    `json:"hsts_max_age"`
-	EnableCSP               bool   `json:"enable_csp"`
-	CSPDirective            string `json:"csp_directive"`
-	ReferrerPolicy          string `json:"referrer_policy"`
-	PermissionsPolicy       string `json:"permissions_policy"`
-	ServerHeader            string `json:"server_header"`
+	EnableFrameOptions       bool   `json:"enable_frame_options"`
+	EnableHSTS               bool   `json:"enable_hsts"`
+	HSTSMaxAge               int    `json:"hsts_max_age"`
+	EnableCSP                bool   `json:"enable_csp"`
+	CSPDirective             string `json:"csp_directive"`
+	ReferrerPolicy           string `json:"referrer_policy"`
+	PermissionsPolicy        string `json:"permissions_policy"`
+	ServerHeader             string `json:"server_header"`
 }
 
 // DefaultSecurityHeadersConfig 기본 보안 헤더 설정
 func DefaultSecurityHeadersConfig() SecurityHeadersConfig {
 	return SecurityHeadersConfig{
-		EnableXSSProtection:     true,
+		EnableXSSProtection:      true,
 		EnableContentTypeNoSniff: true,
-		EnableFrameOptions:      true,
-		EnableHSTS:              false, // HTTPS 환경에서만 활성화
-		HSTSMaxAge:              31536000, // 1년
-		EnableCSP:               true,
-		CSPDirective:            "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'",
-		ReferrerPolicy:          "strict-origin-when-cross-origin",
-		PermissionsPolicy:       "geolocation=(), microphone=(), camera=()",
-		ServerHeader:            "ProxyND",
+		EnableFrameOptions:       true,
+		EnableHSTS:               false,    // HTTPS 환경에서만 활성화
+		HSTSMaxAge:               31536000, // 1년
+		EnableCSP:                true,
+		CSPDirective:             "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'",
+		ReferrerPolicy:           "strict-origin-when-cross-origin",
+		PermissionsPolicy:        "geolocation=(), microphone=(), camera=()",
+		ServerHeader:             "ProxyND",
 	}
 }
 
 // ProductionSecurityHeadersConfig 프로덕션용 보안 헤더 설정
 func ProductionSecurityHeadersConfig() SecurityHeadersConfig {
 	return SecurityHeadersConfig{
-		EnableXSSProtection:     true,
+		EnableXSSProtection:      true,
 		EnableContentTypeNoSniff: true,
-		EnableFrameOptions:      true,
-		EnableHSTS:              true,
-		HSTSMaxAge:              31536000,
-		EnableCSP:               true,
-		CSPDirective:            "default-src 'self'; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'self'",
-		ReferrerPolicy:          "strict-origin-when-cross-origin",
-		PermissionsPolicy:       "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()",
-		ServerHeader:            "ProxyND",
+		EnableFrameOptions:       true,
+		EnableHSTS:               true,
+		HSTSMaxAge:               31536000,
+		EnableCSP:                true,
+		CSPDirective:             "default-src 'self'; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'self'",
+		ReferrerPolicy:           "strict-origin-when-cross-origin",
+		PermissionsPolicy:        "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()",
+		ServerHeader:             "ProxyND",
 	}
 }
 
@@ -157,7 +157,7 @@ func SecureHeaders() fiber.Handler {
 func CORSSecurityHeaders(allowedOrigins []string) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		origin := c.Get("Origin")
-		
+
 		// Origin 검증
 		isAllowed := false
 		for _, allowedOrigin := range allowedOrigins {
