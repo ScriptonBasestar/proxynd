@@ -1,0 +1,139 @@
+name: Build Test
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+env:
+  GO_VERSION: '1.22'
+
+jobs:
+  test-build:
+    name: Test Build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+          - goos: linux
+            goarch: arm64
+          - goos: darwin
+            goarch: amd64
+          - goos: darwin
+            goarch: arm64
+          - goos: windows
+            goarch: amd64
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION }}
+        cache: true
+
+    - name: Install dependencies
+      run: go mod download
+
+    - name: Run tests
+      if: matrix.goos == 'linux' && matrix.goarch == 'amd64'
+      run: go test -v ./...
+
+    - name: Test build ProxyND server
+      env:
+        GOOS: ${{ matrix.goos }}
+        GOARCH: ${{ matrix.goarch }}
+        CGO_ENABLED: 0
+      run: |
+        VERSION="test-build"
+        BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+        COMMIT_SHA=${GITHUB_SHA::8}
+        
+        output_name=proxynd
+        if [ "${{ matrix.goos }}" = "windows" ]; then
+          output_name="proxynd.exe"
+        fi
+        
+        go build \
+          -ldflags="-w -s -X main.Version=${VERSION} -X main.BuildTime=${BUILD_TIME} -X main.CommitSHA=${COMMIT_SHA}" \
+          -trimpath \
+          -o ${output_name} \
+          main.go
+        
+        echo "✅ ProxyND server build successful for ${{ matrix.goos }}/${{ matrix.goarch }}"
+
+    - name: Test build ProxyND CLI
+      env:
+        GOOS: ${{ matrix.goos }}
+        GOARCH: ${{ matrix.goarch }}
+        CGO_ENABLED: 0
+      run: |
+        VERSION="test-build"
+        BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+        COMMIT_SHA=${GITHUB_SHA::8}
+        
+        output_name=proxyndctl
+        if [ "${{ matrix.goos }}" = "windows" ]; then
+          output_name="proxyndctl.exe"
+        fi
+        
+        go build \
+          -ldflags="-w -s -X main.Version=${VERSION} -X main.BuildTime=${BUILD_TIME} -X main.CommitSHA=${COMMIT_SHA}" \
+          -trimpath \
+          -o ${output_name} \
+          ./cmd/proxyndctl/main.go
+        
+        echo "✅ ProxyND CLI build successful for ${{ matrix.goos }}/${{ matrix.goarch }}"
+
+    - name: Verify binaries
+      run: |
+        if [ "${{ matrix.goos }}" = "windows" ]; then
+          ls -la proxynd.exe proxyndctl.exe
+        else
+          ls -la proxynd proxyndctl
+          # Unix 시스템에서는 실행 가능한지 확인
+          if [ "${{ matrix.goos }}" = "linux" ] && [ "${{ matrix.goarch }}" = "amd64" ]; then
+            ./proxynd --version || echo "ProxyND version check failed"
+            ./proxyndctl --version || echo "ProxyND CLI version check failed"
+          fi
+        fi
+
+  lint:
+    name: Lint Code
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION }}
+        cache: true
+
+    - name: Install dependencies
+      run: go mod download
+
+    - name: Run go fmt
+      run: |
+        if [ -n "$(gofmt -l .)" ]; then
+          echo "Code is not formatted properly. Please run 'go fmt ./...'"
+          gofmt -l .
+          exit 1
+        fi
+
+    - name: Run go vet
+      run: go vet ./...
+
+    - name: Run go mod tidy
+      run: |
+        go mod tidy
+        if [ -n "$(git diff --exit-code go.mod go.sum)" ]; then
+          echo "go.mod or go.sum is not tidy. Please run 'go mod tidy'"
+          exit 1
+        fi

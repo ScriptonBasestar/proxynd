@@ -1,0 +1,40 @@
+name: Cleanup Build Artifacts
+
+on:
+  schedule:
+    - cron: '0 2 * * 0'  # 매주 일요일 2시
+  workflow_dispatch:       # 수동 실행 가능
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.23'
+        
+    - name: Clean build artifacts
+      run: make clean-all
+      
+    - name: Verify cleanup
+      run: |
+        if [ -f "proxynd" ] || [ -f "bin/proxynd" ] || [ -f "tmp/main" ]; then
+          echo "❌ Build artifacts not cleaned properly"
+          exit 1
+        fi
+        echo "✅ Cleanup verification passed"
+        
+    - name: Check for large files
+      run: |
+        echo "Checking for files larger than 10MB..."
+        find . -type f -size +10M -not -path "./.git/*" || true
+        
+    - name: Report disk usage
+      run: |
+        echo "Disk usage after cleanup:"
+        du -sh . || true
+        echo "Largest directories:"
+        du -sh */ 2>/dev/null | sort -hr | head -10 || true

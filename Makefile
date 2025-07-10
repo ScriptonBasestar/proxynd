@@ -302,8 +302,47 @@ docs-serve:
 	godoc -http=:6060
 
 # Cleanup
+# Cleanup targets
+.PHONY: clean-build
+clean-build:
+	@echo "Cleaning build artifacts..."
+	@rm -f proxynd bin/proxynd
+	@rm -f tmp/main
+	@rm -f dist/*
+	@echo "Build artifacts cleaned!"
+
+.PHONY: clean-logs
+clean-logs:
+	@echo "Cleaning log files..."
+	@mkdir -p logs tests/integration/logs
+	@> logs/access.log
+	@> logs/verification-alerts.log  
+	@> tests/integration/logs/access.log
+	@> tests/integration/logs/verification-alerts.log
+	@echo "Log files cleaned!"
+
+.PHONY: clean-cache
+clean-cache:
+	@echo "Cleaning caches..."
+	@go clean -cache -testcache -modcache 2>/dev/null || true
+	@rm -f coverage.out coverage.html
+	@rm -f gosec-report.json
+	@rm -f deps-graph.png
+	@echo "Caches cleaned!"
+
+.PHONY: clean-dev
+clean-dev:
+	@echo "Cleaning development files..."
+	@rm -rf ./tmp/storage/* 2>/dev/null || true
+	@rm -rf ./.env.local 2>/dev/null || true
+	@echo "Development files cleaned!"
+
+.PHONY: clean-all
+clean-all: clean-build clean-logs clean-cache clean-dev
+	@echo "✅ All cleanup tasks completed!"
+
 .PHONY: clean
-clean: clean-mocks dev-teardown
+clean: clean-mocks dev-teardown clean-all
 	@echo "Cleaning build artifacts..."
 	@rm -f proxynd
 	@rm -f coverage.out coverage.html
@@ -378,7 +417,12 @@ help:
 	@echo "  make docker-build - Build Docker image"
 	@echo ""
 	@echo "Other:"
-	@echo "  make clean        - Clean artifacts"
+	@echo "  make clean        - Clean all artifacts"
+	@echo "  make clean-build  - Clean build outputs only"
+	@echo "  make clean-logs   - Clean log files only"
+	@echo "  make clean-cache  - Clean Go caches only"
+	@echo "  make clean-dev    - Clean development files only"
+	@echo "  make clean-all    - Clean everything"
 	@echo "  make deps         - Manage dependencies"
 	@echo "  make docs         - Generate documentation"
 	@echo "  make help         - Show this help"

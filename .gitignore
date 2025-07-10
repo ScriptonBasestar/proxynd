@@ -1,31 +1,136 @@
-# ─────────────────────────────────────────────
-# 🔐 환경 설정 및 민감 정보
-# ─────────────────────────────────────────────
-.env
-.env.*
-*.key
-*.pem
-*.crt
-lib/firebase_options.dart
+# Go specific
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+*.prof
 
-# ─────────────────────────────────────────────
-# 🧑‍💻 IDE / Editor 설정
-# ─────────────────────────────────────────────
-.idea/
-*.iml
-*.ipr
-*.iws
+# Go build outputs
+proxynd
+proxynd.exe
+main
+main.exe
+/dist/
+/bin/
 
+# Go modules
+go.sum.backup
+
+# Test coverage
+*.cover
+coverage.out
+coverage.html
+coverage.txt
+profile.out
+
+# Dependency directories
+vendor/
+
+# Go workspace file
+go.work
+go.work.sum
+
+# IDEs and editors
 .vscode/
-.vscode/settings.json
-.vscode/launch.json
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
 
-.atom/
-.history
+# Environment variables
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+.env.*
+!.env.example
 
-# ─────────────────────────────────────────────
-# 🪟 운영체제(OS) 생성 파일
-# ─────────────────────────────────────────────
+# Logs
+*.log
+logs/
+log/
+/logs/*
+!/logs/.gitkeep
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# nyc test coverage
+.nyc_output
+
+# Dependency directories
+node_modules/
+
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variables file
+.env
+
+# Development directories
+tmp/
+temp/
+cache/
+storage/
+/tmp/*
+!/tmp/.gitkeep
+
+# Build artifacts
+build/
+out/
+target/
+
+# Configuration files (environment specific)
+config.local.yaml
+config.local.yml
+config.development.yaml
+config.development.yml
+config.production.yaml
+config.production.yml
+config.staging.yaml
+config.staging.yml
+
+# Security and secrets
+*.pem
+*.key
+*.crt
+*.cert
+secrets/
+.secrets
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Cache directories
+.cache/
+.npm/
+.yarn/
+.pnpm-store/
+
+# OS specific
 .DS_Store
 .DS_Store?
 ._*
@@ -33,163 +138,103 @@ lib/firebase_options.dart
 .Trashes
 ehthumbs.db
 Thumbs.db
+*.lnk
 
-# ─────────────────────────────────────────────
-# 🧪 테스트 및 커버리지
-# ─────────────────────────────────────────────
-*.test
-*.out
-coverage.txt
-coverage.html
-.coverage/
-coverage/
-lcov.info
-
-# ─────────────────────────────────────────────
-# 🏗️ 프로젝트 빌드 아티팩트
-# ─────────────────────────────────────────────
-build/
-**/build/
-**/doc/api/
-bin/
-dist/
-generated/
-gen/
-main
-
-# ─────────────────────────────────────────────
-# 🔁 코드 생성 파일
-# ─────────────────────────────────────────────
-*.g.dart
-*.freezed.dart
-*.gr.dart
-
-# ─────────────────────────────────────────────
-# 🐹 Go 관련 파일
-# ─────────────────────────────────────────────
-vendor/
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
-
-# ─────────────────────────────────────────────
-# 🛠️ Flutter / Dart 관련
-# ─────────────────────────────────────────────
-.dart_tool/
-.packages
-.pub-cache/
-.pub/
-.flutter-plugins
-.flutter-plugins-dependencies
-.fvm/
-.melos_tool/
-**/.plugin_symlinks/
-app.*.symbols
-app.*.map.json
-
-# ─────────────────────────────────────────────
-# 📱 Android / iOS 관련
-# ─────────────────────────────────────────────
-android/.gradle/
-android/.idea/
-android/local.properties
-android/app/build/
-android/app/debug/
-android/app/profile/
-android/app/release/
-android/app/google-services.json
-
-ios/Flutter/Generated.xcconfig
-ios/Flutter/flutter_export_environment.sh
-ios/Flutter/ephemeral/
-ios/Pods/
-ios/.symlinks/
-ios/Podfile.lock
-ios/Runner.xcworkspace
-ios/Runner/GeneratedPluginRegistrant.*
-ios/firebase_app_id_file.json
-
-# ─────────────────────────────────────────────
-# 🪟 데스크탑 (Windows / macOS / Linux)
-# ─────────────────────────────────────────────
-windows/ephemeral/
-windows/build/
-windows/Flutter/GeneratedPluginRegistrant.*
-windows/flutter/generated_plugin_registrant.*
-windows/flutter/generated_plugins.cmake
-
-macos/Flutter/ephemeral/
-macos/Flutter/GeneratedPluginRegistrant.swift
-macos/build/
-
-linux/ephemeral/
-linux/build/
-linux/Flutter/GeneratedPluginRegistrant.*
-linux/flutter/generated_plugin_registrant.*
-linux/flutter/generated_plugins.cmake
-
-# ─────────────────────────────────────────────
-# 📄 로그 / 런타임 / 임시 파일
-# ─────────────────────────────────────────────
-*.log
-*.logs
-logs/
-tmp/
-temp/
-.air.toml
-air_tmp/
-debug
-debug.test
-pprof/
-
-# ─────────────────────────────────────────────
-# 🗃️ DB / 캐시 / 백업 파일
-# ─────────────────────────────────────────────
-*.db
-*.sqlite
-*.sqlite3
-*.sqlite*
-*.bak
-*.backup
-*.old
-
-# ─────────────────────────────────────────────
-# 🗃️ Redis 관련 파일
-# ─────────────────────────────────────────────
-redis-cluster/
-redis-sentinel/master/
-redis-sentinel/slave*/
-redis-sentinel/sentinel*/
-
-# ─────────────────────────────────────────────
-# 🛠️ Docker 관련
-# ─────────────────────────────────────────────
+# Docker
 .dockerignore
+docker-compose.override.yml
+.docker/
 
-# ─────────────────────────────────────────────
-# 🗃️ 버전 관리용 / 임시 설정 파일
-# ─────────────────────────────────────────────
-*-test.yaml
-*-test.yml
-*-test.json
-~tmp/
-~/
-tmpconf/
+# Kubernetes
+*.kubeconfig
 
-# ─────────────────────────────────────────────
-# 🧹 기타 불필요한 임시/에디터 파일
-# ─────────────────────────────────────────────
-*.class
-*.pyc
-*.swp
-*.swo
-*.tmp
-*.temp
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# Cloud specific
+.aws/
+.gcp/
+.azure/
+
+# Monitoring and profiling
+*.prof
+*.trace
+*.heap
+*.cpu
+*.mem
+
+# Documentation builds
+docs/build/
+docs/_build/
+site/
+
+# Test artifacts
+.nyc_output/
+coverage/
+junit.xml
+test-results/
+test-reports/
+
+# Backup files
+*.backup
 *.bak
 *.orig
-.migrate_working_dir/
-.buildlog/
-.svn/
-results/
+*.save
+*.swp
+*.tmp
+
+# Package files
+*.deb
+*.rpm
+*.dmg
+*.pkg
+*.msi
+
+# Archives
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+
+# Application specific
+proxyndctl
+/proxyndctl
+storage/*
+!/storage/.gitkeep
+cache/*
+!/cache/.gitkeep
+
+# Analysis and security reports
+gosec-report.json
+security-scan.json
+deps-graph.png
+vulnerability-report.json
+
+# Performance and profiling
+*.pprof
+*.trace
+*.profile
+
+# Local development
+.local/
+local/
+dev/
+development/
+
+# Editor specific
+*.sublime-*
+.vimrc.local
+.nvimrc.local
+tags
+.tags
+
+# System files
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
