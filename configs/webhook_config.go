@@ -8,31 +8,31 @@ import (
 
 // WebhookConfig 웹훅 알림 시스템 전체 설정
 type WebhookConfig struct {
-	Enabled        bool                        `yaml:"enabled" json:"enabled"`                                         // 웹훅 시스템 활성화 여부
-	Endpoints      []WebhookEndpointConfig     `yaml:"endpoints" json:"endpoints" validate:"dive"`                     // 웹훅 엔드포인트 목록
-	RateLimit      WebhookRateLimitConfig      `yaml:"rate_limit" json:"rate_limit" validate:"dive"`                   // 속도 제한 설정
-	Retry          WebhookRetryConfig          `yaml:"retry" json:"retry" validate:"dive"`                             // 재시도 설정
-	FailureStorage WebhookFailureStorageConfig `yaml:"failure_storage" json:"failure_storage" validate:"dive"`         // 실패 저장소 설정
-	EventFilter    WebhookEventFilter          `yaml:"event_filter" json:"event_filter" validate:"dive"`               // 이벤트 필터링
-	Buffering      WebhookBufferingConfig      `yaml:"buffering" json:"buffering" validate:"dive"`                     // 버퍼링 설정
-	Batching       WebhookBatchingConfig       `yaml:"batching" json:"batching" validate:"dive"`                       // 배치 전송 설정
-	Security       WebhookSecurityConfig       `yaml:"security" json:"security" validate:"dive"`                       // 보안 설정
-	Monitoring     WebhookMonitoringConfig     `yaml:"monitoring" json:"monitoring" validate:"dive"`                   // 모니터링 설정
+	Enabled        bool                        `yaml:"enabled" json:"enabled"`                                 // 웹훅 시스템 활성화 여부
+	Endpoints      []WebhookEndpointConfig     `yaml:"endpoints" json:"endpoints" validate:"dive"`             // 웹훅 엔드포인트 목록
+	RateLimit      WebhookRateLimitConfig      `yaml:"rate_limit" json:"rate_limit" validate:"dive"`           // 속도 제한 설정
+	Retry          WebhookRetryConfig          `yaml:"retry" json:"retry" validate:"dive"`                     // 재시도 설정
+	FailureStorage WebhookFailureStorageConfig `yaml:"failure_storage" json:"failure_storage" validate:"dive"` // 실패 저장소 설정
+	EventFilter    WebhookEventFilter          `yaml:"event_filter" json:"event_filter" validate:"dive"`       // 이벤트 필터링
+	Buffering      WebhookBufferingConfig      `yaml:"buffering" json:"buffering" validate:"dive"`             // 버퍼링 설정
+	Batching       WebhookBatchingConfig       `yaml:"batching" json:"batching" validate:"dive"`               // 배치 전송 설정
+	Security       WebhookSecurityConfig       `yaml:"security" json:"security" validate:"dive"`               // 보안 설정
+	Monitoring     WebhookMonitoringConfig     `yaml:"monitoring" json:"monitoring" validate:"dive"`           // 모니터링 설정
 }
 
 // WebhookEndpointConfig 개별 웹훅 엔드포인트 설정
 type WebhookEndpointConfig struct {
-	Name        string                 `yaml:"name" json:"name" validate:"required,min=1,max=100"`                            // 엔드포인트 이름
-	URL         string                 `yaml:"url" json:"url" validate:"required,url"`                                        // 웹훅 URL
-	Enabled     bool                   `yaml:"enabled" json:"enabled"`                                                        // 엔드포인트 활성화 여부
-	Method      string                 `yaml:"method" json:"method" validate:"required,oneof=GET POST PUT PATCH DELETE"`      // HTTP 메서드 (GET, POST, PUT)
-	Headers     map[string]string      `yaml:"headers" json:"headers"`                                                        // 추가 HTTP 헤더
-	Timeout     string                 `yaml:"timeout" json:"timeout" validate:"required,duration"`                           // 요청 타임아웃 (예: "30s")
-	EventTypes  []string               `yaml:"event_types" json:"event_types" validate:"required,min=1"`                      // 구독할 이벤트 타입
-	Format      string                 `yaml:"format" json:"format" validate:"required,oneof=json slack discord teams"`       // 메시지 포맷 (json, slack, discord, teams)
-	Template    string                 `yaml:"template" json:"template"`                                                      // 커스텀 메시지 템플릿
-	Credentials WebhookCredentials     `yaml:"credentials" json:"credentials" validate:"dive"`                                // 인증 정보
-	Filters     WebhookEndpointFilters `yaml:"filters" json:"filters" validate:"dive"`                                        // 엔드포인트별 필터
+	Name        string                 `yaml:"name" json:"name" validate:"required,min=1,max=100"`                       // 엔드포인트 이름
+	URL         string                 `yaml:"url" json:"url" validate:"required,url"`                                   // 웹훅 URL
+	Enabled     bool                   `yaml:"enabled" json:"enabled"`                                                   // 엔드포인트 활성화 여부
+	Method      string                 `yaml:"method" json:"method" validate:"required,oneof=GET POST PUT PATCH DELETE"` // HTTP 메서드 (GET, POST, PUT)
+	Headers     map[string]string      `yaml:"headers" json:"headers"`                                                   // 추가 HTTP 헤더
+	Timeout     string                 `yaml:"timeout" json:"timeout" validate:"required,duration"`                      // 요청 타임아웃 (예: "30s")
+	EventTypes  []string               `yaml:"event_types" json:"event_types" validate:"required,min=1"`                 // 구독할 이벤트 타입
+	Format      string                 `yaml:"format" json:"format" validate:"required,oneof=json slack discord teams"`  // 메시지 포맷 (json, slack, discord, teams)
+	Template    string                 `yaml:"template" json:"template"`                                                 // 커스텀 메시지 템플릿
+	Credentials WebhookCredentials     `yaml:"credentials" json:"credentials" validate:"dive"`                           // 인증 정보
+	Filters     WebhookEndpointFilters `yaml:"filters" json:"filters" validate:"dive"`                                   // 엔드포인트별 필터
 }
 
 // WebhookCredentials 웹훅 인증 정보
@@ -63,14 +63,14 @@ type WebhookEndpointFilters struct {
 
 // WebhookRateLimitConfig 웹훅 속도 제한 설정
 type WebhookRateLimitConfig struct {
-	Enabled         bool   `yaml:"enabled" json:"enabled"`                                                               // 속도 제한 활성화
-	MaxPerSecond    int    `yaml:"max_per_second" json:"max_per_second" validate:"min=0,max=1000"`                      // 초당 최대 요청 수
-	MaxPerMinute    int    `yaml:"max_per_minute" json:"max_per_minute" validate:"min=0,max=10000"`                     // 분당 최대 요청 수
-	MaxPerHour      int    `yaml:"max_per_hour" json:"max_per_hour" validate:"min=0,max=100000"`                        // 시간당 최대 요청 수
-	BurstSize       int    `yaml:"burst_size" json:"burst_size" validate:"min=0,max=1000"`                              // 버스트 크기
-	WindowDuration  string `yaml:"window_duration" json:"window_duration" validate:"omitempty,duration"`                // 슬라이딩 윈도우 기간
+	Enabled         bool   `yaml:"enabled" json:"enabled"`                                                             // 속도 제한 활성화
+	MaxPerSecond    int    `yaml:"max_per_second" json:"max_per_second" validate:"min=0,max=1000"`                     // 초당 최대 요청 수
+	MaxPerMinute    int    `yaml:"max_per_minute" json:"max_per_minute" validate:"min=0,max=10000"`                    // 분당 최대 요청 수
+	MaxPerHour      int    `yaml:"max_per_hour" json:"max_per_hour" validate:"min=0,max=100000"`                       // 시간당 최대 요청 수
+	BurstSize       int    `yaml:"burst_size" json:"burst_size" validate:"min=0,max=1000"`                             // 버스트 크기
+	WindowDuration  string `yaml:"window_duration" json:"window_duration" validate:"omitempty,duration"`               // 슬라이딩 윈도우 기간
 	BackoffStrategy string `yaml:"backoff_strategy" json:"backoff_strategy" validate:"oneof=linear exponential fixed"` // 백오프 전략 (linear, exponential, fixed)
-	MaxBackoffDelay string `yaml:"max_backoff_delay" json:"max_backoff_delay" validate:"omitempty,duration"`            // 최대 백오프 지연
+	MaxBackoffDelay string `yaml:"max_backoff_delay" json:"max_backoff_delay" validate:"omitempty,duration"`           // 최대 백오프 지연
 }
 
 // WebhookRetryConfig 웹훅 재시도 설정
@@ -212,19 +212,19 @@ func (w *WebhookConfig) Validate() error {
 	if err := ValidateStruct(w); err != nil {
 		return err
 	}
-	
+
 	// Additional custom validation
 	if w.Enabled && len(w.Endpoints) == 0 {
 		return helpers.NewConfigFieldError("webhook", "at least one endpoint must be configured when webhook is enabled")
 	}
-	
+
 	// Validate rate limit values
 	if w.RateLimit.Enabled {
 		if w.RateLimit.MaxPerSecond <= 0 && w.RateLimit.MaxPerMinute <= 0 && w.RateLimit.MaxPerHour <= 0 {
 			return helpers.NewConfigFieldError("webhook", "at least one rate limit must be greater than 0 when rate limiting is enabled")
 		}
 	}
-	
+
 	return nil
 }
 

@@ -14,10 +14,10 @@ type ApkProxy struct {
 
 // ApkVerificationConfig APK 서명 검증 설정
 type ApkVerificationConfig struct {
-	Enabled        bool   `yaml:"enabled"`                                         // 서명 검증 활성화 여부
-	KeyDirectory   string `yaml:"key_directory" validate:"omitempty,path"`         // 신뢰할 수 있는 키 디렉토리
-	FailOnInvalid  bool   `yaml:"fail_on_invalid"`                                 // 서명 검증 실패 시 요청 차단 여부
-	CacheValidated bool   `yaml:"cache_validated"`                                 // 검증된 패키지만 캐시 여부
+	Enabled        bool   `yaml:"enabled"`                                 // 서명 검증 활성화 여부
+	KeyDirectory   string `yaml:"key_directory" validate:"omitempty,path"` // 신뢰할 수 있는 키 디렉토리
+	FailOnInvalid  bool   `yaml:"fail_on_invalid"`                         // 서명 검증 실패 시 요청 차단 여부
+	CacheValidated bool   `yaml:"cache_validated"`                         // 검증된 패키지만 캐시 여부
 }
 
 // ApkMirrorSelectionConfig APK 미러 선택 설정
@@ -61,11 +61,11 @@ func (a *ApkProxyConfig) Validate() error {
 	if err := ValidateStruct(a); err != nil {
 		return err
 	}
-	
+
 	// Additional custom validation
 	if a.Verification.Enabled && a.Verification.KeyDirectory == "" {
 		return helpers.NewConfigFieldError("apk-proxy", "key_directory must be specified when verification is enabled")
 	}
-	
+
 	return nil
 }

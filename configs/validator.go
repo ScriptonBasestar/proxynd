@@ -13,7 +13,7 @@ var validate *validator.Validate
 
 func init() {
 	validate = validator.New()
-	
+
 	// Register custom validators
 	validate.RegisterValidation("duration", validateDuration)
 	validate.RegisterValidation("url", validateURL)
@@ -79,13 +79,13 @@ func validateDuration(fl validator.FieldLevel) bool {
 	if value == "" {
 		return true // Allow empty, use required tag if needed
 	}
-	
+
 	// Simple duration validation - check for common patterns
 	// Format: number + unit (s, m, h, d)
 	if len(value) < 2 {
 		return false
 	}
-	
+
 	// Check if it ends with valid unit
 	validUnits := []string{"ns", "us", "µs", "ms", "s", "m", "h", "d"}
 	for _, unit := range validUnits {
@@ -106,7 +106,7 @@ func validateDuration(fl validator.FieldLevel) bool {
 			return true
 		}
 	}
-	
+
 	return false
 }
 
@@ -116,23 +116,23 @@ func validateURL(fl validator.FieldLevel) bool {
 	if value == "" {
 		return true // Allow empty, use required tag if needed
 	}
-	
+
 	// Basic URL validation
 	if !strings.HasPrefix(value, "http://") && !strings.HasPrefix(value, "https://") {
 		return false
 	}
-	
+
 	// Check for basic structure
 	parts := strings.Split(value, "://")
 	if len(parts) != 2 {
 		return false
 	}
-	
+
 	// Check if there's something after the protocol
 	if len(parts[1]) < 3 { // at least "a.b"
 		return false
 	}
-	
+
 	return true
 }
 
@@ -142,12 +142,12 @@ func validatePath(fl validator.FieldLevel) bool {
 	if value == "" {
 		return true // Allow empty, use required tag if needed
 	}
-	
+
 	// Path should not contain null bytes
 	if strings.Contains(value, "\x00") {
 		return false
 	}
-	
+
 	// Basic path validation - just ensure it's not obviously invalid
 	// More complex validation would require OS-specific checks
 	return true

@@ -221,19 +221,19 @@ func (cfg *GlobalConfig) Validate() error {
 	if err := ValidateStruct(cfg); err != nil {
 		return err
 	}
-	
+
 	// Additional custom validation
 	if cfg.Cache.MinCacheHeaderTTL > cfg.Cache.MaxCacheHeaderTTL {
 		return helpers.NewConfigFieldError("global", "min_cache_header_ttl cannot be greater than max_cache_header_ttl")
 	}
-	
+
 	// Validate authentication if present
 	if cfg.Authentication != nil && cfg.Authentication.OAuth2 != nil {
 		if err := cfg.Authentication.OAuth2.Validate(); err != nil {
 			return err
 		}
 	}
-	
+
 	return nil
 }
 

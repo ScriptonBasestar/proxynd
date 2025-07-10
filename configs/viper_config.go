@@ -21,12 +21,12 @@ type ViperConfigLoader struct {
 // NewViperConfigLoader 새 Viper 설정 로더 생성
 func NewViperConfigLoader() *ViperConfigLoader {
 	v := viper.New()
-	
+
 	// 환경 변수 설정
 	v.SetEnvPrefix("PROXYND")
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	v.AutomaticEnv()
-	
+
 	return &ViperConfigLoader{
 		viper:      v,
 		configType: "yaml",
@@ -36,13 +36,13 @@ func NewViperConfigLoader() *ViperConfigLoader {
 // SetConfigPath 설정 파일 경로 설정
 func (vcl *ViperConfigLoader) SetConfigPath(path string) {
 	vcl.configPath = path
-	
+
 	// 파일명과 디렉토리 분리
 	dir := filepath.Dir(path)
 	file := filepath.Base(path)
 	ext := filepath.Ext(file)
 	name := strings.TrimSuffix(file, ext)
-	
+
 	vcl.configName = name
 	vcl.viper.SetConfigName(name)
 	vcl.viper.SetConfigType(strings.TrimPrefix(ext, "."))
@@ -53,7 +53,7 @@ func (vcl *ViperConfigLoader) SetConfigPath(path string) {
 func (vcl *ViperConfigLoader) Load() (*UnifiedConfig, error) {
 	// 기본값 설정
 	vcl.setDefaults()
-	
+
 	// 기본 설정 파일 로드
 	if err := vcl.loadConfigFile(); err != nil {
 		// 설정 파일이 없어도 계속 진행 (환경 변수만 사용)
@@ -61,7 +61,7 @@ func (vcl *ViperConfigLoader) Load() (*UnifiedConfig, error) {
 			return nil, fmt.Errorf("error reading config file: %w", err)
 		}
 	}
-	
+
 	// 환경별 설정 파일 로드
 	if err := vcl.loadEnvironmentConfig(); err != nil {
 		// 환경별 설정 파일은 선택사항
@@ -69,24 +69,24 @@ func (vcl *ViperConfigLoader) Load() (*UnifiedConfig, error) {
 			return nil, fmt.Errorf("error reading environment config: %w", err)
 		}
 	}
-	
+
 	// .env 파일 로드 (있는 경우)
 	vcl.loadDotEnvFile()
-	
+
 	// 환경 변수 바인딩
 	vcl.bindEnvironmentVariables()
-	
+
 	// 설정을 구조체로 언마샬
 	config := &UnifiedConfig{}
 	if err := vcl.viper.Unmarshal(config); err != nil {
 		return nil, fmt.Errorf("unable to decode config into struct: %w", err)
 	}
-	
+
 	// 설정 검증
 	if err := config.Validate(); err != nil {
 		return nil, fmt.Errorf("config validation failed: %w", err)
 	}
-	
+
 	vcl.config = config
 	return config, nil
 }
@@ -105,11 +105,11 @@ func (vcl *ViperConfigLoader) loadEnvironmentConfig() error {
 	if env == "" {
 		env = "development"
 	}
-	
+
 	// 환경별 설정 파일명 설정
 	envConfigName := fmt.Sprintf("%s.%s", vcl.configName, env)
 	vcl.viper.SetConfigName(envConfigName)
-	
+
 	// 환경별 설정을 기존 설정에 병합
 	return vcl.viper.MergeInConfig()
 }
@@ -121,12 +121,12 @@ func (vcl *ViperConfigLoader) loadDotEnvFile() {
 		".env",
 		".env.local",
 	}
-	
+
 	// 환경별 .env 파일도 확인
 	if env := os.Getenv("PROXYND_ENV"); env != "" {
 		envFiles = append(envFiles, fmt.Sprintf(".env.%s", env))
 	}
-	
+
 	// 설정 디렉토리의 .env 파일 확인
 	if vcl.configPath != "" {
 		dir := filepath.Dir(vcl.configPath)
@@ -145,35 +145,35 @@ func (vcl *ViperConfigLoader) loadDotEnvFile() {
 func (vcl *ViperConfigLoader) bindEnvironmentVariables() {
 	// 주요 환경 변수 명시적 바인딩
 	environmentBindings := map[string]string{
-		"SERVER_HOST":            "server.host",
-		"SERVER_PORT":            "server.port",
-		"SERVER_READ_TIMEOUT":    "server.read_timeout",
-		"SERVER_WRITE_TIMEOUT":   "server.write_timeout",
-		"TLS_ENABLED":            "server.tls.enabled",
-		"TLS_CERT_FILE":          "server.tls.cert_file",
-		"TLS_KEY_FILE":           "server.tls.key_file",
-		"CACHE_BACKEND":          "cache.backend",
-		"CACHE_TTL":              "cache.ttl",
-		"CACHE_MAX_SIZE":         "cache.max_size",
-		"STORAGE_DIR":            "cache.file.directory",
-		"S3_ENDPOINT":            "cache.s3.endpoint",
-		"S3_BUCKET":              "cache.s3.bucket",
-		"S3_REGION":              "cache.s3.region",
-		"AWS_ACCESS_KEY_ID":      "cache.s3.access_key_id",
-		"AWS_SECRET_ACCESS_KEY":  "cache.s3.secret_access_key",
-		"REDIS_ADDRESS":          "cache.redis.address",
-		"REDIS_PASSWORD":         "cache.redis.password",
-		"REDIS_DB":               "cache.redis.db",
-		"LOG_LEVEL":              "logging.level",
-		"LOG_FORMAT":             "logging.format",
-		"LOG_OUTPUT":             "logging.output",
-		"METRICS_ENABLED":        "metrics.enabled",
-		"METRICS_PATH":           "metrics.path",
-		"METRICS_PORT":           "metrics.port",
-		"AUTH_ENABLED":           "security.authentication.basic_auth.enabled",
-		"AUTH_USERS_FILE":        "security.authentication.basic_auth.users_file",
+		"SERVER_HOST":           "server.host",
+		"SERVER_PORT":           "server.port",
+		"SERVER_READ_TIMEOUT":   "server.read_timeout",
+		"SERVER_WRITE_TIMEOUT":  "server.write_timeout",
+		"TLS_ENABLED":           "server.tls.enabled",
+		"TLS_CERT_FILE":         "server.tls.cert_file",
+		"TLS_KEY_FILE":          "server.tls.key_file",
+		"CACHE_BACKEND":         "cache.backend",
+		"CACHE_TTL":             "cache.ttl",
+		"CACHE_MAX_SIZE":        "cache.max_size",
+		"STORAGE_DIR":           "cache.file.directory",
+		"S3_ENDPOINT":           "cache.s3.endpoint",
+		"S3_BUCKET":             "cache.s3.bucket",
+		"S3_REGION":             "cache.s3.region",
+		"AWS_ACCESS_KEY_ID":     "cache.s3.access_key_id",
+		"AWS_SECRET_ACCESS_KEY": "cache.s3.secret_access_key",
+		"REDIS_ADDRESS":         "cache.redis.address",
+		"REDIS_PASSWORD":        "cache.redis.password",
+		"REDIS_DB":              "cache.redis.db",
+		"LOG_LEVEL":             "logging.level",
+		"LOG_FORMAT":            "logging.format",
+		"LOG_OUTPUT":            "logging.output",
+		"METRICS_ENABLED":       "metrics.enabled",
+		"METRICS_PATH":          "metrics.path",
+		"METRICS_PORT":          "metrics.port",
+		"AUTH_ENABLED":          "security.authentication.basic_auth.enabled",
+		"AUTH_USERS_FILE":       "security.authentication.basic_auth.users_file",
 	}
-	
+
 	for envVar, configPath := range environmentBindings {
 		_ = vcl.viper.BindEnv(configPath, envVar)
 	}
@@ -189,7 +189,7 @@ func (vcl *ViperConfigLoader) setDefaults() {
 	vcl.viper.SetDefault("server.idle_timeout", "120s")
 	vcl.viper.SetDefault("server.enable_http2", true)
 	vcl.viper.SetDefault("server.tls.min_version", "TLS1.2")
-	
+
 	// 압축 기본값
 	vcl.viper.SetDefault("server.compression.enabled", true)
 	vcl.viper.SetDefault("server.compression.level", 5)
@@ -200,7 +200,7 @@ func (vcl *ViperConfigLoader) setDefaults() {
 		"text/css",
 		"text/plain",
 	})
-	
+
 	// 캐시 기본값
 	vcl.viper.SetDefault("cache.backend", "file")
 	vcl.viper.SetDefault("cache.ttl", "3600s")
@@ -208,7 +208,7 @@ func (vcl *ViperConfigLoader) setDefaults() {
 	vcl.viper.SetDefault("cache.cleanup_interval", "1h")
 	vcl.viper.SetDefault("cache.eviction_policy", "lru")
 	vcl.viper.SetDefault("cache.file.max_file_size", "1GB")
-	
+
 	// 레지스트리 기본값
 	vcl.viper.SetDefault("registries.npm.upstream", "https://registry.npmjs.org")
 	vcl.viper.SetDefault("registries.npm.timeout", "30s")
@@ -216,14 +216,14 @@ func (vcl *ViperConfigLoader) setDefaults() {
 	vcl.viper.SetDefault("registries.pypi.simple", "https://pypi.org/simple")
 	vcl.viper.SetDefault("registries.pypi.timeout", "30s")
 	vcl.viper.SetDefault("registries.docker.use_cache", true)
-	
+
 	// 보안 기본값
 	vcl.viper.SetDefault("security.authentication.basic_auth.users_file", "users.yml")
 	vcl.viper.SetDefault("security.authentication.basic_auth.realm", "ProxyND")
 	vcl.viper.SetDefault("security.authentication.token_auth.header_name", "X-Auth-Token")
 	vcl.viper.SetDefault("security.authentication.ldap.port", 389)
 	vcl.viper.SetDefault("security.package_filter.mode", "allowlist")
-	
+
 	// 로깅 기본값
 	vcl.viper.SetDefault("logging.level", "info")
 	vcl.viper.SetDefault("logging.format", "json")
@@ -235,10 +235,10 @@ func (vcl *ViperConfigLoader) setDefaults() {
 	vcl.viper.SetDefault("logging.access_log.enabled", true)
 	vcl.viper.SetDefault("logging.access_log.format", "json")
 	vcl.viper.SetDefault("logging.access_log.rotate_daily", true)
-	
+
 	// 메트릭 기본값
 	vcl.viper.SetDefault("metrics.path", "/metrics")
-	
+
 	// 고급 설정 기본값
 	vcl.viper.SetDefault("advanced.performance.max_connections", 1000)
 	vcl.viper.SetDefault("advanced.performance.max_idle_connections", 100)

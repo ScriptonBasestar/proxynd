@@ -34,32 +34,32 @@ type UnifiedHotReload struct {
 	useViper     bool
 	viperLoader  *ViperConfigLoader
 	legacyLoader *ConfigLoader
-	
+
 	// 현재 설정
-	config       *UnifiedConfig
-	configMu     sync.RWMutex
-	
+	config   *UnifiedConfig
+	configMu sync.RWMutex
+
 	// 리로드 핸들러
-	handlers     []ReloadHandler
-	handlersMu   sync.RWMutex
-	
+	handlers   []ReloadHandler
+	handlersMu sync.RWMutex
+
 	// 파일 감시 (레거시 모드용)
 	watcher      *fsnotify.Watcher
 	debounce     *time.Timer
 	debounceMu   sync.Mutex
 	debounceTime time.Duration
-	
+
 	// 라이프사이클
-	ctx          context.Context
-	cancel       context.CancelFunc
-	running      bool
-	runningMu    sync.Mutex
+	ctx       context.Context
+	cancel    context.CancelFunc
+	running   bool
+	runningMu sync.Mutex
 }
 
 // NewUnifiedHotReload 새 통합 핫 리로드 생성
 func NewUnifiedHotReload(configPath string, useViper bool) (*UnifiedHotReload, error) {
 	ctx, cancel := context.WithCancel(context.Background())
-	
+
 	uhr := &UnifiedHotReload{
 		useViper:     useViper,
 		handlers:     make([]ReloadHandler, 0),
@@ -67,11 +67,11 @@ func NewUnifiedHotReload(configPath string, useViper bool) (*UnifiedHotReload, e
 		ctx:          ctx,
 		cancel:       cancel,
 	}
-	
+
 	// 로더 초기화 및 초기 설정 로드
 	var initialConfig *UnifiedConfig
 	var err error
-	
+
 	if useViper {
 		uhr.viperLoader = NewViperConfigLoader()
 		uhr.viperLoader.SetConfigPath(configPath)
@@ -80,12 +80,12 @@ func NewUnifiedHotReload(configPath string, useViper bool) (*UnifiedHotReload, e
 		uhr.legacyLoader = NewConfigLoader(configPath)
 		initialConfig, err = uhr.legacyLoader.Load()
 	}
-	
+
 	if err != nil {
 		cancel()
 		return nil, fmt.Errorf("failed to load initial config: %w", err)
 	}
-	
+
 	uhr.config = initialConfig
 	return uhr, nil
 }
@@ -101,7 +101,7 @@ func (uhr *UnifiedHotReload) GetConfig() *UnifiedConfig {
 func (uhr *UnifiedHotReload) RegisterHandler(handler ReloadHandler) {
 	uhr.handlersMu.Lock()
 	defer uhr.handlersMu.Unlock()
-	
+
 	uhr.handlers = append(uhr.handlers, handler)
 	log.Printf("[UnifiedHotReload] Registered handler: %s", handler.Name())
 }
@@ -115,11 +115,11 @@ func (uhr *UnifiedHotReload) RegisterReloadHandler(handler ReloadHandler) {
 func (uhr *UnifiedHotReload) Start() error {
 	uhr.runningMu.Lock()
 	defer uhr.runningMu.Unlock()
-	
+
 	if uhr.running {
 		return fmt.Errorf("hot reload already running")
 	}
-	
+
 	if uhr.useViper {
 		// Viper 자동 감시 설정
 		uhr.setupViperWatch()
@@ -129,13 +129,13 @@ func (uhr *UnifiedHotReload) Start() error {
 			return err
 		}
 	}
-	
+
 	// SIGHUP 시그널 핸들링
 	uhr.setupSignalHandling()
-	
+
 	uhr.running = true
 	log.Println("[UnifiedHotReload] Started")
-	
+
 	return nil
 }
 
@@ -143,20 +143,20 @@ func (uhr *UnifiedHotReload) Start() error {
 func (uhr *UnifiedHotReload) Stop() error {
 	uhr.runningMu.Lock()
 	defer uhr.runningMu.Unlock()
-	
+
 	if !uhr.running {
 		return nil
 	}
-	
+
 	uhr.cancel()
-	
+
 	if uhr.watcher != nil {
 		uhr.watcher.Close()
 	}
-	
+
 	uhr.running = false
 	log.Println("[UnifiedHotReload] Stopped")
-	
+
 	return nil
 }
 
@@ -165,7 +165,7 @@ func (uhr *UnifiedHotReload) setupViperWatch() {
 	uhr.viperLoader.WatchConfig(func(newConfig *UnifiedConfig) {
 		uhr.handleConfigChange(newConfig)
 	})
-	
+
 	log.Println("[UnifiedHotReload] Viper watch enabled")
 }
 
@@ -176,16 +176,16 @@ func (uhr *UnifiedHotReload) setupLegacyWatch() error {
 		return fmt.Errorf("failed to create watcher: %w", err)
 	}
 	uhr.watcher = watcher
-	
+
 	// 설정 파일 감시
 	if err := watcher.Add(uhr.legacyLoader.configPath); err != nil {
 		watcher.Close()
 		return fmt.Errorf("failed to watch config file: %w", err)
 	}
-	
+
 	// 감시 고루틴 시작
 	go uhr.legacyWatchLoop()
-	
+
 	log.Printf("[UnifiedHotReload] Legacy watch enabled: %s", uhr.legacyLoader.configPath)
 	return nil
 }
@@ -196,16 +196,16 @@ func (uhr *UnifiedHotReload) legacyWatchLoop() {
 		select {
 		case <-uhr.ctx.Done():
 			return
-			
+
 		case event, ok := <-uhr.watcher.Events:
 			if !ok {
 				return
 			}
-			
+
 			if event.Op&(fsnotify.Write|fsnotify.Create) != 0 {
 				uhr.debounceReload()
 			}
-			
+
 		case err, ok := <-uhr.watcher.Errors:
 			if !ok {
 				return
@@ -219,11 +219,11 @@ func (uhr *UnifiedHotReload) legacyWatchLoop() {
 func (uhr *UnifiedHotReload) debounceReload() {
 	uhr.debounceMu.Lock()
 	defer uhr.debounceMu.Unlock()
-	
+
 	if uhr.debounce != nil {
 		uhr.debounce.Stop()
 	}
-	
+
 	uhr.debounce = time.AfterFunc(uhr.debounceTime, func() {
 		log.Println("[UnifiedHotReload] Config file changed, reloading...")
 		uhr.reloadLegacy()
@@ -237,7 +237,7 @@ func (uhr *UnifiedHotReload) reloadLegacy() {
 		log.Printf("[UnifiedHotReload] Failed to reload config: %v", err)
 		return
 	}
-	
+
 	uhr.handleConfigChange(newConfig)
 }
 
@@ -247,13 +247,13 @@ func (uhr *UnifiedHotReload) handleConfigChange(newConfig *UnifiedConfig) {
 	uhr.configMu.RLock()
 	oldConfig := uhr.config
 	uhr.configMu.RUnlock()
-	
+
 	// 핸들러 복사 (잠금 최소화)
 	uhr.handlersMu.RLock()
 	handlers := make([]ReloadHandler, len(uhr.handlers))
 	copy(handlers, uhr.handlers)
 	uhr.handlersMu.RUnlock()
-	
+
 	// 모든 핸들러 실행
 	allSuccess := true
 	for _, handler := range handlers {
@@ -264,7 +264,7 @@ func (uhr *UnifiedHotReload) handleConfigChange(newConfig *UnifiedConfig) {
 			log.Printf("[UnifiedHotReload] Handler %s succeeded", handler.Name())
 		}
 	}
-	
+
 	// 성공 시 설정 업데이트
 	if allSuccess {
 		uhr.configMu.Lock()
@@ -280,7 +280,7 @@ func (uhr *UnifiedHotReload) handleConfigChange(newConfig *UnifiedConfig) {
 func (uhr *UnifiedHotReload) setupSignalHandling() {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGHUP)
-	
+
 	go func() {
 		for {
 			select {
@@ -298,18 +298,18 @@ func (uhr *UnifiedHotReload) setupSignalHandling() {
 func (uhr *UnifiedHotReload) manualReload() {
 	var newConfig *UnifiedConfig
 	var err error
-	
+
 	if uhr.useViper {
 		newConfig, err = uhr.viperLoader.Load()
 	} else {
 		newConfig, err = uhr.legacyLoader.Load()
 	}
-	
+
 	if err != nil {
 		log.Printf("[UnifiedHotReload] Manual reload failed: %v", err)
 		return
 	}
-	
+
 	uhr.handleConfigChange(newConfig)
 }
 
@@ -357,7 +357,7 @@ func MakeCacheHandler() ReloadHandler {
 		name: "CacheHandler",
 		fn: func(old, new *UnifiedConfig) error {
 			if old.Cache.Backend != new.Cache.Backend {
-				return fmt.Errorf("cache backend change requires restart: %s -> %s", 
+				return fmt.Errorf("cache backend change requires restart: %s -> %s",
 					old.Cache.Backend, new.Cache.Backend)
 			}
 			if old.Cache.TTL != new.Cache.TTL {
@@ -405,17 +405,17 @@ func QuickSetupHotReload(configPath string, useViper bool) (*UnifiedHotReload, e
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// 기본 핸들러 등록
 	hr.RegisterHandler(MakeLoggingHandler())
 	hr.RegisterHandler(MakeCacheHandler())
 	hr.RegisterHandler(MakeMetricsHandler())
-	
+
 	// 시작
 	if err := hr.Start(); err != nil {
 		return nil, err
 	}
-	
+
 	return hr, nil
 }
 

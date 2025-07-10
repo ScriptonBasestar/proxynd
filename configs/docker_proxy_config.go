@@ -18,9 +18,9 @@ type DockerAuth struct {
 }
 
 type DockerProxyConfig struct {
-	Path       string                         `yaml:"path,omitempty" validate:"required,min=1"`
-	UseCache   bool                           `yaml:"use_cache,omitempty" default:"true"`
-	Proxies    []DockerProxyServer            `yaml:"proxies" validate:"required,min=1,dive"`
+	Path       string                          `yaml:"path,omitempty" validate:"required,min=1"`
+	UseCache   bool                            `yaml:"use_cache,omitempty" default:"true"`
+	Proxies    []DockerProxyServer             `yaml:"proxies" validate:"required,min=1,dive"`
 	Registries map[string]DockerRegistryConfig `yaml:"registries,omitempty" validate:"dive,keys,min=1,endkeys,dive"`
 }
 

@@ -37,11 +37,11 @@ func (cfg *NpmProxyConfig) Validate() error {
 	if err := ValidateStruct(cfg); err != nil {
 		return err
 	}
-	
+
 	// Ensure default registry exists
 	if _, exists := cfg.Proxies["default"]; !exists {
 		return helpers.NewConfigFieldError("npm-proxy", "default registry configuration is required")
 	}
-	
+
 	return nil
 }
