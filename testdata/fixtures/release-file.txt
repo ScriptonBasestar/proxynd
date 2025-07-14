@@ -1,0 +1,5 @@
+Origin: Ubuntu
+Label: Ubuntu
+Suite: jammy
+Codename: jammy
+Date: Thu, 01 Jan 2024 00:00:00 UTC

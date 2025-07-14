@@ -116,10 +116,23 @@ test-race:
 
 .PHONY: test-coverage
 test-coverage:
-	@echo "Generating coverage report..."
-	go test -coverprofile=coverage.out ./...
-	go tool cover -html=coverage.out -o coverage.html
-	@echo "Coverage report generated: coverage.html"
+	@echo "Running comprehensive coverage analysis..."
+	@./scripts/test-coverage.sh
+
+.PHONY: test-runner
+test-runner:
+	@echo "Running tests with test runner script..."
+	@./scripts/run-tests.sh
+
+.PHONY: test-runner-unit
+test-runner-unit:
+	@echo "Running unit tests only..."
+	@./scripts/run-tests.sh -t unit -v
+
+.PHONY: test-runner-coverage
+test-runner-coverage:
+	@echo "Running tests with coverage..."
+	@./scripts/run-tests.sh -c
 
 .PHONY: test-benchmark
 test-benchmark:
@@ -421,8 +434,11 @@ help:
 	@echo ""
 	@echo "Testing:"
 	@echo "  make test-unit    - Run unit tests"
-	@echo "  make test-coverage - Generate coverage report"
+	@echo "  make test-coverage - Generate comprehensive coverage report"
 	@echo "  make test-race    - Run tests with race detector"
+	@echo "  make test-runner  - Run tests with advanced test runner"
+	@echo "  make test-runner-unit - Run unit tests with runner (verbose)"
+	@echo "  make test-runner-coverage - Run tests with coverage using runner"
 	@echo ""
 	@echo "Code:"
 	@echo "  make fmt          - Format code"

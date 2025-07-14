@@ -1,0 +1,4 @@
+Package: test-package
+Version: 1.0.0-1
+Architecture: amd64
+Description: Test Debian package

@@ -1,0 +1,5 @@
+{
+  "enabled": true,
+  "upstream": "https://registry.npmjs.org",
+  "cache_ttl": 1800
+}
