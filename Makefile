@@ -305,51 +305,72 @@ docs-serve:
 # Cleanup targets
 .PHONY: clean-build
 clean-build:
-	@echo "Cleaning build artifacts..."
-	@rm -f proxynd bin/proxynd
+	@echo "🧹 Cleaning build artifacts..."
+	@rm -f proxynd proxyndctl bin/proxynd cmd/proxynd/proxynd cmd/proxyndctl/proxyndctl
 	@rm -f tmp/main
 	@rm -f dist/*
-	@echo "Build artifacts cleaned!"
+	@find . -name "*.exe" -o -name "*.out" -type f -delete 2>/dev/null || true
+	@find . -name "*.test" -type f -delete 2>/dev/null || true
+	@echo "✓ Build artifacts cleaned!"
+
+.PHONY: clean-test
+clean-test:
+	@echo "📊 Cleaning test files..."
+	@rm -f coverage.out coverage.html coverage.txt
+	@rm -f *.prof *.trace *.pprof
+	@find . -name "*.test" -type f -delete 2>/dev/null || true
+	@echo "✓ Test files cleaned!"
 
 .PHONY: clean-logs
 clean-logs:
-	@echo "Cleaning log files..."
+	@echo "📝 Cleaning log files..."
 	@mkdir -p logs tests/integration/logs
-	@> logs/access.log
-	@> logs/verification-alerts.log  
-	@> tests/integration/logs/access.log
-	@> tests/integration/logs/verification-alerts.log
-	@echo "Log files cleaned!"
+	@find logs -name "*.log" -type f -exec truncate -s 0 {} \; 2>/dev/null || true
+	@find tests -name "*.log" -type f -exec truncate -s 0 {} \; 2>/dev/null || true
+	@find integration -name "*.log" -type f -exec truncate -s 0 {} \; 2>/dev/null || true
+	@echo "✓ Log files cleaned!"
 
 .PHONY: clean-cache
 clean-cache:
-	@echo "Cleaning caches..."
-	@go clean -cache -testcache -modcache 2>/dev/null || true
-	@rm -f coverage.out coverage.html
-	@rm -f gosec-report.json
-	@rm -f deps-graph.png
-	@echo "Caches cleaned!"
+	@echo "🗄️ Cleaning caches..."
+	@go clean -cache -testcache 2>/dev/null || true
+	@rm -rf .cache 2>/dev/null || true
+	@echo "✓ Caches cleaned!"
+
+.PHONY: clean-analysis
+clean-analysis:
+	@echo "🔍 Cleaning analysis reports..."
+	@rm -f gosec-report.json staticcheck-report.json golangci-lint-report.json
+	@rm -f deps-graph.png security-report.json
+	@echo "✓ Analysis reports cleaned!"
 
 .PHONY: clean-dev
 clean-dev:
-	@echo "Cleaning development files..."
+	@echo "🛠️ Cleaning development files..."
 	@rm -rf ./tmp/storage/* 2>/dev/null || true
 	@rm -rf ./.env.local 2>/dev/null || true
-	@echo "Development files cleaned!"
+	@find . -name "*.tmp" -o -name "*.temp" -type f -delete 2>/dev/null || true
+	@echo "✓ Development files cleaned!"
+
+.PHONY: clean-deep
+clean-deep: clean-build clean-test clean-logs clean-analysis clean-dev
+	@echo "🗑️ Deep cleaning..."
+	@go clean -modcache 2>/dev/null || true
+	@rm -rf cache/packages/* 2>/dev/null || true
+	@echo "✓ Deep clean completed!"
 
 .PHONY: clean-all
-clean-all: clean-build clean-logs clean-cache clean-dev
+clean-all: clean-build clean-test clean-logs clean-cache clean-analysis clean-dev
 	@echo "✅ All cleanup tasks completed!"
 
 .PHONY: clean
-clean: clean-mocks dev-teardown clean-all
-	@echo "Cleaning build artifacts..."
-	@rm -f proxynd
-	@rm -f coverage.out coverage.html
-	@rm -f gosec-report.json
-	@rm -f deps-graph.png
-	@rm -rf dist/
-	@echo "Clean complete!"
+clean: clean-build clean-test clean-cache clean-analysis
+	@echo "✓ Standard cleanup completed!"
+
+.PHONY: clean-script
+clean-script:
+	@echo "🧹 Running comprehensive cleanup script..."
+	@./scripts/clean.sh
 
 # Development Workflow Helpers
 .PHONY: dev
@@ -416,13 +437,19 @@ help:
 	@echo "  make build        - Build binary"
 	@echo "  make docker-build - Build Docker image"
 	@echo ""
-	@echo "Other:"
-	@echo "  make clean        - Clean all artifacts"
+	@echo "Cleanup:"
+	@echo "  make clean        - Standard cleanup (build + test + cache + analysis)"
 	@echo "  make clean-build  - Clean build outputs only"
+	@echo "  make clean-test   - Clean test files only"
 	@echo "  make clean-logs   - Clean log files only"
 	@echo "  make clean-cache  - Clean Go caches only"
+	@echo "  make clean-analysis - Clean analysis reports only"
 	@echo "  make clean-dev    - Clean development files only"
+	@echo "  make clean-deep   - Deep clean (includes modcache)"
 	@echo "  make clean-all    - Clean everything"
+	@echo "  make clean-script - Run comprehensive cleanup script"
+	@echo ""
+	@echo "Other:"
 	@echo "  make deps         - Manage dependencies"
 	@echo "  make docs         - Generate documentation"
 	@echo "  make help         - Show this help"
