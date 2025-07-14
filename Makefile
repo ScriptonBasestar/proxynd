@@ -449,6 +449,12 @@ help:
 	@echo "  make clean-all    - Clean everything"
 	@echo "  make clean-script - Run comprehensive cleanup script"
 	@echo ""
+	@echo "Validation:"
+	@echo "  make validate     - Run all validations"
+	@echo "  make validate-config - Validate configuration files"
+	@echo "  make validate-modules - Validate Go modules"
+	@echo "  make validate-gitignore - Validate .gitignore patterns"
+	@echo ""
 	@echo "Other:"
 	@echo "  make deps         - Manage dependencies"
 	@echo "  make docs         - Generate documentation"
@@ -474,7 +480,7 @@ pre-commit-update:
 
 # Validate targets
 .PHONY: validate
-validate: validate-config validate-modules
+validate: validate-config validate-modules validate-gitignore
 	@echo "✅ Validation complete!"
 
 .PHONY: validate-config
@@ -489,3 +495,8 @@ validate-config:
 validate-modules:
 	@echo "Validating Go modules..."
 	go mod verify
+
+.PHONY: validate-gitignore
+validate-gitignore:
+	@echo "Validating .gitignore patterns..."
+	@./scripts/validate-gitignore.sh
