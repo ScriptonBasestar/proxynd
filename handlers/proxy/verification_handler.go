@@ -46,7 +46,7 @@ func (vh *VerificationHandler) VerifyDownloadedPackage(
 	content []byte,
 	headers map[string]string,
 ) error {
-	ctx := context.Background()
+	ctx := c.Context()
 
 	// 메타데이터 수집
 	metadata := make(map[string]string)
@@ -128,7 +128,7 @@ func (vh *VerificationHandler) VerifyUploadedPackage(
 		metadata["username"] = username.(string)
 	}
 
-	ctx := context.Background()
+	ctx := c.Context()
 
 	// 패키지 검증 수행
 	result, err := vh.verifier.VerifyPackage(ctx, packageType, packagePath, body, metadata)

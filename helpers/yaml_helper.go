@@ -7,18 +7,20 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// ReadYaml YAML 파일을 읽습니다 (하위 호환성을 위해 유지, 에러 시 log.Fatal)
+// 새로운 코드에서는 ReadYamlSafe 사용을 권장합니다
 func ReadYaml(path string, out interface{}) {
-	// cache - no expire
 	yamlFile, err := os.ReadFile(path)
 	if err != nil {
 		log.Printf("read configs err #%v ", err)
-		panic(err)
+		log.Fatalf("Failed to read YAML file %s: %v", path, err)
+		return
 	}
 	log.Printf("read yaml file path: %s", path)
 	err = yaml.Unmarshal(yamlFile, out)
 	if err != nil {
-		log.Fatalf("Unmarshal: %v", err)
-		panic(err)
+		log.Fatalf("Failed to unmarshal YAML file %s: %v", path, err)
+		return
 	}
 	log.Printf("read config success %s \n", out)
 }

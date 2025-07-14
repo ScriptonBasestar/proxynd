@@ -85,7 +85,12 @@ func NewEnhancedRateLimiter(config ...EnhancedRateLimitConfig) fiber.Handler {
 	// 기본 Rate 파싱
 	defaultRate, err := limiter.NewRateFromFormatted(cfg.Rate)
 	if err != nil {
-		panic(fmt.Sprintf("Invalid default rate format: %v", err))
+		logger.Error("Invalid default rate format, using fallback", "error", err, "rate", cfg.Rate)
+		// 기본값으로 fallback (1000 requests per hour)
+		defaultRate = limiter.Rate{
+			Period: time.Hour,
+			Limit:  1000,
+		}
 	}
 	
 	// 기본 리미터 생성

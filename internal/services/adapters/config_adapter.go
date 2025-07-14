@@ -3,6 +3,7 @@ package adapters
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"proxynd/internal/repositories/config"
 	"proxynd/internal/services/proxy"
@@ -39,13 +40,15 @@ func (a *ConfigAdapter) ReloadConfig(ctx context.Context) error {
 
 // WatchConfig sets up configuration watching with a callback
 func (a *ConfigAdapter) WatchConfig(callback func(proxyType string, config interface{})) error {
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	return a.repo.WatchConfig(ctx, callback)
 }
 
 // SaveProxyConfig saves a proxy configuration
 func (a *ConfigAdapter) SaveProxyConfig(proxyType string, config interface{}) error {
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
 	// Validate before saving
 	if err := a.repo.ValidateConfig(ctx, proxyType, config); err != nil {
@@ -57,7 +60,8 @@ func (a *ConfigAdapter) SaveProxyConfig(proxyType string, config interface{}) er
 
 // SaveGlobalConfig saves the global configuration
 func (a *ConfigAdapter) SaveGlobalConfig(config interface{}) error {
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
 
 	// Validate before saving
 	if err := a.repo.ValidateConfig(ctx, "global", config); err != nil {
