@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"fmt"
+	"net"
 	"regexp"
 	"strings"
 
@@ -365,7 +366,7 @@ func validateUserAgent(c *fiber.Ctx, logger logging.Logger) error {
 	return nil
 }
 
-// StrictValidation 더 엄격한 검증을 위한 설정
+// StrictValidationConfig 더 엄격한 검증을 위한 설정
 func StrictValidationConfig() ValidationConfig {
 	return ValidationConfig{
 		MaxFileSize:    10 * 1024 * 1024, // 10MB
@@ -380,4 +381,239 @@ func StrictValidationConfig() ValidationConfig {
 		},
 		EnableLogging: true,
 	}
+}
+
+// EnhancedInputValidation 향상된 입력 검증 미들웨어 (SQL 인젝션, XSS 등 추가 보안)
+func EnhancedInputValidation(config ...ValidationConfig) fiber.Handler {
+	cfg := DefaultValidationConfig()
+	if len(config) > 0 {
+		cfg = config[0]
+	}
+
+	logger := logging.GetLogger()
+
+	// 추가 위험 패턴 (SQL 인젝션, NoSQL 인젝션 등)
+	sqlPatterns := []string{
+		"union", "select", "insert", "update", "delete", "drop", "create", "alter",
+		"exec", "execute", "sp_", "xp_", "0x", "@@", "char(", "nchar(",
+		"$where", "$regex", "$ne", "$gt", "$lt", "$in", "$nin",
+	}
+
+	xssPatterns := []string{
+		"<iframe", "<object", "<embed", "<applet", "<meta",
+		"vbscript:", "livescript:", "mocha:", "charset=",
+		"&#", "%3c", "%3e", "%22", "%27",
+	}
+
+	return func(c *fiber.Ctx) error {
+		// 기존 검증 먼저 실행
+		baseValidation := InputValidation(cfg)
+		if err := baseValidation(c); err != nil {
+			return err
+		}
+
+		// 향상된 검증 실행
+		if err := validateAdvancedSecurity(c, cfg, logger, sqlPatterns, xssPatterns); err != nil {
+			return c.Status(400).JSON(fiber.Map{
+				"error":   "Security validation failed",
+				"details": err.Error(),
+			})
+		}
+
+		return c.Next()
+	}
+}
+
+// validateAdvancedSecurity 고급 보안 검증
+func validateAdvancedSecurity(c *fiber.Ctx, cfg ValidationConfig, logger logging.Logger, sqlPatterns, xssPatterns []string) error {
+	// 1. Request Body 검증 (JSON/XML 파싱 없이)
+	if c.Method() == "POST" || c.Method() == "PUT" {
+		bodyBytes := c.Body()
+		if len(bodyBytes) > 0 {
+			bodyStr := strings.ToLower(string(bodyBytes))
+			
+			// SQL 인젝션 패턴 검사
+			for _, pattern := range sqlPatterns {
+				if strings.Contains(bodyStr, pattern) {
+					if cfg.EnableLogging {
+						logger.Warn("SQL injection pattern detected in body",
+							logging.F("client_ip", c.IP()),
+							logging.F("pattern", pattern),
+							logging.F("path", c.Path()),
+							logging.F("method", c.Method()))
+					}
+					return fmt.Errorf("invalid request content")
+				}
+			}
+
+			// XSS 패턴 검사
+			for _, pattern := range xssPatterns {
+				if strings.Contains(bodyStr, pattern) {
+					if cfg.EnableLogging {
+						logger.Warn("XSS pattern detected in body",
+							logging.F("client_ip", c.IP()),
+							logging.F("pattern", pattern),
+							logging.F("path", c.Path()),
+							logging.F("method", c.Method()))
+					}
+					return fmt.Errorf("invalid request content")
+				}
+			}
+		}
+	}
+
+	// 2. HTTP 헤더 검증
+	if err := validateHTTPHeaders(c, cfg, logger, xssPatterns); err != nil {
+		return err
+	}
+
+	// 3. Content-Type 검증
+	if err := validateContentType(c, cfg, logger); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// validateHTTPHeaders HTTP 헤더 검증
+func validateHTTPHeaders(c *fiber.Ctx, cfg ValidationConfig, logger logging.Logger, xssPatterns []string) error {
+	// 중요한 헤더들 검증
+	headers := []string{"Referer", "X-Forwarded-For", "X-Real-IP", "Authorization"}
+	
+	for _, headerName := range headers {
+		headerValue := strings.ToLower(c.Get(headerName))
+		if headerValue == "" {
+			continue
+		}
+
+		// 헤더 값 길이 제한
+		if len(headerValue) > 2000 {
+			if cfg.EnableLogging {
+				logger.Warn("HTTP header too long",
+					logging.F("client_ip", c.IP()),
+					logging.F("header", headerName),
+					logging.F("length", len(headerValue)),
+					logging.F("path", c.Path()))
+			}
+			return fmt.Errorf("header %s too long", headerName)
+		}
+
+		// XSS 패턴 검사
+		for _, pattern := range xssPatterns {
+			if strings.Contains(headerValue, pattern) {
+				if cfg.EnableLogging {
+					logger.Warn("XSS pattern detected in header",
+						logging.F("client_ip", c.IP()),
+						logging.F("header", headerName),
+						logging.F("pattern", pattern),
+						logging.F("path", c.Path()))
+				}
+				return fmt.Errorf("invalid header format")
+			}
+		}
+	}
+
+	return nil
+}
+
+// validateContentType Content-Type 검증
+func validateContentType(c *fiber.Ctx, cfg ValidationConfig, logger logging.Logger) error {
+	contentType := strings.ToLower(c.Get("Content-Type"))
+	
+	// POST/PUT 요청에 대한 Content-Type 검증
+	if (c.Method() == "POST" || c.Method() == "PUT") && len(c.Body()) > 0 {
+		allowedContentTypes := []string{
+			"application/json",
+			"application/xml",
+			"text/xml",
+			"application/x-www-form-urlencoded",
+			"multipart/form-data",
+			"application/octet-stream",
+			"text/plain",
+		}
+
+		isValid := false
+		for _, allowed := range allowedContentTypes {
+			if strings.HasPrefix(contentType, allowed) {
+				isValid = true
+				break
+			}
+		}
+
+		if !isValid && contentType != "" {
+			if cfg.EnableLogging {
+				logger.Warn("Invalid Content-Type",
+					logging.F("client_ip", c.IP()),
+					logging.F("content_type", contentType),
+					logging.F("path", c.Path()),
+					logging.F("method", c.Method()))
+			}
+			return fmt.Errorf("invalid content type: %s", contentType)
+		}
+	}
+
+	return nil
+}
+
+// IPValidation IP 주소 기반 검증
+func IPValidation(blockedCIDRs []string, allowedCIDRs []string) fiber.Handler {
+	logger := logging.GetLogger()
+
+	return func(c *fiber.Ctx) error {
+		clientIP := c.IP()
+		
+		// 차단된 CIDR 확인
+		for _, cidr := range blockedCIDRs {
+			if isIPInCIDR(clientIP, cidr) {
+				logger.Warn("Request from blocked IP range",
+					logging.F("client_ip", clientIP),
+					logging.F("blocked_cidr", cidr),
+					logging.F("path", c.Path()))
+				return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+					"error": "Access denied",
+				})
+			}
+		}
+
+		// 허용된 CIDR 확인 (설정된 경우)
+		if len(allowedCIDRs) > 0 {
+			allowed := false
+			for _, cidr := range allowedCIDRs {
+				if isIPInCIDR(clientIP, cidr) {
+					allowed = true
+					break
+				}
+			}
+			
+			if !allowed {
+				logger.Warn("Request from non-allowed IP range",
+					logging.F("client_ip", clientIP),
+					logging.F("path", c.Path()))
+				return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+					"error": "Access denied",
+				})
+			}
+		}
+
+		return c.Next()
+	}
+}
+
+// isIPInCIDR IP가 CIDR 범위에 있는지 확인
+func isIPInCIDR(ip, cidr string) bool {
+	if !strings.Contains(cidr, "/") {
+		return ip == cidr
+	}
+	
+	clientIP := net.ParseIP(ip)
+	if clientIP == nil {
+		return false
+	}
+	
+	_, ipNet, err := net.ParseCIDR(cidr)
+	if err != nil {
+		return false
+	}
+	
+	return ipNet.Contains(clientIP)
 }

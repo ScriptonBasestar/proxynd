@@ -158,13 +158,24 @@ func CORSSecurityHeaders(allowedOrigins []string) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		origin := c.Get("Origin")
 
-		// Origin 검증
+		// Origin 검증 (와일드카드 지원)
 		isAllowed := false
 		for _, allowedOrigin := range allowedOrigins {
-			if origin == allowedOrigin {
+			if allowedOrigin == "*" || origin == allowedOrigin {
 				isAllowed = true
 				break
 			}
+		}
+
+		// OPTIONS 요청 처리 (Preflight)
+		if c.Method() == "OPTIONS" {
+			if isAllowed {
+				c.Set("Access-Control-Allow-Origin", origin)
+			}
+			c.Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+			c.Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, X-API-Key")
+			c.Set("Access-Control-Max-Age", "3600") // 1시간으로 단축
+			return c.SendStatus(fiber.StatusNoContent)
 		}
 
 		if isAllowed {
@@ -175,15 +186,61 @@ func CORSSecurityHeaders(allowedOrigins []string) fiber.Handler {
 
 		// CORS 보안 헤더
 		c.Set("Access-Control-Allow-Credentials", "true")
-		c.Set("Access-Control-Max-Age", "86400") // 24시간
-		c.Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		c.Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
+		c.Set("Access-Control-Expose-Headers", "X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset")
 
 		// 기본 보안 헤더
 		c.Set("X-Content-Type-Options", "nosniff")
 		c.Set("X-Frame-Options", "SAMEORIGIN") // CORS 환경에서는 SAMEORIGIN 사용
 		c.Set("X-XSS-Protection", "1; mode=block")
 		c.Set("Referrer-Policy", "strict-origin-when-cross-origin")
+
+		return c.Next()
+	}
+}
+
+// APISecurityHeaders API 전용 보안 헤더 (더 엄격함)
+func APISecurityHeaders() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		// API 전용 보안 헤더
+		c.Set("X-Content-Type-Options", "nosniff")
+		c.Set("X-Frame-Options", "DENY")
+		c.Set("X-XSS-Protection", "1; mode=block")
+		c.Set("Referrer-Policy", "no-referrer")
+		c.Set("Cache-Control", "no-store, no-cache, must-revalidate, private")
+		c.Set("Pragma", "no-cache")
+		c.Set("Expires", "0")
+		
+		// API 응답에는 민감한 정보가 있을 수 있으므로
+		c.Set("Cross-Origin-Embedder-Policy", "require-corp")
+		c.Set("Cross-Origin-Opener-Policy", "same-origin")
+		c.Set("Cross-Origin-Resource-Policy", "same-origin")
+		
+		// CSP를 더 엄격하게
+		c.Set("Content-Security-Policy", "default-src 'none'; script-src 'none'; object-src 'none'")
+		
+		// 서버 정보 숨김
+		c.Set("Server", "ProxyND-API")
+
+		return c.Next()
+	}
+}
+
+// PublicSecurityHeaders 공개 컨텐츠용 보안 헤더 (덜 엄격함)
+func PublicSecurityHeaders() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		// 공개 컨텐츠용 보안 헤더
+		c.Set("X-Content-Type-Options", "nosniff")
+		c.Set("X-Frame-Options", "SAMEORIGIN")
+		c.Set("X-XSS-Protection", "1; mode=block")
+		c.Set("Referrer-Policy", "strict-origin-when-cross-origin")
+		
+		// 공개 캐시 허용
+		c.Set("Cache-Control", "public, max-age=3600")
+		
+		// 기본 CSP (스크립트와 스타일 허용)
+		c.Set("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'")
+		
+		c.Set("Server", "ProxyND")
 
 		return c.Next()
 	}
