@@ -8,13 +8,13 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path"
 	"path/filepath"
 
 	"github.com/gofiber/fiber/v2"
 
 	"proxynd/configs"
 	"proxynd/helpers"
+	"proxynd/internal/security"
 )
 
 // AptProxy handles APT package manager proxy requests.
@@ -33,8 +33,15 @@ func AptProxy(c *fiber.Ctx) error {
 	config := configs.AptProxyConfig{}
 	config.ReadConfig()
 
-	// Create the file
-	filefullpath := path.Join(storageDir, config.Path, requestPath)
+	// Create the file path securely
+	baseDir := filepath.Join(storageDir, config.Path)
+	filefullpath, err := security.SafeJoinPath(baseDir, requestPath)
+	if err != nil {
+		log.Printf("Invalid path detected: %v", err)
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid path",
+		})
+	}
 	filename := filepath.Base(filefullpath)
 	if _, err := os.Stat(filefullpath); os.IsNotExist(err) {
 		dirpath := filepath.Dir(filefullpath)

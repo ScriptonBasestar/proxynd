@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -15,6 +14,7 @@ import (
 
 	"proxynd/configs"
 	"proxynd/helpers"
+	"proxynd/internal/security"
 	"proxynd/pkg/httpclient"
 )
 
@@ -48,7 +48,7 @@ func PipProxy(c *fiber.Ctx) error {
 		filefullpath = cachePath
 		filename = filepath.Base(filefullpath)
 	} else {
-		filefullpath = path.Join(storageDir, config.Path, requestPath)
+		filefullpath = security.SafeJoinPath(storageDir, config.Path, requestPath)
 		filename = filepath.Base(filefullpath)
 	}
 

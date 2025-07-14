@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -15,6 +14,7 @@ import (
 	"proxynd/configs"
 	"proxynd/helpers"
 	"proxynd/internal/mirror"
+	"proxynd/internal/security"
 	"proxynd/logging"
 	"proxynd/pkg/httpclient"
 	"proxynd/verification/apk"
@@ -111,7 +111,7 @@ func ApkProxyHandler(c *fiber.Ctx) error {
 	apkConfig.ReadConfig()
 
 	// 파일 경로 생성
-	filefullpath := path.Join(storageDir, apkConfig.Path, requestPath)
+	filefullpath := security.SafeJoinPath(storageDir, apkConfig.Path, requestPath)
 	filename := filepath.Base(filefullpath)
 
 	// 서명 검증기 초기화 (필요시)

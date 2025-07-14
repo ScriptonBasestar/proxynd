@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -16,6 +15,7 @@ import (
 
 	"proxynd/configs"
 	"proxynd/helpers"
+	"proxynd/internal/security"
 	"proxynd/pkg/httpclient"
 )
 
@@ -59,12 +59,20 @@ func MavenProxy(c *fiber.Ctx) error {
 	var filefullpath string
 	var filename string
 
-	// Use cache path if available, otherwise create default path
+	// Use cache path if available, otherwise create default path securely
 	if cachePath != "" {
 		filefullpath = cachePath
 		filename = filepath.Base(filefullpath)
 	} else {
-		filefullpath = path.Join(storageDir, config.Path, requestPath)
+		baseDir := filepath.Join(storageDir, config.Path)
+		var err error
+		filefullpath, err = security.SafeJoinPath(baseDir, requestPath)
+		if err != nil {
+			log.Printf("Invalid path detected: %v", err)
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "Invalid path",
+			})
+		}
 		filename = filepath.Base(filefullpath)
 	}
 

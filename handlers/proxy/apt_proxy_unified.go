@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -16,6 +15,7 @@ import (
 
 	"proxynd/configs"
 	"proxynd/helpers"
+	"proxynd/internal/security"
 	"proxynd/pkg/httpclient"
 )
 
@@ -48,7 +48,7 @@ func AptProxyUnified(c *fiber.Ctx) error {
 	config.ReadConfig()
 
 	// Create the file
-	filefullpath := path.Join(storageDir, config.Path, requestPath)
+	filefullpath := security.SafeJoinPath(storageDir, config.Path, requestPath)
 	filename := filepath.Base(filefullpath)
 	if _, err := os.Stat(filefullpath); os.IsNotExist(err) {
 		dirpath := filepath.Dir(filefullpath)

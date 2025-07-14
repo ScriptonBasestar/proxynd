@@ -6,13 +6,13 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"proxynd/configs"
 	"proxynd/helpers"
+	"proxynd/internal/security"
 	"proxynd/pkg/httpclient"
 
 	"github.com/gofiber/fiber/v2"
@@ -35,7 +35,7 @@ func YumProxyHandler(c *fiber.Ctx) error {
 	yumConfig.ReadConfig()
 
 	// 파일 경로 생성
-	filefullpath := path.Join(storageDir, yumConfig.Path, requestPath)
+	filefullpath := security.SafeJoinPath(storageDir, yumConfig.Path, requestPath)
 	filename := filepath.Base(filefullpath)
 
 	// 캐시 확인

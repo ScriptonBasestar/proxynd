@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"path"
+	"path/filepath"
 	"strings"
 
+	"proxynd/internal/security"
 	"proxynd/logging"
 )
 
@@ -47,8 +48,8 @@ func (s *BaseProxyService) ValidateRequest(req ProxyRequest) error {
 		return fmt.Errorf("request path cannot be empty")
 	}
 
-	// Prevent directory traversal attacks
-	if strings.Contains(req.Path, "..") {
+	// Enhanced security validation using security package
+	if security.ContainsTraversalPattern(req.Path) {
 		return fmt.Errorf("invalid path: directory traversal detected")
 	}
 
@@ -107,12 +108,18 @@ func (s *BaseProxyService) CacheResponse(ctx context.Context, cacheKey string, c
 
 // BuildCacheKey creates a cache key from proxy type and request path
 func (s *BaseProxyService) BuildCacheKey(requestPath string) string {
-	return path.Join(s.ProxyType, requestPath)
+	// Use SafeJoinPath for security
+	cacheKey, err := security.SafeJoinPath(s.ProxyType, requestPath)
+	if err != nil {
+		// Fallback to safe key if error
+		return filepath.Join(s.ProxyType, "invalid-path")
+	}
+	return cacheKey
 }
 
 // DetermineContentType determines content type based on file extension
 func (s *BaseProxyService) DetermineContentType(filename string) string {
-	ext := strings.ToLower(path.Ext(filename))
+	ext := strings.ToLower(filepath.Ext(filename))
 
 	switch ext {
 	case ".xml", ".pom":

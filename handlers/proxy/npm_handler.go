@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -16,6 +15,7 @@ import (
 
 	"proxynd/configs"
 	"proxynd/helpers"
+	"proxynd/internal/security"
 	"proxynd/pkg/httpclient"
 )
 
@@ -44,12 +44,20 @@ func NpmProxy(c *fiber.Ctx) error {
 	var filefullpath string
 	var filename string
 
-	// 캐시 경로가 있으면 사용, 없으면 기본 경로 생성
+	// 캐시 경로가 있으면 사용, 없으면 기본 경로 생성 (보안 검증)
 	if cachePath != "" {
 		filefullpath = cachePath
 		filename = filepath.Base(filefullpath)
 	} else {
-		filefullpath = path.Join(storageDir, config.Path, requestPath)
+		baseDir := filepath.Join(storageDir, config.Path)
+		var err error
+		filefullpath, err = security.SafeJoinPath(baseDir, requestPath)
+		if err != nil {
+			log.Printf("Invalid path detected: %v", err)
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "Invalid path",
+			})
+		}
 		filename = filepath.Base(filefullpath)
 	}
 

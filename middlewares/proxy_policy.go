@@ -3,13 +3,14 @@ package middlewares
 import (
 	"log"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
 
 	"proxynd/configs"
 	"proxynd/helpers"
+	"proxynd/internal/security"
 )
 
 // ProxyPolicyMiddleware 프록시 정책 처리 미들웨어
@@ -82,36 +83,74 @@ func checkCache(proxyType, requestPath string) CacheInfo {
 	case "maven":
 		config := configs.MavenProxyConfig{}
 		config.ReadConfig()
-		cachePath = path.Join(storageDir, config.Path, requestPath)
+		baseDir := filepath.Join(storageDir, config.Path)
+		var err error
+		cachePath, err = security.SafeJoinPath(baseDir, requestPath)
+		if err != nil {
+			log.Printf("Invalid path in maven cache check: %v", err)
+			return CacheInfo{Hit: false, Path: ""}
+		}
 
 	case "apt":
 		config := configs.AptProxyConfig{}
 		config.ReadConfig()
+		baseDir := filepath.Join(storageDir, config.Path)
 		// APT는 osType을 포함하므로 경로 처리가 다름
 		pathParts := strings.SplitN(requestPath, "/", 2)
+		var targetPath string
 		if len(pathParts) >= 2 {
-			cachePath = path.Join(storageDir, config.Path, pathParts[1])
+			targetPath = pathParts[1]
 		} else {
-			cachePath = path.Join(storageDir, config.Path, requestPath)
+			targetPath = requestPath
+		}
+		var err error
+		cachePath, err = security.SafeJoinPath(baseDir, targetPath)
+		if err != nil {
+			log.Printf("Invalid path in apt cache check: %v", err)
+			return CacheInfo{Hit: false, Path: ""}
 		}
 
 	case "npm":
 		config := configs.NpmProxyConfig{}
 		config.ReadConfig()
-		cachePath = path.Join(storageDir, config.Path, requestPath)
+		baseDir := filepath.Join(storageDir, config.Path)
+		var err error
+		cachePath, err = security.SafeJoinPath(baseDir, requestPath)
+		if err != nil {
+			log.Printf("Invalid path in npm cache check: %v", err)
+			return CacheInfo{Hit: false, Path: ""}
+		}
 
 	case "pip":
 		config := configs.PipProxyConfig{}
 		config.ReadConfig()
-		cachePath = path.Join(storageDir, config.Path, requestPath)
+		baseDir := filepath.Join(storageDir, config.Path)
+		var err error
+		cachePath, err = security.SafeJoinPath(baseDir, requestPath)
+		if err != nil {
+			log.Printf("Invalid path in pip cache check: %v", err)
+			return CacheInfo{Hit: false, Path: ""}
+		}
 
 	case "docker":
 		config := configs.DockerProxyConfig{}
 		config.ReadConfig()
-		cachePath = path.Join(storageDir, config.Path, requestPath)
+		baseDir := filepath.Join(storageDir, config.Path)
+		var err error
+		cachePath, err = security.SafeJoinPath(baseDir, requestPath)
+		if err != nil {
+			log.Printf("Invalid path in docker cache check: %v", err)
+			return CacheInfo{Hit: false, Path: ""}
+		}
 
 	default:
-		cachePath = path.Join(storageDir, "proxy", proxyType, requestPath)
+		baseDir := filepath.Join(storageDir, "proxy", proxyType)
+		var err error
+		cachePath, err = security.SafeJoinPath(baseDir, requestPath)
+		if err != nil {
+			log.Printf("Invalid path in default cache check: %v", err)
+			return CacheInfo{Hit: false, Path: ""}
+		}
 	}
 
 	// 파일 존재 여부 확인
