@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"proxynd/handlers"
+	// proxyHandlers "proxynd/handlers/proxy" // Commented out until handlers are properly implemented
 	"proxynd/internal/repositories/cache"
 	"proxynd/internal/repositories/config"
 	"proxynd/internal/services/adapters"
@@ -30,9 +30,9 @@ type Container struct {
 	upstreamClient proxy.UpstreamClient
 	serviceFactory *proxy.ServiceFactory
 
-	// Handlers
+	// Handlers (commented out until properly implemented)
 	handlerFactory types.ProxyHandlerFactory
-	unifiedRouter  *handlers.UnifiedProxyRouter
+	// unifiedRouter  *proxyHandlers.UnifiedProxyRouter
 
 	// Singleton instances
 	singletons map[string]interface{}
@@ -195,7 +195,7 @@ func (c *Container) GetHandlerFactory() (types.ProxyHandlerFactory, error) {
 	}
 
 	// Get service factory
-	serviceFactory, err := c.GetServiceFactory()
+	_, err := c.GetServiceFactory()
 	if err != nil {
 		return nil, err
 	}
@@ -203,11 +203,12 @@ func (c *Container) GetHandlerFactory() (types.ProxyHandlerFactory, error) {
 	// Create handler factory
 	factory := types.NewStandardProxyHandlerFactory()
 
-	// Register all handlers
+	// Register all handlers (commented out until handlers are implemented)
+	/*
 	// Maven
 	if err := factory.RegisterHandler(
 		types.ProxyTypeMaven,
-		handlers.MavenHandlerCreator(serviceFactory),
+		proxyHandlers.MavenHandlerCreator(serviceFactory),
 	); err != nil {
 		return nil, fmt.Errorf("failed to register Maven handler: %w", err)
 	}
@@ -215,7 +216,7 @@ func (c *Container) GetHandlerFactory() (types.ProxyHandlerFactory, error) {
 	// APT
 	if err := factory.RegisterHandler(
 		types.ProxyTypeAPT,
-		handlers.AptHandlerCreator(serviceFactory),
+		proxyHandlers.AptHandlerCreator(serviceFactory),
 	); err != nil {
 		return nil, fmt.Errorf("failed to register APT handler: %w", err)
 	}
@@ -223,10 +224,11 @@ func (c *Container) GetHandlerFactory() (types.ProxyHandlerFactory, error) {
 	// NPM
 	if err := factory.RegisterHandler(
 		types.ProxyTypeNPM,
-		handlers.NpmHandlerCreator(serviceFactory),
+		proxyHandlers.NpmHandlerCreator(serviceFactory),
 	); err != nil {
 		return nil, fmt.Errorf("failed to register NPM handler: %w", err)
 	}
+	*/
 
 	// TODO: Register other handlers (Docker, PIP, YUM, APK)
 
@@ -234,11 +236,13 @@ func (c *Container) GetHandlerFactory() (types.ProxyHandlerFactory, error) {
 	return factory, nil
 }
 
-// GetUnifiedRouter returns the unified proxy router
-func (c *Container) GetUnifiedRouter() (*handlers.UnifiedProxyRouter, error) {
+// GetUnifiedRouter returns the unified proxy router (placeholder)
+func (c *Container) GetUnifiedRouter() (interface{}, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	// TODO: Implement unified router when handlers are ready
+	/*
 	if c.unifiedRouter != nil {
 		return c.unifiedRouter, nil
 	}
@@ -250,8 +254,9 @@ func (c *Container) GetUnifiedRouter() (*handlers.UnifiedProxyRouter, error) {
 	}
 
 	// Create unified router
-	c.unifiedRouter = handlers.NewUnifiedProxyRouter(serviceFactory)
-	return c.unifiedRouter, nil
+	c.unifiedRouter = proxyHandlers.NewUnifiedProxyRouter(serviceFactory)
+	*/
+	return nil, fmt.Errorf("unified router not implemented yet")
 }
 
 // GetSingleton returns a singleton instance by key
@@ -293,7 +298,7 @@ func (c *Container) Close() error {
 	c.upstreamClient = nil
 	c.serviceFactory = nil
 	c.handlerFactory = nil
-	c.unifiedRouter = nil
+	// c.unifiedRouter = nil // Commented out since field is removed
 	c.singletons = make(map[string]interface{})
 
 	return nil

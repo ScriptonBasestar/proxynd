@@ -2,6 +2,7 @@ package testutil
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -17,6 +18,48 @@ import (
 	"proxynd/internal/services/config"
 	"proxynd/internal/services/proxy"
 )
+
+// ConfigServiceAdapter adapts config.Service to proxy.ConfigService
+type ConfigServiceAdapter struct {
+	service config.Service
+}
+
+// NewConfigServiceAdapter creates a new config service adapter
+func NewConfigServiceAdapter(service config.Service) proxy.ConfigService {
+	return &ConfigServiceAdapter{service: service}
+}
+
+// GetProxyConfig returns configuration for a specific proxy type
+func (a *ConfigServiceAdapter) GetProxyConfig(ctx context.Context, proxyType string) (interface{}, error) {
+	switch proxyType {
+	case "maven":
+		return a.service.GetMavenConfig(ctx)
+	case "apt":
+		return a.service.GetAptConfig(ctx)
+	case "npm":
+		return a.service.GetNpmConfig(ctx)
+	case "docker":
+		return a.service.GetDockerConfig(ctx)
+	case "pip":
+		return a.service.GetPipConfig(ctx)
+	case "yum":
+		return a.service.GetYumConfig(ctx)
+	case "apk":
+		return a.service.GetApkConfig(ctx)
+	default:
+		return nil, fmt.Errorf("unsupported proxy type: %s", proxyType)
+	}
+}
+
+// GetGlobalConfig returns global configuration
+func (a *ConfigServiceAdapter) GetGlobalConfig(ctx context.Context) (interface{}, error) {
+	return a.service.GetGlobalConfig(ctx)
+}
+
+// ReloadConfig reloads configuration from disk
+func (a *ConfigServiceAdapter) ReloadConfig(ctx context.Context) error {
+	return a.service.Reload(ctx)
+}
 
 // Factory provides methods to create test objects with sensible defaults
 type Factory struct {
@@ -41,7 +84,7 @@ func (f *Factory) ConfigService() config.Service {
 	// Create test config files
 	f.createTestConfigFiles(configDir)
 
-	service, err := config.NewService(configDir)
+	service, err := config.NewService(context.Background(), configDir)
 	require.NoError(f.t, err)
 
 	return service
@@ -61,7 +104,7 @@ func (f *Factory) CacheRepository() repocache.Repository {
 // CacheAdapter creates a test cache adapter
 func (f *Factory) CacheAdapter() proxy.CacheService {
 	repo := f.CacheRepository()
-	return adapters.NewCacheAdapter(repo)
+	return adapters.NewCacheAdapter(repo, 5*time.Minute)
 }
 
 // UpstreamClient creates a test upstream client
@@ -72,11 +115,12 @@ func (f *Factory) UpstreamClient() proxy.UpstreamClient {
 // ProxyService creates a test proxy service
 func (f *Factory) ProxyService(proxyType string) proxy.ProxyService {
 	configService := f.ConfigService()
+	adaptedConfigService := NewConfigServiceAdapter(configService)
 	cacheAdapter := f.CacheAdapter()
 	upstreamClient := f.UpstreamClient()
 
-	factory := proxy.NewFactory(configService, cacheAdapter, upstreamClient)
-	service, err := factory.CreateProxy(proxyType)
+	factory := proxy.NewServiceFactory(cacheAdapter, adaptedConfigService, upstreamClient)
+	service, err := factory.GetService(proxyType)
 	require.NoError(f.t, err)
 
 	return service

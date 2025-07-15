@@ -23,7 +23,6 @@ import (
 type IntegrationTestSuite struct {
 	suite.Suite
 	app      *fiber.App
-	server   *http.Server
 	baseURL  string
 	cacheDir string
 	logDir   string
@@ -35,12 +34,12 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	s.cacheDir = filepath.Join(os.TempDir(), "proxynd-test-cache")
 	s.logDir = filepath.Join(os.TempDir(), "proxynd-test-logs")
 
-	os.MkdirAll(s.cacheDir, 0755)
-	os.MkdirAll(s.logDir, 0755)
+	_ = os.MkdirAll(s.cacheDir, 0755)
+	_ = os.MkdirAll(s.logDir, 0755)
 
 	// 테스트용 환경 변수 설정
-	os.Setenv("CONFIG_DIR", "./")
-	os.Setenv("STORAGE_DIR", s.cacheDir)
+	_ = os.Setenv("CONFIG_DIR", "./")
+	_ = os.Setenv("STORAGE_DIR", s.cacheDir)
 
 	// Fiber 앱 생성
 	s.app = fiber.New(fiber.Config{
@@ -67,19 +66,19 @@ func (s *IntegrationTestSuite) SetupSuite() {
 // TearDownSuite 테스트 스위트 정리
 func (s *IntegrationTestSuite) TearDownSuite() {
 	if s.app != nil {
-		s.app.Shutdown()
+		_ = s.app.Shutdown()
 	}
 
 	// 임시 디렉토리 정리
-	os.RemoveAll(s.cacheDir)
-	os.RemoveAll(s.logDir)
+	_ = os.RemoveAll(s.cacheDir)
+	_ = os.RemoveAll(s.logDir)
 }
 
 // TestHealthCheck 헬스체크 테스트
 func (s *IntegrationTestSuite) TestHealthCheck() {
 	resp, err := http.Get(s.baseURL + "/healthz")
 	require.NoError(s.T(), err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(s.T(), http.StatusOK, resp.StatusCode)
 
@@ -125,12 +124,12 @@ func (s *IntegrationTestSuite) TestNpmProxyScenario() {
 			// 첫 번째 요청 (캐시 미스)
 			resp1, err := http.Get(url)
 			require.NoError(t, err)
-			defer resp1.Body.Close()
+			defer func() { _ = resp1.Body.Close() }()
 
 			// 두 번째 요청 (캐시 히트)
 			resp2, err := http.Get(url)
 			require.NoError(t, err)
-			defer resp2.Body.Close()
+			defer func() { _ = resp2.Body.Close() }()
 
 			// 응답 상태 확인 (실제 NPM 서버가 없으므로 에러 응답도 정상)
 			assert.True(t, resp1.StatusCode == tc.expectedCode || resp1.StatusCode >= 400)
@@ -164,7 +163,7 @@ func (s *IntegrationTestSuite) TestPipProxyScenario() {
 
 			resp, err := http.Get(url)
 			require.NoError(t, err)
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 
 			// 응답 상태 확인
 			assert.True(t, resp.StatusCode == tc.expectedCode || resp.StatusCode >= 400)
@@ -202,7 +201,7 @@ func (s *IntegrationTestSuite) TestAptProxyScenario() {
 
 			resp, err := http.Get(url)
 			require.NoError(t, err)
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 
 			// 응답 상태 확인
 			assert.True(t, resp.StatusCode == tc.expectedCode || resp.StatusCode >= 400)
@@ -269,14 +268,14 @@ func (s *IntegrationTestSuite) TestCacheScenario() {
 	start1 := time.Now()
 	resp1, err := http.Get(url)
 	require.NoError(s.T(), err)
-	defer resp1.Body.Close()
+	defer func() { _ = resp1.Body.Close() }()
 	duration1 := time.Since(start1)
 
 	// 두 번째 요청 (캐시에서 응답)
 	start2 := time.Now()
 	resp2, err := http.Get(url)
 	require.NoError(s.T(), err)
-	defer resp2.Body.Close()
+	defer func() { _ = resp2.Body.Close() }()
 	duration2 := time.Since(start2)
 
 	// 두 번째 요청이 더 빨라야 함 (캐시 효과)
@@ -294,7 +293,7 @@ func (s *IntegrationTestSuite) TestAuthenticationScenario() {
 	// 인증 없이 요청
 	resp1, err := http.Get(url)
 	require.NoError(s.T(), err)
-	defer resp1.Body.Close()
+	defer func() { _ = resp1.Body.Close() }()
 
 	// Basic Auth로 요청
 	req, err := http.NewRequest("GET", url, nil)
@@ -304,7 +303,7 @@ func (s *IntegrationTestSuite) TestAuthenticationScenario() {
 	client := &http.Client{}
 	resp2, err := client.Do(req)
 	require.NoError(s.T(), err)
-	defer resp2.Body.Close()
+	defer func() { _ = resp2.Body.Close() }()
 
 	// 인증 여부에 따른 응답 차이 확인
 	s.T().Logf("Without auth: %d, With auth: %d", resp1.StatusCode, resp2.StatusCode)
@@ -352,7 +351,7 @@ func (s *IntegrationTestSuite) TestLoadScenario() {
 					s.T().Logf("Goroutine %d request %d failed: %v", id, j, err)
 					continue
 				}
-				resp.Body.Close()
+				_ = resp.Body.Close()
 			}
 		}(i)
 	}
@@ -370,8 +369,8 @@ func TestIntegration(t *testing.T) {
 	suite.Run(t, new(IntegrationTestSuite))
 }
 
-// BenchmarkProxyRequests 프록시 요청 벤치마크
-func BenchmarkProxyRequests(b *testing.B) {
+// BenchmarkIntegrationProxyRequests 프록시 요청 벤치마크 (integration 패키지용)
+func BenchmarkIntegrationProxyRequests(b *testing.B) {
 	// 테스트 서버 설정
 	app := fiber.New(fiber.Config{
 		DisableStartupMessage: true,
@@ -380,11 +379,11 @@ func BenchmarkProxyRequests(b *testing.B) {
 	routers.ProxyRouter(app)
 
 	go func() {
-		app.Listen(":8083")
+		_ = app.Listen(":8083")
 	}()
 
 	time.Sleep(100 * time.Millisecond)
-	defer app.Shutdown()
+	defer func() { _ = app.Shutdown() }()
 
 	url := "http://localhost:8083/proxy/npm/express"
 
@@ -396,7 +395,7 @@ func BenchmarkProxyRequests(b *testing.B) {
 				b.Error(err)
 				continue
 			}
-			resp.Body.Close()
+			_ = resp.Body.Close()
 		}
 	})
 }

@@ -278,7 +278,7 @@ func getConfigSummary(config *configs.UnifiedConfig) map[string]interface{} {
 			"maven":  config.Registries.Maven.Enabled,
 		},
 		"metrics_enabled": config.Metrics.Enabled,
-		"auth_enabled":    config.Security.Authentication.BasicAuth.Enabled,
+		"auth_enabled":    len(config.Security.Authentication.BasicAuth.Users) > 0,
 	}
 }
 

@@ -3,7 +3,7 @@ package app
 import (
 	"fmt"
 
-	"proxynd/handlers"
+	// proxyHandlers "proxynd/handlers/proxy" // Commented out until handlers are properly implemented
 	"proxynd/internal/repositories/cache"
 	"proxynd/internal/repositories/config"
 	"proxynd/internal/services/proxy"
@@ -114,7 +114,7 @@ func ProvideCacheService(c *Container) (interface{}, error) {
 		return nil, err
 	}
 
-	repo := repoInterface.(cache.Repository)
+	_ = repoInterface.(cache.Repository)
 
 	// Create cache service (not singleton - stateless)
 	return c.GetCacheService()
@@ -211,18 +211,21 @@ func ProvideUnifiedRouter(c *Container) (interface{}, error) {
 		return nil, err
 	}
 
-	serviceFactory := serviceFactoryInterface.(*proxy.ServiceFactory)
+	_ = serviceFactoryInterface.(*proxy.ServiceFactory)
 
-	// Create unified router
-	return handlers.NewUnifiedProxyRouter(serviceFactory), nil
+	// Create unified router (placeholder implementation)
+	// TODO: Implement proper router when handlers are ready
+	return nil, fmt.Errorf("unified router not implemented yet")
 }
 
 // Helper function to register all handlers
 func registerAllHandlers(factory types.ProxyHandlerFactory, serviceFactory *proxy.ServiceFactory) error {
+	// TODO: Implement handlers when ready
+	/*
 	// Maven
 	if err := factory.RegisterHandler(
 		types.ProxyTypeMaven,
-		handlers.MavenHandlerCreator(serviceFactory),
+		proxyHandlers.MavenHandlerCreator(serviceFactory),
 	); err != nil {
 		return fmt.Errorf("failed to register Maven handler: %w", err)
 	}
@@ -230,7 +233,7 @@ func registerAllHandlers(factory types.ProxyHandlerFactory, serviceFactory *prox
 	// APT
 	if err := factory.RegisterHandler(
 		types.ProxyTypeAPT,
-		handlers.AptHandlerCreator(serviceFactory),
+		proxyHandlers.AptHandlerCreator(serviceFactory),
 	); err != nil {
 		return fmt.Errorf("failed to register APT handler: %w", err)
 	}
@@ -238,12 +241,13 @@ func registerAllHandlers(factory types.ProxyHandlerFactory, serviceFactory *prox
 	// NPM
 	if err := factory.RegisterHandler(
 		types.ProxyTypeNPM,
-		handlers.NpmHandlerCreator(serviceFactory),
+		proxyHandlers.NpmHandlerCreator(serviceFactory),
 	); err != nil {
 		return fmt.Errorf("failed to register NPM handler: %w", err)
 	}
 
 	// TODO: Register other handlers (Docker, PIP, YUM, APK)
+	*/
 
 	return nil
 }

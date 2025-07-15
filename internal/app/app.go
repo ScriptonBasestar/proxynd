@@ -115,7 +115,7 @@ func New(cfg *Config) (*Application, error) {
 // Run starts the application
 func (app *Application) Run() error {
 	// Start configuration watcher
-	ctx, cancel := context.WithCancel(context.Background())
+	_, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	// Configuration changes are now handled by the centralized config service

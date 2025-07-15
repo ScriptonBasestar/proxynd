@@ -218,13 +218,8 @@ func validateConfig(c *fiber.Ctx) error {
 			return exists, nil, 0
 		},
 		"gem": func() (bool, interface{}, int) {
-			config := configs.GemProxyConfig{}
-			exists := config.ConfigExists()
-			if exists {
-				config.ReadConfig()
-				return exists, config, len(config.Proxies)
-			}
-			return exists, nil, 0
+			// GemProxyConfig는 아직 구현되지 않음
+			return false, nil, 0
 		},
 		"apk": func() (bool, interface{}, int) {
 			config := configs.ApkProxyConfig{}

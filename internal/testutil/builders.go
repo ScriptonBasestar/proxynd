@@ -2,7 +2,6 @@ package testutil
 
 import (
 	"proxynd/configs"
-	"time"
 )
 
 // ConfigBuilder 설정 빌더
@@ -20,10 +19,12 @@ func NewGlobalConfigBuilder() *ConfigBuilder {
 			CacheTTL:     3600,
 			MaxCacheSize: 1024 * 1024 * 1024, // 1GB
 			Cache: configs.Cache{
-				Type:      "filesystem",
-				TTL:       3600,
-				MaxSize:   1073741824,
-				Directory: "./cache",
+				TTL:                  3600,
+				UseCacheHeaders:      false,
+				MaxCacheHeaderTTL:    86400,
+				MinCacheHeaderTTL:    300,
+				StaleWhileRevalidate: false,
+				StaleMaxAge:          3600,
 			},
 		},
 	}
@@ -41,7 +42,6 @@ func (b *ConfigBuilder) WithStorageDir(dir string) *ConfigBuilder {
 func (b *ConfigBuilder) WithCacheDir(dir string) *ConfigBuilder {
 	if gc, ok := b.config.(*configs.GlobalConfig); ok {
 		gc.CacheDir = dir
-		gc.Cache.Directory = dir
 	}
 	return b
 }
@@ -59,7 +59,6 @@ func (b *ConfigBuilder) WithCacheTTL(ttl int) *ConfigBuilder {
 func (b *ConfigBuilder) WithMaxCacheSize(size int64) *ConfigBuilder {
 	if gc, ok := b.config.(*configs.GlobalConfig); ok {
 		gc.MaxCacheSize = size
-		gc.Cache.MaxSize = size
 	}
 	return b
 }
@@ -71,117 +70,169 @@ func (b *ConfigBuilder) Build() interface{} {
 
 // APTConfigBuilder APT 설정 빌더
 type APTConfigBuilder struct {
-	config *configs.APTConfig
+	config *configs.AptProxyConfig
 }
 
 // NewAPTConfigBuilder APT 설정 빌더 생성
 func NewAPTConfigBuilder() *APTConfigBuilder {
 	return &APTConfigBuilder{
-		config: &configs.APTConfig{
-			UpstreamURLs:         []string{"http://archive.ubuntu.com/ubuntu"},
-			CacheEnabled:         true,
-			AllowedArchitectures: []string{"amd64", "arm64"},
-			AllowedDistributions: []string{"jammy", "focal"},
+		config: &configs.AptProxyConfig{
+			Path:     "/proxy/apt",
+			UseCache: true,
+			Proxies: map[string][]configs.AptProxy{
+				"default": {
+					{
+						Name: "Ubuntu Archive",
+						URL:  "http://archive.ubuntu.com/ubuntu",
+					},
+				},
+			},
 		},
 	}
 }
 
-// WithUpstreamURLs 업스트림 URL 설정
-func (b *APTConfigBuilder) WithUpstreamURLs(urls ...string) *APTConfigBuilder {
-	b.config.UpstreamURLs = urls
+// WithPath 프록시 경로 설정
+func (b *APTConfigBuilder) WithPath(path string) *APTConfigBuilder {
+	b.config.Path = path
 	return b
 }
 
 // WithCacheEnabled 캐시 활성화 설정
 func (b *APTConfigBuilder) WithCacheEnabled(enabled bool) *APTConfigBuilder {
-	b.config.CacheEnabled = enabled
+	b.config.UseCache = enabled
 	return b
 }
 
-// WithAllowedArchitectures 허용 아키텍처 설정
-func (b *APTConfigBuilder) WithAllowedArchitectures(archs ...string) *APTConfigBuilder {
-	b.config.AllowedArchitectures = archs
+// WithProxy 프록시 설정 추가
+func (b *APTConfigBuilder) WithProxy(name, proxiesKey, url string) *APTConfigBuilder {
+	if b.config.Proxies == nil {
+		b.config.Proxies = make(map[string][]configs.AptProxy)
+	}
+	b.config.Proxies[proxiesKey] = append(b.config.Proxies[proxiesKey], configs.AptProxy{
+		Name: name,
+		URL:  url,
+	})
 	return b
 }
 
 // Build 설정 빌드
-func (b *APTConfigBuilder) Build() *configs.APTConfig {
+func (b *APTConfigBuilder) Build() *configs.AptProxyConfig {
 	return b.config
 }
 
 // MavenConfigBuilder Maven 설정 빌더
 type MavenConfigBuilder struct {
-	config *configs.MavenConfig
+	config *configs.MavenProxyConfig
 }
 
-// NewMavenConfigBuilder Maven 설정 빌더 생성
+// NewMavenConfigBuilder Maven 설정 빌드 생성
 func NewMavenConfigBuilder() *MavenConfigBuilder {
 	return &MavenConfigBuilder{
-		config: &configs.MavenConfig{
-			UpstreamURLs: []configs.MavenUpstream{
+		config: &configs.MavenProxyConfig{
+			Path:     "/proxy/maven",
+			UseCache: true,
+			Proxies: []configs.MavenProxyServer{
 				{
-					ID:       "central",
-					URL:      "https://repo1.maven.org/maven2",
-					Priority: 1,
+					Id:          "central",
+					Name:        "Central Repository",
+					URL:         "https://repo1.maven.org/maven2",
+					Description: "Maven Central Repository",
+					Enabled:     true,
 				},
 			},
-			CacheEnabled:       true,
-			ChecksumValidation: true,
+			Cache: configs.MavenProxyCacheConfig{
+				Enabled: true,
+			},
 		},
 	}
 }
 
-// WithUpstream 업스트림 추가
-func (b *MavenConfigBuilder) WithUpstream(id, url string, priority int) *MavenConfigBuilder {
-	b.config.UpstreamURLs = append(b.config.UpstreamURLs, configs.MavenUpstream{
-		ID:       id,
-		URL:      url,
-		Priority: priority,
+// WithPath 프록시 경로 설정
+func (b *MavenConfigBuilder) WithPath(path string) *MavenConfigBuilder {
+	b.config.Path = path
+	return b
+}
+
+// WithProxy 프록시 서버 추가
+func (b *MavenConfigBuilder) WithProxy(id, name, url, description string, enabled bool) *MavenConfigBuilder {
+	b.config.Proxies = append(b.config.Proxies, configs.MavenProxyServer{
+		Id:          id,
+		Name:        name,
+		URL:         url,
+		Description: description,
+		Enabled:     enabled,
 	})
 	return b
 }
 
-// WithChecksumValidation 체크섬 검증 설정
-func (b *MavenConfigBuilder) WithChecksumValidation(enabled bool) *MavenConfigBuilder {
-	b.config.ChecksumValidation = enabled
+// WithCacheEnabled 캐시 활성화 설정
+func (b *MavenConfigBuilder) WithCacheEnabled(enabled bool) *MavenConfigBuilder {
+	b.config.UseCache = enabled
+	b.config.Cache.Enabled = enabled
 	return b
 }
 
 // Build 설정 빌드
-func (b *MavenConfigBuilder) Build() *configs.MavenConfig {
+func (b *MavenConfigBuilder) Build() *configs.MavenProxyConfig {
 	return b.config
 }
 
 // NPMConfigBuilder NPM 설정 빌더
 type NPMConfigBuilder struct {
-	config *configs.NPMConfig
+	config *configs.NpmProxyConfig
 }
 
 // NewNPMConfigBuilder NPM 설정 빌더 생성
 func NewNPMConfigBuilder() *NPMConfigBuilder {
 	return &NPMConfigBuilder{
-		config: &configs.NPMConfig{
-			UpstreamURLs:          []string{"https://registry.npmjs.org"},
-			CacheEnabled:          true,
-			ScopedPackagesAllowed: true,
+		config: &configs.NpmProxyConfig{
+			Path:      "/proxy/npm",
+			UseCache:  true,
+			UserCache: false,
+			Proxies: map[string][]configs.NpmProxyServer{
+				"default": {
+					{
+						Name: "NPM Registry",
+						URL:  "https://registry.npmjs.org",
+					},
+				},
+			},
 		},
 	}
 }
 
-// WithUpstreamURLs 업스트림 URL 설정
-func (b *NPMConfigBuilder) WithUpstreamURLs(urls ...string) *NPMConfigBuilder {
-	b.config.UpstreamURLs = urls
+// WithPath 프록시 경로 설정
+func (b *NPMConfigBuilder) WithPath(path string) *NPMConfigBuilder {
+	b.config.Path = path
 	return b
 }
 
-// WithScopedPackagesAllowed Scoped 패키지 허용 설정
-func (b *NPMConfigBuilder) WithScopedPackagesAllowed(allowed bool) *NPMConfigBuilder {
-	b.config.ScopedPackagesAllowed = allowed
+// WithCacheEnabled 캐시 활성화 설정
+func (b *NPMConfigBuilder) WithCacheEnabled(enabled bool) *NPMConfigBuilder {
+	b.config.UseCache = enabled
+	return b
+}
+
+// WithUserCache 사용자 캐시 설정
+func (b *NPMConfigBuilder) WithUserCache(enabled bool) *NPMConfigBuilder {
+	b.config.UserCache = enabled
+	return b
+}
+
+// WithProxy 프록시 서버 추가
+func (b *NPMConfigBuilder) WithProxy(registryName, serverName, url string) *NPMConfigBuilder {
+	if b.config.Proxies == nil {
+		b.config.Proxies = make(map[string][]configs.NpmProxyServer)
+	}
+	b.config.Proxies[registryName] = append(b.config.Proxies[registryName], configs.NpmProxyServer{
+		Name: serverName,
+		URL:  url,
+	})
 	return b
 }
 
 // Build 설정 빌드
-func (b *NPMConfigBuilder) Build() *configs.NPMConfig {
+func (b *NPMConfigBuilder) Build() *configs.NpmProxyConfig {
 	return b.config
 }
 

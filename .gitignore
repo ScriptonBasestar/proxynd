@@ -130,6 +130,11 @@ secrets/
 auth.json
 credentials.json
 
+# License files (GitLab 모델이지만 실제 라이센스는 제외)
+license.json
+*.license
+license.key
+
 # ================
 # Analysis & Reports
 # ================
@@ -342,3 +347,5 @@ debug.log
 .claude/
 CLAUDE.local.md
 CLAUDE.md
+tasks/
+data/

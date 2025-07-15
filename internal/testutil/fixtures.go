@@ -27,10 +27,12 @@ func (f *Fixtures) ValidGlobalConfig() *configs.GlobalConfig {
 		CacheTTL:     3600,
 		MaxCacheSize: 1024 * 1024 * 1024, // 1GB
 		Cache: configs.Cache{
-			Type:      "filesystem",
-			TTL:       3600,
-			MaxSize:   1073741824,
-			Directory: "/tmp/test-cache",
+			TTL:                  3600,
+			UseCacheHeaders:      false,
+			MaxCacheHeaderTTL:    86400,
+			MinCacheHeaderTTL:    300,
+			StaleWhileRevalidate: false,
+			StaleMaxAge:          3600,
 		},
 	}
 }
@@ -38,17 +40,13 @@ func (f *Fixtures) ValidGlobalConfig() *configs.GlobalConfig {
 // ValidAPTConfig returns a valid APT proxy configuration
 func (f *Fixtures) ValidAPTConfig() *configs.AptProxyConfig {
 	return &configs.AptProxyConfig{
-		Name:    "apt-proxy",
-		Enabled: true,
-		Servers: []configs.AptProxyServer{
-			{
-				Name:    "ubuntu-main",
-				Enabled: true,
-				Server: configs.UpstreamServer{
-					ID:       "ubuntu",
-					URL:      "http://archive.ubuntu.com/ubuntu",
-					Priority: 1,
-					Timeout:  30,
+		Path:     "/proxy/apt",
+		UseCache: true,
+		Proxies: map[string][]configs.AptProxy{
+			"default": {
+				{
+					Name: "Ubuntu Archive",
+					URL:  "http://archive.ubuntu.com/ubuntu",
 				},
 			},
 		},
@@ -58,14 +56,19 @@ func (f *Fixtures) ValidAPTConfig() *configs.AptProxyConfig {
 // ValidMavenConfig returns a valid Maven proxy configuration
 func (f *Fixtures) ValidMavenConfig() *configs.MavenProxyConfig {
 	return &configs.MavenProxyConfig{
-		Name:    "maven-proxy",
-		Enabled: true,
-		Servers: []configs.MavenProxyServer{
+		Path:     "/proxy/maven",
+		UseCache: true,
+		Proxies: []configs.MavenProxyServer{
 			{
-				Name:    "central",
-				Enabled: true,
-				Url:     "https://repo1.maven.org/maven2",
+				Id:          "central",
+				Name:        "Central Repository",
+				URL:         "https://repo1.maven.org/maven2",
+				Description: "Maven Central Repository",
+				Enabled:     true,
 			},
+		},
+		Cache: configs.MavenProxyCacheConfig{
+			Enabled: true,
 		},
 	}
 }
@@ -73,13 +76,15 @@ func (f *Fixtures) ValidMavenConfig() *configs.MavenProxyConfig {
 // ValidNPMConfig returns a valid NPM proxy configuration
 func (f *Fixtures) ValidNPMConfig() *configs.NpmProxyConfig {
 	return &configs.NpmProxyConfig{
-		Name:    "npm-proxy",
-		Enabled: true,
-		Servers: []configs.NpmProxyServer{
-			{
-				Name:    "npmjs",
-				Enabled: true,
-				Url:     "https://registry.npmjs.org",
+		Path:      "/proxy/npm",
+		UseCache:  true,
+		UserCache: false,
+		Proxies: map[string][]configs.NpmProxyServer{
+			"default": {
+				{
+					Name: "NPM Registry",
+					URL:  "https://registry.npmjs.org",
+				},
 			},
 		},
 	}

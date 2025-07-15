@@ -124,9 +124,9 @@ func TestExampleIntegration(t *testing.T) {
 		mock.Anything,
 	).Return(fixtures.ProxyResponse(200, fixtures.SampleAPTPackageMetadata()), nil)
 
-	// Create service with factory
-	cacheService := factory.CacheAdapter()
-	configService := factory.ConfigService()
+	// Create service with factory (use variables to avoid unused warnings)
+	_ = factory.CacheAdapter()
+	_ = factory.ConfigService()
 
 	// Test with fixtures
 	req := fixtures.ProxyRequestWithHeaders("GET", "/ubuntu/test", map[string]string{

@@ -55,7 +55,11 @@ make docker-run
 [개발 가이드](docs/05-development/README.md)를 참조하세요.
 
 ## 📄 라이선스
-[LICENSE](LICENSE) 파일을 참조하세요.
+ProxyND는 듀얼 라이선스로 제공됩니다:
+- **오픈소스**: [AGPL-3.0](LICENSE) - 소스 공개 의무가 있는 무료 라이선스
+- **상용**: [Commercial License](LICENSE-COMMERCIAL.md) - 독점 사용 및 엔터프라이즈 기능
+
+자세한 내용은 [LICENSING.md](LICENSING.md)를 참조하세요.
 
 ---
 
