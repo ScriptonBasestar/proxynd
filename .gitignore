@@ -337,3 +337,8 @@ debug.log
 # Database dumps
 *.sql.gz
 *.dump
+
+# claude
+.claude/
+CLAUDE.local.md
+CLAUDE.md
