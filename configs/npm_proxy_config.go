@@ -14,9 +14,12 @@ type NpmProxyServer struct {
 type NpmProxyConfig struct {
 	Path      string                      `yaml:"path,omitempty" validate:"required,min=1"`
 	UseCache  bool                        `yaml:"use_cache,omitempty" default:"true"`
-	UserCache bool                        `yaml:"user_cache,omitempty" default:false`
+	UserCache bool                        `yaml:"user_cache,omitempty" default:"false"`
 	Proxies   map[string][]NpmProxyServer `yaml:"proxies" validate:"required,min=1,dive,keys,min=1,endkeys,min=1,dive"`
 }
+
+// NpmProxy is an alias for NpmProxyConfig for backwards compatibility
+type NpmProxy = NpmProxyConfig
 
 func (cfg *NpmProxyConfig) ConfigExists() bool {
 	confDir := helpers.GetConfigDir()

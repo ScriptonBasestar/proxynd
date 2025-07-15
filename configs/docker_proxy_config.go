@@ -18,15 +18,17 @@ type DockerAuth struct {
 }
 
 type DockerProxyConfig struct {
-	Path       string                          `yaml:"path,omitempty" validate:"required,min=1"`
-	UseCache   bool                            `yaml:"use_cache,omitempty" default:"true"`
-	Proxies    []DockerProxyServer             `yaml:"proxies" validate:"required,min=1,dive"`
-	Registries map[string]DockerRegistryConfig `yaml:"registries,omitempty" validate:"dive,keys,min=1,endkeys,dive"`
+	Path       string                               `yaml:"path,omitempty" validate:"required,min=1"`
+	UseCache   bool                                 `yaml:"use_cache,omitempty" default:"true"`
+	Proxies    []DockerProxyServer                  `yaml:"proxies" validate:"required,min=1,dive"`
+	Registries map[string]DockerProxyRegistryConfig `yaml:"registries,omitempty" validate:"dive,keys,min=1,endkeys,dive"`
 }
 
-type DockerRegistryConfig struct {
-	URL  string     `yaml:"url" validate:"required,url"`
-	Auth DockerAuth `yaml:"auth,omitempty" validate:"dive"`
+type DockerProxyRegistryConfig struct {
+	URL      string     `yaml:"url" validate:"required,url"`
+	Auth     DockerAuth `yaml:"auth,omitempty" validate:"dive"`
+	Enabled  bool       `yaml:"enabled,omitempty" default:"true"`
+	UseCache bool       `yaml:"use_cache,omitempty" default:"true"`
 }
 
 func (cfg *DockerProxyConfig) ConfigExists() bool {

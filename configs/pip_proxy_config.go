@@ -34,3 +34,6 @@ func (cfg *PipProxyConfig) ReadConfig() error {
 func (cfg *PipProxyConfig) Validate() error {
 	return ValidateStruct(cfg)
 }
+
+// PipProxy is an alias for PipProxyServer for backwards compatibility
+type PipProxy = PipProxyServer

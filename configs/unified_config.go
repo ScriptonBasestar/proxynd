@@ -174,7 +174,7 @@ type APTMirror struct {
 	Components []string `yaml:"components" json:"components"`
 }
 
-// DockerRegistryConfig Docker 레지스트리 설정
+// DockerRegistryConfig Docker 레지스트리 설정 (unified config용)
 type DockerRegistryConfig struct {
 	Enabled    bool                     `yaml:"enabled" json:"enabled"`
 	UseCache   bool                     `yaml:"use_cache" json:"use_cache"`
@@ -220,24 +220,10 @@ type SecurityConfig struct {
 	HashVerification HashVerificationConfig `yaml:"hash_verification" json:"hash_verification"`
 }
 
-// AuthenticationConfig 인증 설정
-type AuthenticationConfig struct {
-	// 기본 인증
-	BasicAuth BasicAuthConfig `yaml:"basic_auth" json:"basic_auth"`
+// AuthenticationConfig is already defined in global_config.go
+// This file should use the types from global_config.go instead of redefining them
 
-	// 토큰 인증
-	TokenAuth TokenAuthConfig `yaml:"token_auth" json:"token_auth"`
-
-	// LDAP 인증
-	LDAP LDAPConfig `yaml:"ldap" json:"ldap"`
-}
-
-// BasicAuthConfig 기본 인증 설정
-type BasicAuthConfig struct {
-	Enabled   bool   `yaml:"enabled" json:"enabled"`
-	UsersFile string `yaml:"users_file" json:"users_file" default:"users.yml"`
-	Realm     string `yaml:"realm" json:"realm" default:"ProxyND"`
-}
+// BasicAuthConfig is already defined in global_config.go
 
 // TokenAuthConfig 토큰 인증 설정
 type TokenAuthConfig struct {

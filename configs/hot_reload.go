@@ -490,9 +490,12 @@ type SecurityReloadHandler struct {
 }
 
 func (h *SecurityReloadHandler) OnConfigReload(oldConfig, newConfig *UnifiedConfig) error {
-	if oldConfig.Security.Authentication.BasicAuth.UsersFile != newConfig.Security.Authentication.BasicAuth.UsersFile {
-		log.Printf("Reloading users from: %s", newConfig.Security.Authentication.BasicAuth.UsersFile)
-		// TODO: 사용자 파일 리로드
+	// Check if BasicAuth configuration changed
+	if oldConfig.Security.Authentication.BasicAuth != nil && newConfig.Security.Authentication.BasicAuth != nil {
+		if oldConfig.Security.Authentication.BasicAuth.Realm != newConfig.Security.Authentication.BasicAuth.Realm {
+			log.Printf("BasicAuth realm changed to: %s", newConfig.Security.Authentication.BasicAuth.Realm)
+		}
+		// TODO: Reload users if configuration changed
 	}
 	if oldConfig.Security.AccessControl.IPWhitelist.Enabled != newConfig.Security.AccessControl.IPWhitelist.Enabled {
 		if newConfig.Security.AccessControl.IPWhitelist.Enabled {

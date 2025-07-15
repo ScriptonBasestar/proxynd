@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
 )
 
@@ -267,7 +268,7 @@ func (vcl *ViperConfigLoader) GetViper() *viper.Viper {
 // WatchConfig 설정 변경 감시
 func (vcl *ViperConfigLoader) WatchConfig(callback func(*UnifiedConfig)) {
 	vcl.viper.WatchConfig()
-	vcl.viper.OnConfigChange(func(e interface{}) {
+	vcl.viper.OnConfigChange(func(e fsnotify.Event) {
 		// 설정 재로드
 		config := &UnifiedConfig{}
 		if err := vcl.viper.Unmarshal(config); err == nil {

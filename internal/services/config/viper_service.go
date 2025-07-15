@@ -325,9 +325,7 @@ func (s *ViperConfigService) extractGlobalConfig() *configs.GlobalConfig {
 		StorageDir: s.unifiedConfig.Cache.File.Directory,
 		ConfigDir:  s.loader.GetString("config_dir"),
 		Cache: configs.Cache{
-			TTL:     int(s.unifiedConfig.Cache.TTL.Seconds()),
-			MaxSize: s.unifiedConfig.Cache.MaxSize,
-			Backend: s.unifiedConfig.Cache.Backend,
+			TTL: int(s.unifiedConfig.Cache.TTL.Seconds()),
 		},
 	}
 }
@@ -341,17 +339,19 @@ func (s *ViperConfigService) extractAptConfig() *configs.AptProxyConfig {
 	config := &configs.AptProxyConfig{
 		Path:     "/apt",
 		UseCache: s.unifiedConfig.Registries.APT.UserCache,
-		Proxies:  []configs.AptProxy{},
+		Proxies:  make(map[string][]configs.AptProxy),
 	}
 
 	// 미러 설정을 프록시로 변환
-	for _, mirrors := range s.unifiedConfig.Registries.APT.Mirrors {
+	for distribution, mirrors := range s.unifiedConfig.Registries.APT.Mirrors {
+		proxyList := make([]configs.AptProxy, 0, len(mirrors))
 		for _, mirror := range mirrors {
-			config.Proxies = append(config.Proxies, configs.AptProxy{
+			proxyList = append(proxyList, configs.AptProxy{
 				Name: mirror.Name,
 				URL:  mirror.URL,
 			})
 		}
+		config.Proxies[distribution] = proxyList
 	}
 
 	return config
@@ -364,14 +364,14 @@ func (s *ViperConfigService) extractMavenConfig() *configs.MavenProxyConfig {
 	}
 
 	config := &configs.MavenProxyConfig{
-		Path:         "/maven",
-		UseCache:     true,
-		Repositories: []configs.MavenSite{},
+		Path:     "/maven",
+		UseCache: true,
+		Proxies:  []configs.MavenProxyServer{},
 	}
 
+	// Maven 레지스트리 설정을 프록시 서버로 변환
 	for _, repo := range s.unifiedConfig.Registries.Maven.Repositories {
-		config.Repositories = append(config.Repositories, configs.MavenSite{
-			ID:   repo.ID,
+		config.Proxies = append(config.Proxies, configs.MavenProxyServer{
 			Name: repo.Name,
 			URL:  repo.URL,
 		})
@@ -389,10 +389,12 @@ func (s *ViperConfigService) extractNpmConfig() *configs.NpmProxyConfig {
 	return &configs.NpmProxyConfig{
 		Path:     "/npm",
 		UseCache: s.unifiedConfig.Registries.NPM.UserCache,
-		Proxies: []configs.NpmProxy{
-			{
-				Name: "official",
-				URL:  s.unifiedConfig.Registries.NPM.Upstream,
+		Proxies: map[string][]configs.NpmProxyServer{
+			"default": {
+				{
+					Name: "official",
+					URL:  s.unifiedConfig.Registries.NPM.Upstream,
+				},
 			},
 		},
 	}
@@ -407,7 +409,7 @@ func (s *ViperConfigService) extractPipConfig() *configs.PipProxyConfig {
 	return &configs.PipProxyConfig{
 		Path:     "/pypi",
 		UseCache: s.unifiedConfig.Registries.PyPI.UserCache,
-		Proxies: []configs.PipProxy{
+		Proxies: []configs.PipProxyServer{
 			{
 				Name: "pypi",
 				URL:  s.unifiedConfig.Registries.PyPI.Upstream,

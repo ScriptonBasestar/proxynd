@@ -250,9 +250,9 @@ func Get() *Env {
 			// 여전히 nil인 경우 에러 로그 후 기본 환경 반환
 			fmt.Printf("ERROR: environment not loaded, using defaults. Call config.Load() first.\n")
 			return &Env{
-				ServerEnv: "development",
-				Port:      "8080",
-				Host:      "localhost",
+				ServerEnv:  "development",
+				ServerPort: "8080",
+				ServerHost: "localhost",
 			}
 		}
 	}

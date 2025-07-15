@@ -100,14 +100,14 @@ func TestService_GetGlobalConfig(t *testing.T) {
 			name: "valid global config",
 			setup: func() Service {
 				return &service{
-					globalConfig: &configs.GlobalConfig{
-						StorageDir: "/tmp/storage",
-						ConfigDir:  "/tmp/config",
-						Cache: configs.Cache{
-							TTL:     3600,
-							MaxSize: "10GB",
+					globalConfig: &configs.UnifiedConfig{
+						Cache: configs.CacheConfig{
+							File: configs.FileCacheConfig{
+								Directory: "/tmp/storage",
+							},
 						},
 					},
+					configDir: "/tmp/config",
 				}
 			},
 			wantErr: false,
@@ -323,13 +323,19 @@ func TestService_ValidateAll(t *testing.T) {
 			setup: func() *service {
 				svc := &service{
 					validators: make(map[string]Validator),
-					globalConfig: &configs.GlobalConfig{
-						StorageDir: "/tmp/storage",
+					globalConfig: &configs.UnifiedConfig{
+						Cache: configs.CacheConfig{
+							File: configs.FileCacheConfig{
+								Directory: "/tmp/storage",
+							},
+						},
 					},
 					aptConfig: &configs.AptProxyConfig{
 						Path: "/apt",
-						Proxies: []configs.AptProxy{
-							{Name: "ubuntu", URL: "http://archive.ubuntu.com"},
+						Proxies: map[string][]configs.AptProxy{
+							"default": {
+								{Name: "ubuntu", URL: "http://archive.ubuntu.com"},
+							},
 						},
 					},
 				}
@@ -343,8 +349,12 @@ func TestService_ValidateAll(t *testing.T) {
 			setup: func() *service {
 				svc := &service{
 					validators: make(map[string]Validator),
-					globalConfig: &configs.GlobalConfig{
-						CacheDir: "", // This should fail validation
+					globalConfig: &configs.UnifiedConfig{
+						Cache: configs.CacheConfig{
+							File: configs.FileCacheConfig{
+								Directory: "", // This should fail validation
+							},
+						},
 					},
 				}
 				svc.validators["global"] = &mockValidator{
@@ -413,8 +423,12 @@ cache:
 func TestService_Concurrency(t *testing.T) {
 	ctx := context.Background()
 	svc := &service{
-		globalConfig: &configs.GlobalConfig{
-			StorageDir: "/tmp/storage",
+		globalConfig: &configs.UnifiedConfig{
+			Cache: configs.CacheConfig{
+				File: configs.FileCacheConfig{
+					Directory: "/tmp/storage",
+				},
+			},
 		},
 		mavenConfig: &configs.MavenProxyConfig{
 			Path: "/maven",

@@ -3,7 +3,6 @@ package config
 import (
 	"context"
 	"fmt"
-	"path"
 	"sync"
 
 	"proxynd/configs"
@@ -17,7 +16,7 @@ type service struct {
 	validators map[string]Validator
 
 	// Cached configurations
-	globalConfig *configs.GlobalConfig
+	globalConfig *configs.UnifiedConfig
 	mavenConfig  *configs.MavenProxyConfig
 	aptConfig    *configs.AptProxyConfig
 	npmConfig    *configs.NpmProxyConfig
@@ -63,7 +62,16 @@ func (s *service) GetGlobalConfig(ctx context.Context) (*configs.GlobalConfig, e
 		return nil, fmt.Errorf("global configuration not loaded")
 	}
 
-	return s.globalConfig, nil
+	// UnifiedConfig를 GlobalConfig로 변환
+	globalConfig := &configs.GlobalConfig{
+		ConfigDir:  s.configDir,
+		StorageDir: s.globalConfig.Cache.File.Directory,
+		Cache: configs.Cache{
+			TTL: 3600, // 기본값
+		},
+	}
+	
+	return globalConfig, nil
 }
 
 // GetMavenConfig returns the Maven proxy configuration
@@ -160,7 +168,7 @@ func (s *service) Reload(ctx context.Context) error {
 
 // loadAll loads all configurations
 func (s *service) loadAll(ctx context.Context) error {
-	loader := configs.NewLoaderRefactored(s.configDir)
+	loader := configs.NewConfigLoader(s.configDir)
 
 	// Load global config
 	globalConfig, err := loader.LoadGlobalConfig(ctx)

@@ -28,22 +28,22 @@ func TestYamlMake(t *testing.T) {
 		{
 			Id:          "maven-center",
 			Name:        "Center",
-			Url:         "https://repo.maven.com",
+			URL:         "https://repo.maven.com",
 			Description: "desc1",
 		},
 		{
 			Id:          "jcenter-center",
 			Name:        "JCenter",
-			Url:         "https://repo.jmaven.com",
+			URL:         "https://repo.jmaven.com",
 			Description: "desc2",
 		},
 		{
-			Url:         "https://repo.jmaven.com",
+			URL:         "https://repo.jmaven.com",
 			Description: "desc2",
 		},
 		{
 			Name: "springrelease",
-			Url:  "https://repo.jmaven.com",
+			URL:  "https://repo.jmaven.com",
 		},
 	}
 	yamlFile, err := yaml.Marshal(mavenConfig)
