@@ -51,7 +51,7 @@ func DefaultEnhancedRateLimitConfig() EnhancedRateLimitConfig {
 			return strings.HasPrefix(c.Path(), "/health") || 
 				   strings.HasPrefix(c.Path(), "/metrics")
 		},
-		ErrorHandler: func(c *fiber.Ctx, err error) error {
+		ErrorHandler: func(c *fiber.Ctx, _ error) error {
 			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
 				"error":       "Too many requests",
 				"retry_after": time.Now().Add(time.Minute).Unix(),
@@ -75,6 +75,14 @@ func NewEnhancedRateLimiter(config ...EnhancedRateLimitConfig) fiber.Handler {
 	cfg := DefaultEnhancedRateLimitConfig()
 	if len(config) > 0 {
 		cfg = config[0]
+		// ErrorHandler가 nil인 경우 기본값 설정
+		if cfg.ErrorHandler == nil {
+			cfg.ErrorHandler = DefaultEnhancedRateLimitConfig().ErrorHandler
+		}
+		// KeyGenerator가 nil인 경우 기본값 설정
+		if cfg.KeyGenerator == nil {
+			cfg.KeyGenerator = DefaultEnhancedRateLimitConfig().KeyGenerator
+		}
 	}
 	
 	logger := logging.GetLogger()
@@ -85,7 +93,9 @@ func NewEnhancedRateLimiter(config ...EnhancedRateLimitConfig) fiber.Handler {
 	// 기본 Rate 파싱
 	defaultRate, err := limiter.NewRateFromFormatted(cfg.Rate)
 	if err != nil {
-		logger.Error("Invalid default rate format, using fallback", "error", err, "rate", cfg.Rate)
+		logger.Error("Invalid default rate format, using fallback",
+			logging.F("error", err),
+			logging.F("rate", cfg.Rate))
 		// 기본값으로 fallback (1000 requests per hour)
 		defaultRate = limiter.Rate{
 			Period: time.Hour,
@@ -243,11 +253,9 @@ func isIPInList(ip string, list []string) bool {
 			if err == nil && ipNet.Contains(clientIP) {
 				return true
 			}
-		} else {
+		} else if allowedIP == ip {
 			// 단일 IP 확인
-			if allowedIP == ip {
-				return true
-			}
+			return true
 		}
 	}
 	
@@ -263,7 +271,7 @@ func AuthRateLimiter() fiber.Handler {
 			// IP + User-Agent 조합으로 더 정확한 제한
 			return c.IP() + ":" + c.Get("User-Agent")
 		},
-		ErrorHandler: func(c *fiber.Ctx, err error) error {
+		ErrorHandler: func(c *fiber.Ctx, _ error) error {
 			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
 				"error":       "Authentication rate limit exceeded",
 				"message":     "Too many authentication attempts. Please try again later.",

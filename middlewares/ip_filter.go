@@ -17,7 +17,7 @@ type IPFilterConfig struct {
 // IPFilterMiddleware IP 기반 접근 제어 미들웨어
 func IPFilterMiddleware(config IPFilterConfig) fiber.Handler {
 	// CIDR 파싱
-	var allowedNetworks []*net.IPNet
+	allowedNetworks := make([]*net.IPNet, 0, len(config.AllowedCIDRs))
 	for _, cidr := range config.AllowedCIDRs {
 		_, network, err := net.ParseCIDR(cidr)
 		if err != nil {
@@ -28,7 +28,7 @@ func IPFilterMiddleware(config IPFilterConfig) fiber.Handler {
 
 	return func(c *fiber.Ctx) error {
 		// 클라이언트 IP 추출
-		clientIP := getClientIP(c)
+		clientIP := getClientIPSimple(c)
 		if clientIP == "" {
 			if config.DenyAll {
 				return c.Status(fiber.StatusForbidden).SendString("Access denied: IP not found")
@@ -69,8 +69,8 @@ func IPFilterMiddleware(config IPFilterConfig) fiber.Handler {
 	}
 }
 
-// getClientIP 클라이언트 IP 주소 추출
-func getClientIP(c *fiber.Ctx) string {
+// getClientIPSimple 클라이언트 IP 주소 추출 (간단 버전)
+func getClientIPSimple(c *fiber.Ctx) string {
 	// X-Forwarded-For 헤더 확인 (프록시/로드밸런서 환경)
 	if xff := c.Get("X-Forwarded-For"); xff != "" {
 		// 첫 번째 IP 사용 (클라이언트 IP)

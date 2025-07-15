@@ -11,6 +11,13 @@ import (
 	"proxynd/logging"
 )
 
+const (
+	// MethodPOST HTTP POST method
+	MethodPOST = "POST"
+	// MethodPUT HTTP PUT method
+	MethodPUT = "PUT"
+)
+
 var (
 	// 안전한 파일명 패턴 (알파벳, 숫자, 하이픈, 언더스코어, 점)
 	safeFilenameRegex = regexp.MustCompile(`^[a-zA-Z0-9._-]+$`)
@@ -98,7 +105,7 @@ func InputValidation(config ...ValidationConfig) fiber.Handler {
 		}
 
 		// 4. 파일 확장자 검증 (파일 업로드 시)
-		if c.Method() == "POST" || c.Method() == "PUT" {
+		if c.Method() == MethodPOST || c.Method() == MethodPUT {
 			if err := validateFileExtension(c, cfg, logger); err != nil {
 				return c.Status(400).JSON(fiber.Map{
 					"error":   "Invalid file type",
@@ -425,9 +432,14 @@ func EnhancedInputValidation(config ...ValidationConfig) fiber.Handler {
 }
 
 // validateAdvancedSecurity 고급 보안 검증
-func validateAdvancedSecurity(c *fiber.Ctx, cfg ValidationConfig, logger logging.Logger, sqlPatterns, xssPatterns []string) error {
+func validateAdvancedSecurity(
+	c *fiber.Ctx,
+	cfg ValidationConfig,
+	logger logging.Logger,
+	sqlPatterns, xssPatterns []string,
+) error {
 	// 1. Request Body 검증 (JSON/XML 파싱 없이)
-	if c.Method() == "POST" || c.Method() == "PUT" {
+	if c.Method() == MethodPOST || c.Method() == MethodPUT {
 		bodyBytes := c.Body()
 		if len(bodyBytes) > 0 {
 			bodyStr := strings.ToLower(string(bodyBytes))
@@ -521,7 +533,7 @@ func validateContentType(c *fiber.Ctx, cfg ValidationConfig, logger logging.Logg
 	contentType := strings.ToLower(c.Get("Content-Type"))
 	
 	// POST/PUT 요청에 대한 Content-Type 검증
-	if (c.Method() == "POST" || c.Method() == "PUT") && len(c.Body()) > 0 {
+	if (c.Method() == MethodPOST || c.Method() == MethodPUT) && len(c.Body()) > 0 {
 		allowedContentTypes := []string{
 			"application/json",
 			"application/xml",

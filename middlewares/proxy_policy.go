@@ -67,7 +67,7 @@ func isProxyTypeAllowed(proxyType string) bool {
 }
 
 // isAuthenticated 인증 여부 확인 (기본 구현)
-func isAuthenticated(c *fiber.Ctx) bool {
+func isAuthenticated(_ *fiber.Ctx) bool {
 	// TODO: 실제 인증 로직 구현
 	// 현재는 모든 요청을 허용
 	return true
@@ -82,7 +82,7 @@ func checkCache(proxyType, requestPath string) CacheInfo {
 	switch proxyType {
 	case "maven":
 		config := configs.MavenProxyConfig{}
-		config.ReadConfig()
+		_ = config.ReadConfig()
 		baseDir := filepath.Join(storageDir, config.Path)
 		var err error
 		cachePath, err = security.SafeJoinPath(baseDir, requestPath)
@@ -93,7 +93,7 @@ func checkCache(proxyType, requestPath string) CacheInfo {
 
 	case "apt":
 		config := configs.AptProxyConfig{}
-		config.ReadConfig()
+		_ = config.ReadConfig()
 		baseDir := filepath.Join(storageDir, config.Path)
 		// APT는 osType을 포함하므로 경로 처리가 다름
 		pathParts := strings.SplitN(requestPath, "/", 2)
@@ -112,7 +112,7 @@ func checkCache(proxyType, requestPath string) CacheInfo {
 
 	case "npm":
 		config := configs.NpmProxyConfig{}
-		config.ReadConfig()
+		_ = config.ReadConfig()
 		baseDir := filepath.Join(storageDir, config.Path)
 		var err error
 		cachePath, err = security.SafeJoinPath(baseDir, requestPath)
@@ -123,7 +123,7 @@ func checkCache(proxyType, requestPath string) CacheInfo {
 
 	case "pip":
 		config := configs.PipProxyConfig{}
-		config.ReadConfig()
+		_ = config.ReadConfig()
 		baseDir := filepath.Join(storageDir, config.Path)
 		var err error
 		cachePath, err = security.SafeJoinPath(baseDir, requestPath)
@@ -134,7 +134,7 @@ func checkCache(proxyType, requestPath string) CacheInfo {
 
 	case "docker":
 		config := configs.DockerProxyConfig{}
-		config.ReadConfig()
+		_ = config.ReadConfig()
 		baseDir := filepath.Join(storageDir, config.Path)
 		var err error
 		cachePath, err = security.SafeJoinPath(baseDir, requestPath)

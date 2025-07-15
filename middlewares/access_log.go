@@ -1,3 +1,4 @@
+// Package middlewares provides HTTP middleware components for the ProxyND server
 package middlewares
 
 import (
@@ -72,7 +73,7 @@ func NewAccessLogger(config AccessLogConfig) *AccessLogger {
 // initLogFile 로그 파일 초기화
 func (l *AccessLogger) initLogFile() {
 	// 로그 디렉토리 생성
-	if err := os.MkdirAll(l.config.LogDir, os.ModePerm); err != nil {
+	if err := os.MkdirAll(l.config.LogDir, 0750); err != nil {
 		// 디렉토리 생성 실패 시 에러 무시 (파일 로깅 비활성화)
 		return
 	}
@@ -89,15 +90,16 @@ func (l *AccessLogger) initLogFile() {
 
 	// 로그 파일 열기
 	logPath := filepath.Join(l.config.LogDir, filename)
-	file, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+	file, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
 	if err != nil {
-		fmt.Printf("Failed to open access log file: %v\n", err)
+		// 로그 파일 열기 실패 시 stderr에 에러 출력
+		_, _ = os.Stderr.WriteString(fmt.Sprintf("Failed to open access log file: %v\n", err))
 		return
 	}
 
 	// 기존 파일 닫기
 	if l.logFile != nil {
-		l.logFile.Close()
+		_ = l.logFile.Close()
 	}
 
 	l.logFile = file
@@ -146,7 +148,7 @@ func (l *AccessLogger) Log(entry AccessLogEntry) {
 
 	// 콘솔 출력
 	if l.config.ConsoleOutput {
-		fmt.Print(logLine)
+		_, _ = os.Stdout.WriteString(logLine)
 	}
 
 	// 파일 기록
@@ -166,7 +168,7 @@ func (l *AccessLogger) Close() {
 	defer l.mu.Unlock()
 
 	if l.logFile != nil {
-		l.logFile.Close()
+		_ = l.logFile.Close()
 		l.logFile = nil
 	}
 }

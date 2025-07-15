@@ -10,9 +10,12 @@ import (
 type Permission int
 
 const (
-	PermissionRead   Permission = 1 << iota // 읽기 권한
-	PermissionWrite                         // 쓰기 권한
-	PermissionDelete                        // 삭제 권한
+	// PermissionRead 읽기 권한
+	PermissionRead Permission = 1 << iota
+	// PermissionWrite 쓰기 권한
+	PermissionWrite
+	// PermissionDelete 삭제 권한
+	PermissionDelete
 )
 
 // UserPermissions 사용자별 권한 설정

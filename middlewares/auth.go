@@ -71,23 +71,18 @@ func unauthorized(c *fiber.Ctx, realm string) error {
 	return c.Status(fiber.StatusUnauthorized).SendString("Unauthorized")
 }
 
-/*
-UserMiddlewares function to add auth
-*/
+// UserMiddlewares function to add auth
 func UserMiddlewares() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-
-		//Code for middlewares
-
+		// Code for middlewares
 		return c.Next()
 	}
 }
 
+// ProxyMiddleware exported function ProxyMiddleware should have comment or be unexported
 func ProxyMiddleware() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-
-		//Code for middlewares
-
+		// Code for middlewares
 		return c.Next()
 	}
 }

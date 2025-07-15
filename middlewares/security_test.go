@@ -420,7 +420,7 @@ func BenchmarkInputValidation(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		app.Test(req)
+		_, _ = app.Test(req)
 	}
 }
 
@@ -437,6 +437,6 @@ func BenchmarkRateLimit(b *testing.B) {
 		req := httptest.NewRequest("GET", "/test", nil)
 		req.Header.Set("User-Agent", "test-client/1.0")
 		req.Header.Set("X-Forwarded-For", fmt.Sprintf("192.168.1.%d", i%254+1))
-		app.Test(req)
+		_, _ = app.Test(req)
 	}
 }

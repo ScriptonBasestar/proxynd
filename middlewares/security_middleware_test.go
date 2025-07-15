@@ -175,7 +175,7 @@ func TestEnhancedRateLimiterIntegration(t *testing.T) {
 	config := EnhancedRateLimitConfig{
 		Rate:  "2-M", // 분당 2개 요청
 		Burst: 1,
-		KeyGenerator: func(c *fiber.Ctx) string {
+		KeyGenerator: func(_ *fiber.Ctx) string {
 			return "test-key" // 모든 요청에 같은 키 사용
 		},
 		EnableLogging: false, // 테스트 시 로깅 비활성화
@@ -206,7 +206,7 @@ func TestEnhancedRateLimiterIntegration(t *testing.T) {
 	assert.Equal(t, 429, resp3.StatusCode)
 }
 
-func TestSecurityHeaders(t *testing.T) {
+func TestSecurityHeadersMiddleware(t *testing.T) {
 	app := fiber.New()
 	
 	app.Use(SecurityHeaders())
@@ -359,7 +359,7 @@ func BenchmarkSecurityMiddlewares(b *testing.B) {
 			if resp.StatusCode != 200 {
 				b.Fatalf("Expected status 200, got %d", resp.StatusCode)
 			}
-			resp.Body.Close()
+			_ = resp.Body.Close()
 		}
 	})
 }

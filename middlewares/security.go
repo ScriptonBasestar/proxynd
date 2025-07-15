@@ -4,9 +4,15 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
+)
+
+const (
+	// MethodPATCH HTTP PATCH method
+	MethodPATCH = "PATCH"
 )
 
 // SecurityConfig 보안 설정
@@ -38,13 +44,7 @@ func SecurityMiddleware(config SecurityConfig) fiber.Handler {
 		}
 
 		// 요청 본문에서 해시 계산
-		bodyHash, err := calculateBodyHash(c)
-		if err != nil {
-			if config.FailOnHashMismatch {
-				return c.Status(fiber.StatusBadRequest).SendString("Failed to calculate body hash")
-			}
-			return c.Next()
-		}
+		bodyHash := calculateBodyHash(c)
 
 		// 헤더에서 예상 해시 추출
 		expectedHash := extractHashFromHeaders(c, config.RequiredHashHeaders)
@@ -58,8 +58,8 @@ func SecurityMiddleware(config SecurityConfig) fiber.Handler {
 			if config.FailOnHashMismatch {
 				return c.Status(fiber.StatusBadRequest).SendString("Hash verification failed")
 			}
-			// 해시 불일치 로그 기록 (실제 구현에서는 로거 사용)
-			fmt.Printf("Hash mismatch: expected=%s, calculated=%s\n", expectedHash, bodyHash)
+			// 해시 불일치 로그 기록
+			_, _ = os.Stderr.WriteString(fmt.Sprintf("Hash mismatch: expected=%s, calculated=%s\n", expectedHash, bodyHash))
 		}
 
 		// 검증된 해시를 컨텍스트에 저장
@@ -71,16 +71,16 @@ func SecurityMiddleware(config SecurityConfig) fiber.Handler {
 }
 
 // calculateBodyHash 요청 본문의 SHA256 해시 계산
-func calculateBodyHash(c *fiber.Ctx) (string, error) {
+func calculateBodyHash(c *fiber.Ctx) string {
 	// 요청 본문 읽기
 	body := c.Body()
 	if len(body) == 0 {
-		return "", nil
+		return ""
 	}
 
 	// SHA256 해시 계산
 	hash := sha256.Sum256(body)
-	return hex.EncodeToString(hash[:]), nil
+	return hex.EncodeToString(hash[:])
 }
 
 // extractHashFromHeaders 헤더에서 해시 값 추출
@@ -117,7 +117,7 @@ func compareHashes(calculated, expected string) bool {
 // isWriteMethod 쓰기 메서드인지 확인
 func isWriteMethod(method string) bool {
 	switch strings.ToUpper(method) {
-	case "POST", "PUT", "PATCH":
+	case MethodPOST, MethodPUT, MethodPATCH:
 		return true
 	default:
 		return false
@@ -152,28 +152,28 @@ func (v *DefaultPackageVerifier) VerifyPackage(packageType, path string, data []
 }
 
 // verifyNpmPackage NPM 패키지 검증
-func (v *DefaultPackageVerifier) verifyNpmPackage(path string, data []byte) error {
+func (v *DefaultPackageVerifier) verifyNpmPackage(_ string, _ []byte) error {
 	// NPM 패키지 특화 검증 로직
 	// 예: package.json 유효성, 파일 구조 등
 	return nil
 }
 
 // verifyPipPackage PyPI 패키지 검증
-func (v *DefaultPackageVerifier) verifyPipPackage(path string, data []byte) error {
+func (v *DefaultPackageVerifier) verifyPipPackage(_ string, _ []byte) error {
 	// PyPI 패키지 특화 검증 로직
 	// 예: wheel 파일 구조, metadata 등
 	return nil
 }
 
 // verifyAptPackage APT 패키지 검증
-func (v *DefaultPackageVerifier) verifyAptPackage(path string, data []byte) error {
+func (v *DefaultPackageVerifier) verifyAptPackage(_ string, _ []byte) error {
 	// APT 패키지 특화 검증 로직
 	// 예: .deb 파일 구조, GPG 서명 등
 	return nil
 }
 
 // verifyDockerPackage Docker 이미지 검증
-func (v *DefaultPackageVerifier) verifyDockerPackage(path string, data []byte) error {
+func (v *DefaultPackageVerifier) verifyDockerPackage(_ string, _ []byte) error {
 	// Docker 이미지 특화 검증 로직
 	// 예: manifest 구조, 레이어 해시 등
 	return nil
