@@ -345,10 +345,9 @@ func autoRefreshToken(c *fiber.Ctx, sess fiber.Map, userMap fiber.Map) error {
 	oauth2AccessToken, _ := userMap["oauth2_access_token"].(string)
 
 	// 실시간 권한 동기화를 위해 OAuth2 제공자 정보 조회
-	var oauth2Provider interface{}
 	if providerName, ok := userMap["provider"].(string); ok && oauth2AccessToken != "" {
 		// 제공자별 인터페이스 구현체 생성 (실제 구현은 추후 추가)
-		oauth2Provider = createOAuth2Provider(providerName, oauth2Config)
+		_ = createOAuth2Provider(providerName, oauth2Config)
 	}
 
 	// JWT 토큰 갱신 (권한 동기화 포함)
