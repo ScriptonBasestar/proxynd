@@ -4,9 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"io"
 	"net/http"
-	"path"
 	"path/filepath"
 	"strings"
 
@@ -29,7 +27,7 @@ func NewMavenService(
 	base := NewBaseProxyService("maven", cache, configService, upstreamClient)
 
 	// Load Maven-specific configuration
-	configInterface, err := configService.GetProxyConfig("maven")
+	configInterface, err := configService.GetProxyConfig(context.Background(), "maven")
 	if err != nil {
 		return nil, fmt.Errorf("failed to load maven config: %w", err)
 	}

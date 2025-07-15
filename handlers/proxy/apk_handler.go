@@ -111,7 +111,11 @@ func ApkProxyHandler(c *fiber.Ctx) error {
 	apkConfig.ReadConfig()
 
 	// 파일 경로 생성
-	filefullpath := security.SafeJoinPath(storageDir, apkConfig.Path, requestPath)
+	baseDir := filepath.Join(storageDir, apkConfig.Path)
+	filefullpath, err := security.SafeJoinPath(baseDir, requestPath)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).SendString("Invalid path")
+	}
 	filename := filepath.Base(filefullpath)
 
 	// 서명 검증기 초기화 (필요시)

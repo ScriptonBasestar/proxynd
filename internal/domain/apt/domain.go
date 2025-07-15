@@ -191,19 +191,19 @@ func (d *Domain) isMetadataFile(path string) bool {
 }
 
 // ParsePackagePath parses an APT package path into its components
-func (d *Domain) ParsePackagePath(path string) (*PackageInfo, error) {
-	cleanPath := strings.TrimPrefix(path, "/")
+func (d *Domain) ParsePackagePath(pkgPath string) (*PackageInfo, error) {
+	cleanPath := strings.TrimPrefix(pkgPath, "/")
 
 	matches := d.packagePattern.FindStringSubmatch(cleanPath)
 	if len(matches) != 4 {
-		return nil, fmt.Errorf("invalid package path: %s", path)
+		return nil, fmt.Errorf("invalid package path: %s", pkgPath)
 	}
 
 	// Extract component from path
 	// Format: pool/component/...
 	parts := strings.Split(cleanPath, "/")
 	if len(parts) < 2 {
-		return nil, fmt.Errorf("invalid package path format: %s", path)
+		return nil, fmt.Errorf("invalid package path format: %s", pkgPath)
 	}
 
 	component := parts[1]

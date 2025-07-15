@@ -22,7 +22,7 @@ func NewNpmService(
 	base := NewBaseProxyService("npm", cache, configService, upstreamClient)
 
 	// Load NPM-specific configuration
-	configInterface, err := configService.GetProxyConfig("npm")
+	configInterface, err := configService.GetProxyConfig(context.Background(), "npm")
 	if err != nil {
 		return nil, fmt.Errorf("failed to load npm config: %w", err)
 	}

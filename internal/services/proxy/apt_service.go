@@ -22,7 +22,7 @@ func NewAptService(
 	base := NewBaseProxyService("apt", cache, configService, upstreamClient)
 
 	// Load APT-specific configuration
-	configInterface, err := configService.GetProxyConfig("apt")
+	configInterface, err := configService.GetProxyConfig(context.Background(), "apt")
 	if err != nil {
 		return nil, fmt.Errorf("failed to load apt config: %w", err)
 	}

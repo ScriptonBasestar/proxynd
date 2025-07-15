@@ -24,18 +24,20 @@ func TestNewAptService(t *testing.T) {
 				aptConfig := &configs.AptProxyConfig{
 					Path:     "/apt",
 					UseCache: true,
-					Proxies: []configs.AptProxy{
-						{Name: "ubuntu", URL: "http://archive.ubuntu.com/ubuntu"},
+					Proxies: map[string][]configs.AptProxy{
+						"default": {
+							{Name: "ubuntu", URL: "http://archive.ubuntu.com/ubuntu"},
+						},
 					},
 				}
-				config.On("GetProxyConfig", "apt").Return(aptConfig, nil)
+				config.On("GetProxyConfig", mock.Anything, "apt").Return(aptConfig, nil)
 			},
 			wantErr: false,
 		},
 		{
 			name: "config load error",
 			setupMocks: func(cache *MockCacheService, config *MockConfigService, upstream *MockUpstreamClient) {
-				config.On("GetProxyConfig", "apt").Return(nil, fmt.Errorf("config not found"))
+				config.On("GetProxyConfig", mock.Anything, "apt").Return(nil, fmt.Errorf("config not found"))
 			},
 			wantErr: true,
 			errMsg:  "failed to load apt config",
@@ -43,7 +45,7 @@ func TestNewAptService(t *testing.T) {
 		{
 			name: "invalid config type",
 			setupMocks: func(cache *MockCacheService, config *MockConfigService, upstream *MockUpstreamClient) {
-				config.On("GetProxyConfig", "apt").Return("invalid type", nil)
+				config.On("GetProxyConfig", mock.Anything, "apt").Return("invalid type", nil)
 			},
 			wantErr: true,
 			errMsg:  "invalid apt config type",
@@ -89,7 +91,7 @@ func TestAptService_HandleRequest(t *testing.T) {
 		Path:     "/apt",
 		UseCache: true,
 	}
-	config.On("GetProxyConfig", "apt").Return(aptConfig, nil)
+	config.On("GetProxyConfig", mock.Anything, "apt").Return(aptConfig, nil)
 
 	service, err := NewAptService(cache, config, upstream)
 	require.NoError(t, err)

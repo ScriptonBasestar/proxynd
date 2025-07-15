@@ -48,7 +48,11 @@ func AptProxyUnified(c *fiber.Ctx) error {
 	config.ReadConfig()
 
 	// Create the file
-	filefullpath := security.SafeJoinPath(storageDir, config.Path, requestPath)
+	baseDir := filepath.Join(storageDir, config.Path)
+	filefullpath, err := security.SafeJoinPath(baseDir, requestPath)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).SendString("Invalid path")
+	}
 	filename := filepath.Base(filefullpath)
 	if _, err := os.Stat(filefullpath); os.IsNotExist(err) {
 		dirpath := filepath.Dir(filefullpath)

@@ -89,7 +89,7 @@ func MavenProxy(c *fiber.Ctx) error {
 
 		for s, server := range config.Proxies {
 			fmt.Printf("for moon %d\n", s)
-			fullURL := helpers.JoinURL(server.Url, requestPath)
+			fullURL := helpers.JoinURL(server.URL, requestPath)
 
 			// 컨텍스트 기반 요청 (재시도 포함)
 			resp, err := proxyClient.GetWithRetry(ctx, fullURL, 2)

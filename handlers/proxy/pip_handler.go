@@ -48,7 +48,12 @@ func PipProxy(c *fiber.Ctx) error {
 		filefullpath = cachePath
 		filename = filepath.Base(filefullpath)
 	} else {
-		filefullpath = security.SafeJoinPath(storageDir, config.Path, requestPath)
+		baseDir := filepath.Join(storageDir, config.Path)
+		var err error
+		filefullpath, err = security.SafeJoinPath(baseDir, requestPath)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).SendString("Invalid path")
+		}
 		filename = filepath.Base(filefullpath)
 	}
 

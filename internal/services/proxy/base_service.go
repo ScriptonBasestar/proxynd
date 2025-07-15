@@ -192,11 +192,27 @@ func (s *BaseProxyService) HandleNotFound(message string) *ProxyResponse {
 
 // HandleError returns a standard error response
 func (s *BaseProxyService) HandleError(err error, statusCode int) *ProxyResponse {
+	errorMessage := "unknown error"
+	if err != nil {
+		errorMessage = err.Error()
+	}
+	
 	return &ProxyResponse{
-		Body:        io.NopCloser(strings.NewReader(err.Error())),
+		Body:        io.NopCloser(strings.NewReader(errorMessage)),
 		StatusCode:  statusCode,
 		Headers:     map[string]string{"Content-Type": "text/plain"},
 		ContentType: "text/plain",
 		Cached:      false,
 	}
+}
+
+// HandleRequest provides a default implementation that returns 501 Not Implemented
+func (s *BaseProxyService) HandleRequest(ctx context.Context, req ProxyRequest) (*ProxyResponse, error) {
+	return &ProxyResponse{
+		Body:        io.NopCloser(strings.NewReader("service not implemented")),
+		StatusCode:  http.StatusNotImplemented,
+		Headers:     map[string]string{"Content-Type": "text/plain"},
+		ContentType: "text/plain",
+		Cached:      false,
+	}, nil
 }

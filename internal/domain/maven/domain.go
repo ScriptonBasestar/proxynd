@@ -95,7 +95,7 @@ func (d *Domain) ExtractMetadata(requestPath string) (*common.PackageMetadata, e
 	groupPath := matches[1]
 	artifactId := matches[2]
 	version := matches[3]
-	filename := matches[4]
+	// filename := matches[4] // Currently unused, but available if needed
 
 	// Convert group path to groupId (replace / with .)
 	groupId := strings.ReplaceAll(groupPath, "/", ".")

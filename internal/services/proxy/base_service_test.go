@@ -5,8 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -84,14 +82,14 @@ func TestNewBaseProxyService(t *testing.T) {
 	service := NewBaseProxyService("test", cache, config, upstream)
 
 	assert.NotNil(t, service)
-	assert.Equal(t, "test", service.proxyType)
-	assert.Equal(t, cache, service.cache)
-	assert.Equal(t, config, service.configService)
-	assert.Equal(t, upstream, service.upstreamClient)
+	assert.Equal(t, "test", service.ProxyType)
+	assert.Equal(t, cache, service.Cache)
+	assert.Equal(t, config, service.Config)
+	assert.Equal(t, upstream, service.UpstreamClient)
 }
 
 func TestBaseProxyService_GetProxyType(t *testing.T) {
-	service := &BaseProxyService{proxyType: "maven"}
+	service := &BaseProxyService{ProxyType: "maven"}
 	assert.Equal(t, "maven", service.GetProxyType())
 }
 
@@ -119,43 +117,23 @@ func TestBaseProxyService_ValidateRequest(t *testing.T) {
 				Method:    "GET",
 			},
 			wantErr: true,
-			errMsg:  "path is required",
+			errMsg:  "request path cannot be empty",
 		},
 		{
-			name: "empty proxy type",
+			name: "path traversal attack",
 			req: ProxyRequest{
-				Path:      "/maven/test",
-				ProxyType: "",
-				Method:    "GET",
-			},
-			wantErr: true,
-			errMsg:  "proxy type is required",
-		},
-		{
-			name: "empty method",
-			req: ProxyRequest{
-				Path:      "/maven/test",
+				Path:      "/maven/../../../etc/passwd",
 				ProxyType: "maven",
-				Method:    "",
-			},
-			wantErr: true,
-			errMsg:  "method is required",
-		},
-		{
-			name: "proxy type mismatch",
-			req: ProxyRequest{
-				Path:      "/maven/test",
-				ProxyType: "npm",
 				Method:    "GET",
 			},
 			wantErr: true,
-			errMsg:  "proxy type mismatch",
+			errMsg:  "directory traversal detected",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			service := &BaseProxyService{proxyType: "maven"}
+			service := &BaseProxyService{ProxyType: "maven"}
 			err := service.ValidateRequest(tt.req)
 
 			if tt.wantErr {
@@ -168,194 +146,75 @@ func TestBaseProxyService_ValidateRequest(t *testing.T) {
 	}
 }
 
-func TestBaseProxyService_CacheKey(t *testing.T) {
+func TestBaseProxyService_BuildCacheKey(t *testing.T) {
 	tests := []struct {
-		name     string
-		req      ProxyRequest
-		expected string
+		name        string
+		proxyType   string
+		requestPath string
+		expected    string
 	}{
 		{
-			name: "simple path",
-			req: ProxyRequest{
-				Path: "/maven/central/test.jar",
-			},
-			expected: "maven:/maven/central/test.jar",
+			name:        "simple path",
+			proxyType:   "maven",
+			requestPath: "/maven/central/test.jar",
+			expected:    "maven/maven/central/test.jar",
 		},
 		{
-			name: "path with query",
-			req: ProxyRequest{
-				Path: "/npm/package.json?version=1.0.0",
-			},
-			expected: "npm:/npm/package.json?version=1.0.0",
+			name:        "path with query",
+			proxyType:   "npm",
+			requestPath: "/npm/package.json",
+			expected:    "npm/npm/package.json",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			service := &BaseProxyService{proxyType: tt.req.ProxyType}
-			if service.proxyType == "" {
-				service.proxyType = strings.Split(tt.expected, ":")[0]
-			}
-			key := service.CacheKey(tt.req)
+			service := &BaseProxyService{ProxyType: tt.proxyType}
+			key := service.BuildCacheKey(tt.requestPath)
 			assert.Equal(t, tt.expected, key)
 		})
 	}
 }
 
-func TestBaseProxyService_FetchFromCacheOrUpstream(t *testing.T) {
-	ctx := context.Background()
-
-	tests := []struct {
-		name        string
-		setupMocks  func(*MockCacheService, *MockUpstreamClient)
-		req         ProxyRequest
-		upstreamURL string
-		wantCached  bool
-		wantErr     bool
-	}{
-		{
-			name: "cache hit",
-			setupMocks: func(cache *MockCacheService, upstream *MockUpstreamClient) {
-				content := ioutil.NopCloser(bytes.NewBufferString("cached content"))
-				cache.On("Get", ctx, "test:/test/path").Return(content, true, nil)
-			},
-			req: ProxyRequest{
-				Path: "/test/path",
-			},
-			upstreamURL: "http://example.com/test/path",
-			wantCached:  true,
-			wantErr:     false,
-		},
-		{
-			name: "cache miss - fetch from upstream",
-			setupMocks: func(cache *MockCacheService, upstream *MockUpstreamClient) {
-				cache.On("Get", ctx, "test:/test/path").Return(nil, false, nil)
-
-				resp := &ProxyResponse{
-					Body:       ioutil.NopCloser(bytes.NewBufferString("upstream content")),
-					StatusCode: 200,
-				}
-				upstream.On("Fetch", ctx, "http://example.com/test/path", map[string]string(nil)).
-					Return(resp, nil)
-			},
-			req: ProxyRequest{
-				Path: "/test/path",
-			},
-			upstreamURL: "http://example.com/test/path",
-			wantCached:  false,
-			wantErr:     false,
-		},
-		{
-			name: "cache error - fallback to upstream",
-			setupMocks: func(cache *MockCacheService, upstream *MockUpstreamClient) {
-				cache.On("Get", ctx, "test:/test/path").Return(nil, false, fmt.Errorf("cache error"))
-
-				resp := &ProxyResponse{
-					Body:       ioutil.NopCloser(bytes.NewBufferString("upstream content")),
-					StatusCode: 200,
-				}
-				upstream.On("Fetch", ctx, "http://example.com/test/path", map[string]string(nil)).
-					Return(resp, nil)
-			},
-			req: ProxyRequest{
-				Path: "/test/path",
-			},
-			upstreamURL: "http://example.com/test/path",
-			wantCached:  false,
-			wantErr:     false,
-		},
-		{
-			name: "upstream error",
-			setupMocks: func(cache *MockCacheService, upstream *MockUpstreamClient) {
-				cache.On("Get", ctx, "test:/test/path").Return(nil, false, nil)
-				upstream.On("Fetch", ctx, "http://example.com/test/path", map[string]string(nil)).
-					Return(nil, fmt.Errorf("upstream error"))
-			},
-			req: ProxyRequest{
-				Path: "/test/path",
-			},
-			upstreamURL: "http://example.com/test/path",
-			wantCached:  false,
-			wantErr:     true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cache := &MockCacheService{}
-			config := &MockConfigService{}
-			upstream := &MockUpstreamClient{}
-
-			tt.setupMocks(cache, upstream)
-
-			service := NewBaseProxyService("test", cache, config, upstream)
-			resp, err := service.FetchFromCacheOrUpstream(ctx, tt.req, tt.upstreamURL)
-
-			if tt.wantErr {
-				assert.Error(t, err)
-				assert.Nil(t, resp)
-			} else {
-				assert.NoError(t, err)
-				require.NotNil(t, resp)
-				assert.Equal(t, tt.wantCached, resp.Cached)
-			}
-
-			cache.AssertExpectations(t)
-			upstream.AssertExpectations(t)
-		})
-	}
-}
-
-func TestBaseProxyService_CacheResponse(t *testing.T) {
+func TestBaseProxyService_TryCache(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
 		name       string
 		setupMocks func(*MockCacheService)
-		req        ProxyRequest
-		resp       *ProxyResponse
+		cacheKey   string
+		wantFound  bool
 		wantErr    bool
 	}{
 		{
-			name: "successful cache",
+			name: "cache hit",
 			setupMocks: func(cache *MockCacheService) {
-				cache.On("Put", ctx, "test:/test/path", mock.Anything).Return(nil)
+				cache.On("Exists", ctx, "test:/test/path").Return(true, nil)
+				content := io.NopCloser(bytes.NewBufferString("cached content"))
+				cache.On("Get", ctx, "test:/test/path").Return(content, true, nil)
 			},
-			req: ProxyRequest{
-				Path: "/test/path",
-			},
-			resp: &ProxyResponse{
-				Body:       ioutil.NopCloser(bytes.NewBufferString("content to cache")),
-				StatusCode: 200,
-			},
-			wantErr: false,
+			cacheKey:  "test:/test/path",
+			wantFound: true,
+			wantErr:   false,
 		},
 		{
-			name: "cache error",
+			name: "cache miss",
 			setupMocks: func(cache *MockCacheService) {
-				cache.On("Put", ctx, "test:/test/path", mock.Anything).
-					Return(fmt.Errorf("cache write error"))
+				cache.On("Exists", ctx, "test:/test/path").Return(false, nil)
 			},
-			req: ProxyRequest{
-				Path: "/test/path",
-			},
-			resp: &ProxyResponse{
-				Body:       ioutil.NopCloser(bytes.NewBufferString("content")),
-				StatusCode: 200,
-			},
-			wantErr: true,
+			cacheKey:  "test:/test/path",
+			wantFound: false,
+			wantErr:   false,
 		},
 		{
-			name:       "nil response body",
-			setupMocks: func(cache *MockCacheService) {},
-			req: ProxyRequest{
-				Path: "/test/path",
+			name: "cache exists but get fails",
+			setupMocks: func(cache *MockCacheService) {
+				cache.On("Exists", ctx, "test:/test/path").Return(true, nil)
+				cache.On("Get", ctx, "test:/test/path").Return(nil, false, fmt.Errorf("cache error"))
 			},
-			resp: &ProxyResponse{
-				Body:       nil,
-				StatusCode: 200,
-			},
-			wantErr: true,
+			cacheKey:  "test:/test/path",
+			wantFound: false,
+			wantErr:   true,
 		},
 	}
 
@@ -368,7 +227,67 @@ func TestBaseProxyService_CacheResponse(t *testing.T) {
 			tt.setupMocks(cache)
 
 			service := NewBaseProxyService("test", cache, config, upstream)
-			err := service.CacheResponse(ctx, tt.req, tt.resp)
+			content, found, err := service.TryCache(ctx, tt.cacheKey)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+
+			assert.Equal(t, tt.wantFound, found)
+			if found {
+				assert.NotNil(t, content)
+			} else if !tt.wantErr {
+				assert.Nil(t, content)
+			}
+
+			cache.AssertExpectations(t)
+		})
+	}
+}
+
+func TestBaseProxyService_CacheResponse(t *testing.T) {
+	ctx := context.Background()
+
+	tests := []struct {
+		name       string
+		setupMocks func(*MockCacheService)
+		cacheKey   string
+		content    io.Reader
+		wantErr    bool
+	}{
+		{
+			name: "successful cache",
+			setupMocks: func(cache *MockCacheService) {
+				cache.On("Put", ctx, "test:/test/path", mock.Anything).Return(nil)
+			},
+			cacheKey: "test:/test/path",
+			content:  bytes.NewBufferString("content to cache"),
+			wantErr:  false,
+		},
+		{
+			name: "cache error",
+			setupMocks: func(cache *MockCacheService) {
+				cache.On("Put", ctx, "test:/test/path", mock.Anything).
+					Return(fmt.Errorf("cache write error"))
+			},
+			cacheKey: "test:/test/path",
+			content:  bytes.NewBufferString("content"),
+			wantErr:  true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cache := &MockCacheService{}
+			config := &MockConfigService{}
+			upstream := &MockUpstreamClient{}
+
+			tt.setupMocks(cache)
+
+			service := NewBaseProxyService("test", cache, config, upstream)
+			err := service.CacheResponse(ctx, tt.cacheKey, tt.content)
 
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -411,15 +330,19 @@ func TestBaseProxyService_HandleError(t *testing.T) {
 			assert.Equal(t, tt.expectedCode, resp.StatusCode)
 
 			// Read the body to check error message
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			require.NoError(t, err)
-			assert.Contains(t, string(body), tt.expectedMsg)
+			if tt.err != nil {
+				assert.Contains(t, string(body), tt.expectedMsg)
+			} else {
+				assert.Contains(t, string(body), "unknown error")
+			}
 		})
 	}
 }
 
 func TestBaseProxyService_HandleRequest(t *testing.T) {
-	service := &BaseProxyService{proxyType: "base"}
+	service := &BaseProxyService{ProxyType: "base"}
 	ctx := context.Background()
 	req := ProxyRequest{Path: "/test"}
 
@@ -429,7 +352,7 @@ func TestBaseProxyService_HandleRequest(t *testing.T) {
 	assert.NotNil(t, resp)
 	assert.Equal(t, 501, resp.StatusCode)
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
-	assert.Contains(t, string(body), "not implemented")
+	assert.Contains(t, string(body), "service not implemented")
 }

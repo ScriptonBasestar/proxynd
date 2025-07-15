@@ -35,7 +35,11 @@ func YumProxyHandler(c *fiber.Ctx) error {
 	yumConfig.ReadConfig()
 
 	// 파일 경로 생성
-	filefullpath := security.SafeJoinPath(storageDir, yumConfig.Path, requestPath)
+	baseDir := filepath.Join(storageDir, yumConfig.Path)
+	filefullpath, err := security.SafeJoinPath(baseDir, requestPath)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).SendString("Invalid path")
+	}
 	filename := filepath.Base(filefullpath)
 
 	// 캐시 확인

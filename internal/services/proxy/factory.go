@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"context"
 	"fmt"
 	"sync"
 )
@@ -26,6 +27,20 @@ func NewServiceFactory(
 		upstreamClient: upstreamClient,
 		services:       make(map[string]ProxyService),
 	}
+}
+
+// NewProxyServiceFactory creates a new proxy service factory (alias for compatibility)
+func NewProxyServiceFactory(
+	cache CacheService,
+	config ConfigService,
+	upstreamClient UpstreamClient,
+) *ServiceFactory {
+	return NewServiceFactory(cache, config, upstreamClient)
+}
+
+// CreateProxyService creates a proxy service for the given type (alias for compatibility)
+func (f *ServiceFactory) CreateProxyService(ctx context.Context, proxyType string) (ProxyService, error) {
+	return f.GetService(proxyType)
 }
 
 // GetService returns a proxy service for the given type

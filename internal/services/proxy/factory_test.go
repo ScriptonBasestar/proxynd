@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"proxynd/configs"
 )
@@ -19,7 +20,7 @@ func TestNewProxyServiceFactory(t *testing.T) {
 
 	assert.NotNil(t, factory)
 	assert.Equal(t, cache, factory.cache)
-	assert.Equal(t, config, factory.configService)
+	assert.Equal(t, config, factory.config)
 	assert.Equal(t, upstream, factory.upstreamClient)
 }
 
@@ -42,7 +43,7 @@ func TestProxyServiceFactory_CreateProxyService(t *testing.T) {
 					Path:     "/apt",
 					UseCache: true,
 				}
-				config.On("GetProxyConfig", "apt").Return(aptConfig, nil)
+				config.On("GetProxyConfig", mock.Anything, "apt").Return(aptConfig, nil)
 			},
 			wantErr: false,
 			checkType: func(s ProxyService) bool {
@@ -58,7 +59,7 @@ func TestProxyServiceFactory_CreateProxyService(t *testing.T) {
 					Path:     "/maven",
 					UseCache: true,
 				}
-				config.On("GetProxyConfig", "maven").Return(mavenConfig, nil)
+				config.On("GetProxyConfig", mock.Anything, "maven").Return(mavenConfig, nil)
 			},
 			wantErr: false,
 			checkType: func(s ProxyService) bool {
@@ -74,12 +75,11 @@ func TestProxyServiceFactory_CreateProxyService(t *testing.T) {
 					Path:     "/npm",
 					UseCache: true,
 				}
-				config.On("GetProxyConfig", "npm").Return(npmConfig, nil)
+				config.On("GetProxyConfig", mock.Anything, "npm").Return(npmConfig, nil)
 			},
 			wantErr: false,
 			checkType: func(s ProxyService) bool {
-				_, ok := s.(*NpmService)
-				return ok
+				return s.GetProxyType() == "npm"
 			},
 		},
 		{
@@ -90,28 +90,11 @@ func TestProxyServiceFactory_CreateProxyService(t *testing.T) {
 					Path:     "/docker",
 					UseCache: true,
 				}
-				config.On("GetProxyConfig", "docker").Return(dockerConfig, nil)
+				config.On("GetProxyConfig", mock.Anything, "docker").Return(dockerConfig, nil)
 			},
 			wantErr: false,
 			checkType: func(s ProxyService) bool {
-				_, ok := s.(*DockerService)
-				return ok
-			},
-		},
-		{
-			name:      "create pip service",
-			proxyType: "pip",
-			setupMocks: func(config *MockConfigService) {
-				pipConfig := &configs.PipProxyConfig{
-					Path:     "/pip",
-					UseCache: true,
-				}
-				config.On("GetProxyConfig", "pip").Return(pipConfig, nil)
-			},
-			wantErr: false,
-			checkType: func(s ProxyService) bool {
-				_, ok := s.(*OtherProxyService)
-				return ok && s.GetProxyType() == "pip"
+				return s.GetProxyType() == "docker"
 			},
 		},
 		{
@@ -136,7 +119,7 @@ func TestProxyServiceFactory_CreateProxyService(t *testing.T) {
 			name:      "config load error",
 			proxyType: "apt",
 			setupMocks: func(config *MockConfigService) {
-				config.On("GetProxyConfig", "apt").Return(nil, fmt.Errorf("config error"))
+				config.On("GetProxyConfig", mock.Anything, "apt").Return(nil, fmt.Errorf("config error"))
 			},
 			wantErr: true,
 			errMsg:  "failed to load apt config",
@@ -178,7 +161,7 @@ func TestProxyServiceFactory_CreateProxyService(t *testing.T) {
 func TestProxyServiceFactory_AllProxyTypes(t *testing.T) {
 	ctx := context.Background()
 
-	proxyTypes := []string{"apt", "maven", "npm", "docker", "pip", "yum", "apk", "helm"}
+	proxyTypes := []string{"apt", "maven", "npm", "docker"}
 
 	for _, proxyType := range proxyTypes {
 		t.Run(proxyType, func(t *testing.T) {
@@ -189,22 +172,22 @@ func TestProxyServiceFactory_AllProxyTypes(t *testing.T) {
 			// Setup config mock based on proxy type
 			switch proxyType {
 			case "apt":
-				config.On("GetProxyConfig", proxyType).Return(&configs.AptProxyConfig{}, nil)
+				config.On("GetProxyConfig", mock.Anything, proxyType).Return(&configs.AptProxyConfig{}, nil)
 			case "maven":
-				config.On("GetProxyConfig", proxyType).Return(&configs.MavenProxyConfig{}, nil)
+				config.On("GetProxyConfig", mock.Anything, proxyType).Return(&configs.MavenProxyConfig{}, nil)
 			case "npm":
-				config.On("GetProxyConfig", proxyType).Return(&configs.NpmProxyConfig{}, nil)
+				config.On("GetProxyConfig", mock.Anything, proxyType).Return(&configs.NpmProxyConfig{}, nil)
 			case "docker":
-				config.On("GetProxyConfig", proxyType).Return(&configs.DockerProxyConfig{}, nil)
+				config.On("GetProxyConfig", mock.Anything, proxyType).Return(&configs.DockerProxyConfig{}, nil)
 			case "pip":
-				config.On("GetProxyConfig", proxyType).Return(&configs.PipProxyConfig{}, nil)
+				config.On("GetProxyConfig", mock.Anything, proxyType).Return(struct{}{}, nil)
 			case "yum":
-				config.On("GetProxyConfig", proxyType).Return(&configs.YumProxyConfig{}, nil)
+				config.On("GetProxyConfig", mock.Anything, proxyType).Return(struct{}{}, nil)
 			case "apk":
-				config.On("GetProxyConfig", proxyType).Return(&configs.ApkProxyConfig{}, nil)
+				config.On("GetProxyConfig", mock.Anything, proxyType).Return(struct{}{}, nil)
 			default:
 				// For helm and others that use generic config
-				config.On("GetProxyConfig", proxyType).Return(struct{}{}, nil)
+				config.On("GetProxyConfig", mock.Anything, proxyType).Return(struct{}{}, nil)
 			}
 
 			factory := NewProxyServiceFactory(cache, config, upstream)

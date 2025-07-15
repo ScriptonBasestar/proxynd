@@ -22,7 +22,7 @@ func NewDockerService(
 	base := NewBaseProxyService("docker", cache, configService, upstreamClient)
 
 	// Load Docker-specific configuration
-	configInterface, err := configService.GetProxyConfig("docker")
+	configInterface, err := configService.GetProxyConfig(context.Background(), "docker")
 	if err != nil {
 		return nil, fmt.Errorf("failed to load docker config: %w", err)
 	}
