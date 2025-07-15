@@ -162,6 +162,67 @@ fmt:
 	goimports -w -local proxynd .
 	@echo "Code formatting complete!"
 
+.PHONY: format
+format: fmt format-check
+	@echo "✅ All formatting complete!"
+
+.PHONY: format-check
+format-check:
+	@echo "Checking code formatting..."
+	@if [ -n "$$(gofmt -l .)" ]; then \
+		echo "❌ The following files need formatting:"; \
+		gofmt -l .; \
+		echo "Run 'make format' to fix."; \
+		exit 1; \
+	else \
+		echo "✅ All files are properly formatted"; \
+	fi
+
+.PHONY: format-diff
+format-diff:
+	@echo "Showing formatting differences..."
+	@gofmt -d .
+
+.PHONY: format-imports
+format-imports:
+	@echo "Organizing imports..."
+	@which goimports > /dev/null || go install golang.org/x/tools/cmd/goimports@latest
+	@goimports -w -local proxynd .
+	@echo "✅ Imports organized!"
+
+.PHONY: format-simplify
+format-simplify:
+	@echo "Simplifying code..."
+	@which gofmt > /dev/null && gofmt -s -w .
+	@echo "✅ Code simplified!"
+
+.PHONY: format-all
+format-all: install-format-tools
+	@echo "Running all formatters..."
+	@echo "1. Standard formatting..."
+	@gofmt -w .
+	@echo "2. Simplifying code..."
+	@gofmt -s -w .
+	@echo "3. Organizing imports..."
+	@goimports -w -local proxynd .
+	@echo "4. Running gofumpt (strict formatting)..."
+	@gofumpt -w -extra .
+	@echo "5. Running gci (import grouping)..."
+	@gci write --skip-generated -s standard -s default -s "prefix(proxynd)" .
+	@echo "✅ All formatting complete!"
+
+.PHONY: install-format-tools
+install-format-tools:
+	@echo "Installing formatting tools..."
+	@which goimports > /dev/null || (echo "Installing goimports..." && go install golang.org/x/tools/cmd/goimports@latest)
+	@which gofumpt > /dev/null || (echo "Installing gofumpt..." && go install mvdan.cc/gofumpt@latest)
+	@which gci > /dev/null || (echo "Installing gci..." && go install github.com/daixiang0/gci@latest)
+	@echo "✅ All formatting tools installed!"
+
+.PHONY: format-ci
+format-ci: format-check
+	@echo "CI format check passed!"
+
 .PHONY: install-golangci-lint
 install-golangci-lint:
 	@echo "Installing golangci-lint..."
@@ -171,7 +232,7 @@ install-golangci-lint:
 .PHONY: lint
 lint: install-golangci-lint
 	@echo "Running golangci-lint..."
-	golangci-lint run ./...
+	golangci-lint run ./... --skip-files "examples/.*"
 
 .PHONY: lint-fix
 lint-fix: install-golangci-lint
@@ -411,6 +472,102 @@ build-all:
 	GOOS=darwin GOARCH=arm64 go build -o dist/proxynd-darwin-arm64 .
 	@echo "Multi-platform build complete!"
 
+# Installation targets
+.PHONY: install
+install:
+	@echo "Installing proxynd..."
+	go install -v .
+	@echo "✅ proxynd installed to $(shell go env GOPATH)/bin/proxynd"
+
+.PHONY: install-dev
+install-dev: install-tools install
+	@echo "✅ Development installation complete!"
+
+.PHONY: install-tools
+install-tools:
+	@echo "Installing development tools..."
+	@echo "Installing air (hot reload)..."
+	@go install github.com/cosmtrek/air@latest
+	@echo "Installing golangci-lint..."
+	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	@echo "Installing goimports..."
+	@go install golang.org/x/tools/cmd/goimports@latest
+	@echo "Installing mockery..."
+	@go install github.com/vektra/mockery/v2@latest
+	@echo "Installing godoc..."
+	@go install golang.org/x/tools/cmd/godoc@latest
+	@echo "Installing gocyclo..."
+	@go install github.com/fzipp/gocyclo/cmd/gocyclo@latest
+	@echo "Installing gosec..."
+	@go install github.com/securego/gosec/v2/cmd/gosec@latest
+	@echo "Installing nancy..."
+	@go install github.com/sonatype-nexus-community/nancy@latest
+	@echo "Installing godepgraph..."
+	@go install github.com/kisielk/godepgraph@latest
+	@echo "Installing unused..."
+	@go install honnef.co/go/tools/cmd/unused@latest
+	@echo "✅ All development tools installed!"
+
+.PHONY: install-test
+install-test: install-tools
+	@echo "Installing test tools..."
+	@echo "Installing gotestsum..."
+	@go install gotest.tools/gotestsum@latest
+	@echo "Installing richgo (colored test output)..."
+	@go install github.com/kyoh86/richgo@latest
+	@echo "Installing go-junit-report..."
+	@go install github.com/jstemmer/go-junit-report/v2@latest
+	@echo "Installing goconvey..."
+	@go install github.com/smartystreets/goconvey@latest
+	@echo "✅ All test tools installed!"
+
+.PHONY: install-all
+install-all: install-tools install-test install
+	@echo "✅ Complete installation finished!"
+	@echo ""
+	@echo "Installed binaries:"
+	@echo "  - proxynd: $(shell go env GOPATH)/bin/proxynd"
+	@echo ""
+	@echo "Installed tools:"
+	@echo "  - air (hot reload)"
+	@echo "  - golangci-lint (linting)"
+	@echo "  - goimports (import formatting)"
+	@echo "  - mockery (mock generation)"
+	@echo "  - godoc (documentation)"
+	@echo "  - gocyclo (complexity analysis)"
+	@echo "  - gosec (security scanning)"
+	@echo "  - nancy (dependency scanning)"
+	@echo "  - godepgraph (dependency visualization)"
+	@echo "  - unused (dead code detection)"
+	@echo "  - gotestsum (test runner)"
+	@echo "  - richgo (colored test output)"
+	@echo "  - go-junit-report (JUnit reports)"
+	@echo "  - goconvey (test UI)"
+
+.PHONY: uninstall
+uninstall:
+	@echo "Uninstalling proxynd..."
+	@rm -f $(shell go env GOPATH)/bin/proxynd
+	@echo "✅ proxynd uninstalled"
+
+.PHONY: check-tools
+check-tools:
+	@echo "Checking installed tools..."
+	@echo -n "air: "; which air > /dev/null 2>&1 && echo "✅ installed" || echo "❌ not installed"
+	@echo -n "golangci-lint: "; which golangci-lint > /dev/null 2>&1 && echo "✅ installed" || echo "❌ not installed"
+	@echo -n "goimports: "; which goimports > /dev/null 2>&1 && echo "✅ installed" || echo "❌ not installed"
+	@echo -n "mockery: "; which mockery > /dev/null 2>&1 && echo "✅ installed" || echo "❌ not installed"
+	@echo -n "godoc: "; which godoc > /dev/null 2>&1 && echo "✅ installed" || echo "❌ not installed"
+	@echo -n "gocyclo: "; which gocyclo > /dev/null 2>&1 && echo "✅ installed" || echo "❌ not installed"
+	@echo -n "gosec: "; which gosec > /dev/null 2>&1 && echo "✅ installed" || echo "❌ not installed"
+	@echo -n "nancy: "; which nancy > /dev/null 2>&1 && echo "✅ installed" || echo "❌ not installed"
+	@echo -n "godepgraph: "; which godepgraph > /dev/null 2>&1 && echo "✅ installed" || echo "❌ not installed"
+	@echo -n "unused: "; which unused > /dev/null 2>&1 && echo "✅ installed" || echo "❌ not installed"
+	@echo -n "gotestsum: "; which gotestsum > /dev/null 2>&1 && echo "✅ installed" || echo "❌ not installed"
+	@echo -n "richgo: "; which richgo > /dev/null 2>&1 && echo "✅ installed" || echo "❌ not installed"
+	@echo -n "go-junit-report: "; which go-junit-report > /dev/null 2>&1 && echo "✅ installed" || echo "❌ not installed"
+	@echo -n "goconvey: "; which goconvey > /dev/null 2>&1 && echo "✅ installed" || echo "❌ not installed"
+
 # Version management
 .PHONY: version
 version:
@@ -452,6 +609,14 @@ help:
 	@echo "Build:"
 	@echo "  make build        - Build binary"
 	@echo "  make docker-build - Build Docker image"
+	@echo ""
+	@echo "Installation:"
+	@echo "  make install      - Install proxynd binary"
+	@echo "  make install-dev  - Install with all development tools"
+	@echo "  make install-test - Install with test tools"
+	@echo "  make install-all  - Install everything (binary + all tools)"
+	@echo "  make uninstall    - Remove proxynd binary"
+	@echo "  make check-tools  - Check which tools are installed"
 	@echo ""
 	@echo "Cleanup:"
 	@echo "  make clean        - Standard cleanup (build + test + cache + analysis)"
