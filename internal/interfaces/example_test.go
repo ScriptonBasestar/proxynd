@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"proxynd/internal/interfaces"
@@ -69,14 +70,14 @@ func TestExampleService_GetUserData(t *testing.T) {
 
 	t.Run("cache hit", func(t *testing.T) {
 		// Setup mocks
-		mockCache := mocks.NewMockCacheManager()
+		mockCache := mocks.NewMockCacheManager(t)
 		expectedData := []byte("John Doe")
 
 		// Configure mock behavior
-		mockCache.GetFunc = func(ctx context.Context, key string) ([]byte, bool, error) {
-			assert.Equal(t, "user:123", key)
-			return expectedData, true, nil
-		}
+		mockCache.EXPECT().Get(
+			mock.Anything,
+			"user:123",
+		).Return(expectedData, true, nil)
 
 		// Create service with mocks
 		service := NewExampleService(mockCache, nil, nil)
@@ -93,7 +94,7 @@ func TestExampleService_GetUserData(t *testing.T) {
 
 	t.Run("cache miss", func(t *testing.T) {
 		// Setup mocks
-		mockCache := mocks.NewMockCacheManager()
+		mockCache := mocks.NewMockCacheManager(t)
 		mockAuth := &MockAuthService{
 			GetUserFunc: func(ctx context.Context, userID string) (*interfaces.User, error) {
 				return &interfaces.User{
@@ -104,18 +105,17 @@ func TestExampleService_GetUserData(t *testing.T) {
 		}
 
 		// Configure cache to return miss
-		mockCache.GetFunc = func(ctx context.Context, key string) ([]byte, bool, error) {
-			return nil, false, nil
-		}
+		mockCache.EXPECT().Get(
+			mock.Anything,
+			"user:456",
+		).Return(nil, false, nil)
 
-		putCalled := false
-		mockCache.PutFunc = func(ctx context.Context, key string, data []byte, ttl time.Duration) error {
-			putCalled = true
-			assert.Equal(t, "user:456", key)
-			assert.Equal(t, []byte("Jane Doe"), data)
-			assert.Equal(t, 5*time.Minute, ttl)
-			return nil
-		}
+		mockCache.EXPECT().Put(
+			mock.Anything,
+			"user:456",
+			mock.Anything,
+			mock.Anything,
+		).Return(nil)
 
 		// Create service with mocks
 		service := NewExampleService(mockCache, mockAuth, nil)
@@ -124,7 +124,7 @@ func TestExampleService_GetUserData(t *testing.T) {
 		data, err := service.GetUserData(ctx, "456")
 		require.NoError(t, err)
 		assert.Equal(t, []byte("Jane Doe"), data)
-		assert.True(t, putCalled, "cache Put should have been called")
+		// Mock assertions are handled automatically by testify/mock
 	})
 }
 

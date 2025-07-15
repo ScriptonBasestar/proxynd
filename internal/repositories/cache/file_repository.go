@@ -11,7 +11,6 @@ import (
 	"sync"
 	"time"
 
-	"proxynd/helpers"
 	"proxynd/logging"
 )
 
@@ -45,16 +44,13 @@ func NewFileRepository(basePath string, maxSize int64, maxAge time.Duration) (*F
 		maxAge:  maxAge,
 	}
 
-	// Create a context for initialization
-	ctx := context.Background()
-
 	// Load existing metadata
-	if err := repo.loadMetadata(ctx); err != nil {
+	if err := repo.loadMetadata(); err != nil {
 		repo.logger.Warn("Failed to load cache metadata", logging.F("error", err))
 	}
 
 	// Start cleanup goroutine
-	go repo.cleanupRoutine(ctx)
+	go repo.cleanupRoutine()
 
 	return repo, nil
 }

@@ -1,3 +1,4 @@
+// Package adapters provides adapter implementations for various service interfaces.
 package adapters
 
 import (

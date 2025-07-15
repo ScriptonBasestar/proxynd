@@ -115,8 +115,8 @@ func (h *NPMHandlerAdapter) Initialize(config interface{}) error {
 	})
 
 	h.GetLogger().Info("NPM handler initialized",
-		logging.F("default_registry", npmConfig.DefaultRegistry),
-		logging.F("cache_enabled", npmConfig.CacheEnabled))
+		logging.F("use_cache", npmConfig.UseCache),
+		logging.F("user_cache", npmConfig.UserCache))
 
 	return nil
 }
@@ -150,13 +150,8 @@ func (h *NPMHandlerAdapter) ValidateConfig(config interface{}) error {
 		return fmt.Errorf("config must be *configs.NpmProxyConfig")
 	}
 
-	if npmConfig.DefaultRegistry == "" {
-		return fmt.Errorf("default_registry is required")
-	}
-
-	if !strings.HasPrefix(npmConfig.DefaultRegistry, "http://") && 
-	   !strings.HasPrefix(npmConfig.DefaultRegistry, "https://") {
-		return fmt.Errorf("default_registry must be a valid HTTP/HTTPS URL")
+	if len(npmConfig.Proxies) == 0 {
+		return fmt.Errorf("at least one proxy configuration is required")
 	}
 
 	return nil
@@ -165,14 +160,17 @@ func (h *NPMHandlerAdapter) ValidateConfig(config interface{}) error {
 // GetDefaultConfig NPM 기본 설정 반환
 func (h *NPMHandlerAdapter) GetDefaultConfig() interface{} {
 	return &configs.NpmProxyConfig{
-		DefaultRegistry: "https://registry.npmjs.org",
-		CacheEnabled:    true,
-		CacheTTL:        24 * time.Hour,
-		MaxPackageSize:  100 * 1024 * 1024, // 100MB
-		Timeout:         30 * time.Second,
-		RetryCount:      3,
-		EnableGzip:      true,
-		UserAgent:       "ProxyND-NPM/1.0",
+		Path:      "/proxy/npm",
+		UseCache:  true,
+		UserCache: false,
+		Proxies: map[string][]configs.NpmProxyServer{
+			"public": {
+				{
+					Name: "npmjs",
+					URL:  "https://registry.npmjs.org",
+				},
+			},
+		},
 	}
 }
 
@@ -186,12 +184,19 @@ func (h *NPMHandlerAdapter) HealthCheck(ctx context.Context) error {
 		return fmt.Errorf("NPM config not initialized")
 	}
 
-	// 기본 레지스트리 연결 테스트
-	upstreams := []plugins.UpstreamConfig{
-		{
-			URL:     h.config.DefaultRegistry,
-			Timeout: 5 * time.Second,
-		},
+	// 모든 프록시 서버 연결 테스트
+	var upstreams []plugins.UpstreamConfig
+	for _, servers := range h.config.Proxies {
+		for _, server := range servers {
+			upstreams = append(upstreams, plugins.UpstreamConfig{
+				URL:     server.URL,
+				Timeout: 5 * time.Second,
+			})
+		}
+	}
+
+	if len(upstreams) == 0 {
+		return fmt.Errorf("no upstream servers configured")
 	}
 
 	healthResults, err := h.groupManager.HealthCheckGroup(ctx, upstreams)
@@ -199,8 +204,17 @@ func (h *NPMHandlerAdapter) HealthCheck(ctx context.Context) error {
 		return fmt.Errorf("health check failed: %w", err)
 	}
 
-	if !healthResults[h.config.DefaultRegistry] {
-		return fmt.Errorf("default registry is not healthy")
+	// 최소한 하나의 서버는 정상이어야 함
+	healthy := false
+	for _, isHealthy := range healthResults {
+		if isHealthy {
+			healthy = true
+			break
+		}
+	}
+
+	if !healthy {
+		return fmt.Errorf("no healthy upstream servers")
 	}
 
 	return nil
@@ -211,29 +225,21 @@ func (h *NPMHandlerAdapter) handleProxyRequest(ctx *fiber.Ctx) error {
 	path := strings.TrimPrefix(ctx.Path(), "/proxy/npm")
 	
 	// NPM 레지스트리별 업스트림 설정
-	upstreams := []plugins.UpstreamConfig{
-		{
-			URL:      h.config.DefaultRegistry,
-			Priority: 1,
-			Timeout:  h.config.Timeout,
-			Headers: map[string]string{
-				"User-Agent": h.config.UserAgent,
-				"Accept":     "application/json",
-			},
-		},
-	}
-
-	// 추가 레지스트리가 설정된 경우
-	for i, registry := range h.config.AlternativeRegistries {
-		upstreams = append(upstreams, plugins.UpstreamConfig{
-			URL:      registry,
-			Priority: i + 2,
-			Timeout:  h.config.Timeout,
-			Headers: map[string]string{
-				"User-Agent": h.config.UserAgent,
-				"Accept":     "application/json",
-			},
-		})
+	var upstreams []plugins.UpstreamConfig
+	
+	// 모든 프록시 서버를 업스트림으로 추가
+	for _, servers := range h.config.Proxies {
+		for i, server := range servers {
+			upstreams = append(upstreams, plugins.UpstreamConfig{
+				URL:      server.URL,
+				Priority: i + 1, // 순서대로 우선순위 부여
+				Timeout:  30 * time.Second,
+				Headers: map[string]string{
+					"User-Agent": "ProxyND-NPM/1.0",
+					"Accept":     "application/json",
+				},
+			})
+		}
 	}
 
 	// 그룹에서 데이터 가져오기

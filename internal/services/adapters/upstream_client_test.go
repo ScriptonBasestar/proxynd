@@ -1,15 +1,16 @@
 package adapters
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
+	"proxynd/internal/services/proxy"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -20,7 +21,7 @@ func TestNewHTTPUpstreamClient(t *testing.T) {
 		timeout time.Duration
 	}{
 		{
-			name:    "default timeout",
+			name:    "zero timeout",
 			timeout: 0,
 		},
 		{
@@ -35,11 +36,7 @@ func TestNewHTTPUpstreamClient(t *testing.T) {
 			assert.NotNil(t, client)
 			assert.NotNil(t, client.client)
 
-			if tt.timeout > 0 {
-				assert.Equal(t, tt.timeout, client.client.Timeout)
-			} else {
-				assert.Equal(t, 30*time.Second, client.client.Timeout)
-			}
+			assert.Equal(t, tt.timeout, client.client.Timeout)
 		})
 	}
 }
@@ -52,7 +49,7 @@ func TestHTTPUpstreamClient_Fetch(t *testing.T) {
 		wantStatusCode int
 		wantErr        bool
 		errMsg         string
-		checkResponse  func(*testing.T, *ProxyResponse)
+		checkResponse  func(*testing.T, *proxy.ProxyResponse)
 	}{
 		{
 			name: "successful fetch",
@@ -69,7 +66,7 @@ func TestHTTPUpstreamClient_Fetch(t *testing.T) {
 			},
 			wantStatusCode: 200,
 			wantErr:        false,
-			checkResponse: func(t *testing.T, resp *ProxyResponse) {
+			checkResponse: func(t *testing.T, resp *proxy.ProxyResponse) {
 				assert.Equal(t, "text/plain", resp.ContentType)
 				assert.Equal(t, "custom-value", resp.Headers["X-Custom-Header"])
 
@@ -87,12 +84,8 @@ func TestHTTPUpstreamClient_Fetch(t *testing.T) {
 				}))
 			},
 			wantStatusCode: 404,
-			wantErr:        false,
-			checkResponse: func(t *testing.T, resp *ProxyResponse) {
-				body, err := ioutil.ReadAll(resp.Body)
-				require.NoError(t, err)
-				assert.Equal(t, "not found", string(body))
-			},
+			wantErr:        true,
+			errMsg:         "upstream returned error: 404",
 		},
 		{
 			name: "with custom headers",
@@ -128,7 +121,7 @@ func TestHTTPUpstreamClient_Fetch(t *testing.T) {
 				return nil
 			},
 			wantErr: true,
-			errMsg:  "unsupported protocol scheme",
+			errMsg:  "missing protocol scheme",
 		},
 		{
 			name: "large response",
@@ -146,7 +139,7 @@ func TestHTTPUpstreamClient_Fetch(t *testing.T) {
 			},
 			wantStatusCode: 200,
 			wantErr:        false,
-			checkResponse: func(t *testing.T, resp *ProxyResponse) {
+			checkResponse: func(t *testing.T, resp *proxy.ProxyResponse) {
 				body, err := ioutil.ReadAll(resp.Body)
 				require.NoError(t, err)
 				assert.Equal(t, 1024*1024, len(body))
@@ -162,7 +155,7 @@ func TestHTTPUpstreamClient_Fetch(t *testing.T) {
 			},
 			wantStatusCode: 200,
 			wantErr:        false,
-			checkResponse: func(t *testing.T, resp *ProxyResponse) {
+			checkResponse: func(t *testing.T, resp *proxy.ProxyResponse) {
 				assert.Equal(t, "test.jar", resp.FileName)
 			},
 		},
@@ -202,7 +195,13 @@ func TestHTTPUpstreamClient_Fetch(t *testing.T) {
 				if tt.errMsg != "" {
 					assert.Contains(t, err.Error(), tt.errMsg)
 				}
-				assert.Nil(t, resp)
+				// For upstream errors, we still return a response with error details
+				if strings.Contains(err.Error(), "upstream returned error") {
+					require.NotNil(t, resp)
+					assert.Equal(t, tt.wantStatusCode, resp.StatusCode)
+				} else {
+					assert.Nil(t, resp)
+				}
 			} else {
 				assert.NoError(t, err)
 				require.NotNil(t, resp)

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"proxynd/internal/services/proxy"
@@ -33,7 +34,8 @@ func NewHTTPUpstreamClient(timeout time.Duration) *HTTPUpstreamClient {
 }
 
 // Fetch retrieves content from upstream
-func (c *HTTPUpstreamClient) Fetch(ctx context.Context, url string, headers map[string]string) (*proxy.ProxyResponse, error) {
+func (c *HTTPUpstreamClient) Fetch(ctx context.Context, url string,
+	headers map[string]string) (*proxy.ProxyResponse, error) {
 	// Create request with context
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
@@ -65,10 +67,10 @@ func (c *HTTPUpstreamClient) Fetch(ctx context.Context, url string, headers map[
 	if resp.StatusCode >= 400 {
 		// Read error body
 		body, _ := io.ReadAll(resp.Body)
-		resp.Body.Close()
+		_ = resp.Body.Close()
 
 		return &proxy.ProxyResponse{
-			Body:        io.NopCloser(io.Reader(nil)),
+			Body:        io.NopCloser(strings.NewReader(string(body))),
 			StatusCode:  resp.StatusCode,
 			Headers:     c.extractHeaders(resp),
 			ContentType: resp.Header.Get("Content-Type"),
@@ -94,20 +96,10 @@ func (c *HTTPUpstreamClient) Fetch(ctx context.Context, url string, headers map[
 func (c *HTTPUpstreamClient) extractHeaders(resp *http.Response) map[string]string {
 	headers := make(map[string]string)
 
-	// Extract commonly needed headers
-	relevantHeaders := []string{
-		"Content-Type",
-		"Content-Length",
-		"Last-Modified",
-		"ETag",
-		"Cache-Control",
-		"Content-Disposition",
-		"Content-Encoding",
-	}
-
-	for _, header := range relevantHeaders {
-		if value := resp.Header.Get(header); value != "" {
-			headers[header] = value
+	// Extract all headers
+	for key, values := range resp.Header {
+		if len(values) > 0 {
+			headers[key] = values[0]
 		}
 	}
 
