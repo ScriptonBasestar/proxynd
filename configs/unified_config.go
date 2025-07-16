@@ -427,21 +427,45 @@ func (c *UnifiedConfig) applyEnvironmentOverrides() {
 func (c *UnifiedConfig) Validate() error {
 	// 서버 설정 검증
 	if c.Server.Port < 1 || c.Server.Port > 65535 {
-		return fmt.Errorf("invalid server port: %d", c.Server.Port)
+		return &ValidationError{
+			Field:   "server.port",
+			Message: "포트 번호가 유효하지 않습니다",
+			Value:   c.Server.Port,
+		}
 	}
 
 	// TLS 설정 검증
 	if c.Server.TLS.Enabled {
-		if c.Server.TLS.CertFile == "" || c.Server.TLS.KeyFile == "" {
-			return fmt.Errorf("TLS enabled but cert/key files not specified")
+		if c.Server.TLS.CertFile == "" {
+			return &ValidationError{
+				Field:   "server.tls.cert_file",
+				Message: "TLS가 활성화되었으나 인증서 파일이 지정되지 않음",
+				Value:   c.Server.TLS.CertFile,
+			}
+		}
+		
+		if c.Server.TLS.KeyFile == "" {
+			return &ValidationError{
+				Field:   "server.tls.key_file",
+				Message: "TLS가 활성화되었으나 키 파일이 지정되지 않음",
+				Value:   c.Server.TLS.KeyFile,
+			}
 		}
 
-		// 파일 존재 확인
+		// 파일 존재 확인 (개발 환경에서는 skip)
 		if _, err := os.Stat(c.Server.TLS.CertFile); err != nil {
-			return fmt.Errorf("TLS cert file not found: %s", c.Server.TLS.CertFile)
+			return &ValidationError{
+				Field:   "server.tls.cert_file",
+				Message: "TLS 인증서 파일을 찾을 수 없음",
+				Value:   c.Server.TLS.CertFile,
+			}
 		}
 		if _, err := os.Stat(c.Server.TLS.KeyFile); err != nil {
-			return fmt.Errorf("TLS key file not found: %s", c.Server.TLS.KeyFile)
+			return &ValidationError{
+				Field:   "server.tls.key_file",
+				Message: "TLS 키 파일을 찾을 수 없음",
+				Value:   c.Server.TLS.KeyFile,
+			}
 		}
 	}
 
@@ -453,14 +477,33 @@ func (c *UnifiedConfig) Validate() error {
 		}
 	case "s3":
 		if c.Cache.S3.Bucket == "" {
-			return fmt.Errorf("S3 cache enabled but bucket not specified")
+			return &ValidationError{
+				Field:   "cache.s3.bucket",
+				Message: "S3 캐시가 활성화되었으나 버킷이 지정되지 않음",
+				Value:   c.Cache.S3.Bucket,
+			}
+		}
+		if c.Cache.S3.Region == "" {
+			return &ValidationError{
+				Field:   "cache.s3.region",
+				Message: "S3 캐시가 활성화되었으나 리전이 지정되지 않음",
+				Value:   c.Cache.S3.Region,
+			}
 		}
 	case "redis":
 		if c.Cache.Redis.Address == "" {
-			return fmt.Errorf("Redis cache enabled but address not specified")
+			return &ValidationError{
+				Field:   "cache.redis.address",
+				Message: "Redis 캐시가 활성화되었으나 주소가 지정되지 않음",
+				Value:   c.Cache.Redis.Address,
+			}
 		}
 	default:
-		return fmt.Errorf("unsupported cache backend: %s", c.Cache.Backend)
+		return &ValidationError{
+			Field:   "cache.backend",
+			Message: "지원하지 않는 캐시 백엔드",
+			Value:   c.Cache.Backend,
+		}
 	}
 
 	// 로깅 설정 검증
@@ -473,7 +516,96 @@ func (c *UnifiedConfig) Validate() error {
 		}
 	}
 	if !levelValid {
-		return fmt.Errorf("invalid log level: %s", c.Logging.Level)
+		return &ValidationError{
+			Field:   "logging.level",
+			Message: "유효하지 않은 로그 레벨",
+			Value:   c.Logging.Level,
+		}
+	}
+
+	// 메트릭 설정 검증
+	if c.Metrics.Enabled && c.Metrics.Port != 0 {
+		if c.Metrics.Port < 1 || c.Metrics.Port > 65535 {
+			return &ValidationError{
+				Field:   "metrics.port",
+				Message: "메트릭 포트 번호가 유효하지 않습니다",
+				Value:   c.Metrics.Port,
+			}
+		}
+		
+		// 메트릭 포트가 서버 포트와 겹치지 않도록 검증
+		if c.Metrics.Port == c.Server.Port {
+			return &ValidationError{
+				Field:   "metrics.port",
+				Message: "메트릭 포트가 서버 포트와 같습니다",
+				Value:   c.Metrics.Port,
+			}
+		}
+	}
+
+	// 각 레지스트리 설정 검증
+	// NPM 레지스트리 검증
+	if c.Registries.NPM.Enabled {
+		if c.Registries.NPM.Upstream == "" {
+			return &ValidationError{
+				Field:   "registries.npm.upstream",
+				Message: "NPM 업스트림 URL이 설정되지 않음",
+				Value:   c.Registries.NPM.Upstream,
+			}
+		}
+	}
+
+	// PyPI 레지스트리 검증
+	if c.Registries.PyPI.Enabled {
+		if c.Registries.PyPI.Upstream == "" {
+			return &ValidationError{
+				Field:   "registries.pypi.upstream",
+				Message: "PyPI 업스트림 URL이 설정되지 않음",
+				Value:   c.Registries.PyPI.Upstream,
+			}
+		}
+	}
+
+	// APT 레지스트리 검증
+	if c.Registries.APT.Enabled {
+		if len(c.Registries.APT.Mirrors) == 0 {
+			return &ValidationError{
+				Field:   "registries.apt.mirrors",
+				Message: "APT 미러가 설정되지 않음",
+				Value:   c.Registries.APT.Mirrors,
+			}
+		}
+		for distro, mirrors := range c.Registries.APT.Mirrors {
+			if len(mirrors) == 0 {
+				return &ValidationError{
+					Field:   fmt.Sprintf("registries.apt.mirrors.%s", distro),
+					Message: "배포판에 대한 미러가 설정되지 않음",
+					Value:   mirrors,
+				}
+			}
+		}
+	}
+
+	// Docker 레지스트리 검증
+	if c.Registries.Docker.Enabled {
+		if len(c.Registries.Docker.Registries) == 0 {
+			return &ValidationError{
+				Field:   "registries.docker.registries",
+				Message: "Docker 레지스트리가 설정되지 않음",
+				Value:   c.Registries.Docker.Registries,
+			}
+		}
+	}
+
+	// Maven 레지스트리 검증
+	if c.Registries.Maven.Enabled {
+		if len(c.Registries.Maven.Repositories) == 0 {
+			return &ValidationError{
+				Field:   "registries.maven.repositories",
+				Message: "Maven 리포지토리가 설정되지 않음",
+				Value:   c.Registries.Maven.Repositories,
+			}
+		}
 	}
 
 	return nil
