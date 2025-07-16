@@ -32,9 +32,9 @@ func UnifiedProxyHandler(c *fiber.Ctx) error {
 		if !aptConfig.ConfigExists() {
 			return renderConfigAlert(c, "apt-proxy.yaml")
 		}
-		// APT는 경로에서 osType을 추출해야 함
-		// 경로 형식: /proxy/apt/ubuntu/... 또는 /proxy/apt/debian/...
-		return AptProxyUnified(c)
+		// 새로운 DI 기반 핸들러 사용
+		handler := NewAPTHandler()
+		return handler.Handle(c)
 
 	case "npm":
 		// NPM 설정 확인
@@ -89,3 +89,4 @@ func renderConfigAlert(c *fiber.Ctx, configFileName string) error {
 		"ConfigFileName": configFileName,
 	})
 }
+

@@ -145,7 +145,8 @@ func GetDefaultFactory(container *app.Container) *HandlerFactoryImpl {
 
 // RegisterDefaultHandlers 기본 핸들러들 등록
 func RegisterDefaultHandlers(factory *HandlerFactoryImpl) {
-	// APT 핸들러 등록
+	// APT 핸들러 등록 - proxy 패키지에서 import 필요
+	// 실제 구현은 proxy 패키지에서 등록
 	factory.Register("apt", func(container *app.Container) Handler {
 		return NewBaseHandler(container, "apt-handler", "apt")
 	})
