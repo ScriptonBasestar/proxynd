@@ -24,7 +24,9 @@ func UnifiedProxyHandler(c *fiber.Ctx) error {
 		if !mavenConfig.ConfigExists() {
 			return renderConfigAlert(c, "maven-proxy.yaml")
 		}
-		return MavenProxy(c)
+		// 새로운 DI 기반 Maven 핸들러 사용
+		handler := NewMavenHandler()
+		return handler.Handle(c)
 
 	case "apt":
 		// APT 설정 확인
