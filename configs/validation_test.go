@@ -13,7 +13,7 @@ func TestValidationError(t *testing.T) {
 		Message: "test message",
 		Value:   "test_value",
 	}
-	
+
 	expected := "validation failed for field 'test_field': test message (value: test_value)"
 	assert.Equal(t, expected, err.Error())
 }
@@ -28,7 +28,7 @@ func TestAptProxyConfig_Validate(t *testing.T) {
 		{
 			name: "Valid config",
 			config: &AptProxyConfig{
-				Path:    "/proxy/apt",
+				Path: "/proxy/apt",
 				Proxies: map[string][]AptProxy{
 					"ubuntu": {
 						{
@@ -86,12 +86,13 @@ func TestAptProxyConfig_Validate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.config.Validate()
-			
+
 			if tt.expectError {
 				require.Error(t, err)
 				t.Logf("Got error: %v (type: %T)", err, err)
 				if tt.errorField != "" {
-					validationErr, ok := err.(*ValidationError)
+					validationErr := &ValidationError{}
+					ok := errors.As(err, &validationErr)
 					require.True(t, ok, "Expected ValidationError, got: %T", err)
 					assert.Equal(t, tt.errorField, validationErr.Field)
 				}
@@ -182,12 +183,13 @@ func TestMavenProxyConfig_Validate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.config.Validate()
-			
+
 			if tt.expectError {
 				require.Error(t, err)
 				t.Logf("Got error: %v (type: %T)", err, err)
 				if tt.errorField != "" {
-					validationErr, ok := err.(*ValidationError)
+					validationErr := &ValidationError{}
+					ok := errors.As(err, &validationErr)
 					require.True(t, ok, "Expected ValidationError, got: %T", err)
 					assert.Equal(t, tt.errorField, validationErr.Field)
 				}
@@ -282,12 +284,13 @@ func TestNpmProxyConfig_Validate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.config.Validate()
-			
+
 			if tt.expectError {
 				require.Error(t, err)
 				t.Logf("Got error: %v (type: %T)", err, err)
 				if tt.errorField != "" {
-					validationErr, ok := err.(*ValidationError)
+					validationErr := &ValidationError{}
+					ok := errors.As(err, &validationErr)
 					require.True(t, ok, "Expected ValidationError, got: %T", err)
 					assert.Equal(t, tt.errorField, validationErr.Field)
 				}
@@ -498,12 +501,13 @@ func TestUnifiedConfig_Validate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.config.Validate()
-			
+
 			if tt.expectError {
 				require.Error(t, err)
 				t.Logf("Got error: %v (type: %T)", err, err)
 				if tt.errorField != "" {
-					validationErr, ok := err.(*ValidationError)
+					validationErr := &ValidationError{}
+					ok := errors.As(err, &validationErr)
 					require.True(t, ok, "Expected ValidationError, got: %T", err)
 					assert.Equal(t, tt.errorField, validationErr.Field)
 				}

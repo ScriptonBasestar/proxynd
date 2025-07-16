@@ -158,6 +158,18 @@ func validatePort(fl validator.FieldLevel) bool {
 	return value >= 1 && value <= 65535
 }
 
+// ValidationError represents a validation error with detailed information
+type ValidationError struct {
+	Field   string
+	Message string
+	Value   interface{}
+}
+
+func (e *ValidationError) Error() string {
+	return fmt.Sprintf("validation failed for field '%s': %s (value: %v)",
+		e.Field, e.Message, e.Value)
+}
+
 // Validatable interface for configs that implement their own validation
 type Validatable interface {
 	Validate() error

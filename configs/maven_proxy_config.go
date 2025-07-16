@@ -1,18 +1,20 @@
 package configs
 
 import (
+	"fmt"
 	"path"
+	"strings"
 
 	"proxynd/helpers"
 )
 
 type MavenProxyServer struct {
-	Id          string     `yaml:"id,omitempty" validate:"omitempty,min=1,max=100"`
-	Name        string     `yaml:"name" validate:"required,min=1,max=100"`
-	URL         string     `yaml:"url,omitempty" validate:"required,url"`
-	Description string     `yaml:"description" validate:"omitempty,max=500"`
-	Enabled     bool       `yaml:"enabled,omitempty" default:"true"`
-	BasicAuth   BasicAuth  `yaml:"basic_auth,omitempty"`
+	Id          string    `yaml:"id,omitempty" validate:"omitempty,min=1,max=100"`
+	Name        string    `yaml:"name" validate:"required,min=1,max=100"`
+	URL         string    `yaml:"url,omitempty" validate:"required,url"`
+	Description string    `yaml:"description" validate:"omitempty,max=500"`
+	Enabled     bool      `yaml:"enabled,omitempty" default:"true"`
+	BasicAuth   BasicAuth `yaml:"basic_auth,omitempty"`
 }
 
 type BasicAuth struct {
@@ -46,5 +48,60 @@ func (cfg *MavenProxyConfig) ReadConfig() error {
 
 // Validate validates the Maven proxy configuration
 func (cfg *MavenProxyConfig) Validate() error {
-	return ValidateStruct(cfg)
+	// 기본 필드 검증
+	if cfg.Path == "" {
+		return &ValidationError{
+			Field:   "path",
+			Message: "프록시 경로가 설정되지 않음",
+			Value:   cfg.Path,
+		}
+	}
+
+	// 프록시가 없는 경우 검증
+	if len(cfg.Proxies) == 0 {
+		return &ValidationError{
+			Field:   "proxies",
+			Message: "Maven 프록시가 활성화되어 있으나 서버가 설정되지 않음",
+			Value:   cfg.Proxies,
+		}
+	}
+
+	// 각 프록시 서버 검증
+	for i, proxy := range cfg.Proxies {
+		if proxy.Name == "" {
+			return &ValidationError{
+				Field:   fmt.Sprintf("proxies[%d].name", i),
+				Message: "프록시 서버 이름이 비어 있음",
+				Value:   proxy.Name,
+			}
+		}
+
+		if proxy.URL == "" {
+			return &ValidationError{
+				Field:   fmt.Sprintf("proxies[%d].url", i),
+				Message: "프록시 서버 URL이 비어 있음",
+				Value:   proxy.URL,
+			}
+		}
+
+		// URL 형식 검증
+		if !strings.HasPrefix(proxy.URL, "http://") && !strings.HasPrefix(proxy.URL, "https://") {
+			return &ValidationError{
+				Field:   fmt.Sprintf("proxies[%d].url", i),
+				Message: "잘못된 프록시 서버 URL 형식",
+				Value:   proxy.URL,
+			}
+		}
+
+		// Basic Auth 검증
+		if proxy.BasicAuth.Username != "" && proxy.BasicAuth.Password == "" {
+			return &ValidationError{
+				Field:   fmt.Sprintf("proxies[%d].basic_auth.password", i),
+				Message: "사용자명이 설정되었으나 비밀번호가 비어 있음",
+				Value:   proxy.BasicAuth.Password,
+			}
+		}
+	}
+
+	return nil
 }

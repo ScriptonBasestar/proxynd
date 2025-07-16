@@ -19,30 +19,30 @@ repos:
       # Remove trailing whitespace
       - id: trailing-whitespace
         args: [--markdown-linebreak-ext=md]
-      
+
       # Ensure files end with a newline
       - id: end-of-file-fixer
         exclude: ^(vendor/|testdata/)
-      
+
       # Check yaml files
       - id: check-yaml
         args: [--allow-multiple-documents]
         exclude: ^(helm/|k8s/)
-      
+
       # Prevent large files from being committed
       - id: check-added-large-files
         args: ['--maxkb=1000']
-      
+
       # Check for merge conflicts
       - id: check-merge-conflict
-      
+
       # Check json files
       - id: check-json
         exclude: ^(vendor/|testdata/)
-      
+
       # Detect private keys
       - id: detect-private-key
-      
+
       # Ensure consistent line endings
       - id: mixed-line-ending
         args: [--fix=lf]
@@ -53,17 +53,17 @@ repos:
     hooks:
       # Format Go code
       - id: go-fmt
-      
+
       # Organize imports
       - id: go-imports
         args: [-w, -local, proxynd]
-      
+
       # Run go vet
       - id: go-vet
-      
+
       # Ensure go.mod is tidy
       - id: go-mod-tidy
-      
+
       # Run short tests
       - id: go-unit-tests
         args: [-short]
@@ -87,7 +87,7 @@ repos:
         entry: bash -c '! grep -q "^replace" go.mod || (echo "go.mod contains replace directives" && exit 1)'
         language: system
         files: go.mod
-      
+
       # Ensure generated files are committed
       - id: go-generate
         name: Check go generate
@@ -95,17 +95,17 @@ repos:
         language: system
         files: \.go$
         pass_filenames: false
-      
+
       # Check for problematic patterns
       - id: check-fmt-print
         name: Check for fmt.Print statements
         entry: bash -c '! grep -rn "fmt\.Print" --include="*.go" . | grep -v "_test\.go" | grep -v "vendor/" || (echo "Found fmt.Print statements (use structured logging instead)" && exit 1)'
         language: system
         pass_filenames: false
-      
+
       # Check TODO format
       - id: todo-format
         name: Check TODO format
-        entry: bash -c '! grep -rEn "TODO|FIXME" --include="*.go" . | grep -v "vendor/" | grep -v "// TODO(" || (echo "TODOs must include issue reference: // TODO(#123):" && exit 1)'
+        entry: bash -c '! grep -rEn "TODO|FIXME" --include="*.go" . | grep -v "vendor/" | grep -v "// TODO(" || (echo "TODOs must include issue reference like TODO(#123)" && exit 1)'
         language: system
         pass_filenames: false
