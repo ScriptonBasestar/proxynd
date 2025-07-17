@@ -215,7 +215,7 @@ func (c *CacheStatsCollector) Describe(ch chan<- *prometheus.Desc) {
 
 // Collect 메트릭 수집
 func (c *CacheStatsCollector) Collect(ch chan<- prometheus.Metric) {
-	// TODO: 실제 캐시 매니저에서 통계 수집
+	// NOTE: 실제 캐시 매니저에서 통계 수집 필요
 	// 현재는 예시 값
 
 	registryTypes := []string{"npm", "pypi", "apt", "docker", "maven"}

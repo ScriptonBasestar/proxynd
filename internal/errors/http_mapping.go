@@ -6,26 +6,26 @@ import "github.com/gofiber/fiber/v2"
 var errorToHTTPStatus = map[string]int{
 	// APT 에러 매핑
 	"APT001": fiber.StatusNotFound,            // 패키지 미발견
-	"APT002": fiber.StatusServiceUnavailable, // 미러 서버 접근 불가
+	"APT002": fiber.StatusServiceUnavailable,  // 미러 서버 접근 불가
 	"APT003": fiber.StatusBadRequest,          // 잘못된 패키지 형식
 	"APT004": fiber.StatusForbidden,           // 프록시 비활성화
 	"APT005": fiber.StatusBadRequest,          // 잘못된 경로
 	"APT006": fiber.StatusInternalServerError, // 설정 파일 오류
 
 	// Maven 에러 매핑
-	"MVN001": fiber.StatusNotFound,              // 아티팩트 미발견
-	"MVN002": fiber.StatusUnprocessableEntity,   // 체크섬 불일치
-	"MVN003": fiber.StatusServiceUnavailable,    // 리포지토리 접근 불가
-	"MVN004": fiber.StatusForbidden,             // 프록시 비활성화
-	"MVN005": fiber.StatusBadRequest,            // 잘못된 아티팩트 경로
-	"MVN006": fiber.StatusInternalServerError,   // 설정 파일 오류
-	"MVN007": fiber.StatusBadGateway,            // SNAPSHOT 다운로드 실패
-	"MVN008": fiber.StatusBadRequest,            // 잘못된 아티팩트 형식
+	"MVN001": fiber.StatusNotFound,            // 아티팩트 미발견
+	"MVN002": fiber.StatusUnprocessableEntity, // 체크섬 불일치
+	"MVN003": fiber.StatusServiceUnavailable,  // 리포지토리 접근 불가
+	"MVN004": fiber.StatusForbidden,           // 프록시 비활성화
+	"MVN005": fiber.StatusBadRequest,          // 잘못된 아티팩트 경로
+	"MVN006": fiber.StatusInternalServerError, // 설정 파일 오류
+	"MVN007": fiber.StatusBadGateway,          // SNAPSHOT 다운로드 실패
+	"MVN008": fiber.StatusBadRequest,          // 잘못된 아티팩트 형식
 
 	// 캐시 에러 매핑
-	"CACHE001": fiber.StatusNotFound,             // 캐시 미발견
+	"CACHE001": fiber.StatusNotFound,            // 캐시 미발견
 	"CACHE002": fiber.StatusInsufficientStorage, // 저장 공간 부족
-	"CACHE003": fiber.StatusInternalServerError,  // 캐시 오류
+	"CACHE003": fiber.StatusInternalServerError, // 캐시 오류
 
 	// 시스템 에러 매핑
 	"SYSTEM001": fiber.StatusInternalServerError, // 일반 시스템 오류
@@ -41,7 +41,7 @@ func GetHTTPStatus(err error) int {
 		if status, exists := errorToHTTPStatus[domainErr.Code]; exists {
 			return status
 		}
-		
+
 		// 에러 레벨에 따른 기본 상태 코드
 		switch domainErr.Level {
 		case ErrorLevelWarning:
@@ -54,12 +54,12 @@ func GetHTTPStatus(err error) int {
 			return fiber.StatusInternalServerError
 		}
 	}
-	
+
 	// Fiber 에러 처리
 	if fiberErr, ok := err.(*fiber.Error); ok {
 		return fiberErr.Code
 	}
-	
+
 	// 기본 서버 오류
 	return fiber.StatusInternalServerError
 }

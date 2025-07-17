@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/scriptonbasestar/proxynd/internal/logging"
+	"proxynd/logging"
 )
 
 // PerformanceMiddleware provides comprehensive performance monitoring middleware

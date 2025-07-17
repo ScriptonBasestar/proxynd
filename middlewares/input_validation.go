@@ -443,7 +443,7 @@ func validateAdvancedSecurity(
 		bodyBytes := c.Body()
 		if len(bodyBytes) > 0 {
 			bodyStr := strings.ToLower(string(bodyBytes))
-			
+
 			// SQL 인젝션 패턴 검사
 			for _, pattern := range sqlPatterns {
 				if strings.Contains(bodyStr, pattern) {
@@ -491,7 +491,7 @@ func validateAdvancedSecurity(
 func validateHTTPHeaders(c *fiber.Ctx, cfg ValidationConfig, logger logging.Logger, xssPatterns []string) error {
 	// 중요한 헤더들 검증
 	headers := []string{"Referer", "X-Forwarded-For", "X-Real-IP", "Authorization"}
-	
+
 	for _, headerName := range headers {
 		headerValue := strings.ToLower(c.Get(headerName))
 		if headerValue == "" {
@@ -531,7 +531,7 @@ func validateHTTPHeaders(c *fiber.Ctx, cfg ValidationConfig, logger logging.Logg
 // validateContentType Content-Type 검증
 func validateContentType(c *fiber.Ctx, cfg ValidationConfig, logger logging.Logger) error {
 	contentType := strings.ToLower(c.Get("Content-Type"))
-	
+
 	// POST/PUT 요청에 대한 Content-Type 검증
 	if (c.Method() == MethodPOST || c.Method() == MethodPUT) && len(c.Body()) > 0 {
 		allowedContentTypes := []string{
@@ -573,7 +573,7 @@ func IPValidation(blockedCIDRs []string, allowedCIDRs []string) fiber.Handler {
 
 	return func(c *fiber.Ctx) error {
 		clientIP := c.IP()
-		
+
 		// 차단된 CIDR 확인
 		for _, cidr := range blockedCIDRs {
 			if isIPInCIDR(clientIP, cidr) {
@@ -596,7 +596,7 @@ func IPValidation(blockedCIDRs []string, allowedCIDRs []string) fiber.Handler {
 					break
 				}
 			}
-			
+
 			if !allowed {
 				logger.Warn("Request from non-allowed IP range",
 					logging.F("client_ip", clientIP),
@@ -616,16 +616,16 @@ func isIPInCIDR(ip, cidr string) bool {
 	if !strings.Contains(cidr, "/") {
 		return ip == cidr
 	}
-	
+
 	clientIP := net.ParseIP(ip)
 	if clientIP == nil {
 		return false
 	}
-	
+
 	_, ipNet, err := net.ParseCIDR(cidr)
 	if err != nil {
 		return false
 	}
-	
+
 	return ipNet.Contains(clientIP)
 }

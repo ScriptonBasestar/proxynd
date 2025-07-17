@@ -118,16 +118,16 @@ type PluginRegistry interface {
 
 // PluginMetadata 플러그인 메타데이터
 type PluginMetadata struct {
-	Type        string            `json:"type" yaml:"type"`
-	Name        string            `json:"name" yaml:"name"`
-	Version     string            `json:"version" yaml:"version"`
-	Description string            `json:"description" yaml:"description"`
-	Author      string            `json:"author" yaml:"author"`
-	Homepage    string            `json:"homepage,omitempty" yaml:"homepage,omitempty"`
-	License     string            `json:"license,omitempty" yaml:"license,omitempty"`
-	Tags        []string          `json:"tags,omitempty" yaml:"tags,omitempty"`
-	Config      map[string]string `json:"config,omitempty" yaml:"config,omitempty"`
-	Dependencies []string         `json:"dependencies,omitempty" yaml:"dependencies,omitempty"`
+	Type         string            `json:"type" yaml:"type"`
+	Name         string            `json:"name" yaml:"name"`
+	Version      string            `json:"version" yaml:"version"`
+	Description  string            `json:"description" yaml:"description"`
+	Author       string            `json:"author" yaml:"author"`
+	Homepage     string            `json:"homepage,omitempty" yaml:"homepage,omitempty"`
+	License      string            `json:"license,omitempty" yaml:"license,omitempty"`
+	Tags         []string          `json:"tags,omitempty" yaml:"tags,omitempty"`
+	Config       map[string]string `json:"config,omitempty" yaml:"config,omitempty"`
+	Dependencies []string          `json:"dependencies,omitempty" yaml:"dependencies,omitempty"`
 }
 
 // Plugin 플러그인 인터페이스

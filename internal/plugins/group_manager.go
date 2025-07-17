@@ -136,7 +136,7 @@ func (m *DefaultGroupManager) HealthCheckGroup(ctx context.Context, upstreams []
 			defer wg.Done()
 
 			healthy := m.checkSingleUpstream(ctx, upstream)
-			
+
 			mu.Lock()
 			healthResults[upstream.URL] = healthy
 			mu.Unlock()
@@ -152,7 +152,7 @@ func (m *DefaultGroupManager) fetchFromGroup(ctx context.Context, path string, u
 	if parallel {
 		return m.fetchParallel(ctx, path, upstreams)
 	}
-	
+
 	return m.fetchSequential(ctx, path, upstreams)
 }
 
@@ -204,7 +204,7 @@ func (m *DefaultGroupManager) fetchSequential(ctx context.Context, path string, 
 // fetchFromSingleUpstream 단일 업스트림에서 가져오기
 func (m *DefaultGroupManager) fetchFromSingleUpstream(ctx context.Context, path string, upstream UpstreamConfig) GroupResult {
 	start := time.Now()
-	
+
 	result := GroupResult{
 		UpstreamURL: upstream.URL,
 		Headers:     make(map[string]string),
@@ -307,7 +307,7 @@ func (m *DefaultGroupManager) syncPackages(ctx context.Context, mirror MirrorCon
 	m.logger.Info("Package sync completed",
 		logging.F("mirror_url", mirror.URL),
 		logging.F("package_count", len(packages)))
-	
+
 	return nil
 }
 

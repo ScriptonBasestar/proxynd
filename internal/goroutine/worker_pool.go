@@ -62,7 +62,7 @@ func NewWorkerPool(ctx context.Context, config *WorkerPoolConfig) *WorkerPool {
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
-	
+
 	return &WorkerPool{
 		ctx:       ctx,
 		cancel:    cancel,
@@ -102,7 +102,7 @@ func (p *WorkerPool) worker(id int) {
 			if !ok {
 				return
 			}
-			
+
 			// 작업 실행
 			if err := task.Execute(p.ctx); err != nil {
 				select {

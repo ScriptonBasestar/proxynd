@@ -61,7 +61,7 @@ func SetupTestEnvironment(t *testing.T) *TestEnvironment {
 	os.Setenv("STORAGE_DIR", storageDir)
 	os.Setenv("CACHE_DIR", cacheDir)
 	os.Setenv("LOG_DIR", logDir)
-	os.Setenv("SERVER_PORT", "0") // 임의 포트 사용
+	os.Setenv("SERVER_PORT", "0")   // 임의 포트 사용
 	os.Setenv("LOG_LEVEL", "error") // 테스트 시 로그 최소화
 
 	env := &TestEnvironment{
@@ -202,7 +202,7 @@ func WaitForCondition(t *testing.T, condition func() bool, timeout time.Duration
 // CaptureLogs 로그 캡처 (테스트용)
 func CaptureLogs(t *testing.T, fn func()) string {
 	t.Helper()
-	
+
 	// 임시 파일로 로그 리다이렉트
 	tempFile, err := os.CreateTemp("", "test-logs-*")
 	if err != nil {
@@ -234,7 +234,7 @@ func CaptureLogs(t *testing.T, fn func()) string {
 // MockProxyUpstream 테스트용 업스트림 서버 모킹
 func MockProxyUpstream(t *testing.T, responses map[string]string) *httptest.Server {
 	t.Helper()
-	
+
 	return MockHTTPServer(t, func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path
 		if response, exists := responses[path]; exists {
@@ -268,14 +268,14 @@ func AssertHTTPHeader(t *testing.T, resp *http.Response, headerName, expectedVal
 // RunWithTimeout 타임아웃이 있는 함수 실행
 func RunWithTimeout(t *testing.T, timeout time.Duration, fn func()) {
 	t.Helper()
-	
+
 	done := make(chan bool, 1)
-	
+
 	go func() {
 		fn()
 		done <- true
 	}()
-	
+
 	select {
 	case <-done:
 		// 정상 완료

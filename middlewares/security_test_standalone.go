@@ -1,10 +1,10 @@
 package middlewares
 
 import (
-	"testing"
+	"bytes"
 	"net/http/httptest"
 	"strings"
-	"bytes"
+	"testing"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/stretchr/testify/assert"
@@ -14,15 +14,15 @@ import (
 // Standalone tests without logging dependencies
 func TestSecurityHeadersStandalone(t *testing.T) {
 	app := fiber.New()
-	
+
 	// Use basic security headers without logging
 	app.Use(func(c *fiber.Ctx) error {
 		c.Set("X-Content-Type-Options", "nosniff")
-		c.Set("X-Frame-Options", "DENY") 
+		c.Set("X-Frame-Options", "DENY")
 		c.Set("X-XSS-Protection", "1; mode=block")
 		return c.Next()
 	})
-	
+
 	app.Get("/test", func(c *fiber.Ctx) error {
 		return c.SendString("OK")
 	})
@@ -30,7 +30,7 @@ func TestSecurityHeadersStandalone(t *testing.T) {
 	req := httptest.NewRequest("GET", "/test", nil)
 	resp, err := app.Test(req)
 	require.NoError(t, err)
-	
+
 	assert.Equal(t, 200, resp.StatusCode)
 	assert.Equal(t, "nosniff", resp.Header.Get("X-Content-Type-Options"))
 	assert.Equal(t, "DENY", resp.Header.Get("X-Frame-Options"))
@@ -39,7 +39,7 @@ func TestSecurityHeadersStandalone(t *testing.T) {
 
 func TestBasicInputValidationStandalone(t *testing.T) {
 	app := fiber.New()
-	
+
 	// Simple input validation without dependencies
 	app.Use(func(c *fiber.Ctx) error {
 		// Check for basic XSS patterns
@@ -49,7 +49,7 @@ func TestBasicInputValidationStandalone(t *testing.T) {
 		}
 		return c.Next()
 	})
-	
+
 	app.Post("/test", func(c *fiber.Ctx) error {
 		return c.SendString("OK")
 	})
@@ -75,7 +75,7 @@ func TestBasicInputValidationStandalone(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			req := httptest.NewRequest("POST", "/test", strings.NewReader(tt.body))
 			req.Header.Set("Content-Type", "application/json")
-			
+
 			resp, err := app.Test(req)
 			require.NoError(t, err)
 			assert.Equal(t, tt.expectedStatus, resp.StatusCode)
@@ -85,11 +85,11 @@ func TestBasicInputValidationStandalone(t *testing.T) {
 
 func TestSimpleRateLimitStandalone(t *testing.T) {
 	app := fiber.New()
-	
+
 	// Simple counter-based rate limiting
 	requestCount := 0
 	maxRequests := 2
-	
+
 	app.Use(func(c *fiber.Ctx) error {
 		requestCount++
 		if requestCount > maxRequests {
@@ -97,7 +97,7 @@ func TestSimpleRateLimitStandalone(t *testing.T) {
 		}
 		return c.Next()
 	})
-	
+
 	app.Get("/test", func(c *fiber.Ctx) error {
 		return c.SendString("OK")
 	})
@@ -123,12 +123,12 @@ func TestSimpleRateLimitStandalone(t *testing.T) {
 
 func TestCORSHeadersStandalone(t *testing.T) {
 	app := fiber.New()
-	
+
 	allowedOrigins := []string{"https://example.com"}
-	
+
 	app.Use(func(c *fiber.Ctx) error {
 		origin := c.Get("Origin")
-		
+
 		isAllowed := false
 		for _, allowed := range allowedOrigins {
 			if origin == allowed {
@@ -136,20 +136,20 @@ func TestCORSHeadersStandalone(t *testing.T) {
 				break
 			}
 		}
-		
+
 		if isAllowed {
 			c.Set("Access-Control-Allow-Origin", origin)
 		} else {
 			c.Set("Access-Control-Allow-Origin", "null")
 		}
-		
+
 		if c.Method() == "OPTIONS" {
 			return c.SendStatus(204)
 		}
-		
+
 		return c.Next()
 	})
-	
+
 	app.Get("/test", func(c *fiber.Ctx) error {
 		return c.SendString("OK")
 	})
@@ -175,10 +175,10 @@ func TestCORSHeadersStandalone(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			req := httptest.NewRequest("GET", "/test", nil)
 			req.Header.Set("Origin", tt.origin)
-			
+
 			resp, err := app.Test(req)
 			require.NoError(t, err)
-			
+
 			assert.Equal(t, 200, resp.StatusCode)
 			assert.Equal(t, tt.expectedOrigin, resp.Header.Get("Access-Control-Allow-Origin"))
 		})
@@ -187,13 +187,13 @@ func TestCORSHeadersStandalone(t *testing.T) {
 
 func TestContentTypeValidationStandalone(t *testing.T) {
 	app := fiber.New()
-	
+
 	allowedTypes := []string{"application/json", "application/xml", "text/plain"}
-	
+
 	app.Use(func(c *fiber.Ctx) error {
 		if c.Method() == "POST" && len(c.Body()) > 0 {
 			contentType := c.Get("Content-Type")
-			
+
 			isValid := false
 			for _, allowed := range allowedTypes {
 				if strings.HasPrefix(contentType, allowed) {
@@ -201,14 +201,14 @@ func TestContentTypeValidationStandalone(t *testing.T) {
 					break
 				}
 			}
-			
+
 			if !isValid {
 				return c.Status(400).JSON(fiber.Map{"error": "Invalid content type"})
 			}
 		}
 		return c.Next()
 	})
-	
+
 	app.Post("/test", func(c *fiber.Ctx) error {
 		return c.SendString("OK")
 	})
@@ -243,7 +243,7 @@ func TestContentTypeValidationStandalone(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			req := httptest.NewRequest("POST", "/test", bytes.NewReader([]byte(tt.body)))
 			req.Header.Set("Content-Type", tt.contentType)
-			
+
 			resp, err := app.Test(req)
 			require.NoError(t, err)
 			assert.Equal(t, tt.expectedStatus, resp.StatusCode)

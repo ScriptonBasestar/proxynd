@@ -15,7 +15,7 @@ func TestSafeJoinPath(t *testing.T) {
 		{"Simple file", "/var/cache", "package.tar.gz", false},
 		{"Nested path", "/var/cache", "ubuntu/focal/package.deb", false},
 		{"With dot", "/var/cache", "./file.txt", false},
-		
+
 		// Attack attempts
 		{"Simple traversal", "/var/cache", "../etc/passwd", true},
 		{"Double traversal", "/var/cache", "../../etc/passwd", true},
@@ -25,7 +25,7 @@ func TestSafeJoinPath(t *testing.T) {
 		{"Hidden traversal", "/var/cache", ".../.../etc/passwd", true},
 		{"Unicode traversal", "/var/cache", "..%c0%af../etc/passwd", true},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := SafeJoinPath(tt.basePath, tt.userPath)
@@ -48,7 +48,7 @@ func TestValidateFilename(t *testing.T) {
 		{"With backslash", "path\\to\\file", true},
 		{"With null byte", "file\x00.txt", true},
 	}
-	
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := ValidateFilename(tt.filename)

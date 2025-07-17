@@ -443,7 +443,7 @@ func (c *UnifiedConfig) Validate() error {
 				Value:   c.Server.TLS.CertFile,
 			}
 		}
-		
+
 		if c.Server.TLS.KeyFile == "" {
 			return &ValidationError{
 				Field:   "server.tls.key_file",
@@ -532,7 +532,7 @@ func (c *UnifiedConfig) Validate() error {
 				Value:   c.Metrics.Port,
 			}
 		}
-		
+
 		// 메트릭 포트가 서버 포트와 겹치지 않도록 검증
 		if c.Metrics.Port == c.Server.Port {
 			return &ValidationError{
@@ -624,7 +624,7 @@ func parseInt(s string) (int, error) {
 	if s == "" {
 		return 0, nil
 	}
-	
+
 	// 간단한 숫자 변환 (실제로는 strconv.Atoi 사용해야 함)
 	result := 0
 	for _, char := range s {

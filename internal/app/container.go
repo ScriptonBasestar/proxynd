@@ -60,21 +60,21 @@ func NewContainer(cfg *Config) *Container {
 		configChangeCbs: make([]func(*configs.UnifiedConfig), 0),
 		configNotifier:  NewConfigChangeNotifier(),
 	}
-	
+
 	// ConfigLoader 초기화 (기본 설정 파일 경로 사용)
 	configPath := filepath.Join(cfg.ConfigDir, "config.yaml")
 	container.configLoader = configs.NewConfigLoader(configPath)
-	
+
 	// 초기 설정 로드
 	if unifiedConfig, err := container.configLoader.Load(); err == nil {
 		container.configCache = unifiedConfig
 	} else {
 		container.logger.Error("Failed to load initial config", logging.F("error", err))
 	}
-	
+
 	// 설정 파일 감시 시작
 	container.startConfigWatcher()
-	
+
 	return container
 }
 
@@ -99,53 +99,53 @@ func (c *Container) GetUnifiedConfig() *configs.UnifiedConfig {
 func (c *Container) ReloadConfig() error {
 	c.configCacheMu.Lock()
 	defer c.configCacheMu.Unlock()
-	
+
 	// configLoader가 nil인지 확인
 	if c.configLoader == nil {
 		c.logger.Error("Config loader is nil, cannot reload config")
 		return fmt.Errorf("config loader is nil")
 	}
-	
+
 	// 새 설정 로드
 	newConfig, err := c.configLoader.Load()
 	if err != nil {
 		c.logger.Error("Failed to reload config", logging.F("error", err))
 		return err
 	}
-	
+
 	// 설정 검증
 	if validationErrors := configs.ValidateConfig(newConfig); len(validationErrors) > 0 {
 		c.logger.Error("Config validation failed", logging.F("errors", validationErrors))
 		return fmt.Errorf("config validation failed: %v", validationErrors)
 	}
-	
+
 	// 기존 설정과 비교하여 변경된 경우에만 업데이트
 	if c.configCache == nil || !c.isConfigEqual(c.configCache, newConfig) {
 		oldConfig := c.configCache
 		c.configCache = newConfig
-		
+
 		c.logger.Info("Configuration reloaded successfully")
-		
+
 		// 변경 콜백 실행
 		c.notifyConfigChange(newConfig)
-		
+
 		// 새로운 알림 시스템을 통한 알림
 		if c.configNotifier != nil {
 			c.configNotifier.NotifyChange(newConfig)
 		}
-		
+
 		// 서비스 팩토리에 설정 변경 알림
 		if c.serviceFactory != nil {
 			c.serviceFactory.ReloadServices()
 		}
-		
+
 		if oldConfig == nil {
 			c.logger.Info("Initial configuration loaded")
 		} else {
 			c.logger.Info("Configuration updated")
 		}
 	}
-	
+
 	return nil
 }
 
@@ -154,7 +154,7 @@ func (c *Container) AddConfigChangeCallback(callback func(*configs.UnifiedConfig
 	c.configCacheMu.Lock()
 	defer c.configCacheMu.Unlock()
 	c.configChangeCbs = append(c.configChangeCbs, callback)
-	
+
 	// 새로운 알림 시스템에도 추가
 	c.configNotifier.AddListener(callback)
 }
@@ -177,41 +177,41 @@ func (c *Container) startConfigWatcher() {
 		c.logger.Error("Failed to create config watcher", logging.F("error", err))
 		return
 	}
-	
+
 	c.configWatcher = watcher
-	
+
 	// 설정 디렉토리 감시
 	err = watcher.Add(c.config.ConfigDir)
 	if err != nil {
 		c.logger.Error("Failed to watch config directory", logging.F("error", err))
 		return
 	}
-	
+
 	// 고루틴에서 파일 변경 감지
 	go func() {
 		defer watcher.Close()
-		
+
 		for {
 			select {
 			case event, ok := <-watcher.Events:
 				if !ok {
 					return
 				}
-				
+
 				// YAML 파일 변경 감지
-				if event.Op&fsnotify.Write == fsnotify.Write && 
+				if event.Op&fsnotify.Write == fsnotify.Write &&
 					(strings.HasSuffix(event.Name, ".yaml") || strings.HasSuffix(event.Name, ".yml")) {
 					c.logger.Info("Config file changed", logging.F("file", event.Name))
-					
+
 					// 약간의 지연 후 리로드 (파일 쓰기 완료 대기)
 					time.Sleep(100 * time.Millisecond)
-					
+
 					// configLoader가 여전히 유효한지 확인
 					c.configCacheMu.RLock()
 					if c.configLoader != nil && c.configNotifier != nil {
 						c.configCacheMu.RUnlock()
 						if err := c.ReloadConfig(); err != nil {
-							c.logger.Error("Failed to reload config after file change", 
+							c.logger.Error("Failed to reload config after file change",
 								logging.F("error", err), logging.F("file", event.Name))
 						}
 					} else {
@@ -220,7 +220,7 @@ func (c *Container) startConfigWatcher() {
 						return // 정리되었으므로 고루틴 종료
 					}
 				}
-				
+
 			case err, ok := <-watcher.Errors:
 				if !ok {
 					return
@@ -402,29 +402,29 @@ func (c *Container) GetHandlerFactory() (types.ProxyHandlerFactory, error) {
 
 	// Register all handlers (commented out until handlers are implemented)
 	/*
-	// Maven
-	if err := factory.RegisterHandler(
-		types.ProxyTypeMaven,
-		proxyHandlers.MavenHandlerCreator(serviceFactory),
-	); err != nil {
-		return nil, fmt.Errorf("failed to register Maven handler: %w", err)
-	}
+		// Maven
+		if err := factory.RegisterHandler(
+			types.ProxyTypeMaven,
+			proxyHandlers.MavenHandlerCreator(serviceFactory),
+		); err != nil {
+			return nil, fmt.Errorf("failed to register Maven handler: %w", err)
+		}
 
-	// APT
-	if err := factory.RegisterHandler(
-		types.ProxyTypeAPT,
-		proxyHandlers.AptHandlerCreator(serviceFactory),
-	); err != nil {
-		return nil, fmt.Errorf("failed to register APT handler: %w", err)
-	}
+		// APT
+		if err := factory.RegisterHandler(
+			types.ProxyTypeAPT,
+			proxyHandlers.AptHandlerCreator(serviceFactory),
+		); err != nil {
+			return nil, fmt.Errorf("failed to register APT handler: %w", err)
+		}
 
-	// NPM
-	if err := factory.RegisterHandler(
-		types.ProxyTypeNPM,
-		proxyHandlers.NpmHandlerCreator(serviceFactory),
-	); err != nil {
-		return nil, fmt.Errorf("failed to register NPM handler: %w", err)
-	}
+		// NPM
+		if err := factory.RegisterHandler(
+			types.ProxyTypeNPM,
+			proxyHandlers.NpmHandlerCreator(serviceFactory),
+		); err != nil {
+			return nil, fmt.Errorf("failed to register NPM handler: %w", err)
+		}
 	*/
 
 	// TODO: Register other handlers (Docker, PIP, YUM, APK)
@@ -440,18 +440,18 @@ func (c *Container) GetUnifiedRouter() (interface{}, error) {
 
 	// TODO: Implement unified router when handlers are ready
 	/*
-	if c.unifiedRouter != nil {
-		return c.unifiedRouter, nil
-	}
+		if c.unifiedRouter != nil {
+			return c.unifiedRouter, nil
+		}
 
-	// Get service factory
-	serviceFactory, err := c.GetServiceFactory()
-	if err != nil {
-		return nil, err
-	}
+		// Get service factory
+		serviceFactory, err := c.GetServiceFactory()
+		if err != nil {
+			return nil, err
+		}
 
-	// Create unified router
-	c.unifiedRouter = proxyHandlers.NewUnifiedProxyRouter(serviceFactory)
+		// Create unified router
+		c.unifiedRouter = proxyHandlers.NewUnifiedProxyRouter(serviceFactory)
 	*/
 	return nil, fmt.Errorf("unified router not implemented yet")
 }
@@ -506,13 +506,13 @@ func (c *Container) Close() error {
 	c.configCache = nil
 	c.configLoader = nil
 	c.configChangeCbs = nil
-	
+
 	// 설정 변경 알림자 정리
 	if c.configNotifier != nil {
 		c.configNotifier.ClearListeners()
 		c.configNotifier = nil
 	}
-	
+
 	// c.unifiedRouter = nil // Commented out since field is removed
 	c.singletons = make(map[string]interface{})
 

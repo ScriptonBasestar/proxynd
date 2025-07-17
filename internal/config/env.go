@@ -5,51 +5,51 @@ import (
 	"os"
 	"strconv"
 	"sync"
-	
+
 	"github.com/joho/godotenv"
 )
 
 // Env holds all environment variables
 type Env struct {
 	mu sync.RWMutex
-	
+
 	// Server
 	ServerHost string
 	ServerPort string
 	ServerEnv  string
 	ConfigDir  string
 	StorageDir string
-	
+
 	// Database
 	Database DatabaseConfig
-	
+
 	// Redis
 	Redis RedisConfig
-	
+
 	// JWT
 	JWT JWTConfig
-	
+
 	// OAuth
 	OAuth OAuthConfig
-	
+
 	// Registries
 	Registries RegistryConfig
-	
+
 	// API Keys
 	APIKeys map[string]string
-	
+
 	// Security
 	Security SecurityConfig
-	
+
 	// Cache
 	Cache CacheConfig
-	
+
 	// Logging
 	Logging LogConfig
-	
+
 	// Metrics
 	Metrics MetricsConfig
-	
+
 	// Development
 	Development DevConfig
 }
@@ -72,9 +72,9 @@ type RedisConfig struct {
 }
 
 type JWTConfig struct {
-	Secret             string
-	ExpiryHours        int
-	RefreshExpireDays  int
+	Secret            string
+	ExpiryHours       int
+	RefreshExpireDays int
 }
 
 type OAuthConfig struct {
@@ -137,14 +137,14 @@ func Load() (*Env, error) {
 	once.Do(func() {
 		// Load .env file if exists
 		_ = godotenv.Load()
-		
+
 		env = &Env{
 			ServerHost: getEnvOrDefault("SERVER_HOST", "0.0.0.0"),
 			ServerPort: getEnvOrDefault("SERVER_PORT", "8080"),
 			ServerEnv:  getEnvOrDefault("SERVER_ENV", "development"),
 			ConfigDir:  getEnvOrDefault("CONFIG_DIR", "./tmp/config"),
 			StorageDir: getEnvOrDefault("STORAGE_DIR", "./tmp/storage"),
-			
+
 			Database: DatabaseConfig{
 				Host:     getEnvOrDefault("DB_HOST", "localhost"),
 				Port:     getEnvOrDefault("DB_PORT", "5432"),
@@ -153,7 +153,7 @@ func Load() (*Env, error) {
 				Name:     getEnvOrDefault("DB_NAME", "proxynd_db"),
 				SSLMode:  getEnvOrDefault("DB_SSL_MODE", "disable"),
 			},
-			
+
 			Redis: RedisConfig{
 				Host:     getEnvOrDefault("REDIS_HOST", "localhost"),
 				Port:     getEnvOrDefault("REDIS_PORT", "6379"),
@@ -161,13 +161,13 @@ func Load() (*Env, error) {
 				DB:       getEnvAsInt("REDIS_DB", 0),
 				URL:      getEnvOrDefault("REDIS_URL", "redis://localhost:6379"),
 			},
-			
+
 			JWT: JWTConfig{
 				Secret:            getJWTSecret(),
 				ExpiryHours:       getEnvAsInt("JWT_EXPIRY_HOURS", 24),
 				RefreshExpireDays: getEnvAsInt("JWT_REFRESH_EXPIRE_DAYS", 7),
 			},
-			
+
 			OAuth: OAuthConfig{
 				Github: OAuthProvider{
 					ClientID:     os.Getenv("OAUTH_GITHUB_CLIENT_ID"),
@@ -182,7 +182,7 @@ func Load() (*Env, error) {
 					ClientSecret: os.Getenv("OAUTH_GOOGLE_CLIENT_SECRET"),
 				},
 			},
-			
+
 			Registries: RegistryConfig{
 				Maven: RegistryCredentials{
 					Username: os.Getenv("REGISTRY_MAVEN_USERNAME"),
@@ -196,46 +196,46 @@ func Load() (*Env, error) {
 					Password: os.Getenv("REGISTRY_DOCKER_PASSWORD"),
 				},
 			},
-			
+
 			APIKeys: map[string]string{
 				"nexus":       os.Getenv("API_KEY_NEXUS"),
 				"artifactory": os.Getenv("API_KEY_ARTIFACTORY"),
 				"harbor":      os.Getenv("API_KEY_HARBOR"),
 			},
-			
+
 			Security: SecurityConfig{
 				EncryptionKey: getSecurityKey("ENCRYPTION_KEY"),
 				SigningKey:    getSecurityKey("SIGNING_KEY"),
 			},
-			
+
 			Cache: CacheConfig{
 				Type:    getEnvOrDefault("CACHE_TYPE", "filesystem"),
 				TTL:     getEnvAsInt("CACHE_TTL", 3600),
 				MaxSize: getEnvAsInt("CACHE_MAX_SIZE", 1024),
 			},
-			
+
 			Logging: LogConfig{
 				Level:  getEnvOrDefault("LOG_LEVEL", "info"),
 				Format: getEnvOrDefault("LOG_FORMAT", "json"),
 			},
-			
+
 			Metrics: MetricsConfig{
 				Enabled: getEnvAsBool("METRICS_ENABLED", true),
 				Port:    getEnvOrDefault("METRICS_PORT", "9090"),
 			},
-			
+
 			Development: DevConfig{
 				Debug:     getEnvAsBool("DEBUG", false),
 				HotReload: getEnvAsBool("HOT_RELOAD", true),
 			},
 		}
-		
+
 		// Validate required fields in production
 		if env.ServerEnv == "production" {
 			err = env.validateProduction()
 		}
 	})
-	
+
 	return env, err
 }
 
@@ -322,7 +322,7 @@ func getJWTSecret() string {
 		fmt.Printf("WARNING: Using default JWT secret for development. Set JWT_SECRET in production.\n")
 		return "default-jwt-secret-for-development-only"
 	}
-	
+
 	// Validate minimum length
 	if len(secret) < 32 {
 		if os.Getenv("SERVER_ENV") == "production" {
@@ -331,11 +331,11 @@ func getJWTSecret() string {
 		}
 		fmt.Printf("WARNING: JWT_SECRET should be at least 32 characters long\n")
 	}
-	
+
 	return secret
 }
 
-// getSecurityKey returns security key with validation  
+// getSecurityKey returns security key with validation
 func getSecurityKey(key string) string {
 	value := os.Getenv(key)
 	if value == "" {
@@ -347,7 +347,7 @@ func getSecurityKey(key string) string {
 		fmt.Printf("WARNING: Using default %s for development. Set %s in production.\n", key, key)
 		return "default-key-for-development-only"
 	}
-	
+
 	// Validate minimum length
 	if len(value) < 32 {
 		if os.Getenv("SERVER_ENV") == "production" {
@@ -356,7 +356,7 @@ func getSecurityKey(key string) string {
 		}
 		fmt.Printf("WARNING: %s should be at least 32 characters long\n", key)
 	}
-	
+
 	return value
 }
 
@@ -369,14 +369,14 @@ func (e *Env) validateProduction() error {
 		"default-jwt-secret-for-development-only",
 		"default-key-for-development-only",
 	}
-	
+
 	for _, insecure := range insecureDefaults {
-		if e.JWT.Secret == insecure || 
-		   e.Security.EncryptionKey == insecure || 
-		   e.Security.SigningKey == insecure {
+		if e.JWT.Secret == insecure ||
+			e.Security.EncryptionKey == insecure ||
+			e.Security.SigningKey == insecure {
 			return fmt.Errorf("insecure default values detected in production environment")
 		}
 	}
-	
+
 	return nil
 }

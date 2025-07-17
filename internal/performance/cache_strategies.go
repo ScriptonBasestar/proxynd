@@ -6,7 +6,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/scriptonbasestar/proxynd/internal/logging"
+	"proxynd/logging"
 )
 
 // TTL Optimization Strategy
@@ -298,7 +298,7 @@ func (s *SizeOptimizationStrategy) Apply(ctx context.Context, recommendations []
 		case "evict_large_unused":
 			s.logger.Info("Size optimization: evicting large unused entry",
 				logging.String("key", rec.Parameters["key"].(string)),
-				logging.Int64("size", rec.Parameters["size"].(int64)))
+				logging.F("size", rec.Parameters["size"].(int64)))
 			applied++
 		case "implement_size_limits":
 			s.logger.Info("Size optimization: implementing size limits",

@@ -91,4 +91,3 @@ func renderConfigAlert(c *fiber.Ctx, configFileName string) error {
 		"ConfigFileName": configFileName,
 	})
 }
-

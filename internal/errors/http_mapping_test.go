@@ -78,13 +78,13 @@ func TestGetHTTPStatus(t *testing.T) {
 			expected: fiber.StatusInternalServerError,
 		},
 		{
-			name: "Fiber 에러",
-			err: fiber.NewError(fiber.StatusBadRequest, "잘못된 요청"),
+			name:     "Fiber 에러",
+			err:      fiber.NewError(fiber.StatusBadRequest, "잘못된 요청"),
 			expected: fiber.StatusBadRequest,
 		},
 		{
-			name: "일반 에러",
-			err: errors.New("일반적인 에러"),
+			name:     "일반 에러",
+			err:      errors.New("일반적인 에러"),
 			expected: fiber.StatusInternalServerError,
 		},
 	}
@@ -151,8 +151,8 @@ func TestIsClientError(t *testing.T) {
 			expected: false,
 		},
 		{
-			name: "일반 에러 (5xx)",
-			err: errors.New("일반 에러"),
+			name:     "일반 에러 (5xx)",
+			err:      errors.New("일반 에러"),
 			expected: false,
 		},
 	}
@@ -188,8 +188,8 @@ func TestIsServerError(t *testing.T) {
 			expected: true,
 		},
 		{
-			name: "일반 에러 (5xx)",
-			err: errors.New("일반 에러"),
+			name:     "일반 에러 (5xx)",
+			err:      errors.New("일반 에러"),
 			expected: true,
 		},
 	}

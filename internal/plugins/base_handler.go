@@ -11,10 +11,10 @@ import (
 )
 
 var (
-	ErrNotImplemented   = errors.New("method not implemented")
-	ErrUnsupportedMode  = errors.New("operation mode not supported")
-	ErrHandlerNotReady  = errors.New("handler not ready")
-	ErrInvalidConfig    = errors.New("invalid configuration")
+	ErrNotImplemented  = errors.New("method not implemented")
+	ErrUnsupportedMode = errors.New("operation mode not supported")
+	ErrHandlerNotReady = errors.New("handler not ready")
+	ErrInvalidConfig   = errors.New("invalid configuration")
 )
 
 // BasePackageHandler 기본 패키지 핸들러 구현

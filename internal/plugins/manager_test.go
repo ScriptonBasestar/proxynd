@@ -8,13 +8,13 @@ import (
 
 func TestPluginManager_RegisterBuiltinPlugins(t *testing.T) {
 	manager := NewPluginManager(PluginManagerConfig{})
-	
+
 	ctx := context.Background()
 	err := manager.Start(ctx, PluginManagerConfig{
 		AutoRegisterBuiltins: false, // 외부에서 등록
-		HealthCheckInterval:  0, // 헬스체크 비활성화
+		HealthCheckInterval:  0,     // 헬스체크 비활성화
 	})
-	
+
 	if err != nil {
 		t.Fatalf("Failed to start plugin manager: %v", err)
 	}
@@ -29,13 +29,13 @@ func TestPluginManager_RegisterBuiltinPlugins(t *testing.T) {
 
 func TestPluginManager_RegisterCustomPlugin(t *testing.T) {
 	manager := NewPluginManager(PluginManagerConfig{})
-	
+
 	ctx := context.Background()
 	err := manager.Start(ctx, PluginManagerConfig{
 		AutoRegisterBuiltins: false,
 		HealthCheckInterval:  0,
 	})
-	
+
 	if err != nil {
 		t.Fatalf("Failed to start plugin manager: %v", err)
 	}
@@ -65,13 +65,13 @@ func TestPluginManager_RegisterCustomPlugin(t *testing.T) {
 
 func TestPluginManager_UnregisterPlugin(t *testing.T) {
 	manager := NewPluginManager(PluginManagerConfig{})
-	
+
 	ctx := context.Background()
 	err := manager.Start(ctx, PluginManagerConfig{
 		AutoRegisterBuiltins: false,
 		HealthCheckInterval:  0,
 	})
-	
+
 	if err != nil {
 		t.Fatalf("Failed to start plugin manager: %v", err)
 	}
@@ -109,13 +109,13 @@ func TestPluginManager_UnregisterPlugin(t *testing.T) {
 
 func TestPluginManager_GetHandlersByMode(t *testing.T) {
 	manager := NewPluginManager(PluginManagerConfig{})
-	
+
 	ctx := context.Background()
 	err := manager.Start(ctx, PluginManagerConfig{
 		AutoRegisterBuiltins: false,
 		HealthCheckInterval:  0,
 	})
-	
+
 	if err != nil {
 		t.Fatalf("Failed to start plugin manager: %v", err)
 	}
@@ -151,13 +151,13 @@ func TestPluginManager_GetHandlersByMode(t *testing.T) {
 
 func TestPluginManager_HealthCheck(t *testing.T) {
 	manager := NewPluginManager(PluginManagerConfig{})
-	
+
 	ctx := context.Background()
 	err := manager.Start(ctx, PluginManagerConfig{
 		AutoRegisterBuiltins: false,
 		HealthCheckInterval:  0,
 	})
-	
+
 	if err != nil {
 		t.Fatalf("Failed to start plugin manager: %v", err)
 	}
@@ -165,7 +165,7 @@ func TestPluginManager_HealthCheck(t *testing.T) {
 
 	// 빈 상태에서 헬스체크
 	results := manager.HealthCheck(ctx)
-	
+
 	if len(results) != 0 {
 		t.Errorf("Expected 0 health check results, got %d", len(results))
 	}
@@ -173,13 +173,13 @@ func TestPluginManager_HealthCheck(t *testing.T) {
 
 func TestPluginManager_Statistics(t *testing.T) {
 	manager := NewPluginManager(PluginManagerConfig{})
-	
+
 	ctx := context.Background()
 	err := manager.Start(ctx, PluginManagerConfig{
 		AutoRegisterBuiltins: false,
 		HealthCheckInterval:  0,
 	})
-	
+
 	if err != nil {
 		t.Fatalf("Failed to start plugin manager: %v", err)
 	}
@@ -187,7 +187,7 @@ func TestPluginManager_Statistics(t *testing.T) {
 
 	// 통계 조회
 	stats := manager.GetStatistics()
-	
+
 	if stats["total_plugins"].(int) != 0 {
 		t.Errorf("Expected 0 plugins, got %d", stats["total_plugins"].(int))
 	}
@@ -207,7 +207,7 @@ func TestPluginManager_Statistics(t *testing.T) {
 
 func TestPluginManager_Lifecycle(t *testing.T) {
 	manager := NewPluginManager(PluginManagerConfig{})
-	
+
 	ctx := context.Background()
 
 	// 시작 전에는 핸들러 조회 불가
@@ -221,7 +221,7 @@ func TestPluginManager_Lifecycle(t *testing.T) {
 		AutoRegisterBuiltins: false,
 		HealthCheckInterval:  0,
 	})
-	
+
 	if err != nil {
 		t.Fatalf("Failed to start plugin manager: %v", err)
 	}
@@ -247,13 +247,13 @@ func TestPluginManager_Lifecycle(t *testing.T) {
 
 func TestPluginManager_ConcurrentAccess(t *testing.T) {
 	manager := NewPluginManager(PluginManagerConfig{})
-	
+
 	ctx := context.Background()
 	err := manager.Start(ctx, PluginManagerConfig{
 		AutoRegisterBuiltins: false,
 		HealthCheckInterval:  0,
 	})
-	
+
 	if err != nil {
 		t.Fatalf("Failed to start plugin manager: %v", err)
 	}
@@ -272,18 +272,18 @@ func TestPluginManager_ConcurrentAccess(t *testing.T) {
 
 	// 동시에 여러 고루틴에서 핸들러 조회
 	done := make(chan bool, 10)
-	
+
 	for i := 0; i < 10; i++ {
 		go func() {
 			defer func() { done <- true }()
-			
+
 			// 핸들러 조회
 			testHandler, exists := manager.registry.GetHandler("test")
 			if !exists {
 				t.Error("Test handler not found in concurrent access")
 				return
 			}
-			
+
 			// 헬스체크 수행
 			err := testHandler.HealthCheck(ctx)
 			if err != nil {

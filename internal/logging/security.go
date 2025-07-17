@@ -292,16 +292,16 @@ func NewSecurityAnalyzer(logger *SecurityLogger) *SecurityAnalyzer {
 func (sa *SecurityAnalyzer) AnalyzeRequest(ctx context.Context, c *fiber.Ctx) {
 	// Check for SQL injection patterns
 	sa.checkSQLInjection(ctx, c)
-	
+
 	// Check for XSS attempts
 	sa.checkXSS(ctx, c)
-	
+
 	// Check for suspicious user agents
 	sa.checkUserAgent(ctx, c)
-	
+
 	// Check for suspicious IP addresses
 	sa.checkIPAddress(ctx, c)
-	
+
 	// Check for file upload security
 	if c.Method() == "POST" && strings.Contains(c.Get("Content-Type"), "multipart/form-data") {
 		sa.checkFileUpload(ctx, c)
@@ -362,9 +362,9 @@ func (sa *SecurityAnalyzer) checkXSS(ctx context.Context, c *fiber.Ctx) {
 		lowerValue := strings.ToLower(value)
 		for _, pattern := range xssPatterns {
 			if strings.Contains(lowerValue, pattern) {
-				sa.logger.LogSuspiciousActivity(ctx, c, 
-					fmt.Sprintf("XSS attempt detected in parameter: %s", key), 
-					ThreatLevelHigh, 
+				sa.logger.LogSuspiciousActivity(ctx, c,
+					fmt.Sprintf("XSS attempt detected in parameter: %s", key),
+					ThreatLevelHigh,
 					map[string]interface{}{
 						"parameter": key,
 						"pattern":   pattern,
@@ -379,18 +379,18 @@ func (sa *SecurityAnalyzer) checkXSS(ctx context.Context, c *fiber.Ctx) {
 // checkUserAgent checks for suspicious user agents
 func (sa *SecurityAnalyzer) checkUserAgent(ctx context.Context, c *fiber.Ctx) {
 	userAgent := strings.ToLower(c.Get("User-Agent"))
-	
+
 	suspiciousAgents := []string{
 		"sqlmap", "havij", "nmap", "nikto", "dirb", "dirbuster",
 		"wfuzz", "burp", "zap", "w3af", "acunetix", "netsparker",
 		"wget", "curl", "python-requests", "go-http-client",
 	}
-	
+
 	for _, agent := range suspiciousAgents {
 		if strings.Contains(userAgent, agent) {
-			sa.logger.LogSuspiciousActivity(ctx, c, 
-				fmt.Sprintf("Suspicious user agent detected: %s", agent), 
-				ThreatLevelMedium, 
+			sa.logger.LogSuspiciousActivity(ctx, c,
+				fmt.Sprintf("Suspicious user agent detected: %s", agent),
+				ThreatLevelMedium,
 				map[string]interface{}{
 					"user_agent": c.Get("User-Agent"),
 					"pattern":    agent,
@@ -403,31 +403,31 @@ func (sa *SecurityAnalyzer) checkUserAgent(ctx context.Context, c *fiber.Ctx) {
 // checkIPAddress checks for suspicious IP addresses
 func (sa *SecurityAnalyzer) checkIPAddress(ctx context.Context, c *fiber.Ctx) {
 	ip := c.IP()
-	
+
 	// Check for private IP addresses accessing from internet
 	if isPrivateIP(ip) && c.Get("X-Forwarded-For") != "" {
-		sa.logger.LogSuspiciousActivity(ctx, c, 
-			"Private IP address with X-Forwarded-For header", 
-			ThreatLevelMedium, 
+		sa.logger.LogSuspiciousActivity(ctx, c,
+			"Private IP address with X-Forwarded-For header",
+			ThreatLevelMedium,
 			map[string]interface{}{
-				"ip_address":       ip,
+				"ip_address":      ip,
 				"x_forwarded_for": c.Get("X-Forwarded-For"),
 			})
 	}
-	
+
 	// Check for known bad IP ranges (this would typically come from threat intelligence)
 	// This is a simplified example
 	knownBadRanges := []string{
-		"10.0.0.0/8",    // Private range - shouldn't access from internet
-		"172.16.0.0/12", // Private range
+		"10.0.0.0/8",     // Private range - shouldn't access from internet
+		"172.16.0.0/12",  // Private range
 		"192.168.0.0/16", // Private range
 	}
-	
+
 	for _, badRange := range knownBadRanges {
 		if ipInRange(ip, badRange) {
-			sa.logger.LogSuspiciousActivity(ctx, c, 
-				"Request from suspicious IP range", 
-				ThreatLevelLow, 
+			sa.logger.LogSuspiciousActivity(ctx, c,
+				"Request from suspicious IP range",
+				ThreatLevelLow,
 				map[string]interface{}{
 					"ip_address": ip,
 					"range":      badRange,
@@ -443,27 +443,27 @@ func (sa *SecurityAnalyzer) checkFileUpload(ctx context.Context, c *fiber.Ctx) {
 	if err != nil {
 		return
 	}
-	
+
 	for fieldName, files := range form.File {
 		for _, file := range files {
 			// Check file extension
 			if isExecutableFile(file.Filename) {
-				sa.logger.LogSuspiciousActivity(ctx, c, 
-					fmt.Sprintf("Executable file upload attempt: %s", file.Filename), 
-					ThreatLevelHigh, 
+				sa.logger.LogSuspiciousActivity(ctx, c,
+					fmt.Sprintf("Executable file upload attempt: %s", file.Filename),
+					ThreatLevelHigh,
 					map[string]interface{}{
 						"filename": file.Filename,
 						"field":    fieldName,
 						"size":     file.Size,
 					})
 			}
-			
+
 			// Check file size
 			maxSize := int64(10 * 1024 * 1024) // 10MB
 			if file.Size > maxSize {
-				sa.logger.LogSuspiciousActivity(ctx, c, 
-					fmt.Sprintf("Large file upload: %s (%d bytes)", file.Filename, file.Size), 
-					ThreatLevelMedium, 
+				sa.logger.LogSuspiciousActivity(ctx, c,
+					fmt.Sprintf("Large file upload: %s (%d bytes)", file.Filename, file.Size),
+					ThreatLevelMedium,
 					map[string]interface{}{
 						"filename": file.Filename,
 						"size":     file.Size,
@@ -482,13 +482,13 @@ func isPrivateIP(ipStr string) bool {
 	if ip == nil {
 		return false
 	}
-	
+
 	privateRanges := []string{
 		"10.0.0.0/8",
 		"172.16.0.0/12",
 		"192.168.0.0/16",
 	}
-	
+
 	for _, rangeStr := range privateRanges {
 		_, cidr, err := net.ParseCIDR(rangeStr)
 		if err != nil {
@@ -507,12 +507,12 @@ func ipInRange(ipStr, cidrStr string) bool {
 	if ip == nil {
 		return false
 	}
-	
+
 	_, cidr, err := net.ParseCIDR(cidrStr)
 	if err != nil {
 		return false
 	}
-	
+
 	return cidr.Contains(ip)
 }
 
@@ -523,7 +523,7 @@ func isExecutableFile(filename string) bool {
 		".jar", ".app", ".deb", ".rpm", ".run", ".bin", ".sh", ".py",
 		".pl", ".php", ".asp", ".jsp", ".war", ".ear",
 	}
-	
+
 	filename = strings.ToLower(filename)
 	for _, ext := range execExtensions {
 		if strings.HasSuffix(filename, ext) {

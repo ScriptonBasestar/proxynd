@@ -77,7 +77,7 @@ func TestAPTProxy_FullFlow(t *testing.T) {
 				require.NoError(t, err)
 
 				if tt.contentCheck != nil {
-					assert.True(t, tt.contentCheck(string(body)), 
+					assert.True(t, tt.contentCheck(string(body)),
 						"Content check failed for %s", tt.name)
 				}
 
@@ -141,7 +141,7 @@ func TestAPTProxy_ConcurrentRequests(t *testing.T) {
 	for i := 0; i < concurrency; i++ {
 		go func() {
 			defer func() { done <- true }()
-			
+
 			for j := 0; j < requestsPerWorker; j++ {
 				url := server.ProxyURL("apt", "dists/focal/Release")
 				result := performRequest(url)
@@ -180,7 +180,7 @@ func TestAPTProxy_ConcurrentRequests(t *testing.T) {
 	if successCount > 0 {
 		avgDuration := totalDuration / time.Duration(successCount)
 		t.Logf("Average request duration: %v", avgDuration)
-		
+
 		// 성능 기준
 		assert.Less(t, avgDuration, 2*time.Second, "평균 응답 시간이 너무 깁니다")
 	}
@@ -235,7 +235,7 @@ func TestAPTProxy_LargeResponse(t *testing.T) {
 
 	body, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
-	
+
 	// 최소한의 콘텐츠 확인
 	assert.True(t, len(body) > 0, "응답 본문이 비어있습니다")
 	assert.Contains(t, string(body), "Package:", "패키지 정보가 포함되어야 합니다")

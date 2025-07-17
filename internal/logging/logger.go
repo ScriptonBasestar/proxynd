@@ -8,8 +8,8 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 )
 
 // Logger interface for structured logging
@@ -19,7 +19,7 @@ type Logger interface {
 	Warn(msg string, fields ...Field)
 	Error(msg string, fields ...Field)
 	Fatal(msg string, fields ...Field)
-	
+
 	WithField(key string, value interface{}) Logger
 	WithFields(fields map[string]interface{}) Logger
 	WithContext(ctx context.Context) Logger
@@ -34,38 +34,38 @@ type Field struct {
 
 // Config holds logging configuration
 type Config struct {
-	Level      string            `yaml:"level" json:"level"`
-	Format     string            `yaml:"format" json:"format"` // json, text
-	Output     []OutputConfig    `yaml:"output" json:"output"`
-	Sampling   *SamplingConfig   `yaml:"sampling,omitempty" json:"sampling,omitempty"`
-	Correlation bool             `yaml:"correlation" json:"correlation"`
-	Caller     bool             `yaml:"caller" json:"caller"`
-	Fields     map[string]interface{} `yaml:"fields,omitempty" json:"fields,omitempty"`
+	Level       string                 `yaml:"level" json:"level"`
+	Format      string                 `yaml:"format" json:"format"` // json, text
+	Output      []OutputConfig         `yaml:"output" json:"output"`
+	Sampling    *SamplingConfig        `yaml:"sampling,omitempty" json:"sampling,omitempty"`
+	Correlation bool                   `yaml:"correlation" json:"correlation"`
+	Caller      bool                   `yaml:"caller" json:"caller"`
+	Fields      map[string]interface{} `yaml:"fields,omitempty" json:"fields,omitempty"`
 }
 
 // OutputConfig defines where logs should be written
 type OutputConfig struct {
-	Type     string `yaml:"type" json:"type"` // file, stdout, stderr, syslog
-	Path     string `yaml:"path,omitempty" json:"path,omitempty"`
-	MaxSize  int    `yaml:"max_size,omitempty" json:"max_size,omitempty"` // MB
-	MaxAge   int    `yaml:"max_age,omitempty" json:"max_age,omitempty"`   // days
-	MaxBackups int  `yaml:"max_backups,omitempty" json:"max_backups,omitempty"`
-	Compress bool   `yaml:"compress,omitempty" json:"compress,omitempty"`
+	Type       string `yaml:"type" json:"type"` // file, stdout, stderr, syslog
+	Path       string `yaml:"path,omitempty" json:"path,omitempty"`
+	MaxSize    int    `yaml:"max_size,omitempty" json:"max_size,omitempty"` // MB
+	MaxAge     int    `yaml:"max_age,omitempty" json:"max_age,omitempty"`   // days
+	MaxBackups int    `yaml:"max_backups,omitempty" json:"max_backups,omitempty"`
+	Compress   bool   `yaml:"compress,omitempty" json:"compress,omitempty"`
 }
 
 // SamplingConfig for log sampling to reduce volume
 type SamplingConfig struct {
 	Enabled    bool    `yaml:"enabled" json:"enabled"`
-	Initial    int     `yaml:"initial" json:"initial"`       // Log first N messages
-	Thereafter int     `yaml:"thereafter" json:"thereafter"` // Then log every Nth message
+	Initial    int     `yaml:"initial" json:"initial"`               // Log first N messages
+	Thereafter int     `yaml:"thereafter" json:"thereafter"`         // Then log every Nth message
 	Rate       float64 `yaml:"rate,omitempty" json:"rate,omitempty"` // Alternative: sample rate 0.0-1.0
 }
 
 // StructuredLogger implements Logger interface
 type StructuredLogger struct {
-	entry      *logrus.Entry
-	config     *Config
-	component  string
+	entry       *logrus.Entry
+	config      *Config
+	component   string
 	correlation bool
 }
 
@@ -82,14 +82,14 @@ const (
 // NewLogger creates a new structured logger
 func NewLogger(config *Config) (Logger, error) {
 	logrusLogger := logrus.New()
-	
+
 	// Set log level
 	level, err := logrus.ParseLevel(config.Level)
 	if err != nil {
 		return nil, fmt.Errorf("invalid log level: %w", err)
 	}
 	logrusLogger.SetLevel(level)
-	
+
 	// Set formatter
 	switch config.Format {
 	case "json":
@@ -110,7 +110,7 @@ func NewLogger(config *Config) (Logger, error) {
 	default:
 		return nil, fmt.Errorf("invalid log format: %s", config.Format)
 	}
-	
+
 	// Set output
 	if len(config.Output) > 0 {
 		writers := make([]io.Writer, 0, len(config.Output))
@@ -123,25 +123,25 @@ func NewLogger(config *Config) (Logger, error) {
 		}
 		logrusLogger.SetOutput(io.MultiWriter(writers...))
 	}
-	
+
 	// Set caller reporting
 	if config.Caller {
 		logrusLogger.SetReportCaller(true)
 	}
-	
+
 	// Create base entry with global fields
 	entry := logrusLogger.WithFields(logrus.Fields{
-		"service":   "proxynd",
-		"version":   getVersion(),
-		"hostname":  getHostname(),
-		"pid":       os.Getpid(),
+		"service":  "proxynd",
+		"version":  getVersion(),
+		"hostname": getHostname(),
+		"pid":      os.Getpid(),
 	})
-	
+
 	// Add custom fields
 	if config.Fields != nil {
 		entry = entry.WithFields(logrus.Fields(config.Fields))
 	}
-	
+
 	return &StructuredLogger{
 		entry:       entry,
 		config:      config,
@@ -229,29 +229,29 @@ func (l *StructuredLogger) WithFields(fields map[string]interface{}) Logger {
 // WithContext adds context information to the logger
 func (l *StructuredLogger) WithContext(ctx context.Context) Logger {
 	newEntry := l.entry
-	
+
 	if l.correlation {
 		// Add correlation ID from context
 		if correlationID := GetCorrelationID(ctx); correlationID != "" {
 			newEntry = newEntry.WithField("correlation_id", correlationID)
 		}
-		
+
 		// Add request ID from context
 		if requestID := GetRequestID(ctx); requestID != "" {
 			newEntry = newEntry.WithField("request_id", requestID)
 		}
-		
+
 		// Add user ID from context
 		if userID := GetUserID(ctx); userID != "" {
 			newEntry = newEntry.WithField("user_id", userID)
 		}
-		
+
 		// Add session ID from context
 		if sessionID := GetSessionID(ctx); sessionID != "" {
 			newEntry = newEntry.WithField("session_id", sessionID)
 		}
 	}
-	
+
 	return &StructuredLogger{
 		entry:       newEntry,
 		config:      l.config,

@@ -46,7 +46,7 @@ func TestDomainError_Error(t *testing.T) {
 func TestErrorBuilder(t *testing.T) {
 	t.Run("기본 에러 빌더", func(t *testing.T) {
 		err := NewError("TEST001", "테스트 메시지").Build()
-		
+
 		assert.Equal(t, "TEST001", err.Code)
 		assert.Equal(t, "테스트 메시지", err.Message)
 		assert.Equal(t, ErrorLevelError, err.Level)
@@ -56,14 +56,14 @@ func TestErrorBuilder(t *testing.T) {
 	t.Run("모든 필드가 설정된 에러", func(t *testing.T) {
 		originalErr := errors.New("원본 에러")
 		details := map[string]interface{}{"key": "value"}
-		
+
 		err := NewError("TEST002", "복합 에러").
 			WithDomain("test").
 			WithLevel(ErrorLevelCritical).
 			WithCause(originalErr).
 			WithDetails(details).
 			Build()
-		
+
 		assert.Equal(t, "TEST002", err.Code)
 		assert.Equal(t, "복합 에러", err.Message)
 		assert.Equal(t, "test", err.Domain)
@@ -111,7 +111,7 @@ func TestAPTErrors(t *testing.T) {
 	t.Run("WrapAPTError 함수", func(t *testing.T) {
 		originalErr := errors.New("원본 APT 에러")
 		err := WrapAPTError(originalErr, "APT998", "래핑된 APT 에러")
-		
+
 		assert.Equal(t, "APT998", err.Code)
 		assert.Equal(t, "래핑된 APT 에러", err.Message)
 		assert.Equal(t, "apt", err.Domain)
@@ -137,7 +137,7 @@ func TestMavenErrors(t *testing.T) {
 	t.Run("WrapMavenError 함수", func(t *testing.T) {
 		originalErr := errors.New("원본 Maven 에러")
 		err := WrapMavenError(originalErr, "MVN998", "래핑된 Maven 에러")
-		
+
 		assert.Equal(t, "MVN998", err.Code)
 		assert.Equal(t, "래핑된 Maven 에러", err.Message)
 		assert.Equal(t, "maven", err.Domain)

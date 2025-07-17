@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/scriptonbasestar/proxynd/internal/logging"
+	"proxynd/logging"
 )
 
 // ResourceMonitor monitors system resource usage
@@ -405,7 +405,7 @@ func (rm *ResourceMonitor) triggerGC() {
 	rm.stats.mu.Unlock()
 
 	rm.logger.Info("Garbage collection triggered",
-		logging.Int64("gc_triggered_count", rm.stats.GCTriggered))
+		logging.F("gc_triggered_count", rm.stats.GCTriggered))
 }
 
 // triggerMemoryAlert triggers a memory usage alert

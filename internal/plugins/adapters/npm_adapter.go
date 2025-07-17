@@ -15,7 +15,7 @@ import (
 // NPMHandlerAdapter NPM 핸들러를 플러그인 인터페이스로 어댑팅
 type NPMHandlerAdapter struct {
 	*plugins.BasePackageHandler
-	config      *configs.NpmProxyConfig
+	config       *configs.NpmProxyConfig
 	groupManager plugins.GroupManager
 }
 
@@ -37,7 +37,7 @@ func NewNPMPlugin() plugins.Plugin {
 			Tags:        []string{"npm", "nodejs", "javascript", "package-manager"},
 			Config: map[string]string{
 				"default_registry": "https://registry.npmjs.org",
-				"cache_ttl":       "24h",
+				"cache_ttl":        "24h",
 				"max_package_size": "100MB",
 			},
 		},
@@ -223,10 +223,10 @@ func (h *NPMHandlerAdapter) HealthCheck(ctx context.Context) error {
 // handleProxyRequest 프록시 모드 요청 처리
 func (h *NPMHandlerAdapter) handleProxyRequest(ctx *fiber.Ctx) error {
 	path := strings.TrimPrefix(ctx.Path(), "/proxy/npm")
-	
+
 	// NPM 레지스트리별 업스트림 설정
 	var upstreams []plugins.UpstreamConfig
-	
+
 	// 모든 프록시 서버를 업스트림으로 추가
 	for _, servers := range h.config.Proxies {
 		for i, server := range servers {
@@ -245,7 +245,7 @@ func (h *NPMHandlerAdapter) handleProxyRequest(ctx *fiber.Ctx) error {
 	// 그룹에서 데이터 가져오기
 	results, err := h.groupManager.FetchOnDemand(ctx.Context(), path, upstreams)
 	if err != nil {
-		return fiber.NewError(fiber.StatusInternalServerError, 
+		return fiber.NewError(fiber.StatusInternalServerError,
 			fmt.Sprintf("Failed to fetch from upstream: %v", err))
 	}
 
@@ -272,7 +272,7 @@ func (h *NPMHandlerAdapter) handleProxyRequest(ctx *fiber.Ctx) error {
 func (h *NPMHandlerAdapter) handleMirrorRequest(ctx *fiber.Ctx) error {
 	// 미러 모드에서는 로컬 캐시에서 먼저 조회
 	cacheKey := h.BuildCacheKey(ctx)
-	
+
 	h.GetLogger().Debug("Handling mirror request",
 		logging.F("cache_key", cacheKey),
 		logging.F("path", ctx.Path()))
@@ -286,9 +286,9 @@ func (h *NPMHandlerAdapter) handleMirrorRequest(ctx *fiber.Ctx) error {
 // GetSupportedPackageTypes NPM이 지원하는 패키지 타입들
 func (h *NPMHandlerAdapter) GetSupportedPackageTypes() []string {
 	return []string{
-		"@scope/package",  // 스코프 패키지
-		"package",         // 일반 패키지
-		"@types/package",  // TypeScript 타입 정의
+		"@scope/package", // 스코프 패키지
+		"package",        // 일반 패키지
+		"@types/package", // TypeScript 타입 정의
 	}
 }
 
@@ -303,7 +303,7 @@ func (h *NPMHandlerAdapter) IsValidNPMPackageName(name string) bool {
 	// - 하이픈, 언더스코어 허용
 	// - 스코프 패키지 (@scope/package) 허용
 	validChars := "abcdefghijklmnopqrstuvwxyz0123456789-_./@"
-	
+
 	for _, char := range name {
 		found := false
 		for _, validChar := range validChars {

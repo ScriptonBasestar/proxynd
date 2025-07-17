@@ -4,54 +4,54 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/scriptonbasestar/proxynd/internal/logging"
+	"proxynd/internal/logging"
 )
 
 // LoggingConfig holds comprehensive logging configuration
 type LoggingConfig struct {
 	// Core logging settings
-	Level      string                    `yaml:"level" json:"level" default:"info"`
-	Format     string                    `yaml:"format" json:"format" default:"json"`
-	Output     []logging.OutputConfig    `yaml:"output" json:"output"`
-	Caller     bool                      `yaml:"caller" json:"caller" default:"false"`
-	Fields     map[string]interface{}    `yaml:"fields,omitempty" json:"fields,omitempty"`
-	
+	Level  string                 `yaml:"level" json:"level" default:"info"`
+	Format string                 `yaml:"format" json:"format" default:"json"`
+	Output []logging.OutputConfig `yaml:"output" json:"output"`
+	Caller bool                   `yaml:"caller" json:"caller" default:"false"`
+	Fields map[string]interface{} `yaml:"fields,omitempty" json:"fields,omitempty"`
+
 	// Advanced features
-	Correlation *CorrelationConfig        `yaml:"correlation,omitempty" json:"correlation,omitempty"`
-	Sampling    *logging.SamplingConfig   `yaml:"sampling,omitempty" json:"sampling,omitempty"`
-	
+	Correlation *CorrelationConfig      `yaml:"correlation,omitempty" json:"correlation,omitempty"`
+	Sampling    *logging.SamplingConfig `yaml:"sampling,omitempty" json:"sampling,omitempty"`
+
 	// Component-specific logging
-	Components  map[string]ComponentConfig `yaml:"components,omitempty" json:"components,omitempty"`
-	
+	Components map[string]ComponentConfig `yaml:"components,omitempty" json:"components,omitempty"`
+
 	// Middleware configuration
-	Middleware  *MiddlewareConfig         `yaml:"middleware,omitempty" json:"middleware,omitempty"`
-	
+	Middleware *MiddlewareConfig `yaml:"middleware,omitempty" json:"middleware,omitempty"`
+
 	// Audit logging
-	Audit       *AuditConfig              `yaml:"audit,omitempty" json:"audit,omitempty"`
-	
+	Audit *AuditConfig `yaml:"audit,omitempty" json:"audit,omitempty"`
+
 	// Security logging
-	Security    *SecurityConfig           `yaml:"security,omitempty" json:"security,omitempty"`
-	
+	Security *SecurityConfig `yaml:"security,omitempty" json:"security,omitempty"`
+
 	// Performance logging
-	Performance *PerformanceConfig        `yaml:"performance,omitempty" json:"performance,omitempty"`
-	
+	Performance *PerformanceConfig `yaml:"performance,omitempty" json:"performance,omitempty"`
+
 	// Log aggregation and analysis
-	Aggregation *AggregationConfig        `yaml:"aggregation,omitempty" json:"aggregation,omitempty"`
+	Aggregation *AggregationConfig `yaml:"aggregation,omitempty" json:"aggregation,omitempty"`
 }
 
 // CorrelationConfig configures request correlation
 type CorrelationConfig struct {
-	Enabled     bool   `yaml:"enabled" json:"enabled" default:"true"`
-	HeaderName  string `yaml:"header_name" json:"header_name" default:"X-Correlation-ID"`
-	Generate    bool   `yaml:"generate" json:"generate" default:"true"`
+	Enabled    bool   `yaml:"enabled" json:"enabled" default:"true"`
+	HeaderName string `yaml:"header_name" json:"header_name" default:"X-Correlation-ID"`
+	Generate   bool   `yaml:"generate" json:"generate" default:"true"`
 }
 
 // ComponentConfig allows per-component logging configuration
 type ComponentConfig struct {
-	Level      string                 `yaml:"level,omitempty" json:"level,omitempty"`
-	Output     []logging.OutputConfig `yaml:"output,omitempty" json:"output,omitempty"`
-	Enabled    bool                   `yaml:"enabled" json:"enabled" default:"true"`
-	Fields     map[string]interface{} `yaml:"fields,omitempty" json:"fields,omitempty"`
+	Level   string                 `yaml:"level,omitempty" json:"level,omitempty"`
+	Output  []logging.OutputConfig `yaml:"output,omitempty" json:"output,omitempty"`
+	Enabled bool                   `yaml:"enabled" json:"enabled" default:"true"`
+	Fields  map[string]interface{} `yaml:"fields,omitempty" json:"fields,omitempty"`
 }
 
 // MiddlewareConfig configures HTTP request logging middleware
@@ -67,27 +67,27 @@ type MiddlewareConfig struct {
 
 // AuditConfig configures audit logging
 type AuditConfig struct {
-	Enabled        bool     `yaml:"enabled" json:"enabled" default:"true"`
-	File           string   `yaml:"file" json:"file" default:"/var/log/proxynd/audit.log"`
-	Level          string   `yaml:"level" json:"level" default:"info"`
-	Format         string   `yaml:"format" json:"format" default:"json"`
-	Events         []string `yaml:"events,omitempty" json:"events,omitempty"`
-	SkipEndpoints  []string `yaml:"skip_endpoints,omitempty" json:"skip_endpoints,omitempty"`
-	RetentionDays  int      `yaml:"retention_days" json:"retention_days" default:"90"`
-	MaxFileSize    string   `yaml:"max_file_size" json:"max_file_size" default:"100MB"`
-	MaxFiles       int      `yaml:"max_files" json:"max_files" default:"10"`
+	Enabled       bool     `yaml:"enabled" json:"enabled" default:"true"`
+	File          string   `yaml:"file" json:"file" default:"/var/log/proxynd/audit.log"`
+	Level         string   `yaml:"level" json:"level" default:"info"`
+	Format        string   `yaml:"format" json:"format" default:"json"`
+	Events        []string `yaml:"events,omitempty" json:"events,omitempty"`
+	SkipEndpoints []string `yaml:"skip_endpoints,omitempty" json:"skip_endpoints,omitempty"`
+	RetentionDays int      `yaml:"retention_days" json:"retention_days" default:"90"`
+	MaxFileSize   string   `yaml:"max_file_size" json:"max_file_size" default:"100MB"`
+	MaxFiles      int      `yaml:"max_files" json:"max_files" default:"10"`
 }
 
 // SecurityConfig configures security event logging
 type SecurityConfig struct {
-	Enabled         bool     `yaml:"enabled" json:"enabled" default:"true"`
-	File            string   `yaml:"file" json:"file" default:"/var/log/proxynd/security.log"`
-	Level           string   `yaml:"level" json:"level" default:"warn"`
-	Format          string   `yaml:"format" json:"format" default:"json"`
-	ThreatDetection bool     `yaml:"threat_detection" json:"threat_detection" default:"true"`
-	AlertThreshold  int      `yaml:"alert_threshold" json:"alert_threshold" default:"10"`
-	BlockAfter      int      `yaml:"block_after" json:"block_after" default:"50"`
-	RetentionDays   int      `yaml:"retention_days" json:"retention_days" default:"365"`
+	Enabled         bool   `yaml:"enabled" json:"enabled" default:"true"`
+	File            string `yaml:"file" json:"file" default:"/var/log/proxynd/security.log"`
+	Level           string `yaml:"level" json:"level" default:"warn"`
+	Format          string `yaml:"format" json:"format" default:"json"`
+	ThreatDetection bool   `yaml:"threat_detection" json:"threat_detection" default:"true"`
+	AlertThreshold  int    `yaml:"alert_threshold" json:"alert_threshold" default:"10"`
+	BlockAfter      int    `yaml:"block_after" json:"block_after" default:"50"`
+	RetentionDays   int    `yaml:"retention_days" json:"retention_days" default:"365"`
 }
 
 // PerformanceConfig configures performance logging
@@ -104,13 +104,13 @@ type PerformanceConfig struct {
 
 // AggregationConfig configures log aggregation and analysis
 type AggregationConfig struct {
-	Enabled         bool          `yaml:"enabled" json:"enabled" default:"false"`
-	LogPaths        []string      `yaml:"log_paths,omitempty" json:"log_paths,omitempty"`
-	OutputPath      string        `yaml:"output_path" json:"output_path" default:"/var/log/proxynd/analytics"`
-	AnalysisWindow  time.Duration `yaml:"analysis_window" json:"analysis_window" default:"1h"`
+	Enabled         bool              `yaml:"enabled" json:"enabled" default:"false"`
+	LogPaths        []string          `yaml:"log_paths,omitempty" json:"log_paths,omitempty"`
+	OutputPath      string            `yaml:"output_path" json:"output_path" default:"/var/log/proxynd/analytics"`
+	AnalysisWindow  time.Duration     `yaml:"analysis_window" json:"analysis_window" default:"1h"`
 	Patterns        map[string]string `yaml:"patterns,omitempty" json:"patterns,omitempty"`
-	MaxFileSize     int64         `yaml:"max_file_size" json:"max_file_size" default:"104857600"` // 100MB
-	RetentionPeriod time.Duration `yaml:"retention_period" json:"retention_period" default:"720h"` // 30 days
+	MaxFileSize     int64             `yaml:"max_file_size" json:"max_file_size" default:"104857600"`  // 100MB
+	RetentionPeriod time.Duration     `yaml:"retention_period" json:"retention_period" default:"720h"` // 30 days
 }
 
 // Default configurations
@@ -123,12 +123,12 @@ var (
 				Type: "stdout",
 			},
 			{
-				Type:     "file",
-				Path:     "/var/log/proxynd/app.log",
-				MaxSize:  100, // 100MB
-				MaxAge:   7,   // 7 days
+				Type:       "file",
+				Path:       "/var/log/proxynd/app.log",
+				MaxSize:    100, // 100MB
+				MaxAge:     7,   // 7 days
 				MaxBackups: 10,
-				Compress: true,
+				Compress:   true,
 			},
 		},
 		Caller: false,
@@ -225,7 +225,7 @@ var (
 			"error":        `^(?P<timestamp>\S+)\s+(?P<level>ERROR|FATAL)\s+(?P<component>\w+)\s+(?P<message>.*)`,
 			"security":     `^(?P<timestamp>\S+)\s+(?P<level>\w+)\s+security\s+(?P<event_type>\w+)\s+(?P<message>.*)`,
 		},
-		MaxFileSize:     100 * 1024 * 1024, // 100MB
+		MaxFileSize:     100 * 1024 * 1024,   // 100MB
 		RetentionPeriod: 30 * 24 * time.Hour, // 30 days
 	}
 )
@@ -341,18 +341,18 @@ func (c *LoggingConfig) IsComponentEnabled(component string) bool {
 // GetComponentFields returns additional fields for a component
 func (c *LoggingConfig) GetComponentFields(component string) map[string]interface{} {
 	fields := make(map[string]interface{})
-	
+
 	// Add global fields
 	for k, v := range c.Fields {
 		fields[k] = v
 	}
-	
+
 	// Add component-specific fields
 	if config, exists := c.Components[component]; exists {
 		for k, v := range config.Fields {
 			fields[k] = v
 		}
 	}
-	
+
 	return fields
 }

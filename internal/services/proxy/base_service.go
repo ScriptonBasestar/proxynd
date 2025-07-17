@@ -196,7 +196,7 @@ func (s *BaseProxyService) HandleError(err error, statusCode int) *ProxyResponse
 	if err != nil {
 		errorMessage = err.Error()
 	}
-	
+
 	return &ProxyResponse{
 		Body:        io.NopCloser(strings.NewReader(errorMessage)),
 		StatusCode:  statusCode,

@@ -33,6 +33,7 @@ type APTHandler struct {
 	name      string
 	proxyType string
 	logger    logging.Logger
+	config    *configs.AptProxyConfig
 }
 
 // NewAPTHandler 새로운 APT 핸들러 생성
@@ -48,6 +49,7 @@ func NewAPTHandler() *APTHandler {
 		name:      "apt-proxy",
 		proxyType: "apt",
 		logger:    logging.GetLogger(),
+		config:    &configs.AptProxyConfig{},
 	}
 
 	return handler
@@ -59,13 +61,12 @@ func (h *APTHandler) Handle(c *fiber.Ctx) error {
 	start := time.Now()
 
 	// 설정 로드
-	config := &configs.AptProxyConfig{}
-	if err := config.ReadConfig(); err != nil {
+	if err := h.config.ReadConfig(); err != nil {
 		h.logger.Error("Failed to read APT config", logging.F("error", err))
 		return errors.WrapAPTError(err, "APT006", "APT 설정 파일을 읽을 수 없습니다")
 	}
 
-	if len(config.Proxies) == 0 {
+	if len(h.config.Proxies) == 0 {
 		return errors.ErrAPTProxyDisabled
 	}
 
@@ -85,15 +86,15 @@ func (h *APTHandler) Handle(c *fiber.Ctx) error {
 	// 캐시 기능은 추후 구현
 
 	// OS별 프록시 설정 확인
-	proxies, exists := config.Proxies[osType]
+	proxies, exists := h.config.Proxies[osType]
 	if !exists || len(proxies) == 0 {
-		return errors.NewAPTError("APT002", 
+		return errors.NewAPTError("APT002",
 			fmt.Sprintf("OS 타입 '%s'에 대한 APT 미러가 설정되지 않았습니다", osType)).Build()
 	}
 
 	// 파일 경로 생성
 	storageDir := helpers.GetStorageDir()
-	baseDir := filepath.Join(storageDir, config.Path)
+	baseDir := filepath.Join(storageDir, h.config.Path)
 	filePath, err := security.SafeJoinPath(baseDir, packagePath)
 	if err != nil {
 		return errors.WrapAPTError(err, "APT005", "잘못된 APT 패키지 경로입니다")
@@ -132,7 +133,6 @@ func (h *APTHandler) validatePath(path string) error {
 func (h *APTHandler) generateCacheKey(osType, path string) string {
 	return fmt.Sprintf("apt:%s:%s", osType, strings.ReplaceAll(path, "/", "_"))
 }
-
 
 // downloadFromUpstream 업스트림에서 파일 다운로드
 func (h *APTHandler) downloadFromUpstream(filePath string, proxies []configs.AptProxy, packagePath string) error {
@@ -181,7 +181,11 @@ func (h *APTHandler) tryDownloadFromMirror(filePath, mirrorURL, packagePath stri
 	if err != nil {
 		return fmt.Errorf("failed to create file: %w", err)
 	}
-	defer out.Close()
+	defer func() {
+		if err := out.Close(); err != nil {
+			h.logger.Warn("Failed to close file", logging.F("file", filePath), logging.F("error", err))
+		}
+	}()
 
 	// 데이터 복사
 	if _, err := io.Copy(out, resp.Body); err != nil {
@@ -191,7 +195,6 @@ func (h *APTHandler) tryDownloadFromMirror(filePath, mirrorURL, packagePath stri
 
 	return nil
 }
-
 
 // sendFile 파일 전송
 func (h *APTHandler) sendFile(c *fiber.Ctx, filePath, filename string) error {
@@ -254,21 +257,36 @@ func (h *APTHandler) logResponse(c *fiber.Ctx, duration time.Duration) {
 	}
 }
 
+// IsEnabled 활성화 상태 확인 (v2 기능 통합)
+func (h *APTHandler) IsEnabled() bool {
+	if err := h.config.ReadConfig(); err != nil {
+		h.logger.Error("Failed to read APT config", logging.F("error", err))
+		return false
+	}
+	return len(h.config.Proxies) > 0
+}
+
+// GenerateCacheKey 캐시 키 생성 (v2 기능 통합)
+func (h *APTHandler) GenerateCacheKey(c *fiber.Ctx) string {
+	osType := c.Params("osType", "ubuntu")
+	path := c.Params("*")
+	return fmt.Sprintf("apt:%s:%s", osType, strings.ReplaceAll(path, "/", "_"))
+}
+
 // HealthCheck APT 핸들러 헬스체크
 func (h *APTHandler) HealthCheck() error {
 	// APT 설정 확인
-	config := &configs.AptProxyConfig{}
-	if err := config.ReadConfig(); err != nil {
+	if err := h.config.ReadConfig(); err != nil {
 		return fmt.Errorf("failed to read APT configuration: %w", err)
 	}
 
-	if len(config.Proxies) == 0 {
+	if len(h.config.Proxies) == 0 {
 		return fmt.Errorf("APT proxy has no configured mirrors")
 	}
 
 	// 최소 하나의 프록시가 설정되어 있는지 확인
 	hasProxy := false
-	for _, proxies := range config.Proxies {
+	for _, proxies := range h.config.Proxies {
 		if len(proxies) > 0 {
 			hasProxy = true
 			break

@@ -87,7 +87,7 @@ type BaseProxyHandler interface {
 
 	// 설정 검증 및 활성화 상태 확인
 	IsEnabled() bool
-	
+
 	// 캐시 키 생성 (프록시별 고유 로직)
 	GenerateCacheKey(c *fiber.Ctx) string
 
@@ -111,10 +111,10 @@ type BaseProxyHandler interface {
 // CacheableProxyHandler 캐시 지원 프록시 핸들러 인터페이스
 type CacheableProxyHandler interface {
 	BaseProxyHandler
-	
+
 	// 캐시 무효화 조건
 	ShouldInvalidateCache(c *fiber.Ctx) bool
-	
+
 	// 캐시 우선순위 (용량 제한 시 사용)
 	GetCachePriority(c *fiber.Ctx) int
 }
@@ -122,10 +122,10 @@ type CacheableProxyHandler interface {
 // AuthenticatedProxyHandler 인증이 필요한 프록시 핸들러 인터페이스
 type AuthenticatedProxyHandler interface {
 	BaseProxyHandler
-	
+
 	// 업스트림 인증 정보 구성
 	GetUpstreamAuth(c *fiber.Ctx) (username, password string, err error)
-	
+
 	// 클라이언트 인증 검증
 	ValidateClientAuth(c *fiber.Ctx) error
 }
@@ -133,10 +133,10 @@ type AuthenticatedProxyHandler interface {
 // MetricsAwareProxyHandler 메트릭 수집이 가능한 프록시 핸들러 인터페이스
 type MetricsAwareProxyHandler interface {
 	BaseProxyHandler
-	
+
 	// 요청 메트릭 기록
 	RecordRequestMetrics(c *fiber.Ctx, statusCode int, duration time.Duration)
-	
+
 	// 캐시 메트릭 기록
 	RecordCacheMetrics(cacheKey string, hit bool, size int)
 }

@@ -30,7 +30,7 @@ func TestConcurrentRequests(t *testing.T) {
 		concurrency            = 20  // 동시 연결 수
 		totalRequests          = 200 // 총 요청 수
 		requestsPerGoroutine   = totalRequests / concurrency
-		maxAcceptableErrorRate = 5.0 // 최대 허용 에러율 (%)
+		maxAcceptableErrorRate = 5.0             // 최대 허용 에러율 (%)
 		maxAverageLatency      = 1 * time.Second // 최대 평균 응답 시간
 	)
 
@@ -83,7 +83,7 @@ func TestConcurrentRequests(t *testing.T) {
 
 	for result := range results {
 		durations = append(durations, result.Duration)
-		
+
 		if minDuration == 0 || result.Duration < minDuration {
 			minDuration = result.Duration
 		}
@@ -166,9 +166,9 @@ func TestStressTest(t *testing.T) {
 					return
 				default:
 					atomic.AddInt64(&totalRequests, 1)
-					
+
 					result := performLoadTestRequest(client, server.ProxyURL("apt", "dists/focal/Release"))
-					
+
 					if result.Error != nil {
 						atomic.AddInt64(&errorCount, 1)
 					} else {

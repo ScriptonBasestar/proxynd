@@ -4,18 +4,18 @@ package license
 // Feature constants - 모든 엔터프라이즈 기능 정의
 const (
 	// 인증 기능
-	FeatureLDAPAuth      = "ldap_auth"
-	FeatureSAMLAuth      = "saml_auth"
-	FeatureOAuth2        = "oauth2_advanced"
-	FeatureRBAC          = "rbac"
-	FeatureMFA           = "mfa"
+	FeatureLDAPAuth = "ldap_auth"
+	FeatureSAMLAuth = "saml_auth"
+	FeatureOAuth2   = "oauth2_advanced"
+	FeatureRBAC     = "rbac"
+	FeatureMFA      = "mfa"
 
 	// 고급 프록시 기능
-	FeatureMultiDatacenter   = "multi_datacenter"
-	FeatureGeoRouting        = "geo_routing"
-	FeatureSmartCaching      = "smart_caching"
-	FeaturePredictiveCache   = "predictive_cache"
-	FeatureBandwidthControl  = "bandwidth_control"
+	FeatureMultiDatacenter  = "multi_datacenter"
+	FeatureGeoRouting       = "geo_routing"
+	FeatureSmartCaching     = "smart_caching"
+	FeaturePredictiveCache  = "predictive_cache"
+	FeatureBandwidthControl = "bandwidth_control"
 
 	// 보안 기능
 	FeatureVulnerabilityScanning = "vulnerability_scanning"
@@ -32,16 +32,16 @@ const (
 	FeatureSLAMonitoring     = "sla_monitoring"
 
 	// API 및 자동화
-	FeatureGraphQLAPI        = "graphql_api"
-	FeatureWebhooks          = "webhooks_advanced"
-	FeatureTerraformProvider = "terraform_provider"
+	FeatureGraphQLAPI         = "graphql_api"
+	FeatureWebhooks           = "webhooks_advanced"
+	FeatureTerraformProvider  = "terraform_provider"
 	FeatureKubernetesOperator = "kubernetes_operator"
 
 	// 컴플라이언스
-	FeatureGDPRCompliance = "gdpr_compliance"
-	FeatureSOXCompliance  = "sox_compliance"
+	FeatureGDPRCompliance  = "gdpr_compliance"
+	FeatureSOXCompliance   = "sox_compliance"
 	FeatureHIPAACompliance = "hipaa_compliance"
-	FeatureDataRetention  = "data_retention"
+	FeatureDataRetention   = "data_retention"
 
 	// 지원
 	FeaturePrioritySupport = "priority_support"

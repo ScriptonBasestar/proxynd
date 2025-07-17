@@ -138,11 +138,11 @@ func TestCircuitBreakerSimulation(t *testing.T) {
 
 	// Then: 시스템이 완전히 실패하지 않았는지 확인
 	t.Logf("Circuit breaker simulation: Success=%d, Error=%d", successCount, errorCount)
-	
+
 	// 최소한 일부 요청은 성공해야 함 (완전한 장애 상황이 아니라면)
 	totalRequests := successCount + errorCount
 	successRate := float64(successCount) / float64(totalRequests) * 100
-	
+
 	if successRate > 0 {
 		assert.Greater(t, successRate, 50.0, "성공률이 50% 이하입니다")
 	}
@@ -179,7 +179,7 @@ func TestGracefulDegradation(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			url := server.ProxyURL(tc.proxyType, tc.path)
 			resp, err := client.Get(url)
-			
+
 			if err != nil {
 				t.Logf("Request failed (acceptable for degradation): %v", err)
 				return
@@ -217,7 +217,7 @@ func TestConcurrentFailures(t *testing.T) {
 			}
 
 			success := false
-			
+
 			// 각 고루틴에서 여러 요청 시도
 			for j := 0; j < 3; j++ {
 				resp, err := client.Get(server.ProxyURL("apt", "dists/focal/Release"))
@@ -231,7 +231,7 @@ func TestConcurrentFailures(t *testing.T) {
 				}
 				time.Sleep(100 * time.Millisecond)
 			}
-			
+
 			results <- success
 		}(i)
 	}
@@ -271,7 +271,7 @@ func TestRetryLogic(t *testing.T) {
 
 	for attempt := 1; attempt <= maxRetries; attempt++ {
 		t.Logf("Attempt %d/%d", attempt, maxRetries)
-		
+
 		resp, err := client.Get(server.ProxyURL("apt", "dists/focal/Release"))
 		if err != nil {
 			t.Logf("Attempt %d failed: %v", attempt, err)

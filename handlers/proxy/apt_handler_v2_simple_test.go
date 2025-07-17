@@ -18,7 +18,7 @@ func TestAPTHandlerV2_Simple(t *testing.T) {
 			os.Unsetenv("CONFIG_DIR")
 		}
 	}()
-	
+
 	// 임시 디렉토리 설정
 	tempDir := t.TempDir()
 	os.Setenv("CONFIG_DIR", tempDir)
@@ -35,20 +35,20 @@ func TestAPTHandlerV2_Simple(t *testing.T) {
 	})
 
 	t.Run("IsEnabled with proxies", func(t *testing.T) {
-		// IsEnabled 메서드는 ReadConfig()를 호출하므로 
+		// IsEnabled 메서드는 ReadConfig()를 호출하므로
 		// 실제로는 파일이 있어야 함. 이 테스트는 스킵
 		t.Skip("IsEnabled requires actual config file")
 	})
 
 	t.Run("isMetadataFile", func(t *testing.T) {
 		handler := NewAPTHandlerV2()
-		
+
 		// 메타데이터 파일
 		assert.True(t, handler.isMetadataFile("/dists/focal/Release"))
 		assert.True(t, handler.isMetadataFile("/dists/focal/main/binary-amd64/Packages"))
 		assert.True(t, handler.isMetadataFile("/dists/focal/Release.gpg"))
 		assert.True(t, handler.isMetadataFile("/dists/focal/InRelease"))
-		
+
 		// 일반 파일
 		assert.False(t, handler.isMetadataFile("/pool/main/v/vim/vim_8.2.deb"))
 		assert.False(t, handler.isMetadataFile("/some/other/file.txt"))
@@ -56,7 +56,7 @@ func TestAPTHandlerV2_Simple(t *testing.T) {
 
 	t.Run("HandleError mapping", func(t *testing.T) {
 		handler := NewAPTHandlerV2()
-		
+
 		// 기본 에러 처리만 테스트
 		err := handler.HandleError(assert.AnError, nil)
 		assert.Error(t, err)
@@ -75,11 +75,11 @@ func TestAPTHandlerV2_Simple(t *testing.T) {
 			{"/dists/focal/main/binary-amd64/Packages.gz", 24 * time.Hour},
 			{"/some/other/file", 1 * time.Hour},
 		}
-		
+
 		for _, tc := range testCases {
 			// Simulate fiber context by checking file extension/path
 			var ttl time.Duration
-			
+
 			if tc.path == "/dists/focal/Release" {
 				ttl = 10 * time.Minute
 			} else if tc.path == "/dists/focal/main/binary-amd64/Packages" {
@@ -91,14 +91,14 @@ func TestAPTHandlerV2_Simple(t *testing.T) {
 			} else {
 				ttl = 1 * time.Hour
 			}
-			
+
 			assert.Equal(t, tc.expected, ttl, "TTL mismatch for path: %s", tc.path)
 		}
 	})
 
 	t.Run("ShouldCache logic", func(t *testing.T) {
 		handler := NewAPTHandlerV2()
-		
+
 		testCases := []struct {
 			path       string
 			statusCode int
@@ -111,10 +111,10 @@ func TestAPTHandlerV2_Simple(t *testing.T) {
 			{"/dists/focal/main/binary-amd64/Packages.gz", 200, true},
 			{"/some/other/file.txt", 200, false},
 		}
-		
+
 		for _, tc := range testCases {
 			var shouldCache bool
-			
+
 			if tc.statusCode != 200 && tc.statusCode != 304 {
 				shouldCache = false
 			} else if handler.isMetadataFile(tc.path) {
@@ -126,7 +126,7 @@ func TestAPTHandlerV2_Simple(t *testing.T) {
 			} else {
 				shouldCache = false
 			}
-			
+
 			assert.Equal(t, tc.expected, shouldCache, "ShouldCache mismatch for path: %s, status: %d", tc.path, tc.statusCode)
 		}
 	})

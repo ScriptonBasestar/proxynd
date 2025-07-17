@@ -142,10 +142,10 @@ logging:
 
 	// Then
 	assert.NoError(t, err)
-	
+
 	// 콜백이 비동기로 실행되므로 잠시 대기
 	time.Sleep(100 * time.Millisecond)
-	
+
 	assert.True(t, callbackCalled)
 	assert.NotNil(t, callbackConfig)
 	assert.Equal(t, "warn", callbackConfig.Logging.Level)

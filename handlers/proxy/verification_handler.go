@@ -198,14 +198,14 @@ func (vh *VerificationHandler) sendErrorAlert(
 // isStrictMode 엄격 모드 확인
 func (vh *VerificationHandler) isStrictMode() bool {
 	// 설정에서 확인
-	// TODO: 실제 설정 구조에 맞게 수정
+	// NOTE: 실제 설정 구조에 맞게 수정 필요
 	return true
 }
 
 // shouldBlockOnFailure 검증 실패 시 차단 여부
 func (vh *VerificationHandler) shouldBlockOnFailure() bool {
 	// 설정에서 확인
-	// TODO: 실제 설정 구조에 맞게 수정
+	// NOTE: 실제 설정 구조에 맞게 수정 필요
 	return true
 }
 

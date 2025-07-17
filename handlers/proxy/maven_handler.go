@@ -35,6 +35,7 @@ type MavenHandler struct {
 	name             string
 	handlerType      string
 	logger           logging.Logger
+	config           *configs.MavenProxyConfig
 }
 
 // ChecksumVerifier 체크섬 검증기
@@ -54,6 +55,7 @@ func NewMavenHandler() *MavenHandler {
 		name:             "maven-proxy",
 		handlerType:      "maven",
 		logger:           logging.GetLogger(),
+		config:           &configs.MavenProxyConfig{},
 	}
 
 	return handler
@@ -72,13 +74,12 @@ func (h *MavenHandler) Handle(c *fiber.Ctx) error {
 	start := time.Now()
 
 	// 설정 로드
-	config := &configs.MavenProxyConfig{}
-	if err := config.ReadConfig(); err != nil {
+	if err := h.config.ReadConfig(); err != nil {
 		h.logger.Error("Failed to read Maven config", logging.F("error", err))
 		return errors.WrapMavenError(err, "MVN006", "Maven 설정 파일을 읽을 수 없습니다")
 	}
 
-	if len(config.Proxies) == 0 {
+	if len(h.config.Proxies) == 0 {
 		return errors.ErrMavenProxyDisabled
 	}
 
@@ -92,12 +93,12 @@ func (h *MavenHandler) Handle(c *fiber.Ctx) error {
 
 	// SNAPSHOT 버전 처리
 	if strings.Contains(artifactPath, "-SNAPSHOT") {
-		return h.handleSnapshotArtifact(c, artifactPath, config)
+		return h.handleSnapshotArtifact(c, artifactPath, h.config)
 	}
 
 	// 파일 경로 생성
 	storageDir := helpers.GetStorageDir()
-	baseDir := filepath.Join(storageDir, config.Path)
+	baseDir := filepath.Join(storageDir, h.config.Path)
 	filePath, err := security.SafeJoinPath(baseDir, artifactPath)
 	if err != nil {
 		return errors.WrapMavenError(err, "MVN005", "잘못된 Maven 아티팩트 경로입니다")
@@ -112,7 +113,7 @@ func (h *MavenHandler) Handle(c *fiber.Ctx) error {
 	}
 
 	// 업스트림에서 다운로드
-	responseContent, err := h.downloadFromUpstream(filePath, config.Proxies, artifactPath)
+	responseContent, err := h.downloadFromUpstream(filePath, h.config.Proxies, artifactPath)
 	if err != nil {
 		h.logger.Error("Failed to download from upstream",
 			logging.F("path", artifactPath),
@@ -222,7 +223,7 @@ func (h *MavenHandler) handleSnapshotArtifact(c *fiber.Ctx, artifactPath string,
 	)
 
 	// SNAPSHOT은 항상 업스트림에서 최신 버전 가져오기 (캐시 안함)
-	responseContent, err := h.downloadSnapshotFromUpstream(config.Proxies, artifactPath)
+	responseContent, err := h.downloadSnapshotFromUpstream(h.config.Proxies, artifactPath)
 	if err != nil {
 		return errors.WrapMavenError(err, "MVN007", "SNAPSHOT 아티팩트 다운로드에 실패했습니다")
 	}
@@ -378,15 +379,29 @@ func (h *MavenHandler) logResponse(c *fiber.Ctx, duration time.Duration) {
 	}
 }
 
+// IsEnabled 활성화 상태 확인 (v2 기능 통합)
+func (h *MavenHandler) IsEnabled() bool {
+	if err := h.config.ReadConfig(); err != nil {
+		h.logger.Error("Failed to read Maven config", logging.F("error", err))
+		return false
+	}
+	return len(h.config.Proxies) > 0
+}
+
+// GenerateCacheKey 캐시 키 생성 (v2 기능 통합)
+func (h *MavenHandler) GenerateCacheKey(c *fiber.Ctx) string {
+	artifactPath := c.Params("*")
+	return fmt.Sprintf("maven:%s", strings.ReplaceAll(artifactPath, "/", "_"))
+}
+
 // HealthCheck Maven 핸들러 헬스체크
 func (h *MavenHandler) HealthCheck() error {
 	// Maven 설정 확인
-	config := &configs.MavenProxyConfig{}
-	if err := config.ReadConfig(); err != nil {
+	if err := h.config.ReadConfig(); err != nil {
 		return fmt.Errorf("failed to read Maven configuration: %w", err)
 	}
 
-	if len(config.Proxies) == 0 {
+	if len(h.config.Proxies) == 0 {
 		return fmt.Errorf("Maven proxy has no configured repositories")
 	}
 

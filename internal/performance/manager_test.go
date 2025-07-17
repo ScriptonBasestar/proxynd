@@ -5,14 +5,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/scriptonbasestar/proxynd/internal/logging"
+	"proxynd/logging"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestNewManager(t *testing.T) {
 	logger := logging.NewTestLogger()
-	config := DefaultConfig()
+	config := DefaultManagerConfig()
 
 	manager, err := NewManager(logger, config)
 	require.NoError(t, err)
@@ -22,7 +22,7 @@ func TestNewManager(t *testing.T) {
 
 func TestManagerStartStop(t *testing.T) {
 	logger := logging.NewTestLogger()
-	config := DefaultConfig()
+	config := DefaultManagerConfig()
 
 	manager, err := NewManager(logger, config)
 	require.NoError(t, err)
@@ -50,7 +50,7 @@ func TestManagerStartStop(t *testing.T) {
 
 func TestManagerComponents(t *testing.T) {
 	logger := logging.NewTestLogger()
-	config := DefaultConfig()
+	config := DefaultManagerConfig()
 
 	manager, err := NewManager(logger, config)
 	require.NoError(t, err)
@@ -65,7 +65,7 @@ func TestManagerComponents(t *testing.T) {
 
 func TestManagerMetrics(t *testing.T) {
 	logger := logging.NewTestLogger()
-	config := DefaultConfig()
+	config := DefaultManagerConfig()
 
 	manager, err := NewManager(logger, config)
 	require.NoError(t, err)
@@ -78,7 +78,7 @@ func TestManagerMetrics(t *testing.T) {
 
 func TestManagerHealthStatus(t *testing.T) {
 	logger := logging.NewTestLogger()
-	config := DefaultConfig()
+	config := DefaultManagerConfig()
 
 	manager, err := NewManager(logger, config)
 	require.NoError(t, err)
@@ -97,7 +97,7 @@ func TestManagerHealthStatus(t *testing.T) {
 }
 
 func TestDefaultConfig(t *testing.T) {
-	config := DefaultConfig()
+	config := DefaultManagerConfig()
 
 	// Test cache optimizer config
 	assert.NotNil(t, config.CacheOptimizer)
@@ -131,7 +131,7 @@ func TestDefaultConfig(t *testing.T) {
 
 func TestManagerGlobalOptimization(t *testing.T) {
 	logger := logging.NewTestLogger()
-	config := DefaultConfig()
+	config := DefaultManagerConfig()
 
 	// Reduce optimization interval for testing
 	config.ResourceMonitor.MemoryInterval = 100 * time.Millisecond
@@ -156,7 +156,7 @@ func TestManagerGlobalOptimization(t *testing.T) {
 
 func TestManagerComponentIntegration(t *testing.T) {
 	logger := logging.NewTestLogger()
-	config := DefaultConfig()
+	config := DefaultManagerConfig()
 
 	manager, err := NewManager(logger, config)
 	require.NoError(t, err)
@@ -189,7 +189,7 @@ func TestManagerComponentIntegration(t *testing.T) {
 
 func BenchmarkManagerMetrics(b *testing.B) {
 	logger := logging.NewTestLogger()
-	config := DefaultConfig()
+	config := DefaultManagerConfig()
 
 	manager, err := NewManager(logger, config)
 	require.NoError(b, err)
@@ -204,7 +204,7 @@ func BenchmarkManagerMetrics(b *testing.B) {
 
 func BenchmarkManagerHealthStatus(b *testing.B) {
 	logger := logging.NewTestLogger()
-	config := DefaultConfig()
+	config := DefaultManagerConfig()
 
 	manager, err := NewManager(logger, config)
 	require.NoError(b, err)

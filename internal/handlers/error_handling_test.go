@@ -81,31 +81,31 @@ func TestBaseProxyHandlerImpl_ErrorHandling(t *testing.T) {
 		mockHandler := &MockErrorHandler{}
 		mockContainer := &MockErrorContainer{}
 		mockCache := &mocks.MockCache{}
-		
+
 		mockContainer.On("Cache").Return(mockCache)
 		mockHandler.On("IsEnabled").Return(false)
 		mockHandler.On("Type").Return("test")
-		
+
 		impl := NewBaseProxyHandlerImpl(mockContainer, mockHandler)
-		
+
 		// Fiber 컨텍스트 생성
 		app := fiber.New()
 		ctx := app.AcquireCtx(&fasthttp.RequestCtx{})
 		defer app.ReleaseCtx(ctx)
-		
+
 		// Handle 실행
 		err := impl.Handle(ctx)
-		
+
 		// 검증
 		assert.Error(t, err)
-		
+
 		// ProxyND 에러 구조체인지 확인
 		if proxyErr, ok := err.(*proxyerrors.DomainError); ok {
 			assert.Equal(t, "PROXY001", proxyErr.Code)
 			assert.Contains(t, proxyErr.Message, "프록시가 비활성화되어 있습니다")
 			assert.Equal(t, "test", proxyErr.Domain)
 		}
-		
+
 		mockContainer.AssertExpectations(t)
 		mockHandler.AssertExpectations(t)
 	})
@@ -115,33 +115,33 @@ func TestBaseProxyHandlerImpl_ErrorHandling(t *testing.T) {
 		mockHandler := &MockErrorHandler{}
 		mockContainer := &MockErrorContainer{}
 		mockCache := &mocks.MockCache{}
-		
+
 		mockContainer.On("Cache").Return(mockCache)
 		mockHandler.On("IsEnabled").Return(true)
 		mockHandler.On("Type").Return("test")
 		mockHandler.On("GenerateCacheKey", mock.Anything).Return("test-key")
-		
+
 		// 캐시 미스 설정
 		mockCache.On("Get", "test-key").Return(nil, errors.New("cache miss"))
-		
+
 		// BuildUpstreamURL 에러 설정
 		buildError := errors.New("upstream URL build failed")
 		mockHandler.On("BuildUpstreamURL", mock.Anything).Return("", buildError)
 		mockHandler.On("HandleError", buildError, mock.Anything).Return(nil)
-		
+
 		impl := NewBaseProxyHandlerImpl(mockContainer, mockHandler)
-		
+
 		// Fiber 컨텍스트 생성
 		app := fiber.New()
 		ctx := app.AcquireCtx(&fasthttp.RequestCtx{})
 		defer app.ReleaseCtx(ctx)
-		
+
 		// Handle 실행
 		err := impl.Handle(ctx)
-		
+
 		// 검증
 		assert.Error(t, err)
-		
+
 		// ProxyND 에러 구조체인지 확인
 		if proxyErr, ok := err.(*proxyerrors.DomainError); ok {
 			assert.Equal(t, "PROXY002", proxyErr.Code)
@@ -149,7 +149,7 @@ func TestBaseProxyHandlerImpl_ErrorHandling(t *testing.T) {
 			assert.Equal(t, "test", proxyErr.Domain)
 			assert.Equal(t, buildError, proxyErr.Cause)
 		}
-		
+
 		mockContainer.AssertExpectations(t)
 		mockHandler.AssertExpectations(t)
 		mockCache.AssertExpectations(t)
@@ -160,37 +160,37 @@ func TestBaseProxyHandlerImpl_ErrorHandling(t *testing.T) {
 		mockHandler := &MockErrorHandler{}
 		mockContainer := &MockErrorContainer{}
 		mockCache := &mocks.MockCache{}
-		
+
 		mockContainer.On("Cache").Return(mockCache)
 		mockHandler.On("IsEnabled").Return(true)
 		mockHandler.On("Type").Return("test")
 		mockHandler.On("GenerateCacheKey", mock.Anything).Return("test-key")
-		
+
 		// 캐시 미스 설정
 		mockCache.On("Get", "test-key").Return(nil, errors.New("cache miss"))
-		
+
 		// BuildUpstreamURL 성공
 		mockHandler.On("BuildUpstreamURL", mock.Anything).Return("http://test.com/path", nil)
-		
+
 		// TransformRequest 에러 설정
 		transformError := errors.New("request transform failed")
 		mockHandler.On("TransformRequest", mock.Anything, mock.Anything).Return(transformError)
 		mockHandler.On("HandleError", transformError, mock.Anything).Return(nil)
-		
+
 		impl := NewBaseProxyHandlerImpl(mockContainer, mockHandler)
-		
+
 		// Fiber 컨텍스트 생성
 		app := fiber.New()
 		ctx := app.AcquireCtx(&fasthttp.RequestCtx{})
 		defer app.ReleaseCtx(ctx)
-		
+
 		// Handle 실행
 		err := impl.Handle(ctx)
-		
+
 		// 검증
 		assert.Error(t, err)
 		assert.Equal(t, transformError, err)
-		
+
 		mockContainer.AssertExpectations(t)
 		mockHandler.AssertExpectations(t)
 		mockCache.AssertExpectations(t)
@@ -201,36 +201,36 @@ func TestBaseProxyHandlerImpl_ErrorHandling(t *testing.T) {
 		mockHandler := &MockErrorHandler{}
 		mockContainer := &MockErrorContainer{}
 		mockCache := &mocks.MockCache{}
-		
+
 		mockContainer.On("Cache").Return(mockCache)
 		mockHandler.On("IsEnabled").Return(true)
 		mockHandler.On("Type").Return("test")
 		mockHandler.On("GenerateCacheKey", mock.Anything).Return("test-key")
-		
+
 		// 캐시 미스 설정
 		mockCache.On("Get", "test-key").Return(nil, errors.New("cache miss"))
-		
+
 		// BuildUpstreamURL 성공
 		mockHandler.On("BuildUpstreamURL", mock.Anything).Return("http://test.com/path", nil)
-		
+
 		// TransformRequest 성공
 		mockHandler.On("TransformRequest", mock.Anything, mock.Anything).Return(nil)
-		
+
 		// 참고: 실제 HTTP 요청은 모킹하기 어려우므로 TransformResponse 에러만 테스트
 		originalData := []byte("original response")
 		transformError := errors.New("response transform failed")
 		mockHandler.On("TransformResponse", originalData, mock.Anything).Return([]byte{}, transformError)
 		mockHandler.On("HandleError", transformError, mock.Anything).Return(nil)
-		
+
 		// 캐시 정책 설정 (캐시하지 않음)
 		mockHandler.On("ShouldCache", mock.Anything, mock.Anything).Return(false)
-		
+
 		impl := NewBaseProxyHandlerImpl(mockContainer, mockHandler)
-		
+
 		// 이 테스트는 실제 HTTP 요청 없이는 완전히 테스트하기 어려우므로,
 		// 최소한 구조체가 정상적으로 생성되는지 확인
 		assert.NotNil(t, impl)
-		
+
 		mockContainer.AssertExpectations(t)
 	})
 }
@@ -241,17 +241,17 @@ func TestBaseProxyHandlerImpl_CacheErrors(t *testing.T) {
 		mockHandler := &MockErrorHandler{}
 		mockContainer := &MockErrorContainer{}
 		mockCache := &mocks.MockCache{}
-		
+
 		mockContainer.On("Cache").Return(mockCache)
-		
+
 		impl := NewBaseProxyHandlerImpl(mockContainer, mockHandler)
-		
+
 		// logCacheError 메서드 직접 테스트 (캐시 에러 로깅 기능)
 		cacheError := errors.New("cache connection failed")
 		assert.NotPanics(t, func() {
 			impl.logCacheError("get", cacheError, "test")
 		})
-		
+
 		mockContainer.AssertExpectations(t)
 	})
 }
@@ -262,37 +262,37 @@ func TestBaseProxyHandlerImpl_ErrorRecovery(t *testing.T) {
 		mockHandler := &MockErrorHandler{}
 		mockContainer := &MockErrorContainer{}
 		mockCache := &mocks.MockCache{}
-		
+
 		mockContainer.On("Cache").Return(mockCache)
 		mockHandler.On("IsEnabled").Return(true)
 		mockHandler.On("Type").Return("test")
 		mockHandler.On("GenerateCacheKey", mock.Anything).Return("test-key")
-		
+
 		// 캐시 미스 설정
 		mockCache.On("Get", "test-key").Return(nil, errors.New("cache miss"))
-		
+
 		// BuildUpstreamURL 에러 설정
 		buildError := errors.New("upstream URL build failed")
 		mockHandler.On("BuildUpstreamURL", mock.Anything).Return("", buildError)
-		
+
 		// 커스텀 에러 처리 (에러를 변환)
 		customError := fiber.NewError(fiber.StatusBadGateway, "Custom upstream error")
 		mockHandler.On("HandleError", buildError, mock.Anything).Return(customError)
-		
+
 		impl := NewBaseProxyHandlerImpl(mockContainer, mockHandler)
-		
+
 		// Fiber 컨텍스트 생성
 		app := fiber.New()
 		ctx := app.AcquireCtx(&fasthttp.RequestCtx{})
 		defer app.ReleaseCtx(ctx)
-		
+
 		// Handle 실행
 		err := impl.Handle(ctx)
-		
+
 		// 검증 - 커스텀 에러가 반환되어야 함
 		assert.Error(t, err)
 		assert.Equal(t, customError, err)
-		
+
 		mockContainer.AssertExpectations(t)
 		mockHandler.AssertExpectations(t)
 		mockCache.AssertExpectations(t)
@@ -303,35 +303,35 @@ func TestBaseProxyHandlerImpl_ErrorRecovery(t *testing.T) {
 		mockHandler := &MockErrorHandler{}
 		mockContainer := &MockErrorContainer{}
 		mockCache := &mocks.MockCache{}
-		
+
 		mockContainer.On("Cache").Return(mockCache)
 		mockHandler.On("IsEnabled").Return(true)
 		mockHandler.On("Type").Return("test")
 		mockHandler.On("GenerateCacheKey", mock.Anything).Return("test-key")
-		
+
 		// 캐시 미스 설정
 		mockCache.On("Get", "test-key").Return(nil, errors.New("cache miss"))
-		
+
 		// BuildUpstreamURL 에러 설정
 		buildError := errors.New("upstream URL build failed")
 		mockHandler.On("BuildUpstreamURL", mock.Anything).Return("", buildError)
-		
+
 		// 에러 처리기가 nil 반환 (에러 무시)
 		mockHandler.On("HandleError", buildError, mock.Anything).Return(nil)
-		
+
 		impl := NewBaseProxyHandlerImpl(mockContainer, mockHandler)
-		
+
 		// Fiber 컨텍스트 생성
 		app := fiber.New()
 		ctx := app.AcquireCtx(&fasthttp.RequestCtx{})
 		defer app.ReleaseCtx(ctx)
-		
+
 		// Handle 실행
 		err := impl.Handle(ctx)
-		
+
 		// 검증 - 기본 ProxyND 에러가 반환되어야 함
 		assert.Error(t, err)
-		
+
 		// ProxyND 에러 구조체인지 확인
 		if proxyErr, ok := err.(*proxyerrors.DomainError); ok {
 			assert.Equal(t, "PROXY002", proxyErr.Code)
@@ -339,7 +339,7 @@ func TestBaseProxyHandlerImpl_ErrorRecovery(t *testing.T) {
 			assert.Equal(t, "test", proxyErr.Domain)
 			assert.Equal(t, buildError, proxyErr.Cause)
 		}
-		
+
 		mockContainer.AssertExpectations(t)
 		mockHandler.AssertExpectations(t)
 		mockCache.AssertExpectations(t)
@@ -352,18 +352,18 @@ func BenchmarkBaseProxyHandlerImpl_ErrorHandling(b *testing.B) {
 	mockHandler := &MockErrorHandler{}
 	mockContainer := &MockErrorContainer{}
 	mockCache := &mocks.MockCache{}
-	
+
 	mockContainer.On("Cache").Return(mockCache)
 	mockHandler.On("IsEnabled").Return(false)
 	mockHandler.On("Type").Return("test")
-	
+
 	impl := NewBaseProxyHandlerImpl(mockContainer, mockHandler)
-	
+
 	// Fiber 앱 생성
 	app := fiber.New()
-	
+
 	b.ResetTimer()
-	
+
 	for i := 0; i < b.N; i++ {
 		ctx := app.AcquireCtx(&fasthttp.RequestCtx{})
 		_ = impl.Handle(ctx)

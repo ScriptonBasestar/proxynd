@@ -18,19 +18,19 @@ func BenchmarkSimpleCache(b *testing.B) {
 	if err != nil {
 		b.Fatalf("Failed to create cache backend: %v", err)
 	}
-	
+
 	cacheOptions := cache.CacheOptions{
-		MaxSize:    1024 * 1024 * 100,        // 100MB
-		DefaultTTL: 3600 * time.Second,       // 1 hour
+		MaxSize:    1024 * 1024 * 100,  // 100MB
+		DefaultTTL: 3600 * time.Second, // 1 hour
 	}
 	cacheManager := cache.NewManager(cacheBackend, cacheOptions)
-	
+
 	testData := make([]byte, 1024) // 1KB 테스트 데이터
-	
+
 	b.Run("Put", func(b *testing.B) {
 		b.ReportAllocs()
 		b.ResetTimer()
-		
+
 		for i := 0; i < b.N; i++ {
 			key := "test-key"
 			err := cacheManager.Put(key, testData, 3600*time.Second)
@@ -39,14 +39,14 @@ func BenchmarkSimpleCache(b *testing.B) {
 			}
 		}
 	})
-	
+
 	// 캐시에 데이터 준비
 	cacheManager.Put("bench-key", testData, 3600*time.Second)
-	
+
 	b.Run("Get", func(b *testing.B) {
 		b.ReportAllocs()
 		b.ResetTimer()
-		
+
 		for i := 0; i < b.N; i++ {
 			_, exists := cacheManager.Get("bench-key")
 			if !exists {
@@ -54,11 +54,11 @@ func BenchmarkSimpleCache(b *testing.B) {
 			}
 		}
 	})
-	
+
 	b.Run("Exists", func(b *testing.B) {
 		b.ReportAllocs()
 		b.ResetTimer()
-		
+
 		for i := 0; i < b.N; i++ {
 			exists := cacheManager.Exists("bench-key")
 			if !exists {
@@ -77,13 +77,13 @@ func BenchmarkDataSizes(b *testing.B) {
 	if err != nil {
 		b.Fatalf("Failed to create cache backend: %v", err)
 	}
-	
+
 	cacheOptions := cache.CacheOptions{
-		MaxSize:    1024 * 1024 * 500,        // 500MB
-		DefaultTTL: 3600 * time.Second,       // 1 hour
+		MaxSize:    1024 * 1024 * 500,  // 500MB
+		DefaultTTL: 3600 * time.Second, // 1 hour
 	}
 	cacheManager := cache.NewManager(cacheBackend, cacheOptions)
-	
+
 	sizes := []struct {
 		name string
 		size int
@@ -93,15 +93,15 @@ func BenchmarkDataSizes(b *testing.B) {
 		{"100KB", 100 * 1024},
 		{"1MB", 1024 * 1024},
 	}
-	
+
 	for _, size := range sizes {
 		testData := make([]byte, size.size)
-		
+
 		b.Run("Put_"+size.name, func(b *testing.B) {
 			b.SetBytes(int64(size.size))
 			b.ReportAllocs()
 			b.ResetTimer()
-			
+
 			for i := 0; i < b.N; i++ {
 				key := "test-key"
 				err := cacheManager.Put(key, testData, 3600*time.Second)
@@ -110,15 +110,15 @@ func BenchmarkDataSizes(b *testing.B) {
 				}
 			}
 		})
-		
+
 		// 캐시에 데이터 준비
 		cacheManager.Put("bench-key-"+size.name, testData, 3600*time.Second)
-		
+
 		b.Run("Get_"+size.name, func(b *testing.B) {
 			b.SetBytes(int64(size.size))
 			b.ReportAllocs()
 			b.ResetTimer()
-			
+
 			for i := 0; i < b.N; i++ {
 				data, exists := cacheManager.Get("bench-key-" + size.name)
 				if !exists {
@@ -141,25 +141,25 @@ func BenchmarkConcurrentAccess(b *testing.B) {
 	if err != nil {
 		b.Fatalf("Failed to create cache backend: %v", err)
 	}
-	
+
 	cacheOptions := cache.CacheOptions{
-		MaxSize:    1024 * 1024 * 100,        // 100MB
-		DefaultTTL: 3600 * time.Second,       // 1 hour
+		MaxSize:    1024 * 1024 * 100,  // 100MB
+		DefaultTTL: 3600 * time.Second, // 1 hour
 	}
 	cacheManager := cache.NewManager(cacheBackend, cacheOptions)
-	
+
 	testData := make([]byte, 1024) // 1KB 테스트 데이터
-	
+
 	// 초기 데이터 준비
 	for i := 0; i < 100; i++ {
 		key := "concurrent-key"
 		cacheManager.Put(key, testData, 3600*time.Second)
 	}
-	
+
 	b.Run("ConcurrentReads", func(b *testing.B) {
 		b.ReportAllocs()
 		b.ResetTimer()
-		
+
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
 				_, exists := cacheManager.Get("concurrent-key")
@@ -169,11 +169,11 @@ func BenchmarkConcurrentAccess(b *testing.B) {
 			}
 		})
 	})
-	
+
 	b.Run("ConcurrentWrites", func(b *testing.B) {
 		b.ReportAllocs()
 		b.ResetTimer()
-		
+
 		b.RunParallel(func(pb *testing.PB) {
 			i := 0
 			for pb.Next() {
@@ -193,38 +193,38 @@ func BenchmarkMemoryAllocation(b *testing.B) {
 	data1KB := make([]byte, 1024)
 	data10KB := make([]byte, 10*1024)
 	data100KB := make([]byte, 100*1024)
-	
+
 	b.Run("ByteSlice_1KB", func(b *testing.B) {
 		b.ReportAllocs()
 		b.ResetTimer()
-		
+
 		for i := 0; i < b.N; i++ {
 			_ = append([]byte(nil), data1KB...)
 		}
 	})
-	
+
 	b.Run("ByteSlice_10KB", func(b *testing.B) {
 		b.ReportAllocs()
 		b.ResetTimer()
-		
+
 		for i := 0; i < b.N; i++ {
 			_ = append([]byte(nil), data10KB...)
 		}
 	})
-	
+
 	b.Run("ByteSlice_100KB", func(b *testing.B) {
 		b.ReportAllocs()
 		b.ResetTimer()
-		
+
 		for i := 0; i < b.N; i++ {
 			_ = append([]byte(nil), data100KB...)
 		}
 	})
-	
+
 	b.Run("ByteBuffer_1KB", func(b *testing.B) {
 		b.ReportAllocs()
 		b.ResetTimer()
-		
+
 		for i := 0; i < b.N; i++ {
 			var buf bytes.Buffer
 			buf.Write(data1KB)
@@ -241,22 +241,22 @@ func BenchmarkStringOperations(b *testing.B) {
 		"proxy/maven/org/springframework/spring-core/5.3.21/spring-core-5.3.21.jar",
 		"proxy/npm/@types/node/-/node-18.0.0.tgz",
 	}
-	
+
 	b.Run("KeyGeneration", func(b *testing.B) {
 		b.ReportAllocs()
 		b.ResetTimer()
-		
+
 		for i := 0; i < b.N; i++ {
 			for _, key := range testKeys {
 				_ = "cache:" + key
 			}
 		}
 	})
-	
+
 	b.Run("KeyValidation", func(b *testing.B) {
 		b.ReportAllocs()
 		b.ResetTimer()
-		
+
 		for i := 0; i < b.N; i++ {
 			for _, key := range testKeys {
 				// 간단한 키 검증 로직

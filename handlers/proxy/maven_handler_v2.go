@@ -79,7 +79,7 @@ func (h *MavenHandlerV2) BuildUpstreamURL(c *fiber.Ctx) (string, error) {
 	// URL 구성
 	baseURL := strings.TrimRight(repository.URL, "/")
 	cleanPath := strings.TrimLeft(artifactPath, "/")
-	
+
 	return fmt.Sprintf("%s/%s", baseURL, cleanPath), nil
 }
 
@@ -158,7 +158,7 @@ func (h *MavenHandlerV2) ShouldCache(c *fiber.Ctx, statusCode int) bool {
 	}
 
 	artifactPath := c.Params("*")
-	
+
 	// SNAPSHOT 아티팩트는 캐시하지 않음
 	if h.isSnapshotArtifact(artifactPath) {
 		return false
@@ -207,9 +207,9 @@ func (h *MavenHandlerV2) GetCacheTTL(c *fiber.Ctx) time.Duration {
 	}
 
 	// JAR, WAR, EAR 파일은 긴 TTL (30일)
-	if strings.HasSuffix(artifactPath, ".jar") || 
-	   strings.HasSuffix(artifactPath, ".war") || 
-	   strings.HasSuffix(artifactPath, ".ear") {
+	if strings.HasSuffix(artifactPath, ".jar") ||
+		strings.HasSuffix(artifactPath, ".war") ||
+		strings.HasSuffix(artifactPath, ".ear") {
 		return 30 * 24 * time.Hour
 	}
 
@@ -265,17 +265,17 @@ func (h *MavenHandlerV2) isSnapshotArtifact(path string) bool {
 
 // isChecksumFile 체크섬 파일인지 확인
 func (h *MavenHandlerV2) isChecksumFile(path string) bool {
-	return strings.HasSuffix(path, ".sha1") || 
-		   strings.HasSuffix(path, ".md5") ||
-		   strings.HasSuffix(path, ".sha256") ||
-		   strings.HasSuffix(path, ".sha512")
+	return strings.HasSuffix(path, ".sha1") ||
+		strings.HasSuffix(path, ".md5") ||
+		strings.HasSuffix(path, ".sha256") ||
+		strings.HasSuffix(path, ".sha512")
 }
 
 // validateChecksum 체크섬 검증 (기본 구현)
 func (h *MavenHandlerV2) validateChecksum(checksumData []byte, checksumPath string) error {
 	// 기본적인 체크섬 형식 검증
 	checksum := strings.TrimSpace(string(checksumData))
-	
+
 	ext := filepath.Ext(checksumPath)
 	switch ext {
 	case ".sha1":
@@ -335,7 +335,7 @@ func (h *MavenHandlerV2) ValidateClientAuth(c *fiber.Ctx) error {
 // RecordRequestMetrics 요청 메트릭 기록
 func (h *MavenHandlerV2) RecordRequestMetrics(c *fiber.Ctx, statusCode int, duration time.Duration) {
 	artifactPath := c.Params("*")
-	
+
 	h.logger.Info("Maven request metrics",
 		logging.F("status_code", statusCode),
 		logging.F("duration_ms", duration.Milliseconds()),
@@ -352,7 +352,7 @@ func (h *MavenHandlerV2) RecordCacheMetrics(cacheKey string, hit bool, size int)
 	if hit {
 		status = "hit"
 	}
-	
+
 	h.logger.Info("Maven cache metrics",
 		logging.F("cache_key", cacheKey),
 		logging.F("cache_status", status),

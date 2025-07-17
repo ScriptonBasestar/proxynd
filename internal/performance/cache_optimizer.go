@@ -2,10 +2,11 @@ package performance
 
 import (
 	"context"
+	"math"
 	"sync"
 	"time"
 
-	"github.com/scriptonbasestar/proxynd/internal/logging"
+	"proxynd/logging"
 )
 
 // CacheOptimizer provides intelligent cache optimization strategies
@@ -474,6 +475,6 @@ func getHighestPriority(recommendations []OptimizationRecommendation) int {
 	return maxPriority
 }
 
-import "math"
+// import "math"
 
 // Note: math package should be imported normally in real implementation

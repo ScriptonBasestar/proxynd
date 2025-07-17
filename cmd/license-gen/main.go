@@ -25,27 +25,27 @@ const privateKeyPEM = `
 `
 
 type License struct {
-	ID           string    `json:"id"`
-	Company      string    `json:"company"`
-	Email        string    `json:"email"`
-	Features     []string  `json:"features"`
-	MaxServers   int       `json:"max_servers"`
-	MaxUsers     int       `json:"max_users"`
-	IssuedAt     time.Time `json:"issued_at"`
-	ExpiresAt    time.Time `json:"expires_at"`
-	Type         string    `json:"type"`
-	Signature    string    `json:"signature"`
+	ID         string    `json:"id"`
+	Company    string    `json:"company"`
+	Email      string    `json:"email"`
+	Features   []string  `json:"features"`
+	MaxServers int       `json:"max_servers"`
+	MaxUsers   int       `json:"max_users"`
+	IssuedAt   time.Time `json:"issued_at"`
+	ExpiresAt  time.Time `json:"expires_at"`
+	Type       string    `json:"type"`
+	Signature  string    `json:"signature"`
 }
 
 func main() {
 	var (
-		company    = flag.String("company", "", "Company name")
-		email      = flag.String("email", "", "Contact email")
+		company     = flag.String("company", "", "Company name")
+		email       = flag.String("email", "", "Contact email")
 		licenseType = flag.String("type", "trial", "License type: trial, starter, professional, enterprise, ultimate")
-		duration   = flag.Duration("duration", 365*24*time.Hour, "License duration")
-		maxServers = flag.Int("servers", 0, "Max servers (0 = unlimited)")
-		maxUsers   = flag.Int("users", 0, "Max users (0 = unlimited)")
-		output     = flag.String("output", "license.json", "Output file")
+		duration    = flag.Duration("duration", 365*24*time.Hour, "License duration")
+		maxServers  = flag.Int("servers", 0, "Max servers (0 = unlimited)")
+		maxUsers    = flag.Int("users", 0, "Max users (0 = unlimited)")
+		output      = flag.String("output", "license.json", "Output file")
 	)
 	flag.Parse()
 

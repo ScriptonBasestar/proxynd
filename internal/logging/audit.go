@@ -97,7 +97,7 @@ func (a *AuditLogger) LogEvent(ctx context.Context, event AuditEvent) {
 	}
 
 	message := "Audit event: " + event.Action
-	
+
 	// Log based on result
 	switch event.Result {
 	case "failure", "error":
@@ -114,19 +114,19 @@ func (a *AuditLogger) LogEvent(ctx context.Context, event AuditEvent) {
 // LogAuthentication logs authentication events
 func (a *AuditLogger) LogAuthentication(ctx context.Context, userID, method, result string, metadata map[string]interface{}) {
 	event := AuditEvent{
-		EventType: "authentication",
-		Action:    "authenticate",
-		Resource:  "user",
+		EventType:  "authentication",
+		Action:     "authenticate",
+		Resource:   "user",
 		ResourceID: userID,
-		Result:    result,
-		Metadata:  metadata,
+		Result:     result,
+		Metadata:   metadata,
 	}
-	
+
 	if metadata == nil {
 		event.Metadata = make(map[string]interface{})
 	}
 	event.Metadata["auth_method"] = method
-	
+
 	a.LogEvent(ctx, event)
 }
 
@@ -139,7 +139,7 @@ func (a *AuditLogger) LogAuthorization(ctx context.Context, userID, resource, ac
 		Result:    result,
 		Metadata:  metadata,
 	}
-	
+
 	a.LogEvent(ctx, event)
 }
 
@@ -153,7 +153,7 @@ func (a *AuditLogger) LogFileAccess(ctx context.Context, filePath, action, resul
 		Result:     result,
 		Metadata:   metadata,
 	}
-	
+
 	a.LogEvent(ctx, event)
 }
 
@@ -169,7 +169,7 @@ func (a *AuditLogger) LogConfigurationChange(ctx context.Context, configType, ac
 			"changes": changes,
 		},
 	}
-	
+
 	a.LogEvent(ctx, event)
 }
 
@@ -182,7 +182,7 @@ func (a *AuditLogger) LogAdminAction(ctx context.Context, action, resource, resu
 		Result:    result,
 		Metadata:  metadata,
 	}
-	
+
 	a.LogEvent(ctx, event)
 }
 
@@ -195,7 +195,7 @@ func (a *AuditLogger) LogSecurityEvent(ctx context.Context, eventType, action, r
 		Result:    result,
 		Metadata:  metadata,
 	}
-	
+
 	a.LogEvent(ctx, event)
 }
 
@@ -203,29 +203,29 @@ func (a *AuditLogger) LogSecurityEvent(ctx context.Context, eventType, action, r
 func AuditMiddleware(auditLogger *AuditLogger) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		start := time.Now()
-		
+
 		// Extract request information
 		userID := GetUserID(c.UserContext())
 		if userID == "" {
 			userID = c.Get("X-User-ID")
 		}
-		
+
 		// Process request
 		err := c.Next()
-		
+
 		// Log audit event for specific endpoints
 		if shouldAudit(c.Method(), c.Path()) {
 			duration := time.Since(start)
 			result := "success"
 			errorMessage := ""
-			
+
 			if err != nil {
 				result = "failure"
 				errorMessage = err.Error()
 			} else if c.Response().StatusCode() >= 400 {
 				result = "failure"
 			}
-			
+
 			event := AuditEvent{
 				EventType:    "api_call",
 				Action:       getActionFromRequest(c.Method(), c.Path()),
@@ -243,10 +243,10 @@ func AuditMiddleware(auditLogger *AuditLogger) fiber.Handler {
 					"query":       c.Queries(),
 				},
 			}
-			
+
 			auditLogger.LogEvent(c.UserContext(), event)
 		}
-		
+
 		return err
 	}
 }
@@ -259,18 +259,18 @@ func shouldAudit(method, path string) bool {
 		"/metrics",
 		"/favicon.ico",
 	}
-	
+
 	for _, skipPath := range skipPaths {
 		if path == skipPath {
 			return false
 		}
 	}
-	
+
 	// Audit all POST, PUT, DELETE requests
 	if method == "POST" || method == "PUT" || method == "DELETE" {
 		return true
 	}
-	
+
 	// Audit specific GET endpoints (admin, auth, etc.)
 	auditPaths := []string{
 		"/admin",
@@ -278,13 +278,13 @@ func shouldAudit(method, path string) bool {
 		"/api/admin",
 		"/api/auth",
 	}
-	
+
 	for _, auditPath := range auditPaths {
 		if len(path) >= len(auditPath) && path[:len(auditPath)] == auditPath {
 			return true
 		}
 	}
-	
+
 	return false
 }
 
@@ -315,4 +315,3 @@ func getResourceFromPath(path string) string {
 	}
 	return "unknown"
 }
-

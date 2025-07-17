@@ -78,12 +78,12 @@ func TestBaseProxyHandlerImpl_Constructor(t *testing.T) {
 		mockHandler := &MockSimpleHandler{}
 		mockContainer := &MockSimpleContainer{}
 		mockCache := &mocks.MockCache{}
-		
+
 		mockContainer.On("Cache").Return(mockCache)
-		
+
 		// BaseProxyHandlerImpl 생성
 		impl := NewBaseProxyHandlerImpl(mockContainer, mockHandler)
-		
+
 		// 검증
 		assert.NotNil(t, impl)
 		assert.Equal(t, mockContainer, impl.container)
@@ -91,7 +91,7 @@ func TestBaseProxyHandlerImpl_Constructor(t *testing.T) {
 		assert.Equal(t, mockCache, impl.cache)
 		assert.NotNil(t, impl.logger)
 		assert.NotNil(t, impl.client)
-		
+
 		mockContainer.AssertExpectations(t)
 	})
 
@@ -99,10 +99,10 @@ func TestBaseProxyHandlerImpl_Constructor(t *testing.T) {
 		// Cache를 제공하지 않는 간단한 컨테이너
 		mockHandler := &MockSimpleHandler{}
 		simpleContainer := struct{}{}
-		
+
 		// BaseProxyHandlerImpl 생성 - 캐시 없이
 		impl := NewBaseProxyHandlerImpl(simpleContainer, mockHandler)
-		
+
 		// 검증
 		assert.NotNil(t, impl)
 		assert.Equal(t, simpleContainer, impl.container)
@@ -118,15 +118,15 @@ func TestBaseProxyHandlerImpl_Name(t *testing.T) {
 		// Mock 설정
 		mockHandler := &MockSimpleHandler{}
 		mockHandler.On("Type").Return("test")
-		
+
 		impl := &BaseProxyHandlerImpl{
 			handler: mockHandler,
 		}
-		
+
 		// Name 메서드 테스트
 		name := impl.Name()
 		assert.Equal(t, "base-proxy-test", name)
-		
+
 		mockHandler.AssertExpectations(t)
 	})
 }
@@ -136,15 +136,15 @@ func TestBaseProxyHandlerImpl_Type(t *testing.T) {
 		// Mock 설정
 		mockHandler := &MockSimpleHandler{}
 		mockHandler.On("Type").Return("apt")
-		
+
 		impl := &BaseProxyHandlerImpl{
 			handler: mockHandler,
 		}
-		
+
 		// Type 메서드 테스트
 		proxyType := impl.Type()
 		assert.Equal(t, "apt", proxyType)
-		
+
 		mockHandler.AssertExpectations(t)
 	})
 }
@@ -154,15 +154,15 @@ func TestBaseProxyHandlerImpl_HealthCheck(t *testing.T) {
 		// Mock 설정
 		mockHandler := &MockSimpleHandler{}
 		mockHandler.On("IsEnabled").Return(true)
-		
+
 		impl := &BaseProxyHandlerImpl{
 			handler: mockHandler,
 		}
-		
+
 		// HealthCheck 테스트
 		err := impl.HealthCheck()
 		assert.NoError(t, err)
-		
+
 		mockHandler.AssertExpectations(t)
 	})
 
@@ -171,16 +171,16 @@ func TestBaseProxyHandlerImpl_HealthCheck(t *testing.T) {
 		mockHandler := &MockSimpleHandler{}
 		mockHandler.On("IsEnabled").Return(false)
 		mockHandler.On("Type").Return("test")
-		
+
 		impl := &BaseProxyHandlerImpl{
 			handler: mockHandler,
 		}
-		
+
 		// HealthCheck 테스트
 		err := impl.HealthCheck()
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "비활성화되어 있습니다")
-		
+
 		mockHandler.AssertExpectations(t)
 	})
 }
@@ -188,11 +188,11 @@ func TestBaseProxyHandlerImpl_HealthCheck(t *testing.T) {
 func TestBaseProxyHandlerImpl_isHopByHopHeader(t *testing.T) {
 	t.Run("isHopByHopHeader detection", func(t *testing.T) {
 		impl := &BaseProxyHandlerImpl{}
-		
+
 		// hop-by-hop 헤더들
 		hopByHopHeaders := []string{
 			"Connection",
-			"Keep-Alive", 
+			"Keep-Alive",
 			"Proxy-Authenticate",
 			"Proxy-Authorization",
 			"TE",
@@ -200,11 +200,11 @@ func TestBaseProxyHandlerImpl_isHopByHopHeader(t *testing.T) {
 			"Transfer-Encoding",
 			"Upgrade",
 		}
-		
+
 		for _, header := range hopByHopHeaders {
 			assert.True(t, impl.isHopByHopHeader(header), "Expected %s to be hop-by-hop header", header)
 		}
-		
+
 		// 일반 헤더들
 		normalHeaders := []string{
 			"Content-Type",
@@ -214,7 +214,7 @@ func TestBaseProxyHandlerImpl_isHopByHopHeader(t *testing.T) {
 			"Accept",
 			"Host",
 		}
-		
+
 		for _, header := range normalHeaders {
 			assert.False(t, impl.isHopByHopHeader(header), "Expected %s to NOT be hop-by-hop header", header)
 		}
@@ -222,7 +222,7 @@ func TestBaseProxyHandlerImpl_isHopByHopHeader(t *testing.T) {
 
 	t.Run("isHopByHopHeader case sensitivity", func(t *testing.T) {
 		impl := &BaseProxyHandlerImpl{}
-		
+
 		// 대소문자 구분 확인
 		assert.True(t, impl.isHopByHopHeader("Connection"))
 		assert.False(t, impl.isHopByHopHeader("connection")) // 소문자는 false
@@ -236,17 +236,17 @@ func TestBaseProxyHandlerImpl_Logging(t *testing.T) {
 		mockHandler := &MockSimpleHandler{}
 		mockContainer := &MockSimpleContainer{}
 		mockCache := &mocks.MockCache{}
-		
+
 		mockContainer.On("Cache").Return(mockCache)
-		
+
 		// NewBaseProxyHandlerImpl을 통해 올바르게 초기화된 인스턴스 생성
 		impl := NewBaseProxyHandlerImpl(mockContainer, mockHandler)
-		
+
 		// logCacheError는 void 함수이므로 에러가 발생하지 않는지만 확인
 		assert.NotPanics(t, func() {
 			impl.logCacheError("get", assert.AnError, "test")
 		})
-		
+
 		mockContainer.AssertExpectations(t)
 	})
 }
@@ -254,14 +254,14 @@ func TestBaseProxyHandlerImpl_Logging(t *testing.T) {
 // 벤치마크 테스트
 func BenchmarkBaseProxyHandlerImpl_isHopByHopHeader(b *testing.B) {
 	impl := &BaseProxyHandlerImpl{}
-	
+
 	b.Run("hop-by-hop header", func(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			_ = impl.isHopByHopHeader("Connection")
 		}
 	})
-	
+
 	b.Run("normal header", func(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {

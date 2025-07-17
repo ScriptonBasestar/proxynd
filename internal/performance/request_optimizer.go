@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/scriptonbasestar/proxynd/internal/logging"
+	"proxynd/logging"
 )
 
 // RequestOptimizer optimizes HTTP request processing

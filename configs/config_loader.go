@@ -403,140 +403,140 @@ func ValidateConfig(config *UnifiedConfig) []string {
 // LoadMavenProxyConfig 메이븐 프록시 설정 로드
 func (cl *ConfigLoader) LoadMavenProxyConfig(ctx context.Context) (*MavenProxyConfig, error) {
 	config := &MavenProxyConfig{}
-	
+
 	// 기본값 설정
 	config.UseCache = true
 	config.Cache = MavenProxyCacheConfig{
 		Enabled: true,
 	}
-	
+
 	// 설정 파일 경로 구성
 	configPath := filepath.Join(cl.configPath, "maven-proxy.yaml")
-	
+
 	// 설정 파일이 존재하는지 확인
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		return config, nil // 기본값 반환
 	}
-	
+
 	// 설정 파일 읽기
 	data, err := os.ReadFile(configPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read maven config file: %w", err)
 	}
-	
+
 	// YAML 파싱
 	if err := yaml.Unmarshal(data, config); err != nil {
 		return nil, fmt.Errorf("failed to parse maven config: %w", err)
 	}
-	
+
 	// 검증
 	if err := config.Validate(); err != nil {
 		return nil, fmt.Errorf("invalid maven config: %w", err)
 	}
-	
+
 	return config, nil
 }
 
 // LoadAptProxyConfig APT 프록시 설정 로드
 func (cl *ConfigLoader) LoadAptProxyConfig(ctx context.Context) (*AptProxyConfig, error) {
 	config := &AptProxyConfig{}
-	
+
 	// 기본값 설정
 	config.UseCache = true
-	
+
 	// 설정 파일 경로 구성
 	configPath := filepath.Join(cl.configPath, "apt-proxy.yaml")
-	
+
 	// 설정 파일이 존재하는지 확인
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		return config, nil // 기본값 반환
 	}
-	
+
 	// 설정 파일 읽기
 	data, err := os.ReadFile(configPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read apt config file: %w", err)
 	}
-	
+
 	// YAML 파싱
 	if err := yaml.Unmarshal(data, config); err != nil {
 		return nil, fmt.Errorf("failed to parse apt config: %w", err)
 	}
-	
+
 	// 검증
 	if err := config.Validate(); err != nil {
 		return nil, fmt.Errorf("invalid apt config: %w", err)
 	}
-	
+
 	return config, nil
 }
 
 // LoadNpmProxyConfig NPM 프록시 설정 로드
 func (cl *ConfigLoader) LoadNpmProxyConfig(ctx context.Context) (*NpmProxyConfig, error) {
 	config := &NpmProxyConfig{}
-	
+
 	// 기본값 설정
 	config.UseCache = true
 	config.UserCache = false
-	
+
 	// 설정 파일 경로 구성
 	configPath := filepath.Join(cl.configPath, "npm-proxy.yaml")
-	
+
 	// 설정 파일이 존재하는지 확인
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		return config, nil // 기본값 반환
 	}
-	
+
 	// 설정 파일 읽기
 	data, err := os.ReadFile(configPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read npm config file: %w", err)
 	}
-	
+
 	// YAML 파싱
 	if err := yaml.Unmarshal(data, config); err != nil {
 		return nil, fmt.Errorf("failed to parse npm config: %w", err)
 	}
-	
+
 	// 검증
 	if err := config.Validate(); err != nil {
 		return nil, fmt.Errorf("invalid npm config: %w", err)
 	}
-	
+
 	return config, nil
 }
 
 // LoadDockerProxyConfig Docker 프록시 설정 로드
 func (cl *ConfigLoader) LoadDockerProxyConfig(ctx context.Context) (*DockerProxyConfig, error) {
 	config := &DockerProxyConfig{}
-	
+
 	// 기본값 설정
 	config.UseCache = true
-	
+
 	// 설정 파일 경로 구성
 	configPath := filepath.Join(cl.configPath, "docker-proxy.yaml")
-	
+
 	// 설정 파일이 존재하는지 확인
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		return config, nil // 기본값 반환
 	}
-	
+
 	// 설정 파일 읽기
 	data, err := os.ReadFile(configPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read docker config file: %w", err)
 	}
-	
+
 	// YAML 파싱
 	if err := yaml.Unmarshal(data, config); err != nil {
 		return nil, fmt.Errorf("failed to parse docker config: %w", err)
 	}
-	
+
 	// 검증
 	if err := config.Validate(); err != nil {
 		return nil, fmt.Errorf("invalid docker config: %w", err)
 	}
-	
+
 	return config, nil
 }
 
@@ -548,101 +548,101 @@ func (cl *ConfigLoader) LoadGlobalConfig(ctx context.Context) (*UnifiedConfig, e
 // LoadPipProxyConfig PIP 프록시 설정 로드
 func (cl *ConfigLoader) LoadPipProxyConfig(ctx context.Context) (*PipProxyConfig, error) {
 	config := &PipProxyConfig{}
-	
+
 	// 기본값 설정
 	config.UseCache = true
-	
+
 	// 설정 파일 경로 구성
 	configPath := filepath.Join(cl.configPath, "pip-proxy.yaml")
-	
+
 	// 설정 파일이 존재하는지 확인
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		return config, nil // 기본값 반환
 	}
-	
+
 	// 설정 파일 읽기
 	data, err := os.ReadFile(configPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read pip config file: %w", err)
 	}
-	
+
 	// YAML 파싱
 	if err := yaml.Unmarshal(data, config); err != nil {
 		return nil, fmt.Errorf("failed to parse pip config: %w", err)
 	}
-	
+
 	// 검증
 	if err := config.Validate(); err != nil {
 		return nil, fmt.Errorf("invalid pip config: %w", err)
 	}
-	
+
 	return config, nil
 }
 
 // LoadYumProxyConfig YUM 프록시 설정 로드
 func (cl *ConfigLoader) LoadYumProxyConfig(ctx context.Context) (*YumProxyConfig, error) {
 	config := &YumProxyConfig{}
-	
+
 	// 기본값 설정
 	config.UseCache = true
-	
+
 	// 설정 파일 경로 구성
 	configPath := filepath.Join(cl.configPath, "yum-proxy.yaml")
-	
+
 	// 설정 파일이 존재하는지 확인
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		return config, nil // 기본값 반환
 	}
-	
+
 	// 설정 파일 읽기
 	data, err := os.ReadFile(configPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read yum config file: %w", err)
 	}
-	
+
 	// YAML 파싱
 	if err := yaml.Unmarshal(data, config); err != nil {
 		return nil, fmt.Errorf("failed to parse yum config: %w", err)
 	}
-	
+
 	// 검증
 	if err := config.Validate(); err != nil {
 		return nil, fmt.Errorf("invalid yum config: %w", err)
 	}
-	
+
 	return config, nil
 }
 
 // LoadApkProxyConfig APK 프록시 설정 로드
 func (cl *ConfigLoader) LoadApkProxyConfig(ctx context.Context) (*ApkProxyConfig, error) {
 	config := &ApkProxyConfig{}
-	
+
 	// 기본값 설정
 	config.UseCache = true
-	
+
 	// 설정 파일 경로 구성
 	configPath := filepath.Join(cl.configPath, "apk-proxy.yaml")
-	
+
 	// 설정 파일이 존재하는지 확인
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		return config, nil // 기본값 반환
 	}
-	
+
 	// 설정 파일 읽기
 	data, err := os.ReadFile(configPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read apk config file: %w", err)
 	}
-	
+
 	// YAML 파싱
 	if err := yaml.Unmarshal(data, config); err != nil {
 		return nil, fmt.Errorf("failed to parse apk config: %w", err)
 	}
-	
+
 	// 검증
 	if err := config.Validate(); err != nil {
 		return nil, fmt.Errorf("invalid apk config: %w", err)
 	}
-	
+
 	return config, nil
 }

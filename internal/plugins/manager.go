@@ -254,12 +254,12 @@ func (pm *PluginManager) HandleRequest(ctx *fiber.Ctx, packageType string, mode 
 
 	handler, exists := pm.GetHandler(packageType)
 	if !exists {
-		return fiber.NewError(fiber.StatusNotFound, 
+		return fiber.NewError(fiber.StatusNotFound,
 			fmt.Sprintf("Handler for package type '%s' not found", packageType))
 	}
 
 	if !handler.SupportsMode(mode) {
-		return fiber.NewError(fiber.StatusBadRequest, 
+		return fiber.NewError(fiber.StatusBadRequest,
 			fmt.Sprintf("Handler for '%s' does not support %s mode", packageType, mode))
 	}
 
@@ -366,7 +366,7 @@ func (pm *PluginManager) startHealthCheckLoop(ctx context.Context, interval time
 // performHealthCheck 헬스체크 수행
 func (pm *PluginManager) performHealthCheck(ctx context.Context) {
 	results := pm.HealthCheck(ctx)
-	
+
 	healthyCount := 0
 	for packageType, err := range results {
 		if err == nil {

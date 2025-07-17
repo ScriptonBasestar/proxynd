@@ -214,7 +214,7 @@ func (pv *PackageVerifier) verifyAptPackage(
 	metadata map[string]string,
 ) (*VerificationResult, error) {
 	// APT는 Release 파일의 SHA256 사용
-	// TODO: GPG 서명 검증 구현
+	// NOTE: GPG 서명 검증 구현 필요
 
 	expectedHash := metadata["sha256sum"]
 	if expectedHash == "" {

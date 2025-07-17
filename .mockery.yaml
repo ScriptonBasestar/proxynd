@@ -54,7 +54,6 @@ packages:
   proxynd/health:
     interfaces:
       HealthChecker:
-      HealthCheck:
   
   proxynd/internal/webhook:
     interfaces:

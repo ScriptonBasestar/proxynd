@@ -7,11 +7,11 @@ import (
 
 // 기본 타임아웃 상수 정의
 const (
-	DefaultTimeout  = 30 * time.Second  // 기본 요청 타임아웃
-	DownloadTimeout = 5 * time.Minute   // 파일 다운로드 타임아웃
-	UploadTimeout   = 10 * time.Minute  // 파일 업로드 타임아웃
-	ShortTimeout    = 5 * time.Second   // 빠른 작업용 타임아웃
-	LongTimeout     = 2 * time.Minute   // 긴 작업용 타임아웃
+	DefaultTimeout  = 30 * time.Second // 기본 요청 타임아웃
+	DownloadTimeout = 5 * time.Minute  // 파일 다운로드 타임아웃
+	UploadTimeout   = 10 * time.Minute // 파일 업로드 타임아웃
+	ShortTimeout    = 5 * time.Second  // 빠른 작업용 타임아웃
+	LongTimeout     = 2 * time.Minute  // 긴 작업용 타임아웃
 )
 
 // WithDefaultTimeout 기본 타임아웃이 설정된 컨텍스트 생성

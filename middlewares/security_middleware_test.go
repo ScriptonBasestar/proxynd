@@ -40,10 +40,10 @@ func TestSecurityMiddlewareConfig(t *testing.T) {
 
 func TestEnhancedInputValidation(t *testing.T) {
 	app := fiber.New()
-	
+
 	// 테스트용 미들웨어 설정
 	app.Use(EnhancedInputValidation())
-	
+
 	app.Post("/test", func(c *fiber.Ctx) error {
 		return c.SendString("OK")
 	})
@@ -89,10 +89,10 @@ func TestEnhancedInputValidation(t *testing.T) {
 			expectedStatus: 400,
 		},
 		{
-			name:           "Long header value",
-			method:         "POST",
-			path:           "/test",
-			body:           `{"test": "data"}`,
+			name:   "Long header value",
+			method: "POST",
+			path:   "/test",
+			body:   `{"test": "data"}`,
 			headers: map[string]string{
 				"Content-Type": "application/json",
 				"X-Custom":     strings.Repeat("a", 2500), // 너무 긴 헤더
@@ -104,7 +104,7 @@ func TestEnhancedInputValidation(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			req := httptest.NewRequest(tt.method, tt.path, strings.NewReader(tt.body))
-			
+
 			for key, value := range tt.headers {
 				req.Header.Set(key, value)
 			}
@@ -118,13 +118,13 @@ func TestEnhancedInputValidation(t *testing.T) {
 
 func TestIPValidation(t *testing.T) {
 	app := fiber.New()
-	
+
 	// IP 필터링 미들웨어 설정
 	blockedCIDRs := []string{"192.168.1.0/24", "10.0.0.1"}
 	allowedCIDRs := []string{"127.0.0.1", "::1"}
-	
+
 	app.Use(IPValidation(blockedCIDRs, allowedCIDRs))
-	
+
 	app.Get("/test", func(c *fiber.Ctx) error {
 		return c.SendString("OK")
 	})
@@ -160,7 +160,7 @@ func TestIPValidation(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			req := httptest.NewRequest("GET", "/test", nil)
 			req.RemoteAddr = tt.remoteAddr
-			
+
 			resp, err := app.Test(req)
 			require.NoError(t, err)
 			assert.Equal(t, tt.expectedStatus, resp.StatusCode)
@@ -170,7 +170,7 @@ func TestIPValidation(t *testing.T) {
 
 func TestEnhancedRateLimiterIntegration(t *testing.T) {
 	app := fiber.New()
-	
+
 	// 테스트용 Rate Limiter 설정 (매우 낮은 제한)
 	config := EnhancedRateLimitConfig{
 		Rate:  "2-M", // 분당 2개 요청
@@ -180,9 +180,9 @@ func TestEnhancedRateLimiterIntegration(t *testing.T) {
 		},
 		EnableLogging: false, // 테스트 시 로깅 비활성화
 	}
-	
+
 	app.Use(NewEnhancedRateLimiter(config))
-	
+
 	app.Get("/test", func(c *fiber.Ctx) error {
 		return c.SendString("OK")
 	})
@@ -208,9 +208,9 @@ func TestEnhancedRateLimiterIntegration(t *testing.T) {
 
 func TestSecurityHeadersMiddleware(t *testing.T) {
 	app := fiber.New()
-	
+
 	app.Use(SecurityHeaders())
-	
+
 	app.Get("/test", func(c *fiber.Ctx) error {
 		return c.SendString("OK")
 	})
@@ -218,9 +218,9 @@ func TestSecurityHeadersMiddleware(t *testing.T) {
 	req := httptest.NewRequest("GET", "/test", nil)
 	resp, err := app.Test(req)
 	require.NoError(t, err)
-	
+
 	assert.Equal(t, 200, resp.StatusCode)
-	
+
 	// 보안 헤더 확인
 	assert.Equal(t, "nosniff", resp.Header.Get("X-Content-Type-Options"))
 	assert.Equal(t, "DENY", resp.Header.Get("X-Frame-Options"))
@@ -231,10 +231,10 @@ func TestSecurityHeadersMiddleware(t *testing.T) {
 
 func TestCORSSecurityHeaders(t *testing.T) {
 	app := fiber.New()
-	
+
 	allowedOrigins := []string{"https://example.com", "https://test.com"}
 	app.Use(CORSSecurityHeaders(allowedOrigins))
-	
+
 	app.Get("/test", func(c *fiber.Ctx) error {
 		return c.SendString("OK")
 	})
@@ -273,10 +273,10 @@ func TestCORSSecurityHeaders(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			req := httptest.NewRequest(tt.method, "/test", nil)
 			req.Header.Set("Origin", tt.origin)
-			
+
 			resp, err := app.Test(req)
 			require.NoError(t, err)
-			
+
 			assert.Equal(t, tt.expectedStatus, resp.StatusCode)
 			assert.Equal(t, tt.expectedOrigin, resp.Header.Get("Access-Control-Allow-Origin"))
 		})
@@ -285,13 +285,13 @@ func TestCORSSecurityHeaders(t *testing.T) {
 
 func TestSetupSecurityMiddlewares(t *testing.T) {
 	app := fiber.New()
-	
+
 	config := DefaultSecurityMiddlewareConfig()
 	config.EnableSecurityLogging = false // 테스트 시 로깅 비활성화
-	
+
 	// 보안 미들웨어 설정
 	SetupSecurityMiddlewares(app, config)
-	
+
 	app.Get("/test", func(c *fiber.Ctx) error {
 		return c.SendString("OK")
 	})
@@ -299,27 +299,27 @@ func TestSetupSecurityMiddlewares(t *testing.T) {
 	req := httptest.NewRequest("GET", "/test", nil)
 	resp, err := app.Test(req)
 	require.NoError(t, err)
-	
+
 	assert.Equal(t, 200, resp.StatusCode)
-	
+
 	// Rate limit 헤더 확인
 	assert.NotEmpty(t, resp.Header.Get("X-RateLimit-Limit"))
 	assert.NotEmpty(t, resp.Header.Get("X-RateLimit-Remaining"))
-	
+
 	// 보안 헤더 확인
 	assert.Equal(t, "nosniff", resp.Header.Get("X-Content-Type-Options"))
 }
 
 func TestAPISecurityMiddlewares(t *testing.T) {
 	app := fiber.New()
-	
+
 	config := DefaultSecurityMiddlewareConfig()
 	config.EnableSecurityLogging = false
-	
+
 	// API 그룹 생성
 	apiGroup := app.Group("/api")
 	SetupAPISecurityMiddlewares(apiGroup, config)
-	
+
 	apiGroup.Get("/test", func(c *fiber.Ctx) error {
 		return c.SendString("OK")
 	})
@@ -327,9 +327,9 @@ func TestAPISecurityMiddlewares(t *testing.T) {
 	req := httptest.NewRequest("GET", "/api/test", nil)
 	resp, err := app.Test(req)
 	require.NoError(t, err)
-	
+
 	assert.Equal(t, 200, resp.StatusCode)
-	
+
 	// API 전용 보안 헤더 확인
 	assert.Equal(t, "ProxyND-API", resp.Header.Get("Server"))
 	assert.Equal(t, "no-store, no-cache, must-revalidate, private", resp.Header.Get("Cache-Control"))
@@ -337,18 +337,18 @@ func TestAPISecurityMiddlewares(t *testing.T) {
 
 func BenchmarkSecurityMiddlewares(b *testing.B) {
 	app := fiber.New()
-	
+
 	config := DefaultSecurityMiddlewareConfig()
 	config.EnableSecurityLogging = false
-	
+
 	SetupSecurityMiddlewares(app, config)
-	
+
 	app.Get("/test", func(c *fiber.Ctx) error {
 		return c.SendString("OK")
 	})
 
 	req := httptest.NewRequest("GET", "/test", nil)
-	
+
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -366,9 +366,9 @@ func BenchmarkSecurityMiddlewares(b *testing.B) {
 
 func TestValidateContentType(t *testing.T) {
 	app := fiber.New()
-	
+
 	app.Use(EnhancedInputValidation())
-	
+
 	app.Post("/test", func(c *fiber.Ctx) error {
 		return c.SendString("OK")
 	})
@@ -415,7 +415,7 @@ func TestValidateContentType(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			req := httptest.NewRequest("POST", "/test", bytes.NewReader(tt.body))
 			req.Header.Set("Content-Type", tt.contentType)
-			
+
 			resp, err := app.Test(req)
 			require.NoError(t, err)
 			assert.Equal(t, tt.expectedStatus, resp.StatusCode)

@@ -25,13 +25,13 @@ func NewErrorRecovery() *ErrorRecoveryMiddleware {
 // ErrorRecovery 패닉 복구 미들웨어 함수
 func ErrorRecovery() fiber.Handler {
 	recovery := NewErrorRecovery()
-	
+
 	return func(c *fiber.Ctx) error {
 		defer func() {
 			if r := recover(); r != nil {
 				// 스택 트레이스 캡처
 				stack := debug.Stack()
-				
+
 				// 추적 ID 가져오기
 				traceID := c.Locals("requestID")
 				if traceID == nil {
@@ -54,7 +54,7 @@ func ErrorRecovery() fiber.Handler {
 
 				// 패닉 에러를 컨텍스트에 저장하고 에러 핸들러로 전달
 				c.Locals("panic_error", panicErr)
-				
+
 				// 에러 응답 생성
 				response := ErrorResponse{
 					Error:     panicErr.Code,
@@ -63,7 +63,7 @@ func ErrorRecovery() fiber.Handler {
 					TraceID:   traceID.(string),
 					Timestamp: panicErr.Timestamp,
 				}
-				
+
 				// 패닉 상황에서는 직접 응답
 				c.Status(fiber.StatusInternalServerError).JSON(response)
 			}
@@ -92,7 +92,7 @@ func (m *ErrorRecoveryMiddleware) logPanic(c *fiber.Ctx, panicValue interface{},
 type RecoveryConfig struct {
 	// EnableStackTrace 스택 트레이스 포함 여부
 	EnableStackTrace bool
-	
+
 	// StackTraceHandler 커스텀 스택 트레이스 핸들러
 	StackTraceHandler func(c *fiber.Ctx, e interface{})
 }
@@ -100,7 +100,7 @@ type RecoveryConfig struct {
 // RecoveryWithConfig 설정 가능한 복구 미들웨어
 func RecoveryWithConfig(config RecoveryConfig) fiber.Handler {
 	recovery := NewErrorRecovery()
-	
+
 	return func(c *fiber.Ctx) error {
 		defer func() {
 			if r := recover(); r != nil {
@@ -132,7 +132,7 @@ func RecoveryWithConfig(config RecoveryConfig) fiber.Handler {
 					"panic":    fmt.Sprintf("%v", r),
 					"trace_id": traceID,
 				}
-				
+
 				if config.EnableStackTrace {
 					panicDetails["stack"] = string(debug.Stack())
 				}

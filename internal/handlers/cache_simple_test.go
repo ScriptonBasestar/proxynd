@@ -78,31 +78,31 @@ func TestBaseProxyHandlerImpl_SimpleCacheTest(t *testing.T) {
 	t.Run("Cache key generation", func(t *testing.T) {
 		// Mock 설정
 		mockHandler := &SimpleCacheHandler{}
-		
+
 		// Fiber 컨텍스트 생성
 		app := fiber.New()
 		ctx := app.AcquireCtx(&fasthttp.RequestCtx{})
 		defer app.ReleaseCtx(ctx)
-		
+
 		// 캐시 키 생성 테스트
 		expectedKey := "test-cache-key"
 		mockHandler.On("GenerateCacheKey", ctx).Return(expectedKey)
-		
+
 		cacheKey := mockHandler.GenerateCacheKey(ctx)
 		assert.Equal(t, expectedKey, cacheKey)
-		
+
 		mockHandler.AssertExpectations(t)
 	})
 
 	t.Run("Cache TTL policy", func(t *testing.T) {
 		// Mock 설정
 		mockHandler := &SimpleCacheHandler{}
-		
+
 		// Fiber 컨텍스트 생성
 		app := fiber.New()
 		ctx := app.AcquireCtx(&fasthttp.RequestCtx{})
 		defer app.ReleaseCtx(ctx)
-		
+
 		// TTL 정책 테스트
 		testCases := []struct {
 			name        string
@@ -114,14 +114,14 @@ func TestBaseProxyHandlerImpl_SimpleCacheTest(t *testing.T) {
 			{"Not found response", 404, false, 0},
 			{"Server error", 500, false, 0},
 		}
-		
+
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
 				mockHandler.On("ShouldCache", ctx, tc.statusCode).Return(tc.shouldCache).Once()
-				
+
 				shouldCache := mockHandler.ShouldCache(ctx, tc.statusCode)
 				assert.Equal(t, tc.shouldCache, shouldCache)
-				
+
 				if tc.shouldCache {
 					mockHandler.On("GetCacheTTL", ctx).Return(tc.ttl).Once()
 					ttl := mockHandler.GetCacheTTL(ctx)
@@ -129,35 +129,35 @@ func TestBaseProxyHandlerImpl_SimpleCacheTest(t *testing.T) {
 				}
 			})
 		}
-		
+
 		mockHandler.AssertExpectations(t)
 	})
 
 	t.Run("Cache operations", func(t *testing.T) {
 		// Mock 설정
 		mockCache := &mocks.MockCache{}
-		
+
 		cacheKey := "test-key"
 		data := []byte("test data")
 		ttl := 1 * time.Hour
-		
+
 		// 캐시 저장 성공
 		mockCache.On("SetWithTTL", cacheKey, data, ttl).Return(nil).Once()
 		err := mockCache.SetWithTTL(cacheKey, data, ttl)
 		assert.NoError(t, err)
-		
+
 		// 캐시 조회 성공
 		mockCache.On("Get", cacheKey).Return(data, nil).Once()
 		retrievedData, err := mockCache.Get(cacheKey)
 		assert.NoError(t, err)
 		assert.Equal(t, data, retrievedData)
-		
+
 		// 캐시 미스
 		mockCache.On("Get", "nonexistent-key").Return(nil, errors.New("key not found")).Once()
 		retrievedData, err = mockCache.Get("nonexistent-key")
 		assert.Error(t, err)
 		assert.Nil(t, retrievedData)
-		
+
 		mockCache.AssertExpectations(t)
 	})
 
@@ -166,29 +166,29 @@ func TestBaseProxyHandlerImpl_SimpleCacheTest(t *testing.T) {
 		mockHandler := &SimpleCacheHandler{}
 		mockContainer := &SimpleCacheContainer{}
 		mockCache := &mocks.MockCache{}
-		
+
 		mockContainer.On("Cache").Return(mockCache)
 		mockHandler.On("IsEnabled").Return(true)
 		mockHandler.On("Type").Return("test")
 		mockHandler.On("GenerateCacheKey", mock.Anything).Return("test-key")
-		
+
 		// 캐시 히트 설정
 		cachedData := []byte("cached response")
 		mockCache.On("Get", "test-key").Return(cachedData, nil)
-		
+
 		impl := NewBaseProxyHandlerImpl(mockContainer, mockHandler)
-		
+
 		// Fiber 컨텍스트 생성
 		app := fiber.New()
 		ctx := app.AcquireCtx(&fasthttp.RequestCtx{})
 		defer app.ReleaseCtx(ctx)
-		
+
 		// Handle 실행
 		err := impl.Handle(ctx)
-		
+
 		// 기본 검증 (에러 없음)
 		assert.NoError(t, err)
-		
+
 		mockContainer.AssertExpectations(t)
 		mockHandler.AssertExpectations(t)
 		mockCache.AssertExpectations(t)

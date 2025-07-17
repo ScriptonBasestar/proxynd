@@ -5,13 +5,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/scriptonbasestar/proxynd/internal/logging"
+	"proxynd/logging"
 )
 
 // Manager coordinates all performance optimization components
 type Manager struct {
 	logger           logging.Logger
-	config           *Config
+	config           *ManagerConfig
 	cacheOptimizer   *CacheOptimizer
 	connectionPool   *ConnectionPool
 	resourceMonitor  *ResourceMonitor
@@ -22,8 +22,8 @@ type Manager struct {
 	stopCh           chan struct{}
 }
 
-// Config contains all performance configuration
-type Config struct {
+// ManagerConfig contains all performance configuration for manager
+type ManagerConfig struct {
 	CacheOptimizer   *CacheOptimizerConfig   `yaml:"cache_optimizer,omitempty" json:"cache_optimizer,omitempty"`
 	ConnectionPool   *PoolConfig             `yaml:"connection_pool,omitempty" json:"connection_pool,omitempty"`
 	ResourceMonitor  *ResourceConfig         `yaml:"resource_monitor,omitempty" json:"resource_monitor,omitempty"`
@@ -34,43 +34,43 @@ type Config struct {
 // GlobalMetrics aggregates metrics from all performance components
 type GlobalMetrics struct {
 	// Request metrics
-	TotalRequests        int64         `json:"total_requests"`
-	AverageResponseTime  time.Duration `json:"average_response_time"`
-	SlowRequests         int64         `json:"slow_requests"`
-	CriticalRequests     int64         `json:"critical_requests"`
-	
+	TotalRequests       int64         `json:"total_requests"`
+	AverageResponseTime time.Duration `json:"average_response_time"`
+	SlowRequests        int64         `json:"slow_requests"`
+	CriticalRequests    int64         `json:"critical_requests"`
+
 	// Cache metrics
-	CacheHitRate         float64       `json:"cache_hit_rate"`
-	CacheMissRate        float64       `json:"cache_miss_rate"`
-	CacheOptimizations   int64         `json:"cache_optimizations"`
-	
+	CacheHitRate       float64 `json:"cache_hit_rate"`
+	CacheMissRate      float64 `json:"cache_miss_rate"`
+	CacheOptimizations int64   `json:"cache_optimizations"`
+
 	// Connection metrics
-	ActiveConnections    int64         `json:"active_connections"`
-	ConnectionsCreated   int64         `json:"connections_created"`
-	ConnectionsReused    int64         `json:"connections_reused"`
-	ConnectionFailures   int64         `json:"connection_failures"`
-	
+	ActiveConnections  int64 `json:"active_connections"`
+	ConnectionsCreated int64 `json:"connections_created"`
+	ConnectionsReused  int64 `json:"connections_reused"`
+	ConnectionFailures int64 `json:"connection_failures"`
+
 	// Resource metrics
-	CPUUsage             float64       `json:"cpu_usage"`
-	MemoryUsage          float64       `json:"memory_usage"`
-	GoroutineCount       int           `json:"goroutine_count"`
-	GCTriggered          int64         `json:"gc_triggered"`
-	
+	CPUUsage       float64 `json:"cpu_usage"`
+	MemoryUsage    float64 `json:"memory_usage"`
+	GoroutineCount int     `json:"goroutine_count"`
+	GCTriggered    int64   `json:"gc_triggered"`
+
 	// Optimization metrics
-	OptimizationsApplied int64         `json:"optimizations_applied"`
-	LastOptimization     time.Time     `json:"last_optimization"`
-	AlertsTriggered      int64         `json:"alerts_triggered"`
-	
+	OptimizationsApplied int64     `json:"optimizations_applied"`
+	LastOptimization     time.Time `json:"last_optimization"`
+	AlertsTriggered      int64     `json:"alerts_triggered"`
+
 	// Performance improvements
-	BytesSaved           int64         `json:"bytes_saved"`
-	LatencyReduction     time.Duration `json:"latency_reduction"`
-	ThroughputIncrease   float64       `json:"throughput_increase"`
-	
-	LastUpdate           time.Time     `json:"last_update"`
+	BytesSaved         int64         `json:"bytes_saved"`
+	LatencyReduction   time.Duration `json:"latency_reduction"`
+	ThroughputIncrease float64       `json:"throughput_increase"`
+
+	LastUpdate time.Time `json:"last_update"`
 }
 
 // NewManager creates a new performance manager
-func NewManager(logger logging.Logger, config *Config) (*Manager, error) {
+func NewManager(logger logging.Logger, config *ManagerConfig) (*Manager, error) {
 	manager := &Manager{
 		logger: logger.WithComponent("performance.manager"),
 		config: config,
@@ -216,7 +216,7 @@ func (m *Manager) startGlobalOptimization(ctx context.Context) {
 // performGlobalOptimization performs comprehensive performance optimization
 func (m *Manager) performGlobalOptimization(ctx context.Context) {
 	m.logger.Info("Starting global performance optimization")
-	
+
 	optimizationsApplied := 0
 
 	// Analyze and optimize cache performance
@@ -237,13 +237,13 @@ func (m *Manager) performGlobalOptimization(ctx context.Context) {
 	// Analyze system resource usage and optimize if needed
 	if m.resourceMonitor != nil {
 		stats := m.resourceMonitor.GetStats()
-		
+
 		// Trigger optimizations based on resource usage
 		if stats.MemoryPercent > 0.8 {
 			m.logger.Warn("High memory usage detected, triggering memory optimization")
 			optimizationsApplied++
 		}
-		
+
 		if stats.GoroutineCount > 1000 {
 			m.logger.Warn("High goroutine count detected, consider reviewing goroutine management")
 		}
@@ -252,14 +252,14 @@ func (m *Manager) performGlobalOptimization(ctx context.Context) {
 	// Analyze connection pool performance
 	if m.connectionPool != nil {
 		poolStats := m.connectionPool.GetStats()
-		
+
 		// Log connection pool health
 		utilizationRate := float64(poolStats.ActiveConnections) / float64(poolStats.TotalConnections)
 		if utilizationRate > 0.9 {
 			m.logger.Warn("High connection pool utilization",
 				logging.Float64("utilization", utilizationRate),
-				logging.Int64("active", poolStats.ActiveConnections),
-				logging.Int64("total", poolStats.TotalConnections))
+				logging.F("active", poolStats.ActiveConnections),
+				logging.F("total", poolStats.TotalConnections))
 		}
 	}
 
@@ -273,20 +273,20 @@ func (m *Manager) performGlobalOptimization(ctx context.Context) {
 // generatePerformanceReport generates a comprehensive performance report
 func (m *Manager) generatePerformanceReport() {
 	metrics := m.GetGlobalMetrics()
-	
+
 	m.logger.Info("Performance Report",
-		logging.Int64("total_requests", metrics.TotalRequests),
+		logging.F("total_requests", metrics.TotalRequests),
 		logging.Duration("avg_response_time", metrics.AverageResponseTime),
 		logging.Float64("cache_hit_rate", metrics.CacheHitRate),
 		logging.Float64("cpu_usage", metrics.CPUUsage),
 		logging.Float64("memory_usage", metrics.MemoryUsage),
-		logging.Int64("active_connections", metrics.ActiveConnections),
-		logging.Int64("optimizations_applied", metrics.OptimizationsApplied))
+		logging.F("active_connections", metrics.ActiveConnections),
+		logging.F("optimizations_applied", metrics.OptimizationsApplied))
 
 	// Performance recommendations
 	recommendations := m.generateRecommendations(metrics)
 	if len(recommendations) > 0 {
-		m.logger.Info("Performance Recommendations", 
+		m.logger.Info("Performance Recommendations",
 			logging.Strings("recommendations", recommendations))
 	}
 }
@@ -430,8 +430,8 @@ func (m *Manager) GetHealthStatus() map[string]interface{} {
 		reqStats := m.requestOptimizer.GetStats()
 		reqHealthy := reqStats.OptimizationErrors < 10
 		status["components"].(map[string]interface{})["request_optimizer"] = map[string]interface{}{
-			"status":             getHealthStatusString(reqHealthy),
-			"total_requests":     reqStats.TotalRequests,
+			"status":              getHealthStatusString(reqHealthy),
+			"total_requests":      reqStats.TotalRequests,
 			"optimization_errors": reqStats.OptimizationErrors,
 		}
 		if !reqHealthy {
@@ -498,8 +498,8 @@ func getHealthStatusString(healthy bool) string {
 }
 
 // DefaultConfig returns a default performance configuration
-func DefaultConfig() *Config {
-	return &Config{
+func DefaultManagerConfig() *ManagerConfig {
+	return &ManagerConfig{
 		CacheOptimizer: &CacheOptimizerConfig{
 			AnalysisWindow:           time.Hour,
 			MinDataPoints:            100,

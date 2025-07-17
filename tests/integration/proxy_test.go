@@ -190,7 +190,6 @@ npm:
 	}
 }
 
-
 // getUpstreamURL 업스트림 서버 URL 반환
 func (s *ProxyIntegrationTestSuite) getUpstreamURL(proxyType string) string {
 	if s.upstreamServers != nil && s.upstreamServers[proxyType] != nil {
@@ -319,7 +318,6 @@ func (s *ProxyIntegrationTestSuite) initializeProxyServicesCommon() {
 	}
 	s.proxyServices["npm"] = npmService
 }
-
 
 // TestAPTProxyFlow APT 프록시 전체 플로우 테스트
 func TestAPTProxyFlow(t *testing.T) {
@@ -732,7 +730,7 @@ func TestErrorHandling(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("업스트림 서버 다운", func(t *testing.T) {
-		// NOTE: 존재하지 않는 서버로 설정 변경하는 부분은 
+		// NOTE: 존재하지 않는 서버로 설정 변경하는 부분은
 		// configService 인터페이스를 통해 직접 수정할 수 없으므로 주석 처리
 
 		configServiceAdapter := &configServiceAdapter{service: suite.configService}

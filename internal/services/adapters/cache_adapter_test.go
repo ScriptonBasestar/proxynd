@@ -5,14 +5,13 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"testing"
 	"time"
 
-	"proxynd/internal/repositories/cache"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"proxynd/internal/repositories/cache"
 )
 
 // Mock repository
@@ -96,7 +95,7 @@ func TestCacheAdapter_Get(t *testing.T) {
 			name: "cache hit",
 			key:  "test-key",
 			setupMock: func(m *MockCacheRepository) {
-				content := ioutil.NopCloser(bytes.NewBufferString("cached content"))
+				content := io.NopCloser(bytes.NewBufferString("cached content"))
 				m.On("Get", ctx, "test-key").Return(content, nil)
 			},
 			wantExists:  true,
@@ -139,7 +138,7 @@ func TestCacheAdapter_Get(t *testing.T) {
 
 				if tt.wantExists {
 					require.NotNil(t, content)
-					data, err := ioutil.ReadAll(content)
+					data, err := io.ReadAll(content)
 					require.NoError(t, err)
 					assert.Equal(t, tt.wantContent, string(data))
 				} else {

@@ -209,15 +209,15 @@ func APISecurityHeaders() fiber.Handler {
 		c.Set("Cache-Control", "no-store, no-cache, must-revalidate, private")
 		c.Set("Pragma", "no-cache")
 		c.Set("Expires", "0")
-		
+
 		// API 응답에는 민감한 정보가 있을 수 있으므로
 		c.Set("Cross-Origin-Embedder-Policy", "require-corp")
 		c.Set("Cross-Origin-Opener-Policy", "same-origin")
 		c.Set("Cross-Origin-Resource-Policy", "same-origin")
-		
+
 		// CSP를 더 엄격하게
 		c.Set("Content-Security-Policy", "default-src 'none'; script-src 'none'; object-src 'none'")
-		
+
 		// 서버 정보 숨김
 		c.Set("Server", "ProxyND-API")
 
@@ -233,13 +233,13 @@ func PublicSecurityHeaders() fiber.Handler {
 		c.Set("X-Frame-Options", "SAMEORIGIN")
 		c.Set("X-XSS-Protection", "1; mode=block")
 		c.Set("Referrer-Policy", "strict-origin-when-cross-origin")
-		
+
 		// 공개 캐시 허용
 		c.Set("Cache-Control", "public, max-age=3600")
-		
+
 		// 기본 CSP (스크립트와 스타일 허용)
 		c.Set("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'")
-		
+
 		c.Set("Server", "ProxyND")
 
 		return c.Next()

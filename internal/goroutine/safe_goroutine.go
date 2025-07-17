@@ -93,14 +93,14 @@ func NewSafeGoGroupWithHandler(ctx context.Context, handler PanicHandler) *SafeG
 // Go 안전한 고루틴 추가
 func (g *SafeGoGroup) Go(fn func() error) {
 	g.wg.Add(1)
-	
+
 	go func() {
 		defer g.wg.Done()
 		defer func() {
 			if r := recover(); r != nil {
 				stack := debug.Stack()
 				g.handler(r, stack)
-				
+
 				// panic을 에러로 변환
 				err := fmt.Errorf("panic recovered: %v", r)
 				select {
@@ -139,12 +139,12 @@ func (g *SafeGoGroup) Wait() {
 // Errors 발생한 에러들 반환
 func (g *SafeGoGroup) Errors() []error {
 	var errors []error
-	
+
 	// 채널에서 모든 에러 수집
 	for err := range g.errors {
 		errors = append(errors, err)
 	}
-	
+
 	return errors
 }
 

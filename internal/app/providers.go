@@ -222,31 +222,31 @@ func ProvideUnifiedRouter(c *Container) (interface{}, error) {
 func registerAllHandlers(factory types.ProxyHandlerFactory, serviceFactory *proxy.ServiceFactory) error {
 	// TODO: Implement handlers when ready
 	/*
-	// Maven
-	if err := factory.RegisterHandler(
-		types.ProxyTypeMaven,
-		proxyHandlers.MavenHandlerCreator(serviceFactory),
-	); err != nil {
-		return fmt.Errorf("failed to register Maven handler: %w", err)
-	}
+		// Maven
+		if err := factory.RegisterHandler(
+			types.ProxyTypeMaven,
+			proxyHandlers.MavenHandlerCreator(serviceFactory),
+		); err != nil {
+			return fmt.Errorf("failed to register Maven handler: %w", err)
+		}
 
-	// APT
-	if err := factory.RegisterHandler(
-		types.ProxyTypeAPT,
-		proxyHandlers.AptHandlerCreator(serviceFactory),
-	); err != nil {
-		return fmt.Errorf("failed to register APT handler: %w", err)
-	}
+		// APT
+		if err := factory.RegisterHandler(
+			types.ProxyTypeAPT,
+			proxyHandlers.AptHandlerCreator(serviceFactory),
+		); err != nil {
+			return fmt.Errorf("failed to register APT handler: %w", err)
+		}
 
-	// NPM
-	if err := factory.RegisterHandler(
-		types.ProxyTypeNPM,
-		proxyHandlers.NpmHandlerCreator(serviceFactory),
-	); err != nil {
-		return fmt.Errorf("failed to register NPM handler: %w", err)
-	}
+		// NPM
+		if err := factory.RegisterHandler(
+			types.ProxyTypeNPM,
+			proxyHandlers.NpmHandlerCreator(serviceFactory),
+		); err != nil {
+			return fmt.Errorf("failed to register NPM handler: %w", err)
+		}
 
-	// TODO: Register other handlers (Docker, PIP, YUM, APK)
+		// TODO: Register other handlers (Docker, PIP, YUM, APK)
 	*/
 
 	return nil

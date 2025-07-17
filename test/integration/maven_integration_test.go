@@ -25,17 +25,17 @@ func TestMavenProxy_ArtifactDownload(t *testing.T) {
 	require.NoError(t, err)
 
 	tests := []struct {
-		name           string
-		path           string
-		expectedSize   int64 // 최소 크기
-		contentType    string
-		contentCheck   func([]byte) bool
+		name         string
+		path         string
+		expectedSize int64 // 최소 크기
+		contentType  string
+		contentCheck func([]byte) bool
 	}{
 		{
-			name:        "Spring Core POM",
-			path:        "org/springframework/spring-core/5.3.21/spring-core-5.3.21.pom",
+			name:         "Spring Core POM",
+			path:         "org/springframework/spring-core/5.3.21/spring-core-5.3.21.pom",
 			expectedSize: 100, // 최소 100바이트
-			contentType: "application/xml",
+			contentType:  "application/xml",
 			contentCheck: func(data []byte) bool {
 				content := string(data)
 				return strings.Contains(content, "<groupId>org.springframework</groupId>") &&
@@ -44,10 +44,10 @@ func TestMavenProxy_ArtifactDownload(t *testing.T) {
 			},
 		},
 		{
-			name:        "Spring Core JAR",
-			path:        "org/springframework/spring-core/5.3.21/spring-core-5.3.21.jar",
+			name:         "Spring Core JAR",
+			path:         "org/springframework/spring-core/5.3.21/spring-core-5.3.21.jar",
 			expectedSize: 1000, // 최소 1KB
-			contentType: "application/java-archive",
+			contentType:  "application/java-archive",
 			contentCheck: func(data []byte) bool {
 				// JAR 파일은 바이너리이므로 길이만 확인
 				return len(data) >= 1000
@@ -134,11 +134,11 @@ func TestMavenProxy_ChecksumValidation(t *testing.T) {
 
 	// Then: 체크섬 계산 및 검증
 	actualSha1 := calculateSHA1(jarData)
-	
+
 	// 실제 환경에서는 .sha1 파일을 다운로드하여 비교
 	// 여기서는 체크섬이 올바른 형식인지만 확인
 	assert.Len(t, actualSha1, 40, "SHA1 해시는 40자여야 합니다")
-	
+
 	t.Logf("JAR file size: %d bytes", len(jarData))
 	t.Logf("SHA1 checksum: %s", actualSha1)
 }
@@ -163,13 +163,13 @@ func TestMavenProxy_ConcurrentDownloads(t *testing.T) {
 	for i := 0; i < concurrency; i++ {
 		go func(id int) {
 			defer func() { done <- true }()
-			
+
 			// 다양한 아티팩트 요청
 			paths := []string{
 				"org/springframework/spring-core/5.3.21/spring-core-5.3.21.pom",
 				"org/springframework/spring-core/5.3.21/spring-core-5.3.21.jar",
 			}
-			
+
 			path := paths[id%len(paths)]
 			url := server.ProxyURL("maven", path)
 			result := performRequest(url)
@@ -233,12 +233,12 @@ func TestMavenProxy_LargeArtifact(t *testing.T) {
 	for {
 		n, err := resp.Body.Read(buffer)
 		totalSize += n
-		
+
 		if err == io.EOF {
 			break
 		}
 		require.NoError(t, err)
-		
+
 		// 너무 큰 파일 방지 (테스트 환경)
 		if totalSize > 10*1024*1024 { // 10MB 제한
 			t.Logf("Large file download stopped at %d bytes", totalSize)
@@ -302,7 +302,7 @@ func TestMavenProxy_SnapshotHandling(t *testing.T) {
 	// Then: SNAPSHOT은 캐시되지 않아야 하므로 적절한 처리 확인
 	assert.Equal(t, 404, resp.StatusCode) // 테스트 환경에서는 존재하지 않음
 	assert.Equal(t, "maven", resp.Header.Get("X-Proxy-Type"))
-	
+
 	// SNAPSHOT은 일반적으로 캐시되지 않음
 	cacheStatus := resp.Header.Get("X-Cache-Status")
 	if cacheStatus != "" {

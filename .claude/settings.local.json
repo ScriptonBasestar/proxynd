@@ -46,7 +46,16 @@
       "Bash(./scripts/cleanup-build.sh:*)",
       "Bash(./.git/hooks/pre-commit:*)",
       "Bash(git rm:*)",
-      "mcp__shrimp__process_thought"
+      "mcp__shrimp__process_thought",
+      "Bash(/usr/local/go/bin/go mod tidy)",
+      "Bash(bash:*)",
+      "Bash(env -u CLAUDE_SNAPSHOT_SCRIPT PATH=$PATH make lint)",
+      "Bash(golangci-lint run:*)",
+      "Bash(env -i PATH=$PATH PWD=/Users/archmagece/myopen/scripton/proxynd make lint)",
+      "Bash(export TERM=xterm)",
+      "Bash(./temp_delete.sh:*)",
+      "Bash(python3:*)",
+      "Bash(golangci-lint:*)"
     ],
     "deny": []
   }

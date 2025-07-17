@@ -4,36 +4,36 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/helmet"
-	
+
 	"proxynd/logging"
 )
 
 // SecurityMiddlewareConfig 보안 미들웨어 통합 설정
 type SecurityMiddlewareConfig struct {
 	// Rate Limiting
-	EnableRateLimit       bool                      `json:"enable_rate_limit"`
-	RateLimitConfig       EnhancedRateLimitConfig   `json:"rate_limit_config"`
-	
+	EnableRateLimit bool                    `json:"enable_rate_limit"`
+	RateLimitConfig EnhancedRateLimitConfig `json:"rate_limit_config"`
+
 	// Input Validation
-	EnableInputValidation bool                      `json:"enable_input_validation"`
-	ValidationConfig      ValidationConfig          `json:"validation_config"`
-	EnableEnhancedValidation bool                   `json:"enable_enhanced_validation"`
-	
+	EnableInputValidation    bool             `json:"enable_input_validation"`
+	ValidationConfig         ValidationConfig `json:"validation_config"`
+	EnableEnhancedValidation bool             `json:"enable_enhanced_validation"`
+
 	// Security Headers
-	EnableSecurityHeaders bool                      `json:"enable_security_headers"`
-	SecurityHeadersConfig SecurityHeadersConfig     `json:"security_headers_config"`
-	
+	EnableSecurityHeaders bool                  `json:"enable_security_headers"`
+	SecurityHeadersConfig SecurityHeadersConfig `json:"security_headers_config"`
+
 	// CORS
-	EnableCORS           bool                       `json:"enable_cors"`
-	AllowedOrigins       []string                   `json:"allowed_origins"`
-	
+	EnableCORS     bool     `json:"enable_cors"`
+	AllowedOrigins []string `json:"allowed_origins"`
+
 	// IP Filtering
-	EnableIPFiltering    bool                       `json:"enable_ip_filtering"`
-	BlockedCIDRs         []string                   `json:"blocked_cidrs"`
-	AllowedCIDRs         []string                   `json:"allowed_cidrs"`
-	
+	EnableIPFiltering bool     `json:"enable_ip_filtering"`
+	BlockedCIDRs      []string `json:"blocked_cidrs"`
+	AllowedCIDRs      []string `json:"allowed_cidrs"`
+
 	// Logging
-	EnableSecurityLogging bool                      `json:"enable_security_logging"`
+	EnableSecurityLogging bool `json:"enable_security_logging"`
 }
 
 // DefaultSecurityMiddlewareConfig 기본 보안 미들웨어 설정
@@ -46,30 +46,30 @@ func DefaultSecurityMiddlewareConfig() SecurityMiddlewareConfig {
 		EnableEnhancedValidation: true,
 		EnableSecurityHeaders:    true,
 		SecurityHeadersConfig:    DefaultSecurityHeadersConfig(),
-		EnableCORS:              false,
-		AllowedOrigins:          []string{},
-		EnableIPFiltering:       false,
-		BlockedCIDRs:           []string{},
-		AllowedCIDRs:           []string{},
-		EnableSecurityLogging:   true,
+		EnableCORS:               false,
+		AllowedOrigins:           []string{},
+		EnableIPFiltering:        false,
+		BlockedCIDRs:             []string{},
+		AllowedCIDRs:             []string{},
+		EnableSecurityLogging:    true,
 	}
 }
 
 // ProductionSecurityMiddlewareConfig 프로덕션용 보안 미들웨어 설정
 func ProductionSecurityMiddlewareConfig() SecurityMiddlewareConfig {
 	return SecurityMiddlewareConfig{
-		EnableRateLimit:          true,
+		EnableRateLimit: true,
 		RateLimitConfig: EnhancedRateLimitConfig{
-			Rate:             "500-H", // 시간당 500개 요청으로 제한
-			Burst:            50,
-			TrustedProxies:   []string{"127.0.0.1", "::1"},
-			WhitelistIPs:     []string{},
-			BlacklistIPs:     []string{},
-			EnableLogging:    true,
+			Rate:           "500-H", // 시간당 500개 요청으로 제한
+			Burst:          50,
+			TrustedProxies: []string{"127.0.0.1", "::1"},
+			WhitelistIPs:   []string{},
+			BlacklistIPs:   []string{},
+			EnableLogging:  true,
 			PathConfigs: map[string]PathRateConfig{
-				"/auth":   {Rate: "3-M", Burst: 1},     // 인증: 분당 3개 요청
-				"/api":    {Rate: "60-M", Burst: 10},   // API: 분당 60개 요청
-				"/proxy":  {Rate: "300-M", Burst: 30},  // 프록시: 분당 300개 요청
+				"/auth":  {Rate: "3-M", Burst: 1},    // 인증: 분당 3개 요청
+				"/api":   {Rate: "60-M", Burst: 10},  // API: 분당 60개 요청
+				"/proxy": {Rate: "300-M", Burst: 30}, // 프록시: 분당 300개 요청
 			},
 		},
 		EnableInputValidation:    true,
@@ -77,19 +77,19 @@ func ProductionSecurityMiddlewareConfig() SecurityMiddlewareConfig {
 		EnableEnhancedValidation: true,
 		EnableSecurityHeaders:    true,
 		SecurityHeadersConfig:    ProductionSecurityHeadersConfig(),
-		EnableCORS:              false,
-		AllowedOrigins:          []string{},
-		EnableIPFiltering:       false,
-		BlockedCIDRs:           []string{},
-		AllowedCIDRs:           []string{},
-		EnableSecurityLogging:   true,
+		EnableCORS:               false,
+		AllowedOrigins:           []string{},
+		EnableIPFiltering:        false,
+		BlockedCIDRs:             []string{},
+		AllowedCIDRs:             []string{},
+		EnableSecurityLogging:    true,
 	}
 }
 
 // SetupSecurityMiddlewares 보안 미들웨어 설정
 func SetupSecurityMiddlewares(app *fiber.App, config SecurityMiddlewareConfig) {
 	logger := logging.GetLogger()
-	
+
 	if config.EnableSecurityLogging {
 		logger.Info("Setting up security middlewares",
 			logging.F("rate_limit", config.EnableRateLimit),
@@ -165,7 +165,7 @@ func SetupSecurityMiddlewares(app *fiber.App, config SecurityMiddlewareConfig) {
 
 	// 6. Helmet (추가 보안 헤더)
 	app.Use(helmet.New())
-	
+
 	if config.EnableSecurityLogging {
 		logger.Info("Security middlewares setup completed")
 	}
@@ -213,7 +213,7 @@ func SetupAuthSecurityMiddlewares(authGroup fiber.Router, config SecurityMiddlew
 	}
 }
 
-// SetupProxySecurityMiddlewares 프록시 엔드포인트 전용 보안 미들웨어  
+// SetupProxySecurityMiddlewares 프록시 엔드포인트 전용 보안 미들웨어
 func SetupProxySecurityMiddlewares(proxyGroup fiber.Router, config SecurityMiddlewareConfig) {
 	logger := logging.GetLogger()
 

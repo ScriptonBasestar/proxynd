@@ -15,9 +15,9 @@ import (
 )
 
 var (
-	ErrInvalidLicense   = errors.New("invalid license")
-	ErrExpiredLicense   = errors.New("license expired")
-	ErrInvalidSignature = errors.New("invalid license signature")
+	ErrInvalidLicense     = errors.New("invalid license")
+	ErrExpiredLicense     = errors.New("license expired")
+	ErrInvalidSignature   = errors.New("invalid license signature")
 	ErrFeatureNotLicensed = errors.New("feature not licensed")
 )
 
@@ -31,16 +31,16 @@ MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1234567890...
 
 // License 라이센스 정보
 type License struct {
-	ID           string    `json:"id"`
-	Company      string    `json:"company"`
-	Email        string    `json:"email"`
-	Features     []string  `json:"features"`
-	MaxServers   int       `json:"max_servers"`
-	MaxUsers     int       `json:"max_users"`
-	IssuedAt     time.Time `json:"issued_at"`
-	ExpiresAt    time.Time `json:"expires_at"`
-	Type         string    `json:"type"` // "trial", "starter", "professional", "enterprise", "ultimate"
-	Signature    string    `json:"signature"`
+	ID         string    `json:"id"`
+	Company    string    `json:"company"`
+	Email      string    `json:"email"`
+	Features   []string  `json:"features"`
+	MaxServers int       `json:"max_servers"`
+	MaxUsers   int       `json:"max_users"`
+	IssuedAt   time.Time `json:"issued_at"`
+	ExpiresAt  time.Time `json:"expires_at"`
+	Type       string    `json:"type"` // "trial", "starter", "professional", "enterprise", "ultimate"
+	Signature  string    `json:"signature"`
 }
 
 // Validator 라이센스 검증기
@@ -97,12 +97,12 @@ func (v *Validator) verifySignature(license *License) error {
 	// 서명 제외한 라이센스 데이터 직렬화
 	sig := license.Signature
 	license.Signature = ""
-	
+
 	data, err := json.Marshal(license)
 	if err != nil {
 		return err
 	}
-	
+
 	license.Signature = sig
 
 	// 서명 디코드

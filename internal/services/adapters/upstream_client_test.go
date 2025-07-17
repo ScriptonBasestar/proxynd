@@ -3,16 +3,16 @@ package adapters
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 
-	"proxynd/internal/services/proxy"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"proxynd/internal/services/proxy"
 )
 
 func TestNewHTTPUpstreamClient(t *testing.T) {
@@ -70,7 +70,7 @@ func TestHTTPUpstreamClient_Fetch(t *testing.T) {
 				assert.Equal(t, "text/plain", resp.ContentType)
 				assert.Equal(t, "custom-value", resp.Headers["X-Custom-Header"])
 
-				body, err := ioutil.ReadAll(resp.Body)
+				body, err := io.ReadAll(resp.Body)
 				require.NoError(t, err)
 				assert.Equal(t, "test content", string(body))
 			},
@@ -140,7 +140,7 @@ func TestHTTPUpstreamClient_Fetch(t *testing.T) {
 			wantStatusCode: 200,
 			wantErr:        false,
 			checkResponse: func(t *testing.T, resp *proxy.ProxyResponse) {
-				body, err := ioutil.ReadAll(resp.Body)
+				body, err := io.ReadAll(resp.Body)
 				require.NoError(t, err)
 				assert.Equal(t, 1024*1024, len(body))
 			},
@@ -237,7 +237,7 @@ func TestHTTPUpstreamClient_FetchWithRedirect(t *testing.T) {
 	require.NotNil(t, resp)
 	assert.Equal(t, 200, resp.StatusCode)
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	require.NoError(t, err)
 	assert.Equal(t, "final content", string(body))
 }

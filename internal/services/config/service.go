@@ -70,7 +70,7 @@ func (s *service) GetGlobalConfig(ctx context.Context) (*configs.GlobalConfig, e
 			TTL: 3600, // 기본값
 		},
 	}
-	
+
 	return globalConfig, nil
 }
 

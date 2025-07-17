@@ -26,12 +26,12 @@ func NewBaseProxyHandlerImpl(container interface{}, handler BaseProxyHandler) *B
 	type CacheProvider interface {
 		Cache() cache.Cache
 	}
-	
+
 	var cacheInstance cache.Cache
 	if cp, ok := container.(CacheProvider); ok {
 		cacheInstance = cp.Cache()
 	}
-	
+
 	return &BaseProxyHandlerImpl{
 		container: container,
 		handler:   handler,
@@ -67,12 +67,12 @@ func (b *BaseProxyHandlerImpl) Handle(c *fiber.Ctx) error {
 		// 캐시 히트
 		c.Set("X-Cache-Status", "HIT")
 		c.Set("X-Proxy-Type", proxyType)
-		
+
 		// 캐시 메트릭 기록
 		if metricsHandler, ok := b.handler.(MetricsAwareProxyHandler); ok {
 			metricsHandler.RecordCacheMetrics(cacheKey, true, len(cachedData))
 		}
-		
+
 		return c.Send(cachedData)
 	}
 
@@ -95,7 +95,7 @@ func (b *BaseProxyHandlerImpl) Handle(c *fiber.Ctx) error {
 
 	// 5. Fiber Agent 생성 및 요청 설정
 	agent := b.client.Get(upstreamURL)
-	
+
 	// 기본 헤더 복사 (hop-by-hop 헤더 제외)
 	c.Request().Header.VisitAll(func(key, value []byte) {
 		keyStr := string(key)
@@ -122,7 +122,7 @@ func (b *BaseProxyHandlerImpl) Handle(c *fiber.Ctx) error {
 			logging.F("upstream_url", upstreamURL),
 			logging.F("error", errs[0]),
 		)
-		
+
 		// 에러 처리
 		handlerErr := b.handler.HandleError(errs[0], c)
 		if handlerErr != nil {
@@ -253,11 +253,11 @@ func (b *BaseProxyHandlerImpl) HealthCheck() error {
 	if !b.handler.IsEnabled() {
 		return fmt.Errorf("프록시 '%s'가 비활성화되어 있습니다", b.handler.Type())
 	}
-	
+
 	// 핸들러별 추가 헬스체크 (Healthable 인터페이스 구현 시)
 	if healthableHandler, ok := b.handler.(Healthable); ok {
 		return healthableHandler.HealthCheck()
 	}
-	
+
 	return nil
 }

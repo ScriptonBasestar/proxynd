@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gofiber/adaptor/v2"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
-	"github.com/gofiber/adaptor/v2"
 
 	"proxynd/configs"
 	"proxynd/internal/app"
@@ -93,8 +93,8 @@ func SetupTestServer(t *testing.T) *TestServer {
 	// Fiber 앱 설정
 	app := fiber.New(fiber.Config{
 		DisableStartupMessage: true,
-		ReadTimeout:          30 * time.Second,
-		WriteTimeout:         30 * time.Second,
+		ReadTimeout:           30 * time.Second,
+		WriteTimeout:          30 * time.Second,
 		ErrorHandler: func(c *fiber.Ctx, err error) error {
 			code := fiber.StatusInternalServerError
 			if e, ok := err.(*fiber.Error); ok {
@@ -112,7 +112,7 @@ func SetupTestServer(t *testing.T) *TestServer {
 	app.Use(logger.New(logger.Config{
 		Format: "[${time}] ${status} - ${latency} ${method} ${path}\n",
 	}))
-	
+
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "*",
 		AllowMethods: "GET,POST,HEAD,PUT,DELETE,PATCH,OPTIONS",
@@ -152,7 +152,7 @@ func setupRoutes(app *fiber.App, container *app.Container) {
 		path := c.Params("*")
 		c.Set("X-Proxy-Type", "apt")
 		c.Set("X-Cache-Status", "MISS") // 실제 구현에서는 캐시 로직에 따라 결정
-		
+
 		// 간단한 모의 응답 (실제 구현에서는 핸들러 사용)
 		if path == "dists/focal/Release" {
 			return c.SendString("Origin: Ubuntu\nSuite: focal\nArchitectures: amd64 arm64\n")
@@ -160,7 +160,7 @@ func setupRoutes(app *fiber.App, container *app.Container) {
 		if path == "dists/focal/main/binary-amd64/Packages" {
 			return c.SendString("Package: test-package\nVersion: 1.0.0\nArchitecture: amd64\n")
 		}
-		
+
 		return c.Status(404).SendString("Not Found")
 	})
 
@@ -169,7 +169,7 @@ func setupRoutes(app *fiber.App, container *app.Container) {
 		path := c.Params("*")
 		c.Set("X-Proxy-Type", "maven")
 		c.Set("X-Cache-Status", "MISS")
-		
+
 		// 간단한 모의 응답
 		if path == "org/springframework/spring-core/5.3.21/spring-core-5.3.21.pom" {
 			c.Set("Content-Type", "application/xml")
@@ -180,13 +180,13 @@ func setupRoutes(app *fiber.App, container *app.Container) {
     <version>5.3.21</version>
 </project>`)
 		}
-		
+
 		if path == "org/springframework/spring-core/5.3.21/spring-core-5.3.21.jar" {
 			c.Set("Content-Type", "application/java-archive")
 			// 모의 JAR 데이터
 			return c.Send(make([]byte, 1024*1024)) // 1MB 모의 데이터
 		}
-		
+
 		return c.Status(404).SendString("Not Found")
 	})
 
@@ -195,7 +195,7 @@ func setupRoutes(app *fiber.App, container *app.Container) {
 		path := c.Params("*")
 		c.Set("X-Proxy-Type", "npm")
 		c.Set("X-Cache-Status", "MISS")
-		
+
 		// 간단한 모의 응답
 		if path == "express" {
 			c.Set("Content-Type", "application/json")
@@ -205,7 +205,7 @@ func setupRoutes(app *fiber.App, container *app.Container) {
 				"description": "Fast, unopinionated, minimalist web framework",
 			})
 		}
-		
+
 		return c.Status(404).SendString("Not Found")
 	})
 
@@ -245,7 +245,7 @@ func (ts *TestServer) GetClient() *http.Client {
 // WaitForReady 서버가 준비될 때까지 대기
 func (ts *TestServer) WaitForReady() error {
 	client := ts.GetClient()
-	
+
 	for i := 0; i < 10; i++ {
 		resp, err := client.Get(ts.URL() + "/health")
 		if err == nil && resp.StatusCode == 200 {
@@ -257,6 +257,6 @@ func (ts *TestServer) WaitForReady() error {
 		}
 		time.Sleep(100 * time.Millisecond)
 	}
-	
+
 	return fmt.Errorf("서버가 준비되지 않음")
 }

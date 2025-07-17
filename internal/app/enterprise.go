@@ -49,7 +49,7 @@ func InitEnterpriseFeatures(configDir string) *EnterpriseFeatures {
 			ef.validator = validator
 			ef.featureGate = license.NewFeatureGate(validator)
 			ef.enabled = true
-			
+
 			info := validator.GetLicenseInfo()
 			fmt.Printf("Enterprise license loaded: %s (%s)\n", info["company"], info["type"])
 		}
@@ -76,9 +76,9 @@ func (ef *EnterpriseFeatures) RequireFeature(feature string) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		if !ef.HasFeature(feature) {
 			return c.Status(402).JSON(fiber.Map{
-				"error": "Feature not licensed",
-				"feature": feature,
-				"message": "This feature requires an enterprise license",
+				"error":       "Feature not licensed",
+				"feature":     feature,
+				"message":     "This feature requires an enterprise license",
 				"upgrade_url": "https://proxynd.io/pricing",
 			})
 		}
@@ -91,19 +91,19 @@ func (ef *EnterpriseFeatures) GetLicenseInfo() map[string]interface{} {
 	if !ef.IsEnabled() {
 		return map[string]interface{}{
 			"licensed": false,
-			"type": "community",
+			"type":     "community",
 			"features": []string{},
 		}
 	}
-	
+
 	info := ef.validator.GetLicenseInfo()
 	info["licensed"] = true
-	
+
 	// 활성화된 기능 목록 추가
 	if licenseType, ok := info["type"].(string); ok {
 		info["available_features"] = license.GetFeaturesForLicense(licenseType)
 	}
-	
+
 	return info
 }
 
@@ -117,20 +117,20 @@ func (ef *EnterpriseFeatures) RegisterEnterpriseRoutes(app *fiber.App) {
 	// 기능 카탈로그 조회
 	app.Get("/api/v1/features", func(c *fiber.Ctx) error {
 		features := make([]fiber.Map, 0)
-		
+
 		for id, info := range license.FeatureCatalog {
 			features = append(features, fiber.Map{
-				"id": id,
-				"name": info.Name,
+				"id":          id,
+				"name":        info.Name,
 				"description": info.Description,
-				"category": info.Category,
+				"category":    info.Category,
 				"min_license": info.MinLicense,
-				"enabled": ef.HasFeature(id),
+				"enabled":     ef.HasFeature(id),
 			})
 		}
-		
+
 		return c.JSON(fiber.Map{
-			"features": features,
+			"features":     features,
 			"license_type": ef.GetLicenseInfo()["type"],
 		})
 	})

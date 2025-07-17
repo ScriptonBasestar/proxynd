@@ -9,7 +9,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/scriptonbasestar/proxynd/internal/logging"
+	"proxynd/logging"
 )
 
 // ConnectionPool manages HTTP connections with intelligent pooling
@@ -401,7 +401,7 @@ func (cp *ConnectionPool) optimizeConnections() {
 	now := time.Now()
 	optimized := 0
 
-	for host, hostPool := range cp.pools {
+	for _, hostPool := range cp.pools {
 		hostStats := hostPool.stats
 		hostStats.mu.RLock()
 
@@ -445,8 +445,8 @@ func (cp *ConnectionPool) optimizeForHighLoad(hostPool *HostPool) {
 	// Increase connection limits
 	transport := hostPool.transport
 
-	newMaxConns := min(transport.MaxConnsPerHost*2, cp.config.MaxConnsPerHost*2)
-	newMaxIdle := min(transport.MaxIdleConnsPerHost*2, cp.config.MaxIdleConnsPerHost*2)
+	newMaxConns := minInt(transport.MaxConnsPerHost*2, cp.config.MaxConnsPerHost*2)
+	newMaxIdle := minInt(transport.MaxIdleConnsPerHost*2, cp.config.MaxIdleConnsPerHost*2)
 
 	if newMaxConns > transport.MaxConnsPerHost {
 		transport.MaxConnsPerHost = newMaxConns
@@ -556,7 +556,7 @@ func (cb *CircuitBreaker) RecordFailure() {
 	if cb.state == CircuitClosed && cb.failures >= int64(cb.config.CircuitBreakerThreshold) {
 		cb.state = CircuitOpen
 		cb.nextRetry = time.Now().Add(cb.config.CircuitBreakerTimeout)
-		cb.logger.Warn("Circuit breaker opened", logging.Int64("failures", cb.failures))
+		cb.logger.Warn("Circuit breaker opened", logging.F("failures", cb.failures))
 	} else if cb.state == CircuitHalfOpen {
 		cb.state = CircuitOpen
 		cb.nextRetry = time.Now().Add(cb.config.CircuitBreakerTimeout)
@@ -671,7 +671,7 @@ func (hc *HealthChecker) recordFailure() {
 		hc.isHealthy = false
 		hc.logger.Warn("Host marked as unhealthy",
 			logging.String("host", hc.host),
-			logging.Int64("failures", hc.failures))
+			logging.F("failures", hc.failures))
 	}
 }
 
@@ -711,12 +711,12 @@ func (pm *PoolMonitor) logPoolMetrics() {
 	stats := pm.pool.GetStats()
 
 	pm.logger.Info("Connection pool metrics",
-		logging.Int64("total_connections", stats.TotalConnections),
-		logging.Int64("active_connections", stats.ActiveConnections),
-		logging.Int64("idle_connections", stats.IdleConnections),
-		logging.Int64("connections_created", stats.ConnectionsCreated),
-		logging.Int64("connections_reused", stats.ConnectionsReused),
-		logging.Int64("connection_failures", stats.ConnectionFailures),
+		logging.F("total_connections", stats.TotalConnections),
+		logging.F("active_connections", stats.ActiveConnections),
+		logging.F("idle_connections", stats.IdleConnections),
+		logging.F("connections_created", stats.ConnectionsCreated),
+		logging.F("connections_reused", stats.ConnectionsReused),
+		logging.F("connection_failures", stats.ConnectionFailures),
 		logging.Int("host_pools", len(stats.HostStats)))
 
 	// Log per-host metrics for active hosts
@@ -724,9 +724,9 @@ func (pm *PoolMonitor) logPoolMetrics() {
 		if time.Since(hostStats.LastRequest) < time.Hour { // Only log recently active hosts
 			pm.logger.Info("Host pool metrics",
 				logging.String("host", host),
-				logging.Int64("total_requests", hostStats.TotalRequests),
-				logging.Int64("successful_requests", hostStats.SuccessfulRequests),
-				logging.Int64("failed_requests", hostStats.FailedRequests),
+				logging.F("total_requests", hostStats.TotalRequests),
+				logging.F("successful_requests", hostStats.SuccessfulRequests),
+				logging.F("failed_requests", hostStats.FailedRequests),
 				logging.Duration("average_latency", hostStats.AverageLatency),
 				logging.String("circuit_breaker_state", hostStats.CircuitBreakerState),
 				logging.Bool("is_healthy", hostStats.IsHealthy))
@@ -736,7 +736,7 @@ func (pm *PoolMonitor) logPoolMetrics() {
 
 // Helper functions
 
-func min(a, b int) int {
+func minInt(a, b int) int {
 	if a < b {
 		return a
 	}

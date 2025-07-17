@@ -73,7 +73,7 @@ func (h *APTHandlerV2) BuildUpstreamURL(c *fiber.Ctx) (string, error) {
 	// URL 구성
 	baseURL := strings.TrimRight(mirror.URL, "/")
 	cleanPath := strings.TrimLeft(packagePath, "/")
-	
+
 	return fmt.Sprintf("%s/%s", baseURL, cleanPath), nil
 }
 
@@ -109,13 +109,13 @@ func (h *APTHandlerV2) TransformResponse(resp []byte, c *fiber.Ctx) ([]byte, err
 	// Release 파일 서명 검증 (선택적)
 	if strings.Contains(path, "Release") && !strings.Contains(path, "Release.gpg") {
 		h.logger.Debug("Processing Release file", logging.F("path", path))
-		
+
 		// Release 파일에 ProxyND 정보 추가 (선택적)
 		if h.shouldAddProxyInfo() {
-			proxyInfo := fmt.Sprintf("\nX-ProxyND-Cache: %s\nX-ProxyND-Timestamp: %s\n", 
-				c.Get("X-Cache-Status", "MISS"), 
+			proxyInfo := fmt.Sprintf("\nX-ProxyND-Cache: %s\nX-ProxyND-Timestamp: %s\n",
+				c.Get("X-Cache-Status", "MISS"),
 				time.Now().Format(time.RFC3339))
-			
+
 			// 응답 끝에 추가 (실제로는 해시 무결성을 위해 주의 필요)
 			return append(resp, []byte(proxyInfo)...), nil
 		}
@@ -137,7 +137,7 @@ func (h *APTHandlerV2) ShouldCache(c *fiber.Ctx, statusCode int) bool {
 	}
 
 	path := c.Path()
-	
+
 	// 메타데이터 파일은 캐시
 	if h.isMetadataFile(path) {
 		return true
@@ -269,7 +269,7 @@ func (h *APTHandlerV2) RecordCacheMetrics(cacheKey string, hit bool, size int) {
 	if hit {
 		status = "hit"
 	}
-	
+
 	h.logger.Info("APT cache metrics",
 		logging.F("cache_key", cacheKey),
 		logging.F("cache_status", status),

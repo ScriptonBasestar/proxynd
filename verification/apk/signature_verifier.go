@@ -238,7 +238,11 @@ func (sv *SignatureVerifier) calculateFileHash(filePath string) ([]byte, error) 
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			sv.logger.Warn("Failed to close file", logging.F("file", filePath), logging.F("error", err))
+		}
+	}()
 
 	hasher := sha256.New()
 	if _, err := io.Copy(hasher, file); err != nil {

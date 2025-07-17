@@ -18,11 +18,11 @@ type PluginMiddleware struct {
 
 // PluginMiddlewareConfig 플러그인 미들웨어 설정
 type PluginMiddlewareConfig struct {
-	BasePath        string        `json:"base_path" yaml:"base_path"`
-	DefaultMode     OperationMode `json:"default_mode" yaml:"default_mode"`
-	Timeout         time.Duration `json:"timeout" yaml:"timeout"`
-	EnableMetrics   bool          `json:"enable_metrics" yaml:"enable_metrics"`
-	EnableLogging   bool          `json:"enable_logging" yaml:"enable_logging"`
+	BasePath      string        `json:"base_path" yaml:"base_path"`
+	DefaultMode   OperationMode `json:"default_mode" yaml:"default_mode"`
+	Timeout       time.Duration `json:"timeout" yaml:"timeout"`
+	EnableMetrics bool          `json:"enable_metrics" yaml:"enable_metrics"`
+	EnableLogging bool          `json:"enable_logging" yaml:"enable_logging"`
 }
 
 // NewPluginMiddleware 새로운 플러그인 미들웨어 생성
@@ -105,7 +105,7 @@ func (pm *PluginMiddleware) HealthCheckHandler() fiber.Handler {
 		defer cancel()
 
 		results := pm.manager.HealthCheck(ctx)
-		
+
 		healthStatus := make(map[string]interface{})
 		allHealthy := true
 
@@ -124,8 +124,8 @@ func (pm *PluginMiddleware) HealthCheckHandler() fiber.Handler {
 		}
 
 		response := map[string]interface{}{
-			"status":   "healthy",
-			"handlers": healthStatus,
+			"status":    "healthy",
+			"handlers":  healthStatus,
 			"timestamp": time.Now().UTC().Format(time.RFC3339),
 		}
 
@@ -142,7 +142,7 @@ func (pm *PluginMiddleware) HealthCheckHandler() fiber.Handler {
 func (pm *PluginMiddleware) StatisticsHandler() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		stats := pm.manager.GetStatistics()
-		
+
 		response := map[string]interface{}{
 			"statistics": stats,
 			"timestamp":  time.Now().UTC().Format(time.RFC3339),
@@ -156,7 +156,7 @@ func (pm *PluginMiddleware) StatisticsHandler() fiber.Handler {
 func (pm *PluginMiddleware) ListHandlersHandler() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		handlers := pm.manager.ListHandlers()
-		
+
 		handlerDetails := make(map[string]interface{})
 		for _, packageType := range handlers {
 			if metadata, exists := pm.manager.GetPluginMetadata(packageType); exists {
@@ -195,11 +195,11 @@ func (pm *PluginMiddleware) ListHandlersHandler() fiber.Handler {
 // parseRequest 요청 파싱하여 패키지 타입과 모드 추출
 func (pm *PluginMiddleware) parseRequest(c *fiber.Ctx, config PluginMiddlewareConfig) (string, OperationMode, error) {
 	path := c.Path()
-	
+
 	// 기본 경로 제거
 	relativePath := strings.TrimPrefix(path, config.BasePath)
 	relativePath = strings.TrimPrefix(relativePath, "/")
-	
+
 	// 경로 구조: /proxy/{mode}/{type}/{path...} 또는 /proxy/{type}/{path...}
 	parts := strings.Split(relativePath, "/")
 	if len(parts) == 0 {
@@ -250,7 +250,7 @@ func (pm *PluginMiddleware) CacheMiddleware() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		// 캐시 키 생성
 		cacheKey := pm.buildCacheKey(c)
-		
+
 		pm.logger.Debug("Cache middleware",
 			logging.F("cache_key", cacheKey),
 			logging.F("method", c.Method()))
@@ -295,10 +295,10 @@ func (pm *PluginMiddleware) ErrorHandler() fiber.ErrorHandler {
 		// 에러 응답
 		return c.Status(code).JSON(map[string]interface{}{
 			"error": map[string]interface{}{
-				"code":    code,
-				"message": message,
-				"path":    c.Path(),
-				"method":  c.Method(),
+				"code":      code,
+				"message":   message,
+				"path":      c.Path(),
+				"method":    c.Method(),
 				"timestamp": time.Now().UTC().Format(time.RFC3339),
 			},
 		})
@@ -323,7 +323,7 @@ func (pm *PluginMiddleware) RateLimitMiddleware() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		// TODO: 플러그인별 레이트 리미팅 구현
 		// 패키지 타입과 클라이언트 IP 기반으로 제한
-		
+
 		return c.Next()
 	}
 }

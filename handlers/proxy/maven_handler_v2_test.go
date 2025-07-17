@@ -18,7 +18,7 @@ func TestMavenHandlerV2_Simple(t *testing.T) {
 			os.Unsetenv("CONFIG_DIR")
 		}
 	}()
-	
+
 	// 임시 디렉토리 설정
 	tempDir := t.TempDir()
 	os.Setenv("CONFIG_DIR", tempDir)
@@ -41,11 +41,11 @@ func TestMavenHandlerV2_Simple(t *testing.T) {
 
 	t.Run("isSnapshotArtifact", func(t *testing.T) {
 		handler := NewMavenHandlerV2()
-		
+
 		// SNAPSHOT 아티팩트
 		assert.True(t, handler.isSnapshotArtifact("com/example/app/1.0-SNAPSHOT/app-1.0-SNAPSHOT.jar"))
 		assert.True(t, handler.isSnapshotArtifact("org/springframework/spring-core/5.3.0-SNAPSHOT/spring-core-5.3.0-SNAPSHOT.jar"))
-		
+
 		// 릴리즈 아티팩트
 		assert.False(t, handler.isSnapshotArtifact("com/example/app/1.0/app-1.0.jar"))
 		assert.False(t, handler.isSnapshotArtifact("org/springframework/spring-core/5.3.0/spring-core-5.3.0.jar"))
@@ -53,13 +53,13 @@ func TestMavenHandlerV2_Simple(t *testing.T) {
 
 	t.Run("isChecksumFile", func(t *testing.T) {
 		handler := NewMavenHandlerV2()
-		
+
 		// 체크섬 파일들
 		assert.True(t, handler.isChecksumFile("com/example/app/1.0/app-1.0.jar.sha1"))
 		assert.True(t, handler.isChecksumFile("com/example/app/1.0/app-1.0.jar.md5"))
 		assert.True(t, handler.isChecksumFile("com/example/app/1.0/app-1.0.jar.sha256"))
 		assert.True(t, handler.isChecksumFile("com/example/app/1.0/app-1.0.jar.sha512"))
-		
+
 		// 일반 파일
 		assert.False(t, handler.isChecksumFile("com/example/app/1.0/app-1.0.jar"))
 		assert.False(t, handler.isChecksumFile("com/example/app/1.0/app-1.0.pom"))
@@ -67,27 +67,27 @@ func TestMavenHandlerV2_Simple(t *testing.T) {
 
 	t.Run("validateArtifactPath", func(t *testing.T) {
 		handler := NewMavenHandlerV2()
-		
+
 		// 유효한 경로
 		assert.NoError(t, handler.validateArtifactPath("com/example/app/1.0/app-1.0.jar"))
 		assert.NoError(t, handler.validateArtifactPath("org/springframework/spring-core/5.3.0/spring-core-5.3.0.jar"))
-		
+
 		// 무효한 경로 (.. 포함)
 		assert.Error(t, handler.validateArtifactPath("com/example/../../../etc/passwd"))
 		assert.Error(t, handler.validateArtifactPath("../com/example/app/1.0/app-1.0.jar"))
-		
+
 		// 무효한 경로 (절대 경로)
 		assert.Error(t, handler.validateArtifactPath("/com/example/app/1.0/app-1.0.jar"))
 	})
 
 	t.Run("validateChecksum", func(t *testing.T) {
 		handler := NewMavenHandlerV2()
-		
+
 		// 유효한 체크섬들
 		assert.NoError(t, handler.validateChecksum([]byte("da39a3ee5e6b4b0d3255bfef95601890afd80709"), "test.sha1"))
 		assert.NoError(t, handler.validateChecksum([]byte("d41d8cd98f00b204e9800998ecf8427e"), "test.md5"))
 		assert.NoError(t, handler.validateChecksum([]byte("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"), "test.sha256"))
-		
+
 		// 무효한 체크섬들 (길이가 틀림)
 		assert.Error(t, handler.validateChecksum([]byte("short"), "test.sha1"))
 		assert.Error(t, handler.validateChecksum([]byte("short"), "test.md5"))
@@ -96,7 +96,7 @@ func TestMavenHandlerV2_Simple(t *testing.T) {
 
 	t.Run("HandleError mapping", func(t *testing.T) {
 		handler := NewMavenHandlerV2()
-		
+
 		// 기본 에러 처리만 테스트
 		err := handler.HandleError(assert.AnError, nil)
 		assert.Error(t, err)
@@ -116,11 +116,11 @@ func TestMavenHandlerV2_Simple(t *testing.T) {
 			{"com/example/app/1.0/app-1.0.pom", 7 * 24 * time.Hour},
 			{"com/example/other/file.txt", 24 * time.Hour},
 		}
-		
+
 		for _, tc := range testCases {
 			// Simulate GetCacheTTL logic
 			var ttl time.Duration
-			
+
 			if tc.path == "com/example/maven-metadata.xml" {
 				ttl = 5 * time.Minute
 			} else if tc.path == "com/example/app/1.0/app-1.0.jar.sha1" {
@@ -133,7 +133,7 @@ func TestMavenHandlerV2_Simple(t *testing.T) {
 			} else {
 				ttl = 24 * time.Hour
 			}
-			
+
 			assert.Equal(t, tc.expected, ttl, "TTL mismatch for path: %s", tc.path)
 		}
 	})
@@ -152,10 +152,10 @@ func TestMavenHandlerV2_Simple(t *testing.T) {
 			{"com/example/maven-metadata.xml", 200, true},
 			{"com/example/other/file.txt", 200, false},
 		}
-		
+
 		for _, tc := range testCases {
 			var shouldCache bool
-			
+
 			if tc.statusCode != 200 && tc.statusCode != 304 {
 				shouldCache = false
 			} else if tc.path == "com/example/app/1.0-SNAPSHOT/app-1.0-SNAPSHOT.jar" {
@@ -169,7 +169,7 @@ func TestMavenHandlerV2_Simple(t *testing.T) {
 			} else {
 				shouldCache = false
 			}
-			
+
 			assert.Equal(t, tc.expected, shouldCache, "ShouldCache mismatch for path: %s, status: %d", tc.path, tc.statusCode)
 		}
 	})

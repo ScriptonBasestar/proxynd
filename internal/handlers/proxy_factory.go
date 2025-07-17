@@ -44,7 +44,7 @@ func (f *ProxyHandlerFactory) Register(proxyType string, creator func() BaseProx
 	defer f.mutex.Unlock()
 
 	f.handlers[proxyType] = creator
-	
+
 	f.logger.Debug("Proxy handler registered",
 		logging.F("proxy_type", proxyType),
 	)
@@ -106,7 +106,7 @@ func (f *ProxyHandlerFactory) CreateSingleton(proxyType string) (*BaseProxyHandl
 
 	handler := creator()
 	baseHandler := NewBaseProxyHandlerImpl(f.container, handler)
-	
+
 	// 인스턴스 캐시
 	f.instances[proxyType] = baseHandler
 
@@ -152,7 +152,7 @@ func (f *ProxyHandlerFactory) GetHandlerInfo(proxyType string) (map[string]inter
 
 	// 임시 핸들러 생성하여 정보 수집
 	handler := creator()
-	
+
 	info := map[string]interface{}{
 		"type":    handler.Type(),
 		"enabled": handler.IsEnabled(),
@@ -198,7 +198,7 @@ func (f *ProxyHandlerFactory) HealthCheck() map[string]error {
 
 	for proxyType, creator := range f.handlers {
 		handler := creator()
-		
+
 		// 활성화되지 않은 핸들러는 스킵
 		if !handler.IsEnabled() {
 			continue
@@ -258,7 +258,7 @@ func (f *ProxyHandlerFactory) GetStatistics() map[string]interface{} {
 	for proxyType, creator := range f.handlers {
 		handler := creator()
 		typeStats[proxyType] = map[string]interface{}{
-			"enabled":    handler.IsEnabled(),
+			"enabled":      handler.IsEnabled(),
 			"has_instance": f.instances[proxyType] != nil,
 		}
 	}

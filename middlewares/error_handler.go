@@ -33,7 +33,7 @@ func NewErrorHandler() *ErrorHandlerMiddleware {
 // ErrorHandler 에러 핸들링 미들웨어 함수
 func ErrorHandler() fiber.Handler {
 	handler := NewErrorHandler()
-	
+
 	return func(c *fiber.Ctx) error {
 		// 다음 핸들러 실행
 		err := c.Next()
@@ -130,7 +130,7 @@ func (h *ErrorHandlerMiddleware) handleGenericError(c *fiber.Ctx, err error, tra
 // logError 도메인 에러 로깅 (구조화된 형식)
 func (h *ErrorHandlerMiddleware) logError(c *fiber.Ctx, err *errors.DomainError, traceID string) {
 	logLevel := h.getLogLevel(err.Level)
-	
+
 	fields := []logging.Field{
 		logging.F("trace_id", traceID),
 		logging.F("domain", err.Domain),
@@ -152,7 +152,7 @@ func (h *ErrorHandlerMiddleware) logError(c *fiber.Ctx, err *errors.DomainError,
 	}
 
 	message := "Domain error occurred"
-	
+
 	switch logLevel {
 	case "info":
 		h.logger.Info(message, fields...)

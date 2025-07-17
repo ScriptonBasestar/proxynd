@@ -18,16 +18,16 @@ type PerformanceLogger struct {
 
 // PerformanceMetrics tracks performance statistics
 type PerformanceMetrics struct {
-	mu                 sync.RWMutex
-	RequestCount       int64
-	TotalDuration      time.Duration
-	MinDuration        time.Duration
-	MaxDuration        time.Duration
-	SlowRequestCount   int64
-	ErrorCount         int64
-	MemoryAllocations  int64
-	GCCount            uint32
-	LastResetTime      time.Time
+	mu                sync.RWMutex
+	RequestCount      int64
+	TotalDuration     time.Duration
+	MinDuration       time.Duration
+	MaxDuration       time.Duration
+	SlowRequestCount  int64
+	ErrorCount        int64
+	MemoryAllocations int64
+	GCCount           uint32
+	LastResetTime     time.Time
 }
 
 // PerformanceEvent represents a performance-related event
@@ -49,13 +49,13 @@ type PerformanceEvent struct {
 
 // Performance event types
 const (
-	PerfEventRequest      = "http_request"
-	PerfEventDatabase     = "database_query"
-	PerfEventCache        = "cache_operation"
-	PerfEventFileIO       = "file_io"
-	PerfEventNetworkCall  = "network_call"
-	PerfEventComputation  = "computation"
-	PerfEventMemoryGC     = "garbage_collection"
+	PerfEventRequest     = "http_request"
+	PerfEventDatabase    = "database_query"
+	PerfEventCache       = "cache_operation"
+	PerfEventFileIO      = "file_io"
+	PerfEventNetworkCall = "network_call"
+	PerfEventComputation = "computation"
+	PerfEventMemoryGC    = "garbage_collection"
 )
 
 // NewPerformanceLogger creates a new performance logger
@@ -201,14 +201,14 @@ func (p *PerformanceLogger) ResetMetrics() {
 
 // PerformanceTracker helps track performance of operations
 type PerformanceTracker struct {
-	logger        *PerformanceLogger
-	eventType     string
-	component     string
-	operation     string
-	startTime     time.Time
-	memoryBefore  uint64
-	metadata      map[string]interface{}
-	ctx           context.Context
+	logger       *PerformanceLogger
+	eventType    string
+	component    string
+	operation    string
+	startTime    time.Time
+	memoryBefore uint64
+	metadata     map[string]interface{}
+	ctx          context.Context
 }
 
 // StartOperation starts tracking an operation
@@ -245,17 +245,17 @@ func (pt *PerformanceTracker) Finish(success bool, errorMessage string) {
 	runtime.ReadMemStats(&memStats)
 
 	event := PerformanceEvent{
-		Type:          pt.eventType,
-		Component:     pt.component,
-		Operation:     pt.operation,
-		Duration:      duration,
-		StartTime:     pt.startTime,
-		EndTime:       endTime,
-		MemoryBefore:  pt.memoryBefore,
-		MemoryAfter:   memStats.Alloc,
-		Success:       success,
-		ErrorMessage:  errorMessage,
-		Metadata:      pt.metadata,
+		Type:         pt.eventType,
+		Component:    pt.component,
+		Operation:    pt.operation,
+		Duration:     duration,
+		StartTime:    pt.startTime,
+		EndTime:      endTime,
+		MemoryBefore: pt.memoryBefore,
+		MemoryAfter:  memStats.Alloc,
+		Success:      success,
+		ErrorMessage: errorMessage,
+		Metadata:     pt.metadata,
 	}
 
 	pt.logger.LogPerformanceEvent(pt.ctx, event)
@@ -387,7 +387,7 @@ func (p *PerformanceLogger) StartPeriodicMemoryLogging(ctx context.Context, inte
 // LogPerformanceMetrics logs current performance metrics summary
 func (p *PerformanceLogger) LogPerformanceMetrics(ctx context.Context) {
 	metrics := p.GetMetrics()
-	
+
 	fields := []Field{
 		NewField("request_count", metrics.RequestCount),
 		NewField("total_duration", metrics.TotalDuration),
@@ -404,10 +404,10 @@ func (p *PerformanceLogger) LogPerformanceMetrics(ctx context.Context) {
 	if metrics.RequestCount > 0 {
 		avgDuration := metrics.TotalDuration / time.Duration(metrics.RequestCount)
 		fields = append(fields, Duration("avg_duration", avgDuration))
-		
+
 		errorRate := float64(metrics.ErrorCount) / float64(metrics.RequestCount)
 		fields = append(fields, Float64("error_rate", errorRate))
-		
+
 		slowRequestRate := float64(metrics.SlowRequestCount) / float64(metrics.RequestCount)
 		fields = append(fields, Float64("slow_request_rate", slowRequestRate))
 	}

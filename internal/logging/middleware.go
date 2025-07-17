@@ -1,8 +1,6 @@
 package logging
 
 import (
-	"bytes"
-	"io"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -11,14 +9,14 @@ import (
 
 // Config for logging middleware
 type MiddlewareConfig struct {
-	Logger           Logger
-	SkipPaths        []string
-	SkipSuccessLogs  bool
-	LogRequestBody   bool
-	LogResponseBody  bool
-	MaxBodySize      int
-	TimeFormat       string
-	CustomFields     func(*fiber.Ctx) map[string]interface{}
+	Logger          Logger
+	SkipPaths       []string
+	SkipSuccessLogs bool
+	LogRequestBody  bool
+	LogResponseBody bool
+	MaxBodySize     int
+	TimeFormat      string
+	CustomFields    func(*fiber.Ctx) map[string]interface{}
 }
 
 // Default configuration
@@ -51,7 +49,7 @@ func New(config ...MiddlewareConfig) fiber.Handler {
 		}
 
 		start := time.Now()
-		
+
 		// Generate request ID if not present
 		requestID := c.Get("X-Request-ID")
 		if requestID == "" {
@@ -69,13 +67,13 @@ func New(config ...MiddlewareConfig) fiber.Handler {
 		// Add IDs to context
 		ctx := WithRequestID(c.Context(), requestID)
 		ctx = WithCorrelationID(ctx, correlationID)
-		
+
 		// Extract user ID from headers or context
 		userID := c.Get("X-User-ID")
 		if userID != "" {
 			ctx = WithUserID(ctx, userID)
 		}
-		
+
 		// Extract session ID
 		sessionID := c.Get("X-Session-ID")
 		if sessionID != "" {
@@ -92,24 +90,16 @@ func New(config ...MiddlewareConfig) fiber.Handler {
 			copy(requestBody, c.Body())
 		}
 
-		// Create response body capturer
-		var responseBody []byte
-		if cfg.LogResponseBody {
-			originalWrite := c.Response().BodyWriter()
-			bodyCapture := &bodyWriter{
-				ResponseWriter: originalWrite,
-				body:          &bytes.Buffer{},
-				maxSize:       cfg.MaxBodySize,
-			}
-			c.Response().SetBodyWriter(bodyCapture)
-			defer func() {
-				responseBody = bodyCapture.body.Bytes()
-			}()
-		}
-
 		// Process request
 		err := c.Next()
-		
+
+		// Capture response body if enabled
+		var responseBody []byte
+		if cfg.LogResponseBody && len(c.Response().Body()) > 0 && len(c.Response().Body()) <= cfg.MaxBodySize {
+			responseBody = make([]byte, len(c.Response().Body()))
+			copy(responseBody, c.Response().Body())
+		}
+
 		// Calculate duration
 		duration := time.Since(start)
 		status := c.Response().StatusCode()
@@ -189,7 +179,7 @@ func New(config ...MiddlewareConfig) fiber.Handler {
 
 		// Log the request
 		logger := cfg.Logger.WithContext(ctx).WithComponent("http.middleware")
-		
+
 		message := "HTTP request processed"
 		if err != nil {
 			message = "HTTP request failed"
@@ -208,56 +198,36 @@ func New(config ...MiddlewareConfig) fiber.Handler {
 	}
 }
 
-// bodyWriter captures response body
-type bodyWriter struct {
-	io.Writer
-	ResponseWriter io.Writer
-	body          *bytes.Buffer
-	maxSize       int
-}
-
-func (bw *bodyWriter) Write(b []byte) (int, error) {
-	// Write to original response
-	n, err := bw.ResponseWriter.Write(b)
-	
-	// Capture body if under size limit
-	if bw.body.Len()+len(b) <= bw.maxSize {
-		bw.body.Write(b[:n])
-	}
-	
-	return n, err
-}
-
 // isSafeHeader checks if a header is safe to log
 func isSafeHeader(header string) bool {
 	// List of headers that are safe to log
 	safeHeaders := map[string]bool{
-		"Content-Type":    true,
-		"Content-Length":  true,
-		"Accept":          true,
-		"Accept-Encoding": true,
-		"Accept-Language": true,
-		"Cache-Control":   true,
-		"Connection":      true,
-		"Host":            true,
-		"Origin":          true,
-		"Referer":         true,
-		"User-Agent":      true,
-		"X-Forwarded-For": true,
-		"X-Real-IP":       true,
-		"X-Request-ID":    true,
+		"Content-Type":     true,
+		"Content-Length":   true,
+		"Accept":           true,
+		"Accept-Encoding":  true,
+		"Accept-Language":  true,
+		"Cache-Control":    true,
+		"Connection":       true,
+		"Host":             true,
+		"Origin":           true,
+		"Referer":          true,
+		"User-Agent":       true,
+		"X-Forwarded-For":  true,
+		"X-Real-IP":        true,
+		"X-Request-ID":     true,
 		"X-Correlation-ID": true,
-		"X-User-ID":       true,
-		"X-Session-ID":    true,
+		"X-User-ID":        true,
+		"X-Session-ID":     true,
 	}
 
 	// Don't log sensitive headers
 	sensitiveHeaders := map[string]bool{
-		"Authorization": true,
-		"Cookie":        true,
-		"Set-Cookie":    true,
-		"X-API-Key":     true,
-		"X-Auth-Token":  true,
+		"Authorization":  true,
+		"Cookie":         true,
+		"Set-Cookie":     true,
+		"X-API-Key":      true,
+		"X-Auth-Token":   true,
 		"Authentication": true,
 	}
 
