@@ -98,7 +98,7 @@ linters-settings:
   dupl:
     # tokens count to trigger issue, 150 by default
     threshold: 150
-  
+
   errcheck:
     # report about not checking of errors in type assertions: `a := b.(MyStruct)`;
     check-type-assertions: true
@@ -106,19 +106,19 @@ linters-settings:
     check-blank: true
     # path to a file containing a list of functions to exclude from checking
     # exclude: /path/to/file.txt
-  
+
   exhaustive:
     # indicates that switch statements are to be considered exhaustive if a
     # 'default' case is present, even if all enum members aren't listed in the
     # switch
     default-signifies-exhaustive: true
-  
+
   goconst:
     # minimal length of string constant, 3 by default
     min-len: 3
     # minimal occurrences count to trigger, 3 by default
     min-occurrences: 3
-  
+
   gocritic:
     # Enable multiple checks by tags, run `golangci-lint linters-settings gocritic` to see available tags and checks
     enabled-tags:
@@ -137,11 +137,11 @@ linters-settings:
       - unnamedResult   # named results are useful for documentation
       - hugeParam       # can be annoying
       - rangeValCopy    # can be annoying
-  
+
   gocyclo:
     # minimal code complexity to report, 30 by default (increased for development)
     min-complexity: 30
-  
+
   govet:
     # report about shadowed variables
     check-shadowing: true
@@ -158,19 +158,19 @@ linters-settings:
     # disable some analyzers
     disable:
       - fieldalignment # too strict
-  
+
   lll:
     # max line length, lines longer will be reported. Increased for development.
     line-length: 150
     # tab width in spaces. Default to 1.
     tab-width: 1
-  
+
   misspell:
     # Correct spellings using locale preferences for US or UK.
     locale: US
     ignore-words:
       - proxynd
-  
+
   nolintlint:
     # Enable to ensure that nolint directives are all used. Default is true.
     allow-unused: false
@@ -180,7 +180,7 @@ linters-settings:
     require-explanation: true
     # Require nolint directives to mention the specific linter being suppressed. Default is false.
     require-specific: true
-  
+
   revive:
     # When set to false, ignores files with "GENERATED" header, similar to golint. See https://github.com/mgechev/revive#configuration
     ignore-generated-header: true
@@ -198,10 +198,10 @@ linters-settings:
       - name: errorf
       - name: empty-block
       - name: unreachable-code
-      
+
       # Disabled temporarily - too strict for development:
       # - name: context-as-argument
-      # - name: context-keys-type  
+      # - name: context-keys-type
       # - name: dot-imports
       # - name: error-naming
       # - name: exported          # commenting requirements
@@ -213,13 +213,13 @@ linters-settings:
       # - name: superfluous-else
       # - name: unused-parameter
       # - name: redefines-builtin-id
-  
+
   # gosec settings removed - linter disabled for development phase
-  
+
   unparam:
     # Inspect exported functions, default is false. Set to true if no external program/library imports your code.
     check-exported: false
-  
+
   errorlint:
     # Report non-wrapping error creation using fmt.Errorf
     errorf: true
@@ -227,7 +227,7 @@ linters-settings:
     asserts: true
     # Report comparison of errors with ==
     comparison: true
-  
+
   maintidx:
     # Show functions with maintainability index lower than N.
     # A high index indicates better maintainability (it's kind of the opposite of complexity).
@@ -250,7 +250,7 @@ issues:
     - "should not use dot imports" # Dot imports (can be legitimate)
     - "cyclomatic complexity .* of func .* is high" # Complexity warnings (already handled by gocyclo)
     - "line is .* characters" # Line length warnings (already handled by lll)
-    
+
   exclude-rules:
     # Exclude some linters from running on tests files.
     - path: _test\.go
@@ -261,21 +261,21 @@ issues:
         - errcheck
         - goconst
         - funlen
-    
+
     # Exclude known linters from partially hard-vendored code,
     # which is impossible to exclude via "nolint" comments.
     - path: test
       linters:
         - gosec
         - dupl
-    
+
     # Exclude benchmarks from linting
     - path: _bench\.go
       linters:
         - dupl
         - gosec
         - goconst
-    
+
     # Exclude mocks from linting
     - path: mocks/
       linters:
@@ -286,40 +286,40 @@ issues:
         - unparam
         - unused
         - ineffassign
-    
+
     # Exclude some staticcheck messages
     - linters:
         - staticcheck
       text: "SA9003:"
-    
+
     # Exclude lll issues for long lines with go:generate
     - linters:
         - lll
       source: "^//go:generate "
-    
+
     # Allow using deprecated io/ioutil for now
     - linters:
         - staticcheck
       text: "SA1019: \"io/ioutil\" has been deprecated"
-    
+
     # Ignore missing comments on exported types/functions in internal packages
     - path: internal/
       linters:
         - revive
       text: "exported .* should have comment"
-    
-    
+
+
     # Exclude shadow checking on err variables
     - linters:
         - govet
       text: "shadow: declaration of \"err\" shadows declaration"
-  
+
   # Maximum issues count per one linter. Set to 0 to disable. Default is 50.
   max-issues-per-linter: 0
-  
+
   # Maximum count of issues with the same text. Set to 0 to disable. Default is 3.
   max-same-issues: 0
-  
+
   # Show only new issues: if there are unstaged changes or untracked files,
   # only those changes are analyzed, else only changes in HEAD~ are analyzed.
   # It's a super-useful option for integration of golangci-lint into existing
@@ -327,9 +327,9 @@ issues:
   # of integration: much better don't allow issues in new code.
   # Default is false.
   new: false
-  
+
   # Show only new issues created after git revision `REV`
   # new-from-rev: HEAD~
-  
+
   # Fix found issues (if it's supported by the linter)
   fix: false

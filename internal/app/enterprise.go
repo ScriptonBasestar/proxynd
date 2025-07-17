@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/gofiber/fiber/v2"
+
 	"proxynd/internal/enterprise/license"
 )
 

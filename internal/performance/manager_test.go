@@ -5,9 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"proxynd/logging"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"proxynd/logging"
 )
 
 func TestNewManager(t *testing.T) {

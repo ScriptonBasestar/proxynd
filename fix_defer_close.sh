@@ -25,10 +25,10 @@ generate_fix() {
     local file=$1
     local line_num=$2
     local line_content=$3
-    
+
     # Extract the variable name being closed
     var_name=$(echo "$line_content" | sed -n 's/.*defer \([a-zA-Z0-9_]*\)\.Close().*/\1/p')
-    
+
     # Determine the appropriate logger based on file path
     logger="log"
     if [[ "$file" == *"internal/logging"* ]]; then
@@ -36,7 +36,7 @@ generate_fix() {
     elif [[ "$file" == *"test"* ]]; then
         logger="t.Logf"
     fi
-    
+
     cat >> "$RESULT_FILE" << EOF
 
 ### File: \`$file:$line_num\`
@@ -67,7 +67,7 @@ for file in $FILES; do
     while IFS= read -r line; do
         line_num=$(echo "$line" | cut -d: -f1)
         line_content=$(echo "$line" | cut -d: -f2-)
-        
+
         # Skip if it already has error handling
         if [[ ! "$line_content" =~ "if err :=" ]]; then
             generate_fix "$file" "$line_num" "$line_content"

@@ -214,11 +214,11 @@ golangci-lint run --out-format=json > lint-report.json
 1. **configs/logging_config.go**
    - Long lines (line 224-227)
    - Possible unused config fields
-   
+
 2. **handlers/proxy/apt_handler.go**
    - HTTP response body closing
    - Error wrapping patterns
-   
+
 3. **internal/handlers/base_proxy_impl.go**
    - Fiber client resource management
    - Complex error handling flow

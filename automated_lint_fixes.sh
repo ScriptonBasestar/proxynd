@@ -32,47 +32,47 @@ log_error() {
 # Check for required tools
 check_tools() {
     log_info "Checking required tools..."
-    
+
     # Check Go
     if ! command -v go &> /dev/null; then
         log_error "Go is not installed"
         exit 1
     fi
-    
+
     # Check/Install goimports
     if ! command -v goimports &> /dev/null; then
         log_warning "goimports not found, installing..."
         go install golang.org/x/tools/cmd/goimports@latest
     fi
-    
+
     # Check/Install golangci-lint
     if ! command -v golangci-lint &> /dev/null; then
         log_warning "golangci-lint not found, installing..."
         curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
     fi
-    
+
     log_success "All required tools are available"
 }
 
 # Phase 1: Basic formatting
 phase1_formatting() {
     log_info "Phase 1: Basic code formatting..."
-    
+
     # Run gofmt
     log_info "Running gofmt..."
     go fmt ./...
-    
+
     # Run goimports
     log_info "Running goimports..."
     goimports -w .
-    
+
     log_success "Phase 1 complete"
 }
 
 # Phase 2: Auto-fixable lint issues
 phase2_auto_fix() {
     log_info "Phase 2: Running auto-fixable linters..."
-    
+
     # Run golangci-lint with auto-fix for safe linters
     golangci-lint run --fix --disable-all \
         --enable=whitespace \
@@ -81,31 +81,31 @@ phase2_auto_fix() {
         --enable=gofmt \
         --enable=goimports \
         ./... || true
-    
+
     log_success "Phase 2 complete"
 }
 
 # Phase 3: Fix deprecated io/ioutil
 phase3_fix_ioutil() {
     log_info "Phase 3: Fixing deprecated io/ioutil usage..."
-    
+
     # Count occurrences
     COUNT=$(grep -r "io/ioutil" --include="*.go" . | wc -l)
-    
+
     if [ $COUNT -eq 0 ]; then
         log_info "No io/ioutil usage found"
         return
     fi
-    
+
     log_info "Found $COUNT files using io/ioutil"
-    
+
     # Run the auto-fix tool if it exists
     if [ -f "auto_fix_ioutil.go" ]; then
         log_info "Running io/ioutil auto-fixer..."
         go run auto_fix_ioutil.go
     else
         log_warning "auto_fix_ioutil.go not found, using sed fallback..."
-        
+
         # Fix imports
         find . -name "*.go" -type f ! -path "./vendor/*" ! -path "./.git/*" | while read -r file; do
             # Check if file uses ioutil
@@ -126,43 +126,43 @@ phase3_fix_ioutil() {
             fi
         done
     fi
-    
+
     log_success "Phase 3 complete"
 }
 
 # Phase 4: Extract repeated strings
 phase4_extract_constants() {
     log_info "Phase 4: Extracting repeated strings to constants..."
-    
+
     # Run goconst to find repeated strings
     if command -v goconst &> /dev/null; then
         log_info "Running goconst analysis..."
         goconst -min-len 5 -min-occurrences 3 ./... > goconst_report.txt 2>&1 || true
-        
+
         if [ -s goconst_report.txt ]; then
             log_warning "Found repeated strings. See goconst_report.txt for details"
         fi
     else
         log_warning "goconst not installed, skipping constant extraction"
     fi
-    
+
     log_success "Phase 4 complete"
 }
 
 # Phase 5: Generate lint reports
 phase5_generate_reports() {
     log_info "Phase 5: Generating lint reports..."
-    
+
     # Full lint report
     log_info "Running full lint analysis..."
     golangci-lint run ./... > lint_report_full.txt 2>&1 || true
-    
+
     # Individual linter reports
     for linter in errcheck staticcheck unused ineffassign govet bodyclose; do
         log_info "Analyzing $linter issues..."
         golangci-lint run --disable-all --enable=$linter ./... > "lint_report_${linter}.txt" 2>&1 || true
     done
-    
+
     # Create summary
     cat > lint_summary_after_fixes.txt << EOF
 === Lint Summary After Automated Fixes ===
@@ -172,19 +172,19 @@ Total Issues: $(grep -c ":" lint_report_full.txt 2>/dev/null || echo 0)
 
 By Linter:
 EOF
-    
+
     for linter in errcheck staticcheck unused ineffassign govet bodyclose goconst whitespace misspell; do
         count=$(grep -c "\[$linter\]" lint_report_full.txt 2>/dev/null || echo 0)
         echo "$linter: $count issues" >> lint_summary_after_fixes.txt
     done
-    
+
     log_success "Phase 5 complete"
 }
 
 # Phase 6: Create manual fix guide
 phase6_create_guide() {
     log_info "Phase 6: Creating manual fix guide..."
-    
+
     cat > manual_fixes_required.md << 'EOF'
 # Manual Fixes Required
 
@@ -257,7 +257,7 @@ Look for functions with many if/else branches or switch cases.
 3. Run `make lint` after each batch of fixes
 4. Consider adding `// nolint` directives with explanations for intentional patterns
 EOF
-    
+
     log_success "Phase 6 complete"
 }
 
@@ -266,15 +266,15 @@ main() {
     echo "ProxyND Automated Lint Fix Tool"
     echo "==============================="
     echo ""
-    
+
     check_tools
-    
+
     # Backup current state
     log_info "Creating backup branch..."
     git branch -D lint-fixes-backup 2>/dev/null || true
     git checkout -b lint-fixes-backup
     git checkout -
-    
+
     # Run all phases
     phase1_formatting
     phase2_auto_fix
@@ -282,7 +282,7 @@ main() {
     phase4_extract_constants
     phase5_generate_reports
     phase6_create_guide
-    
+
     echo ""
     echo "==============================="
     log_success "Automated fixes complete!"

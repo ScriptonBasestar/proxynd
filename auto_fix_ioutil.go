@@ -1,16 +1,16 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"go/ast"
+	"go/format"
 	"go/parser"
 	"go/token"
-	"go/format"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
-	"bytes"
 )
 
 // This tool automatically fixes deprecated io/ioutil usage
@@ -61,7 +61,7 @@ func processFile(filename string) error {
 			// Check what ioutil functions are used
 			hasReadAll := false
 			needsOS := false
-			
+
 			ast.Inspect(file, func(n ast.Node) bool {
 				if sel, ok := n.(*ast.SelectorExpr); ok {
 					if ident, ok := sel.X.(*ast.Ident); ok && ident.Name == "ioutil" {
