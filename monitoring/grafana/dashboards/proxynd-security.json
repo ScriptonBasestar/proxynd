@@ -1,0 +1,335 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "ProxyND Security Dashboard",
+    "tags": ["proxynd", "security"],
+    "style": "dark",
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Authentication Failures",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(proxynd_auth_failures_total[5m])",
+            "legendFormat": "Auth Failures/sec"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Failures/sec",
+            "min": 0
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 0
+        },
+        "alert": {
+          "conditions": [
+            {
+              "evaluator": {
+                "params": [0.1],
+                "type": "gt"
+              },
+              "operator": {
+                "type": "and"
+              },
+              "query": {
+                "params": ["A", "5m", "now"]
+              },
+              "reducer": {
+                "params": [],
+                "type": "avg"
+              },
+              "type": "query"
+            }
+          ],
+          "executionErrorState": "alerting",
+          "for": "2m",
+          "frequency": "10s",
+          "handler": 1,
+          "name": "High Authentication Failure Rate",
+          "noDataState": "no_data",
+          "notifications": []
+        }
+      },
+      {
+        "id": 2,
+        "title": "Unauthorized Access Attempts",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(proxynd_unauthorized_attempts_total[5m])",
+            "legendFormat": "Unauthorized Attempts/sec"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Attempts/sec",
+            "min": 0
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 0
+        }
+      },
+      {
+        "id": 3,
+        "title": "Failed Requests by IP",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "topk(10, sum by (remote_addr) (rate(proxynd_http_requests_total{status=~\"4..|5..\"}[5m])))",
+            "legendFormat": "{{remote_addr}}",
+            "format": "table"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 8
+        }
+      },
+      {
+        "id": 4,
+        "title": "Rate Limiting Violations",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(proxynd_rate_limit_violations_total[5m])",
+            "legendFormat": "Rate Limit Violations/sec"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Violations/sec",
+            "min": 0
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 8
+        }
+      },
+      {
+        "id": 5,
+        "title": "SSL Certificate Expiry",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "(probe_ssl_earliest_cert_expiry - time()) / 86400",
+            "legendFormat": "Days until expiry"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "days",
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "red",
+                  "value": 0
+                },
+                {
+                  "color": "yellow",
+                  "value": 30
+                },
+                {
+                  "color": "green",
+                  "value": 90
+                }
+              ]
+            }
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 16
+        }
+      },
+      {
+        "id": 6,
+        "title": "Security Headers Status",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "probe_http_status_code{job=\"blackbox\"}",
+            "legendFormat": "HTTP Status"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "red",
+                  "value": 0
+                },
+                {
+                  "color": "yellow",
+                  "value": 400
+                },
+                {
+                  "color": "green",
+                  "value": 200
+                }
+              ]
+            }
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 16
+        }
+      },
+      {
+        "id": 7,
+        "title": "File Upload Attempts",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(proxynd_upload_attempts_total[5m])",
+            "legendFormat": "Upload Attempts/sec"
+          },
+          {
+            "expr": "rate(proxynd_upload_failures_total[5m])",
+            "legendFormat": "Upload Failures/sec"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Attempts/sec",
+            "min": 0
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 24
+        }
+      },
+      {
+        "id": 8,
+        "title": "Blocked IPs",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "proxynd_blocked_ips",
+            "legendFormat": "{{ip}}",
+            "format": "table"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 24
+        }
+      },
+      {
+        "id": 9,
+        "title": "Security Events Timeline",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(proxynd_security_events_total[5m])",
+            "legendFormat": "{{event_type}}"
+          }
+        ],
+        "yAxes": [
+          {
+            "label": "Events/sec",
+            "min": 0
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 32
+        }
+      },
+      {
+        "id": 10,
+        "title": "TLS Version Usage",
+        "type": "piechart",
+        "targets": [
+          {
+            "expr": "sum by (tls_version) (proxynd_tls_connections_total)",
+            "legendFormat": "{{tls_version}}"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 40
+        }
+      },
+      {
+        "id": 11,
+        "title": "User Agent Analysis",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "topk(10, sum by (user_agent) (rate(proxynd_http_requests_total[5m])))",
+            "legendFormat": "{{user_agent}}",
+            "format": "table"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 40
+        }
+      }
+    ],
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "timepicker": {
+      "refresh_intervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ]
+    },
+    "refresh": "30s",
+    "schemaVersion": 27,
+    "version": 0,
+    "links": [
+      {
+        "title": "ProxyND Overview Dashboard",
+        "url": "/d/proxynd-overview"
+      },
+      {
+        "title": "ProxyND Performance Dashboard",
+        "url": "/d/proxynd-performance"
+      }
+    ]
+  }
+}

@@ -1,0 +1,424 @@
+name: Enhanced CI Pipeline
+
+on:
+  push:
+    branches: [ main, master, develop, 'release/*', 'hotfix/*' ]
+  pull_request:
+    branches: [ main, master, develop ]
+  workflow_dispatch:
+    inputs:
+      run_performance_tests:
+        description: 'Run performance tests'
+        type: boolean
+        required: false
+        default: false
+      run_security_scan:
+        description: 'Run security scans'
+        type: boolean
+        required: false
+        default: true
+
+env:
+  GO_VERSION: '1.22'
+  DOCKER_REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  COVERAGE_THRESHOLD: 80
+
+jobs:
+  code-quality:
+    name: Code Quality Gate
+    runs-on: ubuntu-latest
+    outputs:
+      quality-passed: ${{ steps.quality-check.outputs.passed }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Install quality tools
+        run: |
+          go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+          go install github.com/securecodewarrior/sast-scan@latest || echo "SAST scan not available"
+
+      - name: Run code quality script
+        id: quality-check
+        run: |
+          chmod +x scripts/code_quality_check.sh
+          if ./scripts/code_quality_check.sh; then
+            echo "passed=true" >> $GITHUB_OUTPUT
+            echo "✅ Code quality checks passed"
+          else
+            echo "passed=false" >> $GITHUB_OUTPUT
+            echo "❌ Code quality checks failed"
+            exit 1
+          fi
+
+      - name: Run linting
+        run: |
+          golangci-lint run --timeout=10m --out-format=github-actions
+
+      - name: Check TODO/FIXME count
+        run: |
+          todo_count=$(find . -name "*.go" -exec grep -i "todo\|fixme" {} + | wc -l)
+          echo "Current TODO/FIXME count: $todo_count"
+          if [ "$todo_count" -gt 50 ]; then
+            echo "❌ Too many TODO/FIXME items ($todo_count > 50)"
+            exit 1
+          else
+            echo "✅ TODO/FIXME count acceptable ($todo_count/50)"
+          fi
+
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: code-quality
+    strategy:
+      matrix:
+        test-type: [unit, integration, handlers]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Install dependencies
+        run: |
+          go mod download
+          go mod verify
+
+      - name: Create test environment
+        run: |
+          mkdir -p tmp/test-cache
+          mkdir -p tmp/test-config
+          mkdir -p reports/coverage
+
+      - name: Run unit tests
+        if: matrix.test-type == 'unit'
+        run: |
+          go test -v -race -coverprofile=reports/coverage/unit.out -covermode=atomic ./...
+
+      - name: Run integration tests
+        if: matrix.test-type == 'integration'
+        run: |
+          # Run our comprehensive integration tests
+          if [ -d "tests/integration" ]; then
+            go test -v -timeout=300s ./tests/integration/...
+          fi
+          if [ -d "test/integration" ]; then
+            go test -v -timeout=300s ./test/integration/...
+          fi
+
+      - name: Run handler tests
+        if: matrix.test-type == 'handlers'
+        run: |
+          # Run comprehensive handler tests
+          go test -v -race -coverprofile=reports/coverage/handlers.out ./handlers/...
+          go test -v -race -coverprofile=reports/coverage/internal-handlers.out ./internal/handlers/...
+
+      - name: Check test coverage
+        if: matrix.test-type == 'unit'
+        run: |
+          go tool cover -func=reports/coverage/unit.out > coverage-summary.txt
+          coverage=$(grep "total:" coverage-summary.txt | awk '{print $3}' | sed 's/%//')
+          echo "Test coverage: ${coverage}%"
+          
+          if (( $(echo "$coverage < $COVERAGE_THRESHOLD" | bc -l) )); then
+            echo "❌ Coverage below threshold: ${coverage}% < ${COVERAGE_THRESHOLD}%"
+            exit 1
+          else
+            echo "✅ Coverage meets threshold: ${coverage}% >= ${COVERAGE_THRESHOLD}%"
+          fi
+
+      - name: Upload coverage reports
+        if: matrix.test-type == 'unit'
+        uses: codecov/codecov-action@v3
+        with:
+          file: reports/coverage/unit.out
+          flags: unittests
+          name: codecov-${{ matrix.test-type }}
+
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    needs: [code-quality, unit-tests]
+    strategy:
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+            platform: linux/amd64
+          - goos: linux
+            goarch: arm64
+            platform: linux/arm64
+          - goos: darwin
+            goarch: amd64
+            platform: darwin/amd64
+          - goos: darwin
+            goarch: arm64
+            platform: darwin/arm64
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Build binary
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+        run: |
+          mkdir -p dist
+          output_name=proxynd-${{ matrix.goos }}-${{ matrix.goarch }}
+          
+          # Build with version info
+          BUILD_TIME=$(date -u '+%Y-%m-%d_%H:%M:%S')
+          GIT_COMMIT=$(git rev-parse --short HEAD)
+          VERSION=${GITHUB_REF_NAME:-dev}
+          
+          go build \
+            -ldflags="-w -s -X main.Version=$VERSION -X main.GitCommit=$GIT_COMMIT -X main.BuildTime=$BUILD_TIME" \
+            -o dist/${output_name} \
+            main.go
+          
+          # Verify binary
+          if [ "${{ matrix.goos }}" = "linux" ] && [ "${{ matrix.goarch }}" = "amd64" ]; then
+            ./dist/${output_name} --version || echo "Version check failed"
+          fi
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: binary-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: dist/
+          retention-days: 7
+
+  security-scan:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    needs: code-quality
+    if: github.event.inputs.run_security_scan != 'false'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Run Gosec Security Scanner
+        run: |
+          go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest
+          gosec -fmt json -out gosec-report.json ./...
+
+      - name: Run Nancy vulnerability scanner
+        run: |
+          go install github.com/sonatypecommunity/nancy@latest
+          go list -json -deps ./... | nancy sleuth --loud > nancy-report.txt
+
+      - name: Scan for secrets
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --debug --only-verified
+
+      - name: Upload security reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-reports-${{ github.sha }}
+          path: |
+            gosec-report.json
+            nancy-report.txt
+          retention-days: 30
+
+  docker-build:
+    name: Docker Build & Test
+    runs-on: ubuntu-latest
+    needs: [build-and-test]
+    permissions:
+      contents: read
+      packages: write
+      security-events: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.DOCKER_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            BUILD_DATE=${{ steps.meta.outputs.created }}
+            VCS_REF=${{ github.sha }}
+            VERSION=${{ steps.meta.outputs.version }}
+
+      - name: Test Docker image
+        run: |
+          # Test the built image
+          docker run --rm ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} --version
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  performance-check:
+    name: Performance Regression Check
+    runs-on: ubuntu-latest
+    needs: [build-and-test]
+    if: github.event.inputs.run_performance_tests == 'true' || github.event_name == 'schedule'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Run quick performance check
+        run: |
+          echo "Running quick performance benchmarks..."
+          mkdir -p reports/performance
+          
+          # Run benchmarks for key areas
+          go test -bench=BenchmarkSimpleCache -benchmem -benchtime=10s ./tests/benchmark/ -run=^$ > reports/performance/cache.txt
+          go test -bench=BenchmarkMemoryAllocation -benchmem -benchtime=5s ./tests/benchmark/ -run=^$ > reports/performance/memory.txt
+          
+          echo "Performance check completed"
+
+      - name: Upload performance results
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-results-${{ github.sha }}
+          path: reports/performance/
+          retention-days: 7
+
+  deployment-readiness:
+    name: Deployment Readiness
+    runs-on: ubuntu-latest
+    needs: [security-scan, docker-build, performance-check]
+    if: always()
+    outputs:
+      ready-for-deployment: ${{ steps.readiness-check.outputs.ready }}
+    steps:
+      - name: Check deployment readiness
+        id: readiness-check
+        run: |
+          # Check if all critical jobs passed
+          security_status="${{ needs.security-scan.result }}"
+          docker_status="${{ needs.docker-build.result }}"
+          performance_status="${{ needs.performance-check.result }}"
+          
+          echo "Security scan: $security_status"
+          echo "Docker build: $docker_status"
+          echo "Performance check: $performance_status"
+          
+          if [[ "$security_status" == "success" ]] && [[ "$docker_status" == "success" ]]; then
+            echo "ready=true" >> $GITHUB_OUTPUT
+            echo "✅ Ready for deployment"
+          else
+            echo "ready=false" >> $GITHUB_OUTPUT
+            echo "❌ Not ready for deployment"
+          fi
+
+      - name: Create deployment summary
+        run: |
+          echo "# Deployment Readiness Report" > deployment-summary.md
+          echo "" >> deployment-summary.md
+          echo "**Branch**: ${{ github.ref_name }}" >> deployment-summary.md
+          echo "**Commit**: ${{ github.sha }}" >> deployment-summary.md
+          echo "**Date**: $(date -u)" >> deployment-summary.md
+          echo "" >> deployment-summary.md
+          echo "## Status Summary" >> deployment-summary.md
+          echo "- Security Scan: ${{ needs.security-scan.result }}" >> deployment-summary.md
+          echo "- Docker Build: ${{ needs.docker-build.result }}" >> deployment-summary.md
+          echo "- Performance Check: ${{ needs.performance-check.result }}" >> deployment-summary.md
+          echo "" >> deployment-summary.md
+          echo "**Ready for Deployment**: ${{ steps.readiness-check.outputs.ready }}" >> deployment-summary.md
+
+      - name: Upload deployment report
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-report-${{ github.sha }}
+          path: deployment-summary.md
+          retention-days: 30
+
+  notify:
+    name: Notification
+    runs-on: ubuntu-latest
+    needs: [deployment-readiness]
+    if: always() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    steps:
+      - name: Notify on failure
+        if: needs.deployment-readiness.outputs.ready-for-deployment != 'true'
+        run: |
+          echo "🚨 CI/CD Pipeline Failed for ${{ github.ref_name }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "View details: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+      - name: Notify on success
+        if: needs.deployment-readiness.outputs.ready-for-deployment == 'true'
+        run: |
+          echo "✅ CI/CD Pipeline Successful for ${{ github.ref_name }}"
+          echo "Commit: ${{ github.sha }}"
+          echo "Ready for deployment!"

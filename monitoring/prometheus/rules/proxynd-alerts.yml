@@ -1,0 +1,191 @@
+groups:
+  - name: proxynd.alerts
+    rules:
+      # Service availability alerts
+      - alert: ProxyNDDown
+        expr: up{job="proxynd"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "ProxyND service is down"
+          description: "ProxyND service has been down for more than 1 minute"
+
+      - alert: ProxyNDHighLatency
+        expr: histogram_quantile(0.95, rate(proxynd_http_request_duration_seconds_bucket[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ProxyND high latency"
+          description: "ProxyND 95th percentile latency is {{ $value }}s"
+
+      # Error rate alerts
+      - alert: ProxyNDHighErrorRate
+        expr: rate(proxynd_http_requests_total{status=~"5.."}[5m]) / rate(proxynd_http_requests_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ProxyND high error rate"
+          description: "ProxyND error rate is {{ $value | humanizePercentage }} for more than 5 minutes"
+
+      - alert: ProxyNDCriticalErrorRate
+        expr: rate(proxynd_http_requests_total{status=~"5.."}[5m]) / rate(proxynd_http_requests_total[5m]) > 0.25
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "ProxyND critical error rate"
+          description: "ProxyND error rate is {{ $value | humanizePercentage }} for more than 2 minutes"
+
+      # Cache performance alerts
+      - alert: ProxyNDLowCacheHitRate
+        expr: rate(proxynd_cache_hits_total[5m]) / (rate(proxynd_cache_hits_total[5m]) + rate(proxynd_cache_misses_total[5m])) < 0.5
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ProxyND low cache hit rate"
+          description: "ProxyND cache hit rate is {{ $value | humanizePercentage }} for more than 10 minutes"
+
+      - alert: ProxyNDCacheStorageHigh
+        expr: proxynd_cache_size_bytes / proxynd_cache_max_size_bytes > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ProxyND cache storage usage high"
+          description: "ProxyND cache storage usage is {{ $value | humanizePercentage }}"
+
+      # Resource utilization alerts
+      - alert: ProxyNDHighCPUUsage
+        expr: rate(container_cpu_usage_seconds_total{container="proxynd"}[5m]) > 0.8
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ProxyND high CPU usage"
+          description: "ProxyND CPU usage is {{ $value | humanizePercentage }}"
+
+      - alert: ProxyNDHighMemoryUsage
+        expr: container_memory_usage_bytes{container="proxynd"} / container_spec_memory_limit_bytes{container="proxynd"} > 0.8
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ProxyND high memory usage"
+          description: "ProxyND memory usage is {{ $value | humanizePercentage }}"
+
+      # Security alerts
+      - alert: ProxyNDHighFailedAuthRate
+        expr: rate(proxynd_auth_failures_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ProxyND high authentication failure rate"
+          description: "ProxyND authentication failure rate is {{ $value }} failures/second"
+
+      - alert: ProxyNDUnauthorizedAccess
+        expr: rate(proxynd_unauthorized_attempts_total[5m]) > 0.05
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "ProxyND unauthorized access attempts"
+          description: "ProxyND is experiencing {{ $value }} unauthorized access attempts/second"
+
+      # Business logic alerts
+      - alert: ProxyNDHighDownloadFailureRate
+        expr: rate(proxynd_download_failures_total[5m]) / rate(proxynd_download_attempts_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ProxyND high download failure rate"
+          description: "ProxyND download failure rate is {{ $value | humanizePercentage }}"
+
+      - alert: ProxyNDUpstreamUnavailable
+        expr: proxynd_upstream_available == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "ProxyND upstream unavailable"
+          description: "ProxyND upstream {{ $labels.upstream }} is unavailable"
+
+      # Storage alerts
+      - alert: ProxyNDLowDiskSpace
+        expr: (node_filesystem_avail_bytes{mountpoint="/storage"} / node_filesystem_size_bytes{mountpoint="/storage"}) < 0.1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "ProxyND low disk space"
+          description: "ProxyND storage disk space is below 10%"
+
+      - alert: ProxyNDDiskSpaceWarning
+        expr: (node_filesystem_avail_bytes{mountpoint="/storage"} / node_filesystem_size_bytes{mountpoint="/storage"}) < 0.2
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ProxyND disk space warning"
+          description: "ProxyND storage disk space is below 20%"
+
+      # Network alerts
+      - alert: ProxyNDHighNetworkLatency
+        expr: probe_duration_seconds{job="blackbox"} > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ProxyND high network latency"
+          description: "ProxyND network latency is {{ $value }}s for {{ $labels.instance }}"
+
+      - alert: ProxyNDEndpointDown
+        expr: probe_success{job="blackbox"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "ProxyND endpoint down"
+          description: "ProxyND endpoint {{ $labels.instance }} is down"
+
+  - name: proxynd.recording
+    rules:
+      # Request rate recording rules
+      - record: proxynd:http_requests:rate5m
+        expr: rate(proxynd_http_requests_total[5m])
+
+      - record: proxynd:http_requests:rate1h
+        expr: rate(proxynd_http_requests_total[1h])
+
+      # Error rate recording rules
+      - record: proxynd:http_errors:rate5m
+        expr: rate(proxynd_http_requests_total{status=~"5.."}[5m])
+
+      - record: proxynd:http_error_rate:rate5m
+        expr: proxynd:http_errors:rate5m / proxynd:http_requests:rate5m
+
+      # Cache performance recording rules
+      - record: proxynd:cache_hit_rate:rate5m
+        expr: rate(proxynd_cache_hits_total[5m]) / (rate(proxynd_cache_hits_total[5m]) + rate(proxynd_cache_misses_total[5m]))
+
+      - record: proxynd:cache_usage:current
+        expr: proxynd_cache_size_bytes / proxynd_cache_max_size_bytes
+
+      # Resource utilization recording rules
+      - record: proxynd:cpu_usage:rate5m
+        expr: rate(container_cpu_usage_seconds_total{container="proxynd"}[5m])
+
+      - record: proxynd:memory_usage:current
+        expr: container_memory_usage_bytes{container="proxynd"} / container_spec_memory_limit_bytes{container="proxynd"}
+
+      # Network performance recording rules
+      - record: proxynd:network_latency:quantile95
+        expr: histogram_quantile(0.95, rate(proxynd_http_request_duration_seconds_bucket[5m]))
+
+      - record: proxynd:network_latency:quantile99
+        expr: histogram_quantile(0.99, rate(proxynd_http_request_duration_seconds_bucket[5m]))

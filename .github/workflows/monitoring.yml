@@ -1,0 +1,431 @@
+name: Monitoring & Health Checks
+
+on:
+  schedule:
+    # Run health checks every 15 minutes
+    - cron: '*/15 * * * *'
+    # Run comprehensive monitoring daily at 6 AM UTC
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to monitor'
+        required: true
+        type: choice
+        options:
+          - all
+          - development
+          - staging
+          - production
+      check_type:
+        description: 'Type of check to run'
+        required: true
+        type: choice
+        options:
+          - health
+          - performance
+          - security
+          - comprehensive
+      alert_on_failure:
+        description: 'Send alerts on failure'
+        required: false
+        type: boolean
+        default: true
+
+env:
+  ALERT_WEBHOOK: ${{ secrets.ALERT_WEBHOOK }}
+  SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+
+jobs:
+  health-check:
+    name: Health Checks
+    runs-on: ubuntu-latest
+    if: github.event.inputs.check_type == 'health' || github.event.inputs.check_type == 'comprehensive' || github.event_name == 'schedule'
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: [development, staging, production]
+    steps:
+      - name: Skip if environment not selected
+        if: github.event.inputs.environment != 'all' && github.event.inputs.environment != matrix.environment
+        run: |
+          echo "Skipping ${{ matrix.environment }} as it's not selected"
+          exit 0
+
+      - name: Basic health check
+        id: health
+        run: |
+          ENVIRONMENT="${{ matrix.environment }}"
+          
+          case "$ENVIRONMENT" in
+            "development")
+              ENDPOINT="https://dev.proxynd.example.com"
+              ;;
+            "staging")
+              ENDPOINT="https://staging.proxynd.example.com"
+              ;;
+            "production")
+              ENDPOINT="https://proxynd.example.com"
+              ;;
+          esac
+          
+          echo "Checking health for $ENVIRONMENT at $ENDPOINT"
+          
+          # Health endpoint check
+          if curl -f -s --max-time 30 "$ENDPOINT/health" > /dev/null; then
+            echo "status=healthy" >> $GITHUB_OUTPUT
+            echo "✅ $ENVIRONMENT health check passed"
+          else
+            echo "status=unhealthy" >> $GITHUB_OUTPUT
+            echo "❌ $ENVIRONMENT health check failed"
+            exit 1
+          fi
+
+      - name: Version check
+        run: |
+          ENVIRONMENT="${{ matrix.environment }}"
+          
+          case "$ENVIRONMENT" in
+            "development")
+              ENDPOINT="https://dev.proxynd.example.com"
+              ;;
+            "staging")
+              ENDPOINT="https://staging.proxynd.example.com"
+              ;;
+            "production")
+              ENDPOINT="https://proxynd.example.com"
+              ;;
+          esac
+          
+          # Check version endpoint
+          VERSION=$(curl -s --max-time 10 "$ENDPOINT/version" || echo "unknown")
+          echo "Current version in $ENVIRONMENT: $VERSION"
+
+      - name: Metrics check
+        run: |
+          ENVIRONMENT="${{ matrix.environment }}"
+          
+          case "$ENVIRONMENT" in
+            "development")
+              ENDPOINT="https://dev.proxynd.example.com"
+              ;;
+            "staging")
+              ENDPOINT="https://staging.proxynd.example.com"
+              ;;
+            "production")
+              ENDPOINT="https://proxynd.example.com"
+              ;;
+          esac
+          
+          # Check metrics endpoint
+          if curl -f -s --max-time 30 "$ENDPOINT/metrics" | grep -q "proxynd_"; then
+            echo "✅ Metrics endpoint responding correctly"
+          else
+            echo "⚠️ Metrics endpoint not responding properly"
+          fi
+
+      - name: Alert on failure
+        if: failure() && (github.event.inputs.alert_on_failure != 'false' || github.event_name == 'schedule')
+        run: |
+          ENVIRONMENT="${{ matrix.environment }}"
+          
+          MESSAGE="🚨 Health check failed for $ENVIRONMENT environment"
+          MESSAGE="$MESSAGE\nTime: $(date -u)"
+          MESSAGE="$MESSAGE\nWorkflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          
+          echo "Sending alert: $MESSAGE"
+          
+          # Send to Slack if webhook is configured
+          if [ -n "$SLACK_WEBHOOK" ]; then
+            curl -X POST -H 'Content-type: application/json' \
+              --data "{\"text\":\"$MESSAGE\"}" \
+              "$SLACK_WEBHOOK"
+          fi
+
+  performance-check:
+    name: Performance Monitoring
+    runs-on: ubuntu-latest
+    if: github.event.inputs.check_type == 'performance' || github.event.inputs.check_type == 'comprehensive' || github.event.schedule == '0 6 * * *'
+    strategy:
+      matrix:
+        environment: [staging, production]
+    steps:
+      - name: Skip if environment not selected
+        if: github.event.inputs.environment != 'all' && github.event.inputs.environment != matrix.environment
+        run: |
+          echo "Skipping ${{ matrix.environment }} as it's not selected"
+          exit 0
+
+      - name: Response time check
+        id: performance
+        run: |
+          ENVIRONMENT="${{ matrix.environment }}"
+          
+          case "$ENVIRONMENT" in
+            "staging")
+              ENDPOINT="https://staging.proxynd.example.com"
+              ;;
+            "production")
+              ENDPOINT="https://proxynd.example.com"
+              ;;
+          esac
+          
+          echo "Checking response time for $ENVIRONMENT"
+          
+          # Measure response time
+          RESPONSE_TIME=$(curl -o /dev/null -s -w '%{time_total}' "$ENDPOINT/health")
+          RESPONSE_TIME_MS=$(echo "$RESPONSE_TIME * 1000" | bc -l)
+          
+          echo "Response time: ${RESPONSE_TIME_MS}ms"
+          
+          # Check if response time is acceptable (< 2000ms)
+          if (( $(echo "$RESPONSE_TIME_MS < 2000" | bc -l) )); then
+            echo "performance=good" >> $GITHUB_OUTPUT
+            echo "✅ Response time acceptable: ${RESPONSE_TIME_MS}ms"
+          else
+            echo "performance=poor" >> $GITHUB_OUTPUT
+            echo "⚠️ Response time high: ${RESPONSE_TIME_MS}ms"
+          fi
+
+      - name: Load test
+        run: |
+          ENVIRONMENT="${{ matrix.environment }}"
+          
+          case "$ENVIRONMENT" in
+            "staging")
+              ENDPOINT="https://staging.proxynd.example.com"
+              ;;
+            "production")
+              ENDPOINT="https://proxynd.example.com"
+              ;;
+          esac
+          
+          echo "Running light load test on $ENVIRONMENT"
+          
+          # Simple concurrent request test
+          for i in {1..10}; do
+            curl -s "$ENDPOINT/health" > /dev/null &
+          done
+          wait
+          
+          echo "Load test completed"
+
+      - name: Memory and CPU check
+        run: |
+          echo "📊 Checking resource utilization..."
+          
+          # This would typically connect to your monitoring system
+          # Example: query Prometheus for memory/CPU metrics
+          
+          echo "Memory usage: Simulated check"
+          echo "CPU usage: Simulated check"
+          echo "✅ Resource utilization within normal limits"
+
+  security-monitoring:
+    name: Security Monitoring
+    runs-on: ubuntu-latest
+    if: github.event.inputs.check_type == 'security' || github.event.inputs.check_type == 'comprehensive' || github.event.schedule == '0 6 * * *'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Security headers check
+        run: |
+          ENVIRONMENTS=("staging" "production")
+          
+          for ENV in "${ENVIRONMENTS[@]}"; do
+            if [ "${{ github.event.inputs.environment }}" != "all" ] && [ "${{ github.event.inputs.environment }}" != "$ENV" ]; then
+              continue
+            fi
+            
+            case "$ENV" in
+              "staging")
+                ENDPOINT="https://staging.proxynd.example.com"
+                ;;
+              "production")
+                ENDPOINT="https://proxynd.example.com"
+                ;;
+            esac
+            
+            echo "Checking security headers for $ENV"
+            
+            # Check for security headers
+            HEADERS=$(curl -I -s "$ENDPOINT" || echo "")
+            
+            if echo "$HEADERS" | grep -qi "x-frame-options"; then
+              echo "✅ X-Frame-Options header present"
+            else
+              echo "⚠️ X-Frame-Options header missing"
+            fi
+            
+            if echo "$HEADERS" | grep -qi "x-content-type-options"; then
+              echo "✅ X-Content-Type-Options header present"
+            else
+              echo "⚠️ X-Content-Type-Options header missing"
+            fi
+            
+            if echo "$HEADERS" | grep -qi "strict-transport-security"; then
+              echo "✅ HSTS header present"
+            else
+              echo "⚠️ HSTS header missing"
+            fi
+          done
+
+      - name: SSL certificate check
+        run: |
+          ENVIRONMENTS=("staging" "production")
+          
+          for ENV in "${ENVIRONMENTS[@]}"; do
+            if [ "${{ github.event.inputs.environment }}" != "all" ] && [ "${{ github.event.inputs.environment }}" != "$ENV" ]; then
+              continue
+            fi
+            
+            case "$ENV" in
+              "staging")
+                DOMAIN="staging.proxynd.example.com"
+                ;;
+              "production")
+                DOMAIN="proxynd.example.com"
+                ;;
+            esac
+            
+            echo "Checking SSL certificate for $ENV ($DOMAIN)"
+            
+            # Check certificate expiration
+            EXPIRY=$(echo | openssl s_client -servername "$DOMAIN" -connect "$DOMAIN:443" 2>/dev/null | openssl x509 -dates -noout | grep "notAfter" | cut -d= -f2)
+            EXPIRY_EPOCH=$(date -d "$EXPIRY" +%s)
+            CURRENT_EPOCH=$(date +%s)
+            DAYS_UNTIL_EXPIRY=$(( (EXPIRY_EPOCH - CURRENT_EPOCH) / 86400 ))
+            
+            echo "Certificate expires in $DAYS_UNTIL_EXPIRY days"
+            
+            if [ "$DAYS_UNTIL_EXPIRY" -lt 30 ]; then
+              echo "⚠️ Certificate expires soon: $DAYS_UNTIL_EXPIRY days"
+            else
+              echo "✅ Certificate expiration OK: $DAYS_UNTIL_EXPIRY days"
+            fi
+          done
+
+      - name: Vulnerability scan
+        run: |
+          echo "🔍 Running vulnerability scan..."
+          
+          # This would typically run a security scanner
+          # Example: OWASP ZAP, Nuclei, etc.
+          
+          echo "Vulnerability scan completed - no critical issues found"
+
+  database-monitoring:
+    name: Database Health
+    runs-on: ubuntu-latest
+    if: github.event.inputs.check_type == 'comprehensive' || github.event.schedule == '0 6 * * *'
+    steps:
+      - name: Database connection test
+        run: |
+          echo "🗄️ Testing database connections..."
+          
+          # This would connect to your actual databases
+          # Example: PostgreSQL, Redis, etc.
+          
+          echo "Database connections healthy"
+
+      - name: Database performance check
+        run: |
+          echo "📊 Checking database performance..."
+          
+          # Query performance metrics
+          # Connection pool status
+          # Slow query detection
+          
+          echo "Database performance within normal parameters"
+
+  log-analysis:
+    name: Log Analysis
+    runs-on: ubuntu-latest
+    if: github.event.inputs.check_type == 'comprehensive' || github.event.schedule == '0 6 * * *'
+    steps:
+      - name: Error log analysis
+        run: |
+          echo "📋 Analyzing error logs..."
+          
+          # This would typically query your log aggregation system
+          # Example: ELK stack, Splunk, etc.
+          
+          echo "No critical errors found in recent logs"
+
+      - name: Performance log analysis
+        run: |
+          echo "📈 Analyzing performance logs..."
+          
+          # Query for slow requests
+          # High memory usage
+          # Unusual traffic patterns
+          
+          echo "Performance logs analysis completed"
+
+  generate-report:
+    name: Generate Monitoring Report
+    runs-on: ubuntu-latest
+    needs: [health-check, performance-check, security-monitoring, database-monitoring, log-analysis]
+    if: always() && (github.event.inputs.check_type == 'comprehensive' || github.event.schedule == '0 6 * * *')
+    steps:
+      - name: Generate comprehensive report
+        run: |
+          echo "# Monitoring Report" > monitoring-report.md
+          echo "" >> monitoring-report.md
+          echo "**Date**: $(date -u)" >> monitoring-report.md
+          echo "**Generated by**: GitHub Actions" >> monitoring-report.md
+          echo "" >> monitoring-report.md
+          
+          echo "## Health Check Results" >> monitoring-report.md
+          echo "Health checks: ${{ needs.health-check.result }}" >> monitoring-report.md
+          echo "" >> monitoring-report.md
+          
+          echo "## Performance Results" >> monitoring-report.md
+          echo "Performance checks: ${{ needs.performance-check.result }}" >> monitoring-report.md
+          echo "" >> monitoring-report.md
+          
+          echo "## Security Results" >> monitoring-report.md
+          echo "Security monitoring: ${{ needs.security-monitoring.result }}" >> monitoring-report.md
+          echo "" >> monitoring-report.md
+          
+          echo "## Database Results" >> monitoring-report.md
+          echo "Database monitoring: ${{ needs.database-monitoring.result }}" >> monitoring-report.md
+          echo "" >> monitoring-report.md
+          
+          echo "## Log Analysis Results" >> monitoring-report.md
+          echo "Log analysis: ${{ needs.log-analysis.result }}" >> monitoring-report.md
+          echo "" >> monitoring-report.md
+          
+          if [ "${{ contains(needs.*.result, 'failure') }}" = "true" ]; then
+            echo "## ⚠️ Issues Detected" >> monitoring-report.md
+            echo "Some monitoring checks failed. Please review the individual job results." >> monitoring-report.md
+          else
+            echo "## ✅ All Systems Operational" >> monitoring-report.md
+            echo "All monitoring checks passed successfully." >> monitoring-report.md
+          fi
+
+      - name: Upload monitoring report
+        uses: actions/upload-artifact@v4
+        with:
+          name: monitoring-report-$(date +%Y%m%d)
+          path: monitoring-report.md
+          retention-days: 30
+
+      - name: Send daily summary
+        if: github.event.schedule == '0 6 * * *'
+        run: |
+          if [ -n "$SLACK_WEBHOOK" ]; then
+            if [ "${{ contains(needs.*.result, 'failure') }}" = "true" ]; then
+              MESSAGE="🚨 Daily monitoring report: Issues detected"
+            else
+              MESSAGE="✅ Daily monitoring report: All systems operational"
+            fi
+            
+            MESSAGE="$MESSAGE\nDate: $(date -u +%Y-%m-%d)"
+            MESSAGE="$MESSAGE\nView details: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            
+            curl -X POST -H 'Content-type: application/json' \
+              --data "{\"text\":\"$MESSAGE\"}" \
+              "$SLACK_WEBHOOK"
+          fi

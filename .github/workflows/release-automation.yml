@@ -1,0 +1,413 @@
+name: Release Automation
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+      - 'v*.*.*-*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., v1.2.3)'
+        required: true
+        type: string
+      prerelease:
+        description: 'Mark as pre-release'
+        required: false
+        type: boolean
+        default: false
+      draft:
+        description: 'Create as draft'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  GO_VERSION: '1.22'
+  DOCKER_REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  validate-release:
+    name: Validate Release
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      is-prerelease: ${{ steps.version.outputs.is-prerelease }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+            IS_PRERELEASE="${{ github.event.inputs.prerelease }}"
+          else
+            VERSION="${{ github.ref_name }}"
+            # Check if it's a pre-release (contains alpha, beta, rc)
+            if [[ "$VERSION" =~ (alpha|beta|rc) ]]; then
+              IS_PRERELEASE=true
+            else
+              IS_PRERELEASE=false
+            fi
+          fi
+          
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "is-prerelease=$IS_PRERELEASE" >> $GITHUB_OUTPUT
+          echo "Release version: $VERSION"
+          echo "Is pre-release: $IS_PRERELEASE"
+
+      - name: Validate version format
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          if [[ ! "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+(\.[0-9]+)?)?$ ]]; then
+            echo "❌ Invalid version format: $VERSION"
+            echo "Expected format: vX.Y.Z or vX.Y.Z-suffix"
+            exit 1
+          fi
+          echo "✅ Version format is valid: $VERSION"
+
+      - name: Check if tag exists (for manual releases)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          if git rev-parse "refs/tags/$VERSION" >/dev/null 2>&1; then
+            echo "❌ Tag $VERSION already exists"
+            exit 1
+          fi
+          echo "✅ Tag $VERSION is available"
+
+  comprehensive-tests:
+    name: Comprehensive Testing
+    runs-on: ubuntu-latest
+    needs: validate-release
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Run all tests
+        run: |
+          echo "Running comprehensive test suite for release..."
+          
+          # Unit tests with coverage
+          go test -v -race -coverprofile=coverage.out ./...
+          
+          # Integration tests
+          if [ -d "tests/integration" ]; then
+            go test -v -timeout=300s ./tests/integration/...
+          fi
+          
+          # Performance tests (quick run)
+          go test -bench=BenchmarkSimpleCache -benchmem -benchtime=10s ./tests/benchmark/ -run=^$
+
+      - name: Verify build works
+        run: |
+          go build -o proxynd-test main.go
+          ./proxynd-test --version
+
+      - name: Run code quality checks
+        run: |
+          chmod +x scripts/code_quality_check.sh
+          ./scripts/code_quality_check.sh
+
+  build-release-assets:
+    name: Build Release Assets
+    runs-on: ubuntu-latest
+    needs: [validate-release, comprehensive-tests]
+    strategy:
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+            suffix: linux-amd64
+          - goos: linux
+            goarch: arm64
+            suffix: linux-arm64
+          - goos: darwin
+            goarch: amd64
+            suffix: darwin-amd64
+          - goos: darwin
+            goarch: arm64
+            suffix: darwin-arm64
+          - goos: windows
+            goarch: amd64
+            suffix: windows-amd64.exe
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Build binary
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+        run: |
+          mkdir -p dist
+          
+          # Build with release flags
+          VERSION="${{ needs.validate-release.outputs.version }}"
+          BUILD_TIME=$(date -u '+%Y-%m-%d_%H:%M:%S')
+          GIT_COMMIT=$(git rev-parse HEAD)
+          
+          binary_name="proxynd-${{ matrix.suffix }}"
+          
+          go build \
+            -ldflags="-w -s -X main.Version=$VERSION -X main.GitCommit=$GIT_COMMIT -X main.BuildTime=$BUILD_TIME" \
+            -o "dist/$binary_name" \
+            main.go
+          
+          # Create tarball/zip
+          cd dist
+          if [[ "${{ matrix.goos }}" == "windows" ]]; then
+            zip "proxynd-${{ needs.validate-release.outputs.version }}-${{ matrix.suffix }}.zip" "$binary_name"
+          else
+            tar -czf "proxynd-${{ needs.validate-release.outputs.version }}-${{ matrix.suffix }}.tar.gz" "$binary_name"
+          fi
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.suffix }}
+          path: dist/proxynd-${{ needs.validate-release.outputs.version }}-*
+          retention-days: 7
+
+  build-docker-release:
+    name: Build Release Docker Image
+    runs-on: ubuntu-latest
+    needs: [validate-release, comprehensive-tests]
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.DOCKER_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}},value=${{ needs.validate-release.outputs.version }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ needs.validate-release.outputs.version }}
+            type=semver,pattern={{major}},value=${{ needs.validate-release.outputs.version }}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            BUILD_DATE=${{ steps.meta.outputs.created }}
+            VCS_REF=${{ github.sha }}
+            VERSION=${{ needs.validate-release.outputs.version }}
+
+  generate-changelog:
+    name: Generate Changelog
+    runs-on: ubuntu-latest
+    needs: validate-release
+    outputs:
+      changelog: ${{ steps.changelog.outputs.changelog }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          VERSION="${{ needs.validate-release.outputs.version }}"
+          
+          # Get previous tag
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^1 2>/dev/null || echo "")
+          
+          echo "# Release $VERSION" > changelog.md
+          echo "" >> changelog.md
+          
+          if [ -n "$PREV_TAG" ]; then
+            echo "## Changes since $PREV_TAG" >> changelog.md
+            echo "" >> changelog.md
+            
+            # Generate commit log
+            git log --pretty=format:"- %s (%h)" $PREV_TAG..HEAD >> changelog.md
+            echo "" >> changelog.md
+            echo "" >> changelog.md
+            
+            # Get contributors
+            echo "## Contributors" >> changelog.md
+            git log --pretty=format:"- %an" $PREV_TAG..HEAD | sort | uniq >> changelog.md
+          else
+            echo "## Initial Release" >> changelog.md
+            echo "" >> changelog.md
+            echo "This is the first release of ProxyND." >> changelog.md
+          fi
+          
+          # Output for GitHub
+          {
+            echo 'changelog<<EOF'
+            cat changelog.md
+            echo EOF
+          } >> $GITHUB_OUTPUT
+
+      - name: Upload changelog
+        uses: actions/upload-artifact@v4
+        with:
+          name: changelog
+          path: changelog.md
+          retention-days: 7
+
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [validate-release, build-release-assets, build-docker-release, generate-changelog]
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+
+      - name: Prepare release assets
+        run: |
+          mkdir -p release-assets
+          
+          # Copy all release binaries
+          find artifacts/release-* -name "*.tar.gz" -o -name "*.zip" | while read file; do
+            cp "$file" release-assets/
+          done
+          
+          # List assets
+          echo "Release assets:"
+          ls -la release-assets/
+
+      - name: Create tag (for manual releases)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          VERSION="${{ needs.validate-release.outputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$VERSION" -m "Release $VERSION"
+          git push origin "$VERSION"
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        id: create_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ needs.validate-release.outputs.version }}
+          release_name: ProxyND ${{ needs.validate-release.outputs.version }}
+          body: ${{ needs.generate-changelog.outputs.changelog }}
+          draft: ${{ github.event.inputs.draft || false }}
+          prerelease: ${{ needs.validate-release.outputs.is-prerelease }}
+
+      - name: Upload release assets
+        run: |
+          for asset in release-assets/*; do
+            if [ -f "$asset" ]; then
+              echo "Uploading $asset..."
+              curl \
+                -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                -H "Content-Type: application/octet-stream" \
+                --data-binary @"$asset" \
+                "${{ steps.create_release.outputs.upload_url }}=$(basename "$asset")"
+            fi
+          done
+
+  update-helm-chart:
+    name: Update Helm Chart
+    runs-on: ubuntu-latest
+    needs: [create-release, validate-release]
+    if: needs.validate-release.outputs.is-prerelease == 'false'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Update Helm chart version
+        run: |
+          VERSION="${{ needs.validate-release.outputs.version }}"
+          # Remove 'v' prefix for Helm
+          CHART_VERSION="${VERSION#v}"
+          
+          # Update Chart.yaml
+          if [ -f "helm/Chart.yaml" ]; then
+            sed -i "s/version: .*/version: $CHART_VERSION/" helm/Chart.yaml
+            sed -i "s/appVersion: .*/appVersion: \"$VERSION\"/" helm/Chart.yaml
+            
+            echo "Updated Helm chart to version $CHART_VERSION"
+          fi
+
+      - name: Package Helm chart
+        run: |
+          if [ -d "helm" ]; then
+            helm package helm/ --destination helm-packages/
+            echo "Helm chart packaged"
+          fi
+
+      - name: Upload Helm chart
+        uses: actions/upload-artifact@v4
+        with:
+          name: helm-chart-${{ needs.validate-release.outputs.version }}
+          path: helm-packages/
+          retention-days: 30
+
+  post-release:
+    name: Post-Release Tasks
+    runs-on: ubuntu-latest
+    needs: [create-release, validate-release]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Update documentation
+        run: |
+          VERSION="${{ needs.validate-release.outputs.version }}"
+          echo "Release $VERSION completed successfully!" > release-notes.txt
+          echo "Docker image: ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION#v}" >> release-notes.txt
+
+      - name: Notify release completion
+        run: |
+          echo "🎉 Release ${{ needs.validate-release.outputs.version }} has been published!"
+          echo "📦 Binaries are available on the releases page"
+          echo "🐳 Docker image: ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.validate-release.outputs.version }}"
+          echo "📊 View the release: ${{ github.server_url }}/${{ github.repository }}/releases/tag/${{ needs.validate-release.outputs.version }}"

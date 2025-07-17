@@ -1,0 +1,41 @@
+# Global owners - these users will be requested for review when anyone opens a PR
+* @scriptonbasestar @maintainer-team
+
+# Security-related files require security team review
+/.github/workflows/security-scan.yml @security-team @scriptonbasestar
+/.github/SECURITY.md @security-team @scriptonbasestar
+/.github/dependabot.yml @security-team @scriptonbasestar
+
+# CI/CD pipeline files require DevOps team review
+/.github/workflows/ @devops-team @scriptonbasestar
+/Dockerfile @devops-team @scriptonbasestar
+/docker-compose.yml @devops-team @scriptonbasestar
+/helm/ @devops-team @scriptonbasestar
+
+# Configuration files require careful review
+/configs/ @scriptonbasestar @config-team
+/sample-conf/ @scriptonbasestar @config-team
+
+# Core application code
+/internal/ @scriptonbasestar @core-team
+/handlers/ @scriptonbasestar @core-team
+/middlewares/ @scriptonbasestar @core-team
+/cache/ @scriptonbasestar @core-team
+
+# Documentation
+/docs/ @scriptonbasestar @docs-team
+/README.md @scriptonbasestar @docs-team
+/CHANGELOG.md @scriptonbasestar @docs-team
+
+# Test files
+/tests/ @scriptonbasestar @qa-team
+*_test.go @scriptonbasestar @qa-team
+
+# Build and development files
+/Makefile @scriptonbasestar @build-team
+/go.mod @scriptonbasestar @build-team
+/go.sum @scriptonbasestar @build-team
+/.air.toml @scriptonbasestar @build-team
+
+# Scripts
+/scripts/ @scriptonbasestar @devops-team

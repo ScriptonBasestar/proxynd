@@ -10,9 +10,12 @@ updates:
       timezone: "Asia/Seoul"
     reviewers:
       - "scriptonbasestar"
+    assignees:
+      - "security-team"
     labels:
       - "dependencies"
       - "go"
+      - "security"
     commit-message:
       prefix: "chore"
       prefix-development: "chore"
@@ -21,6 +24,28 @@ updates:
       separator: "-"
     open-pull-requests-limit: 10
     rebase-strategy: "auto"
+    allow:
+      - dependency-type: "direct"
+      - dependency-type: "indirect"
+    ignore:
+      # Ignore patch updates for stable dependencies
+      - dependency-name: "github.com/gofiber/fiber/v2"
+        update-types: ["version-update:semver-patch"]
+    groups:
+      # Group security updates together
+      security-updates:
+        applies-to: security-updates
+        patterns:
+          - "*"
+      # Group minor and patch updates
+      minor-updates:
+        update-types:
+          - "minor"
+          - "patch"
+        patterns:
+          - "github.com/gofiber/*"
+          - "github.com/stretchr/*"
+          - "go.uber.org/*"
     
   # GitHub Actions
   - package-ecosystem: "github-actions"
