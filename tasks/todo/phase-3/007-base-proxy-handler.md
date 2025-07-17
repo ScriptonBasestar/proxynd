@@ -434,12 +434,12 @@ wc -l handlers/proxy/apt_handler.go handlers/proxy/apt_handler_v2.go
 4. 기존 기능 호환성 유지
 
 ## 완료 조건
-- [ ] ProxyHandler 인터페이스 정의
-- [ ] BaseProxyHandlerImpl 구현
-- [ ] APT 핸들러 v2 구현
-- [ ] Maven 핸들러 v2 구현
-- [ ] 팩토리 패턴 구현
-- [ ] 라우터 통합
-- [ ] 코드 중복 195줄 제거
-- [ ] 단위 테스트 작성
-- [ ] 기능 호환성 검증
+- [x] ProxyHandler 인터페이스 정의
+- [x] BaseProxyHandlerImpl 구현
+- [x] APT 핸들러 v2 구현
+- [x] Maven 핸들러 v2 구현
+- [x] 팩토리 패턴 구현
+- [x] 라우터 통합
+- [x] 코드 중복 195줄 제거
+- [x] 단위 테스트 작성
+- [x] 기능 호환성 검증
