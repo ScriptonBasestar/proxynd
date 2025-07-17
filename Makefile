@@ -137,7 +137,42 @@ test-runner-coverage:
 .PHONY: test-benchmark
 test-benchmark:
 	@echo "Running benchmarks..."
+	go test -bench=. -benchmem ./tests/benchmark/...
+
+.PHONY: test-benchmark-all
+test-benchmark-all:
+	@echo "Running all benchmarks..."
 	go test -bench=. -benchmem ./internal/services/...
+	go test -bench=. -benchmem ./tests/benchmark/...
+	go test -bench=. -benchmem ./handlers/proxy/...
+	go test -bench=. -benchmem ./middlewares/...
+
+.PHONY: test-benchmark-proxy
+test-benchmark-proxy:
+	@echo "Running proxy benchmarks..."
+	go test -bench=BenchmarkProxy -benchmem ./tests/benchmark/...
+
+.PHONY: test-benchmark-cache
+test-benchmark-cache:
+	@echo "Running cache benchmarks..."
+	go test -bench=BenchmarkCache -benchmem ./tests/benchmark/...
+
+.PHONY: test-benchmark-middleware
+test-benchmark-middleware:
+	@echo "Running middleware benchmarks..."
+	go test -bench=BenchmarkMiddleware -benchmem ./tests/benchmark/...
+
+.PHONY: test-benchmark-config
+test-benchmark-config:
+	@echo "Running config benchmarks..."
+	go test -bench=BenchmarkConfig -benchmem ./tests/benchmark/...
+
+.PHONY: test-benchmark-report
+test-benchmark-report:
+	@echo "Generating benchmark report..."
+	@mkdir -p ./reports/benchmarks
+	go test -bench=. -benchmem -benchtime=10s ./tests/benchmark/... > ./reports/benchmarks/benchmark_$(shell date +%Y%m%d_%H%M%S).txt
+	@echo "Benchmark report saved to ./reports/benchmarks/"
 
 .PHONY: test-integration
 test-integration:

@@ -69,3 +69,13 @@ packages:
   proxynd/internal/auth/jwt:
     interfaces:
       JWTService:
+  
+  # 핸들러 인터페이스
+  proxynd/internal/handlers:
+    interfaces:
+      BaseProxyHandler:
+      ProxyHandler:
+      CacheableProxyHandler:
+      AuthenticatedProxyHandler:
+      MetricsAwareProxyHandler:
+      Healthable:

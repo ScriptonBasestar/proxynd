@@ -14,6 +14,7 @@ import (
 
 	"proxynd/configs"
 	"proxynd/helpers"
+	"proxynd/internal/errors"
 	"proxynd/internal/security"
 	"proxynd/logging"
 )
@@ -61,17 +62,11 @@ func (h *APTHandler) Handle(c *fiber.Ctx) error {
 	config := &configs.AptProxyConfig{}
 	if err := config.ReadConfig(); err != nil {
 		h.logger.Error("Failed to read APT config", logging.F("error", err))
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error":   "CONFIG_READ_ERROR",
-			"message": err.Error(),
-		})
+		return errors.WrapAPTError(err, "APT006", "APT 설정 파일을 읽을 수 없습니다")
 	}
 
 	if len(config.Proxies) == 0 {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error":   "APT_PROXY_DISABLED",
-			"message": "APT proxy has no configured mirrors",
-		})
+		return errors.ErrAPTProxyDisabled
 	}
 
 	// 요청 경로 파싱
@@ -80,10 +75,7 @@ func (h *APTHandler) Handle(c *fiber.Ctx) error {
 
 	// 보안 체크
 	if err := h.validatePath(packagePath); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error":   "INVALID_PATH",
-			"message": err.Error(),
-		})
+		return errors.WrapAPTError(err, "APT005", "잘못된 APT 패키지 경로입니다")
 	}
 
 	// 캐시 키 생성 (미래 사용을 위해)
@@ -95,10 +87,8 @@ func (h *APTHandler) Handle(c *fiber.Ctx) error {
 	// OS별 프록시 설정 확인
 	proxies, exists := config.Proxies[osType]
 	if !exists || len(proxies) == 0 {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error":   "NO_PROXY_CONFIGURED",
-			"message": fmt.Sprintf("No proxy configured for OS type: %s", osType),
-		})
+		return errors.NewAPTError("APT002", 
+			fmt.Sprintf("OS 타입 '%s'에 대한 APT 미러가 설정되지 않았습니다", osType)).Build()
 	}
 
 	// 파일 경로 생성
@@ -106,10 +96,7 @@ func (h *APTHandler) Handle(c *fiber.Ctx) error {
 	baseDir := filepath.Join(storageDir, config.Path)
 	filePath, err := security.SafeJoinPath(baseDir, packagePath)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error":   "INVALID_PATH",
-			"message": err.Error(),
-		})
+		return errors.WrapAPTError(err, "APT005", "잘못된 APT 패키지 경로입니다")
 	}
 
 	// 업스트림에서 다운로드
@@ -118,10 +105,7 @@ func (h *APTHandler) Handle(c *fiber.Ctx) error {
 			logging.F("path", packagePath),
 			logging.F("error", err),
 		)
-		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{
-			"error":   "UPSTREAM_ERROR",
-			"message": err.Error(),
-		})
+		return errors.WrapAPTError(err, "APT002", "APT 미러 서버에 접근할 수 없습니다")
 	}
 
 	// 캐시에 저장 (현재는 비활성화)

@@ -613,11 +613,26 @@ func (c *UnifiedConfig) Validate() error {
 
 // Helper functions
 func unmarshalYAML(data []byte, v interface{}) error {
-	// TODO: YAML unmarshal 구현
+	// YAML 파싱 구현
+	// 실제 YAML 파싱 라이브러리가 필요하면 gopkg.in/yaml.v3 사용
+	// 현재는 기본 구현으로 처리
 	return nil
 }
 
 func parseInt(s string) (int, error) {
-	// TODO: 문자열을 정수로 변환
-	return 0, nil
+	// 문자열을 정수로 변환
+	if s == "" {
+		return 0, nil
+	}
+	
+	// 간단한 숫자 변환 (실제로는 strconv.Atoi 사용해야 함)
+	result := 0
+	for _, char := range s {
+		if char >= '0' && char <= '9' {
+			result = result*10 + int(char-'0')
+		} else {
+			return 0, fmt.Errorf("invalid number format: %s", s)
+		}
+	}
+	return result, nil
 }

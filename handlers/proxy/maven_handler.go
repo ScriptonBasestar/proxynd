@@ -16,6 +16,7 @@ import (
 
 	"proxynd/configs"
 	"proxynd/helpers"
+	"proxynd/internal/errors"
 	"proxynd/internal/security"
 	"proxynd/logging"
 )
@@ -74,17 +75,11 @@ func (h *MavenHandler) Handle(c *fiber.Ctx) error {
 	config := &configs.MavenProxyConfig{}
 	if err := config.ReadConfig(); err != nil {
 		h.logger.Error("Failed to read Maven config", logging.F("error", err))
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error":   "CONFIG_READ_ERROR",
-			"message": err.Error(),
-		})
+		return errors.WrapMavenError(err, "MVN006", "Maven 설정 파일을 읽을 수 없습니다")
 	}
 
 	if len(config.Proxies) == 0 {
-		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-			"error":   "MAVEN_PROXY_DISABLED",
-			"message": "Maven proxy has no configured repositories",
-		})
+		return errors.ErrMavenProxyDisabled
 	}
 
 	// 아티팩트 경로 파싱
@@ -92,10 +87,7 @@ func (h *MavenHandler) Handle(c *fiber.Ctx) error {
 
 	// 보안 체크
 	if err := h.validatePath(artifactPath); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error":   "INVALID_PATH",
-			"message": err.Error(),
-		})
+		return errors.WrapMavenError(err, "MVN005", "잘못된 Maven 아티팩트 경로입니다")
 	}
 
 	// SNAPSHOT 버전 처리
@@ -108,10 +100,7 @@ func (h *MavenHandler) Handle(c *fiber.Ctx) error {
 	baseDir := filepath.Join(storageDir, config.Path)
 	filePath, err := security.SafeJoinPath(baseDir, artifactPath)
 	if err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error":   "INVALID_PATH",
-			"message": err.Error(),
-		})
+		return errors.WrapMavenError(err, "MVN005", "잘못된 Maven 아티팩트 경로입니다")
 	}
 
 	// 캐시 확인 (기존 파일이 있는지)
@@ -129,10 +118,7 @@ func (h *MavenHandler) Handle(c *fiber.Ctx) error {
 			logging.F("path", artifactPath),
 			logging.F("error", err),
 		)
-		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{
-			"error":   "UPSTREAM_ERROR",
-			"message": err.Error(),
-		})
+		return errors.WrapMavenError(err, "MVN003", "Maven 리포지토리에 접근할 수 없습니다")
 	}
 
 	// 체크섬 검증 (체크섬 파일인 경우)
@@ -238,10 +224,7 @@ func (h *MavenHandler) handleSnapshotArtifact(c *fiber.Ctx, artifactPath string,
 	// SNAPSHOT은 항상 업스트림에서 최신 버전 가져오기 (캐시 안함)
 	responseContent, err := h.downloadSnapshotFromUpstream(config.Proxies, artifactPath)
 	if err != nil {
-		return c.Status(fiber.StatusBadGateway).JSON(fiber.Map{
-			"error":   "SNAPSHOT_DOWNLOAD_ERROR",
-			"message": err.Error(),
-		})
+		return errors.WrapMavenError(err, "MVN007", "SNAPSHOT 아티팩트 다운로드에 실패했습니다")
 	}
 
 	filename := filepath.Base(artifactPath)
@@ -288,10 +271,7 @@ func (h *MavenHandler) sendFile(c *fiber.Ctx, filePath, filename string) error {
 	// 캐시된 파일 읽기
 	content, err := os.ReadFile(filePath)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error":   "FILE_READ_ERROR",
-			"message": err.Error(),
-		})
+		return errors.WrapMavenError(err, "MVN001", "Maven 아티팩트를 찾을 수 없습니다")
 	}
 
 	return h.sendMavenResponse(c, content, filename)

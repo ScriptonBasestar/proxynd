@@ -1,0 +1,190 @@
+# ProxyND Performance Optimization Configuration
+# This file configures comprehensive performance optimization features
+
+# Performance optimization settings
+performance:
+  # Enable performance optimization globally
+  enabled: true
+  
+  # Cache optimization configuration
+  cache_optimizer:
+    # Analysis settings
+    analysis_window: "1h"
+    min_data_points: 100
+    
+    # Optimization thresholds
+    hit_rate_threshold: 0.8
+    miss_rate_threshold: 0.3
+    eviction_threshold: 0.1
+    
+    # TTL optimization
+    enable_ttl_optimization: true
+    min_ttl: "5m"
+    max_ttl: "24h"
+    ttl_adjustment_factor: 0.1
+    
+    # Size optimization
+    enable_size_optimization: true
+    max_cache_size: 1073741824  # 1GB
+    size_optimization_interval: "10m"
+    
+    # Prewarming
+    enable_prewarming: true
+    prewarming_schedule: "0 6 * * *"  # Daily at 6 AM
+    prewarming_patterns:
+      - "*.deb"
+      - "*.rpm"
+      - "maven-metadata.xml"
+      - "*.jar"
+  
+  # Connection pooling configuration
+  connection_pool:
+    # Pool sizing
+    max_idle_conns: 100
+    max_idle_conns_per_host: 10
+    max_conns_per_host: 50
+    
+    # Timeouts
+    idle_conn_timeout: "90s"
+    conn_timeout: "30s"
+    keep_alive_timeout: "30s"
+    tls_handshake_timeout: "10s"
+    response_header_timeout: "30s"
+    
+    # Health checking
+    enable_health_check: true
+    health_check_interval: "30s"
+    health_check_timeout: "5s"
+    failure_threshold: 3
+    
+    # Circuit breaker
+    enable_circuit_breaker: true
+    circuit_breaker_threshold: 5
+    circuit_breaker_window: "60s"
+    circuit_breaker_timeout: "30s"
+    
+    # Optimization
+    enable_connection_reuse: true
+    enable_tcp_keep_alive: true
+    enable_compression: true
+    optimization_interval: "5m"
+  
+  # Resource monitoring configuration
+  resource_monitor:
+    # Monitoring intervals
+    memory_interval: "30s"
+    cpu_interval: "30s"
+    disk_interval: "60s"
+    network_interval: "30s"
+    
+    # Alert thresholds
+    memory_threshold: 0.8   # 80%
+    cpu_threshold: 0.8      # 80%
+    disk_threshold: 0.9     # 90%
+    goroutine_threshold: 1000
+    
+    # Optimization settings
+    enable_auto_gc: true
+    gc_threshold: 0.7       # 70% memory usage
+    enable_optimization: true
+  
+  # Request optimization configuration
+  request_optimizer:
+    # Compression settings
+    enable_compression: true
+    compression_level: 6
+    compression_threshold: 1024
+    compressible_types:
+      - "text/html"
+      - "text/css"
+      - "text/javascript"
+      - "application/javascript"
+      - "application/json"
+      - "text/plain"
+      - "application/xml"
+      - "text/xml"
+    
+    # Caching optimization
+    enable_cache_optimization: true
+    cache_control_max_age: "1h"
+    etags: true
+    
+    # Rate limiting
+    enable_adaptive_rate_limit: true
+    base_rate_limit: 1000
+    burst_limit: 100
+    rate_limit_window: "1m"
+    
+    # Request optimization
+    max_request_size: 10485760   # 10MB
+    request_timeout: "30s"
+    keep_alive_timeout: "30s"
+    
+    # Response optimization
+    enable_response_streaming: true
+    streaming_threshold: 1048576    # 1MB
+    max_response_size: 104857600    # 100MB
+    
+    # Performance monitoring
+    slow_request_threshold: "2s"
+    enable_metrics: true
+  
+  # Performance middleware configuration
+  middleware:
+    # Monitoring settings
+    enable_metrics: true
+    enable_tracing: true
+    enable_profiling: false
+    
+    # Performance thresholds
+    slow_request_threshold: "2s"
+    critical_request_threshold: "5s"
+    
+    # Optimization settings
+    enable_request_optimization: true
+    enable_cache_optimization: true
+    enable_resource_monitoring: true
+    
+    # Alert settings
+    enable_alerts: true
+    alert_threshold: 10
+    
+    # Skip paths for performance monitoring
+    skip_paths:
+      - "/health"
+      - "/metrics"
+      - "/favicon.ico"
+      - "/_internal"
+
+# Integration with existing ProxyND configuration
+# Performance optimization can be enabled per proxy type
+
+# APT proxy with performance optimization
+apt-proxy:
+  enabled: true
+  upstream_url: "http://archive.ubuntu.com/ubuntu/"
+  cache_dir: "/storage/apt-cache"
+  performance:
+    enable_optimization: true
+    cache_prewarming: true
+    compression: true
+
+# Maven proxy with performance optimization  
+maven-proxy:
+  enabled: true
+  upstream_url: "https://repo1.maven.org/maven2/"
+  cache_dir: "/storage/maven-cache"
+  performance:
+    enable_optimization: true
+    connection_pooling: true
+    smart_caching: true
+
+# NPM proxy with performance optimization
+npm-proxy:
+  enabled: true
+  upstream_url: "https://registry.npmjs.org/"
+  cache_dir: "/storage/npm-cache"
+  performance:
+    enable_optimization: true
+    request_optimization: true
+    adaptive_rate_limiting: true

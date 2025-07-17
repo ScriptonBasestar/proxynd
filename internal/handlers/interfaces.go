@@ -95,7 +95,7 @@ type BaseProxyHandler interface {
 	BuildUpstreamURL(c *fiber.Ctx) (string, error)
 
 	// 요청 변환 (헤더 추가, 인증 정보 등)
-	TransformRequest(c *fiber.Ctx, upstreamReq *fiber.Request) error
+	TransformRequest(c *fiber.Ctx, upstreamReq *fiber.Agent) error
 
 	// 응답 변환 (압축 해제, 포맷 변경 등)
 	TransformResponse(resp []byte, c *fiber.Ctx) ([]byte, error)

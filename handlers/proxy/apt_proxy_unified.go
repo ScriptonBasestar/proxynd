@@ -40,7 +40,7 @@ func AptProxyUnified(c *fiber.Ctx) error {
 
 	log.Printf("APT proxy - osType: %s, path: %s\n", osType, requestPath)
 
-	// fixme di
+	// 의존성 주입으로 변경 필요 - 향후 Container에서 설정 주입
 	storageDir := helpers.GetStorageDir()
 	globalConfig := configs.GlobalConfig{}
 	globalConfig.ReadConfig()

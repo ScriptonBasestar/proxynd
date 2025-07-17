@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"encoding/base64"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -9,7 +10,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"proxynd/configs"
-	"proxynd/helpers"
 	"proxynd/internal/errors"
 	"proxynd/logging"
 )
@@ -84,35 +84,35 @@ func (h *MavenHandlerV2) BuildUpstreamURL(c *fiber.Ctx) (string, error) {
 }
 
 // TransformRequest 요청 변환
-func (h *MavenHandlerV2) TransformRequest(c *fiber.Ctx, upstreamReq *fiber.Request) error {
+func (h *MavenHandlerV2) TransformRequest(c *fiber.Ctx, upstreamReq *fiber.Agent) error {
 	// Maven 특화 헤더 추가
-	upstreamReq.Header.Set("X-Maven-Proxy", "ProxyND")
-	upstreamReq.Header.Set("User-Agent", "ProxyND/1.0 Maven-Proxy")
+	upstreamReq.Set("X-Maven-Proxy", "ProxyND")
+	upstreamReq.Set("User-Agent", "ProxyND/1.0 Maven-Proxy")
 
 	// Maven 클라이언트 정보
-	upstreamReq.Header.Set("X-Maven-Client", "ProxyND")
+	upstreamReq.Set("X-Maven-Client", "ProxyND")
 
 	// 압축 지원
-	if !upstreamReq.Header.Contains("Accept-Encoding") {
-		upstreamReq.Header.Set("Accept-Encoding", "gzip, deflate")
+	if c.Get("Accept-Encoding") == "" {
+		upstreamReq.Set("Accept-Encoding", "gzip, deflate")
 	}
 
 	// SNAPSHOT 아티팩트의 경우 캐시 비활성화
 	artifactPath := c.Params("*")
 	if h.isSnapshotArtifact(artifactPath) {
-		upstreamReq.Header.Set("Cache-Control", "no-cache")
-		upstreamReq.Header.Set("Pragma", "no-cache")
+		upstreamReq.Set("Cache-Control", "no-cache")
+		upstreamReq.Set("Pragma", "no-cache")
 	}
 
 	// Basic Auth 설정 (필요한 경우)
 	if username, password, err := h.GetUpstreamAuth(c); err == nil && username != "" {
-		upstreamReq.Header.Set("Authorization", 
-			fmt.Sprintf("Basic %s", helpers.Base64Encode(fmt.Sprintf("%s:%s", username, password))))
+		auth := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", username, password)))
+		upstreamReq.Set("Authorization", fmt.Sprintf("Basic %s", auth))
 	}
 
 	h.logger.Debug("Maven request transformed",
 		logging.F("artifact_path", artifactPath),
-		logging.F("upstream_url", string(upstreamReq.URI().FullURI())),
+		logging.F("method", c.Method()),
 		logging.F("is_snapshot", h.isSnapshotArtifact(artifactPath)),
 	)
 

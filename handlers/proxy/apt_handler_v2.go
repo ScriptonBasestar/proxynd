@@ -8,7 +8,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"proxynd/configs"
-	"proxynd/helpers"
 	"proxynd/internal/errors"
 	"proxynd/logging"
 )
@@ -79,25 +78,25 @@ func (h *APTHandlerV2) BuildUpstreamURL(c *fiber.Ctx) (string, error) {
 }
 
 // TransformRequest 요청 변환
-func (h *APTHandlerV2) TransformRequest(c *fiber.Ctx, upstreamReq *fiber.Request) error {
+func (h *APTHandlerV2) TransformRequest(c *fiber.Ctx, upstreamReq *fiber.Agent) error {
 	// APT 특화 헤더 추가
-	upstreamReq.Header.Set("X-APT-Proxy", "ProxyND")
-	upstreamReq.Header.Set("User-Agent", "ProxyND/1.0 APT-Proxy")
+	upstreamReq.Set("X-APT-Proxy", "ProxyND")
+	upstreamReq.Set("User-Agent", "ProxyND/1.0 APT-Proxy")
 
 	// 압축 지원
-	if !upstreamReq.Header.Contains("Accept-Encoding") {
-		upstreamReq.Header.Set("Accept-Encoding", "gzip, deflate")
+	if c.Get("Accept-Encoding") == "" {
+		upstreamReq.Set("Accept-Encoding", "gzip, deflate")
 	}
 
 	// 캐시 제어 헤더 (메타데이터의 경우)
 	path := c.Path()
 	if h.isMetadataFile(path) {
-		upstreamReq.Header.Set("Cache-Control", "max-age=300") // 5분
+		upstreamReq.Set("Cache-Control", "max-age=300") // 5분
 	}
 
 	h.logger.Debug("APT request transformed",
 		logging.F("path", path),
-		logging.F("upstream_url", string(upstreamReq.URI().FullURI())),
+		logging.F("method", c.Method()),
 	)
 
 	return nil
@@ -241,11 +240,7 @@ func (h *APTHandlerV2) GetUpstreamAuth(c *fiber.Ctx) (string, string, error) {
 		return "", "", nil // 인증 정보 없음
 	}
 
-	proxy := proxies[0]
-	if proxy.BasicAuth.Username != "" {
-		return proxy.BasicAuth.Username, proxy.BasicAuth.Password, nil
-	}
-
+	// APT는 기본적으로 인증이 필요하지 않음
 	return "", "", nil
 }
 
