@@ -105,7 +105,7 @@ type AdaptiveRateLimiter struct {
 // NewRequestOptimizer creates a new request optimizer
 func NewRequestOptimizer(logger logging.Logger, config *RequestOptimizerConfig) *RequestOptimizer {
 	optimizer := &RequestOptimizer{
-		logger:      logger.WithComponent("request.optimizer"),
+		logger:      logger.WithField("component", "request.optimizer"),
 		config:      config,
 		stats:       NewRequestStats(),
 		compressor:  NewResponseCompressor(logger, config),
@@ -124,7 +124,7 @@ func NewRequestStats() *RequestStats {
 func NewResponseCompressor(logger logging.Logger, config *RequestOptimizerConfig) *ResponseCompressor {
 	return &ResponseCompressor{
 		config: config,
-		logger: logger.WithComponent("response.compressor"),
+		logger: logger.WithField("component", "response.compressor"),
 	}
 }
 
@@ -132,7 +132,7 @@ func NewResponseCompressor(logger logging.Logger, config *RequestOptimizerConfig
 func NewAdaptiveRateLimiter(logger logging.Logger, config *RequestOptimizerConfig) *AdaptiveRateLimiter {
 	return &AdaptiveRateLimiter{
 		config:        config,
-		logger:        logger.WithComponent("rate.limiter"),
+		logger:        logger.WithField("component", "rate.limiter"),
 		requestCounts: make(map[string]int),
 		lastReset:     time.Now(),
 		currentLimit:  config.BaseRateLimit,
@@ -157,7 +157,7 @@ func (ro *RequestOptimizer) OptimizeRequest(c *fiber.Ctx) error {
 	}
 
 	// Validate request size
-	if c.Request().Header.ContentLength() > ro.config.MaxRequestSize {
+	if c.Request().Header.ContentLength() > int(ro.config.MaxRequestSize) {
 		return c.Status(fiber.StatusRequestEntityTooLarge).JSON(fiber.Map{
 			"error":    "Request too large",
 			"max_size": ro.config.MaxRequestSize,
@@ -224,8 +224,8 @@ func (rc *ResponseCompressor) CompressResponse(c *fiber.Ctx) {
 	c.Set("Vary", "Accept-Encoding")
 
 	rc.logger.Debug("Response compressed",
-		logging.Int("original_size", originalSize),
-		logging.Int("compressed_size", compressedSize),
+		logging.F("original_size", originalSize),
+		logging.F("compressed_size", compressedSize),
 		logging.Float64("ratio", float64(compressedSize)/float64(originalSize)))
 }
 
@@ -335,9 +335,9 @@ func (arl *AdaptiveRateLimiter) CheckRateLimit(c *fiber.Ctx) error {
 
 	if count >= arl.currentLimit {
 		arl.logger.Warn("Rate limit exceeded",
-			logging.String("client_ip", clientIP),
-			logging.Int("count", count),
-			logging.Int("limit", arl.currentLimit))
+			logging.F("client_ip", clientIP),
+			logging.F("count", count),
+			logging.F("limit", arl.currentLimit))
 		return fiber.NewError(fiber.StatusTooManyRequests, "Rate limit exceeded")
 	}
 
@@ -363,7 +363,7 @@ func (arl *AdaptiveRateLimiter) adjustRateLimit() {
 
 	arl.logger.Debug("Rate limit adjusted",
 		logging.Float64("system_load", arl.systemLoad),
-		logging.Int("new_limit", arl.currentLimit))
+		logging.F("new_limit", arl.currentLimit))
 }
 
 // updateRequestStats updates request statistics
@@ -399,8 +399,8 @@ func (ro *RequestOptimizer) recordRequestMetrics(c *fiber.Ctx, duration time.Dur
 		ro.stats.SlowRequests++
 		ro.logger.Warn("Slow request detected",
 			logging.Duration("duration", duration),
-			logging.String("path", c.Path()),
-			logging.String("method", c.Method()))
+			logging.F("path", c.Path()),
+			logging.F("method", c.Method()))
 	}
 
 	// Track response size

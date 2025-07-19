@@ -139,7 +139,7 @@ type EstimatedImpact struct {
 // NewCacheOptimizer creates a new cache optimizer
 func NewCacheOptimizer(logger logging.Logger, config *CacheOptimizerConfig) *CacheOptimizer {
 	optimizer := &CacheOptimizer{
-		logger:     logger.WithComponent("cache.optimizer"),
+		logger:     logger.WithField("component", "cache.optimizer"),
 		config:     config,
 		stats:      NewCacheStats(),
 		strategies: make(map[string]OptimizationStrategy),
@@ -247,8 +247,8 @@ func (co *CacheOptimizer) AnalyzePerformance(ctx context.Context) ([]*Optimizati
 		report, err := strategy.Analyze(ctx, co.stats)
 		if err != nil {
 			co.logger.Error("Strategy analysis failed",
-				logging.String("strategy", name),
-				logging.Error(err))
+				logging.F("strategy", name),
+				logging.ErrorField(err))
 			continue
 		}
 
@@ -261,8 +261,8 @@ func (co *CacheOptimizer) AnalyzePerformance(ctx context.Context) ([]*Optimizati
 	sortReportsByPriority(reports)
 
 	co.logger.Info("Cache performance analysis completed",
-		logging.Int("strategies_analyzed", len(co.strategies)),
-		logging.Int("reports_generated", len(reports)))
+		logging.F("strategies_analyzed", len(co.strategies)),
+		logging.F("reports_generated", len(reports)))
 
 	return reports, nil
 }
@@ -275,22 +275,22 @@ func (co *CacheOptimizer) ApplyOptimizations(ctx context.Context, reports []*Opt
 		strategy, exists := co.strategies[report.Strategy]
 		if !exists {
 			co.logger.Warn("Unknown optimization strategy",
-				logging.String("strategy", report.Strategy))
+				logging.F("strategy", report.Strategy))
 			continue
 		}
 
 		err := strategy.Apply(ctx, report.Recommendations)
 		if err != nil {
 			co.logger.Error("Failed to apply optimization",
-				logging.String("strategy", report.Strategy),
-				logging.Error(err))
+				logging.F("strategy", report.Strategy),
+				logging.ErrorField(err))
 			continue
 		}
 
 		appliedCount++
 		co.logger.Info("Optimization applied successfully",
-			logging.String("strategy", report.Strategy),
-			logging.Int("recommendations", len(report.Recommendations)))
+			logging.F("strategy", report.Strategy),
+			logging.F("recommendations", len(report.Recommendations)))
 	}
 
 	// Update optimization stats
@@ -300,8 +300,8 @@ func (co *CacheOptimizer) ApplyOptimizations(ctx context.Context, reports []*Opt
 	co.stats.mu.Unlock()
 
 	co.logger.Info("Cache optimizations completed",
-		logging.Int("applied", appliedCount),
-		logging.Int("total", len(reports)))
+		logging.F("applied", appliedCount),
+		logging.F("total", len(reports)))
 
 	return nil
 }
@@ -351,14 +351,14 @@ func (co *CacheOptimizer) StartPeriodicOptimization(ctx context.Context) {
 			reports, err := co.AnalyzePerformance(ctx)
 			if err != nil {
 				co.logger.Error("Periodic optimization analysis failed",
-					logging.Error(err))
+					logging.ErrorField(err))
 				continue
 			}
 
 			if len(reports) > 0 {
 				if err := co.ApplyOptimizations(ctx, reports); err != nil {
 					co.logger.Error("Periodic optimization application failed",
-						logging.Error(err))
+						logging.ErrorField(err))
 				}
 			}
 		}

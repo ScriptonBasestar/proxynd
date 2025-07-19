@@ -17,7 +17,7 @@ type TTLOptimizationStrategy struct {
 
 func NewTTLOptimizationStrategy(logger logging.Logger, config *CacheOptimizerConfig) *TTLOptimizationStrategy {
 	return &TTLOptimizationStrategy{
-		logger: logger.WithComponent("cache.strategy.ttl"),
+		logger: logger.WithField("component", "cache.strategy.ttl"),
 		config: config,
 	}
 }
@@ -142,15 +142,15 @@ func (s *TTLOptimizationStrategy) Apply(ctx context.Context, recommendations []O
 		if rec.Type == "extend_ttl" || rec.Type == "reduce_ttl" {
 			// In a real implementation, this would call the cache service
 			s.logger.Info("TTL optimization applied",
-				logging.String("action", rec.Action),
-				logging.String("key", rec.Parameters["key"].(string)))
+				logging.F("action", rec.Action),
+				logging.F("key", rec.Parameters["key"].(string)))
 			applied++
 		}
 	}
 
 	s.logger.Info("TTL optimization strategy completed",
-		logging.Int("applied", applied),
-		logging.Int("total", len(recommendations)))
+		logging.F("applied", applied),
+		logging.F("total", len(recommendations)))
 
 	return nil
 }
@@ -163,7 +163,7 @@ type SizeOptimizationStrategy struct {
 
 func NewSizeOptimizationStrategy(logger logging.Logger, config *CacheOptimizerConfig) *SizeOptimizationStrategy {
 	return &SizeOptimizationStrategy{
-		logger: logger.WithComponent("cache.strategy.size"),
+		logger: logger.WithField("component", "cache.strategy.size"),
 		config: config,
 	}
 }
@@ -297,18 +297,18 @@ func (s *SizeOptimizationStrategy) Apply(ctx context.Context, recommendations []
 		switch rec.Type {
 		case "evict_large_unused":
 			s.logger.Info("Size optimization: evicting large unused entry",
-				logging.String("key", rec.Parameters["key"].(string)),
+				logging.F("key", rec.Parameters["key"].(string)),
 				logging.F("size", rec.Parameters["size"].(int64)))
 			applied++
 		case "implement_size_limits":
 			s.logger.Info("Size optimization: implementing size limits",
-				logging.Int("max_entry_size", rec.Parameters["max_entry_size"].(int)))
+				logging.F("max_entry_size", rec.Parameters["max_entry_size"].(int)))
 			applied++
 		}
 	}
 
 	s.logger.Info("Size optimization strategy completed",
-		logging.Int("applied", applied))
+		logging.F("applied", applied))
 
 	return nil
 }
@@ -321,7 +321,7 @@ type EvictionOptimizationStrategy struct {
 
 func NewEvictionOptimizationStrategy(logger logging.Logger, config *CacheOptimizerConfig) *EvictionOptimizationStrategy {
 	return &EvictionOptimizationStrategy{
-		logger: logger.WithComponent("cache.strategy.eviction"),
+		logger: logger.WithField("component", "cache.strategy.eviction"),
 		config: config,
 	}
 }
@@ -428,7 +428,7 @@ func (s *EvictionOptimizationStrategy) Apply(ctx context.Context, recommendation
 		switch rec.Type {
 		case "optimize_eviction_policy":
 			s.logger.Info("Eviction optimization: updating eviction algorithm",
-				logging.String("algorithm", rec.Parameters["algorithm"].(string)))
+				logging.F("algorithm", rec.Parameters["algorithm"].(string)))
 			applied++
 		case "protect_hot_keys":
 			s.logger.Info("Eviction optimization: implementing key protection",
@@ -438,7 +438,7 @@ func (s *EvictionOptimizationStrategy) Apply(ctx context.Context, recommendation
 	}
 
 	s.logger.Info("Eviction optimization strategy completed",
-		logging.Int("applied", applied))
+		logging.F("applied", applied))
 
 	return nil
 }
@@ -451,7 +451,7 @@ type PrewarmingStrategy struct {
 
 func NewPrewarmingStrategy(logger logging.Logger, config *CacheOptimizerConfig) *PrewarmingStrategy {
 	return &PrewarmingStrategy{
-		logger: logger.WithComponent("cache.strategy.prewarming"),
+		logger: logger.WithField("component", "cache.strategy.prewarming"),
 		config: config,
 	}
 }
@@ -547,18 +547,18 @@ func (s *PrewarmingStrategy) Apply(ctx context.Context, recommendations []Optimi
 		case "schedule_prewarming":
 			keys := rec.Parameters["keys"].([]string)
 			s.logger.Info("Prewarming: scheduling prewarming for popular keys",
-				logging.Int("key_count", len(keys)),
-				logging.String("schedule", rec.Parameters["schedule"].(string)))
+				logging.F("key_count", len(keys)),
+				logging.F("schedule", rec.Parameters["schedule"].(string)))
 			applied++
 		case "implement_predictive_prewarming":
 			s.logger.Info("Prewarming: enabling predictive prewarming",
-				logging.String("prediction_window", rec.Parameters["prediction_window"].(string)))
+				logging.F("prediction_window", rec.Parameters["prediction_window"].(string)))
 			applied++
 		}
 	}
 
 	s.logger.Info("Prewarming strategy completed",
-		logging.Int("applied", applied))
+		logging.F("applied", applied))
 
 	return nil
 }
@@ -571,7 +571,7 @@ type HotKeyOptimizationStrategy struct {
 
 func NewHotKeyOptimizationStrategy(logger logging.Logger, config *CacheOptimizerConfig) *HotKeyOptimizationStrategy {
 	return &HotKeyOptimizationStrategy{
-		logger: logger.WithComponent("cache.strategy.hotkey"),
+		logger: logger.WithField("component", "cache.strategy.hotkey"),
 		config: config,
 	}
 }
@@ -680,21 +680,21 @@ func (s *HotKeyOptimizationStrategy) Apply(ctx context.Context, recommendations 
 			key := rec.Parameters["key"].(string)
 			factor := rec.Parameters["replication_factor"].(int)
 			s.logger.Info("Hot key optimization: implementing replication",
-				logging.String("key", key),
-				logging.Int("replication_factor", factor))
+				logging.F("key", key),
+				logging.F("replication_factor", factor))
 			applied++
 		case "promote_to_fast_storage":
 			key := rec.Parameters["key"].(string)
 			tier := rec.Parameters["storage_tier"].(string)
 			s.logger.Info("Hot key optimization: promoting to fast storage",
-				logging.String("key", key),
-				logging.String("storage_tier", tier))
+				logging.F("key", key),
+				logging.F("storage_tier", tier))
 			applied++
 		}
 	}
 
 	s.logger.Info("Hot key optimization strategy completed",
-		logging.Int("applied", applied))
+		logging.F("applied", applied))
 
 	return nil
 }

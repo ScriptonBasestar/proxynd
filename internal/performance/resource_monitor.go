@@ -92,7 +92,7 @@ type ResourceAlert struct {
 // NewResourceMonitor creates a new resource monitor
 func NewResourceMonitor(logger logging.Logger, config *ResourceConfig) *ResourceMonitor {
 	return &ResourceMonitor{
-		logger: logger.WithComponent("resource.monitor"),
+		logger: logger.WithField("component", "resource.monitor"),
 		config: config,
 		stats:  NewResourceStats(),
 		stopCh: make(chan struct{}),
@@ -300,7 +300,7 @@ func (rm *ResourceMonitor) updateCPUStats() {
 	}
 
 	rm.logger.Debug("CPU stats updated",
-		logging.Int("goroutine_count", rm.stats.GoroutineCount),
+		logging.F("goroutine_count", rm.stats.GoroutineCount),
 		logging.Float64("cpu_percent", rm.stats.CPUPercent))
 }
 
@@ -375,7 +375,7 @@ func (rm *ResourceMonitor) performOptimization() {
 
 	rm.logger.Info("Resource optimization completed",
 		logging.Float64("memory_percent", rm.stats.MemoryPercent),
-		logging.Int("goroutine_count", rm.stats.GoroutineCount))
+		logging.F("goroutine_count", rm.stats.GoroutineCount))
 }
 
 // optimizeMemory performs memory optimization
@@ -392,8 +392,8 @@ func (rm *ResourceMonitor) optimizeMemory() {
 func (rm *ResourceMonitor) optimizeGoroutines() {
 	// Log goroutine stack for analysis
 	rm.logger.Warn("High goroutine count detected, consider reviewing goroutine management",
-		logging.Int("count", rm.stats.GoroutineCount),
-		logging.Int("threshold", rm.config.GoroutineThreshold))
+		logging.F("count", rm.stats.GoroutineCount),
+		logging.F("threshold", rm.config.GoroutineThreshold))
 }
 
 // triggerGC triggers garbage collection
@@ -452,8 +452,8 @@ func (rm *ResourceMonitor) triggerGoroutineAlert() {
 	}
 
 	rm.logger.Warn("Goroutine count alert",
-		logging.Int("count", rm.stats.GoroutineCount),
-		logging.Int("threshold", rm.config.GoroutineThreshold))
+		logging.F("count", rm.stats.GoroutineCount),
+		logging.F("threshold", rm.config.GoroutineThreshold))
 
 	rm.logAlert(alert)
 }
@@ -486,9 +486,9 @@ func (rm *ResourceMonitor) triggerDiskAlert() {
 // logAlert logs a resource alert
 func (rm *ResourceMonitor) logAlert(alert ResourceAlert) {
 	rm.logger.Warn("Resource alert triggered",
-		logging.String("alert_type", alert.Type),
-		logging.String("severity", alert.Severity),
-		logging.String("message", alert.Message),
+		logging.F("alert_type", alert.Type),
+		logging.F("severity", alert.Severity),
+		logging.F("message", alert.Message),
 		logging.Time("timestamp", alert.Timestamp))
 }
 

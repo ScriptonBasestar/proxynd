@@ -147,7 +147,7 @@ type PoolMonitor struct {
 // NewConnectionPool creates a new connection pool
 func NewConnectionPool(logger logging.Logger, config *PoolConfig) *ConnectionPool {
 	pool := &ConnectionPool{
-		logger: logger.WithComponent("connection.pool"),
+		logger: logger.WithField("component", "connection.pool"),
 		config: config,
 		pools:  make(map[string]*HostPool),
 		stats:  NewPoolStats(),
@@ -269,18 +269,18 @@ func (cp *ConnectionPool) createHostPool(host string) *HostPool {
 
 	// Initialize circuit breaker
 	if cp.config.EnableCircuitBreaker {
-		hostPool.circuitBreaker = NewCircuitBreaker(cp.config, cp.logger.WithComponent("circuit.breaker"))
+		hostPool.circuitBreaker = NewCircuitBreaker(cp.config, cp.logger.WithField("component", "circuit.breaker"))
 	}
 
 	// Initialize health checker
 	if cp.config.EnableHealthCheck {
-		hostPool.healthChecker = NewHealthChecker(host, cp.config, cp.logger.WithComponent("health.checker"))
+		hostPool.healthChecker = NewHealthChecker(host, cp.config, cp.logger.WithField("component", "health.checker"))
 	}
 
 	cp.logger.Info("Created new host pool",
-		logging.String("host", host),
-		logging.Int("max_conns_per_host", cp.config.MaxConnsPerHost),
-		logging.Int("max_idle_conns_per_host", cp.config.MaxIdleConnsPerHost))
+		logging.F("host", host),
+		logging.F("max_conns_per_host", cp.config.MaxConnsPerHost),
+		logging.F("max_idle_conns_per_host", cp.config.MaxIdleConnsPerHost))
 
 	return hostPool
 }
@@ -436,8 +436,8 @@ func (cp *ConnectionPool) optimizeConnections() {
 	cp.stats.mu.Unlock()
 
 	cp.logger.Info("Connection pool optimization completed",
-		logging.Int("pools_optimized", optimized),
-		logging.Int("total_pools", len(cp.pools)))
+		logging.F("pools_optimized", optimized),
+		logging.F("total_pools", len(cp.pools)))
 }
 
 // optimizeForHighLoad optimizes pool for high load scenarios
@@ -453,9 +453,9 @@ func (cp *ConnectionPool) optimizeForHighLoad(hostPool *HostPool) {
 		transport.MaxIdleConnsPerHost = newMaxIdle
 
 		cp.logger.Info("Optimized pool for high load",
-			logging.String("host", hostPool.host),
-			logging.Int("new_max_conns", newMaxConns),
-			logging.Int("new_max_idle", newMaxIdle))
+			logging.F("host", hostPool.host),
+			logging.F("new_max_conns", newMaxConns),
+			logging.F("new_max_idle", newMaxIdle))
 	}
 }
 
@@ -472,9 +472,9 @@ func (cp *ConnectionPool) optimizeForLowLoad(hostPool *HostPool) {
 		transport.MaxIdleConnsPerHost = newMaxIdle
 
 		cp.logger.Info("Optimized pool for low load",
-			logging.String("host", hostPool.host),
-			logging.Int("new_max_conns", newMaxConns),
-			logging.Int("new_max_idle", newMaxIdle))
+			logging.F("host", hostPool.host),
+			logging.F("new_max_conns", newMaxConns),
+			logging.F("new_max_idle", newMaxIdle))
 	}
 }
 
@@ -498,7 +498,7 @@ func (cp *ConnectionPool) Close() error {
 			hostPool.healthChecker.Stop()
 		}
 		// Transport will be closed by GC
-		cp.logger.Info("Closed host pool", logging.String("host", host))
+		cp.logger.Info("Closed host pool", logging.F("host", host))
 	}
 
 	cp.logger.Info("Connection pool closed")
@@ -655,7 +655,7 @@ func (hc *HealthChecker) recordSuccess() {
 	hc.lastCheck = time.Now()
 	if !hc.isHealthy {
 		hc.isHealthy = true
-		hc.logger.Info("Host marked as healthy", logging.String("host", hc.host))
+		hc.logger.Info("Host marked as healthy", logging.F("host", hc.host))
 	}
 }
 
@@ -670,7 +670,7 @@ func (hc *HealthChecker) recordFailure() {
 	if hc.isHealthy && hc.failures >= int64(hc.config.FailureThreshold) {
 		hc.isHealthy = false
 		hc.logger.Warn("Host marked as unhealthy",
-			logging.String("host", hc.host),
+			logging.F("host", hc.host),
 			logging.F("failures", hc.failures))
 	}
 }
@@ -681,7 +681,7 @@ func (hc *HealthChecker) recordFailure() {
 func NewPoolMonitor(pool *ConnectionPool, logger logging.Logger) *PoolMonitor {
 	return &PoolMonitor{
 		pool:   pool,
-		logger: logger.WithComponent("pool.monitor"),
+		logger: logger.WithField("component", "pool.monitor"),
 		done:   make(chan struct{}),
 	}
 }
@@ -717,18 +717,18 @@ func (pm *PoolMonitor) logPoolMetrics() {
 		logging.F("connections_created", stats.ConnectionsCreated),
 		logging.F("connections_reused", stats.ConnectionsReused),
 		logging.F("connection_failures", stats.ConnectionFailures),
-		logging.Int("host_pools", len(stats.HostStats)))
+		logging.F("host_pools", len(stats.HostStats)))
 
 	// Log per-host metrics for active hosts
 	for host, hostStats := range stats.HostStats {
 		if time.Since(hostStats.LastRequest) < time.Hour { // Only log recently active hosts
 			pm.logger.Info("Host pool metrics",
-				logging.String("host", host),
+				logging.F("host", host),
 				logging.F("total_requests", hostStats.TotalRequests),
 				logging.F("successful_requests", hostStats.SuccessfulRequests),
 				logging.F("failed_requests", hostStats.FailedRequests),
 				logging.Duration("average_latency", hostStats.AverageLatency),
-				logging.String("circuit_breaker_state", hostStats.CircuitBreakerState),
+				logging.F("circuit_breaker_state", hostStats.CircuitBreakerState),
 				logging.Bool("is_healthy", hostStats.IsHealthy))
 		}
 	}

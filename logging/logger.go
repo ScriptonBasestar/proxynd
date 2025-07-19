@@ -375,6 +375,69 @@ func (zl *ZeroLogger) copyFields() map[string]interface{} {
 
 // 편의 함수들
 
+// String creates a string field
+func String(key, value string) Field {
+	return F(key, value)
+}
+
+// Int creates an int field
+func Int(key string, value int) Field {
+	return F(key, value)
+}
+
+// Int64 creates an int64 field
+func Int64(key string, value int64) Field {
+	return F(key, value)
+}
+
+// Uint64 creates a uint64 field
+func Uint64(key string, value uint64) Field {
+	return F(key, value)
+}
+
+// Float64 creates a float64 field
+func Float64(key string, value float64) Field {
+	return F(key, value)
+}
+
+// Bool creates a bool field
+func Bool(key string, value bool) Field {
+	return F(key, value)
+}
+
+// Time creates a time field
+func Time(key string, value time.Time) Field {
+	return F(key, value)
+}
+
+// Duration creates a duration field
+func Duration(key string, value time.Duration) Field {
+	return F(key, value.String())
+}
+
+// ErrorField creates an error field
+func ErrorField(err error) Field {
+	if err == nil {
+		return F("error", nil)
+	}
+	return F("error", err.Error())
+}
+
+// Uint32 creates a uint32 field
+func Uint32(key string, value uint32) Field {
+	return F(key, value)
+}
+
+// Strings creates a string slice field
+func Strings(key string, value []string) Field {
+	return F(key, value)
+}
+
+// Any creates a field with any value
+func Any(key string, value interface{}) Field {
+	return F(key, value)
+}
+
 // Debug logs a message at debug level using the global logger.
 func Debug(msg string, fields ...Field) {
 	GetLogger().Debug(msg, fields...)

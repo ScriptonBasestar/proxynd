@@ -72,7 +72,7 @@ type GlobalMetrics struct {
 // NewManager creates a new performance manager
 func NewManager(logger logging.Logger, config *ManagerConfig) (*Manager, error) {
 	manager := &Manager{
-		logger: logger.WithComponent("performance.manager"),
+		logger: logger.WithField("component", "performance.manager"),
 		config: config,
 		stopCh: make(chan struct{}),
 	}
@@ -184,7 +184,7 @@ func (m *Manager) Stop() error {
 	// Close connection pool
 	if m.connectionPool != nil {
 		if err := m.connectionPool.Close(); err != nil {
-			m.logger.Error("Failed to close connection pool", logging.Error(err))
+			m.logger.Error("Failed to close connection pool", logging.ErrorField(err))
 		} else {
 			m.logger.Info("Connection pool closed")
 		}
@@ -223,13 +223,13 @@ func (m *Manager) performGlobalOptimization(ctx context.Context) {
 	if m.cacheOptimizer != nil {
 		reports, err := m.cacheOptimizer.AnalyzePerformance(ctx)
 		if err != nil {
-			m.logger.Error("Cache performance analysis failed", logging.Error(err))
+			m.logger.Error("Cache performance analysis failed", logging.ErrorField(err))
 		} else if len(reports) > 0 {
 			if err := m.cacheOptimizer.ApplyOptimizations(ctx, reports); err != nil {
-				m.logger.Error("Cache optimization application failed", logging.Error(err))
+				m.logger.Error("Cache optimization application failed", logging.ErrorField(err))
 			} else {
 				optimizationsApplied += len(reports)
-				m.logger.Info("Cache optimizations applied", logging.Int("count", len(reports)))
+				m.logger.Info("Cache optimizations applied", logging.F("count", len(reports)))
 			}
 		}
 	}
@@ -267,7 +267,7 @@ func (m *Manager) performGlobalOptimization(ctx context.Context) {
 	m.generatePerformanceReport()
 
 	m.logger.Info("Global performance optimization completed",
-		logging.Int("optimizations_applied", optimizationsApplied))
+		logging.F("optimizations_applied", optimizationsApplied))
 }
 
 // generatePerformanceReport generates a comprehensive performance report

@@ -86,7 +86,7 @@ func NewPerformanceMiddleware(
 	config *PerformanceConfig,
 ) *PerformanceMiddleware {
 	return &PerformanceMiddleware{
-		logger:           logger.WithComponent("performance.middleware"),
+		logger:           logger.WithField("component", "performance.middleware"),
 		cacheOptimizer:   cacheOptimizer,
 		connectionPool:   connectionPool,
 		resourceMonitor:  resourceMonitor,
@@ -191,9 +191,9 @@ func (pm *PerformanceMiddleware) recordMetrics(c *fiber.Ctx, duration time.Durat
 
 	pm.logger.Debug("Performance metrics recorded",
 		logging.Duration("duration", duration),
-		logging.String("path", c.Path()),
-		logging.String("method", c.Method()),
-		logging.Int("status", c.Response().StatusCode()))
+		logging.F("path", c.Path()),
+		logging.F("method", c.Method()),
+		logging.F("status", c.Response().StatusCode()))
 }
 
 // triggerOptimizations triggers performance optimizations based on metrics
@@ -205,13 +205,13 @@ func (pm *PerformanceMiddleware) triggerOptimizations(c *fiber.Ctx, duration tim
 				ctx := context.Background()
 				reports, err := pm.cacheOptimizer.AnalyzePerformance(ctx)
 				if err != nil {
-					pm.logger.Error("Cache optimization analysis failed", logging.Error(err))
+					pm.logger.Error("Cache optimization analysis failed", logging.ErrorField(err))
 					return
 				}
 
 				if len(reports) > 0 {
 					if err := pm.cacheOptimizer.ApplyOptimizations(ctx, reports); err != nil {
-						pm.logger.Error("Cache optimization application failed", logging.Error(err))
+						pm.logger.Error("Cache optimization application failed", logging.ErrorField(err))
 					}
 				}
 			}()
@@ -222,8 +222,8 @@ func (pm *PerformanceMiddleware) triggerOptimizations(c *fiber.Ctx, duration tim
 	if duration > pm.config.CriticalRequestThreshold {
 		pm.logger.Warn("Critical request performance detected",
 			logging.Duration("duration", duration),
-			logging.String("path", c.Path()),
-			logging.String("method", c.Method()))
+			logging.F("path", c.Path()),
+			logging.F("method", c.Method()))
 
 		if pm.config.EnableAlerts {
 			pm.triggerPerformanceAlert(c, duration)
@@ -242,15 +242,15 @@ func (pm *PerformanceMiddleware) logPerformance(c *fiber.Ctx, duration time.Dura
 
 	fields := []logging.Field{
 		logging.Duration("duration", duration),
-		logging.String("method", c.Method()),
-		logging.String("path", c.Path()),
-		logging.Int("status", c.Response().StatusCode()),
-		logging.String("user_agent", c.Get("User-Agent")),
-		logging.String("remote_ip", c.IP()),
+		logging.F("method", c.Method()),
+		logging.F("path", c.Path()),
+		logging.F("status", c.Response().StatusCode()),
+		logging.F("user_agent", c.Get("User-Agent")),
+		logging.F("remote_ip", c.IP()),
 	}
 
 	if err != nil {
-		fields = append(fields, logging.Error(err))
+		fields = append(fields, logging.ErrorField(err))
 	}
 
 	message := "Request processed"
