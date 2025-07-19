@@ -1,12 +1,10 @@
 quiet: false
 with-expecter: true
-name: "Mock{{.InterfaceName}}"
 dir: "{{.InterfaceDir}}/mocks"
 outpkg: "mocks"
 filename: "{{.InterfaceName | snakecase}}.go"
 mockname: "Mock{{.InterfaceName}}"
 inpackage: false
-testonly: true
 
 packages:
   # 서비스 인터페이스
