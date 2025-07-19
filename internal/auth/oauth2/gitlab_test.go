@@ -325,15 +325,16 @@ func TestGitLabProvider_GetUserProjects(t *testing.T) {
 
 func TestGitLabProvider_CheckProjectAccess(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/api/v4/projects/testuser/accessible-project" {
+		switch r.URL.Path {
+		case "/api/v4/projects/testuser/accessible-project":
 			w.WriteHeader(http.StatusOK)
 			json.NewEncoder(w).Encode(map[string]interface{}{
 				"id":   1,
 				"name": "accessible-project",
 			})
-		} else if r.URL.Path == "/api/v4/projects/testuser/private-project" {
+		case "/api/v4/projects/testuser/private-project":
 			w.WriteHeader(http.StatusNotFound)
-		} else {
+		default:
 			w.WriteHeader(http.StatusNotFound)
 		}
 	}))
@@ -474,21 +475,22 @@ func TestMapGitLabAccessLevel(t *testing.T) {
 
 func TestGitLabProvider_CheckAdminStatus(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/api/v4/user" {
+		switch r.URL.Path {
+		case "/api/v4/user":
 			userResponse := GitLabUser{
 				ID:       123456,
 				Username: "admin",
 				IsAdmin:  true,
 			}
 			json.NewEncoder(w).Encode(userResponse)
-		} else if r.URL.Path == "/api/v4/users" {
+		case "/api/v4/users":
 			// 관리자만 접근 가능한 엔드포인트
 			w.WriteHeader(http.StatusOK)
 			json.NewEncoder(w).Encode([]map[string]interface{}{
 				{"id": 1, "username": "user1"},
 				{"id": 2, "username": "user2"},
 			})
-		} else {
+		default:
 			w.WriteHeader(http.StatusNotFound)
 		}
 	}))

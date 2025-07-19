@@ -76,7 +76,7 @@ func (gwa *GenericWebhookAdapter) Send(ctx context.Context, event *alerts.AlertE
 	if err != nil {
 		return fmt.Errorf("failed to send request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// 응답 상태 확인
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -269,10 +269,10 @@ func (swa *SlackWebhookAdapter) Send(ctx context.Context, event *alerts.AlertEve
 	if err != nil {
 		return fmt.Errorf("failed to send Slack request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("Slack webhook returned status %d", resp.StatusCode)
+		return fmt.Errorf("slack webhook returned status %d", resp.StatusCode)
 	}
 
 	return nil
@@ -466,11 +466,11 @@ func (dwa *DiscordWebhookAdapter) Send(ctx context.Context, event *alerts.AlertE
 	if err != nil {
 		return fmt.Errorf("failed to send Discord request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Discord는 204 No Content를 반환
 	if resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("Discord webhook returned status %d", resp.StatusCode)
+		return fmt.Errorf("discord webhook returned status %d", resp.StatusCode)
 	}
 
 	return nil

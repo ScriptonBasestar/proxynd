@@ -164,9 +164,10 @@ func CreatePolicyEvent(eventType WebhookEventType, policyName, violationDetail s
 // CreateServerEvent 서버 상태 이벤트 생성
 func CreateServerEvent(eventType WebhookEventType, serviceName string, status string, details map[string]interface{}) *AlertEvent {
 	level := AlertLevelInfo
-	if status == "error" || status == "failed" {
+	switch status {
+	case "error", "failed":
 		level = AlertLevelError
-	} else if status == "warning" {
+	case "warning":
 		level = AlertLevelWarning
 	}
 

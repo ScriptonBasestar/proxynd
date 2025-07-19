@@ -320,14 +320,15 @@ func TestGitHubProvider_GetUserRepositories(t *testing.T) {
 
 func TestGitHubProvider_CheckRepositoryAccess(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/repos/testuser/accessible-repo" {
+		switch r.URL.Path {
+		case "/repos/testuser/accessible-repo":
 			w.WriteHeader(http.StatusOK)
 			json.NewEncoder(w).Encode(map[string]interface{}{
 				"full_name": "testuser/accessible-repo",
 			})
-		} else if r.URL.Path == "/repos/testuser/private-repo" {
+		case "/repos/testuser/private-repo":
 			w.WriteHeader(http.StatusNotFound)
-		} else {
+		default:
 			w.WriteHeader(http.StatusNotFound)
 		}
 	}))

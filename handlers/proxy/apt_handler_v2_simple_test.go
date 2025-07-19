@@ -80,15 +80,16 @@ func TestAPTHandlerV2_Simple(t *testing.T) {
 			// Simulate fiber context by checking file extension/path
 			var ttl time.Duration
 
-			if tc.path == "/dists/focal/Release" {
+			switch tc.path {
+			case "/dists/focal/Release":
 				ttl = 10 * time.Minute
-			} else if tc.path == "/dists/focal/main/binary-amd64/Packages" {
+			case "/dists/focal/main/binary-amd64/Packages":
 				ttl = 30 * time.Minute
-			} else if tc.path == "/pool/main/v/vim/vim_8.2.deb" {
+			case "/pool/main/v/vim/vim_8.2.deb":
 				ttl = 7 * 24 * time.Hour
-			} else if tc.path == "/dists/focal/main/binary-amd64/Packages.gz" {
+			case "/dists/focal/main/binary-amd64/Packages.gz":
 				ttl = 24 * time.Hour
-			} else {
+			default:
 				ttl = 1 * time.Hour
 			}
 

@@ -121,16 +121,16 @@ func TestMavenHandlerV2_Simple(t *testing.T) {
 			// Simulate GetCacheTTL logic
 			var ttl time.Duration
 
-			if tc.path == "com/example/maven-metadata.xml" {
+			switch tc.path {
+			case "com/example/maven-metadata.xml":
 				ttl = 5 * time.Minute
-			} else if tc.path == "com/example/app/1.0/app-1.0.jar.sha1" {
+			case "com/example/app/1.0/app-1.0.jar.sha1":
 				ttl = 30 * 24 * time.Hour
-			} else if tc.path == "com/example/app/1.0/app-1.0.jar" ||
-				tc.path == "com/example/app/1.0/app-1.0.war" {
+			case "com/example/app/1.0/app-1.0.jar", "com/example/app/1.0/app-1.0.war":
 				ttl = 30 * 24 * time.Hour
-			} else if tc.path == "com/example/app/1.0/app-1.0.pom" {
+			case "com/example/app/1.0/app-1.0.pom":
 				ttl = 7 * 24 * time.Hour
-			} else {
+			default:
 				ttl = 24 * time.Hour
 			}
 

@@ -146,7 +146,7 @@ func (g *GoogleProvider) ValidateToken(ctx context.Context, token string) (*Toke
 	if err != nil {
 		return &TokenInfo{Valid: false}, nil
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return &TokenInfo{Valid: false}, nil
@@ -196,10 +196,10 @@ func (g *GoogleProvider) RevokeToken(ctx context.Context, token string) error {
 	if err != nil {
 		return fmt.Errorf("failed to revoke Google token: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("Google token revocation failed with status %d", resp.StatusCode)
+		return fmt.Errorf("google token revocation failed with status %d", resp.StatusCode)
 	}
 
 	return nil
@@ -283,7 +283,7 @@ func (g *GoogleProvider) VerifyIDToken(ctx context.Context, idToken string) (*Go
 	if err != nil {
 		return nil, fmt.Errorf("failed to verify ID token: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("ID token verification failed with status %d", resp.StatusCode)

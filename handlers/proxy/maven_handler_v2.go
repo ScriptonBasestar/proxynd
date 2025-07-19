@@ -17,14 +17,14 @@ import (
 // MavenHandlerV2 Template Method 패턴을 사용하는 Maven 핸들러
 type MavenHandlerV2 struct {
 	logger logging.Logger
-	config *configs.MavenProxyConfig
+	Config *configs.MavenProxyConfig
 }
 
 // NewMavenHandlerV2 새로운 Maven 핸들러 v2 생성
 func NewMavenHandlerV2() *MavenHandlerV2 {
 	return &MavenHandlerV2{
 		logger: logging.GetLogger(),
-		config: &configs.MavenProxyConfig{},
+		Config: &configs.MavenProxyConfig{},
 	}
 }
 
@@ -37,11 +37,11 @@ func (h *MavenHandlerV2) Type() string {
 
 // IsEnabled 활성화 상태 확인
 func (h *MavenHandlerV2) IsEnabled() bool {
-	if err := h.config.ReadConfig(); err != nil {
+	if err := h.Config.ReadConfig(); err != nil {
 		h.logger.Error("Failed to read Maven config", logging.F("error", err))
 		return false
 	}
-	return len(h.config.Proxies) > 0
+	return len(h.Config.Proxies) > 0
 }
 
 // GenerateCacheKey 캐시 키 생성
@@ -52,12 +52,12 @@ func (h *MavenHandlerV2) GenerateCacheKey(c *fiber.Ctx) string {
 
 // BuildUpstreamURL 업스트림 URL 구성
 func (h *MavenHandlerV2) BuildUpstreamURL(c *fiber.Ctx) (string, error) {
-	if err := h.config.ReadConfig(); err != nil {
-		return "", fmt.Errorf("Maven 설정 로드 실패: %w", err)
+	if err := h.Config.ReadConfig(); err != nil {
+		return "", fmt.Errorf("maven 설정 로드 실패: %w", err)
 	}
 
-	if len(h.config.Proxies) == 0 {
-		return "", fmt.Errorf("Maven 리포지토리가 설정되지 않았습니다")
+	if len(h.Config.Proxies) == 0 {
+		return "", fmt.Errorf("maven 리포지토리가 설정되지 않았습니다")
 	}
 
 	artifactPath := c.Params("*")
@@ -71,9 +71,9 @@ func (h *MavenHandlerV2) BuildUpstreamURL(c *fiber.Ctx) (string, error) {
 	}
 
 	// 첫 번째 리포지토리 사용 (추후 로드밸런싱 구현)
-	repository := h.config.Proxies[0]
+	repository := h.Config.Proxies[0]
 	if repository.URL == "" {
-		return "", fmt.Errorf("Maven 리포지토리 URL이 설정되지 않았습니다")
+		return "", fmt.Errorf("maven 리포지토리 URL이 설정되지 않았습니다")
 	}
 
 	// URL 구성
@@ -308,15 +308,15 @@ func (h *MavenHandlerV2) validateChecksum(checksumData []byte, checksumPath stri
 
 // GetUpstreamAuth 업스트림 인증 정보 반환
 func (h *MavenHandlerV2) GetUpstreamAuth(c *fiber.Ctx) (string, string, error) {
-	if err := h.config.ReadConfig(); err != nil {
+	if err := h.Config.ReadConfig(); err != nil {
 		return "", "", err
 	}
 
-	if len(h.config.Proxies) == 0 {
+	if len(h.Config.Proxies) == 0 {
 		return "", "", nil
 	}
 
-	repository := h.config.Proxies[0]
+	repository := h.Config.Proxies[0]
 	if repository.BasicAuth.Username != "" {
 		return repository.BasicAuth.Username, repository.BasicAuth.Password, nil
 	}
@@ -364,17 +364,17 @@ func (h *MavenHandlerV2) RecordCacheMetrics(cacheKey string, hit bool, size int)
 
 // HealthCheck Maven 핸들러 헬스체크
 func (h *MavenHandlerV2) HealthCheck() error {
-	if err := h.config.ReadConfig(); err != nil {
-		return fmt.Errorf("Maven 설정 파일 읽기 실패: %w", err)
+	if err := h.Config.ReadConfig(); err != nil {
+		return fmt.Errorf("maven 설정 파일 읽기 실패: %w", err)
 	}
 
-	if len(h.config.Proxies) == 0 {
-		return fmt.Errorf("Maven 리포지토리가 설정되지 않았습니다")
+	if len(h.Config.Proxies) == 0 {
+		return fmt.Errorf("maven 리포지토리가 설정되지 않았습니다")
 	}
 
 	// 최소 하나의 유효한 리포지토리가 있는지 확인
 	hasValidRepository := false
-	for _, repository := range h.config.Proxies {
+	for _, repository := range h.Config.Proxies {
 		if repository.URL != "" {
 			h.logger.Debug("Found valid Maven repository",
 				logging.F("repository_name", repository.Name),

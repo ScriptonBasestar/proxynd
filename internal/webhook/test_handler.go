@@ -146,14 +146,15 @@ func (wt *WebhookTester) testEndpoint(endpoint configs.WebhookEndpointConfig) (*
 	}
 
 	wt.logger.Debug("웹훅 엔드포인트 테스트 시작",
-		logging.F("endpoint", endpoint.Name),
+		logging.F(fieldEndpoint, endpoint.Name),
 		logging.F("url", endpoint.URL))
 
 	// 어댑터 선택
 	adapterName := "generic"
-	if endpoint.Format == "slack" {
-		adapterName = "slack"
-	} else if endpoint.Format == "discord" {
+	switch endpoint.Format {
+	case webhookTypeSlack:
+		adapterName = webhookTypeSlack
+	case "discord":
 		adapterName = "discord"
 	}
 
@@ -193,18 +194,18 @@ func (wt *WebhookTester) testEndpoint(endpoint configs.WebhookEndpointConfig) (*
 		result.ErrorMessage = err.Error()
 
 		wt.logger.Warn("웹훅 엔드포인트 테스트 실패",
-			logging.F("endpoint", endpoint.Name),
+			logging.F(fieldEndpoint, endpoint.Name),
 			logging.F("url", endpoint.URL),
 			logging.F("error", err.Error()),
-			logging.F("response_time", responseTime))
+			logging.F(fieldResponseTime, responseTime))
 	} else {
 		result.Success = true
 		result.StatusCode = 200 // 성공한 경우 기본값
 
 		wt.logger.Info("웹훅 엔드포인트 테스트 성공",
-			logging.F("endpoint", endpoint.Name),
+			logging.F(fieldEndpoint, endpoint.Name),
 			logging.F("url", endpoint.URL),
-			logging.F("response_time", responseTime))
+			logging.F(fieldResponseTime, responseTime))
 	}
 
 	return result, nil
@@ -231,7 +232,7 @@ func (wt *WebhookTester) TestEndpointConnectivity(endpointName string) (*TestRes
 	// 실제 이벤트를 전송하지 않고 엔드포인트 접근 가능성만 확인
 
 	wt.logger.Debug("웹훅 엔드포인트 연결성 테스트",
-		logging.F("endpoint", endpoint.Name),
+		logging.F(fieldEndpoint, endpoint.Name),
 		logging.F("url", endpoint.URL))
 
 	// TODO: HTTP client로 HEAD/GET 요청 구현
@@ -274,7 +275,7 @@ func (wt *WebhookTester) ValidateEndpointConfig(endpoint configs.WebhookEndpoint
 
 	// 포맷 검증
 	validFormats := map[string]bool{
-		"json": true, "slack": true, "discord": true, "teams": true,
+		"json": true, webhookTypeSlack: true, "discord": true, "teams": true,
 	}
 	if endpoint.Format != "" && !validFormats[endpoint.Format] {
 		errors = append(errors, fmt.Sprintf("unsupported format: %s", endpoint.Format))

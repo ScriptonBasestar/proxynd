@@ -238,7 +238,7 @@ func (ws *WebhookSender) Stop(ctx context.Context) error {
 	// 배치 관리자 중지
 	if ws.config.Batching.Enabled && ws.batchManager != nil {
 		if err := ws.batchManager.Stop(ctx); err != nil {
-			ws.logger.Error("배치 관리자 중지 실패", logging.F("error", err))
+			ws.logger.Error("배치 관리자 중지 실패", logging.F(fieldError, err))
 		}
 	}
 
@@ -266,12 +266,12 @@ func (ws *WebhookSender) Stop(ctx context.Context) error {
 
 	// 큐 정리
 	if ws.queue != nil {
-		ws.queue.Close()
+		_ = ws.queue.Close()
 	}
 
 	// 영속성 실패 큐 정리
 	if ws.failureQueue != nil {
-		ws.failureQueue.Close()
+		_ = ws.failureQueue.Close()
 	}
 
 	ws.started = false
@@ -312,13 +312,13 @@ func (ws *WebhookSender) SendEvent(event *alerts.AlertEvent) error {
 	// 배치가 비활성화된 경우 기존 방식으로 큐에 추가
 	if err := ws.queue.Push(event); err != nil {
 		ws.logger.Error("이벤트 큐 추가 실패",
-			logging.F("error", err.Error()),
-			logging.F("event_id", event.ID))
+			logging.F(fieldError, err.Error()),
+			logging.F(fieldEventID, event.ID))
 		return fmt.Errorf("failed to queue event: %w", err)
 	}
 
 	ws.logger.Debug("이벤트가 큐에 추가됨",
-		logging.F("event_id", event.ID),
+		logging.F(fieldEventID, event.ID),
 		logging.F("event_type", event.Type),
 		logging.F("queue_size", ws.queue.Size()))
 
@@ -518,9 +518,10 @@ func (ws *WebhookSender) sendToEndpoint(ctx context.Context, event *alerts.Alert
 
 	// 어댑터 선택
 	adapterName := "generic"
-	if endpoint.Format == "slack" {
+	switch endpoint.Format {
+	case "slack":
 		adapterName = "slack"
-	} else if endpoint.Format == "discord" {
+	case "discord":
 		adapterName = "discord"
 	}
 
@@ -547,7 +548,7 @@ func (ws *WebhookSender) sendToEndpoint(ctx context.Context, event *alerts.Alert
 		// 속도 제한 확인
 		if err := ws.rateLimiter.Wait(ctx); err != nil {
 			// 이력 기록 (속도 제한 오류)
-			ws.recordHistory(event, endpoint, "failed", time.Since(startTime), 0, err.Error(), finalAttempt-1)
+			ws.recordHistory(event, endpoint, statusFailed, time.Since(startTime), 0, err.Error(), finalAttempt-1)
 			return fmt.Errorf("rate limit wait failed: %w", err)
 		}
 
@@ -559,17 +560,17 @@ func (ws *WebhookSender) sendToEndpoint(ctx context.Context, event *alerts.Alert
 			// 재시도 가능한 오류인지 확인
 			if !ws.isRetryableError(err) {
 				// 이력 기록 (재시도 불가능한 오류)
-				ws.recordHistory(event, endpoint, "failed", time.Since(startTime), 0, err.Error(), finalAttempt-1)
+				ws.recordHistory(event, endpoint, statusFailed, time.Since(startTime), 0, err.Error(), finalAttempt-1)
 				return fmt.Errorf("non-retryable error: %w", err)
 			}
 
 			if attempt < retryPolicy.MaxAttempts {
 				delay := ws.calculateBackoffDelay(attempt, retryPolicy)
 				ws.logger.Warn("웹훅 전송 실패, 재시도 예정",
-					logging.F("endpoint", endpoint.Name),
+					logging.F(fieldEndpoint, endpoint.Name),
 					logging.F("attempt", attempt),
 					logging.F("delay", delay),
-					logging.F("error", err.Error()))
+					logging.F(fieldError, err.Error()))
 
 				select {
 				case <-time.After(delay):
@@ -577,7 +578,7 @@ func (ws *WebhookSender) sendToEndpoint(ctx context.Context, event *alerts.Alert
 					continue
 				case <-ctx.Done():
 					// 이력 기록 (컨텍스트 취소)
-					ws.recordHistory(event, endpoint, "failed", time.Since(startTime), 0, "context cancelled", finalAttempt-1)
+					ws.recordHistory(event, endpoint, statusFailed, time.Since(startTime), 0, "context cancelled", finalAttempt-1)
 					return ctx.Err()
 				}
 			}
@@ -585,8 +586,8 @@ func (ws *WebhookSender) sendToEndpoint(ctx context.Context, event *alerts.Alert
 			// 성공
 			ws.metrics.incrementSent()
 			ws.logger.Debug("웹훅 전송 성공",
-				logging.F("endpoint", endpoint.Name),
-				logging.F("event_id", event.ID))
+				logging.F(fieldEndpoint, endpoint.Name),
+				logging.F(fieldEventID, event.ID))
 
 			// 이력 기록 (성공)
 			ws.recordHistory(event, endpoint, "success", time.Since(startTime), 200, "", finalAttempt-1)
@@ -598,14 +599,14 @@ func (ws *WebhookSender) sendToEndpoint(ctx context.Context, event *alerts.Alert
 	if ws.failureQueue != nil && ws.isRetryableError(lastErr) {
 		if err := ws.failureQueue.AddFailedEvent(event, endpoint.Name, lastErr); err != nil {
 			ws.logger.Error("실패 이벤트 영속성 저장 실패",
-				logging.F("event_id", event.ID),
-				logging.F("endpoint", endpoint.Name),
-				logging.F("error", err))
+				logging.F(fieldEventID, event.ID),
+				logging.F(fieldEndpoint, endpoint.Name),
+				logging.F(fieldError, err))
 		}
 	}
 
 	// 이력 기록 (최종 실패)
-	ws.recordHistory(event, endpoint, "failed", time.Since(startTime), 0, lastErr.Error(), finalAttempt-1)
+	ws.recordHistory(event, endpoint, statusFailed, time.Since(startTime), 0, lastErr.Error(), finalAttempt-1)
 	return fmt.Errorf("failed after %d attempts: %w", retryPolicy.MaxAttempts, lastErr)
 }
 
@@ -635,9 +636,9 @@ func (ws *WebhookSender) recordHistory(event *alerts.AlertEvent, endpoint config
 
 	if err := ws.historyManager.AddHistory(historyItem); err != nil {
 		ws.logger.Error("웹훅 이력 기록 실패",
-			logging.F("endpoint", endpoint.Name),
-			logging.F("event_id", event.ID),
-			logging.F("error", err))
+			logging.F(fieldEndpoint, endpoint.Name),
+			logging.F(fieldEventID, event.ID),
+			logging.F(fieldError, err))
 	}
 }
 
@@ -725,7 +726,7 @@ func (ws *WebhookSender) queueMonitor(ctx context.Context) {
 						// 성공적으로 워커에게 전달
 					default:
 						// 워커가 바쁘면 다시 큐에 넣기
-						ws.queue.Push(event)
+						_ = ws.queue.Push(event)
 					}
 				}
 			}
@@ -810,8 +811,8 @@ func (ws *WebhookSender) processPersistentRetries(ctx context.Context) {
 
 		if endpoint == nil {
 			ws.logger.Warn("엔드포인트를 찾을 수 없음",
-				logging.F("endpoint", item.Endpoint),
-				logging.F("item_id", item.ID))
+				logging.F(fieldEndpoint, item.Endpoint),
+				logging.F(fieldItemID, item.ID))
 			continue
 		}
 
@@ -822,15 +823,15 @@ func (ws *WebhookSender) processPersistentRetries(ctx context.Context) {
 		// 결과에 따라 영속성 큐 업데이트
 		if updateErr := ws.failureQueue.UpdateRetryAttempt(item.ID, success, err); updateErr != nil {
 			ws.logger.Error("재시도 결과 업데이트 실패",
-				logging.F("item_id", item.ID),
-				logging.F("error", updateErr))
+				logging.F(fieldItemID, item.ID),
+				logging.F(fieldError, updateErr))
 		}
 
 		if success {
 			ws.logger.Info("영속성 큐 재시도 성공",
-				logging.F("item_id", item.ID),
-				logging.F("event_id", item.Event.ID),
-				logging.F("endpoint", item.Endpoint),
+				logging.F(fieldItemID, item.ID),
+				logging.F(fieldEventID, item.Event.ID),
+				logging.F(fieldEndpoint, item.Endpoint),
 				logging.F("attempts", item.Attempts))
 		}
 	}

@@ -42,5 +42,5 @@ func NewDockerService(
 func (s *DockerService) HandleRequest(ctx context.Context, req ProxyRequest) (*ProxyResponse, error) {
 	// TODO: Implement Docker-specific logic
 	// This is a stub implementation
-	return s.HandleError(fmt.Errorf("Docker service not yet implemented"), 501), nil
+	return s.HandleError(fmt.Errorf("docker service not yet implemented"), 501), nil
 }

@@ -160,26 +160,26 @@ func runConfigValidate(detailed, checkNetwork bool) error {
 	// API 호출
 	resp, err := http.Get(apiURL)
 	if err != nil {
-		return fmt.Errorf("서버 연결 실패: %v", err)
+		return fmt.Errorf(errServerConnection, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("API 요청 실패: HTTP %d", resp.StatusCode)
+		return fmt.Errorf(errAPIRequest, resp.StatusCode)
 	}
 
 	// 응답 파싱
 	var result ConfigValidationResponse
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return fmt.Errorf("응답 파싱 실패: %v", err)
+		return fmt.Errorf(errResponseParsing, err)
 	}
 
 	// 결과 출력
 	outputFormat := getOutputFormat()
 	switch outputFormat {
-	case "json":
+	case formatJSON:
 		return outputJSON(result)
-	case "yaml":
+	case formatYAML:
 		return outputYAML(result)
 	default:
 		return outputConfigValidationTable(result, detailed)
@@ -194,26 +194,26 @@ func runConfigShow(proxyType string, showSources, showEnv bool) error {
 	// API 호출
 	resp, err := http.Get(apiURL)
 	if err != nil {
-		return fmt.Errorf("서버 연결 실패: %v", err)
+		return fmt.Errorf(errServerConnection, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("API 요청 실패: HTTP %d", resp.StatusCode)
+		return fmt.Errorf(errAPIRequest, resp.StatusCode)
 	}
 
 	// 응답 파싱
 	var result ConfigShowResponse
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return fmt.Errorf("응답 파싱 실패: %v", err)
+		return fmt.Errorf(errResponseParsing, err)
 	}
 
 	// 결과 출력
 	outputFormat := getOutputFormat()
 	switch outputFormat {
-	case "json":
+	case formatJSON:
 		return outputJSON(result)
-	case "yaml":
+	case formatYAML:
 		return outputYAML(result)
 	default:
 		return outputConfigShowTable(result, proxyType, showSources, showEnv)
@@ -245,17 +245,17 @@ func outputConfigValidationTable(result ConfigValidationResponse, detailed bool)
 	if len(result.Errors) > 0 {
 		fmt.Println("❌ 오류:")
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-		fmt.Fprintln(w, "파일\t필드\t메시지")
-		fmt.Fprintln(w, "----\t----\t------")
+		_, _ = fmt.Fprintln(w, "파일\t필드\t메시지")
+		_, _ = fmt.Fprintln(w, "----\t----\t------")
 
 		for _, err := range result.Errors {
 			field := err.Field
 			if field == "" {
 				field = "-"
 			}
-			fmt.Fprintf(w, "%s\t%s\t%s\n", err.File, field, err.Message)
+			_, _ = fmt.Fprintf(w, "%s\t%s\t%s\n", err.File, field, err.Message)
 		}
-		w.Flush()
+		_ = w.Flush()
 		fmt.Println()
 	}
 
@@ -263,17 +263,17 @@ func outputConfigValidationTable(result ConfigValidationResponse, detailed bool)
 	if len(result.Warnings) > 0 {
 		fmt.Println("⚠️ 경고:")
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-		fmt.Fprintln(w, "파일\t필드\t메시지")
-		fmt.Fprintln(w, "----\t----\t------")
+		_, _ = fmt.Fprintln(w, "파일\t필드\t메시지")
+		_, _ = fmt.Fprintln(w, "----\t----\t------")
 
 		for _, warn := range result.Warnings {
 			field := warn.Field
 			if field == "" {
 				field = "-"
 			}
-			fmt.Fprintf(w, "%s\t%s\t%s\n", warn.File, field, warn.Message)
+			_, _ = fmt.Fprintf(w, "%s\t%s\t%s\n", warn.File, field, warn.Message)
 		}
-		w.Flush()
+		_ = w.Flush()
 		fmt.Println()
 	}
 
@@ -281,23 +281,24 @@ func outputConfigValidationTable(result ConfigValidationResponse, detailed bool)
 	if len(summary.ProxyTypes) > 0 {
 		fmt.Println("📦 프록시 타입 상태:")
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-		fmt.Fprintln(w, "타입\t상태\t설정파일\t프록시수\t상태")
-		fmt.Fprintln(w, "----\t----\t--------\t-------\t----")
+		_, _ = fmt.Fprintln(w, "타입\t상태\t설정파일\t프록시수\t상태")
+		_, _ = fmt.Fprintln(w, "----\t----\t--------\t-------\t----")
 
 		for _, proxy := range summary.ProxyTypes {
-			enabled := "❌ 비활성"
+			enabled := statusInactive
 			if proxy.Enabled {
-				enabled = "✅ 활성"
+				enabled = statusActive
 			}
 
-			statusIcon := "✅"
-			if proxy.Status == "warning" {
-				statusIcon = "⚠️"
-			} else if proxy.Status == "error" {
-				statusIcon = "❌"
+			statusIcon := iconSuccess
+			switch proxy.Status {
+			case "warning":
+				statusIcon = iconWarning
+			case "error":
+				statusIcon = iconError
 			}
 
-			fmt.Fprintf(w, "%s\t%s\t%s\t%d\t%s\n",
+			_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%d\t%s\n",
 				proxy.Type,
 				enabled,
 				proxy.ConfigFile,
@@ -305,7 +306,7 @@ func outputConfigValidationTable(result ConfigValidationResponse, detailed bool)
 				statusIcon,
 			)
 		}
-		w.Flush()
+		_ = w.Flush()
 		fmt.Println()
 	}
 
@@ -313,15 +314,15 @@ func outputConfigValidationTable(result ConfigValidationResponse, detailed bool)
 	if detailed && len(summary.ConfigSources) > 0 {
 		fmt.Println("📄 설정 파일 상세:")
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-		fmt.Fprintln(w, "파일\t크기\t수정일시\t존재\t읽기\t유효")
-		fmt.Fprintln(w, "----\t----\t--------\t----\t----\t----")
+		_, _ = fmt.Fprintln(w, "파일\t크기\t수정일시\t존재\t읽기\t유효")
+		_, _ = fmt.Fprintln(w, "----\t----\t--------\t----\t----\t----")
 
 		for _, source := range summary.ConfigSources {
 			exists := boolIcon(source.Exists)
 			readable := boolIcon(source.Readable)
 			valid := boolIcon(source.Valid)
 
-			fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\n",
+			_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\n",
 				source.File,
 				formatBytes(source.Size),
 				source.Modified.Format("01-02 15:04"),
@@ -330,7 +331,7 @@ func outputConfigValidationTable(result ConfigValidationResponse, detailed bool)
 				valid,
 			)
 		}
-		w.Flush()
+		_ = w.Flush()
 		fmt.Println()
 	}
 
@@ -386,18 +387,18 @@ func outputConfigShowTable(result ConfigShowResponse, filterType string, showSou
 	if showSources && len(result.Sources) > 0 {
 		fmt.Println("📄 설정 소스 파일:")
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-		fmt.Fprintln(w, "파일\t경로\t크기\t수정일시\t상태")
-		fmt.Fprintln(w, "----\t----\t----\t--------\t----")
+		_, _ = fmt.Fprintln(w, "파일\t경로\t크기\t수정일시\t상태")
+		_, _ = fmt.Fprintln(w, "----\t----\t----\t--------\t----")
 
 		for _, source := range result.Sources {
-			status := "❌"
+			status := iconError
 			if source.Valid {
-				status = "✅"
+				status = iconSuccess
 			} else if source.Readable {
-				status = "⚠️"
+				status = iconWarning
 			}
 
-			fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
+			_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
 				source.File,
 				truncateString(source.Path, 40),
 				formatBytes(source.Size),
@@ -405,7 +406,7 @@ func outputConfigShowTable(result ConfigShowResponse, filterType string, showSou
 				status,
 			)
 		}
-		w.Flush()
+		_ = w.Flush()
 		fmt.Println()
 	}
 
@@ -413,22 +414,22 @@ func outputConfigShowTable(result ConfigShowResponse, filterType string, showSou
 	if showEnv && len(result.Environment) > 0 {
 		fmt.Println("🌍 환경 변수:")
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-		fmt.Fprintln(w, "변수\t값\t상태")
-		fmt.Fprintln(w, "----\t---\t----")
+		_, _ = fmt.Fprintln(w, "변수\t값\t상태")
+		_, _ = fmt.Fprintln(w, "----\t---\t----")
 
 		for key, value := range result.Environment {
-			status := "✅"
+			status := iconSuccess
 			displayValue := value
 			if value == "" {
-				status = "⚠️"
+				status = iconWarning
 				displayValue = "(미설정)"
 			} else if strings.Contains(strings.ToLower(key), "secret") || strings.Contains(strings.ToLower(key), "password") {
 				displayValue = "***"
 			}
 
-			fmt.Fprintf(w, "%s\t%s\t%s\n", key, displayValue, status)
+			_, _ = fmt.Fprintf(w, "%s\t%s\t%s\n", key, displayValue, status)
 		}
-		w.Flush()
+		_ = w.Flush()
 		fmt.Println()
 	}
 
@@ -438,7 +439,7 @@ func outputConfigShowTable(result ConfigShowResponse, filterType string, showSou
 // boolIcon 불린 값을 아이콘으로 변환
 func boolIcon(value bool) string {
 	if value {
-		return "✅"
+		return iconSuccess
 	}
-	return "❌"
+	return iconError
 }

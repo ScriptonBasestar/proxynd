@@ -200,7 +200,7 @@ func (h *MavenHandler) tryDownloadFromRepository(repositoryURL, artifactPath str
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch from repository: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// 상태 코드 확인
 	if resp.StatusCode != http.StatusOK {
@@ -402,7 +402,7 @@ func (h *MavenHandler) HealthCheck() error {
 	}
 
 	if len(h.config.Proxies) == 0 {
-		return fmt.Errorf("Maven proxy has no configured repositories")
+		return fmt.Errorf("maven proxy has no configured repositories")
 	}
 
 	return nil

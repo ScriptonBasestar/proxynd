@@ -7,6 +7,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 // EnvOverride 환경 변수 오버라이드 매핑
@@ -137,7 +140,7 @@ func getFieldByPath(v reflect.Value, path string) (reflect.Value, error) {
 			}
 
 			// 필드 가져오기
-			field := current.FieldByName(strings.Title(strings.Replace(fieldName, "_", "", -1)))
+			field := current.FieldByName(cases.Title(language.English).String(strings.ReplaceAll(fieldName, "_", "")))
 			if !field.IsValid() {
 				return reflect.Value{}, nil
 			}
@@ -191,8 +194,9 @@ func setFieldValue(field reflect.Value, value string, valueType string) error {
 // toCamelCase 스네이크 케이스를 카멜 케이스로 변환
 func toCamelCase(s string) string {
 	parts := strings.Split(s, "_")
+	caser := cases.Title(language.English)
 	for i := range parts {
-		parts[i] = strings.Title(parts[i])
+		parts[i] = caser.String(parts[i])
 	}
 	return strings.Join(parts, "")
 }
