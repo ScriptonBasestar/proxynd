@@ -48,7 +48,7 @@ func TestConcurrentRequests(t *testing.T) {
 
 	for i := 0; i < concurrency; i++ {
 		wg.Add(1)
-		go func(goroutineID int) {
+		go func(_ int) {
 			defer wg.Done()
 
 			client := &http.Client{
@@ -79,11 +79,8 @@ func TestConcurrentRequests(t *testing.T) {
 
 	// Then: 결과 분석
 	var minDuration, maxDuration time.Duration
-	var durations []time.Duration
 
 	for result := range results {
-		durations = append(durations, result.Duration)
-
 		if minDuration == 0 || result.Duration < minDuration {
 			minDuration = result.Duration
 		}
@@ -153,7 +150,7 @@ func TestStressTest(t *testing.T) {
 
 	for i := 0; i < concurrency; i++ {
 		wg.Add(1)
-		go func(goroutineID int) {
+		go func(_ int) {
 			defer wg.Done()
 
 			client := &http.Client{
@@ -235,7 +232,7 @@ func TestMemoryUsage(t *testing.T) {
 			t.Logf("Request %d failed: %v", i, err)
 			continue
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 
 		// 주기적으로 GC 실행
 		if i%100 == 0 {
@@ -306,7 +303,7 @@ func TestResourceCleanup(t *testing.T) {
 		if err != nil {
 			continue
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 	}
 
 	// 잠시 대기 후 고루틴 수 확인
@@ -348,7 +345,7 @@ func performLoadTestRequest(client *http.Client, url string) LoadTestResult {
 			Error:    err,
 		}
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// 응답 크기 측정을 위해 본문 읽기
 	size := int64(0)

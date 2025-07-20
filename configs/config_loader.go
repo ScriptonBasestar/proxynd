@@ -140,14 +140,14 @@ func (cl *ConfigLoader) newDefaultConfig() *UnifiedConfig {
 				},
 			},
 		},
-		Security: SecurityConfig{
+		Security: UnifiedSecurityConfig{
 			Authentication: AuthenticationConfig{
 				BasicAuth: &BasicAuthConfig{
 					Realm: "ProxyND",
 				},
 			},
 		},
-		Logging: LoggingConfig{
+		Logging: UnifiedLoggingConfig{
 			Level:  "info",
 			Format: "json",
 			Output: "stdout",
@@ -161,7 +161,7 @@ func (cl *ConfigLoader) newDefaultConfig() *UnifiedConfig {
 			Path: "/metrics",
 		},
 		Advanced: AdvancedConfig{
-			Performance: PerformanceConfig{
+			Performance: UnifiedPerformanceConfig{
 				MaxConnections:     1000,
 				MaxIdleConnections: 100,
 				ConnectionTimeout:  30 * time.Second,
@@ -345,7 +345,7 @@ func expandHomePath(path string) string {
 }
 
 // WatchConfig 설정 파일 변경 감시
-func (cl *ConfigLoader) WatchConfig(callback func(*UnifiedConfig)) error {
+func (cl *ConfigLoader) WatchConfig(_ func(*UnifiedConfig)) error {
 	// TODO: 파일 시스템 감시 구현
 	// fsnotify 패키지를 사용하여 설정 파일 변경 감지
 	// 변경 시 Reload() 호출 후 callback 실행
@@ -401,7 +401,7 @@ func ValidateConfig(config *UnifiedConfig) []string {
 }
 
 // LoadMavenProxyConfig 메이븐 프록시 설정 로드
-func (cl *ConfigLoader) LoadMavenProxyConfig(ctx context.Context) (*MavenProxyConfig, error) {
+func (cl *ConfigLoader) LoadMavenProxyConfig(_ context.Context) (*MavenProxyConfig, error) {
 	config := &MavenProxyConfig{}
 
 	// 기본값 설정
@@ -438,7 +438,7 @@ func (cl *ConfigLoader) LoadMavenProxyConfig(ctx context.Context) (*MavenProxyCo
 }
 
 // LoadAptProxyConfig APT 프록시 설정 로드
-func (cl *ConfigLoader) LoadAptProxyConfig(ctx context.Context) (*AptProxyConfig, error) {
+func (cl *ConfigLoader) LoadAptProxyConfig(_ context.Context) (*AptProxyConfig, error) {
 	config := &AptProxyConfig{}
 
 	// 기본값 설정
@@ -472,7 +472,7 @@ func (cl *ConfigLoader) LoadAptProxyConfig(ctx context.Context) (*AptProxyConfig
 }
 
 // LoadNpmProxyConfig NPM 프록시 설정 로드
-func (cl *ConfigLoader) LoadNpmProxyConfig(ctx context.Context) (*NpmProxyConfig, error) {
+func (cl *ConfigLoader) LoadNpmProxyConfig(_ context.Context) (*NpmProxyConfig, error) {
 	config := &NpmProxyConfig{}
 
 	// 기본값 설정
@@ -507,7 +507,7 @@ func (cl *ConfigLoader) LoadNpmProxyConfig(ctx context.Context) (*NpmProxyConfig
 }
 
 // LoadDockerProxyConfig Docker 프록시 설정 로드
-func (cl *ConfigLoader) LoadDockerProxyConfig(ctx context.Context) (*DockerProxyConfig, error) {
+func (cl *ConfigLoader) LoadDockerProxyConfig(_ context.Context) (*DockerProxyConfig, error) {
 	config := &DockerProxyConfig{}
 
 	// 기본값 설정
@@ -541,12 +541,12 @@ func (cl *ConfigLoader) LoadDockerProxyConfig(ctx context.Context) (*DockerProxy
 }
 
 // LoadGlobalConfig 글로벌 설정 로드
-func (cl *ConfigLoader) LoadGlobalConfig(ctx context.Context) (*UnifiedConfig, error) {
+func (cl *ConfigLoader) LoadGlobalConfig(_ context.Context) (*UnifiedConfig, error) {
 	return cl.Load()
 }
 
 // LoadPipProxyConfig PIP 프록시 설정 로드
-func (cl *ConfigLoader) LoadPipProxyConfig(ctx context.Context) (*PipProxyConfig, error) {
+func (cl *ConfigLoader) LoadPipProxyConfig(_ context.Context) (*PipProxyConfig, error) {
 	config := &PipProxyConfig{}
 
 	// 기본값 설정
@@ -580,7 +580,7 @@ func (cl *ConfigLoader) LoadPipProxyConfig(ctx context.Context) (*PipProxyConfig
 }
 
 // LoadYumProxyConfig YUM 프록시 설정 로드
-func (cl *ConfigLoader) LoadYumProxyConfig(ctx context.Context) (*YumProxyConfig, error) {
+func (cl *ConfigLoader) LoadYumProxyConfig(_ context.Context) (*YumProxyConfig, error) {
 	config := &YumProxyConfig{}
 
 	// 기본값 설정
@@ -614,7 +614,7 @@ func (cl *ConfigLoader) LoadYumProxyConfig(ctx context.Context) (*YumProxyConfig
 }
 
 // LoadApkProxyConfig APK 프록시 설정 로드
-func (cl *ConfigLoader) LoadApkProxyConfig(ctx context.Context) (*ApkProxyConfig, error) {
+func (cl *ConfigLoader) LoadApkProxyConfig(_ context.Context) (*ApkProxyConfig, error) {
 	config := &ApkProxyConfig{}
 
 	// 기본값 설정

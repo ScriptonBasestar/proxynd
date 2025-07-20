@@ -207,7 +207,7 @@ func (s *BaseProxyService) HandleError(err error, statusCode int) *ProxyResponse
 }
 
 // HandleRequest provides a default implementation that returns 501 Not Implemented
-func (s *BaseProxyService) HandleRequest(ctx context.Context, req ProxyRequest) (*ProxyResponse, error) {
+func (s *BaseProxyService) HandleRequest(_ context.Context, _ ProxyRequest) (*ProxyResponse, error) {
 	return &ProxyResponse{
 		Body:        io.NopCloser(strings.NewReader("service not implemented")),
 		StatusCode:  http.StatusNotImplemented,

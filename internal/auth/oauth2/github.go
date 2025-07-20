@@ -64,10 +64,10 @@ func NewGitHubProvider(config ProviderConfig) Provider {
 		config.UserIDField = "id"
 	}
 	if config.EmailField == "" {
-		config.EmailField = "email"
+		config.EmailField = fieldEmail
 	}
 	if config.NameField == "" {
-		config.NameField = "name"
+		config.NameField = fieldName
 	}
 	if config.UsernameField == "" {
 		config.UsernameField = "login"
@@ -93,6 +93,7 @@ func (g *GitHubProvider) GetUserInfo(ctx context.Context, accessToken string) (*
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user info: %w", err)
 	}
+	defer func() { _ = resp.Body.Close() }()
 
 	var githubUser GitHubUser
 	if err := ParseAPIResponse(resp, &githubUser); err != nil {
@@ -145,6 +146,7 @@ func (g *GitHubProvider) GetUserOrganizations(ctx context.Context, accessToken s
 	if err != nil {
 		return nil, fmt.Errorf("failed to get organizations: %w", err)
 	}
+	defer func() { _ = resp.Body.Close() }()
 
 	var organizations []GitHubOrganization
 	if err := ParseAPIResponse(resp, &organizations); err != nil {
@@ -170,7 +172,7 @@ func (g *GitHubProvider) ValidateToken(ctx context.Context, token string) (*Toke
 	if err != nil {
 		return &TokenInfo{Valid: false}, nil
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return &TokenInfo{Valid: false}, nil
@@ -206,7 +208,7 @@ func (g *GitHubProvider) RevokeToken(ctx context.Context, token string) error {
 	if err != nil {
 		return fmt.Errorf("failed to revoke GitHub token: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusNotFound {
 		return fmt.Errorf("GitHub token revocation failed with status %d", resp.StatusCode)
@@ -226,6 +228,7 @@ func (g *GitHubProvider) getPrimaryEmail(ctx context.Context, accessToken string
 	if err != nil {
 		return "", err
 	}
+	defer func() { _ = resp.Body.Close() }()
 
 	var emails []GitHubEmails
 	if err := ParseAPIResponse(resp, &emails); err != nil {
@@ -260,6 +263,7 @@ func (g *GitHubProvider) GetUserRepositories(ctx context.Context, accessToken st
 	if err != nil {
 		return nil, fmt.Errorf("failed to get repositories: %w", err)
 	}
+	defer func() { _ = resp.Body.Close() }()
 
 	var repos []map[string]interface{}
 	if err := ParseAPIResponse(resp, &repos); err != nil {
@@ -288,7 +292,7 @@ func (g *GitHubProvider) CheckRepositoryAccess(ctx context.Context, accessToken,
 	if err != nil {
 		return false, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// 200 OK면 접근 가능, 404면 접근 불가능 또는 존재하지 않음
 	return resp.StatusCode == http.StatusOK, nil
@@ -305,6 +309,7 @@ func (g *GitHubProvider) GetRateLimit(ctx context.Context, accessToken string) (
 	if err != nil {
 		return nil, fmt.Errorf("failed to get rate limit: %w", err)
 	}
+	defer func() { _ = resp.Body.Close() }()
 
 	var rateLimit map[string]interface{}
 	if err := ParseAPIResponse(resp, &rateLimit); err != nil {

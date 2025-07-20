@@ -30,9 +30,9 @@ func YumProxyHandler(c *fiber.Ctx) error {
 	// 설정 읽기
 	storageDir := helpers.GetStorageDir()
 	globalConfig := configs.GlobalConfig{}
-	globalConfig.ReadConfig()
+	_ = globalConfig.ReadConfig()
 	yumConfig := configs.YumProxyConfig{}
-	yumConfig.ReadConfig()
+	_ = yumConfig.ReadConfig()
 
 	// 파일 경로 생성
 	baseDir := filepath.Join(storageDir, yumConfig.Path)
@@ -56,20 +56,20 @@ func YumProxyHandler(c *fiber.Ctx) error {
 	// 캐시에 없으면 업스트림에서 가져오기
 	if _, err := os.Stat(filefullpath); os.IsNotExist(err) {
 		dirpath := filepath.Dir(filefullpath)
-		os.MkdirAll(dirpath, os.ModePerm)
+		_ = os.MkdirAll(dirpath, os.ModePerm)
 		out, err := os.Create(filefullpath)
 		if err != nil {
 			log.Printf("Error creating file: %v", err)
 			return c.Status(fiber.StatusInternalServerError).SendString("Error creating file")
 		}
-		defer out.Close()
+		defer func() { _ = out.Close() }()
 
 		// HTTP 클라이언트 생성 (프록시 최적화 설정)
 		proxyClient := httpclient.NewProxyClient()
 
 		// 업스트림 서버에서 파일 가져오기
 		for _, proxy := range yumConfig.Proxies {
-			fullURL := helpers.JoinURL(proxy.Url, requestPath)
+			fullURL := helpers.JoinURL(proxy.URL, requestPath)
 			log.Printf("Fetching from upstream %s: %s\n", proxy.Name, fullURL)
 
 			// 컨텍스트 기반 요청 (재시도 포함)
@@ -78,7 +78,7 @@ func YumProxyHandler(c *fiber.Ctx) error {
 				log.Printf("Error fetching from proxy %s: %v\n", proxy.Name, err)
 				continue
 			}
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 
 			if resp.StatusCode == http.StatusOK {
 				// 파일 저장
@@ -117,15 +117,15 @@ func getYumContentType(filename string) string {
 	case strings.HasSuffix(filename, ".xml.bz2") || strings.HasSuffix(filename, ".xml.xz"):
 		return "application/xml"
 	case strings.HasSuffix(filename, ".sqlite") || strings.HasSuffix(filename, ".sqlite.bz2"):
-		return "application/octet-stream"
+		return mimeApplicationOctetStream
 	case strings.HasSuffix(filename, ".sqlite.gz") || strings.HasSuffix(filename, ".sqlite.xz"):
-		return "application/octet-stream"
+		return mimeApplicationOctetStream
 	case strings.HasSuffix(filename, ".asc") || strings.HasSuffix(filename, ".gpg"):
 		return "application/pgp-signature"
 	case strings.Contains(filename, "repomd.xml"):
 		return "text/xml"
 	default:
-		return "application/octet-stream"
+		return mimeApplicationOctetStream
 	}
 }
 

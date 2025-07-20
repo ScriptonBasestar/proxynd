@@ -1,3 +1,4 @@
+// Package cache provides cache repository implementations
 package cache
 
 import (
@@ -56,7 +57,7 @@ func NewFileRepository(basePath string, maxSize int64, maxAge time.Duration) (*F
 }
 
 // Get retrieves an item from the cache
-func (r *FileRepository) Get(ctx context.Context, key string) (io.ReadCloser, error) {
+func (r *FileRepository) Get(_ context.Context, key string) (io.ReadCloser, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -93,7 +94,7 @@ func (r *FileRepository) Get(ctx context.Context, key string) (io.ReadCloser, er
 }
 
 // Put stores an item in the cache
-func (r *FileRepository) Put(ctx context.Context, key string, content io.Reader, ttl time.Duration) error {
+func (r *FileRepository) Put(_ context.Context, key string, content io.Reader, ttl time.Duration) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -116,15 +117,15 @@ func (r *FileRepository) Put(ctx context.Context, key string, content io.Reader,
 	// Copy content to temp file
 	size, err := io.Copy(tmpFile, content)
 	if err != nil {
-		tmpFile.Close()
-		os.Remove(tmpPath)
+		_ = tmpFile.Close()
+		_ = os.Remove(tmpPath)
 		return fmt.Errorf("failed to write cache content: %w", err)
 	}
-	tmpFile.Close()
+	_ = tmpFile.Close()
 
 	// Move temp file to final location
 	if err := os.Rename(tmpPath, filePath); err != nil {
-		os.Remove(tmpPath)
+		_ = os.Remove(tmpPath)
 		return fmt.Errorf("failed to move cache file: %w", err)
 	}
 
@@ -139,7 +140,7 @@ func (r *FileRepository) Put(ctx context.Context, key string, content io.Reader,
 	}
 
 	// Save metadata
-	r.saveMetadata()
+	_ = r.saveMetadata()
 
 	r.logger.Debug("Cached item", logging.F("key", key), logging.F("size", size))
 
@@ -147,7 +148,7 @@ func (r *FileRepository) Put(ctx context.Context, key string, content io.Reader,
 }
 
 // Exists checks if a key exists in the cache
-func (r *FileRepository) Exists(ctx context.Context, key string) (bool, error) {
+func (r *FileRepository) Exists(_ context.Context, key string) (bool, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -171,7 +172,7 @@ func (r *FileRepository) Exists(ctx context.Context, key string) (bool, error) {
 }
 
 // Delete removes an item from the cache
-func (r *FileRepository) Delete(ctx context.Context, key string) error {
+func (r *FileRepository) Delete(_ context.Context, key string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -185,7 +186,7 @@ func (r *FileRepository) Delete(ctx context.Context, key string) error {
 	delete(r.metadata, key)
 
 	// Save metadata
-	r.saveMetadata()
+	_ = r.saveMetadata()
 
 	r.logger.Debug("Deleted cache item", logging.F("key", key))
 
@@ -193,7 +194,7 @@ func (r *FileRepository) Delete(ctx context.Context, key string) error {
 }
 
 // List returns all cache keys matching a pattern
-func (r *FileRepository) List(ctx context.Context, pattern string) ([]string, error) {
+func (r *FileRepository) List(_ context.Context, pattern string) ([]string, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -214,7 +215,7 @@ func (r *FileRepository) List(ctx context.Context, pattern string) ([]string, er
 }
 
 // Size returns the size of a cached item in bytes
-func (r *FileRepository) Size(ctx context.Context, key string) (int64, error) {
+func (r *FileRepository) Size(_ context.Context, key string) (int64, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -227,7 +228,7 @@ func (r *FileRepository) Size(ctx context.Context, key string) (int64, error) {
 }
 
 // Clear removes all items from the cache
-func (r *FileRepository) Clear(ctx context.Context) error {
+func (r *FileRepository) Clear(_ context.Context) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -251,7 +252,7 @@ func (r *FileRepository) Clear(ctx context.Context) error {
 
 	// Clear metadata
 	r.metadata = make(map[string]*CacheItem)
-	r.saveMetadata()
+	_ = r.saveMetadata()
 
 	r.logger.Info("Cache cleared")
 
@@ -259,7 +260,7 @@ func (r *FileRepository) Clear(ctx context.Context) error {
 }
 
 // Stats returns cache statistics
-func (r *FileRepository) Stats(ctx context.Context) (*CacheStats, error) {
+func (r *FileRepository) Stats(_ context.Context) (*CacheStats, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -360,13 +361,13 @@ func (r *FileRepository) cleanup() {
 	// Delete expired items
 	for _, key := range keysToDelete {
 		filePath := r.getFilePath(key)
-		os.Remove(filePath)
+		_ = os.Remove(filePath)
 		delete(r.metadata, key)
 		r.stats.EvictedCount++
 	}
 
 	if len(keysToDelete) > 0 {
-		r.saveMetadata()
+		_ = r.saveMetadata()
 		r.logger.Info("Cleaned up expired cache items", logging.F("count", len(keysToDelete)))
 	}
 }

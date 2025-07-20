@@ -22,7 +22,7 @@ func TestHealthCheck(t *testing.T) {
 	// When
 	resp, err := http.Get(server.URL() + "/health")
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Then
 	assert.Equal(t, 200, resp.StatusCode)
@@ -44,7 +44,7 @@ func TestServiceRecovery(t *testing.T) {
 	// When: 정상 요청 확인
 	resp, err := http.Get(server.ProxyURL("apt", "dists/focal/Release"))
 	require.NoError(t, err)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	assert.Equal(t, 200, resp.StatusCode)
 	assert.Equal(t, "apt", resp.Header.Get("X-Proxy-Type"))
@@ -56,7 +56,7 @@ func TestServiceRecovery(t *testing.T) {
 			t.Logf("Request %d failed: %v", i+1, err)
 			continue
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 
 		assert.Equal(t, 200, resp.StatusCode)
 		time.Sleep(100 * time.Millisecond)
@@ -90,7 +90,7 @@ func TestTimeoutHandling(t *testing.T) {
 		// 타임아웃 에러는 예상되는 상황
 		t.Logf("Expected timeout or network error: %v", err)
 	} else {
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 		// 빠른 응답의 경우 성공 검증
 		assert.True(t, resp.StatusCode >= 200 && resp.StatusCode < 500)
 	}
@@ -124,7 +124,7 @@ func TestCircuitBreakerSimulation(t *testing.T) {
 			t.Logf("Request %d failed: %v", i+1, err)
 			continue
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 
 		if resp.StatusCode == 200 {
 			successCount++
@@ -184,7 +184,7 @@ func TestGracefulDegradation(t *testing.T) {
 				t.Logf("Request failed (acceptable for degradation): %v", err)
 				return
 			}
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 
 			// 성공한 경우 기본 검증
 			assert.True(t, resp.StatusCode >= 200 && resp.StatusCode < 500,
@@ -211,7 +211,7 @@ func TestConcurrentFailures(t *testing.T) {
 
 	// When: 동시에 여러 요청 실행 (일부는 실패할 수 있음)
 	for i := 0; i < concurrency; i++ {
-		go func(id int) {
+		go func(_ int) {
 			client := &http.Client{
 				Timeout: 5 * time.Second,
 			}
@@ -222,12 +222,12 @@ func TestConcurrentFailures(t *testing.T) {
 			for j := 0; j < 3; j++ {
 				resp, err := client.Get(server.ProxyURL("apt", "dists/focal/Release"))
 				if err == nil && resp.StatusCode == 200 {
-					resp.Body.Close()
+					_ = resp.Body.Close()
 					success = true
 					break
 				}
 				if resp != nil {
-					resp.Body.Close()
+					_ = resp.Body.Close()
 				}
 				time.Sleep(100 * time.Millisecond)
 			}
@@ -280,7 +280,7 @@ func TestRetryLogic(t *testing.T) {
 			}
 			continue
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		if resp.StatusCode == 200 {
 			success = true
@@ -334,7 +334,7 @@ func TestServiceDiscovery(t *testing.T) {
 				t.Logf("Endpoint %s failed: %v", endpoint, err)
 				return
 			}
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 
 			// 서비스가 응답하는지 확인
 			assert.True(t, resp.StatusCode >= 200 && resp.StatusCode < 500,

@@ -36,6 +36,9 @@ type RateLimiter interface {
 	SetLimit(limit int)
 }
 
+// Sender is an alias for WebhookSender to avoid stuttering
+type Sender = WebhookSender
+
 // WebhookSender 웹훅 전송 핵심 엔진
 type WebhookSender struct {
 	config         configs.WebhookConfig
@@ -513,16 +516,17 @@ func (ws *WebhookSender) matchesPattern(value, pattern string) bool {
 }
 
 // sendToEndpoint 특정 엔드포인트로 전송
-func (ws *WebhookSender) sendToEndpoint(ctx context.Context, event *alerts.AlertEvent, endpoint configs.WebhookEndpointConfig) error {
+func (ws *WebhookSender) sendToEndpoint(ctx context.Context, event *alerts.AlertEvent,
+	endpoint configs.WebhookEndpointConfig) error {
 	startTime := time.Now()
 
 	// 어댑터 선택
-	adapterName := "generic"
+	adapterName := webhookTypeGeneric
 	switch endpoint.Format {
-	case "slack":
-		adapterName = "slack"
-	case "discord":
-		adapterName = "discord"
+	case webhookTypeSlack:
+		adapterName = webhookTypeSlack
+	case webhookTypeDiscord:
+		adapterName = webhookTypeDiscord
 	}
 
 	adapter, exists := ws.adapters[adapterName]
@@ -611,7 +615,9 @@ func (ws *WebhookSender) sendToEndpoint(ctx context.Context, event *alerts.Alert
 }
 
 // recordHistory 웹훅 전송 이력 기록
-func (ws *WebhookSender) recordHistory(event *alerts.AlertEvent, endpoint configs.WebhookEndpointConfig, status string, responseTime time.Duration, statusCode int, errorMessage string, retryCount int) {
+func (ws *WebhookSender) recordHistory(event *alerts.AlertEvent,
+	endpoint configs.WebhookEndpointConfig, status string, responseTime time.Duration,
+	statusCode int, errorMessage string, retryCount int) {
 	if ws.historyManager == nil {
 		return
 	}
@@ -664,7 +670,7 @@ func pow(base, exp float64) float64 {
 }
 
 // isRetryableError 재시도 가능한 오류인지 확인
-func (ws *WebhookSender) isRetryableError(err error) bool {
+func (ws *WebhookSender) isRetryableError(_ error) bool {
 	// HTTP 상태 코드나 오류 타입을 기반으로 재시도 가능 여부 판단
 	// 구현은 실제 어댑터에서 더 정교하게 처리
 	return true

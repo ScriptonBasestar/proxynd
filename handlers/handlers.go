@@ -6,7 +6,7 @@ import (
 )
 
 // RegisterRoutes registers all application routes
-func RegisterRoutes(app *fiber.App) {
+func RegisterRoutes(_ *fiber.App) {
 	// This function can be used to register all routes in one place
 	// Currently, routes are registered separately in each router
 }

@@ -12,6 +12,13 @@ type ProxyType string
 
 // Supported proxy types
 const (
+	// ProxyTypeAPT is a const that proxy type a p t
+	// ProxyTypeMaven is a const that proxy type maven
+	// ProxyTypeNPM is a const that proxy type n p m
+	// ProxyTypeDocker is a const that proxy type docker
+	// ProxyTypePIP is a const that proxy type p i p
+	// ProxyTypeYUM is a const that proxy type y u m
+	// ProxyTypeAPK is a const that proxy type a p k
 	ProxyTypeAPT    ProxyType = "apt"
 	ProxyTypeMaven  ProxyType = "maven"
 	ProxyTypeNPM    ProxyType = "npm"

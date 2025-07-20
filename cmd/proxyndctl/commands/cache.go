@@ -1,3 +1,4 @@
+// Package commands provides CLI command implementations for proxyndctl
 package commands
 
 import (
@@ -88,7 +89,7 @@ func newCacheListCmd() *cobra.Command {
 		Short: "캐시된 패키지 목록 조회",
 		Long: `캐시된 패키지 목록을 조회합니다.
 패키지 타입별 필터링을 지원하며, 크기, 생성 시간, 마지막 접근 시간을 표시합니다.`,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			return runCacheList(proxyType, limit, offset)
 		},
 	}
@@ -113,7 +114,7 @@ func newCacheClearCmd() *cobra.Command {
 		Short: "캐시 정리",
 		Long: `캐시를 정리합니다.
 전체 또는 특정 패키지 타입별 정리가 가능하며, 확인 프롬프트를 제공합니다.`,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			return runCacheClear(proxyType, force, confirm)
 		},
 	}
@@ -134,7 +135,7 @@ func newCacheSizeCmd() *cobra.Command {
 		Short: "캐시 사용량 통계",
 		Long: `캐시 사용량 통계를 조회합니다.
 패키지 타입별 사용량, 디스크 사용률 및 여유 공간을 표시합니다.`,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			return runCacheSize(detailed)
 		},
 	}
@@ -164,9 +165,9 @@ func runCacheList(proxyType string, limit, offset int) error {
 	// API 호출
 	resp, err := http.Get(apiURL)
 	if err != nil {
-		return fmt.Errorf("서버 연결 실패: %v", err)
+		return fmt.Errorf(errServerConnection, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("API 요청 실패: HTTP %d", resp.StatusCode)
@@ -201,7 +202,7 @@ func runCacheClear(proxyType string, force, confirm bool) error {
 
 		fmt.Printf("%s (y/N): ", message)
 		var response string
-		fmt.Scanln(&response)
+		_, _ = fmt.Scanln(&response)
 		if strings.ToLower(response) != "y" && strings.ToLower(response) != "yes" {
 			fmt.Println("캐시 정리가 취소되었습니다.")
 			return nil
@@ -227,9 +228,9 @@ func runCacheClear(proxyType string, force, confirm bool) error {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("서버 연결 실패: %v", err)
+		return fmt.Errorf(errServerConnection, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("캐시 정리 실패: HTTP %d", resp.StatusCode)
@@ -253,9 +254,9 @@ func runCacheSize(detailed bool) error {
 	// API 호출
 	resp, err := http.Get(apiURL)
 	if err != nil {
-		return fmt.Errorf("서버 연결 실패: %v", err)
+		return fmt.Errorf(errServerConnection, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("API 요청 실패: HTTP %d", resp.StatusCode)
@@ -287,11 +288,11 @@ func outputCacheListTable(result CacheListResponse) error {
 	}
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	fmt.Fprintln(w, "타입\t경로\t크기\t생성일시\t접근일시\tTTL")
-	fmt.Fprintln(w, "----\t----\t----\t-------\t-------\t---")
+	_, _ = fmt.Fprintln(w, "타입\t경로\t크기\t생성일시\t접근일시\tTTL")
+	_, _ = fmt.Fprintln(w, "----\t----\t----\t-------\t-------\t---")
 
 	for _, item := range result.Items {
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\n",
+		_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\n",
 			item.ProxyType,
 			truncateString(item.Path, 50),
 			formatBytes(item.Size),
@@ -301,7 +302,7 @@ func outputCacheListTable(result CacheListResponse) error {
 		)
 	}
 
-	fmt.Fprintf(w, "\n총 %d개 항목\n", result.Total)
+	_, _ = fmt.Fprintf(w, "\n총 %d개 항목\n", result.Total)
 	return w.Flush()
 }
 
@@ -317,8 +318,8 @@ func outputCacheSizeTable(result CacheSizeResponse, detailed bool) error {
 	if len(result.SizeByType) > 0 {
 		fmt.Println("📦 프록시 타입별 사용량:")
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-		fmt.Fprintln(w, "타입\t크기\t항목수\t상태\t설정파일")
-		fmt.Fprintln(w, "----\t----\t-----\t----\t--------")
+		_, _ = fmt.Fprintln(w, "타입\t크기\t항목수\t상태\t설정파일")
+		_, _ = fmt.Fprintln(w, "----\t----\t-----\t----\t--------")
 
 		for proxyType, size := range result.SizeByType {
 			items := result.ItemsByType[proxyType]
@@ -328,7 +329,7 @@ func outputCacheSizeTable(result CacheSizeResponse, detailed bool) error {
 				status = "✅ 활성"
 			}
 
-			fmt.Fprintf(w, "%s\t%s\t%d\t%s\t%s\n",
+			_, _ = fmt.Fprintf(w, "%s\t%s\t%d\t%s\t%s\n",
 				proxyType,
 				formatBytes(size),
 				items,
@@ -336,7 +337,7 @@ func outputCacheSizeTable(result CacheSizeResponse, detailed bool) error {
 				detail.ConfigPath,
 			)
 		}
-		w.Flush()
+		_ = w.Flush()
 		fmt.Println()
 	}
 

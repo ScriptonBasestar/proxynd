@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"proxynd/configs"
-	"proxynd/internal/repositories/cache"
 	repocache "proxynd/internal/repositories/cache"
 	"proxynd/internal/services/adapters"
 	"proxynd/internal/services/config"
@@ -204,12 +203,15 @@ type fileSystemCacheRepository struct {
 	baseDir string
 }
 
-func (r *fileSystemCacheRepository) Get(ctx context.Context, key string) (io.ReadCloser, error) {
+// Get returns the
+func (r *fileSystemCacheRepository) Get(_ context.Context, key string) (io.ReadCloser, error) {
 	path := filepath.Join(r.baseDir, key)
 	return os.Open(path)
 }
 
-func (r *fileSystemCacheRepository) Put(ctx context.Context, key string, content io.Reader, ttl time.Duration) error {
+// Put performs put operation
+
+func (r *fileSystemCacheRepository) Put(_ context.Context, key string, content io.Reader, _ time.Duration) error {
 	path := filepath.Join(r.baseDir, key)
 	dir := filepath.Dir(path)
 
@@ -221,27 +223,30 @@ func (r *fileSystemCacheRepository) Put(ctx context.Context, key string, content
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	_, err = io.Copy(file, content)
 	return err
+	// Exists performs exists operation
 }
 
-func (r *fileSystemCacheRepository) Exists(ctx context.Context, key string) (bool, error) {
+func (r *fileSystemCacheRepository) Exists(_ context.Context, key string) (bool, error) {
 	path := filepath.Join(r.baseDir, key)
 	_, err := os.Stat(path)
 	if os.IsNotExist(err) {
 		return false, nil
 	}
+	// Delete performs delete operation
 	return err == nil, err
 }
 
-func (r *fileSystemCacheRepository) Delete(ctx context.Context, key string) error {
+func (r *fileSystemCacheRepository) Delete(_ context.Context, key string) error {
+	// List performs list operation
 	path := filepath.Join(r.baseDir, key)
 	return os.Remove(path)
 }
 
-func (r *fileSystemCacheRepository) List(ctx context.Context, pattern string) ([]string, error) {
+func (r *fileSystemCacheRepository) List(_ context.Context, pattern string) ([]string, error) {
 	matches, err := filepath.Glob(filepath.Join(r.baseDir, pattern))
 	if err != nil {
 		return nil, err
@@ -250,28 +255,31 @@ func (r *fileSystemCacheRepository) List(ctx context.Context, pattern string) ([
 	// Remove base directory from paths
 	for i, match := range matches {
 		matches[i], _ = filepath.Rel(r.baseDir, match)
+		// Size performs size operation
 	}
 
 	return matches, nil
 }
 
-func (r *fileSystemCacheRepository) Size(ctx context.Context, key string) (int64, error) {
+func (r *fileSystemCacheRepository) Size(_ context.Context, key string) (int64, error) {
 	path := filepath.Join(r.baseDir, key)
 	info, err := os.Stat(path)
+	// Clear performs clear operation
 	if err != nil {
 		return 0, err
 	}
+	// Stats performs stats operation
 	return info.Size(), nil
 }
 
-func (r *fileSystemCacheRepository) Clear(ctx context.Context) error {
+func (r *fileSystemCacheRepository) Clear(_ context.Context) error {
 	return os.RemoveAll(r.baseDir)
 }
 
-func (r *fileSystemCacheRepository) Stats(ctx context.Context) (*cache.CacheStats, error) {
-	var stats cache.CacheStats
+func (r *fileSystemCacheRepository) Stats(_ context.Context) (*repocache.CacheStats, error) {
+	var stats repocache.CacheStats
 
-	err := filepath.Walk(r.baseDir, func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(r.baseDir, func(_ string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}

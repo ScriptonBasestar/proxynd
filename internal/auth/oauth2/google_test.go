@@ -9,9 +9,16 @@ import (
 	"time"
 )
 
+// Test-specific constants
+const (
+	testProviderGoogle       = "google"
+	testPathTokenInfo        = "/tokeninfo"
+	testHostOAuth2GoogleAPIs = "oauth2.googleapis.com"
+)
+
 func TestNewGoogleProvider(t *testing.T) {
 	config := ProviderConfig{
-		Name:         "google",
+		Name:         testProviderGoogle,
 		ClientID:     "test_client_id",
 		ClientSecret: "test_client_secret",
 		RedirectURI:  "https://example.com/callback",
@@ -19,8 +26,8 @@ func TestNewGoogleProvider(t *testing.T) {
 
 	provider := NewGoogleProvider(config)
 
-	if provider.GetName() != "google" {
-		t.Errorf("Expected provider name 'google', got '%s'", provider.GetName())
+	if provider.GetName() != testProviderGoogle {
+		t.Errorf("Expected provider name '%s', got '%s'", testProviderGoogle, provider.GetName())
 	}
 
 	// Google 기본값이 설정되었는지 확인
@@ -63,7 +70,7 @@ func TestGoogleProvider_GetUserInfo(t *testing.T) {
 				Locale:        "en",
 				VerifiedEmail: true,
 			}
-			json.NewEncoder(w).Encode(userResponse)
+			_ = json.NewEncoder(w).Encode(userResponse)
 		} else {
 			w.WriteHeader(http.StatusNotFound)
 		}
@@ -117,7 +124,7 @@ func TestGoogleProvider_GetUserInfo_NameFromParts(t *testing.T) {
 				Picture:       "https://lh3.googleusercontent.com/photo.jpg",
 				VerifiedEmail: true,
 			}
-			json.NewEncoder(w).Encode(userResponse)
+			_ = json.NewEncoder(w).Encode(userResponse)
 		} else {
 			w.WriteHeader(http.StatusNotFound)
 		}
@@ -171,7 +178,7 @@ func TestGoogleProvider_GetUserOrganizations(t *testing.T) {
 
 func TestGoogleProvider_ValidateToken(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/tokeninfo" {
+		if r.URL.Path == testPathTokenInfo {
 			tokenInfo := GoogleTokenInfo{
 				Audience:  "test_client_id",
 				UserID:    "123456789",
@@ -179,7 +186,7 @@ func TestGoogleProvider_ValidateToken(t *testing.T) {
 				ExpiresIn: 3600,
 				Email:     "test@example.com",
 			}
-			json.NewEncoder(w).Encode(tokenInfo)
+			_ = json.NewEncoder(w).Encode(tokenInfo)
 		} else {
 			w.WriteHeader(http.StatusNotFound)
 		}
@@ -200,8 +207,8 @@ func TestGoogleProvider_ValidateToken(t *testing.T) {
 	// Mock 서버 URL을 사용하도록 설정
 	DefaultHTTPClient = &MockHTTPClient{
 		DoFunc: func(req *http.Request) (*http.Response, error) {
-			if req.URL.Host == "oauth2.googleapis.com" {
-				req.URL.Scheme = "http"
+			if req.URL.Host == testHostOAuth2GoogleAPIs {
+				req.URL.Scheme = testSchemeHTTP
 				req.URL.Host = server.URL[7:] // "http://" 제거
 			}
 			return http.DefaultClient.Do(req)
@@ -228,14 +235,14 @@ func TestGoogleProvider_ValidateToken(t *testing.T) {
 
 func TestGoogleProvider_ValidateToken_WrongAudience(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/tokeninfo" {
+		if r.URL.Path == testPathTokenInfo {
 			tokenInfo := GoogleTokenInfo{
 				Audience:  "wrong_client_id", // 잘못된 클라이언트 ID
 				UserID:    "123456789",
 				Scope:     "openid email profile",
 				ExpiresIn: 3600,
 			}
-			json.NewEncoder(w).Encode(tokenInfo)
+			_ = json.NewEncoder(w).Encode(tokenInfo)
 		} else {
 			w.WriteHeader(http.StatusNotFound)
 		}
@@ -256,8 +263,8 @@ func TestGoogleProvider_ValidateToken_WrongAudience(t *testing.T) {
 	// Mock 서버 URL을 사용하도록 설정
 	DefaultHTTPClient = &MockHTTPClient{
 		DoFunc: func(req *http.Request) (*http.Response, error) {
-			if req.URL.Host == "oauth2.googleapis.com" {
-				req.URL.Scheme = "http"
+			if req.URL.Host == testHostOAuth2GoogleAPIs {
+				req.URL.Scheme = testSchemeHTTP
 				req.URL.Host = server.URL[7:] // "http://" 제거
 			}
 			return http.DefaultClient.Do(req)
@@ -277,9 +284,9 @@ func TestGoogleProvider_ValidateToken_WrongAudience(t *testing.T) {
 }
 
 func TestGoogleProvider_ValidateToken_Invalid(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(map[string]string{
+		_ = json.NewEncoder(w).Encode(map[string]string{
 			"error":             "invalid_token",
 			"error_description": "Invalid Value",
 		})
@@ -300,8 +307,8 @@ func TestGoogleProvider_ValidateToken_Invalid(t *testing.T) {
 	// Mock 서버 URL을 사용하도록 설정
 	DefaultHTTPClient = &MockHTTPClient{
 		DoFunc: func(req *http.Request) (*http.Response, error) {
-			if req.URL.Host == "oauth2.googleapis.com" {
-				req.URL.Scheme = "http"
+			if req.URL.Host == testHostOAuth2GoogleAPIs {
+				req.URL.Scheme = testSchemeHTTP
 				req.URL.Host = server.URL[7:] // "http://" 제거
 			}
 			return http.DefaultClient.Do(req)
@@ -322,7 +329,7 @@ func TestGoogleProvider_ValidateToken_Invalid(t *testing.T) {
 
 func TestGoogleProvider_VerifyIDToken(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/tokeninfo" {
+		if r.URL.Path == testPathTokenInfo {
 			tokenInfo := GoogleTokenInfo{
 				Issuer:         "https://accounts.google.com",
 				Audience:       "test_client_id",
@@ -338,7 +345,7 @@ func TestGoogleProvider_VerifyIDToken(t *testing.T) {
 				ExpirationTime: time.Now().Add(time.Hour).Unix(),
 				HostedDomain:   "example.com",
 			}
-			json.NewEncoder(w).Encode(tokenInfo)
+			_ = json.NewEncoder(w).Encode(tokenInfo)
 		} else {
 			w.WriteHeader(http.StatusNotFound)
 		}
@@ -359,8 +366,8 @@ func TestGoogleProvider_VerifyIDToken(t *testing.T) {
 	// Mock 서버 URL을 사용하도록 설정
 	DefaultHTTPClient = &MockHTTPClient{
 		DoFunc: func(req *http.Request) (*http.Response, error) {
-			if req.URL.Host == "oauth2.googleapis.com" {
-				req.URL.Scheme = "http"
+			if req.URL.Host == testHostOAuth2GoogleAPIs {
+				req.URL.Scheme = testSchemeHTTP
 				req.URL.Host = server.URL[7:] // "http://" 제거
 			}
 			return http.DefaultClient.Do(req)
@@ -387,14 +394,14 @@ func TestGoogleProvider_VerifyIDToken(t *testing.T) {
 
 func TestGoogleProvider_VerifyIDToken_WrongIssuer(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/tokeninfo" {
+		if r.URL.Path == testPathTokenInfo {
 			tokenInfo := GoogleTokenInfo{
 				Issuer:         "https://evil.com", // 잘못된 발급자
 				Audience:       "test_client_id",
 				Subject:        "123456789",
 				ExpirationTime: time.Now().Add(time.Hour).Unix(),
 			}
-			json.NewEncoder(w).Encode(tokenInfo)
+			_ = json.NewEncoder(w).Encode(tokenInfo)
 		} else {
 			w.WriteHeader(http.StatusNotFound)
 		}
@@ -415,8 +422,8 @@ func TestGoogleProvider_VerifyIDToken_WrongIssuer(t *testing.T) {
 	// Mock 서버 URL을 사용하도록 설정
 	DefaultHTTPClient = &MockHTTPClient{
 		DoFunc: func(req *http.Request) (*http.Response, error) {
-			if req.URL.Host == "oauth2.googleapis.com" {
-				req.URL.Scheme = "http"
+			if req.URL.Host == testHostOAuth2GoogleAPIs {
+				req.URL.Scheme = testSchemeHTTP
 				req.URL.Host = server.URL[7:] // "http://" 제거
 			}
 			return http.DefaultClient.Do(req)
@@ -437,7 +444,7 @@ func TestGoogleProvider_VerifyIDToken_WrongIssuer(t *testing.T) {
 
 func TestGoogleProvider_GetHostedDomain(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/tokeninfo" {
+		if r.URL.Path == testPathTokenInfo {
 			tokenInfo := GoogleTokenInfo{
 				Issuer:         "https://accounts.google.com",
 				Audience:       "test_client_id",
@@ -445,7 +452,7 @@ func TestGoogleProvider_GetHostedDomain(t *testing.T) {
 				ExpirationTime: time.Now().Add(time.Hour).Unix(),
 				HostedDomain:   "example.com",
 			}
-			json.NewEncoder(w).Encode(tokenInfo)
+			_ = json.NewEncoder(w).Encode(tokenInfo)
 		} else {
 			w.WriteHeader(http.StatusNotFound)
 		}
@@ -466,8 +473,8 @@ func TestGoogleProvider_GetHostedDomain(t *testing.T) {
 	// Mock 서버 URL을 사용하도록 설정
 	DefaultHTTPClient = &MockHTTPClient{
 		DoFunc: func(req *http.Request) (*http.Response, error) {
-			if req.URL.Host == "oauth2.googleapis.com" {
-				req.URL.Scheme = "http"
+			if req.URL.Host == testHostOAuth2GoogleAPIs {
+				req.URL.Scheme = testSchemeHTTP
 				req.URL.Host = server.URL[7:] // "http://" 제거
 			}
 			return http.DefaultClient.Do(req)
@@ -488,7 +495,7 @@ func TestGoogleProvider_GetHostedDomain(t *testing.T) {
 
 func TestGoogleProvider_CheckGSuiteUser(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/tokeninfo" {
+		if r.URL.Path == testPathTokenInfo {
 			tokenInfo := GoogleTokenInfo{
 				Issuer:         "https://accounts.google.com",
 				Audience:       "test_client_id",
@@ -496,7 +503,7 @@ func TestGoogleProvider_CheckGSuiteUser(t *testing.T) {
 				ExpirationTime: time.Now().Add(time.Hour).Unix(),
 				HostedDomain:   "company.com",
 			}
-			json.NewEncoder(w).Encode(tokenInfo)
+			_ = json.NewEncoder(w).Encode(tokenInfo)
 		} else {
 			w.WriteHeader(http.StatusNotFound)
 		}
@@ -517,8 +524,8 @@ func TestGoogleProvider_CheckGSuiteUser(t *testing.T) {
 	// Mock 서버 URL을 사용하도록 설정
 	DefaultHTTPClient = &MockHTTPClient{
 		DoFunc: func(req *http.Request) (*http.Response, error) {
-			if req.URL.Host == "oauth2.googleapis.com" {
-				req.URL.Scheme = "http"
+			if req.URL.Host == testHostOAuth2GoogleAPIs {
+				req.URL.Scheme = testSchemeHTTP
 				req.URL.Host = server.URL[7:] // "http://" 제거
 			}
 			return http.DefaultClient.Do(req)
@@ -539,7 +546,7 @@ func TestGoogleProvider_CheckGSuiteUser(t *testing.T) {
 
 func TestGoogleProvider_GetUserDomains(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/tokeninfo" {
+		if r.URL.Path == testPathTokenInfo {
 			tokenInfo := GoogleTokenInfo{
 				Issuer:         "https://accounts.google.com",
 				Audience:       "test_client_id",
@@ -547,7 +554,7 @@ func TestGoogleProvider_GetUserDomains(t *testing.T) {
 				ExpirationTime: time.Now().Add(time.Hour).Unix(),
 				HostedDomain:   "company.com",
 			}
-			json.NewEncoder(w).Encode(tokenInfo)
+			_ = json.NewEncoder(w).Encode(tokenInfo)
 		} else {
 			w.WriteHeader(http.StatusNotFound)
 		}
@@ -568,8 +575,8 @@ func TestGoogleProvider_GetUserDomains(t *testing.T) {
 	// Mock 서버 URL을 사용하도록 설정
 	DefaultHTTPClient = &MockHTTPClient{
 		DoFunc: func(req *http.Request) (*http.Response, error) {
-			if req.URL.Host == "oauth2.googleapis.com" {
-				req.URL.Scheme = "http"
+			if req.URL.Host == testHostOAuth2GoogleAPIs {
+				req.URL.Scheme = testSchemeHTTP
 				req.URL.Host = server.URL[7:] // "http://" 제거
 			}
 			return http.DefaultClient.Do(req)
@@ -601,7 +608,7 @@ func TestGoogleProvider_Registration(t *testing.T) {
 
 	found := false
 	for _, name := range providers {
-		if name == "google" {
+		if name == testProviderGoogle {
 			found = true
 			break
 		}
@@ -613,13 +620,13 @@ func TestGoogleProvider_Registration(t *testing.T) {
 
 	// 제공자 생성 테스트
 	config := ProviderConfig{
-		Name:         "google",
+		Name:         testProviderGoogle,
 		ClientID:     "test_id",
 		ClientSecret: "test_secret",
 		RedirectURI:  "https://example.com/callback",
 	}
 
-	provider := CreateProvider("google", config)
+	provider := CreateProvider(testProviderGoogle, config)
 	if provider == nil {
 		t.Error("Expected Google provider to be created")
 	}
@@ -629,7 +636,7 @@ func TestGoogleProvider_Registration(t *testing.T) {
 		t.Error("Expected provider to be GoogleProvider instance")
 	}
 
-	if googleProvider.GetName() != "google" {
-		t.Errorf("Expected provider name 'google', got '%s'", googleProvider.GetName())
+	if googleProvider.GetName() != testProviderGoogle {
+		t.Errorf("Expected provider name '%s', got '%s'", testProviderGoogle, googleProvider.GetName())
 	}
 }

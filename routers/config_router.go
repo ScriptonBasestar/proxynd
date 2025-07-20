@@ -140,7 +140,7 @@ func validateConfig(c *fiber.Ctx) error {
 	// 설정 디렉토리 확인
 	configDir := helpers.GetConfigDir()
 	if configDir == "" {
-		configDir = "./config"
+		configDir = defaultConfigDir
 	}
 
 	logger.Info("Starting config validation", logging.F("config_dir", configDir))
@@ -158,7 +158,7 @@ func validateConfig(c *fiber.Ctx) error {
 			Message: "글로벌 설정 파일이 존재하지 않습니다",
 		})
 	} else {
-		globalConfig.ReadConfig()
+		_ = globalConfig.ReadConfig()
 	}
 
 	// 각 프록시 타입별 설정 검증
@@ -167,7 +167,7 @@ func validateConfig(c *fiber.Ctx) error {
 			config := configs.AptProxyConfig{}
 			exists := config.ConfigExists()
 			if exists {
-				config.ReadConfig()
+				_ = config.ReadConfig()
 				return exists, config, len(config.Proxies)
 			}
 			return exists, nil, 0
@@ -176,7 +176,7 @@ func validateConfig(c *fiber.Ctx) error {
 			config := configs.NpmProxyConfig{}
 			exists := config.ConfigExists()
 			if exists {
-				config.ReadConfig()
+				_ = config.ReadConfig()
 				return exists, config, len(config.Proxies)
 			}
 			return exists, nil, 0
@@ -185,7 +185,7 @@ func validateConfig(c *fiber.Ctx) error {
 			config := configs.MavenProxyConfig{}
 			exists := config.ConfigExists()
 			if exists {
-				config.ReadConfig()
+				_ = config.ReadConfig()
 				return exists, config, len(config.Proxies)
 			}
 			return exists, nil, 0
@@ -194,7 +194,7 @@ func validateConfig(c *fiber.Ctx) error {
 			config := configs.PipProxyConfig{}
 			exists := config.ConfigExists()
 			if exists {
-				config.ReadConfig()
+				_ = config.ReadConfig()
 				return exists, config, len(config.Proxies)
 			}
 			return exists, nil, 0
@@ -203,7 +203,7 @@ func validateConfig(c *fiber.Ctx) error {
 			config := configs.DockerProxyConfig{}
 			exists := config.ConfigExists()
 			if exists {
-				config.ReadConfig()
+				_ = config.ReadConfig()
 				return exists, config, len(config.Proxies)
 			}
 			return exists, nil, 0
@@ -212,7 +212,7 @@ func validateConfig(c *fiber.Ctx) error {
 			config := configs.YumProxyConfig{}
 			exists := config.ConfigExists()
 			if exists {
-				config.ReadConfig()
+				_ = config.ReadConfig()
 				return exists, config, len(config.Proxies)
 			}
 			return exists, nil, 0
@@ -225,7 +225,7 @@ func validateConfig(c *fiber.Ctx) error {
 			config := configs.ApkProxyConfig{}
 			exists := config.ConfigExists()
 			if exists {
-				config.ReadConfig()
+				_ = config.ReadConfig()
 				return exists, config, len(config.Proxies)
 			}
 			return exists, nil, 0
@@ -261,6 +261,7 @@ func validateConfig(c *fiber.Ctx) error {
 		if exists && config != nil {
 			// 실제로는 각 프록시 URL에 대해 연결성 테스트 수행
 			// 여기서는 간단히 URL 형식만 검증
+			_ = config // 설정 체크만 수행
 		}
 
 		proxyTypes = append(proxyTypes, ProxyTypeStatus{
@@ -274,7 +275,7 @@ func validateConfig(c *fiber.Ctx) error {
 	}
 
 	// 환경 변수 검증
-	requiredEnvVars := []string{"SERVER_PORT", "CONFIG_DIR", "STORAGE_DIR"}
+	requiredEnvVars := []string{"SERVER_PORT", "CONFIG_DIR", defaultStorageDir}
 	for _, envVar := range requiredEnvVars {
 		if os.Getenv(envVar) == "" {
 			warnings = append(warnings, ValidationWarning{
@@ -312,7 +313,7 @@ func validateConfig(c *fiber.Ctx) error {
 	}
 
 	logger.Info("Config validation completed",
-		logging.F("valid", response.Valid),
+		logging.F(statusValid, response.Valid),
 		logging.F("errors", len(errors)),
 		logging.F("warnings", len(warnings)),
 		logging.F("duration", time.Since(startTime)))
@@ -326,7 +327,7 @@ func showConfig(c *fiber.Ctx) error {
 
 	configDir := helpers.GetConfigDir()
 	if configDir == "" {
-		configDir = "./config"
+		configDir = defaultConfigDir
 	}
 
 	// 글로벌 설정 로드
@@ -334,7 +335,7 @@ func showConfig(c *fiber.Ctx) error {
 	maskedGlobal := MaskedGlobalConfig{}
 
 	if globalConfig.ConfigExists() {
-		globalConfig.ReadConfig()
+		_ = globalConfig.ReadConfig()
 		maskedGlobal = MaskedGlobalConfig{
 			StorageDir: getConfigStorageDir(globalConfig),
 			ConfigDir:  configDir,
@@ -349,7 +350,7 @@ func showConfig(c *fiber.Ctx) error {
 		"apt": func() interface{} {
 			config := configs.AptProxyConfig{}
 			if config.ConfigExists() {
-				config.ReadConfig()
+				_ = config.ReadConfig()
 				// 민감한 정보 마스킹 (필요시)
 				return maskSensitiveInfo(config)
 			}
@@ -358,7 +359,7 @@ func showConfig(c *fiber.Ctx) error {
 		"npm": func() interface{} {
 			config := configs.NpmProxyConfig{}
 			if config.ConfigExists() {
-				config.ReadConfig()
+				_ = config.ReadConfig()
 				return maskSensitiveInfo(config)
 			}
 			return nil
@@ -374,7 +375,8 @@ func showConfig(c *fiber.Ctx) error {
 
 	// 설정 소스 정보
 	sources := []ConfigSource{}
-	configFiles := []string{"global.yaml", "apt-proxy.yaml", "npm-proxy.yaml", "maven-proxy.yaml", "pip-proxy.yaml", "docker-proxy.yaml", "yum-proxy.yaml", "gem-proxy.yaml", "apk-proxy.yaml"}
+	configFiles := []string{"global.yaml", "apt-proxy.yaml", "npm-proxy.yaml", "maven-proxy.yaml",
+		"pip-proxy.yaml", "docker-proxy.yaml", "yum-proxy.yaml", "gem-proxy.yaml", "apk-proxy.yaml"}
 
 	for _, file := range configFiles {
 		path := filepath.Join(configDir, file)
@@ -384,10 +386,10 @@ func showConfig(c *fiber.Ctx) error {
 
 	// 환경 변수 (중요한 것만)
 	environment := map[string]string{
-		"SERVER_PORT": os.Getenv("SERVER_PORT"),
-		"CONFIG_DIR":  os.Getenv("CONFIG_DIR"),
-		"STORAGE_DIR": os.Getenv("STORAGE_DIR"),
-		"LOG_LEVEL":   os.Getenv("LOG_LEVEL"),
+		"SERVER_PORT":     os.Getenv("SERVER_PORT"),
+		"CONFIG_DIR":      os.Getenv("CONFIG_DIR"),
+		defaultStorageDir: os.Getenv(defaultStorageDir),
+		"LOG_LEVEL":       os.Getenv("LOG_LEVEL"),
 	}
 
 	// 요약 정보
@@ -433,13 +435,13 @@ func showConfig(c *fiber.Ctx) error {
 func listConfigFiles(c *fiber.Ctx) error {
 	configDir := helpers.GetConfigDir()
 	if configDir == "" {
-		configDir = "./config"
+		configDir = defaultConfigDir
 	}
 
 	files, err := os.ReadDir(configDir)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
-			"error": fmt.Sprintf("Failed to read config directory: %v", err),
+			fieldError: fmt.Sprintf("Failed to read config directory: %v", err),
 		})
 	}
 
@@ -465,16 +467,16 @@ func getConfigFile(c *fiber.Ctx) error {
 	filename := c.Params("*")
 	configDir := helpers.GetConfigDir()
 	if configDir == "" {
-		configDir = "./config"
+		configDir = defaultConfigDir
 	}
 
 	// 보안: Path Traversal 방지를 위한 파일명 검증
 	if err := security.ValidateFilename(filename); err != nil {
 		logger.Warn("Invalid config filename",
 			logging.F("filename", filename),
-			logging.F("error", err.Error()))
+			logging.F(fieldError, err.Error()))
 		return c.Status(400).JSON(fiber.Map{
-			"error": "Invalid filename",
+			fieldError: "Invalid filename",
 		})
 	}
 
@@ -483,16 +485,16 @@ func getConfigFile(c *fiber.Ctx) error {
 	if err != nil {
 		logger.Warn("Path traversal attempt in config",
 			logging.F("filename", filename),
-			logging.F("error", err.Error()))
+			logging.F(fieldError, err.Error()))
 		return c.Status(400).JSON(fiber.Map{
-			"error": "Invalid path",
+			fieldError: "Invalid path",
 		})
 	}
 
 	// 파일 존재 확인
 	if !helpers.FileExists(filePath) {
 		return c.Status(404).JSON(fiber.Map{
-			"error": "File not found",
+			fieldError: "File not found",
 		})
 	}
 
@@ -500,7 +502,7 @@ func getConfigFile(c *fiber.Ctx) error {
 	content, err := os.ReadFile(filePath)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
-			"error": fmt.Sprintf("Failed to read file: %v", err),
+			fieldError: fmt.Sprintf("Failed to read file: %v", err),
 		})
 	}
 
@@ -558,7 +560,7 @@ func validateConfigFile(path, description string) ConfigSource {
 	if err != nil {
 		return source
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	source.Readable = true
 
@@ -588,7 +590,7 @@ func getConfigStorageDir(globalConfig configs.GlobalConfig) string {
 	if globalConfig.StorageDir != "" {
 		return globalConfig.StorageDir
 	}
-	if storageDir := os.Getenv("STORAGE_DIR"); storageDir != "" {
+	if storageDir := os.Getenv(defaultStorageDir); storageDir != "" {
 		return storageDir
 	}
 	return "./storage"

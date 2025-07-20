@@ -30,10 +30,10 @@ type LoggingConfig struct {
 	Audit *AuditConfig `yaml:"audit,omitempty" json:"audit,omitempty"`
 
 	// Security logging
-	Security *SecurityConfig `yaml:"security,omitempty" json:"security,omitempty"`
+	Security *SecurityLoggingConfig `yaml:"security,omitempty" json:"security,omitempty"`
 
 	// Performance logging
-	Performance *PerformanceConfig `yaml:"performance,omitempty" json:"performance,omitempty"`
+	Performance *PerformanceLoggingConfig `yaml:"performance,omitempty" json:"performance,omitempty"`
 
 	// Log aggregation and analysis
 	Aggregation *AggregationConfig `yaml:"aggregation,omitempty" json:"aggregation,omitempty"`
@@ -78,8 +78,8 @@ type AuditConfig struct {
 	MaxFiles      int      `yaml:"max_files" json:"max_files" default:"10"`
 }
 
-// SecurityConfig configures security event logging
-type SecurityConfig struct {
+// SecurityLoggingConfig configures security event logging
+type SecurityLoggingConfig struct {
 	Enabled         bool   `yaml:"enabled" json:"enabled" default:"true"`
 	File            string `yaml:"file" json:"file" default:"/var/log/proxynd/security.log"`
 	Level           string `yaml:"level" json:"level" default:"warn"`
@@ -90,8 +90,8 @@ type SecurityConfig struct {
 	RetentionDays   int    `yaml:"retention_days" json:"retention_days" default:"365"`
 }
 
-// PerformanceConfig configures performance logging
-type PerformanceConfig struct {
+// PerformanceLoggingConfig configures performance logging
+type PerformanceLoggingConfig struct {
 	Enabled           bool          `yaml:"enabled" json:"enabled" default:"true"`
 	File              string        `yaml:"file" json:"file" default:"/var/log/proxynd/performance.log"`
 	Level             string        `yaml:"level" json:"level" default:"info"`
@@ -115,6 +115,7 @@ type AggregationConfig struct {
 
 // Default configurations
 var (
+	// DefaultLoggingConfig provides the default logging configuration
 	DefaultLoggingConfig = LoggingConfig{
 		Level:  "info",
 		Format: "json",
@@ -166,7 +167,7 @@ var (
 			MaxFileSize:   "100MB",
 			MaxFiles:      10,
 		},
-		Security: &SecurityConfig{
+		Security: &SecurityLoggingConfig{
 			Enabled:         true,
 			File:            "/var/log/proxynd/security.log",
 			Level:           "warn",
@@ -176,7 +177,7 @@ var (
 			BlockAfter:      50,
 			RetentionDays:   365,
 		},
-		Performance: &PerformanceConfig{
+		Performance: &PerformanceLoggingConfig{
 			Enabled:           true,
 			File:              "/var/log/proxynd/performance.log",
 			Level:             "info",
@@ -210,6 +211,7 @@ var (
 		},
 	}
 
+	// DefaultAggregationConfig provides the default log aggregation configuration
 	DefaultAggregationConfig = AggregationConfig{
 		Enabled: false,
 		LogPaths: []string{
@@ -221,9 +223,10 @@ var (
 		OutputPath:     "/var/log/proxynd/analytics",
 		AnalysisWindow: 1 * time.Hour,
 		Patterns: map[string]string{
-			"http_request": `^(?P<timestamp>\S+)\s+(?P<level>\w+)\s+.*HTTP request.*method=(?P<method>\w+).*path=(?P<path>\S+).*status=(?P<status>\d+).*duration=(?P<duration>[\d.]+\w+)`,
-			"error":        `^(?P<timestamp>\S+)\s+(?P<level>ERROR|FATAL)\s+(?P<component>\w+)\s+(?P<message>.*)`,
-			"security":     `^(?P<timestamp>\S+)\s+(?P<level>\w+)\s+security\s+(?P<event_type>\w+)\s+(?P<message>.*)`,
+			"http_request": `^(?P<timestamp>\S+)\s+(?P<level>\w+)\s+.*HTTP request.*` +
+				`method=(?P<method>\w+).*path=(?P<path>\S+).*status=(?P<status>\d+).*duration=(?P<duration>[\d.]+\w+)`,
+			"error":    `^(?P<timestamp>\S+)\s+(?P<level>ERROR|FATAL)\s+(?P<component>\w+)\s+(?P<message>.*)`,
+			"security": `^(?P<timestamp>\S+)\s+(?P<level>\w+)\s+security\s+(?P<event_type>\w+)\s+(?P<message>.*)`,
 		},
 		MaxFileSize:     100 * 1024 * 1024,   // 100MB
 		RetentionPeriod: 30 * 24 * time.Hour, // 30 days

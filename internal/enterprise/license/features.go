@@ -4,18 +4,50 @@ package license
 // Feature constants - 모든 엔터프라이즈 기능 정의
 const (
 	// 인증 기능
+	// FeatureLDAPAuth is a const that feature l d a p auth
+	// FeatureSAMLAuth is a const that feature s a m l auth
+	// FeatureOAuth2 is a const that feature o auth2
+	// FeatureRBAC is a const that feature r b a c
+	// FeatureMFA is a const that feature m f a
 	FeatureLDAPAuth = "ldap_auth"
 	FeatureSAMLAuth = "saml_auth"
-	FeatureOAuth2   = "oauth2_advanced"
-	FeatureRBAC     = "rbac"
-	FeatureMFA      = "mfa"
+	// FeatureMultiDatacenter is a const that feature multi datacenter
+	// FeatureGeoRouting is a const that feature geo routing
+	// FeatureSmartCaching is a const that feature smart caching
+	// FeaturePredictiveCache is a const that feature predictive cache
+	// FeatureBandwidthControl is a const that feature bandwidth control
+	FeatureOAuth2 = "oauth2_advanced"
+	FeatureRBAC   = "rbac"
+	// FeatureVulnerabilityScanning is a const that feature vulnerability scanning
+	// FeatureLicenseScanning is a const that feature license scanning
+	// FeatureMalwareScanning is a const that feature malware scanning
+	// FeatureSecurityPolicies is a const that feature security policies
+	// FeatureAuditLog is a const that feature audit log
+	FeatureMFA = "mfa"
 
+	// FeatureAdvancedAnalytics is a const that feature advanced analytics
+	// FeatureCustomDashboards is a const that feature custom dashboards
+	// FeatureReporting is a const that feature reporting
+	// FeatureAlerting is a const that feature alerting
+	// FeatureSLAMonitoring is a const that feature s l a monitoring
 	// 고급 프록시 기능
-	FeatureMultiDatacenter  = "multi_datacenter"
-	FeatureGeoRouting       = "geo_routing"
-	FeatureSmartCaching     = "smart_caching"
+	FeatureMultiDatacenter = "multi_datacenter"
+	// FeatureGraphQLAPI is a const that feature graph q l a p i
+	// FeatureWebhooks is a const that feature webhooks
+	// FeatureTerraformProvider is a const that feature terraform provider
+	// FeatureKubernetesOperator is a const that feature kubernetes operator
+	FeatureGeoRouting   = "geo_routing"
+	FeatureSmartCaching = "smart_caching"
+	// FeatureGDPRCompliance is a const that feature g d p r compliance
+	// FeatureSOXCompliance is a const that feature s o x compliance
+	// FeatureHIPAACompliance is a const that feature h i p a a compliance
+	// FeatureDataRetention is a const that feature data retention
 	FeaturePredictiveCache  = "predictive_cache"
 	FeatureBandwidthControl = "bandwidth_control"
+	// FeaturePrioritySupport is a const that feature priority support
+	// Feature247Support is a const that feature247 support
+	// FeatureDedicatedCSM is a const that feature dedicated c s m
+	// FeatureSLA is a const that feature s l a
 
 	// 보안 기능
 	FeatureVulnerabilityScanning = "vulnerability_scanning"

@@ -24,6 +24,8 @@ const privateKeyPEM = `
 -----END RSA PRIVATE KEY-----
 `
 
+// License is exported
+// License represents a data structure
 type License struct {
 	ID         string    `json:"id"`
 	Company    string    `json:"company"`
@@ -113,7 +115,12 @@ func main() {
 
 func generateID() string {
 	b := make([]byte, 16)
-	rand.Read(b)
+	_, err := rand.Read(b)
+	if err != nil {
+		// rand.Read은 crypto/rand를 사용하므로 실패하기 어렵지만,
+		// 만약 실패하면 패닉을 발생시킴 (라이센스 생성에서 중요한 보안 요소)
+		panic(fmt.Sprintf("failed to generate random ID: %v", err))
+	}
 	return fmt.Sprintf("%x", b)
 }
 

@@ -86,6 +86,7 @@ func TestPrometheusMiddleware(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			req := httptest.NewRequest(tt.method, tt.path, nil)
 			resp, err := app.Test(req)
+			defer func() { _ = resp.Body.Close() }()
 
 			assert.Equal(t, nil, err)
 			assert.Equal(t, tt.expectedStatus, resp.StatusCode)
@@ -112,12 +113,14 @@ func TestMetricsEndpoint(t *testing.T) {
 	// Prometheus 핸들러 등록
 	app.Get("/metrics", func(c *fiber.Ctx) error {
 		// 간단한 테스트를 위해 텍스트 응답
-		return c.SendString("# HELP proxynd_http_requests_total Total number of HTTP requests\n# TYPE proxynd_http_requests_total counter\n")
+		return c.SendString("# HELP proxynd_http_requests_total Total number of HTTP requests\n" +
+			"# TYPE proxynd_http_requests_total counter\n")
 	})
 
 	// /metrics 엔드포인트 테스트
 	req := httptest.NewRequest("GET", "/metrics", nil)
 	resp, err := app.Test(req)
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, nil, err)
 	assert.Equal(t, 200, resp.StatusCode)
@@ -226,7 +229,7 @@ func TestMetricsMiddleware_ErrorHandling(t *testing.T) {
 	app.Use(metrics.PrometheusMiddleware())
 
 	// 오류를 발생시키는 핸들러
-	app.Get("/error", func(c *fiber.Ctx) error {
+	app.Get("/error", func(_ *fiber.Ctx) error {
 		return fiber.NewError(500, "Internal Server Error")
 	})
 
@@ -257,6 +260,7 @@ func TestMetricsMiddleware_ErrorHandling(t *testing.T) {
 	for _, tt := range tests {
 		req := httptest.NewRequest("GET", tt.path, nil)
 		resp, err := app.Test(req)
+		defer func() { _ = resp.Body.Close() }()
 
 		assert.Equal(t, nil, err)
 		assert.Equal(t, tt.expectedStatus, resp.StatusCode)

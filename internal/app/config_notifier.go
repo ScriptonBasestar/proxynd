@@ -31,7 +31,7 @@ func (n *ConfigChangeNotifier) AddListener(listener func(*configs.UnifiedConfig)
 }
 
 // RemoveListener 특정 리스너 제거 (실제로는 구현이 복잡하므로 Clear 사용 권장)
-func (n *ConfigChangeNotifier) RemoveListener(listener func(*configs.UnifiedConfig)) {
+func (n *ConfigChangeNotifier) RemoveListener(_ func(*configs.UnifiedConfig)) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 

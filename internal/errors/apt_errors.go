@@ -4,6 +4,7 @@ import "time"
 
 // APT 도메인 에러 정의
 var (
+	// ErrAPTPackageNotFound is a var that err a p t package not found
 	ErrAPTPackageNotFound = &DomainError{
 		Code:      "APT001",
 		Message:   "요청한 APT 패키지를 찾을 수 없습니다",
@@ -11,6 +12,7 @@ var (
 		Level:     ErrorLevelWarning,
 		Timestamp: time.Now(),
 	}
+	// ErrAPTMirrorUnavailable is a var that err a p t mirror unavailable
 
 	ErrAPTMirrorUnavailable = &DomainError{
 		Code:      "APT002",
@@ -18,27 +20,31 @@ var (
 		Domain:    "apt",
 		Level:     ErrorLevelError,
 		Timestamp: time.Now(),
+		// ErrAPTInvalidPackageFormat is a var that err a p t invalid package format
 	}
 
 	ErrAPTInvalidPackageFormat = &DomainError{
-		Code:      "APT003",
-		Message:   "잘못된 APT 패키지 형식입니다",
-		Domain:    "apt",
-		Level:     ErrorLevelError,
+		Code:    "APT003",
+		Message: "잘못된 APT 패키지 형식입니다",
+		Domain:  "apt",
+		Level:   ErrorLevelError,
+		// ErrAPTProxyDisabled is a var that err a p t proxy disabled
 		Timestamp: time.Now(),
 	}
 
 	ErrAPTProxyDisabled = &DomainError{
-		Code:      "APT004",
-		Message:   "APT 프록시가 비활성화되어 있습니다",
-		Domain:    "apt",
+		Code:    "APT004",
+		Message: "APT 프록시가 비활성화되어 있습니다",
+		Domain:  "apt",
+		// ErrAPTInvalidPath is a var that err a p t invalid path
 		Level:     ErrorLevelError,
 		Timestamp: time.Now(),
 	}
 
 	ErrAPTInvalidPath = &DomainError{
-		Code:      "APT005",
-		Message:   "잘못된 APT 패키지 경로입니다",
+		Code:    "APT005",
+		Message: "잘못된 APT 패키지 경로입니다",
+		// ErrAPTConfigError is a var that err a p t config error
 		Domain:    "apt",
 		Level:     ErrorLevelError,
 		Timestamp: time.Now(),

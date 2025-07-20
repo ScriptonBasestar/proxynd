@@ -1,3 +1,4 @@
+// Package handlers provides base handler implementations
 package handlers
 
 import (
@@ -9,6 +10,14 @@ import (
 	"proxynd/configs"
 	"proxynd/internal/app"
 	"proxynd/logging"
+)
+
+// Log level constants
+const (
+	// LogLevelError is a const that log level error
+	// LogLevelInfo is a const that log level info
+	LogLevelError = "error"
+	LogLevelInfo  = "info"
 )
 
 // BaseHandler 기본 핸들러 구현체
@@ -89,17 +98,17 @@ func (h *BaseHandler) GetCacheKey(c *fiber.Ctx) string {
 }
 
 // RequiresAuth 기본 인증 요구 여부 (false)
-func (h *BaseHandler) RequiresAuth(c *fiber.Ctx) bool {
+func (h *BaseHandler) RequiresAuth(_ *fiber.Ctx) bool {
 	return false
 }
 
 // Authenticate 기본 인증 로직 (통과)
-func (h *BaseHandler) Authenticate(c *fiber.Ctx) error {
+func (h *BaseHandler) Authenticate(_ *fiber.Ctx) error {
 	return nil
 }
 
 // ShouldLog 기본 로깅 여부 (모든 요청 로깅)
-func (h *BaseHandler) ShouldLog(c *fiber.Ctx) bool {
+func (h *BaseHandler) ShouldLog(_ *fiber.Ctx) bool {
 	return true
 }
 
@@ -107,9 +116,9 @@ func (h *BaseHandler) ShouldLog(c *fiber.Ctx) bool {
 func (h *BaseHandler) GetLogLevel(c *fiber.Ctx) string {
 	// 에러 상태코드는 error 레벨, 나머지는 info 레벨
 	if c.Response().StatusCode() >= 400 {
-		return "error"
+		return LogLevelError
 	}
-	return "info"
+	return LogLevelInfo
 }
 
 // RecordMetrics 기본 메트릭 기록
@@ -167,7 +176,7 @@ func (h *BaseHandler) LogResponse(c *fiber.Ctx, duration time.Duration) {
 		}
 
 		switch level {
-		case "error":
+		case LogLevelError:
 			h.logger.Error(message, fields...)
 		case "warn":
 			h.logger.Warn(message, fields...)

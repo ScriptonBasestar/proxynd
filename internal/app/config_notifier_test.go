@@ -178,7 +178,7 @@ func TestConfigChangeNotifier_ConcurrentAccess(t *testing.T) {
 	// Add listeners concurrently
 	for i := 0; i < numGoroutines; i++ {
 		wg.Add(1)
-		go func(goroutineIndex int) {
+		go func(_ int) {
 			defer wg.Done()
 			for j := 0; j < numListenersPerGoroutine; j++ {
 				listener := func(*configs.UnifiedConfig) {}

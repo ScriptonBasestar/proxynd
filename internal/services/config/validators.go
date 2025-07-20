@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+
 	"proxynd/configs"
 )
 
@@ -129,7 +130,7 @@ func (v *proxyConfigValidator) validateApkConfig(config interface{}) error {
 }
 
 // validateHelmConfig validates Helm proxy configuration
-func (v *proxyConfigValidator) validateHelmConfig(config interface{}) error {
+func (v *proxyConfigValidator) validateHelmConfig(_ interface{}) error {
 	// Helm config not implemented yet
 	return nil
 }

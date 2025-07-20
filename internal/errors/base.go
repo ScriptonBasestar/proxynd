@@ -5,17 +5,21 @@ import (
 	"time"
 )
 
-// ErrorLevel 에러 심각도 레벨
+// ErrorLevel represents error severity level
 type ErrorLevel int
 
 const (
+	// ErrorLevelInfo indicates informational messages
 	ErrorLevelInfo ErrorLevel = iota
+	// ErrorLevelWarning indicates warning messages
 	ErrorLevelWarning
+	// ErrorLevelError indicates error messages
 	ErrorLevelError
+	// ErrorLevelCritical indicates critical error messages
 	ErrorLevelCritical
 )
 
-// DomainError 도메인별 구조화된 에러
+// DomainError represents a structured error with domain context
 type DomainError struct {
 	Code      string      `json:"code"`
 	Message   string      `json:"message"`
@@ -35,12 +39,12 @@ func (e *DomainError) Error() string {
 	return fmt.Sprintf("[%s] %s: %s", e.Domain, e.Code, e.Message)
 }
 
-// ErrorBuilder 에러 빌더 패턴
+// ErrorBuilder provides a builder pattern for creating domain errors
 type ErrorBuilder struct {
 	err *DomainError
 }
 
-// NewError 새로운 에러 빌더 생성
+// NewError creates a new error builder
 func NewError(code, message string) *ErrorBuilder {
 	return &ErrorBuilder{
 		err: &DomainError{
@@ -52,36 +56,36 @@ func NewError(code, message string) *ErrorBuilder {
 	}
 }
 
-// WithDomain 도메인 설정
+// WithDomain sets the error domain
 func (b *ErrorBuilder) WithDomain(domain string) *ErrorBuilder {
 	b.err.Domain = domain
 	return b
 }
 
-// WithCause 원인 에러 설정
+// WithCause sets the underlying cause error
 func (b *ErrorBuilder) WithCause(cause error) *ErrorBuilder {
 	b.err.Cause = cause
 	return b
 }
 
-// WithDetails 추가 상세 정보 설정
+// WithDetails sets additional error details
 func (b *ErrorBuilder) WithDetails(details interface{}) *ErrorBuilder {
 	b.err.Details = details
 	return b
 }
 
-// WithLevel 에러 레벨 설정
+// WithLevel sets the error severity level
 func (b *ErrorBuilder) WithLevel(level ErrorLevel) *ErrorBuilder {
 	b.err.Level = level
 	return b
 }
 
-// Build 최종 에러 객체 생성
+// Build creates the final domain error
 func (b *ErrorBuilder) Build() *DomainError {
 	return b.err
 }
 
-// String 에러 레벨을 문자열로 변환
+// String converts error level to string representation
 func (e ErrorLevel) String() string {
 	switch e {
 	case ErrorLevelInfo:

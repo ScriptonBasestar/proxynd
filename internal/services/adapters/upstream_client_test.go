@@ -55,11 +55,11 @@ func TestHTTPUpstreamClient_Fetch(t *testing.T) {
 		{
 			name: "successful fetch",
 			setupServer: func() *httptest.Server {
-				return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 					w.Header().Set("Content-Type", "text/plain")
 					w.Header().Set("X-Custom-Header", "custom-value")
 					w.WriteHeader(http.StatusOK)
-					w.Write([]byte("test content"))
+					_, _ = w.Write([]byte("test content"))
 				}))
 			},
 			headers: map[string]string{
@@ -79,9 +79,9 @@ func TestHTTPUpstreamClient_Fetch(t *testing.T) {
 		{
 			name: "404 response",
 			setupServer: func() *httptest.Server {
-				return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 					w.WriteHeader(http.StatusNotFound)
-					w.Write([]byte("not found"))
+					_, _ = w.Write([]byte("not found"))
 				}))
 			},
 			wantStatusCode: 404,
@@ -108,7 +108,7 @@ func TestHTTPUpstreamClient_Fetch(t *testing.T) {
 		{
 			name: "server timeout",
 			setupServer: func() *httptest.Server {
-				return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 					time.Sleep(100 * time.Millisecond)
 					w.WriteHeader(http.StatusOK)
 				}))
@@ -127,7 +127,7 @@ func TestHTTPUpstreamClient_Fetch(t *testing.T) {
 		{
 			name: "large response",
 			setupServer: func() *httptest.Server {
-				return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 					// Send 1MB of data
 					data := make([]byte, 1024*1024)
 					for i := range data {
@@ -135,7 +135,7 @@ func TestHTTPUpstreamClient_Fetch(t *testing.T) {
 					}
 					w.Header().Set("Content-Length", fmt.Sprintf("%d", len(data)))
 					w.WriteHeader(http.StatusOK)
-					w.Write(data)
+					_, _ = w.Write(data)
 				}))
 			},
 			wantStatusCode: 200,
@@ -149,7 +149,7 @@ func TestHTTPUpstreamClient_Fetch(t *testing.T) {
 		{
 			name: "with content disposition",
 			setupServer: func() *httptest.Server {
-				return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 					w.Header().Set("Content-Disposition", `attachment; filename="test.jar"`)
 					w.WriteHeader(http.StatusOK)
 				}))
@@ -226,7 +226,7 @@ func TestHTTPUpstreamClient_FetchWithRedirect(t *testing.T) {
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("final content"))
+		_, _ = w.Write([]byte("final content"))
 	}))
 	defer server.Close()
 
@@ -244,7 +244,7 @@ func TestHTTPUpstreamClient_FetchWithRedirect(t *testing.T) {
 }
 
 func TestHTTPUpstreamClient_FetchWithContextCancel(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		time.Sleep(1 * time.Second)
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -302,7 +302,7 @@ func TestHTTPUpstreamClient_ParseContentDisposition(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 				if tt.header != "" {
 					w.Header().Set("Content-Disposition", tt.header)
 				}
@@ -323,9 +323,9 @@ func TestHTTPUpstreamClient_ParseContentDisposition(t *testing.T) {
 
 // Benchmark test
 func BenchmarkHTTPUpstreamClient_Fetch(b *testing.B) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("benchmark content"))
+		_, _ = w.Write([]byte("benchmark content"))
 	}))
 	defer server.Close()
 
@@ -338,6 +338,6 @@ func BenchmarkHTTPUpstreamClient_Fetch(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 	}
 }

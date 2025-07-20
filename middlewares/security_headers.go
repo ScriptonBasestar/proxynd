@@ -46,10 +46,12 @@ func ProductionSecurityHeadersConfig() SecurityHeadersConfig {
 		EnableHSTS:               true,
 		HSTSMaxAge:               31536000,
 		EnableCSP:                true,
-		CSPDirective:             "default-src 'self'; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'self'",
-		ReferrerPolicy:           "strict-origin-when-cross-origin",
-		PermissionsPolicy:        "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()",
-		ServerHeader:             "ProxyND",
+		CSPDirective: "default-src 'self'; object-src 'none'; script-src 'self'; " +
+			"style-src 'self' 'unsafe-inline'; base-uri 'self'; form-action 'self'",
+		ReferrerPolicy: "strict-origin-when-cross-origin",
+		PermissionsPolicy: "geolocation=(), microphone=(), camera=(), payment=(), " +
+			"usb=(), magnetometer=(), gyroscope=(), accelerometer=()",
+		ServerHeader: "ProxyND",
 	}
 }
 
@@ -238,7 +240,8 @@ func PublicSecurityHeaders() fiber.Handler {
 		c.Set("Cache-Control", "public, max-age=3600")
 
 		// 기본 CSP (스크립트와 스타일 허용)
-		c.Set("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'")
+		c.Set("Content-Security-Policy",
+			"default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'")
 
 		c.Set("Server", "ProxyND")
 

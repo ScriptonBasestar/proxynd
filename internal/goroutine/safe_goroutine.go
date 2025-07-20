@@ -1,3 +1,4 @@
+// Package goroutine provides safe goroutine management utilities
 package goroutine
 
 import (

@@ -186,7 +186,8 @@ func TestCacheAdapter_Put(t *testing.T) {
 			key:     "empty-key",
 			content: "",
 			setupMock: func(m *MockCacheRepository) {
-				m.On("Put", ctx, "empty-key", mock.AnythingOfType("*bytes.Buffer"), mock.AnythingOfType("time.Duration")).Return(nil)
+				m.On("Put", ctx, "empty-key", mock.AnythingOfType("*bytes.Buffer"),
+					mock.AnythingOfType("time.Duration")).Return(nil)
 			},
 			wantErr: false,
 		},
@@ -335,7 +336,8 @@ func TestCacheAdapter_LargeContent(t *testing.T) {
 		largeContent[i] = byte(i % 256)
 	}
 
-	repo.On("Put", ctx, "large-key", mock.AnythingOfType("*bytes.Reader"), mock.AnythingOfType("time.Duration")).Return(nil)
+	repo.On("Put", ctx, "large-key", mock.AnythingOfType("*bytes.Reader"),
+		mock.AnythingOfType("time.Duration")).Return(nil)
 
 	adapter := NewCacheAdapter(repo, 5*time.Minute)
 	reader := bytes.NewReader(largeContent)

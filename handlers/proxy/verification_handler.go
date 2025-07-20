@@ -210,7 +210,7 @@ func (vh *VerificationHandler) shouldBlockOnFailure() bool {
 }
 
 // loadVerifierConfig 검증 설정 로드
-func loadVerifierConfig(globalConfig *configs.GlobalConfig) *verification.VerifierConfig {
+func loadVerifierConfig(_ *configs.GlobalConfig) *verification.VerifierConfig {
 	// 기본 설정
 	config := &verification.VerifierConfig{
 		StrictMode:     true,

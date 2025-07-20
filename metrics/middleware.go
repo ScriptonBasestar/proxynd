@@ -8,13 +8,20 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+// Constants for metrics middleware
+const (
+	metricsPath   = "/metrics"
+	resultFailure = "failure"
+	statusUnknown = "unknown"
+)
+
 // PrometheusMiddleware Prometheus 메트릭 수집 미들웨어
 func PrometheusMiddleware() fiber.Handler {
 	metrics := GetMetrics()
 
 	return func(c *fiber.Ctx) error {
 		// /metrics 엔드포인트는 제외
-		if c.Path() == "/metrics" {
+		if c.Path() == metricsPath {
 			return c.Next()
 		}
 
@@ -178,13 +185,13 @@ func updateAuthMetrics(c *fiber.Ctx, metrics *Metrics) {
 		if method, ok := authAttempt.(string); ok {
 			authResult := "success"
 			if c.Response().StatusCode() == 401 || c.Response().StatusCode() == 403 {
-				authResult = "failure"
+				authResult = resultFailure
 			}
 
 			metrics.AuthAttemptsTotal.WithLabelValues(method, authResult).Inc()
 
 			// 인증 실패
-			if authResult == "failure" {
+			if authResult == resultFailure {
 				reason := "invalid_credentials"
 				if c.Response().StatusCode() == 403 {
 					reason = "forbidden"
@@ -201,13 +208,13 @@ func updateVerificationMetrics(c *fiber.Ctx, metrics *Metrics, registryType stri
 	if verified := c.Locals("packageVerified"); verified != nil {
 		result := "success"
 		if !verified.(bool) {
-			result = "failure"
+			result = resultFailure
 		}
 
 		metrics.PackageVerifications.WithLabelValues(registryType, result).Inc()
 
 		// 검증 실패 상세
-		if result == "failure" {
+		if result == resultFailure {
 			if failureType := c.Locals("verificationFailureType"); failureType != nil {
 				if ft, ok := failureType.(string); ok {
 					metrics.VerificationFailures.WithLabelValues(registryType, ft).Inc()
@@ -241,7 +248,7 @@ func extractRegistryType(c *fiber.Ctx) string {
 		}
 	}
 
-	return "unknown"
+	return statusUnknown
 }
 
 // normalizePath 경로 정규화 (카디널리티 감소)
@@ -301,7 +308,7 @@ func getUpstream(c *fiber.Ctx, registryType string) string {
 	case "apt":
 		return "archive.ubuntu.com"
 	default:
-		return "unknown"
+		return statusUnknown
 	}
 }
 
@@ -337,6 +344,6 @@ func getErrorType(statusCode int) string {
 			return "server_error"
 		}
 	default:
-		return "unknown"
+		return statusUnknown
 	}
 }

@@ -101,18 +101,18 @@ registries:
 
 func TestUnifiedConfig_EnvironmentOverrides(t *testing.T) {
 	// 환경 변수 설정
-	os.Setenv("SERVER_PORT", "8888")
-	os.Setenv("LOG_LEVEL", "error")
-	os.Setenv("CACHE_BACKEND", "redis")
-	os.Setenv("STORAGE_DIR", "/custom/storage")
-	os.Setenv("METRICS_ENABLED", "true")
+	_ = os.Setenv("SERVER_PORT", "8888")
+	_ = os.Setenv("LOG_LEVEL", "error")
+	_ = os.Setenv("CACHE_BACKEND", "redis")
+	_ = os.Setenv("STORAGE_DIR", "/custom/storage")
+	_ = os.Setenv("METRICS_ENABLED", "true")
 
 	defer func() {
-		os.Unsetenv("SERVER_PORT")
-		os.Unsetenv("LOG_LEVEL")
-		os.Unsetenv("CACHE_BACKEND")
-		os.Unsetenv("STORAGE_DIR")
-		os.Unsetenv("METRICS_ENABLED")
+		_ = os.Unsetenv("SERVER_PORT")
+		_ = os.Unsetenv("LOG_LEVEL")
+		_ = os.Unsetenv("CACHE_BACKEND")
+		_ = os.Unsetenv("STORAGE_DIR")
+		_ = os.Unsetenv("METRICS_ENABLED")
 	}()
 
 	// 임시 설정 파일 생성
@@ -203,7 +203,7 @@ func TestUnifiedConfig_Validation(t *testing.T) {
 				Cache: configs.CacheConfig{
 					Backend: "file",
 				},
-				Logging: configs.LoggingConfig{
+				Logging: configs.UnifiedLoggingConfig{
 					Level: "invalid",
 				},
 			},
@@ -228,14 +228,14 @@ func TestUnifiedConfig_Validation(t *testing.T) {
 
 func TestEnvOverride_GetEnvironmentOverrides(t *testing.T) {
 	// 환경 변수 설정
-	os.Setenv("SERVER_PORT", "8080")
-	os.Setenv("LOG_LEVEL", "debug")
-	os.Setenv("CACHE_BACKEND", "s3")
+	_ = os.Setenv("SERVER_PORT", "8080")
+	_ = os.Setenv("LOG_LEVEL", "debug")
+	_ = os.Setenv("CACHE_BACKEND", "s3")
 
 	defer func() {
-		os.Unsetenv("SERVER_PORT")
-		os.Unsetenv("LOG_LEVEL")
-		os.Unsetenv("CACHE_BACKEND")
+		_ = os.Unsetenv("SERVER_PORT")
+		_ = os.Unsetenv("LOG_LEVEL")
+		_ = os.Unsetenv("CACHE_BACKEND")
 	}()
 
 	overrides := configs.GetEnvironmentOverrides()
@@ -247,12 +247,12 @@ func TestEnvOverride_GetEnvironmentOverrides(t *testing.T) {
 
 func TestConfigLoader_EnvironmentVariableExpansion(t *testing.T) {
 	// 환경 변수 설정
-	os.Setenv("TEST_BUCKET", "my-test-bucket")
-	os.Setenv("TEST_REGION", "us-east-1")
+	_ = os.Setenv("TEST_BUCKET", "my-test-bucket")
+	_ = os.Setenv("TEST_REGION", "us-east-1")
 
 	defer func() {
-		os.Unsetenv("TEST_BUCKET")
-		os.Unsetenv("TEST_REGION")
+		_ = os.Unsetenv("TEST_BUCKET")
+		_ = os.Unsetenv("TEST_REGION")
 	}()
 
 	// 임시 설정 파일 생성
@@ -312,7 +312,7 @@ logging:
 	reloadCount := 0
 	testHandler := &testReloadHandler{
 		name: "TestHandler",
-		onReload: func(old, new *configs.UnifiedConfig) error {
+		onReload: func(_, _ *configs.UnifiedConfig) error {
 			reloadCount++
 			return nil
 		},
@@ -352,11 +352,11 @@ logging:
 // 테스트용 리로드 핸들러
 type testReloadHandler struct {
 	name     string
-	onReload func(old, new *configs.UnifiedConfig) error
+	onReload func(old, newVal *configs.UnifiedConfig) error
 }
 
-func (h *testReloadHandler) OnConfigReload(old, new *configs.UnifiedConfig) error {
-	return h.onReload(old, new)
+func (h *testReloadHandler) OnConfigReload(old, newVal *configs.UnifiedConfig) error {
+	return h.onReload(old, newVal)
 }
 
 func (h *testReloadHandler) Name() string {

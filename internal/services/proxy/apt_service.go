@@ -1,3 +1,4 @@
+// Package proxy provides proxy service implementations
 package proxy
 
 import (
@@ -39,7 +40,7 @@ func NewAptService(
 }
 
 // HandleRequest processes an APT proxy request
-func (s *AptService) HandleRequest(ctx context.Context, req ProxyRequest) (*ProxyResponse, error) {
+func (s *AptService) HandleRequest(_ context.Context, _ ProxyRequest) (*ProxyResponse, error) {
 	// TODO: Implement APT-specific logic
 	// This is a stub implementation
 	return s.HandleError(fmt.Errorf("APT service not yet implemented"), 501), nil

@@ -106,9 +106,9 @@ func ApkProxyHandler(c *fiber.Ctx) error {
 	// 설정 읽기
 	storageDir := helpers.GetStorageDir()
 	globalConfig := configs.GlobalConfig{}
-	globalConfig.ReadConfig()
+	_ = globalConfig.ReadConfig()
 	apkConfig := configs.ApkProxyConfig{}
-	apkConfig.ReadConfig()
+	_ = apkConfig.ReadConfig()
 
 	// 파일 경로 생성
 	baseDir := filepath.Join(storageDir, apkConfig.Path)
@@ -151,13 +151,13 @@ func ApkProxyHandler(c *fiber.Ctx) error {
 	// 캐시에 없으면 업스트림에서 가져오기
 	if _, err := os.Stat(filefullpath); os.IsNotExist(err) {
 		dirpath := filepath.Dir(filefullpath)
-		os.MkdirAll(dirpath, os.ModePerm)
+		_ = os.MkdirAll(dirpath, os.ModePerm)
 		out, err := os.Create(filefullpath)
 		if err != nil {
 			log.Printf("Error creating file: %v", err)
 			return c.Status(fiber.StatusInternalServerError).SendString("Error creating file")
 		}
-		defer out.Close()
+		defer func() { _ = out.Close() }()
 
 		// HTTP 클라이언트 생성 (프록시 최적화 설정)
 		proxyClient := httpclient.NewProxyClient()
@@ -171,7 +171,7 @@ func ApkProxyHandler(c *fiber.Ctx) error {
 		}
 
 		for _, proxy := range proxies {
-			fullURL := helpers.JoinURL(proxy.Url, requestPath)
+			fullURL := helpers.JoinURL(proxy.URL, requestPath)
 			log.Printf("Fetching from upstream %s: %s\n", proxy.Name, fullURL)
 
 			// 컨텍스트 기반 요청 (재시도 포함)
@@ -180,7 +180,7 @@ func ApkProxyHandler(c *fiber.Ctx) error {
 				log.Printf("Error fetching from proxy %s: %v\n", proxy.Name, err)
 				continue
 			}
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 
 			if resp.StatusCode == http.StatusOK {
 				// 파일 저장
@@ -223,19 +223,19 @@ func getApkContentType(filename string) string {
 	case strings.HasSuffix(filename, ".apk"):
 		return "application/vnd.alpine.apk"
 	case strings.HasSuffix(filename, "APKINDEX.tar.gz"):
-		return "application/gzip"
+		return mimeApplicationGzip
 	case strings.HasSuffix(filename, "APKINDEX"):
-		return "text/plain"
+		return mimeTextPlain
 	case strings.HasSuffix(filename, ".asc"):
-		return "application/pgp-signature"
+		return mimeApplicationPGPSignature
 	case strings.HasSuffix(filename, ".rsa"):
-		return "application/octet-stream"
+		return mimeApplicationOctetStream
 	case strings.HasSuffix(filename, ".tar.gz"):
-		return "application/gzip"
+		return mimeApplicationGzip
 	case strings.HasSuffix(filename, ".gz"):
-		return "application/gzip"
+		return mimeApplicationGzip
 	default:
-		return "application/octet-stream"
+		return mimeApplicationOctetStream
 	}
 }
 
@@ -287,7 +287,7 @@ func verifyApkFileSignature(filePath string, config configs.ApkProxyConfig, c *f
 		logger.Error("APK 서명 검증 실패로 요청 차단",
 			logging.F("file", filePath))
 
-		c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+		_ = c.Status(fiber.StatusForbidden).JSON(fiber.Map{
 			"error":   "APK signature verification failed",
 			"message": "The requested APK file failed signature verification",
 			"details": result.Error,

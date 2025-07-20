@@ -10,6 +10,16 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+// HTTP method constants
+const (
+	// MethodPOST represents the HTTP POST method
+	MethodPOST = "POST"
+	// MethodPUT represents the HTTP PUT method
+	MethodPUT = "PUT"
+	// MethodDELETE represents the HTTP DELETE method
+	MethodDELETE = "DELETE"
+)
+
 // SecurityLogger handles security-specific logging
 type SecurityLogger struct {
 	logger    Logger
@@ -19,26 +29,41 @@ type SecurityLogger struct {
 
 // SecurityEvent types
 const (
-	SecurityEventAuthFailure        = "auth_failure"
+	// SecurityEventAuthFailure represents authentication failure events
+	SecurityEventAuthFailure = "auth_failure"
+	// SecurityEventUnauthorizedAccess represents unauthorized access attempts
 	SecurityEventUnauthorizedAccess = "unauthorized_access"
+	// SecurityEventSuspiciousActivity represents suspicious user activity
 	SecurityEventSuspiciousActivity = "suspicious_activity"
-	SecurityEventBruteForce         = "brute_force"
-	SecurityEventSQLInjection       = "sql_injection"
-	SecurityEventXSS                = "xss_attempt"
-	SecurityEventCSRF               = "csrf_attempt"
-	SecurityEventFileUpload         = "file_upload"
-	SecurityEventRateLimitExceeded  = "rate_limit_exceeded"
-	SecurityEventIPBlocked          = "ip_blocked"
-	SecurityEventMalwareDetected    = "malware_detected"
+	// SecurityEventBruteForce represents brute force attack attempts
+	SecurityEventBruteForce = "brute_force"
+	// SecurityEventSQLInjection represents SQL injection attempts
+	SecurityEventSQLInjection = "sql_injection"
+	// SecurityEventXSS represents XSS attack attempts
+	SecurityEventXSS = "xss_attempt"
+	// SecurityEventCSRF represents CSRF attack attempts
+	SecurityEventCSRF = "csrf_attempt"
+	// SecurityEventFileUpload represents suspicious file upload events
+	SecurityEventFileUpload = "file_upload"
+	// SecurityEventRateLimitExceeded represents rate limit violations
+	SecurityEventRateLimitExceeded = "rate_limit_exceeded"
+	// SecurityEventIPBlocked represents IP blocking events
+	SecurityEventIPBlocked = "ip_blocked"
+	// SecurityEventMalwareDetected represents malware detection events
+	SecurityEventMalwareDetected = "malware_detected"
 )
 
 // ThreatLevel represents the severity of a security event
 type ThreatLevel string
 
 const (
-	ThreatLevelLow      ThreatLevel = "low"
-	ThreatLevelMedium   ThreatLevel = "medium"
-	ThreatLevelHigh     ThreatLevel = "high"
+	// ThreatLevelLow represents low-severity security threats
+	ThreatLevelLow ThreatLevel = "low"
+	// ThreatLevelMedium represents medium-severity security threats
+	ThreatLevelMedium ThreatLevel = "medium"
+	// ThreatLevelHigh represents high-severity security threats
+	ThreatLevelHigh ThreatLevel = "high"
+	// ThreatLevelCritical represents critical security threats
 	ThreatLevelCritical ThreatLevel = "critical"
 )
 
@@ -148,7 +173,12 @@ func (s *SecurityLogger) LogSecurityEvent(ctx context.Context, event SecurityEve
 // Convenience methods for common security events
 
 // LogAuthenticationFailure logs authentication failures
-func (s *SecurityLogger) LogAuthenticationFailure(ctx context.Context, c *fiber.Ctx, reason string, metadata map[string]interface{}) {
+func (s *SecurityLogger) LogAuthenticationFailure(
+	ctx context.Context,
+	c *fiber.Ctx,
+	reason string,
+	metadata map[string]interface{},
+) {
 	event := SecurityEvent{
 		Type:        SecurityEventAuthFailure,
 		ThreatLevel: ThreatLevelMedium,
@@ -163,7 +193,12 @@ func (s *SecurityLogger) LogAuthenticationFailure(ctx context.Context, c *fiber.
 }
 
 // LogUnauthorizedAccess logs unauthorized access attempts
-func (s *SecurityLogger) LogUnauthorizedAccess(ctx context.Context, c *fiber.Ctx, resource string, metadata map[string]interface{}) {
+func (s *SecurityLogger) LogUnauthorizedAccess(
+	ctx context.Context,
+	c *fiber.Ctx,
+	resource string,
+	metadata map[string]interface{},
+) {
 	event := SecurityEvent{
 		Type:        SecurityEventUnauthorizedAccess,
 		ThreatLevel: ThreatLevelHigh,
@@ -178,7 +213,13 @@ func (s *SecurityLogger) LogUnauthorizedAccess(ctx context.Context, c *fiber.Ctx
 }
 
 // LogSuspiciousActivity logs suspicious behavior
-func (s *SecurityLogger) LogSuspiciousActivity(ctx context.Context, c *fiber.Ctx, activity string, threatLevel ThreatLevel, metadata map[string]interface{}) {
+func (s *SecurityLogger) LogSuspiciousActivity(
+	ctx context.Context,
+	c *fiber.Ctx,
+	activity string,
+	threatLevel ThreatLevel,
+	metadata map[string]interface{},
+) {
 	event := SecurityEvent{
 		Type:        SecurityEventSuspiciousActivity,
 		ThreatLevel: threatLevel,
@@ -193,7 +234,13 @@ func (s *SecurityLogger) LogSuspiciousActivity(ctx context.Context, c *fiber.Ctx
 }
 
 // LogBruteForceAttempt logs brute force attacks
-func (s *SecurityLogger) LogBruteForceAttempt(ctx context.Context, c *fiber.Ctx, target string, attemptCount int, metadata map[string]interface{}) {
+func (s *SecurityLogger) LogBruteForceAttempt(
+	ctx context.Context,
+	c *fiber.Ctx,
+	target string,
+	attemptCount int,
+	metadata map[string]interface{},
+) {
 	if metadata == nil {
 		metadata = make(map[string]interface{})
 	}
@@ -214,7 +261,12 @@ func (s *SecurityLogger) LogBruteForceAttempt(ctx context.Context, c *fiber.Ctx,
 }
 
 // LogInjectionAttempt logs SQL injection attempts
-func (s *SecurityLogger) LogInjectionAttempt(ctx context.Context, c *fiber.Ctx, injectionType, payload string, metadata map[string]interface{}) {
+func (s *SecurityLogger) LogInjectionAttempt(
+	ctx context.Context,
+	c *fiber.Ctx,
+	injectionType, payload string,
+	metadata map[string]interface{},
+) {
 	if metadata == nil {
 		metadata = make(map[string]interface{})
 	}
@@ -235,7 +287,13 @@ func (s *SecurityLogger) LogInjectionAttempt(ctx context.Context, c *fiber.Ctx, 
 }
 
 // LogRateLimitExceeded logs rate limiting violations
-func (s *SecurityLogger) LogRateLimitExceeded(ctx context.Context, c *fiber.Ctx, limit int, window time.Duration, metadata map[string]interface{}) {
+func (s *SecurityLogger) LogRateLimitExceeded(
+	ctx context.Context,
+	c *fiber.Ctx,
+	limit int,
+	window time.Duration,
+	metadata map[string]interface{},
+) {
 	if metadata == nil {
 		metadata = make(map[string]interface{})
 	}
@@ -256,7 +314,12 @@ func (s *SecurityLogger) LogRateLimitExceeded(ctx context.Context, c *fiber.Ctx,
 }
 
 // LogMalwareDetection logs malware detection
-func (s *SecurityLogger) LogMalwareDetection(ctx context.Context, c *fiber.Ctx, fileName, malwareType string, metadata map[string]interface{}) {
+func (s *SecurityLogger) LogMalwareDetection(
+	ctx context.Context,
+	c *fiber.Ctx,
+	fileName, malwareType string,
+	metadata map[string]interface{},
+) {
 	if metadata == nil {
 		metadata = make(map[string]interface{})
 	}
@@ -303,7 +366,7 @@ func (sa *SecurityAnalyzer) AnalyzeRequest(ctx context.Context, c *fiber.Ctx) {
 	sa.checkIPAddress(ctx, c)
 
 	// Check for file upload security
-	if c.Method() == "POST" && strings.Contains(c.Get("Content-Type"), "multipart/form-data") {
+	if c.Method() == MethodPOST && strings.Contains(c.Get("Content-Type"), "multipart/form-data") {
 		sa.checkFileUpload(ctx, c)
 	}
 }

@@ -1,9 +1,6 @@
 package proxy
 
 import (
-	"crypto/md5"
-	"crypto/sha1"
-	"encoding/hex"
 	"fmt"
 	"io"
 	"net/http"
@@ -21,7 +18,7 @@ import (
 	"proxynd/logging"
 )
 
-// Handler Maven 핸들러 인터페이스 (import cycle 방지)
+// MavenHandlerInterface represents a maven handler interface
 type MavenHandlerInterface interface {
 	Handle(c *fiber.Ctx) error
 	Name() string
@@ -150,7 +147,9 @@ func (h *MavenHandler) validatePath(path string) error {
 }
 
 // downloadFromUpstream 업스트림에서 파일 다운로드
-func (h *MavenHandler) downloadFromUpstream(filePath string, proxies []configs.MavenProxyServer, artifactPath string) ([]byte, error) {
+func (h *MavenHandler) downloadFromUpstream(
+	filePath string, proxies []configs.MavenProxyServer, artifactPath string,
+) ([]byte, error) {
 	// 디렉토리 생성
 	dirPath := filepath.Dir(filePath)
 	if err := os.MkdirAll(dirPath, 0755); err != nil {
@@ -177,14 +176,13 @@ func (h *MavenHandler) downloadFromUpstream(filePath string, proxies []configs.M
 				logging.F("index", i),
 			)
 			return responseContent, nil
-		} else {
-			lastErr = err
-			h.logger.Warn("Repository download failed, trying next",
-				logging.F("repository", proxy.URL),
-				logging.F("index", i),
-				logging.F("error", err),
-			)
 		}
+		lastErr = err
+		h.logger.Warn("Repository download failed, trying next",
+			logging.F("repository", proxy.URL),
+			logging.F("index", i),
+			logging.F("error", err),
+		)
 	}
 
 	return nil, fmt.Errorf("all repositories failed: %w", lastErr)
@@ -217,7 +215,7 @@ func (h *MavenHandler) tryDownloadFromRepository(repositoryURL, artifactPath str
 }
 
 // handleSnapshotArtifact SNAPSHOT 버전 처리
-func (h *MavenHandler) handleSnapshotArtifact(c *fiber.Ctx, artifactPath string, config *configs.MavenProxyConfig) error {
+func (h *MavenHandler) handleSnapshotArtifact(c *fiber.Ctx, artifactPath string, _ *configs.MavenProxyConfig) error {
 	h.logger.Info("Handling SNAPSHOT artifact",
 		logging.F("path", artifactPath),
 	)
@@ -234,7 +232,9 @@ func (h *MavenHandler) handleSnapshotArtifact(c *fiber.Ctx, artifactPath string,
 }
 
 // downloadSnapshotFromUpstream SNAPSHOT 버전을 업스트림에서 다운로드 (캐시 안함)
-func (h *MavenHandler) downloadSnapshotFromUpstream(proxies []configs.MavenProxyServer, artifactPath string) ([]byte, error) {
+func (h *MavenHandler) downloadSnapshotFromUpstream(
+	proxies []configs.MavenProxyServer, artifactPath string,
+) ([]byte, error) {
 	var lastErr error
 
 	for i, proxy := range proxies {
@@ -245,13 +245,12 @@ func (h *MavenHandler) downloadSnapshotFromUpstream(proxies []configs.MavenProxy
 				logging.F("index", i),
 			)
 			return content, nil
-		} else {
-			lastErr = err
-			h.logger.Warn("SNAPSHOT download failed, trying next repository",
-				logging.F("repository", proxy.URL),
-				logging.F("error", err),
-			)
 		}
+		lastErr = err
+		h.logger.Warn("SNAPSHOT download failed, trying next repository",
+			logging.F("repository", proxy.URL),
+			logging.F("error", err),
+		)
 	}
 
 	return nil, fmt.Errorf("all repositories failed for SNAPSHOT: %w", lastErr)
@@ -318,20 +317,6 @@ func (v *ChecksumVerifier) ValidateChecksum(checksumData []byte, checksumPath st
 	// TODO: 실제 원본 파일과 비교하는 로직 구현
 	// 현재는 검증 성공으로 처리
 	return nil
-}
-
-// calculateSHA1 SHA1 해시 계산
-func (v *ChecksumVerifier) calculateSHA1(data []byte) string {
-	h := sha1.New()
-	h.Write(data)
-	return hex.EncodeToString(h.Sum(nil))
-}
-
-// calculateMD5 MD5 해시 계산
-func (v *ChecksumVerifier) calculateMD5(data []byte) string {
-	h := md5.New()
-	h.Write(data)
-	return hex.EncodeToString(h.Sum(nil))
 }
 
 // Name 핸들러 이름 반환

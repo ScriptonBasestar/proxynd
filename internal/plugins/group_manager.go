@@ -56,7 +56,11 @@ func NewGroupManager(config GroupManagerConfig) GroupManager {
 }
 
 // FetchOnDemand 프록시 모드: 요청 시점에 그룹에서 데이터 가져오기
-func (m *DefaultGroupManager) FetchOnDemand(ctx context.Context, path string, upstreams []UpstreamConfig) ([]GroupResult, error) {
+func (m *DefaultGroupManager) FetchOnDemand(
+	ctx context.Context,
+	path string,
+	upstreams []UpstreamConfig,
+) ([]GroupResult, error) {
 	return m.fetchFromGroup(ctx, path, upstreams, false)
 }
 
@@ -125,7 +129,10 @@ func (m *DefaultGroupManager) SyncFromSingleMirror(ctx context.Context, mirror M
 }
 
 // HealthCheckGroup 그룹 헬스체크
-func (m *DefaultGroupManager) HealthCheckGroup(ctx context.Context, upstreams []UpstreamConfig) (map[string]bool, error) {
+func (m *DefaultGroupManager) HealthCheckGroup(
+	ctx context.Context,
+	upstreams []UpstreamConfig,
+) (map[string]bool, error) {
 	healthResults := make(map[string]bool)
 	var mu sync.Mutex
 	var wg sync.WaitGroup
@@ -148,7 +155,12 @@ func (m *DefaultGroupManager) HealthCheckGroup(ctx context.Context, upstreams []
 }
 
 // fetchFromGroup 그룹에서 데이터 가져오기 (내부 함수)
-func (m *DefaultGroupManager) fetchFromGroup(ctx context.Context, path string, upstreams []UpstreamConfig, parallel bool) ([]GroupResult, error) {
+func (m *DefaultGroupManager) fetchFromGroup(
+	ctx context.Context,
+	path string,
+	upstreams []UpstreamConfig,
+	parallel bool,
+) ([]GroupResult, error) {
 	if parallel {
 		return m.fetchParallel(ctx, path, upstreams)
 	}
@@ -157,7 +169,11 @@ func (m *DefaultGroupManager) fetchFromGroup(ctx context.Context, path string, u
 }
 
 // fetchParallel 병렬로 여러 업스트림에서 가져오기
-func (m *DefaultGroupManager) fetchParallel(ctx context.Context, path string, upstreams []UpstreamConfig) ([]GroupResult, error) {
+func (m *DefaultGroupManager) fetchParallel(
+	ctx context.Context,
+	path string,
+	upstreams []UpstreamConfig,
+) ([]GroupResult, error) {
 	resultsChan := make(chan GroupResult, len(upstreams))
 	var wg sync.WaitGroup
 
@@ -182,7 +198,11 @@ func (m *DefaultGroupManager) fetchParallel(ctx context.Context, path string, up
 }
 
 // fetchSequential 순차적으로 업스트림에서 가져오기
-func (m *DefaultGroupManager) fetchSequential(ctx context.Context, path string, upstreams []UpstreamConfig) ([]GroupResult, error) {
+func (m *DefaultGroupManager) fetchSequential(
+	ctx context.Context,
+	path string,
+	upstreams []UpstreamConfig,
+) ([]GroupResult, error) {
 	results := make([]GroupResult, 0, len(upstreams))
 
 	for _, upstream := range upstreams {
@@ -202,7 +222,11 @@ func (m *DefaultGroupManager) fetchSequential(ctx context.Context, path string, 
 }
 
 // fetchFromSingleUpstream 단일 업스트림에서 가져오기
-func (m *DefaultGroupManager) fetchFromSingleUpstream(ctx context.Context, path string, upstream UpstreamConfig) GroupResult {
+func (m *DefaultGroupManager) fetchFromSingleUpstream(
+	ctx context.Context,
+	path string,
+	upstream UpstreamConfig,
+) GroupResult {
 	start := time.Now()
 
 	result := GroupResult{
@@ -257,7 +281,7 @@ func (m *DefaultGroupManager) fetchFromSingleUpstream(ctx context.Context, path 
 		return result
 	}
 
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	result.StatusCode = resp.StatusCode
 
@@ -281,7 +305,7 @@ func (m *DefaultGroupManager) fetchFromSingleUpstream(ctx context.Context, path 
 }
 
 // fetchPackageList 미러에서 패키지 목록 조회
-func (m *DefaultGroupManager) fetchPackageList(ctx context.Context, mirror MirrorConfig) ([]string, error) {
+func (m *DefaultGroupManager) fetchPackageList(_ context.Context, mirror MirrorConfig) ([]string, error) {
 	// 여기서는 간단한 구현으로 기본 패키지 목록을 반환
 	// 실제 구현에서는 미러의 패키지 인덱스를 파싱해야 함
 	m.logger.Debug("Fetching package list from mirror",
@@ -302,7 +326,7 @@ func (m *DefaultGroupManager) applyFilters(packages []string, includePatterns, e
 }
 
 // syncPackages 패키지 동기화 (병렬 처리)
-func (m *DefaultGroupManager) syncPackages(ctx context.Context, mirror MirrorConfig, packages []string) error {
+func (m *DefaultGroupManager) syncPackages(_ context.Context, mirror MirrorConfig, packages []string) error {
 	// TODO: 실제 패키지 동기화 로직 구현
 	m.logger.Info("Package sync completed",
 		logging.F("mirror_url", mirror.URL),
@@ -330,7 +354,7 @@ func (m *DefaultGroupManager) checkSingleUpstream(ctx context.Context, upstream 
 	if err != nil {
 		return false
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	return resp.StatusCode < 400
 }

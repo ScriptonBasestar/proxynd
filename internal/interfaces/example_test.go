@@ -96,7 +96,7 @@ func TestExampleService_GetUserData(t *testing.T) {
 		// Setup mocks
 		mockCache := mocks.NewMockCacheManager(t)
 		mockAuth := &MockAuthService{
-			GetUserFunc: func(ctx context.Context, userID string) (*interfaces.User, error) {
+			GetUserFunc: func(_ context.Context, userID string) (*interfaces.User, error) {
 				return &interfaces.User{
 					ID:   userID,
 					Name: "Jane Doe",
@@ -133,11 +133,11 @@ type MockAuthService struct {
 	GetUserFunc func(ctx context.Context, userID string) (*interfaces.User, error)
 }
 
-func (m *MockAuthService) Authenticate(ctx context.Context, credentials interfaces.Credentials) (*interfaces.User, error) {
+func (m *MockAuthService) Authenticate(_ context.Context, _ interfaces.Credentials) (*interfaces.User, error) {
 	panic("not implemented")
 }
 
-func (m *MockAuthService) AuthorizeRequest(ctx context.Context, token string, resource string, action string) (bool, error) {
+func (m *MockAuthService) AuthorizeRequest(_ context.Context, _ string, _ string, _ string) (bool, error) {
 	panic("not implemented")
 }
 
@@ -148,11 +148,11 @@ func (m *MockAuthService) GetUser(ctx context.Context, userID string) (*interfac
 	panic("GetUserFunc not set")
 }
 
-func (m *MockAuthService) CreateUser(ctx context.Context, user *interfaces.User) error {
+func (m *MockAuthService) CreateUser(_ context.Context, _ *interfaces.User) error {
 	panic("not implemented")
 }
 
-func (m *MockAuthService) UpdateUser(ctx context.Context, userID string, updates map[string]interface{}) error {
+func (m *MockAuthService) UpdateUser(_ context.Context, _ string, _ map[string]interface{}) error {
 	panic("not implemented")
 }
 

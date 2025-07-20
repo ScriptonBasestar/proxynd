@@ -133,7 +133,7 @@ func NewMavenConfigBuilder() *MavenConfigBuilder {
 			UseCache: true,
 			Proxies: []configs.MavenProxyServer{
 				{
-					Id:          "central",
+					ID:          "central",
 					Name:        "Central Repository",
 					URL:         "https://repo1.maven.org/maven2",
 					Description: "Maven Central Repository",
@@ -156,7 +156,7 @@ func (b *MavenConfigBuilder) WithPath(path string) *MavenConfigBuilder {
 // WithProxy 프록시 서버 추가
 func (b *MavenConfigBuilder) WithProxy(id, name, url, description string, enabled bool) *MavenConfigBuilder {
 	b.config.Proxies = append(b.config.Proxies, configs.MavenProxyServer{
-		Id:          id,
+		ID:          id,
 		Name:        name,
 		URL:         url,
 		Description: description,

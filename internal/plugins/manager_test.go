@@ -18,7 +18,7 @@ func TestPluginManager_RegisterBuiltinPlugins(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to start plugin manager: %v", err)
 	}
-	defer manager.Stop(ctx)
+	defer func() { _ = manager.Stop(ctx) }()
 
 	// 기본 상태에서는 핸들러가 없어야 함
 	handlers := manager.ListHandlers()
@@ -39,7 +39,7 @@ func TestPluginManager_RegisterCustomPlugin(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to start plugin manager: %v", err)
 	}
-	defer manager.Stop(ctx)
+	defer func() { _ = manager.Stop(ctx) }()
 
 	// 테스트용 간단한 핸들러 생성
 	handler := NewBasePackageHandler("test", "Test Handler", "1.0.0")
@@ -75,7 +75,7 @@ func TestPluginManager_UnregisterPlugin(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to start plugin manager: %v", err)
 	}
-	defer manager.Stop(ctx)
+	defer func() { _ = manager.Stop(ctx) }()
 
 	// 테스트 핸들러 등록
 	handler := NewBasePackageHandler("test", "Test Handler", "1.0.0")
@@ -119,7 +119,7 @@ func TestPluginManager_GetHandlersByMode(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to start plugin manager: %v", err)
 	}
-	defer manager.Stop(ctx)
+	defer func() { _ = manager.Stop(ctx) }()
 
 	// 테스트 핸들러 등록
 	handler := NewBasePackageHandler("test", "Test Handler", "1.0.0")
@@ -161,7 +161,7 @@ func TestPluginManager_HealthCheck(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to start plugin manager: %v", err)
 	}
-	defer manager.Stop(ctx)
+	defer func() { _ = manager.Stop(ctx) }()
 
 	// 빈 상태에서 헬스체크
 	results := manager.HealthCheck(ctx)
@@ -183,7 +183,7 @@ func TestPluginManager_Statistics(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to start plugin manager: %v", err)
 	}
-	defer manager.Stop(ctx)
+	defer func() { _ = manager.Stop(ctx) }()
 
 	// 통계 조회
 	stats := manager.GetStatistics()
@@ -257,7 +257,7 @@ func TestPluginManager_ConcurrentAccess(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to start plugin manager: %v", err)
 	}
-	defer manager.Stop(ctx)
+	defer func() { _ = manager.Stop(ctx) }()
 
 	// 테스트 핸들러 등록
 	handler := NewBasePackageHandler("test", "Test Handler", "1.0.0")

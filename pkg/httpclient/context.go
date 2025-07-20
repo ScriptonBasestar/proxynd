@@ -1,3 +1,4 @@
+// Package httpclient provides HTTP client utilities
 package httpclient
 
 import (
@@ -45,7 +46,8 @@ func (c *ContextClient) GetWithTimeout(url string, timeout time.Duration) (*http
 }
 
 // Post performs a POST request with context
-func (c *ContextClient) Post(ctx context.Context, url string, contentType string, body io.Reader) (*http.Response, error) {
+func (c *ContextClient) Post(ctx context.Context, url string, contentType string,
+	body io.Reader) (*http.Response, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
@@ -116,8 +118,8 @@ func (p *ProxyClient) GetWithRetry(ctx context.Context, url string, maxRetries i
 		}
 
 		// Close body for retry
-		io.Copy(io.Discard, resp.Body)
-		resp.Body.Close()
+		_, _ = io.Copy(io.Discard, resp.Body)
+		_ = resp.Body.Close()
 		lastErr = fmt.Errorf("server error: %d", resp.StatusCode)
 	}
 

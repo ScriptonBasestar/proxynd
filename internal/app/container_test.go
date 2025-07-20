@@ -12,6 +12,17 @@ import (
 	"proxynd/configs"
 )
 
+// Test constants
+const (
+	testConfigContent = `
+server:
+  host: "localhost"
+  port: 8080
+logging:
+  level: "info"
+`
+)
+
 func TestContainer_GetUnifiedConfig(t *testing.T) {
 	// Given
 	tempDir := t.TempDir()
@@ -35,7 +46,7 @@ logging:
 	require.NoError(t, err)
 
 	container := NewContainer(cfg)
-	defer container.Close()
+	defer func() { _ = container.Close() }()
 
 	// When
 	unifiedConfig := container.GetUnifiedConfig()
@@ -57,19 +68,13 @@ func TestContainer_ReloadConfig(t *testing.T) {
 	}
 
 	// 초기 설정 파일 생성
-	configContent := `
-server:
-  host: "localhost"
-  port: 8080
-logging:
-  level: "info"
-`
+	configContent := testConfigContent
 	configFile := filepath.Join(tempDir, "config.yaml")
 	err := os.WriteFile(configFile, []byte(configContent), 0644)
 	require.NoError(t, err)
 
 	container := NewContainer(cfg)
-	defer container.Close()
+	defer func() { _ = container.Close() }()
 
 	// 초기 설정 확인
 	initialConfig := container.GetUnifiedConfig()
@@ -104,19 +109,13 @@ func TestContainer_ConfigChangeCallback(t *testing.T) {
 	}
 
 	// 테스트용 설정 파일 생성
-	configContent := `
-server:
-  host: "localhost"
-  port: 8080
-logging:
-  level: "info"
-`
+	configContent := testConfigContent
 	configFile := filepath.Join(tempDir, "config.yaml")
 	err := os.WriteFile(configFile, []byte(configContent), 0644)
 	require.NoError(t, err)
 
 	container := NewContainer(cfg)
-	defer container.Close()
+	defer func() { _ = container.Close() }()
 
 	// 콜백 등록
 	callbackCalled := false
@@ -172,7 +171,7 @@ logging:
 	require.NoError(t, err)
 
 	container := NewContainer(cfg)
-	defer container.Close()
+	defer func() { _ = container.Close() }()
 
 	// When
 	err = container.ReloadConfig()
@@ -191,23 +190,17 @@ func TestContainer_ConfigFileWatcher(t *testing.T) {
 	}
 
 	// 초기 설정 파일 생성
-	configContent := `
-server:
-  host: "localhost"
-  port: 8080
-logging:
-  level: "info"
-`
+	configContent := testConfigContent
 	configFile := filepath.Join(tempDir, "config.yaml")
 	err := os.WriteFile(configFile, []byte(configContent), 0644)
 	require.NoError(t, err)
 
 	container := NewContainer(cfg)
-	defer container.Close()
+	defer func() { _ = container.Close() }()
 
 	// 콜백 등록
 	callbackCalled := false
-	container.AddConfigChangeCallback(func(config *configs.UnifiedConfig) {
+	container.AddConfigChangeCallback(func(_ *configs.UnifiedConfig) {
 		callbackCalled = true
 	})
 
@@ -254,7 +247,7 @@ server:
 	require.NoError(t, err)
 
 	container := NewContainer(cfg)
-	defer container.Close()
+	defer func() { _ = container.Close() }()
 
 	// When: 여러 번 설정 조회
 	config1 := container.GetUnifiedConfig()

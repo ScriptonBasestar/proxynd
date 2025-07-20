@@ -54,7 +54,7 @@ func NewService(ctx context.Context, configDir string) (Service, error) {
 }
 
 // GetGlobalConfig returns the global configuration
-func (s *service) GetGlobalConfig(ctx context.Context) (*configs.GlobalConfig, error) {
+func (s *service) GetGlobalConfig(_ context.Context) (*configs.GlobalConfig, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -75,7 +75,7 @@ func (s *service) GetGlobalConfig(ctx context.Context) (*configs.GlobalConfig, e
 }
 
 // GetMavenConfig returns the Maven proxy configuration
-func (s *service) GetMavenConfig(ctx context.Context) (*configs.MavenProxyConfig, error) {
+func (s *service) GetMavenConfig(_ context.Context) (*configs.MavenProxyConfig, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -87,7 +87,7 @@ func (s *service) GetMavenConfig(ctx context.Context) (*configs.MavenProxyConfig
 }
 
 // GetAptConfig returns the APT proxy configuration
-func (s *service) GetAptConfig(ctx context.Context) (*configs.AptProxyConfig, error) {
+func (s *service) GetAptConfig(_ context.Context) (*configs.AptProxyConfig, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -99,7 +99,7 @@ func (s *service) GetAptConfig(ctx context.Context) (*configs.AptProxyConfig, er
 }
 
 // GetNpmConfig returns the NPM proxy configuration
-func (s *service) GetNpmConfig(ctx context.Context) (*configs.NpmProxyConfig, error) {
+func (s *service) GetNpmConfig(_ context.Context) (*configs.NpmProxyConfig, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -111,7 +111,7 @@ func (s *service) GetNpmConfig(ctx context.Context) (*configs.NpmProxyConfig, er
 }
 
 // GetDockerConfig returns the Docker proxy configuration
-func (s *service) GetDockerConfig(ctx context.Context) (*configs.DockerProxyConfig, error) {
+func (s *service) GetDockerConfig(_ context.Context) (*configs.DockerProxyConfig, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -123,7 +123,7 @@ func (s *service) GetDockerConfig(ctx context.Context) (*configs.DockerProxyConf
 }
 
 // GetPipConfig returns the PIP proxy configuration
-func (s *service) GetPipConfig(ctx context.Context) (*configs.PipProxyConfig, error) {
+func (s *service) GetPipConfig(_ context.Context) (*configs.PipProxyConfig, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -135,7 +135,7 @@ func (s *service) GetPipConfig(ctx context.Context) (*configs.PipProxyConfig, er
 }
 
 // GetYumConfig returns the YUM proxy configuration
-func (s *service) GetYumConfig(ctx context.Context) (*configs.YumProxyConfig, error) {
+func (s *service) GetYumConfig(_ context.Context) (*configs.YumProxyConfig, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -147,7 +147,7 @@ func (s *service) GetYumConfig(ctx context.Context) (*configs.YumProxyConfig, er
 }
 
 // GetApkConfig returns the APK proxy configuration
-func (s *service) GetApkConfig(ctx context.Context) (*configs.ApkProxyConfig, error) {
+func (s *service) GetApkConfig(_ context.Context) (*configs.ApkProxyConfig, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -230,7 +230,7 @@ func (s *service) loadAll(ctx context.Context) error {
 }
 
 // ValidateAll validates all loaded configurations
-func (s *service) ValidateAll(ctx context.Context) error {
+func (s *service) ValidateAll(_ context.Context) error {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 

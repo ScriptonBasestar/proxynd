@@ -52,7 +52,7 @@ func NewViperConfigService(configPath string) (*ViperConfigService, error) {
 }
 
 // GetGlobalConfig 전역 설정 반환
-func (s *ViperConfigService) GetGlobalConfig(ctx context.Context) (*configs.GlobalConfig, error) {
+func (s *ViperConfigService) GetGlobalConfig(_ context.Context) (*configs.GlobalConfig, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -65,7 +65,7 @@ func (s *ViperConfigService) GetGlobalConfig(ctx context.Context) (*configs.Glob
 }
 
 // GetMavenConfig Maven 프록시 설정 반환
-func (s *ViperConfigService) GetMavenConfig(ctx context.Context) (*configs.MavenProxyConfig, error) {
+func (s *ViperConfigService) GetMavenConfig(_ context.Context) (*configs.MavenProxyConfig, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -78,7 +78,7 @@ func (s *ViperConfigService) GetMavenConfig(ctx context.Context) (*configs.Maven
 }
 
 // GetAptConfig APT 프록시 설정 반환
-func (s *ViperConfigService) GetAptConfig(ctx context.Context) (*configs.AptProxyConfig, error) {
+func (s *ViperConfigService) GetAptConfig(_ context.Context) (*configs.AptProxyConfig, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -91,7 +91,7 @@ func (s *ViperConfigService) GetAptConfig(ctx context.Context) (*configs.AptProx
 }
 
 // GetNpmConfig NPM 프록시 설정 반환
-func (s *ViperConfigService) GetNpmConfig(ctx context.Context) (*configs.NpmProxyConfig, error) {
+func (s *ViperConfigService) GetNpmConfig(_ context.Context) (*configs.NpmProxyConfig, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -104,7 +104,7 @@ func (s *ViperConfigService) GetNpmConfig(ctx context.Context) (*configs.NpmProx
 }
 
 // GetDockerConfig Docker 프록시 설정 반환
-func (s *ViperConfigService) GetDockerConfig(ctx context.Context) (*configs.DockerProxyConfig, error) {
+func (s *ViperConfigService) GetDockerConfig(_ context.Context) (*configs.DockerProxyConfig, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -117,7 +117,7 @@ func (s *ViperConfigService) GetDockerConfig(ctx context.Context) (*configs.Dock
 }
 
 // GetPipConfig PIP 프록시 설정 반환
-func (s *ViperConfigService) GetPipConfig(ctx context.Context) (*configs.PipProxyConfig, error) {
+func (s *ViperConfigService) GetPipConfig(_ context.Context) (*configs.PipProxyConfig, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -130,7 +130,7 @@ func (s *ViperConfigService) GetPipConfig(ctx context.Context) (*configs.PipProx
 }
 
 // GetYumConfig YUM 프록시 설정 반환
-func (s *ViperConfigService) GetYumConfig(ctx context.Context) (*configs.YumProxyConfig, error) {
+func (s *ViperConfigService) GetYumConfig(_ context.Context) (*configs.YumProxyConfig, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -143,7 +143,7 @@ func (s *ViperConfigService) GetYumConfig(ctx context.Context) (*configs.YumProx
 }
 
 // GetApkConfig APK 프록시 설정 반환
-func (s *ViperConfigService) GetApkConfig(ctx context.Context) (*configs.ApkProxyConfig, error) {
+func (s *ViperConfigService) GetApkConfig(_ context.Context) (*configs.ApkProxyConfig, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -156,7 +156,7 @@ func (s *ViperConfigService) GetApkConfig(ctx context.Context) (*configs.ApkProx
 }
 
 // ValidateAll 모든 설정 검증
-func (s *ViperConfigService) ValidateAll(ctx context.Context) error {
+func (s *ViperConfigService) ValidateAll(_ context.Context) error {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -194,7 +194,7 @@ func (s *ViperConfigService) ValidateAll(ctx context.Context) error {
 }
 
 // Reload 설정 재로드
-func (s *ViperConfigService) Reload(ctx context.Context) error {
+func (s *ViperConfigService) Reload(_ context.Context) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

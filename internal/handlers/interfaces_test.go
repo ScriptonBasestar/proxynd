@@ -47,7 +47,7 @@ func TestHandlerInterfaces(t *testing.T) {
 		Port:      "8080",
 	}
 	container := app.NewContainer(cfg)
-	defer container.Close()
+	defer func() { _ = container.Close() }()
 
 	// BaseHandler가 모든 인터페이스를 구현하는지 확인
 	t.Run("BaseHandler implements all interfaces", func(t *testing.T) {
@@ -82,6 +82,7 @@ func TestHandlerInterfaces(t *testing.T) {
 
 		resp, err := app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 		assert.Equal(t, 200, resp.StatusCode)
 	})
 
@@ -120,6 +121,7 @@ func TestHandlerInterfaces(t *testing.T) {
 
 		resp, err := app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 		assert.Equal(t, 200, resp.StatusCode)
 
 		// POST 요청 테스트 실행
@@ -128,6 +130,7 @@ func TestHandlerInterfaces(t *testing.T) {
 
 		resp, err = app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 		assert.Equal(t, 200, resp.StatusCode)
 	})
 
@@ -153,6 +156,7 @@ func TestHandlerInterfaces(t *testing.T) {
 
 		resp, err := app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 		assert.Equal(t, 200, resp.StatusCode)
 	})
 
@@ -187,6 +191,7 @@ func TestHandlerInterfaces(t *testing.T) {
 
 		resp, err := app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 		assert.Equal(t, 200, resp.StatusCode)
 
 		// 에러 요청 테스트
@@ -195,6 +200,7 @@ func TestHandlerInterfaces(t *testing.T) {
 
 		resp, err = app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 		assert.Equal(t, 500, resp.StatusCode)
 	})
 
@@ -218,6 +224,7 @@ func TestHandlerInterfaces(t *testing.T) {
 
 		resp, err := app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 		assert.Equal(t, 200, resp.StatusCode)
 	})
 
@@ -252,7 +259,7 @@ func TestHandlerCompatibility(t *testing.T) {
 		Port:      "8080",
 	}
 	container := app.NewContainer(cfg)
-	defer container.Close()
+	defer func() { _ = container.Close() }()
 
 	// BaseHandler가 ComposeHandler 인터페이스를 구현하는지 확인
 	t.Run("BaseHandler implements ComposeHandler", func(t *testing.T) {
@@ -275,7 +282,7 @@ func TestHandlerCompatibility(t *testing.T) {
 				handler.IsCacheable(c)
 				handler.GetCacheKey(c)
 				handler.RequiresAuth(c)
-				handler.Authenticate(c)
+				_ = handler.Authenticate(c)
 				handler.ShouldLog(c)
 				handler.GetLogLevel(c)
 				handler.RecordMetrics(c, 100, 200)
@@ -289,6 +296,7 @@ func TestHandlerCompatibility(t *testing.T) {
 
 		resp, err := app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 		assert.Equal(t, 200, resp.StatusCode)
 	})
 

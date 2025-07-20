@@ -93,7 +93,7 @@ func (l *AccessLogger) initLogFile() {
 	file, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
 	if err != nil {
 		// 로그 파일 열기 실패 시 stderr에 에러 출력
-		_, _ = os.Stderr.WriteString(fmt.Sprintf("Failed to open access log file: %v\n", err))
+		_, _ = fmt.Fprintf(os.Stderr, "Failed to open access log file: %v\n", err)
 		return
 	}
 
@@ -155,9 +155,11 @@ func (l *AccessLogger) Log(entry AccessLogEntry) {
 	if l.logFile != nil {
 		if _, err := l.logFile.WriteString(logLine); err != nil {
 			// 로그 쓰기 실패 시 에러 무시 (로그가 중요하지 않은 경우)
+			_ = err // 에러를 명시적으로 무시
 		}
 		if err := l.logFile.Sync(); err != nil {
 			// 파일 동기화 실패 시 에러 무시
+			_ = err // 에러를 명시적으로 무시
 		}
 	}
 }

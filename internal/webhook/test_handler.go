@@ -10,6 +10,13 @@ import (
 	"proxynd/logging"
 )
 
+// Additional webhook type constants not in constants.go
+const (
+	webhookTypeDiscord = "discord"
+	webhookTypeGeneric = "generic"
+	webhookTypeTeams   = "teams"
+)
+
 // TestResult 웹훅 테스트 결과
 type TestResult struct {
 	EndpointName   string                 `json:"endpoint_name"`
@@ -150,17 +157,17 @@ func (wt *WebhookTester) testEndpoint(endpoint configs.WebhookEndpointConfig) (*
 		logging.F("url", endpoint.URL))
 
 	// 어댑터 선택
-	adapterName := "generic"
+	adapterName := webhookTypeGeneric
 	switch endpoint.Format {
 	case webhookTypeSlack:
 		adapterName = webhookTypeSlack
-	case "discord":
-		adapterName = "discord"
+	case webhookTypeDiscord:
+		adapterName = webhookTypeDiscord
 	}
 
 	adapter, exists := wt.sender.adapters[adapterName]
 	if !exists {
-		adapter = wt.sender.adapters["generic"] // 폴백
+		adapter = wt.sender.adapters[webhookTypeGeneric] // 폴백
 	}
 
 	// 타임아웃 설정
@@ -250,7 +257,7 @@ func (wt *WebhookTester) TestEndpointConnectivity(endpointName string) (*TestRes
 }
 
 // GetTestHistory 테스트 이력 조회 (향후 확장용)
-func (wt *WebhookTester) GetTestHistory(endpointName string, limit int) ([]TestResult, error) {
+func (wt *WebhookTester) GetTestHistory(_ string, _ int) ([]TestResult, error) {
 	// TODO: 테스트 이력을 저장하고 조회하는 기능 구현
 	// 현재는 빈 슬라이스 반환
 	return []TestResult{}, nil
@@ -275,7 +282,7 @@ func (wt *WebhookTester) ValidateEndpointConfig(endpoint configs.WebhookEndpoint
 
 	// 포맷 검증
 	validFormats := map[string]bool{
-		"json": true, webhookTypeSlack: true, "discord": true, "teams": true,
+		"json": true, webhookTypeSlack: true, webhookTypeDiscord: true, webhookTypeTeams: true,
 	}
 	if endpoint.Format != "" && !validFormats[endpoint.Format] {
 		errors = append(errors, fmt.Sprintf("unsupported format: %s", endpoint.Format))

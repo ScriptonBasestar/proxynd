@@ -58,7 +58,7 @@ func (h *HTTPBestPracticesHandler) HandleWithProperCleanup(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadGateway).SendString("Upstream request failed")
 	}
 	// CRITICAL: Always close response body, even on error
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Check response status
 	if resp.StatusCode != http.StatusOK {
@@ -133,8 +133,8 @@ func (h *HTTPBestPracticesHandler) makeRequest(ctx context.Context, url string) 
 	// Always close response body
 	defer func() {
 		// Drain and close body to allow connection reuse
-		io.Copy(io.Discard, resp.Body)
-		resp.Body.Close()
+		_, _ = io.Copy(io.Discard, resp.Body)
+		_ = resp.Body.Close()
 	}()
 
 	if resp.StatusCode != http.StatusOK {
@@ -198,8 +198,8 @@ func (h *HTTPBestPracticesHandler) makeRequestWithCleanup(ctx context.Context, u
 	cleanup := func() {
 		if resp != nil && resp.Body != nil {
 			// Drain remaining body to allow connection reuse
-			io.Copy(io.Discard, resp.Body)
-			resp.Body.Close()
+			_, _ = io.Copy(io.Discard, resp.Body)
+			_ = resp.Body.Close()
 		}
 	}
 

@@ -3,6 +3,7 @@ package routers
 import (
 	"os"
 	"path/filepath"
+	"strings"
 
 	"proxynd/configs"
 	"proxynd/helpers"
@@ -35,7 +36,7 @@ func getApkVerificationStatus(c *fiber.Ctx) error {
 
 	// APK 설정 읽기
 	apkConfig := configs.ApkProxyConfig{}
-	apkConfig.ReadConfig()
+	_ = apkConfig.ReadConfig()
 
 	// 서명 검증기 생성
 	verifier := apk.NewSignatureVerifier()
@@ -109,7 +110,9 @@ func verifySpecificApkFile(c *fiber.Ctx) error {
 
 	// 경로 정규화 및 검증
 	cleanPath := filepath.Clean(fullPath)
-	if !filepath.HasPrefix(cleanPath, storageDir) {
+	// filepath.HasPrefix is deprecated, use strings.HasPrefix with cleaned paths
+	if !strings.HasPrefix(cleanPath, filepath.Clean(storageDir)+string(filepath.Separator)) &&
+		cleanPath != filepath.Clean(storageDir) {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Invalid file path: outside storage directory",
 		})
@@ -124,7 +127,7 @@ func verifySpecificApkFile(c *fiber.Ctx) error {
 
 	// APK 설정 읽기
 	apkConfig := configs.ApkProxyConfig{}
-	apkConfig.ReadConfig()
+	_ = apkConfig.ReadConfig()
 
 	// 서명 검증기 생성 및 키 로드
 	verifier := apk.NewSignatureVerifier()
@@ -158,7 +161,7 @@ func getTrustedKeys(c *fiber.Ctx) error {
 
 	// APK 설정 읽기
 	apkConfig := configs.ApkProxyConfig{}
-	apkConfig.ReadConfig()
+	_ = apkConfig.ReadConfig()
 
 	if apkConfig.Verification.KeyDirectory == "" {
 		return c.JSON(fiber.Map{
@@ -190,7 +193,7 @@ func getTrustedKeys(c *fiber.Ctx) error {
 func getApkVerificationConfig(c *fiber.Ctx) error {
 	// APK 설정 읽기
 	apkConfig := configs.ApkProxyConfig{}
-	apkConfig.ReadConfig()
+	_ = apkConfig.ReadConfig()
 
 	return c.JSON(fiber.Map{
 		"verification": apkConfig.Verification,

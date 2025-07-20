@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestFileSystemBackend(t *testing.T) {
@@ -15,7 +17,7 @@ func TestFileSystemBackend(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// 파일 시스템 백엔드 생성
 	backend, err := NewFileSystemBackend(tempDir)
@@ -38,7 +40,7 @@ func TestFileSystemBackend(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		defer reader.Close()
+		defer func() { _ = reader.Close() }()
 
 		// 내용 확인
 		result, err := io.ReadAll(reader)
@@ -60,7 +62,7 @@ func TestFileSystemBackend(t *testing.T) {
 		}
 
 		// 키 저장
-		backend.Put(key, bytes.NewReader([]byte("test")), time.Hour)
+		require.NoError(t, backend.Put(key, bytes.NewReader([]byte("test")), time.Hour))
 
 		// 존재하는 키
 		if !backend.Exists(key) {
@@ -72,7 +74,7 @@ func TestFileSystemBackend(t *testing.T) {
 		key := "test/delete.txt"
 
 		// 데이터 저장
-		backend.Put(key, bytes.NewReader([]byte("delete me")), time.Hour)
+		require.NoError(t, backend.Put(key, bytes.NewReader([]byte("delete me")), time.Hour))
 
 		// 삭제
 		err := backend.Delete(key)
@@ -90,7 +92,7 @@ func TestFileSystemBackend(t *testing.T) {
 		key := "test/ttl.txt"
 
 		// 짧은 TTL로 저장
-		backend.Put(key, bytes.NewReader([]byte("expire soon")), 100*time.Millisecond)
+		require.NoError(t, backend.Put(key, bytes.NewReader([]byte("expire soon")), 100*time.Millisecond))
 
 		// 즉시 읽기 - 성공해야 함
 		if !backend.Exists(key) {
@@ -111,7 +113,7 @@ func TestFileSystemBackend(t *testing.T) {
 		data := []byte("metadata test")
 
 		// 데이터 저장
-		backend.Put(key, bytes.NewReader(data), time.Hour)
+		require.NoError(t, backend.Put(key, bytes.NewReader(data), time.Hour))
 
 		// 메타데이터 조회
 		meta, err := backend.GetMetadata(key)
@@ -136,7 +138,7 @@ func TestFileSystemBackend(t *testing.T) {
 		// 여러 파일 저장
 		for i := 0; i < 5; i++ {
 			key := filepath.Join("test", "clear", string(rune('a'+i))+".txt")
-			backend.Put(key, bytes.NewReader([]byte("data")), time.Hour)
+			require.NoError(t, backend.Put(key, bytes.NewReader([]byte("data")), time.Hour))
 		}
 
 		// 전체 삭제

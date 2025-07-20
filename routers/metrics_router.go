@@ -62,7 +62,7 @@ func adaptor(h http.Handler) fiber.Handler {
 }
 
 // getMetricsUsers 메트릭 엔드포인트용 사용자 정보 반환
-func getMetricsUsers(config *configs.UnifiedConfig) map[string]string {
+func getMetricsUsers(_ *configs.UnifiedConfig) map[string]string {
 	// 기본 사용자
 	users := map[string]string{
 		"metrics": "prometheus", // 기본 사용자
@@ -75,7 +75,7 @@ func getMetricsUsers(config *configs.UnifiedConfig) map[string]string {
 }
 
 // setupAdditionalMetrics 추가 메트릭 엔드포인트 설정
-func setupAdditionalMetrics(app *fiber.App, config *configs.UnifiedConfig) {
+func setupAdditionalMetrics(app *fiber.App, _ *configs.UnifiedConfig) {
 	// TTL 통계 엔드포인트
 	app.Get("/api/metrics/ttl", func(c *fiber.Ctx) error {
 		collector := metrics.GetTTLCollector()
@@ -259,14 +259,14 @@ func getCacheStatsForRegistry(registryType string, m *metrics.Metrics) fiber.Map
 }
 
 // getMetricValue 메트릭 값 추출 (간단한 구현)
-func getMetricValue(metric interface{}) float64 {
+func getMetricValue(_ interface{}) float64 {
 	// TODO: 실제 Prometheus 메트릭에서 값 추출
 	// prometheus.Metric 인터페이스를 통해 값 읽기
 	return 0.0
 }
 
 // getMetricValueWithLabel 레이블이 있는 메트릭 값 추출
-func getMetricValueWithLabel(metric interface{}, labelName, labelValue string) float64 {
+func getMetricValueWithLabel(_ interface{}, _, _ string) float64 {
 	// TODO: 실제 구현
 	return 0.0
 }

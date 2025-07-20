@@ -41,7 +41,7 @@ func BenchmarkSimpleCache(b *testing.B) {
 	})
 
 	// 캐시에 데이터 준비
-	cacheManager.Put("bench-key", testData, 3600*time.Second)
+	_ = cacheManager.Put("bench-key", testData, 3600*time.Second)
 
 	b.Run("Get", func(b *testing.B) {
 		b.ReportAllocs()
@@ -112,7 +112,7 @@ func BenchmarkDataSizes(b *testing.B) {
 		})
 
 		// 캐시에 데이터 준비
-		cacheManager.Put("bench-key-"+size.name, testData, 3600*time.Second)
+		_ = cacheManager.Put("bench-key-"+size.name, testData, 3600*time.Second)
 
 		b.Run("Get_"+size.name, func(b *testing.B) {
 			b.SetBytes(int64(size.size))
@@ -153,7 +153,7 @@ func BenchmarkConcurrentAccess(b *testing.B) {
 	// 초기 데이터 준비
 	for i := 0; i < 100; i++ {
 		key := "concurrent-key"
-		cacheManager.Put(key, testData, 3600*time.Second)
+		_ = cacheManager.Put(key, testData, 3600*time.Second)
 	}
 
 	b.Run("ConcurrentReads", func(b *testing.B) {

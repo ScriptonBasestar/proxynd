@@ -219,7 +219,7 @@ func ProvideUnifiedRouter(c *Container) (interface{}, error) {
 }
 
 // Helper function to register all handlers
-func registerAllHandlers(factory types.ProxyHandlerFactory, serviceFactory *proxy.ServiceFactory) error {
+func registerAllHandlers(_ types.ProxyHandlerFactory, _ *proxy.ServiceFactory) error {
 	// TODO: Implement handlers when ready
 	/*
 		// Maven

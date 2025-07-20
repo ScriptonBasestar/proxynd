@@ -1,3 +1,4 @@
+// Package adapters provides plugin adapter implementations
 package adapters
 
 import (

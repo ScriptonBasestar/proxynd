@@ -39,7 +39,7 @@ func NewNpmService(
 }
 
 // HandleRequest processes an NPM proxy request
-func (s *NpmService) HandleRequest(ctx context.Context, req ProxyRequest) (*ProxyResponse, error) {
+func (s *NpmService) HandleRequest(_ context.Context, _ ProxyRequest) (*ProxyResponse, error) {
 	// TODO: Implement NPM-specific logic
 	// This is a stub implementation
 	return s.HandleError(fmt.Errorf("NPM service not yet implemented"), 501), nil

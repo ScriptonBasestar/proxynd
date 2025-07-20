@@ -92,13 +92,13 @@ func LoadSecureConfig() error {
 // GenerateSecureKey 안전한 키 생성 도구
 func GenerateSecureKey() (string, error) {
 	// 시간 기반 시드로 랜덤 생성
-	rand.Seed(time.Now().UnixNano())
+	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*"
 	key := make([]byte, 64) // 64자 길이의 키 생성
 
 	for i := range key {
-		key[i] = charset[rand.Intn(len(charset))]
+		key[i] = charset[rng.Intn(len(charset))]
 	}
 
 	return string(key), nil

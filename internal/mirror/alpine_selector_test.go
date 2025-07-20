@@ -157,7 +157,7 @@ func TestCalculateMirrorScore(t *testing.T) {
 
 	proxy := configs.ApkProxy{
 		Name: "test-mirror",
-		Url:  "https://test.mirror.com/alpine",
+		URL:  "https://test.mirror.com/alpine",
 	}
 
 	version := AlpineVersion{
@@ -180,9 +180,9 @@ func TestSelectBestMirror(t *testing.T) {
 
 	// 테스트 프록시 목록
 	proxies := []configs.ApkProxy{
-		{Name: "korea-mirror", Url: "https://mirror.kakao.com/alpine"},
-		{Name: "japan-mirror", Url: "https://ftp.riken.jp/alpine"},
-		{Name: "official-mirror", Url: "https://dl-cdn.alpinelinux.org/alpine"},
+		{Name: "korea-mirror", URL: "https://mirror.kakao.com/alpine"},
+		{Name: "japan-mirror", URL: "https://ftp.riken.jp/alpine"},
+		{Name: "official-mirror", URL: "https://dl-cdn.alpinelinux.org/alpine"},
 	}
 
 	// 테스트 미러 헬스 정보 설정

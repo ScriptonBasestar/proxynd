@@ -15,6 +15,14 @@ import (
 	"proxynd/logging"
 )
 
+// Compression format constants
+const (
+	// CompressionFormatGzip is a const that compression format gzip
+	// CompressionFormatNone is a const that compression format none
+	CompressionFormatGzip = "gzip"
+	CompressionFormatNone = "none"
+)
+
 // BatchGroup 배치 그룹
 type BatchGroup struct {
 	Key       string                        // 그룹 키 (endpoint, type, level 등)
@@ -68,7 +76,7 @@ func (bm *BatchManager) Start(ctx context.Context) {
 }
 
 // Stop 배치 관리자 중지
-func (bm *BatchManager) Stop(ctx context.Context) error {
+func (bm *BatchManager) Stop(_ context.Context) error {
 	bm.logger.Info("배치 관리자 중지 중...")
 
 	if bm.ticker != nil {
@@ -345,7 +353,7 @@ func (bm *BatchManager) compressPayload(payload map[string]interface{}) ([]byte,
 	}
 
 	switch bm.config.CompressionFormat {
-	case "gzip":
+	case CompressionFormatGzip:
 		var buf bytes.Buffer
 		writer := gzip.NewWriter(&buf)
 		_, err := writer.Write(jsonData)
@@ -357,7 +365,7 @@ func (bm *BatchManager) compressPayload(payload map[string]interface{}) ([]byte,
 			return nil, err
 		}
 		return buf.Bytes(), nil
-	case "none", "":
+	case CompressionFormatNone, "":
 		return jsonData, nil
 	default:
 		bm.logger.Warn("지원하지 않는 압축 포맷", logging.F("format", bm.config.CompressionFormat))
@@ -374,7 +382,7 @@ func (bm *BatchManager) setBatchHeaders(headers map[string]string) map[string]st
 	headers["X-ProxyND-Batch"] = "true"
 	headers["X-ProxyND-Batch-Format"] = "webhook_events"
 
-	if bm.config.CompressionFormat == "gzip" {
+	if bm.config.CompressionFormat == CompressionFormatGzip {
 		headers["Content-Encoding"] = "gzip"
 	}
 
@@ -401,7 +409,7 @@ func (bm *BatchManager) retryBatch(group *BatchGroup) {
 
 	// 재시도는 개별 이벤트로 분해하여 처리
 	for _, event := range group.Events {
-		bm.sender.SendEvent(event)
+		_ = bm.sender.SendEvent(event)
 	}
 }
 

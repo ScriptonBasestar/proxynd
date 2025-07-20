@@ -227,11 +227,3 @@ func (app *Application) initializeFiberApp() {
 		return c.Next()
 	})
 }
-
-func (app *Application) handleConfigChange(proxyType string, config interface{}) {
-	app.logger.Info("Configuration changed",
-		logging.F("proxy_type", proxyType))
-
-	// Reload services to pick up new configuration
-	app.serviceFactory.ReloadServices()
-}

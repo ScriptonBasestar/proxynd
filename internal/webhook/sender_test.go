@@ -67,7 +67,7 @@ func TestSendEvent(t *testing.T) {
 	ctx := context.Background()
 	err = sender.Start(ctx)
 	assert.Equal(t, err, nil)
-	defer sender.Stop(ctx)
+	defer func() { _ = sender.Stop(ctx) }()
 
 	// 테스트 이벤트 생성
 	event := alerts.CreateWebhookEvent(
@@ -303,7 +303,7 @@ func TestWebhookSenderBatching(t *testing.T) {
 	ctx := context.Background()
 	err = sender.Start(ctx)
 	assert.Equal(t, err, nil)
-	defer sender.Stop(ctx)
+	defer func() { _ = sender.Stop(ctx) }()
 
 	// 테스트 이벤트들 전송
 	for i := 0; i < 5; i++ {

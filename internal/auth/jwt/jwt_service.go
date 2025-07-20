@@ -1,3 +1,4 @@
+// Package jwt provides JWT authentication service implementation
 package jwt
 
 import (
@@ -51,17 +52,26 @@ func NewJWTService(config *configs.OAuth2Config) *JWTService {
 }
 
 // GenerateTokenPair 액세스 토큰과 리프레시 토큰 쌍 생성
-func (s *JWTService) GenerateTokenPair(userID, email, name, username, role, provider string, organizations []string) (*TokenPair, error) {
+func (s *JWTService) GenerateTokenPair(
+	userID, email, name, username, role, provider string,
+	organizations []string,
+) (*TokenPair, error) {
 	now := time.Now()
 
 	// 액세스 토큰 생성
-	accessToken, accessExpiresAt, err := s.generateToken(userID, email, name, username, role, provider, organizations, "access", now, time.Duration(s.config.JWT.AccessTokenTTL)*time.Second)
+	accessToken, accessExpiresAt, err := s.generateToken(
+		userID, email, name, username, role, provider, organizations, "access",
+		now, time.Duration(s.config.JWT.AccessTokenTTL)*time.Second,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate access token: %w", err)
 	}
 
 	// 리프레시 토큰 생성
-	refreshToken, _, err := s.generateToken(userID, email, name, username, role, provider, organizations, "refresh", now, time.Duration(s.config.JWT.RefreshTokenTTL)*time.Second)
+	refreshToken, _, err := s.generateToken(
+		userID, email, name, username, role, provider, organizations, "refresh",
+		now, time.Duration(s.config.JWT.RefreshTokenTTL)*time.Second,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate refresh token: %w", err)
 	}
@@ -76,7 +86,10 @@ func (s *JWTService) GenerateTokenPair(userID, email, name, username, role, prov
 }
 
 // generateToken 개별 토큰 생성
-func (s *JWTService) generateToken(userID, email, name, username, role, provider string, organizations []string, tokenType string, issuedAt time.Time, duration time.Duration) (string, time.Time, error) {
+func (s *JWTService) generateToken(
+	userID, email, name, username, role, provider string,
+	organizations []string, tokenType string, issuedAt time.Time, duration time.Duration,
+) (string, time.Time, error) {
 	expiresAt := issuedAt.Add(duration)
 
 	// JWT ID 생성
@@ -223,7 +236,9 @@ func (s *JWTService) RefreshAccessToken(refreshTokenString string) (*TokenPair, 
 }
 
 // RefreshAccessTokenWithSync 리프레시 토큰으로 새 액세스 토큰 생성 (권한 동기화)
-func (s *JWTService) RefreshAccessTokenWithSync(refreshTokenString string, oauth2Provider OAuth2Provider, oauth2AccessToken string) (*TokenPair, error) {
+func (s *JWTService) RefreshAccessTokenWithSync(
+	refreshTokenString string, oauth2Provider OAuth2Provider, oauth2AccessToken string,
+) (*TokenPair, error) {
 	// 리프레시 토큰 검증
 	refreshClaims, err := s.ValidateRefreshToken(refreshTokenString)
 	if err != nil {

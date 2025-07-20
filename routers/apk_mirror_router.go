@@ -1,3 +1,4 @@
+// Package routers provides API route definitions
 package routers
 
 import (
@@ -34,7 +35,7 @@ func getMirrorStatus(c *fiber.Ctx) error {
 
 	// APK 설정 읽기
 	apkConfig := configs.ApkProxyConfig{}
-	apkConfig.ReadConfig()
+	_ = apkConfig.ReadConfig()
 
 	// 미러 선택기가 활성화되어 있는지 확인
 	if !apkConfig.MirrorSelection.Enabled {
@@ -78,7 +79,7 @@ func getMirrorHealth(c *fiber.Ctx) error {
 
 	// APK 설정 읽기
 	apkConfig := configs.ApkProxyConfig{}
-	apkConfig.ReadConfig()
+	_ = apkConfig.ReadConfig()
 
 	if !apkConfig.MirrorSelection.Enabled {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -148,7 +149,7 @@ func testMirrorSelection(c *fiber.Ctx) error {
 
 	// APK 설정 읽기
 	apkConfig := configs.ApkProxyConfig{}
-	apkConfig.ReadConfig()
+	_ = apkConfig.ReadConfig()
 
 	if !apkConfig.MirrorSelection.Enabled {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -167,7 +168,7 @@ func testMirrorSelection(c *fiber.Ctx) error {
 		info := fiber.Map{
 			"rank":     i + 1,
 			"name":     selectedMirror.Name,
-			"url":      selectedMirror.Url,
+			"url":      selectedMirror.URL,
 			"region":   "",
 			"healthy":  true,
 			"priority": 0,
@@ -200,7 +201,7 @@ func testMirrorSelection(c *fiber.Ctx) error {
 func getMirrorConfig(c *fiber.Ctx) error {
 	// APK 설정 읽기
 	apkConfig := configs.ApkProxyConfig{}
-	apkConfig.ReadConfig()
+	_ = apkConfig.ReadConfig()
 
 	return c.JSON(fiber.Map{
 		"mirror_selection": apkConfig.MirrorSelection,
@@ -214,7 +215,7 @@ func refreshMirrorHealth(c *fiber.Ctx) error {
 
 	// APK 설정 읽기
 	apkConfig := configs.ApkProxyConfig{}
-	apkConfig.ReadConfig()
+	_ = apkConfig.ReadConfig()
 
 	if !apkConfig.MirrorSelection.Enabled {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{

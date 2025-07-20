@@ -9,6 +9,15 @@ import (
 	"proxynd/logging"
 )
 
+// Define context key types
+type contextKey string
+
+const (
+	contextKeyPerformanceStart   contextKey = "performance_start"
+	contextKeyPerformanceEnabled contextKey = "performance_enabled"
+	contextKeyTraceID            contextKey = "trace_id"
+)
+
 // PerformanceMiddleware provides comprehensive performance monitoring middleware
 type PerformanceMiddleware struct {
 	logger           logging.Logger
@@ -27,8 +36,9 @@ type PerformanceConfig struct {
 	EnableProfiling bool `yaml:"enable_profiling" json:"enable_profiling" default:"false"`
 
 	// Performance thresholds
-	SlowRequestThreshold     time.Duration `yaml:"slow_request_threshold" json:"slow_request_threshold" default:"2s"`
-	CriticalRequestThreshold time.Duration `yaml:"critical_request_threshold" json:"critical_request_threshold" default:"5s"`
+	SlowRequestThreshold time.Duration `yaml:"slow_request_threshold" json:"slow_request_threshold" default:"2s"`
+	// Critical request threshold (5 seconds by default)
+	CriticalRequestThreshold time.Duration `yaml:"critical_request_threshold" json:"critical_request_threshold"`
 
 	// Optimization settings
 	EnableRequestOptimization bool `yaml:"enable_request_optimization" json:"enable_request_optimization" default:"true"`
@@ -154,20 +164,20 @@ func (pm *PerformanceMiddleware) shouldSkipPath(path string) bool {
 // addPerformanceContext adds performance-related context
 func (pm *PerformanceMiddleware) addPerformanceContext(ctx context.Context) context.Context {
 	// Add performance tracking context
-	ctx = context.WithValue(ctx, "performance_start", time.Now())
-	ctx = context.WithValue(ctx, "performance_enabled", true)
+	ctx = context.WithValue(ctx, contextKeyPerformanceStart, time.Now())
+	ctx = context.WithValue(ctx, contextKeyPerformanceEnabled, true)
 
 	if pm.config.EnableTracing {
 		// Add tracing context (in practice, use proper tracing library)
 		traceID := generateTraceID()
-		ctx = context.WithValue(ctx, "trace_id", traceID)
+		ctx = context.WithValue(ctx, contextKeyTraceID, traceID)
 	}
 
 	return ctx
 }
 
 // recordMetrics records comprehensive performance metrics
-func (pm *PerformanceMiddleware) recordMetrics(c *fiber.Ctx, duration time.Duration, err error, beforeMetrics *ResourceStats) {
+func (pm *PerformanceMiddleware) recordMetrics(c *fiber.Ctx, duration time.Duration, err error, _ *ResourceStats) {
 	// Record request optimizer metrics
 	if pm.requestOptimizer != nil {
 		pm.requestOptimizer.recordRequestMetrics(c, duration, err)
@@ -368,7 +378,7 @@ func (pm *PerformanceMiddleware) GetHealthStatus() map[string]interface{} {
 
 	// Check performance health
 	if metrics.AverageResponseTime > pm.config.SlowRequestThreshold {
-		status["performance"].(map[string]interface{})["status"] = "degraded"
+		status["performance"].(map[string]interface{})["status"] = HealthStatusDegraded
 		overallHealthy = false
 	}
 
@@ -379,22 +389,22 @@ func (pm *PerformanceMiddleware) GetHealthStatus() map[string]interface{} {
 
 	// Check resource health
 	if metrics.CPUUsage > 0.8 || metrics.MemoryUsage > 0.8 {
-		status["resources"].(map[string]interface{})["status"] = "degraded"
+		status["resources"].(map[string]interface{})["status"] = HealthStatusDegraded
 		overallHealthy = false
 	}
 
 	// Check cache health
 	if metrics.CacheHitRate < 0.5 { // Less than 50% hit rate
-		status["cache"].(map[string]interface{})["status"] = "degraded"
+		status["cache"].(map[string]interface{})["status"] = HealthStatusDegraded
 	}
 
 	// Check connection health
 	if metrics.PoolUtilization > 0.9 { // 90% pool utilization
-		status["connections"].(map[string]interface{})["status"] = "degraded"
+		status["connections"].(map[string]interface{})["status"] = HealthStatusDegraded
 	}
 
 	if !overallHealthy {
-		status["overall_status"] = "degraded"
+		status["overall_status"] = HealthStatusDegraded
 	}
 
 	return status

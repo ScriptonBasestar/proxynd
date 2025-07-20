@@ -9,12 +9,13 @@ import (
 	"proxynd/logging"
 )
 
-// TTL Optimization Strategy
+// TTLOptimizationStrategy represents a TTL optimization strategy
 type TTLOptimizationStrategy struct {
 	logger logging.Logger
 	config *CacheOptimizerConfig
 }
 
+// NewTTLOptimizationStrategy creates a new instance of TTLOptimizationStrategy
 func NewTTLOptimizationStrategy(logger logging.Logger, config *CacheOptimizerConfig) *TTLOptimizationStrategy {
 	return &TTLOptimizationStrategy{
 		logger: logger.WithField("component", "cache.strategy.ttl"),
@@ -22,15 +23,18 @@ func NewTTLOptimizationStrategy(logger logging.Logger, config *CacheOptimizerCon
 	}
 }
 
+// Name returns the name of the optimization strategy
 func (s *TTLOptimizationStrategy) Name() string {
 	return "ttl_optimization"
 }
 
+// Priority returns the priority of this optimization strategy
 func (s *TTLOptimizationStrategy) Priority() int {
 	return 7
 }
 
-func (s *TTLOptimizationStrategy) Analyze(ctx context.Context, stats *CacheStats) (*OptimizationReport, error) {
+// Analyze performs TTL optimization analysis
+func (s *TTLOptimizationStrategy) Analyze(_ context.Context, stats *CacheStats) (*OptimizationReport, error) {
 	if !s.config.EnableTTLOptimization {
 		return nil, nil
 	}
@@ -132,11 +136,13 @@ func (s *TTLOptimizationStrategy) Analyze(ctx context.Context, stats *CacheStats
 		ThroughputImprovement: 0.08,
 		ConfidenceLevel:       0.75,
 	}
+	// Apply performs apply operation
 
 	return report, nil
 }
 
-func (s *TTLOptimizationStrategy) Apply(ctx context.Context, recommendations []OptimizationRecommendation) error {
+// Apply applies the given optimization recommendations
+func (s *TTLOptimizationStrategy) Apply(_ context.Context, recommendations []OptimizationRecommendation) error {
 	applied := 0
 	for _, rec := range recommendations {
 		if rec.Type == "extend_ttl" || rec.Type == "reduce_ttl" {
@@ -151,32 +157,38 @@ func (s *TTLOptimizationStrategy) Apply(ctx context.Context, recommendations []O
 	s.logger.Info("TTL optimization strategy completed",
 		logging.F("applied", applied),
 		logging.F("total", len(recommendations)))
+	// SizeOptimizationStrategy represents a size optimization strategy
 
 	return nil
 }
 
-// Size Optimization Strategy
+// SizeOptimizationStrategy implements cache size optimization
 type SizeOptimizationStrategy struct {
 	logger logging.Logger
 	config *CacheOptimizerConfig
 }
 
+// NewSizeOptimizationStrategy creates a new size optimization strategy
 func NewSizeOptimizationStrategy(logger logging.Logger, config *CacheOptimizerConfig) *SizeOptimizationStrategy {
 	return &SizeOptimizationStrategy{
 		logger: logger.WithField("component", "cache.strategy.size"),
+		// Priority performs priority operation
 		config: config,
 	}
 }
 
+// Name returns the strategy name
 func (s *SizeOptimizationStrategy) Name() string {
 	return "size_optimization"
 }
 
+// Priority returns the strategy priority
 func (s *SizeOptimizationStrategy) Priority() int {
 	return 8
 }
 
-func (s *SizeOptimizationStrategy) Analyze(ctx context.Context, stats *CacheStats) (*OptimizationReport, error) {
+// Analyze analyzes cache statistics for size optimization opportunities
+func (s *SizeOptimizationStrategy) Analyze(_ context.Context, stats *CacheStats) (*OptimizationReport, error) {
 	if !s.config.EnableSizeOptimization {
 		return nil, nil
 	}
@@ -281,6 +293,7 @@ func (s *SizeOptimizationStrategy) Analyze(ctx context.Context, stats *CacheStat
 
 	report.Issues = issues
 	report.Recommendations = recommendations
+	// Apply performs apply operation
 	report.EstimatedImpact = EstimatedImpact{
 		MemoryUsageReduction:  0.2,
 		HitRateImprovement:    0.05,
@@ -291,7 +304,8 @@ func (s *SizeOptimizationStrategy) Analyze(ctx context.Context, stats *CacheStat
 	return report, nil
 }
 
-func (s *SizeOptimizationStrategy) Apply(ctx context.Context, recommendations []OptimizationRecommendation) error {
+// Apply applies the given size optimization recommendations
+func (s *SizeOptimizationStrategy) Apply(_ context.Context, recommendations []OptimizationRecommendation) error {
 	applied := 0
 	for _, rec := range recommendations {
 		switch rec.Type {
@@ -303,38 +317,45 @@ func (s *SizeOptimizationStrategy) Apply(ctx context.Context, recommendations []
 		case "implement_size_limits":
 			s.logger.Info("Size optimization: implementing size limits",
 				logging.F("max_entry_size", rec.Parameters["max_entry_size"].(int)))
+			// EvictionOptimizationStrategy represents a eviction optimization strategy
 			applied++
 		}
 	}
 
 	s.logger.Info("Size optimization strategy completed",
 		logging.F("applied", applied))
+	// NewEvictionOptimizationStrategy creates a new evictionoptimizationstrategy
 
 	return nil
 }
 
-// Eviction Optimization Strategy
+// EvictionOptimizationStrategy implements cache eviction optimization
 type EvictionOptimizationStrategy struct {
 	logger logging.Logger
 	config *CacheOptimizerConfig
 }
 
-func NewEvictionOptimizationStrategy(logger logging.Logger, config *CacheOptimizerConfig) *EvictionOptimizationStrategy {
+// NewEvictionOptimizationStrategy creates a new eviction optimization strategy
+func NewEvictionOptimizationStrategy(
+	logger logging.Logger, config *CacheOptimizerConfig) *EvictionOptimizationStrategy {
 	return &EvictionOptimizationStrategy{
 		logger: logger.WithField("component", "cache.strategy.eviction"),
 		config: config,
 	}
 }
 
+// Name returns the strategy name
 func (s *EvictionOptimizationStrategy) Name() string {
 	return "eviction_optimization"
 }
 
+// Priority returns the strategy priority
 func (s *EvictionOptimizationStrategy) Priority() int {
 	return 6
 }
 
-func (s *EvictionOptimizationStrategy) Analyze(ctx context.Context, stats *CacheStats) (*OptimizationReport, error) {
+// Analyze analyzes cache statistics for eviction optimization opportunities
+func (s *EvictionOptimizationStrategy) Analyze(_ context.Context, stats *CacheStats) (*OptimizationReport, error) {
 	stats.mu.RLock()
 	defer stats.mu.RUnlock()
 
@@ -406,7 +427,8 @@ func (s *EvictionOptimizationStrategy) Analyze(ctx context.Context, stats *Cache
 				"min_access_count":     5,
 			},
 			EstimatedGain: 0.08,
-			Risk:          "low",
+			// Apply performs apply operation
+			Risk: "low",
 		})
 	}
 
@@ -422,33 +444,40 @@ func (s *EvictionOptimizationStrategy) Analyze(ctx context.Context, stats *Cache
 	return report, nil
 }
 
-func (s *EvictionOptimizationStrategy) Apply(ctx context.Context, recommendations []OptimizationRecommendation) error {
+// Apply applies the given eviction optimization recommendations
+func (s *EvictionOptimizationStrategy) Apply(_ context.Context, recommendations []OptimizationRecommendation) error {
 	applied := 0
 	for _, rec := range recommendations {
 		switch rec.Type {
 		case "optimize_eviction_policy":
 			s.logger.Info("Eviction optimization: updating eviction algorithm",
+				// PrewarmingStrategy represents a prewarming strategy
 				logging.F("algorithm", rec.Parameters["algorithm"].(string)))
 			applied++
 		case "protect_hot_keys":
 			s.logger.Info("Eviction optimization: implementing key protection",
 				logging.Float64("protection_threshold", rec.Parameters["protection_threshold"].(float64)))
+			// NewPrewarmingStrategy creates a new prewarmingstrategy
 			applied++
 		}
 	}
 
 	s.logger.Info("Eviction optimization strategy completed",
 		logging.F("applied", applied))
+	// Name returns the name of the component
 
 	return nil
 }
 
-// Prewarming Strategy
+// Priority performs priority operation
+
+// PrewarmingStrategy implements cache prewarming optimization
 type PrewarmingStrategy struct {
 	logger logging.Logger
 	config *CacheOptimizerConfig
 }
 
+// NewPrewarmingStrategy creates a new prewarming strategy
 func NewPrewarmingStrategy(logger logging.Logger, config *CacheOptimizerConfig) *PrewarmingStrategy {
 	return &PrewarmingStrategy{
 		logger: logger.WithField("component", "cache.strategy.prewarming"),
@@ -456,15 +485,18 @@ func NewPrewarmingStrategy(logger logging.Logger, config *CacheOptimizerConfig) 
 	}
 }
 
+// Name returns the strategy name
 func (s *PrewarmingStrategy) Name() string {
 	return "prewarming"
 }
 
+// Priority returns the strategy priority
 func (s *PrewarmingStrategy) Priority() int {
 	return 5
 }
 
-func (s *PrewarmingStrategy) Analyze(ctx context.Context, stats *CacheStats) (*OptimizationReport, error) {
+// Analyze analyzes cache statistics for prewarming opportunities
+func (s *PrewarmingStrategy) Analyze(_ context.Context, stats *CacheStats) (*OptimizationReport, error) {
 	if !s.config.EnablePrewarming {
 		return nil, nil
 	}
@@ -518,7 +550,8 @@ func (s *PrewarmingStrategy) Analyze(ctx context.Context, stats *CacheStats) (*O
 				Type:        "implement_predictive_prewarming",
 				Priority:    6,
 				Description: "Implement predictive prewarming to reduce cold starts",
-				Action:      "enable_predictive_prewarming",
+				// Apply performs apply operation
+				Action: "enable_predictive_prewarming",
 				Parameters: map[string]interface{}{
 					"prediction_window":    "1h",
 					"confidence_threshold": 0.7,
@@ -540,35 +573,42 @@ func (s *PrewarmingStrategy) Analyze(ctx context.Context, stats *CacheStats) (*O
 	return report, nil
 }
 
-func (s *PrewarmingStrategy) Apply(ctx context.Context, recommendations []OptimizationRecommendation) error {
+// Apply applies the given prewarming recommendations
+func (s *PrewarmingStrategy) Apply(_ context.Context, recommendations []OptimizationRecommendation) error {
 	applied := 0
+	// HotKeyOptimizationStrategy represents a hot key optimization strategy
 	for _, rec := range recommendations {
 		switch rec.Type {
 		case "schedule_prewarming":
 			keys := rec.Parameters["keys"].([]string)
 			s.logger.Info("Prewarming: scheduling prewarming for popular keys",
+				// NewHotKeyOptimizationStrategy creates a new hotkeyoptimizationstrategy
 				logging.F("key_count", len(keys)),
 				logging.F("schedule", rec.Parameters["schedule"].(string)))
 			applied++
 		case "implement_predictive_prewarming":
 			s.logger.Info("Prewarming: enabling predictive prewarming",
 				logging.F("prediction_window", rec.Parameters["prediction_window"].(string)))
+			// Name returns the name of the component
 			applied++
 		}
 	}
+	// Priority performs priority operation
 
 	s.logger.Info("Prewarming strategy completed",
 		logging.F("applied", applied))
+	// Analyze performs analyze operation
 
 	return nil
 }
 
-// Hot Key Optimization Strategy
+// HotKeyOptimizationStrategy implements hot key optimization
 type HotKeyOptimizationStrategy struct {
 	logger logging.Logger
 	config *CacheOptimizerConfig
 }
 
+// NewHotKeyOptimizationStrategy creates a new hot key optimization strategy
 func NewHotKeyOptimizationStrategy(logger logging.Logger, config *CacheOptimizerConfig) *HotKeyOptimizationStrategy {
 	return &HotKeyOptimizationStrategy{
 		logger: logger.WithField("component", "cache.strategy.hotkey"),
@@ -576,15 +616,18 @@ func NewHotKeyOptimizationStrategy(logger logging.Logger, config *CacheOptimizer
 	}
 }
 
+// Name returns the strategy name
 func (s *HotKeyOptimizationStrategy) Name() string {
 	return "hot_key_optimization"
 }
 
+// Priority returns the strategy priority
 func (s *HotKeyOptimizationStrategy) Priority() int {
 	return 8
 }
 
-func (s *HotKeyOptimizationStrategy) Analyze(ctx context.Context, stats *CacheStats) (*OptimizationReport, error) {
+// Analyze analyzes cache statistics for hot key optimization opportunities
+func (s *HotKeyOptimizationStrategy) Analyze(_ context.Context, stats *CacheStats) (*OptimizationReport, error) {
 	stats.mu.RLock()
 	defer stats.mu.RUnlock()
 
@@ -643,7 +686,8 @@ func (s *HotKeyOptimizationStrategy) Analyze(ctx context.Context, stats *CacheSt
 	}
 
 	// Check for keys that should be promoted to faster storage
-	for _, keyStats := range hotKeys[:min(len(hotKeys), 5)] { // Top 5 hot keys
+	for _, keyStats := range hotKeys[:minInt(len(hotKeys), 5)] { // Top 5 hot keys
+		// Apply performs apply operation
 		if keyStats.AverageLatency > 10*time.Millisecond {
 			recommendations = append(recommendations, OptimizationRecommendation{
 				Type:        "promote_to_fast_storage",
@@ -672,7 +716,8 @@ func (s *HotKeyOptimizationStrategy) Analyze(ctx context.Context, stats *CacheSt
 	return report, nil
 }
 
-func (s *HotKeyOptimizationStrategy) Apply(ctx context.Context, recommendations []OptimizationRecommendation) error {
+// Apply applies the given hot key optimization recommendations
+func (s *HotKeyOptimizationStrategy) Apply(_ context.Context, recommendations []OptimizationRecommendation) error {
 	applied := 0
 	for _, rec := range recommendations {
 		switch rec.Type {
@@ -706,7 +751,7 @@ func matchesPattern(key, pattern string) bool {
 	return len(key) > 0 && len(pattern) > 0
 }
 
-func min(a, b int) int {
+func minInt(a, b int) int {
 	if a < b {
 		return a
 	}

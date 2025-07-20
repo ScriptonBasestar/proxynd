@@ -21,7 +21,7 @@ func WebhookRouter(app *fiber.App) {
 	// 웹훅 설정 로드
 	var webhookConfig configs.WebhookConfig
 	if webhookConfig.ConfigExists() {
-		webhookConfig.ReadConfig()
+		_ = webhookConfig.ReadConfig()
 	} else {
 		webhookConfig = configs.GetDefaultWebhookConfig()
 	}
@@ -35,7 +35,7 @@ func WebhookRouter(app *fiber.App) {
 			sender = s
 			historyManager = sender.GetHistoryManager()
 		} else {
-			logger.Error("웹훅 sender 초기화 실패", logging.F("error", err))
+			logger.Error("웹훅 sender 초기화 실패", logging.F(fieldError, err))
 		}
 	}
 
@@ -88,7 +88,7 @@ func testAllWebhooks(tester *webhook.WebhookTester, logger logging.Logger) fiber
 
 		select {
 		case result := <-resultChan:
-			response := dtos.ApiResponse{
+			response := dtos.APIResponse{
 				Success: true,
 				Message: "웹훅 테스트 완료",
 				Data:    result,
@@ -96,8 +96,8 @@ func testAllWebhooks(tester *webhook.WebhookTester, logger logging.Logger) fiber
 			return c.JSON(response)
 
 		case err := <-errorChan:
-			logger.Error("웹훅 테스트 실행 오류", logging.F("error", err))
-			response := dtos.ApiResponse{
+			logger.Error("웹훅 테스트 실행 오류", logging.F(fieldError, err))
+			response := dtos.APIResponse{
 				Success: false,
 				Message: "웹훅 테스트 실패",
 				Error:   err.Error(),
@@ -105,7 +105,7 @@ func testAllWebhooks(tester *webhook.WebhookTester, logger logging.Logger) fiber
 			return c.Status(500).JSON(response)
 
 		case <-ctx.Done():
-			response := dtos.ApiResponse{
+			response := dtos.APIResponse{
 				Success: false,
 				Message: "웹훅 테스트 타임아웃",
 				Error:   "request timeout",
@@ -118,9 +118,9 @@ func testAllWebhooks(tester *webhook.WebhookTester, logger logging.Logger) fiber
 // testSingleWebhook 단일 웹훅 엔드포인트 테스트
 func testSingleWebhook(tester *webhook.WebhookTester, logger logging.Logger) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		endpointName := c.Params("endpoint")
+		endpointName := c.Params(fieldEndpoint)
 		if endpointName == "" {
-			response := dtos.ApiResponse{
+			response := dtos.APIResponse{
 				Success: false,
 				Message: "엔드포인트 이름이 필요합니다",
 				Error:   "endpoint parameter is required",
@@ -129,16 +129,16 @@ func testSingleWebhook(tester *webhook.WebhookTester, logger logging.Logger) fib
 		}
 
 		logger.Info("단일 웹훅 엔드포인트 테스트 요청",
-			logging.F("endpoint", endpointName),
+			logging.F(fieldEndpoint, endpointName),
 			logging.F("client_ip", c.IP()))
 
 		result, err := tester.TestSingleEndpoint(endpointName)
 		if err != nil {
 			logger.Error("웹훅 엔드포인트 테스트 오류",
-				logging.F("endpoint", endpointName),
-				logging.F("error", err))
+				logging.F(fieldEndpoint, endpointName),
+				logging.F(fieldError, err))
 
-			response := dtos.ApiResponse{
+			response := dtos.APIResponse{
 				Success: false,
 				Message: "웹훅 엔드포인트 테스트 실패",
 				Error:   err.Error(),
@@ -146,7 +146,7 @@ func testSingleWebhook(tester *webhook.WebhookTester, logger logging.Logger) fib
 			return c.Status(404).JSON(response)
 		}
 
-		response := dtos.ApiResponse{
+		response := dtos.APIResponse{
 			Success: result.Success,
 			Message: "웹훅 엔드포인트 테스트 완료",
 			Data:    result,
@@ -163,9 +163,9 @@ func testSingleWebhook(tester *webhook.WebhookTester, logger logging.Logger) fib
 // testWebhookConnectivity 웹훅 연결성 테스트
 func testWebhookConnectivity(tester *webhook.WebhookTester, logger logging.Logger) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		endpointName := c.Params("endpoint")
+		endpointName := c.Params(fieldEndpoint)
 		if endpointName == "" {
-			response := dtos.ApiResponse{
+			response := dtos.APIResponse{
 				Success: false,
 				Message: "엔드포인트 이름이 필요합니다",
 				Error:   "endpoint parameter is required",
@@ -174,16 +174,16 @@ func testWebhookConnectivity(tester *webhook.WebhookTester, logger logging.Logge
 		}
 
 		logger.Debug("웹훅 연결성 테스트 요청",
-			logging.F("endpoint", endpointName),
+			logging.F(fieldEndpoint, endpointName),
 			logging.F("client_ip", c.IP()))
 
 		result, err := tester.TestEndpointConnectivity(endpointName)
 		if err != nil {
 			logger.Error("웹훅 연결성 테스트 오류",
-				logging.F("endpoint", endpointName),
-				logging.F("error", err))
+				logging.F(fieldEndpoint, endpointName),
+				logging.F(fieldError, err))
 
-			response := dtos.ApiResponse{
+			response := dtos.APIResponse{
 				Success: false,
 				Message: "웹훅 연결성 테스트 실패",
 				Error:   err.Error(),
@@ -191,7 +191,7 @@ func testWebhookConnectivity(tester *webhook.WebhookTester, logger logging.Logge
 			return c.Status(404).JSON(response)
 		}
 
-		response := dtos.ApiResponse{
+		response := dtos.APIResponse{
 			Success: result.Success,
 			Message: "웹훅 연결성 테스트 완료",
 			Data:    result,
@@ -206,7 +206,7 @@ func validateWebhookConfig(logger logging.Logger) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		var endpoint configs.WebhookEndpointConfig
 		if err := c.BodyParser(&endpoint); err != nil {
-			response := dtos.ApiResponse{
+			response := dtos.APIResponse{
 				Success: false,
 				Message: "잘못된 요청 형식",
 				Error:   err.Error(),
@@ -222,7 +222,7 @@ func validateWebhookConfig(logger logging.Logger) fiber.Handler {
 		tester := &webhook.WebhookTester{}
 		errors := tester.ValidateEndpointConfig(endpoint)
 
-		response := dtos.ApiResponse{
+		response := dtos.APIResponse{
 			Success: len(errors) == 0,
 			Message: "웹훅 설정 검증 완료",
 			Data: map[string]interface{}{
@@ -240,7 +240,7 @@ func validateWebhookConfig(logger logging.Logger) fiber.Handler {
 }
 
 // getWebhookStatusSimple 웹훅 시스템 기본 상태 조회
-func getWebhookStatusSimple(config configs.WebhookConfig, logger logging.Logger) fiber.Handler {
+func getWebhookStatusSimple(config configs.WebhookConfig, _ logging.Logger) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		enabledCount := 0
 		for _, endpoint := range config.Endpoints {
@@ -257,7 +257,7 @@ func getWebhookStatusSimple(config configs.WebhookConfig, logger logging.Logger)
 			"check_time":             time.Now(),
 		}
 
-		response := dtos.ApiResponse{
+		response := dtos.APIResponse{
 			Success: true,
 			Message: "웹훅 상태 조회 완료",
 			Data:    status,
@@ -268,7 +268,7 @@ func getWebhookStatusSimple(config configs.WebhookConfig, logger logging.Logger)
 }
 
 // getWebhookEndpoints 웹훅 엔드포인트 목록 조회
-func getWebhookEndpoints(config configs.WebhookConfig, logger logging.Logger) fiber.Handler {
+func getWebhookEndpoints(config configs.WebhookConfig, _ logging.Logger) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		// 민감한 정보 제외하고 반환
 		endpoints := make([]map[string]interface{}, len(config.Endpoints))
@@ -286,11 +286,11 @@ func getWebhookEndpoints(config configs.WebhookConfig, logger logging.Logger) fi
 			}
 		}
 
-		response := dtos.ApiResponse{
+		response := dtos.APIResponse{
 			Success: true,
 			Message: "웹훅 엔드포인트 목록 조회 완료",
 			Data: map[string]interface{}{
-				"total":     len(endpoints),
+				fieldTotal:  len(endpoints),
 				"endpoints": endpoints,
 			},
 		}
@@ -303,8 +303,8 @@ func getWebhookEndpoints(config configs.WebhookConfig, logger logging.Logger) fi
 func getWebhookHistory(historyManager *webhook.WebhookHistoryManager, logger logging.Logger) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		// 쿼리 파라미터 파싱
-		limitStr := c.Query("limit", "50")
-		offsetStr := c.Query("offset", "0")
+		limitStr := c.Query(fieldLimit, "50")
+		offsetStr := c.Query(fieldOffset, "0")
 
 		limit, err := strconv.Atoi(limitStr)
 		if err != nil || limit <= 0 || limit > 500 {
@@ -317,14 +317,14 @@ func getWebhookHistory(historyManager *webhook.WebhookHistoryManager, logger log
 		}
 
 		if historyManager == nil {
-			response := dtos.ApiResponse{
+			response := dtos.APIResponse{
 				Success: true,
 				Message: "웹훅 이력 조회 완료",
 				Data: map[string]interface{}{
 					"histories": []interface{}{},
-					"total":     0,
-					"limit":     limit,
-					"offset":    offset,
+					fieldTotal:  0,
+					fieldLimit:  limit,
+					fieldOffset: offset,
 					"note":      "히스토리 매니저가 초기화되지 않음",
 				},
 			}
@@ -334,8 +334,8 @@ func getWebhookHistory(historyManager *webhook.WebhookHistoryManager, logger log
 		// 히스토리 조회
 		histories, total, err := historyManager.GetHistory("", limit, offset)
 		if err != nil {
-			logger.Error("웹훅 이력 조회 실패", logging.F("error", err))
-			response := dtos.ApiResponse{
+			logger.Error("웹훅 이력 조회 실패", logging.F(fieldError, err))
+			response := dtos.APIResponse{
 				Success: false,
 				Message: "웹훅 이력 조회 실패",
 				Error:   err.Error(),
@@ -343,14 +343,14 @@ func getWebhookHistory(historyManager *webhook.WebhookHistoryManager, logger log
 			return c.Status(500).JSON(response)
 		}
 
-		response := dtos.ApiResponse{
+		response := dtos.APIResponse{
 			Success: true,
 			Message: "웹훅 이력 조회 완료",
 			Data: map[string]interface{}{
 				"histories": histories,
-				"total":     total,
-				"limit":     limit,
-				"offset":    offset,
+				fieldTotal:  total,
+				fieldLimit:  limit,
+				fieldOffset: offset,
 			},
 		}
 
@@ -361,9 +361,9 @@ func getWebhookHistory(historyManager *webhook.WebhookHistoryManager, logger log
 // getWebhookHistoryByEndpoint 특정 엔드포인트의 웹훅 이력 조회
 func getWebhookHistoryByEndpoint(historyManager *webhook.WebhookHistoryManager, logger logging.Logger) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		endpointName := c.Params("endpoint")
+		endpointName := c.Params(fieldEndpoint)
 		if endpointName == "" {
-			response := dtos.ApiResponse{
+			response := dtos.APIResponse{
 				Success: false,
 				Message: "엔드포인트 이름이 필요합니다",
 				Error:   "endpoint parameter is required",
@@ -372,8 +372,8 @@ func getWebhookHistoryByEndpoint(historyManager *webhook.WebhookHistoryManager, 
 		}
 
 		// 쿼리 파라미터 파싱
-		limitStr := c.Query("limit", "50")
-		offsetStr := c.Query("offset", "0")
+		limitStr := c.Query(fieldLimit, "50")
+		offsetStr := c.Query(fieldOffset, "0")
 
 		limit, err := strconv.Atoi(limitStr)
 		if err != nil || limit <= 0 || limit > 500 {
@@ -386,21 +386,21 @@ func getWebhookHistoryByEndpoint(historyManager *webhook.WebhookHistoryManager, 
 		}
 
 		logger.Debug("특정 엔드포인트 웹훅 이력 조회",
-			logging.F("endpoint", endpointName),
-			logging.F("limit", limit),
-			logging.F("offset", offset))
+			logging.F(fieldEndpoint, endpointName),
+			logging.F(fieldLimit, limit),
+			logging.F(fieldOffset, offset))
 
 		if historyManager == nil {
-			response := dtos.ApiResponse{
+			response := dtos.APIResponse{
 				Success: true,
 				Message: "엔드포인트별 웹훅 이력 조회 완료",
 				Data: map[string]interface{}{
-					"endpoint":  endpointName,
-					"histories": []interface{}{},
-					"total":     0,
-					"limit":     limit,
-					"offset":    offset,
-					"note":      "히스토리 매니저가 초기화되지 않음",
+					fieldEndpoint: endpointName,
+					"histories":   []interface{}{},
+					fieldTotal:    0,
+					fieldLimit:    limit,
+					fieldOffset:   offset,
+					"note":        "히스토리 매니저가 초기화되지 않음",
 				},
 			}
 			return c.JSON(response)
@@ -409,8 +409,8 @@ func getWebhookHistoryByEndpoint(historyManager *webhook.WebhookHistoryManager, 
 		// 히스토리 조회
 		histories, total, err := historyManager.GetHistory(endpointName, limit, offset)
 		if err != nil {
-			logger.Error("엔드포인트별 웹훅 이력 조회 실패", logging.F("error", err))
-			response := dtos.ApiResponse{
+			logger.Error("엔드포인트별 웹훅 이력 조회 실패", logging.F(fieldError, err))
+			response := dtos.APIResponse{
 				Success: false,
 				Message: "엔드포인트별 웹훅 이력 조회 실패",
 				Error:   err.Error(),
@@ -418,15 +418,15 @@ func getWebhookHistoryByEndpoint(historyManager *webhook.WebhookHistoryManager, 
 			return c.Status(500).JSON(response)
 		}
 
-		response := dtos.ApiResponse{
+		response := dtos.APIResponse{
 			Success: true,
 			Message: "엔드포인트별 웹훅 이력 조회 완료",
 			Data: map[string]interface{}{
-				"endpoint":  endpointName,
-				"histories": histories,
-				"total":     total,
-				"limit":     limit,
-				"offset":    offset,
+				fieldEndpoint: endpointName,
+				"histories":   histories,
+				fieldTotal:    total,
+				fieldLimit:    limit,
+				fieldOffset:   offset,
 			},
 		}
 
@@ -453,7 +453,7 @@ func getWebhookStatistics(historyManager *webhook.WebhookHistoryManager, logger 
 			now := time.Now()
 			startTime := now.Add(-time.Duration(hours) * time.Hour)
 
-			response := dtos.ApiResponse{
+			response := dtos.APIResponse{
 				Success: true,
 				Message: "웹훅 통계 조회 완료",
 				Data: map[string]interface{}{
@@ -488,8 +488,8 @@ func getWebhookStatistics(historyManager *webhook.WebhookHistoryManager, logger 
 		// 통계 조회
 		stats, err := historyManager.GetStatistics("", timeRange)
 		if err != nil {
-			logger.Error("웹훅 통계 조회 실패", logging.F("error", err))
-			response := dtos.ApiResponse{
+			logger.Error("웹훅 통계 조회 실패", logging.F(fieldError, err))
+			response := dtos.APIResponse{
 				Success: false,
 				Message: "웹훅 통계 조회 실패",
 				Error:   err.Error(),
@@ -497,7 +497,7 @@ func getWebhookStatistics(historyManager *webhook.WebhookHistoryManager, logger 
 			return c.Status(500).JSON(response)
 		}
 
-		response := dtos.ApiResponse{
+		response := dtos.APIResponse{
 			Success: true,
 			Message: "웹훅 통계 조회 완료",
 			Data:    stats,
@@ -508,11 +508,12 @@ func getWebhookStatistics(historyManager *webhook.WebhookHistoryManager, logger 
 }
 
 // getWebhookStatisticsByEndpoint 특정 엔드포인트의 웹훅 통계 조회
-func getWebhookStatisticsByEndpoint(historyManager *webhook.WebhookHistoryManager, logger logging.Logger) fiber.Handler {
+func getWebhookStatisticsByEndpoint(historyManager *webhook.WebhookHistoryManager,
+	logger logging.Logger) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		endpointName := c.Params("endpoint")
+		endpointName := c.Params(fieldEndpoint)
 		if endpointName == "" {
-			response := dtos.ApiResponse{
+			response := dtos.APIResponse{
 				Success: false,
 				Message: "엔드포인트 이름이 필요합니다",
 				Error:   "endpoint parameter is required",
@@ -528,18 +529,18 @@ func getWebhookStatisticsByEndpoint(historyManager *webhook.WebhookHistoryManage
 		}
 
 		logger.Debug("특정 엔드포인트 웹훅 통계 조회",
-			logging.F("endpoint", endpointName),
+			logging.F(fieldEndpoint, endpointName),
 			logging.F("hours", hours))
 
 		if historyManager == nil {
 			now := time.Now()
 			startTime := now.Add(-time.Duration(hours) * time.Hour)
 
-			response := dtos.ApiResponse{
+			response := dtos.APIResponse{
 				Success: true,
 				Message: "엔드포인트별 웹훅 통계 조회 완료",
 				Data: map[string]interface{}{
-					"endpoint":              endpointName,
+					fieldEndpoint:           endpointName,
 					"total_sent":            0,
 					"total_success":         0,
 					"total_failed":          0,
@@ -571,8 +572,8 @@ func getWebhookStatisticsByEndpoint(historyManager *webhook.WebhookHistoryManage
 		// 특정 엔드포인트 통계 조회
 		stats, err := historyManager.GetStatistics(endpointName, timeRange)
 		if err != nil {
-			logger.Error("엔드포인트별 웹훅 통계 조회 실패", logging.F("error", err))
-			response := dtos.ApiResponse{
+			logger.Error("엔드포인트별 웹훅 통계 조회 실패", logging.F(fieldError, err))
+			response := dtos.APIResponse{
 				Success: false,
 				Message: "엔드포인트별 웹훅 통계 조회 실패",
 				Error:   err.Error(),
@@ -598,13 +599,13 @@ func getWebhookStatisticsByEndpoint(historyManager *webhook.WebhookHistoryManage
 			}
 		}
 
-		response := dtos.ApiResponse{
+		response := dtos.APIResponse{
 			Success: true,
 			Message: "엔드포인트별 웹훅 통계 조회 완료",
 			Data: map[string]interface{}{
-				"endpoint":   endpointName,
-				"statistics": endpointStats,
-				"time_range": stats.TimeRange,
+				fieldEndpoint: endpointName,
+				"statistics":  endpointStats,
+				"time_range":  stats.TimeRange,
 			},
 		}
 
@@ -616,22 +617,22 @@ func getWebhookStatisticsByEndpoint(historyManager *webhook.WebhookHistoryManage
 func getRecentActivity(historyManager *webhook.WebhookHistoryManager, logger logging.Logger) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		// 제한 개수 파라미터
-		limitStr := c.Query("limit", "20")
+		limitStr := c.Query(fieldLimit, "20")
 		limit, err := strconv.Atoi(limitStr)
 		if err != nil || limit <= 0 || limit > 100 {
 			limit = 20
 		}
 
 		logger.Debug("최근 웹훅 활동 조회",
-			logging.F("limit", limit))
+			logging.F(fieldLimit, limit))
 
 		if historyManager == nil {
-			response := dtos.ApiResponse{
+			response := dtos.APIResponse{
 				Success: true,
 				Message: "최근 웹훅 활동 조회 완료",
 				Data: map[string]interface{}{
 					"activities": []interface{}{},
-					"limit":      limit,
+					fieldLimit:   limit,
 					"note":       "히스토리 매니저가 초기화되지 않음",
 				},
 			}
@@ -641,8 +642,8 @@ func getRecentActivity(historyManager *webhook.WebhookHistoryManager, logger log
 		// 최근 활동 조회
 		activities, err := historyManager.GetRecentActivity(limit)
 		if err != nil {
-			logger.Error("최근 웹훅 활동 조회 실패", logging.F("error", err))
-			response := dtos.ApiResponse{
+			logger.Error("최근 웹훅 활동 조회 실패", logging.F(fieldError, err))
+			response := dtos.APIResponse{
 				Success: false,
 				Message: "최근 웹훅 활동 조회 실패",
 				Error:   err.Error(),
@@ -650,13 +651,13 @@ func getRecentActivity(historyManager *webhook.WebhookHistoryManager, logger log
 			return c.Status(500).JSON(response)
 		}
 
-		response := dtos.ApiResponse{
+		response := dtos.APIResponse{
 			Success: true,
 			Message: "최근 웹훅 활동 조회 완료",
 			Data: map[string]interface{}{
 				"activities": activities,
-				"limit":      limit,
-				"total":      len(activities),
+				fieldLimit:   limit,
+				fieldTotal:   len(activities),
 			},
 		}
 

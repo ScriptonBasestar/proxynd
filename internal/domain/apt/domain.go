@@ -1,3 +1,4 @@
+// Package apt provides APT domain logic and models
 package apt
 
 import (
@@ -42,7 +43,7 @@ func NewDomain() *Domain {
 }
 
 // ParseRequest parses and validates an APT proxy request
-func (d *Domain) ParseRequest(ctx context.Context, req *common.ProxyRequest) error {
+func (d *Domain) ParseRequest(_ context.Context, req *common.ProxyRequest) error {
 	if req.Method != "GET" && req.Method != "HEAD" {
 		return fmt.Errorf("unsupported method for APT proxy: %s", req.Method)
 	}
@@ -118,7 +119,7 @@ func (d *Domain) ExtractMetadata(requestPath string) (*common.PackageMetadata, e
 }
 
 // TransformResponse transforms the upstream response if needed
-func (d *Domain) TransformResponse(ctx context.Context, resp *common.ProxyResponse) error {
+func (d *Domain) TransformResponse(_ context.Context, _ *common.ProxyResponse) error {
 	// APT responses typically don't need transformation
 	// This could be extended to modify repository URLs in Release files
 	return nil

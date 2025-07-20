@@ -1,3 +1,4 @@
+// Package logging provides logging and audit functionality
 package logging
 
 import (
@@ -7,6 +8,20 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+)
+
+// Result constants for audit events
+const (
+	// ResultFailure is a const that result failure
+	// ResultError is a const that result error
+	// ResultUnauthorized is a const that result unauthorized
+	// ResultForbidden is a const that result forbidden
+	// ResultSuccess is a const that result success
+	ResultFailure      = "failure"
+	ResultError        = "error"
+	ResultUnauthorized = "unauthorized"
+	ResultForbidden    = "forbidden"
+	ResultSuccess      = "success"
 )
 
 // AuditEvent represents an audit log event
@@ -100,9 +115,9 @@ func (a *AuditLogger) LogEvent(ctx context.Context, event AuditEvent) {
 
 	// Log based on result
 	switch event.Result {
-	case "failure", "error":
+	case ResultFailure, ResultError:
 		a.logger.WithContext(ctx).Error(message, fields...)
-	case "unauthorized", "forbidden":
+	case ResultUnauthorized, ResultForbidden:
 		a.logger.WithContext(ctx).Warn(message, fields...)
 	default:
 		a.logger.WithContext(ctx).Info(message, fields...)
@@ -112,7 +127,9 @@ func (a *AuditLogger) LogEvent(ctx context.Context, event AuditEvent) {
 // Convenience methods for common audit events
 
 // LogAuthentication logs authentication events
-func (a *AuditLogger) LogAuthentication(ctx context.Context, userID, method, result string, metadata map[string]interface{}) {
+func (a *AuditLogger) LogAuthentication(
+	ctx context.Context, userID, method, result string, metadata map[string]interface{},
+) {
 	event := AuditEvent{
 		EventType:  "authentication",
 		Action:     "authenticate",
@@ -131,7 +148,10 @@ func (a *AuditLogger) LogAuthentication(ctx context.Context, userID, method, res
 }
 
 // LogAuthorization logs authorization events
-func (a *AuditLogger) LogAuthorization(ctx context.Context, userID, resource, action, result string, metadata map[string]interface{}) {
+func (a *AuditLogger) LogAuthorization(
+	ctx context.Context, _, resource, action, result string,
+	metadata map[string]interface{},
+) {
 	event := AuditEvent{
 		EventType: "authorization",
 		Action:    action,
@@ -144,7 +164,9 @@ func (a *AuditLogger) LogAuthorization(ctx context.Context, userID, resource, ac
 }
 
 // LogFileAccess logs file access events
-func (a *AuditLogger) LogFileAccess(ctx context.Context, filePath, action, result string, metadata map[string]interface{}) {
+func (a *AuditLogger) LogFileAccess(
+	ctx context.Context, filePath, action, result string, metadata map[string]interface{},
+) {
 	event := AuditEvent{
 		EventType:  "file_access",
 		Action:     action,
@@ -158,7 +180,9 @@ func (a *AuditLogger) LogFileAccess(ctx context.Context, filePath, action, resul
 }
 
 // LogConfigurationChange logs configuration change events
-func (a *AuditLogger) LogConfigurationChange(ctx context.Context, configType, action, result string, changes map[string]interface{}) {
+func (a *AuditLogger) LogConfigurationChange(
+	ctx context.Context, configType, action, result string, changes map[string]interface{},
+) {
 	event := AuditEvent{
 		EventType:  "configuration_change",
 		Action:     action,
@@ -174,7 +198,9 @@ func (a *AuditLogger) LogConfigurationChange(ctx context.Context, configType, ac
 }
 
 // LogAdminAction logs administrative actions
-func (a *AuditLogger) LogAdminAction(ctx context.Context, action, resource, result string, metadata map[string]interface{}) {
+func (a *AuditLogger) LogAdminAction(
+	ctx context.Context, action, resource, result string, metadata map[string]interface{},
+) {
 	event := AuditEvent{
 		EventType: "admin_action",
 		Action:    action,
@@ -187,7 +213,9 @@ func (a *AuditLogger) LogAdminAction(ctx context.Context, action, resource, resu
 }
 
 // LogSecurityEvent logs security-related events
-func (a *AuditLogger) LogSecurityEvent(ctx context.Context, eventType, action, result string, metadata map[string]interface{}) {
+func (a *AuditLogger) LogSecurityEvent(
+	ctx context.Context, eventType, action, result string, metadata map[string]interface{},
+) {
 	event := AuditEvent{
 		EventType: "security_event",
 		Action:    action,
@@ -216,14 +244,14 @@ func AuditMiddleware(auditLogger *AuditLogger) fiber.Handler {
 		// Log audit event for specific endpoints
 		if shouldAudit(c.Method(), c.Path()) {
 			duration := time.Since(start)
-			result := "success"
+			result := ResultSuccess
 			errorMessage := ""
 
 			if err != nil {
-				result = "failure"
+				result = ResultFailure
 				errorMessage = err.Error()
 			} else if c.Response().StatusCode() >= 400 {
-				result = "failure"
+				result = ResultFailure
 			}
 
 			event := AuditEvent{
@@ -248,8 +276,22 @@ func AuditMiddleware(auditLogger *AuditLogger) fiber.Handler {
 		}
 
 		return err
+		// HTTPMethodPOST is a const that h t t p method p o s t
+		// HTTPMethodPUT is a const that h t t p method p u t
+		// HTTPMethodDELETE is a const that h t t p method d e l e t e
+		// HTTPMethodGET is a const that h t t p method g e t
+		// HTTPMethodPATCH is a const that h t t p method p a t c h
 	}
 }
+
+// HTTP method constants for audit
+const (
+	HTTPMethodPOST   = "POST"
+	HTTPMethodPUT    = "PUT"
+	HTTPMethodDELETE = "DELETE"
+	HTTPMethodGET    = "GET"
+	HTTPMethodPATCH  = "PATCH"
+)
 
 // shouldAudit determines if a request should be audited
 func shouldAudit(method, path string) bool {
@@ -267,7 +309,7 @@ func shouldAudit(method, path string) bool {
 	}
 
 	// Audit all POST, PUT, DELETE requests
-	if method == "POST" || method == "PUT" || method == "DELETE" {
+	if method == HTTPMethodPOST || method == HTTPMethodPUT || method == HTTPMethodDELETE {
 		return true
 	}
 
@@ -289,15 +331,15 @@ func shouldAudit(method, path string) bool {
 }
 
 // getActionFromRequest determines the action from HTTP method and path
-func getActionFromRequest(method, path string) string {
+func getActionFromRequest(method, _ string) string {
 	switch method {
-	case "GET":
+	case HTTPMethodGET:
 		return "read"
-	case "POST":
+	case HTTPMethodPOST:
 		return "create"
-	case "PUT", "PATCH":
+	case HTTPMethodPUT, HTTPMethodPATCH:
 		return "update"
-	case "DELETE":
+	case HTTPMethodDELETE:
 		return "delete"
 	default:
 		return method

@@ -18,7 +18,6 @@ type RequestOptimizer struct {
 	stats       *RequestStats
 	compressor  *ResponseCompressor
 	rateLimiter *AdaptiveRateLimiter
-	mu          sync.RWMutex
 }
 
 // RequestOptimizerConfig configures request optimization
@@ -30,12 +29,14 @@ type RequestOptimizerConfig struct {
 	CompressibleTypes    []string `yaml:"compressible_types,omitempty" json:"compressible_types,omitempty"`
 
 	// Caching optimization
-	EnableCacheOptimization bool          `yaml:"enable_cache_optimization" json:"enable_cache_optimization" default:"true"`
+	// Enable cache optimization (true by default)
+	EnableCacheOptimization bool          `yaml:"enable_cache_optimization" json:"enable_cache_optimization"`
 	CacheControlMaxAge      time.Duration `yaml:"cache_control_max_age" json:"cache_control_max_age" default:"1h"`
 	ETags                   bool          `yaml:"etags" json:"etags" default:"true"`
 
 	// Rate limiting
-	EnableAdaptiveRateLimit bool          `yaml:"enable_adaptive_rate_limit" json:"enable_adaptive_rate_limit" default:"true"`
+	// Enable adaptive rate limiting (true by default)
+	EnableAdaptiveRateLimit bool          `yaml:"enable_adaptive_rate_limit" json:"enable_adaptive_rate_limit"`
 	BaseRateLimit           int           `yaml:"base_rate_limit" json:"base_rate_limit" default:"1000"`
 	BurstLimit              int           `yaml:"burst_limit" json:"burst_limit" default:"100"`
 	RateLimitWindow         time.Duration `yaml:"rate_limit_window" json:"rate_limit_window" default:"1m"`
@@ -390,7 +391,8 @@ func (ro *RequestOptimizer) recordRequestMetrics(c *fiber.Ctx, duration time.Dur
 	} else {
 		// Calculate rolling average
 		oldAvg := float64(ro.stats.AverageResponseTime.Nanoseconds())
-		newAvg := (oldAvg*float64(ro.stats.TotalRequests-1) + float64(duration.Nanoseconds())) / float64(ro.stats.TotalRequests)
+		newAvg := (oldAvg*float64(ro.stats.TotalRequests-1) +
+			float64(duration.Nanoseconds())) / float64(ro.stats.TotalRequests)
 		ro.stats.AverageResponseTime = time.Duration(int64(newAvg))
 	}
 

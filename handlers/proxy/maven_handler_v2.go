@@ -223,7 +223,7 @@ func (h *MavenHandlerV2) GetCacheTTL(c *fiber.Ctx) time.Duration {
 }
 
 // HandleError 에러 처리
-func (h *MavenHandlerV2) HandleError(err error, c *fiber.Ctx) error {
+func (h *MavenHandlerV2) HandleError(err error, _ *fiber.Ctx) error {
 	// Maven 도메인 에러로 변환
 	if strings.Contains(err.Error(), "리포지토리가 설정되지 않았습니다") {
 		return errors.WrapMavenError(err, "MVN004", "Maven 프록시가 비활성화되어 있습니다")
@@ -307,7 +307,7 @@ func (h *MavenHandlerV2) validateChecksum(checksumData []byte, checksumPath stri
 // AuthenticatedProxyHandler 인터페이스 구현 (선택적)
 
 // GetUpstreamAuth 업스트림 인증 정보 반환
-func (h *MavenHandlerV2) GetUpstreamAuth(c *fiber.Ctx) (string, string, error) {
+func (h *MavenHandlerV2) GetUpstreamAuth(_ *fiber.Ctx) (string, string, error) {
 	if err := h.Config.ReadConfig(); err != nil {
 		return "", "", err
 	}
@@ -325,7 +325,7 @@ func (h *MavenHandlerV2) GetUpstreamAuth(c *fiber.Ctx) (string, string, error) {
 }
 
 // ValidateClientAuth 클라이언트 인증 검증
-func (h *MavenHandlerV2) ValidateClientAuth(c *fiber.Ctx) error {
+func (h *MavenHandlerV2) ValidateClientAuth(_ *fiber.Ctx) error {
 	// 현재는 클라이언트 인증 없음
 	return nil
 }

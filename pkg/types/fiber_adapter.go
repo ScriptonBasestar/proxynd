@@ -1,3 +1,4 @@
+// Package types provides type adapters and utilities
 package types
 
 import (
@@ -82,7 +83,7 @@ func (a *StandardFiberProxyAdapter) Adapt(handler ProxyHandler) fiber.Handler {
 
 		// Ensure response body is closed
 		if proxyResp.Body != nil {
-			defer proxyResp.Body.Close()
+			defer func() { _ = proxyResp.Body.Close() }()
 		}
 
 		// Log successful request

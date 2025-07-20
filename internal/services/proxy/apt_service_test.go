@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+
 	"proxynd/configs"
 )
 
@@ -20,7 +21,7 @@ func TestNewAptService(t *testing.T) {
 	}{
 		{
 			name: "successful creation",
-			setupMocks: func(cache *MockCacheService, config *MockConfigService, upstream *MockUpstreamClient) {
+			setupMocks: func(_ *MockCacheService, config *MockConfigService, _ *MockUpstreamClient) {
 				aptConfig := &configs.AptProxyConfig{
 					Path:     "/apt",
 					UseCache: true,
@@ -36,7 +37,7 @@ func TestNewAptService(t *testing.T) {
 		},
 		{
 			name: "config load error",
-			setupMocks: func(cache *MockCacheService, config *MockConfigService, upstream *MockUpstreamClient) {
+			setupMocks: func(_ *MockCacheService, config *MockConfigService, _ *MockUpstreamClient) {
 				config.On("GetProxyConfig", mock.Anything, "apt").Return(nil, fmt.Errorf("config not found"))
 			},
 			wantErr: true,
@@ -44,7 +45,7 @@ func TestNewAptService(t *testing.T) {
 		},
 		{
 			name: "invalid config type",
-			setupMocks: func(cache *MockCacheService, config *MockConfigService, upstream *MockUpstreamClient) {
+			setupMocks: func(_ *MockCacheService, config *MockConfigService, _ *MockUpstreamClient) {
 				config.On("GetProxyConfig", mock.Anything, "apt").Return("invalid type", nil)
 			},
 			wantErr: true,

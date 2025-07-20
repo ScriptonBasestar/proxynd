@@ -268,7 +268,7 @@ func (vcl *ViperConfigLoader) GetViper() *viper.Viper {
 // WatchConfig 설정 변경 감시
 func (vcl *ViperConfigLoader) WatchConfig(callback func(*UnifiedConfig)) {
 	vcl.viper.WatchConfig()
-	vcl.viper.OnConfigChange(func(e fsnotify.Event) {
+	vcl.viper.OnConfigChange(func(_ fsnotify.Event) {
 		// 설정 재로드
 		config := &UnifiedConfig{}
 		if err := vcl.viper.Unmarshal(config); err == nil {

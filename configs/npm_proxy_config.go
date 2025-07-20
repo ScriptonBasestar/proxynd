@@ -8,11 +8,17 @@ import (
 	"proxynd/helpers"
 )
 
+// NpmProxyServer is exported
+// NpmProxyServer provides server functionality
 type NpmProxyServer struct {
 	Name string `yaml:"name,omitempty" validate:"required,min=1,max=100"`
 	URL  string `yaml:"url,omitempty" validate:"required,url"`
+	// NpmProxyConfig is exported
 }
 
+// NpmProxyConfig is exported
+
+// NpmProxyConfig represents the configuration for npmproxy settings
 type NpmProxyConfig struct {
 	Path      string                      `yaml:"path,omitempty" validate:"required,min=1"`
 	UseCache  bool                        `yaml:"use_cache,omitempty" default:"true"`
@@ -23,11 +29,13 @@ type NpmProxyConfig struct {
 // NpmProxy is an alias for NpmProxyConfig for backwards compatibility
 type NpmProxy = NpmProxyConfig
 
+// ConfigExists checks if the configuration file exists
 func (cfg *NpmProxyConfig) ConfigExists() bool {
 	confDir := helpers.GetConfigDir()
 	return helpers.FileExists(path.Join(confDir, "npm-proxy.yaml"))
 }
 
+// ReadConfig reads the configuration from file
 func (cfg *NpmProxyConfig) ReadConfig() error {
 	confDir := helpers.GetConfigDir()
 	if err := helpers.ReadYamlSafe(path.Join(confDir, "npm-proxy.yaml"), cfg); err != nil {

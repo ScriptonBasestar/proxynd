@@ -50,6 +50,8 @@ func WriteYaml(path string, data interface{}) error {
 	return os.WriteFile(path, yamlData, 0644)
 }
 
+// ToStringYaml is exported
+// ToStringYaml converts data between formats
 func ToStringYaml(out interface{}) string {
 	d, err := yaml.Marshal(out)
 	if err != nil {

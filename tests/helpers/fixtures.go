@@ -1,3 +1,4 @@
+// Package helpers provides test helper utilities
 package helpers
 
 import (
@@ -199,7 +200,7 @@ func CreateTempFixture(t *testing.T, filename, content string) string {
 	}
 
 	t.Cleanup(func() {
-		os.RemoveAll(tempDir)
+		_ = os.RemoveAll(tempDir)
 	})
 
 	filePath := filepath.Join(tempDir, filename)

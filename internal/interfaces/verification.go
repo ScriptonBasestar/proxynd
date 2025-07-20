@@ -7,7 +7,10 @@ import (
 // PackageVerifier defines the interface for package verification
 type PackageVerifier interface {
 	// VerifyPackage verifies a package based on its type
-	VerifyPackage(ctx context.Context, packageType string, packagePath string, data []byte, metadata map[string]string) (*VerificationResult, error)
+	VerifyPackage(
+		ctx context.Context, packageType string, packagePath string,
+		data []byte, metadata map[string]string,
+	) (*VerificationResult, error)
 
 	// SetStrictMode enables or disables strict verification mode
 	SetStrictMode(strict bool)
@@ -55,7 +58,10 @@ type VerificationIssue struct {
 type IssueSeverity string
 
 const (
-	SeverityError   IssueSeverity = "error"
+	// SeverityError indicates a critical verification error
+	SeverityError IssueSeverity = "error"
+	// SeverityWarning indicates a verification warning
 	SeverityWarning IssueSeverity = "warning"
-	SeverityInfo    IssueSeverity = "info"
+	// SeverityInfo indicates informational verification details
+	SeverityInfo IssueSeverity = "info"
 )

@@ -9,7 +9,13 @@ import (
 	"proxynd/logging"
 )
 
-// ErrorResponse 에러 응답 구조체
+// Constants for repeated strings
+const (
+	unknownTraceID = "unknown"
+	errorLevel     = "error"
+)
+
+// ErrorResponse represents an error response structure
 type ErrorResponse struct {
 	Error     string      `json:"error"`
 	Message   string      `json:"message"`
@@ -19,19 +25,19 @@ type ErrorResponse struct {
 	Timestamp time.Time   `json:"timestamp"`
 }
 
-// ErrorHandler 에러 핸들링 미들웨어
+// ErrorHandlerMiddleware represents an error handler middleware
 type ErrorHandlerMiddleware struct {
 	logger logging.Logger
 }
 
-// NewErrorHandler 새로운 에러 핸들러 생성
+// NewErrorHandler creates a new error handler middleware
 func NewErrorHandler() *ErrorHandlerMiddleware {
 	return &ErrorHandlerMiddleware{
 		logger: logging.GetLogger(),
 	}
 }
 
-// ErrorHandler 에러 핸들링 미들웨어 함수
+// ErrorHandler creates a fiber error handling middleware
 func ErrorHandler() fiber.Handler {
 	handler := NewErrorHandler()
 
@@ -45,7 +51,7 @@ func ErrorHandler() fiber.Handler {
 		// 추적 ID 가져오기 (RequestID 미들웨어에서 설정)
 		traceID := c.Locals("requestID")
 		if traceID == nil {
-			traceID = "unknown"
+			traceID = unknownTraceID
 		}
 
 		// 도메인 에러 처리
@@ -159,7 +165,7 @@ func (h *ErrorHandlerMiddleware) logError(c *fiber.Ctx, err *errors.DomainError,
 		h.logger.Info(message, fields...)
 	case "warning":
 		h.logger.Warn(message, fields...)
-	case "error":
+	case errorLevel:
 		h.logger.Error(message, fields...)
 	case "critical":
 		h.logger.Error(message, fields...)
@@ -176,11 +182,11 @@ func (h *ErrorHandlerMiddleware) getLogLevel(level errors.ErrorLevel) string {
 	case errors.ErrorLevelWarning:
 		return "warning"
 	case errors.ErrorLevelError:
-		return "error"
+		return errorLevel
 	case errors.ErrorLevelCritical:
 		return "critical"
 	default:
-		return "error"
+		return errorLevel
 	}
 }
 

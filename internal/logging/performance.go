@@ -49,6 +49,13 @@ type PerformanceEvent struct {
 
 // Performance event types
 const (
+	// PerfEventRequest is a const that perf event request
+	// PerfEventDatabase is a const that perf event database
+	// PerfEventCache is a const that perf event cache
+	// PerfEventFileIO is a const that perf event file i o
+	// PerfEventNetworkCall is a const that perf event network call
+	// PerfEventComputation is a const that perf event computation
+	// PerfEventMemoryGC is a const that perf event memory g c
 	PerfEventRequest     = "http_request"
 	PerfEventDatabase    = "database_query"
 	PerfEventCache       = "cache_operation"
@@ -181,7 +188,19 @@ func (p *PerformanceLogger) GetMetrics() PerformanceMetrics {
 	runtime.ReadMemStats(&gcStats)
 	p.metrics.GCCount = gcStats.NumGC
 
-	return *p.metrics
+	// Return a copy without the mutex to avoid copylocks issue
+	return PerformanceMetrics{
+		RequestCount:      p.metrics.RequestCount,
+		TotalDuration:     p.metrics.TotalDuration,
+		MinDuration:       p.metrics.MinDuration,
+		MaxDuration:       p.metrics.MaxDuration,
+		SlowRequestCount:  p.metrics.SlowRequestCount,
+		ErrorCount:        p.metrics.ErrorCount,
+		MemoryAllocations: p.metrics.MemoryAllocations,
+		GCCount:           p.metrics.GCCount,
+		LastResetTime:     p.metrics.LastResetTime,
+		// mu is intentionally omitted to avoid copying the lock
+	}
 }
 
 // ResetMetrics resets performance metrics
@@ -212,7 +231,10 @@ type PerformanceTracker struct {
 }
 
 // StartOperation starts tracking an operation
-func (p *PerformanceLogger) StartOperation(ctx context.Context, eventType, component, operation string) *PerformanceTracker {
+func (p *PerformanceLogger) StartOperation(
+	ctx context.Context,
+	eventType, component, operation string,
+) *PerformanceTracker {
 	var memStats runtime.MemStats
 	runtime.ReadMemStats(&memStats)
 
@@ -302,7 +324,11 @@ func PerformanceMiddleware(perfLogger *PerformanceLogger) fiber.Handler {
 // Convenience methods for common operations
 
 // TrackDatabaseQuery tracks database query performance
-func (p *PerformanceLogger) TrackDatabaseQuery(ctx context.Context, query string, args []interface{}) *PerformanceTracker {
+func (p *PerformanceLogger) TrackDatabaseQuery(
+	ctx context.Context,
+	query string,
+	args []interface{},
+) *PerformanceTracker {
 	tracker := p.StartOperation(ctx, PerfEventDatabase, "database", "query")
 	tracker.AddMetadata("query", query)
 	tracker.AddMetadata("args_count", len(args))
@@ -332,7 +358,12 @@ func (p *PerformanceLogger) TrackNetworkCall(ctx context.Context, method, url st
 }
 
 // LogSlowQuery logs slow database queries
-func (p *PerformanceLogger) LogSlowQuery(ctx context.Context, query string, duration time.Duration, threshold time.Duration) {
+func (p *PerformanceLogger) LogSlowQuery(
+	ctx context.Context,
+	query string,
+	duration time.Duration,
+	threshold time.Duration,
+) {
 	if duration > threshold {
 		event := PerformanceEvent{
 			Type:      PerfEventDatabase,

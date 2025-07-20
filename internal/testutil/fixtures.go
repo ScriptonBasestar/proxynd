@@ -60,7 +60,7 @@ func (f *Fixtures) ValidMavenConfig() *configs.MavenProxyConfig {
 		UseCache: true,
 		Proxies: []configs.MavenProxyServer{
 			{
-				Id:          "central",
+				ID:          "central",
 				Name:        "Central Repository",
 				URL:         "https://repo1.maven.org/maven2",
 				Description: "Maven Central Repository",
@@ -120,7 +120,8 @@ func (f *Fixtures) ProxyResponse(statusCode int, body string) *proxy.ProxyRespon
 }
 
 // ProxyResponseWithHeaders creates a test proxy response with headers
-func (f *Fixtures) ProxyResponseWithHeaders(statusCode int, body string, headers map[string]string) *proxy.ProxyResponse {
+func (f *Fixtures) ProxyResponseWithHeaders(statusCode int, body string,
+	headers map[string]string) *proxy.ProxyResponse {
 	resp := f.ProxyResponse(statusCode, body)
 	resp.Headers = headers
 	return resp

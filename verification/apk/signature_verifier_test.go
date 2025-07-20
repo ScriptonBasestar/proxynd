@@ -26,7 +26,7 @@ func TestLoadTrustedKeys(t *testing.T) {
 	// 임시 키 디렉토리 생성
 	tempDir, err := os.MkdirTemp("", "apk_keys_test")
 	assert.Equal(t, err, nil)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// 테스트용 RSA 키 쌍 생성
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
@@ -64,7 +64,7 @@ func TestLoadTrustedKeysEmptyDirectory(t *testing.T) {
 	// 빈 임시 디렉토리 생성
 	tempDir, err := os.MkdirTemp("", "apk_keys_empty_test")
 	assert.Equal(t, err, nil)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	verifier := NewSignatureVerifier()
 	err = verifier.LoadTrustedKeys(tempDir)
@@ -109,7 +109,7 @@ func TestFindSignatureFile(t *testing.T) {
 	// 임시 디렉토리 생성
 	tempDir, err := os.MkdirTemp("", "apk_signature_test")
 	assert.Equal(t, err, nil)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// 테스트 APK 파일 생성
 	apkFile := filepath.Join(tempDir, "test.apk")
@@ -131,12 +131,12 @@ func TestCalculateFileHash(t *testing.T) {
 	// 임시 파일 생성
 	tempFile, err := os.CreateTemp("", "hash_test")
 	assert.Equal(t, err, nil)
-	defer os.Remove(tempFile.Name())
+	defer func() { _ = os.Remove(tempFile.Name()) }()
 
 	testContent := []byte("test content for hashing")
 	_, err = tempFile.Write(testContent)
 	assert.Equal(t, err, nil)
-	tempFile.Close()
+	_ = tempFile.Close()
 
 	verifier := NewSignatureVerifier()
 	hash, err := verifier.calculateFileHash(tempFile.Name())

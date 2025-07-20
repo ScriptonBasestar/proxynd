@@ -65,8 +65,11 @@ type CheckResult struct {
 type Status string
 
 const (
-	StatusHealthy   Status = "healthy"
-	StatusDegraded  Status = "degraded"
+	// StatusHealthy indicates the component is functioning normally
+	StatusHealthy Status = "healthy"
+	// StatusDegraded indicates the component has issues but is functional
+	StatusDegraded Status = "degraded"
+	// StatusUnhealthy indicates the component is not functioning
 	StatusUnhealthy Status = "unhealthy"
 )
 
@@ -74,7 +77,10 @@ const (
 type CheckType string
 
 const (
+	// CheckTypeCritical indicates a critical health check
 	CheckTypeCritical CheckType = "critical"
-	CheckTypeWarning  CheckType = "warning"
-	CheckTypeInfo     CheckType = "info"
+	// CheckTypeWarning indicates a warning-level health check
+	CheckTypeWarning CheckType = "warning"
+	// CheckTypeInfo indicates an informational health check
+	CheckTypeInfo CheckType = "info"
 )

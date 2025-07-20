@@ -1,3 +1,4 @@
+// Package auth provides authentication handlers and middleware
 package auth
 
 import (
@@ -256,7 +257,6 @@ func SessionTimeout() fiber.Handler {
 
 					// 갱신 성공 시 응답 헤더 설정
 					c.Set("X-Token-Refreshed", "true")
-
 				} else {
 					return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
 						"error":      "Token expired",
@@ -326,7 +326,7 @@ func DeveloperOrAbove() fiber.Handler {
 // 유틸리티 함수들
 
 // autoRefreshToken 자동 JWT 토큰 갱신 (실시간 권한 동기화 포함)
-func autoRefreshToken(c *fiber.Ctx, sess fiber.Map, userMap fiber.Map) error {
+func autoRefreshToken(_ *fiber.Ctx, sess fiber.Map, userMap fiber.Map) error {
 	jwtRefreshToken, exists := sess["jwt_refresh_token"]
 	if !exists || jwtRefreshToken == nil {
 		return errors.New("no JWT refresh token available")
@@ -391,7 +391,7 @@ func autoRefreshToken(c *fiber.Ctx, sess fiber.Map, userMap fiber.Map) error {
 }
 
 // createOAuth2Provider OAuth2 제공자별 인터페이스 구현체 생성
-func createOAuth2Provider(providerName string, config *configs.OAuth2Config) interface{} {
+func createOAuth2Provider(_ string, _ *configs.OAuth2Config) interface{} {
 	// 실제 구현에서는 각 제공자별로 인터페이스를 구현하여 반환
 	// 현재는 nil 반환 (추후 구현)
 	return nil

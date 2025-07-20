@@ -1,3 +1,4 @@
+// Package main provides the entry point for proxyndctl CLI tool
 package main
 
 import (
@@ -11,6 +12,9 @@ import (
 
 // 빌드 정보 변수 (릴리스 시 ldflags로 설정됨)
 var (
+	// Version is a var that version
+	// BuildTime is a var that build time
+	// CommitSHA is a var that commit s h a
 	Version   = "dev"
 	BuildTime = "unknown"
 	CommitSHA = "unknown"

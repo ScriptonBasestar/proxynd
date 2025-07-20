@@ -25,7 +25,7 @@ type TestServer struct {
 }
 
 // SetupTestServer 테스트 서버 설정
-func SetupTestServer(t *testing.T) *TestServer {
+func SetupTestServer(_ *testing.T) *TestServer {
 	// 테스트용 통합 설정
 	testConfig := &configs.UnifiedConfig{
 		Server: configs.ServerConfig{
@@ -73,7 +73,7 @@ func SetupTestServer(t *testing.T) *TestServer {
 				Directory: "/tmp/proxynd-test-cache",
 			},
 		},
-		Security: configs.SecurityConfig{
+		Security: configs.UnifiedSecurityConfig{
 			Authentication: configs.AuthenticationConfig{
 				BasicAuth: nil,
 				OAuth2:    nil,
@@ -134,7 +134,7 @@ func SetupTestServer(t *testing.T) *TestServer {
 }
 
 // setupRoutes 라우터 설정
-func setupRoutes(app *fiber.App, container *app.Container) {
+func setupRoutes(app *fiber.App, _ *app.Container) {
 	// 헬스체크 엔드포인트
 	app.Get("/health", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
@@ -211,7 +211,8 @@ func setupRoutes(app *fiber.App, container *app.Container) {
 
 	// 메트릭 엔드포인트
 	app.Get("/metrics", func(c *fiber.Ctx) error {
-		return c.SendString("# HELP proxynd_requests_total Total number of requests\n# TYPE proxynd_requests_total counter\nproxynd_requests_total 100\n")
+		return c.SendString("# HELP proxynd_requests_total Total number of requests\n" +
+			"# TYPE proxynd_requests_total counter\nproxynd_requests_total 100\n")
 	})
 }
 
@@ -249,11 +250,11 @@ func (ts *TestServer) WaitForReady() error {
 	for i := 0; i < 10; i++ {
 		resp, err := client.Get(ts.URL() + "/health")
 		if err == nil && resp.StatusCode == 200 {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			return nil
 		}
 		if resp != nil {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 		}
 		time.Sleep(100 * time.Millisecond)
 	}

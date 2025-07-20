@@ -114,6 +114,7 @@ func (g *GitLabProvider) GetUserInfo(ctx context.Context, accessToken string) (*
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user info: %w", err)
 	}
+	defer func() { _ = resp.Body.Close() }()
 
 	var gitlabUser GitLabUser
 	if err := ParseAPIResponse(resp, &gitlabUser); err != nil {
@@ -157,6 +158,7 @@ func (g *GitLabProvider) GetUserOrganizations(ctx context.Context, accessToken s
 	if err != nil {
 		return nil, fmt.Errorf("failed to get groups: %w", err)
 	}
+	defer func() { _ = resp.Body.Close() }()
 
 	var groups []GitLabGroup
 	if err := ParseAPIResponse(resp, &groups); err != nil {
@@ -182,7 +184,7 @@ func (g *GitLabProvider) ValidateToken(ctx context.Context, token string) (*Toke
 	if err != nil {
 		return &TokenInfo{Valid: false}, nil
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return &TokenInfo{Valid: false}, nil
@@ -221,6 +223,7 @@ func (g *GitLabProvider) GetUserProjects(ctx context.Context, accessToken string
 	if err != nil {
 		return nil, fmt.Errorf("failed to get projects: %w", err)
 	}
+	defer func() { _ = resp.Body.Close() }()
 
 	var projects []GitLabProject
 	if err := ParseAPIResponse(resp, &projects); err != nil {
@@ -244,14 +247,16 @@ func (g *GitLabProvider) CheckProjectAccess(ctx context.Context, accessToken, pr
 	if err != nil {
 		return false, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// 200 OK면 접근 가능, 404면 접근 불가능 또는 존재하지 않음
 	return resp.StatusCode == http.StatusOK, nil
 }
 
 // GetGroupMembers 그룹 멤버 목록 조회
-func (g *GitLabProvider) GetGroupMembers(ctx context.Context, accessToken, groupPath string) ([]map[string]interface{}, error) {
+func (g *GitLabProvider) GetGroupMembers(
+	ctx context.Context, accessToken, groupPath string,
+) ([]map[string]interface{}, error) {
 	// 그룹 경로를 URL 인코딩
 	encodedPath := strings.ReplaceAll(groupPath, "/", "%2F")
 	url := fmt.Sprintf("https://gitlab.com/api/v4/groups/%s/members", encodedPath)
@@ -265,6 +270,7 @@ func (g *GitLabProvider) GetGroupMembers(ctx context.Context, accessToken, group
 	if err != nil {
 		return nil, fmt.Errorf("failed to get group members: %w", err)
 	}
+	defer func() { _ = resp.Body.Close() }()
 
 	var members []map[string]interface{}
 	if err := ParseAPIResponse(resp, &members); err != nil {
@@ -284,13 +290,16 @@ func (g *GitLabProvider) GetUserRole(ctx context.Context, accessToken, projectOr
 	req, err := CreateAPIRequest(ctx, "GET", projectURL, nil, accessToken)
 	if err == nil {
 		resp, err := DefaultHTTPClient.Do(req)
-		if err == nil && resp.StatusCode == http.StatusOK {
-			var members []map[string]interface{}
-			if err := ParseAPIResponse(resp, &members); err == nil {
-				// 현재 사용자의 역할 찾기
-				for _, member := range members {
-					if accessLevel, ok := member["access_level"].(float64); ok {
-						return mapGitLabAccessLevel(int(accessLevel)), nil
+		if err == nil {
+			defer func() { _ = resp.Body.Close() }()
+			if resp.StatusCode == http.StatusOK {
+				var members []map[string]interface{}
+				if err := ParseAPIResponse(resp, &members); err == nil {
+					// 현재 사용자의 역할 찾기
+					for _, member := range members {
+						if accessLevel, ok := member["access_level"].(float64); ok {
+							return mapGitLabAccessLevel(int(accessLevel)), nil
+						}
 					}
 				}
 			}
@@ -308,6 +317,7 @@ func (g *GitLabProvider) GetUserRole(ctx context.Context, accessToken, projectOr
 	if err != nil {
 		return "", err
 	}
+	defer func() { _ = resp.Body.Close() }()
 
 	var members []map[string]interface{}
 	if err := ParseAPIResponse(resp, &members); err != nil {
@@ -321,14 +331,14 @@ func (g *GitLabProvider) GetUserRole(ctx context.Context, accessToken, projectOr
 		}
 	}
 
-	return "guest", nil
+	return roleGuest, nil
 }
 
 // mapGitLabAccessLevel GitLab 접근 레벨을 역할 문자열로 매핑
 func mapGitLabAccessLevel(accessLevel int) string {
 	switch accessLevel {
 	case 10:
-		return "guest"
+		return roleGuest
 	case 20:
 		return "reporter"
 	case 30:
@@ -338,12 +348,12 @@ func mapGitLabAccessLevel(accessLevel int) string {
 	case 50:
 		return "owner"
 	default:
-		return "guest"
+		return roleGuest
 	}
 }
 
-// GetApiVersion GitLab API 버전 정보 조회
-func (g *GitLabProvider) GetApiVersion(ctx context.Context, accessToken string) (map[string]interface{}, error) {
+// GetAPIVersion returns GitLab API version information
+func (g *GitLabProvider) GetAPIVersion(ctx context.Context, accessToken string) (map[string]interface{}, error) {
 	req, err := CreateAPIRequest(ctx, "GET", "https://gitlab.com/api/v4/version", nil, accessToken)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create version request: %w", err)
@@ -353,6 +363,7 @@ func (g *GitLabProvider) GetApiVersion(ctx context.Context, accessToken string) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get version: %w", err)
 	}
+	defer func() { _ = resp.Body.Close() }()
 
 	var version map[string]interface{}
 	if err := ParseAPIResponse(resp, &version); err != nil {
@@ -375,7 +386,7 @@ func (g *GitLabProvider) CheckAdminStatus(ctx context.Context, accessToken strin
 	if err != nil {
 		return false, nil
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// 관리자가 아닌 경우 403 Forbidden 반환
 	return resp.StatusCode == http.StatusOK, nil

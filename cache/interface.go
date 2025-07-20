@@ -5,6 +5,9 @@ import (
 	"time"
 )
 
+// Backend is an alias for CacheBackend to avoid stuttering
+type Backend = CacheBackend
+
 // CacheBackend 캐시 백엔드 인터페이스
 type CacheBackend interface {
 	// Get 캐시에서 데이터 읽기
@@ -29,6 +32,9 @@ type CacheBackend interface {
 	Size() (int64, error)
 }
 
+// Metadata is an alias for CacheMetadata to avoid stuttering
+type Metadata = CacheMetadata
+
 // CacheMetadata 캐시 메타데이터
 type CacheMetadata struct {
 	Key         string
@@ -40,12 +46,18 @@ type CacheMetadata struct {
 	ETag        string
 }
 
+// Options is an alias for CacheOptions to avoid stuttering
+type Options = CacheOptions
+
 // CacheOptions 캐시 옵션
 type CacheOptions struct {
 	DefaultTTL time.Duration
 	MaxSize    int64  // 최대 캐시 크기 (바이트)
 	BasePath   string // 기본 경로
 }
+
+// Stats is an alias for CacheStats to avoid stuttering
+type Stats = CacheStats
 
 // CacheStats 캐시 통계
 type CacheStats struct {

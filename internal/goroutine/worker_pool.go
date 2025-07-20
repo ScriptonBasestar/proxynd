@@ -9,8 +9,10 @@ import (
 )
 
 var (
+	// ErrPoolClosed is exported
 	ErrPoolClosed = errors.New("worker pool is closed")
-	ErrTimeout    = errors.New("task execution timeout")
+	// ErrTimeout is a var that err timeout
+	ErrTimeout = errors.New("task execution timeout")
 )
 
 // Task 작업 인터페이스 정의
@@ -91,7 +93,7 @@ func (p *WorkerPool) Start() {
 }
 
 // worker 개별 워커 고루틴
-func (p *WorkerPool) worker(id int) {
+func (p *WorkerPool) worker(_ int) {
 	defer p.wg.Done()
 
 	for {
@@ -144,7 +146,7 @@ func (p *WorkerPool) SubmitWithTimeout(task Task, timeout time.Duration) error {
 	timeoutCtx, cancel := context.WithTimeout(p.ctx, timeout)
 	defer cancel()
 
-	timeoutTask := TaskFunc(func(ctx context.Context) error {
+	timeoutTask := TaskFunc(func(_ context.Context) error {
 		done := make(chan error, 1)
 		go func() {
 			done <- task.Execute(timeoutCtx)

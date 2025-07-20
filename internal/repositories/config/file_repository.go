@@ -1,3 +1,4 @@
+// Package config provides configuration repository implementations
 package config
 
 import (
@@ -13,6 +14,12 @@ import (
 
 	"proxynd/configs"
 	"proxynd/logging"
+)
+
+// Config type constants
+const (
+	// ConfigTypeGlobal is a const that config type global
+	ConfigTypeGlobal = "global"
 )
 
 // FileRepository implements configuration storage using the file system
@@ -39,7 +46,7 @@ func NewFileRepository(configDir string) (*FileRepository, error) {
 
 	// Add config directory to watcher
 	if err := watcher.Add(configDir); err != nil {
-		watcher.Close()
+		_ = watcher.Close()
 		return nil, fmt.Errorf("failed to watch config directory: %w", err)
 	}
 
@@ -52,12 +59,12 @@ func NewFileRepository(configDir string) (*FileRepository, error) {
 }
 
 // LoadGlobalConfig loads the global configuration
-func (r *FileRepository) LoadGlobalConfig(ctx context.Context) (interface{}, error) {
+func (r *FileRepository) LoadGlobalConfig(_ context.Context) (interface{}, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	// Check cache first
-	if config, exists := r.configs["global"]; exists {
+	if config, exists := r.configs[ConfigTypeGlobal]; exists {
 		return config, nil
 	}
 
@@ -87,13 +94,13 @@ func (r *FileRepository) LoadGlobalConfig(ctx context.Context) (interface{}, err
 	}
 
 	// Cache the config
-	r.configs["global"] = config
+	r.configs[ConfigTypeGlobal] = config
 
 	return config, nil
 }
 
 // LoadProxyConfig loads configuration for a specific proxy type
-func (r *FileRepository) LoadProxyConfig(ctx context.Context, proxyType string) (interface{}, error) {
+func (r *FileRepository) LoadProxyConfig(_ context.Context, proxyType string) (interface{}, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -144,7 +151,7 @@ func (r *FileRepository) LoadProxyConfig(ctx context.Context, proxyType string) 
 }
 
 // SaveGlobalConfig saves the global configuration
-func (r *FileRepository) SaveGlobalConfig(ctx context.Context, config interface{}) error {
+func (r *FileRepository) SaveGlobalConfig(_ context.Context, config interface{}) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -155,13 +162,13 @@ func (r *FileRepository) SaveGlobalConfig(ctx context.Context, config interface{
 	}
 
 	// Update cache
-	r.configs["global"] = config
+	r.configs[ConfigTypeGlobal] = config
 
 	return nil
 }
 
 // SaveProxyConfig saves configuration for a specific proxy type
-func (r *FileRepository) SaveProxyConfig(ctx context.Context, proxyType string, config interface{}) error {
+func (r *FileRepository) SaveProxyConfig(_ context.Context, proxyType string, config interface{}) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -178,7 +185,7 @@ func (r *FileRepository) SaveProxyConfig(ctx context.Context, proxyType string, 
 }
 
 // ListProxyTypes returns all configured proxy types
-func (r *FileRepository) ListProxyTypes(ctx context.Context) ([]string, error) {
+func (r *FileRepository) ListProxyTypes(_ context.Context) ([]string, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -208,7 +215,7 @@ func (r *FileRepository) ListProxyTypes(ctx context.Context) ([]string, error) {
 }
 
 // ValidateConfig validates a configuration object
-func (r *FileRepository) ValidateConfig(ctx context.Context, proxyType string, config interface{}) error {
+func (r *FileRepository) ValidateConfig(_ context.Context, proxyType string, config interface{}) error {
 	// Basic validation - ensure config is not nil
 	if config == nil {
 		return fmt.Errorf("config cannot be nil")
@@ -216,7 +223,7 @@ func (r *FileRepository) ValidateConfig(ctx context.Context, proxyType string, c
 
 	// Type-specific validation
 	switch proxyType {
-	case "global":
+	case ConfigTypeGlobal:
 		globalConfig, ok := config.(*configs.GlobalConfig)
 		if !ok {
 			return fmt.Errorf("invalid config type for global config")
@@ -302,7 +309,7 @@ func (r *FileRepository) handleConfigChange(filename string, callback func(proxy
 	// Determine proxy type from filename
 	var proxyType string
 	if basename == "global.yaml" || basename == "global.yml" {
-		proxyType = "global"
+		proxyType = ConfigTypeGlobal
 	} else if strings.HasSuffix(basename, "-proxy.yaml") || strings.HasSuffix(basename, "-proxy.yml") {
 		proxyType = strings.TrimSuffix(basename, "-proxy.yaml")
 		proxyType = strings.TrimSuffix(proxyType, "-proxy.yml")
@@ -319,7 +326,7 @@ func (r *FileRepository) handleConfigChange(filename string, callback func(proxy
 	var config interface{}
 	var err error
 
-	if proxyType == "global" {
+	if proxyType == ConfigTypeGlobal {
 		config, err = r.LoadGlobalConfig(context.Background())
 	} else {
 		config, err = r.LoadProxyConfig(context.Background(), proxyType)

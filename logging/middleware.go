@@ -57,14 +57,14 @@ func New(config ...MiddlewareConfig) fiber.Handler {
 
 	return func(c *fiber.Ctx) error {
 		// 요청 ID 생성
-		requestID := c.Get("X-Request-ID")
+		requestID := c.Get(headerRequestID)
 		if requestID == "" {
 			requestID = uuid.New().String()
-			c.Set("X-Request-ID", requestID)
+			c.Set(headerRequestID, requestID)
 		}
 
 		// 컨텍스트에 요청 ID 저장
-		c.Locals("request_id", requestID)
+		c.Locals(fieldRequestID, requestID)
 
 		// 경로 확인
 		if shouldSkipPath(c.Path(), cfg.SkipPaths) {
@@ -76,7 +76,7 @@ func New(config ...MiddlewareConfig) fiber.Handler {
 
 		// 요청 로거 생성
 		logger := cfg.Logger.WithFields(
-			F("request_id", requestID),
+			F(fieldRequestID, requestID),
 			F("method", c.Method()),
 			F("path", c.Path()),
 			F("ip", c.IP()),
@@ -117,7 +117,7 @@ func New(config ...MiddlewareConfig) fiber.Handler {
 
 		// 응답 로거 생성
 		respLogger := logger.WithFields(
-			F("status", c.Response().StatusCode()),
+			F(fieldStatus, c.Response().StatusCode()),
 			F("duration_ms", duration.Milliseconds()),
 			F("duration", duration.String()),
 		)
@@ -150,7 +150,7 @@ func New(config ...MiddlewareConfig) fiber.Handler {
 
 		// 오류 처리
 		if err != nil {
-			respLogger = respLogger.WithField("error", err.Error())
+			respLogger = respLogger.WithField(fieldError, err.Error())
 		}
 
 		// 상태 코드 확인
@@ -181,15 +181,15 @@ func New(config ...MiddlewareConfig) fiber.Handler {
 func RequestLogger() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		// 요청 ID 생성
-		requestID := c.Get("X-Request-ID")
+		requestID := c.Get(headerRequestID)
 		if requestID == "" {
 			requestID = uuid.New().String()
-			c.Set("X-Request-ID", requestID)
+			c.Set(headerRequestID, requestID)
 		}
 
 		// 요청별 로거 생성
 		logger := GetLogger().WithFields(
-			F("request_id", requestID),
+			F(fieldRequestID, requestID),
 			F("method", c.Method()),
 			F("path", c.Path()),
 			F("ip", c.IP()),
@@ -224,14 +224,14 @@ func ErrorLogger() fiber.Handler {
 			// Fiber 오류 타입 확인
 			if e, ok := err.(*fiber.Error); ok {
 				logger.Error("Request failed",
-					F("error", e.Error()),
+					F(fieldError, e.Error()),
 					F("code", e.Code),
-					F("status", c.Response().StatusCode()),
+					F(fieldStatus, c.Response().StatusCode()),
 				)
 			} else {
 				logger.Error("Request failed",
-					F("error", err.Error()),
-					F("status", c.Response().StatusCode()),
+					F(fieldError, err.Error()),
+					F(fieldStatus, c.Response().StatusCode()),
 				)
 			}
 		}
@@ -266,8 +266,8 @@ func RecoveryLogger() fiber.Handler {
 
 				// 500 오류 반환
 				err = c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-					"error":      "Internal Server Error",
-					"request_id": c.Locals("request_id"),
+					fieldError:     "Internal Server Error",
+					fieldRequestID: c.Locals(fieldRequestID),
 				})
 			}
 		}()
@@ -297,7 +297,7 @@ func shouldSkipStatus(status int, skipStatuses []int) bool {
 }
 
 // extractHeaders 요청 헤더 추출
-func extractHeaders(c *fiber.Ctx, headersToLog []string, isRequest bool) map[string]string {
+func extractHeaders(c *fiber.Ctx, headersToLog []string, _ bool) map[string]string {
 	headers := make(map[string]string)
 
 	// 민감한 헤더 목록

@@ -89,7 +89,7 @@ func newTestAllCmd() *cobra.Command {
 		Use:   "all",
 		Short: "모든 프록시 테스트",
 		Long:  "모든 지원되는 프록시 타입에 대해 테스트를 수행합니다.",
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			return runTestAll(timeout, showDetails)
 		},
 	}
@@ -107,7 +107,7 @@ func newTestConnectivityCmd() *cobra.Command {
 		Short: "프록시 연결성 테스트",
 		Long:  "지정된 프록시 타입의 기본 연결성을 테스트합니다.",
 		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			return runTestConnectivity(args[0])
 		},
 	}
@@ -121,7 +121,7 @@ func newTestTypesCmd() *cobra.Command {
 		Use:   "types",
 		Short: "지원되는 프록시 타입 조회",
 		Long:  "ProxyND에서 지원하는 모든 프록시 타입 목록을 조회합니다.",
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			return runTestTypes()
 		},
 	}
@@ -170,7 +170,7 @@ func newProxyTestCmd(proxyType, description string) *cobra.Command {
 		Use:   proxyType,
 		Short: fmt.Sprintf("%s 프록시 테스트", description),
 		Long:  fmt.Sprintf("%s 프록시의 기능을 테스트합니다.", description),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			return runProxyTest(proxyType, target, timeout)
 		},
 	}
@@ -199,26 +199,26 @@ func runTestAll(timeout int, showDetails bool) error {
 	// API 호출
 	resp, err := http.Post(apiURL, "application/json", bytes.NewBuffer(data))
 	if err != nil {
-		return fmt.Errorf("서버 연결 실패: %v", err)
+		return fmt.Errorf(errServerConnection, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("API 요청 실패: HTTP %d", resp.StatusCode)
+		return fmt.Errorf(errAPIRequest, resp.StatusCode)
 	}
 
 	// 응답 파싱
 	var result ProxyTestResponse
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return fmt.Errorf("응답 파싱 실패: %v", err)
+		return fmt.Errorf(errResponseParsing, err)
 	}
 
 	// 결과 출력
 	outputFormat := getOutputFormat()
 	switch outputFormat {
-	case "json":
+	case formatJSON:
 		return outputJSON(result)
-	case "yaml":
+	case formatYAML:
 		return outputYAML(result)
 	default:
 		return outputTestResultsTable(result, showDetails)
@@ -233,26 +233,26 @@ func runTestConnectivity(proxyType string) error {
 	// API 호출
 	resp, err := http.Get(apiURL)
 	if err != nil {
-		return fmt.Errorf("서버 연결 실패: %v", err)
+		return fmt.Errorf(errServerConnection, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("API 요청 실패: HTTP %d", resp.StatusCode)
+		return fmt.Errorf(errAPIRequest, resp.StatusCode)
 	}
 
 	// 응답 파싱
 	var result ProxyTestResult
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return fmt.Errorf("응답 파싱 실패: %v", err)
+		return fmt.Errorf(errResponseParsing, err)
 	}
 
 	// 결과 출력
 	outputFormat := getOutputFormat()
 	switch outputFormat {
-	case "json":
+	case formatJSON:
 		return outputJSON(result)
-	case "yaml":
+	case formatYAML:
 		return outputYAML(result)
 	default:
 		return outputSingleTestResult(result)
@@ -267,26 +267,26 @@ func runTestTypes() error {
 	// API 호출
 	resp, err := http.Get(apiURL)
 	if err != nil {
-		return fmt.Errorf("서버 연결 실패: %v", err)
+		return fmt.Errorf(errServerConnection, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("API 요청 실패: HTTP %d", resp.StatusCode)
+		return fmt.Errorf(errAPIRequest, resp.StatusCode)
 	}
 
 	// 응답 파싱
 	var result SupportedTypesResponse
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return fmt.Errorf("응답 파싱 실패: %v", err)
+		return fmt.Errorf(errResponseParsing, err)
 	}
 
 	// 결과 출력
 	outputFormat := getOutputFormat()
 	switch outputFormat {
-	case "json":
+	case formatJSON:
 		return outputJSON(result)
-	case "yaml":
+	case formatYAML:
 		return outputYAML(result)
 	default:
 		return outputSupportedTypesTable(result)
@@ -313,26 +313,26 @@ func runProxyTest(proxyType, target string, timeout int) error {
 	// API 호출
 	resp, err := http.Post(apiURL, "application/json", bytes.NewBuffer(data))
 	if err != nil {
-		return fmt.Errorf("서버 연결 실패: %v", err)
+		return fmt.Errorf(errServerConnection, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("API 요청 실패: HTTP %d", resp.StatusCode)
+		return fmt.Errorf(errAPIRequest, resp.StatusCode)
 	}
 
 	// 응답 파싱
 	var result ProxyTestResult
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return fmt.Errorf("응답 파싱 실패: %v", err)
+		return fmt.Errorf(errResponseParsing, err)
 	}
 
 	// 결과 출력
 	outputFormat := getOutputFormat()
 	switch outputFormat {
-	case "json":
+	case formatJSON:
 		return outputJSON(result)
-	case "yaml":
+	case formatYAML:
 		return outputYAML(result)
 	default:
 		return outputSingleTestResult(result)
@@ -342,7 +342,7 @@ func runProxyTest(proxyType, target string, timeout int) error {
 // outputTestResultsTable 테스트 결과를 테이블 형태로 출력
 func outputTestResultsTable(result ProxyTestResponse, showDetails bool) error {
 	fmt.Printf("🧪 프록시 테스트 결과\n")
-	fmt.Printf("테스트 시간: %s\n\n", result.Timestamp.Format("2006-01-02 15:04:05"))
+	fmt.Printf("테스트 시간: %s\n\n", result.Timestamp.Format(dateTimeFormat))
 
 	// 요약 정보
 	summary := result.Summary
@@ -358,8 +358,8 @@ func outputTestResultsTable(result ProxyTestResponse, showDetails bool) error {
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 
 		if showDetails {
-			fmt.Fprintln(w, "타입\t상태\t응답시간\tHTTP코드\t메시지")
-			fmt.Fprintln(w, "----\t----\t--------\t-------\t------")
+			_, _ = fmt.Fprintln(w, "타입\t상태\t응답시간\tHTTP코드\t메시지")
+			_, _ = fmt.Fprintln(w, "----\t----\t--------\t-------\t------")
 
 			for _, test := range result.Results {
 				status := getStatusIcon(test.Status)
@@ -369,7 +369,7 @@ func outputTestResultsTable(result ProxyTestResponse, showDetails bool) error {
 					httpCode = fmt.Sprintf("%d", test.StatusCode)
 				}
 
-				fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
+				_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
 					test.ProxyType,
 					status,
 					responseTime,
@@ -378,14 +378,14 @@ func outputTestResultsTable(result ProxyTestResponse, showDetails bool) error {
 				)
 			}
 		} else {
-			fmt.Fprintln(w, "타입\t상태\t응답시간\t메시지")
-			fmt.Fprintln(w, "----\t----\t--------\t------")
+			_, _ = fmt.Fprintln(w, "타입\t상태\t응답시간\t메시지")
+			_, _ = fmt.Fprintln(w, "----\t----\t--------\t------")
 
 			for _, test := range result.Results {
 				status := getStatusIcon(test.Status)
 				responseTime := fmt.Sprintf("%.1fms", test.ResponseTime)
 
-				fmt.Fprintf(w, "%s\t%s\t%s\t%s\n",
+				_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\n",
 					test.ProxyType,
 					status,
 					responseTime,
@@ -394,7 +394,7 @@ func outputTestResultsTable(result ProxyTestResponse, showDetails bool) error {
 			}
 		}
 
-		w.Flush()
+		_ = w.Flush()
 	}
 
 	return nil
@@ -413,7 +413,7 @@ func outputSingleTestResult(result ProxyTestResult) error {
 		fmt.Printf("HTTP 상태 코드: %d\n", result.StatusCode)
 	}
 
-	fmt.Printf("테스트 시간: %s\n", result.Timestamp.Format("2006-01-02 15:04:05"))
+	fmt.Printf("테스트 시간: %s\n", result.Timestamp.Format(dateTimeFormat))
 
 	// 상세 정보 출력 (있는 경우)
 	if len(result.Details) > 0 {
@@ -429,7 +429,7 @@ func outputSingleTestResult(result ProxyTestResult) error {
 // outputSupportedTypesTable 지원되는 프록시 타입을 테이블 형태로 출력
 func outputSupportedTypesTable(result SupportedTypesResponse) error {
 	fmt.Printf("📦 지원되는 프록시 타입 (총 %d개)\n", result.Total)
-	fmt.Printf("조회 시간: %s\n\n", result.Timestamp.Format("2006-01-02 15:04:05"))
+	fmt.Printf("조회 시간: %s\n\n", result.Timestamp.Format(dateTimeFormat))
 
 	if len(result.ProxyTypes) == 0 {
 		fmt.Println("지원되는 프록시 타입이 없습니다.")
@@ -437,8 +437,8 @@ func outputSupportedTypesTable(result SupportedTypesResponse) error {
 	}
 
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	fmt.Fprintln(w, "프록시 타입\t설명")
-	fmt.Fprintln(w, "----------\t----")
+	_, _ = fmt.Fprintln(w, "프록시 타입\t설명")
+	_, _ = fmt.Fprintln(w, "----------\t----")
 
 	descriptions := map[string]string{
 		"apt":    "APT (Ubuntu/Debian 패키지 매니저)",
@@ -455,10 +455,10 @@ func outputSupportedTypesTable(result SupportedTypesResponse) error {
 		if description == "" {
 			description = fmt.Sprintf("%s 프록시", strings.ToUpper(proxyType))
 		}
-		fmt.Fprintf(w, "%s\t%s\n", proxyType, description)
+		_, _ = fmt.Fprintf(w, "%s\t%s\n", proxyType, description)
 	}
 
-	w.Flush()
+	_ = w.Flush()
 	return nil
 }
 

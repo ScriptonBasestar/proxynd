@@ -10,7 +10,6 @@ import (
 	"regexp"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 )
 
@@ -19,7 +18,6 @@ type LogAggregator struct {
 	logger   Logger
 	config   *AggregatorConfig
 	patterns map[string]*regexp.Regexp
-	mu       sync.RWMutex
 }
 
 // AggregatorConfig configures the log aggregator
@@ -202,12 +200,17 @@ func (la *LogAggregator) AnalyzeLogs(ctx context.Context, timeRange TimeRange) (
 }
 
 // processLogFile processes a single log file
-func (la *LogAggregator) processLogFile(ctx context.Context, filePath string, timeRange TimeRange, analytics *LogAnalytics) error {
+func (la *LogAggregator) processLogFile(
+	ctx context.Context,
+	filePath string,
+	timeRange TimeRange,
+	analytics *LogAnalytics,
+) error {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return fmt.Errorf("failed to open log file: %w", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	scanner := bufio.NewScanner(file)
 	scanner.Buffer(make([]byte, 64*1024), 1024*1024) // 1MB max line size
@@ -269,7 +272,7 @@ func (la *LogAggregator) parseLogEntry(line, source string) *LogEntry {
 }
 
 // extractFieldsFromPattern extracts fields from regex matches
-func (la *LogAggregator) extractFieldsFromPattern(patternName string, matches []string, entry *LogEntry) {
+func (la *LogAggregator) extractFieldsFromPattern(_ string, matches []string, entry *LogEntry) {
 	// This is a simplified implementation
 	// In practice, you'd have named capture groups in your regex patterns
 	if len(matches) > 1 {
@@ -502,9 +505,10 @@ func (la *LogAggregator) collectPerformanceData(entry *LogEntry, analytics *LogA
 	if entry.Fields != nil {
 		// Collect response times for calculation
 		if duration, ok := entry.Fields["duration"].(string); ok {
-			if _, err := time.ParseDuration(duration); err == nil {
+			if parsedDuration, err := time.ParseDuration(duration); err == nil {
 				// This would typically be stored for percentile calculations
 				// Simplified implementation here
+				_ = parsedDuration // 명시적으로 사용됨을 표시
 			}
 		}
 

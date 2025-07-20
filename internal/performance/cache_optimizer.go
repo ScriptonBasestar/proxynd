@@ -1,3 +1,4 @@
+// Package performance provides performance monitoring and optimization
 package performance
 
 import (
@@ -36,9 +37,10 @@ type CacheOptimizerConfig struct {
 	TTLAdjustmentFactor   float64       `yaml:"ttl_adjustment_factor" json:"ttl_adjustment_factor" default:"0.1"`
 
 	// Size optimization
-	EnableSizeOptimization   bool          `yaml:"enable_size_optimization" json:"enable_size_optimization" default:"true"`
-	MaxCacheSize             int64         `yaml:"max_cache_size" json:"max_cache_size" default:"1073741824"` // 1GB
-	SizeOptimizationInterval time.Duration `yaml:"size_optimization_interval" json:"size_optimization_interval" default:"10m"`
+	EnableSizeOptimization bool  `yaml:"enable_size_optimization" json:"enable_size_optimization" default:"true"`
+	MaxCacheSize           int64 `yaml:"max_cache_size" json:"max_cache_size" default:"1073741824"` // 1GB
+	// Size optimization interval (10 minutes by default)
+	SizeOptimizationInterval time.Duration `yaml:"size_optimization_interval" json:"size_optimization_interval"`
 
 	// Prewarming
 	EnablePrewarming   bool     `yaml:"enable_prewarming" json:"enable_prewarming" default:"true"`
@@ -222,7 +224,7 @@ func (co *CacheOptimizer) RecordCacheAccess(key string, hit bool, size int64, la
 }
 
 // RecordCacheEviction records cache eviction for analysis
-func (co *CacheOptimizer) RecordCacheEviction(key string, reason string) {
+func (co *CacheOptimizer) RecordCacheEviction(key string, _ string) {
 	co.stats.mu.Lock()
 	defer co.stats.mu.Unlock()
 

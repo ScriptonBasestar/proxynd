@@ -42,7 +42,7 @@ func NewDocsCmd(rootCmd *cobra.Command) *cobra.Command {
   # 설치 확인
   $ man proxyndctl`,
 		Args: cobra.MaximumNArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			dir := "."
 			if len(args) > 0 {
 				dir = args[0]
@@ -66,7 +66,7 @@ func NewDocsCmd(rootCmd *cobra.Command) *cobra.Command {
   # docs 디렉토리에 생성
   $ proxyndctl docs markdown ./docs/cli`,
 		Args: cobra.MaximumNArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			dir := "."
 			if len(args) > 0 {
 				dir = args[0]
@@ -90,7 +90,7 @@ func NewDocsCmd(rootCmd *cobra.Command) *cobra.Command {
   # docs 디렉토리에 생성
   $ proxyndctl docs rest ./docs/source`,
 		Args: cobra.MaximumNArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			dir := "."
 			if len(args) > 0 {
 				dir = args[0]
@@ -114,7 +114,7 @@ func NewDocsCmd(rootCmd *cobra.Command) *cobra.Command {
   # 파일로 저장
   $ proxyndctl docs yaml . > proxyndctl-commands.yaml`,
 		Args: cobra.MaximumNArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			dir := "."
 			if len(args) > 0 {
 				dir = args[0]

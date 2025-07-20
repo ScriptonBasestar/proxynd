@@ -111,6 +111,7 @@ func TestEnhancedInputValidation(t *testing.T) {
 
 			resp, err := app.Test(req)
 			require.NoError(t, err)
+			defer func() { _ = resp.Body.Close() }()
 			assert.Equal(t, tt.expectedStatus, resp.StatusCode)
 		})
 	}
@@ -163,6 +164,7 @@ func TestIPValidation(t *testing.T) {
 
 			resp, err := app.Test(req)
 			require.NoError(t, err)
+			defer func() { _ = resp.Body.Close() }()
 			assert.Equal(t, tt.expectedStatus, resp.StatusCode)
 		})
 	}
@@ -191,18 +193,21 @@ func TestEnhancedRateLimiterIntegration(t *testing.T) {
 	req1 := httptest.NewRequest("GET", "/test", nil)
 	resp1, err := app.Test(req1)
 	require.NoError(t, err)
+	defer func() { _ = resp1.Body.Close() }()
 	assert.Equal(t, 200, resp1.StatusCode)
 
 	// 두 번째 요청 - 성공해야 함
 	req2 := httptest.NewRequest("GET", "/test", nil)
 	resp2, err := app.Test(req2)
 	require.NoError(t, err)
+	defer func() { _ = resp2.Body.Close() }()
 	assert.Equal(t, 200, resp2.StatusCode)
 
 	// 세 번째 요청 - Rate limit 초과로 실패해야 함
 	req3 := httptest.NewRequest("GET", "/test", nil)
 	resp3, err := app.Test(req3)
 	require.NoError(t, err)
+	defer func() { _ = resp3.Body.Close() }()
 	assert.Equal(t, 429, resp3.StatusCode)
 }
 
@@ -218,6 +223,7 @@ func TestSecurityHeadersMiddleware(t *testing.T) {
 	req := httptest.NewRequest("GET", "/test", nil)
 	resp, err := app.Test(req)
 	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, 200, resp.StatusCode)
 
@@ -276,6 +282,7 @@ func TestCORSSecurityHeaders(t *testing.T) {
 
 			resp, err := app.Test(req)
 			require.NoError(t, err)
+			defer func() { _ = resp.Body.Close() }()
 
 			assert.Equal(t, tt.expectedStatus, resp.StatusCode)
 			assert.Equal(t, tt.expectedOrigin, resp.Header.Get("Access-Control-Allow-Origin"))
@@ -299,6 +306,7 @@ func TestSetupSecurityMiddlewares(t *testing.T) {
 	req := httptest.NewRequest("GET", "/test", nil)
 	resp, err := app.Test(req)
 	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, 200, resp.StatusCode)
 
@@ -327,6 +335,7 @@ func TestAPISecurityMiddlewares(t *testing.T) {
 	req := httptest.NewRequest("GET", "/api/test", nil)
 	resp, err := app.Test(req)
 	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, 200, resp.StatusCode)
 
@@ -418,6 +427,7 @@ func TestValidateContentType(t *testing.T) {
 
 			resp, err := app.Test(req)
 			require.NoError(t, err)
+			defer func() { _ = resp.Body.Close() }()
 			assert.Equal(t, tt.expectedStatus, resp.StatusCode)
 		})
 	}

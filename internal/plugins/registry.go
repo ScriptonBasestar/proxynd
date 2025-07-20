@@ -11,14 +11,19 @@ import (
 )
 
 var (
-	ErrHandlerNotFound    = errors.New("handler not found")
-	ErrHandlerExists      = errors.New("handler already exists")
-	ErrInvalidHandler     = errors.New("invalid handler")
-	ErrRegistryClosed     = errors.New("registry is closed")
+	// ErrHandlerNotFound is returned when a handler is not found
+	ErrHandlerNotFound = errors.New("handler not found")
+	// ErrHandlerExists is returned when a handler already exists
+	ErrHandlerExists = errors.New("handler already exists")
+	// ErrInvalidHandler is returned when a handler is invalid
+	ErrInvalidHandler = errors.New("invalid handler")
+	// ErrRegistryClosed is returned when the registry is closed
+	ErrRegistryClosed = errors.New("registry is closed")
+	// ErrCircularDependency is returned when circular dependency is detected
 	ErrCircularDependency = errors.New("circular dependency detected")
 )
 
-// DefaultPluginRegistry 기본 플러그인 레지스트리 구현
+// DefaultPluginRegistry provides a default plugin registry implementation
 type DefaultPluginRegistry struct {
 	handlers map[string]PackageHandler
 	plugins  map[string]Plugin
@@ -198,7 +203,7 @@ func (r *DefaultPluginRegistry) RegisterPlugin(plugin Plugin) error {
 	handler := plugin.CreateHandler()
 	if err := r.Register(handler); err != nil {
 		// 플러그인 언로드
-		plugin.Unload()
+		_ = plugin.Unload()
 		return fmt.Errorf("failed to register handler: %w", err)
 	}
 

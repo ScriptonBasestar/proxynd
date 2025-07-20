@@ -109,7 +109,7 @@ func TestTTLCollector_ExpirationTracking(t *testing.T) {
 	entries := collector.GetRecentEntries(10)
 	hasEarlyExpiration := false
 	for _, entry := range entries {
-		if entry.IsExpired && entry.ExpiryReason == "early_expiration" {
+		if entry.IsExpired && entry.ExpiryReason == expiryReasonEarlyExpiration {
 			hasEarlyExpiration = true
 			break
 		}
@@ -154,7 +154,7 @@ func TestTTLCollector_ConcurrentAccess(t *testing.T) {
 	done := make(chan bool, 10)
 
 	for i := 0; i < 10; i++ {
-		go func(id int) {
+		go func(_ int) {
 			for j := 0; j < 10; j++ {
 				collector.RecordTTLCalculation("concurrent", "npm", 1800, "test")
 			}

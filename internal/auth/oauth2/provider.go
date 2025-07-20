@@ -200,7 +200,7 @@ func (g *GenericProvider) GetScopes() []string {
 }
 
 // GetUserOrganizations 사용자 조직 목록 조회 (Generic은 지원하지 않음)
-func (g *GenericProvider) GetUserOrganizations(ctx context.Context, accessToken string) ([]string, error) {
+func (g *GenericProvider) GetUserOrganizations(_ context.Context, _ string) ([]string, error) {
 	return []string{}, nil // Generic 제공자는 조직 정보를 지원하지 않음
 }
 

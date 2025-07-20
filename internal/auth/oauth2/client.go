@@ -1,3 +1,4 @@
+// Package oauth2 provides OAuth2 authentication client implementation
 package oauth2
 
 import (
@@ -23,7 +24,9 @@ var DefaultHTTPClient HTTPClient = &http.Client{
 }
 
 // exchangeCodeGeneric Generic 코드 교환 구현
-func exchangeCodeGeneric(ctx context.Context, config ProviderConfig, code string, codeVerifier string) (*TokenResponse, error) {
+func exchangeCodeGeneric(
+	ctx context.Context, config ProviderConfig, code string, codeVerifier string,
+) (*TokenResponse, error) {
 	data := url.Values{}
 	data.Set("grant_type", "authorization_code")
 	data.Set("client_id", config.ClientID)
@@ -48,7 +51,7 @@ func exchangeCodeGeneric(ctx context.Context, config ProviderConfig, code string
 	if err != nil {
 		return nil, fmt.Errorf("failed to exchange code: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
@@ -82,7 +85,7 @@ func getUserInfoGeneric(ctx context.Context, config ProviderConfig, accessToken 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user info: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
@@ -155,7 +158,7 @@ func refreshTokenGeneric(ctx context.Context, config ProviderConfig, refreshToke
 	if err != nil {
 		return nil, fmt.Errorf("failed to refresh token: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
@@ -198,7 +201,7 @@ func revokeTokenGeneric(ctx context.Context, config ProviderConfig, token string
 	if err != nil {
 		return fmt.Errorf("failed to revoke token: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
 		body, _ := io.ReadAll(resp.Body)
@@ -273,7 +276,9 @@ func getTimeField(data map[string]interface{}, fieldName string) (time.Time, boo
 }
 
 // CreateAPIRequest API 요청 생성 헬퍼
-func CreateAPIRequest(ctx context.Context, method, url string, body interface{}, accessToken string) (*http.Request, error) {
+func CreateAPIRequest(
+	ctx context.Context, method, url string, body interface{}, accessToken string,
+) (*http.Request, error) {
 	var reqBody io.Reader
 
 	if body != nil {
@@ -301,7 +306,7 @@ func CreateAPIRequest(ctx context.Context, method, url string, body interface{},
 
 // ParseAPIResponse API 응답 파싱 헬퍼
 func ParseAPIResponse(resp *http.Response, target interface{}) error {
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		body, _ := io.ReadAll(resp.Body)

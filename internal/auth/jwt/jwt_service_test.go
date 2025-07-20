@@ -9,6 +9,13 @@ import (
 	"proxynd/configs"
 )
 
+const (
+	// Test constants for JWT service tests
+	testRoleAdmin        = "admin"
+	testTokenTypeAccess  = "access"
+	testTokenTypeRefresh = "refresh"
+)
+
 // 테스트용 OAuth2 설정 생성
 func createTestConfig() *configs.OAuth2Config {
 	return &configs.OAuth2Config{
@@ -47,7 +54,7 @@ func TestGenerateTokenPair(t *testing.T) {
 	email := "test@example.com"
 	name := "Test User"
 	username := "testuser"
-	role := "admin"
+	role := testRoleAdmin
 	provider := "github"
 	organizations := []string{"test-org", "admin-org"}
 
@@ -89,7 +96,7 @@ func TestValidateAccessToken(t *testing.T) {
 	email := "test@example.com"
 	name := "Test User"
 	username := "testuser"
-	role := "admin"
+	role := testRoleAdmin
 	provider := "github"
 	organizations := []string{"test-org"}
 
@@ -118,8 +125,8 @@ func TestValidateAccessToken(t *testing.T) {
 		t.Errorf("Expected role %s, got %s", role, claims.Role)
 	}
 
-	if claims.TokenType != "access" {
-		t.Errorf("Expected token_type 'access', got %s", claims.TokenType)
+	if claims.TokenType != testTokenTypeAccess {
+		t.Errorf("Expected token_type '%s', got %s", testTokenTypeAccess, claims.TokenType)
 	}
 
 	if len(claims.Organizations) != len(organizations) {
@@ -144,8 +151,8 @@ func TestValidateRefreshToken(t *testing.T) {
 		t.Fatalf("Failed to validate refresh token: %v", err)
 	}
 
-	if claims.TokenType != "refresh" {
-		t.Errorf("Expected token_type 'refresh', got %s", claims.TokenType)
+	if claims.TokenType != testTokenTypeRefresh {
+		t.Errorf("Expected token_type '%s', got %s", testTokenTypeRefresh, claims.TokenType)
 	}
 }
 
@@ -155,7 +162,10 @@ func TestRefreshAccessToken(t *testing.T) {
 	service := NewJWTService(config)
 
 	// 원본 토큰 생성
-	originalTokenPair, err := service.GenerateTokenPair("user123", "user@example.com", "User", "user", "developer", "gitlab", []string{"dev-team"})
+	originalTokenPair, err := service.GenerateTokenPair(
+		"user123", "user@example.com", "User", "user", "developer", "gitlab",
+		[]string{"dev-team"},
+	)
 	if err != nil {
 		t.Fatalf("Failed to generate original token pair: %v", err)
 	}
@@ -208,8 +218,9 @@ func TestTokenValidationErrors(t *testing.T) {
 			expectError: true,
 		},
 		{
-			name:        "Token with wrong signature",
-			token:       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoidGVzdCIsImV4cCI6OTk5OTk5OTk5OX0.invalid_signature",
+			name: "Token with wrong signature",
+			token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." +
+				"eyJ1c2VyX2lkIjoidGVzdCIsImV4cCI6OTk5OTk5OTk5OX0.invalid_signature",
 			expectError: true,
 		},
 	}
@@ -286,7 +297,10 @@ func TestExtractUserInfo(t *testing.T) {
 	service := NewJWTService(config)
 
 	// 토큰 생성
-	tokenPair, err := service.GenerateTokenPair("user123", "user@example.com", "Test User", "testuser", "admin", "github", []string{"admin-org"})
+	tokenPair, err := service.GenerateTokenPair(
+		"user123", "user@example.com", "Test User", "testuser", testRoleAdmin, "github",
+		[]string{"admin-org"},
+	)
 	if err != nil {
 		t.Fatalf("Failed to generate token pair: %v", err)
 	}
@@ -309,7 +323,7 @@ func TestExtractUserInfo(t *testing.T) {
 		t.Errorf("Expected email 'user@example.com', got %v", userInfo["email"])
 	}
 
-	if userInfo["role"] != "admin" {
+	if userInfo["role"] != testRoleAdmin {
 		t.Errorf("Expected role 'admin', got %v", userInfo["role"])
 	}
 }
@@ -339,7 +353,9 @@ func TestIsTokenExpiringSoon(t *testing.T) {
 
 	// 짧은 TTL로 새 토큰 생성
 	config.JWT.AccessTokenTTL = 300 // 5분
-	shortTokenPair, err := service.GenerateTokenPair("user123", "user@example.com", "User", "user", "viewer", "github", nil)
+	shortTokenPair, err := service.GenerateTokenPair(
+		"user123", "user@example.com", "User", "user", "viewer", "github", nil,
+	)
 	if err != nil {
 		t.Fatalf("Failed to generate short token pair: %v", err)
 	}

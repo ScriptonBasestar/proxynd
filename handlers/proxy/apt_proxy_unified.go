@@ -32,7 +32,8 @@ func AptProxyUnified(c *fiber.Ctx) error {
 	pathParts := strings.SplitN(fullPath, "/", 2)
 
 	if len(pathParts) < 2 {
-		return c.Status(fiber.StatusBadRequest).SendString("Invalid APT proxy path format. Expected: /proxy/apt/{osType}/{path}")
+		return c.Status(fiber.StatusBadRequest).
+			SendString("Invalid APT proxy path format. Expected: /proxy/apt/{osType}/{path}")
 	}
 
 	osType := pathParts[0]
@@ -43,9 +44,9 @@ func AptProxyUnified(c *fiber.Ctx) error {
 	// 의존성 주입으로 변경 필요 - 향후 Container에서 설정 주입
 	storageDir := helpers.GetStorageDir()
 	globalConfig := configs.GlobalConfig{}
-	globalConfig.ReadConfig()
+	_ = globalConfig.ReadConfig()
 	config := configs.AptProxyConfig{}
-	config.ReadConfig()
+	_ = config.ReadConfig()
 
 	// Create the file
 	baseDir := filepath.Join(storageDir, config.Path)
@@ -56,13 +57,13 @@ func AptProxyUnified(c *fiber.Ctx) error {
 	filename := filepath.Base(filefullpath)
 	if _, err := os.Stat(filefullpath); os.IsNotExist(err) {
 		dirpath := filepath.Dir(filefullpath)
-		os.MkdirAll(dirpath, os.ModePerm)
+		_ = os.MkdirAll(dirpath, os.ModePerm)
 		out, err := os.Create(filefullpath)
 		if err != nil {
 			log.Printf("Error creating file: %v", err)
 			return c.Status(fiber.StatusInternalServerError).SendString("Error creating file")
 		}
-		defer out.Close()
+		defer func() { _ = out.Close() }()
 
 		// Get the data
 		proxy := config.Proxies[osType]
@@ -84,7 +85,7 @@ func AptProxyUnified(c *fiber.Ctx) error {
 				continue
 			}
 			// Ensure response body is always closed
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 
 			//fmt.Println(resp.Header)
 			fmt.Println(resp.StatusCode)

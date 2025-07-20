@@ -4,6 +4,7 @@ import "time"
 
 // Maven 도메인 에러 정의
 var (
+	// ErrMavenArtifactNotFound is a var that err maven artifact not found
 	ErrMavenArtifactNotFound = &DomainError{
 		Code:      "MVN001",
 		Message:   "Maven 아티팩트를 찾을 수 없습니다",
@@ -11,6 +12,7 @@ var (
 		Level:     ErrorLevelWarning,
 		Timestamp: time.Now(),
 	}
+	// ErrMavenChecksumMismatch is a var that err maven checksum mismatch
 
 	ErrMavenChecksumMismatch = &DomainError{
 		Code:      "MVN002",
@@ -18,34 +20,39 @@ var (
 		Domain:    "maven",
 		Level:     ErrorLevelError,
 		Timestamp: time.Now(),
+		// ErrMavenRepositoryUnavailable is a var that err maven repository unavailable
 	}
 
 	ErrMavenRepositoryUnavailable = &DomainError{
-		Code:      "MVN003",
-		Message:   "Maven 리포지토리에 접근할 수 없습니다",
-		Domain:    "maven",
-		Level:     ErrorLevelError,
+		Code:    "MVN003",
+		Message: "Maven 리포지토리에 접근할 수 없습니다",
+		Domain:  "maven",
+		Level:   ErrorLevelError,
+		// ErrMavenProxyDisabled is a var that err maven proxy disabled
 		Timestamp: time.Now(),
 	}
 
 	ErrMavenProxyDisabled = &DomainError{
-		Code:      "MVN004",
-		Message:   "Maven 프록시가 비활성화되어 있습니다",
-		Domain:    "maven",
+		Code:    "MVN004",
+		Message: "Maven 프록시가 비활성화되어 있습니다",
+		Domain:  "maven",
+		// ErrMavenInvalidArtifactPath is a var that err maven invalid artifact path
 		Level:     ErrorLevelError,
 		Timestamp: time.Now(),
 	}
 
 	ErrMavenInvalidArtifactPath = &DomainError{
-		Code:      "MVN005",
-		Message:   "잘못된 Maven 아티팩트 경로입니다",
+		Code:    "MVN005",
+		Message: "잘못된 Maven 아티팩트 경로입니다",
+		// ErrMavenConfigError is a var that err maven config error
 		Domain:    "maven",
 		Level:     ErrorLevelError,
 		Timestamp: time.Now(),
 	}
 
 	ErrMavenConfigError = &DomainError{
-		Code:      "MVN006",
+		Code: "MVN006",
+		// ErrMavenSnapshotDownload is a var that err maven snapshot download
 		Message:   "Maven 설정 파일을 읽을 수 없습니다",
 		Domain:    "maven",
 		Level:     ErrorLevelCritical,
@@ -53,6 +60,7 @@ var (
 	}
 
 	ErrMavenSnapshotDownload = &DomainError{
+		// ErrMavenInvalidFormat is a var that err maven invalid format
 		Code:      "MVN007",
 		Message:   "SNAPSHOT 아티팩트 다운로드에 실패했습니다",
 		Domain:    "maven",

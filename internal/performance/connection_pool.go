@@ -64,7 +64,6 @@ type HostPool struct {
 	stats          *HostStats
 	circuitBreaker *CircuitBreaker
 	healthChecker  *HealthChecker
-	mu             sync.RWMutex
 	lastOptimized  time.Time
 }
 
@@ -109,7 +108,6 @@ type CircuitBreaker struct {
 	mu          sync.RWMutex
 	state       CircuitState
 	failures    int64
-	requests    int64
 	lastFailure time.Time
 	nextRetry   time.Time
 	config      *PoolConfig
@@ -120,8 +118,11 @@ type CircuitBreaker struct {
 type CircuitState int
 
 const (
+	// CircuitClosed indicates the circuit breaker is closed
 	CircuitClosed CircuitState = iota
+	// CircuitOpen indicates the circuit breaker is open
 	CircuitOpen
+	// CircuitHalfOpen indicates the circuit breaker is half-open
 	CircuitHalfOpen
 )
 
@@ -236,8 +237,8 @@ func (cp *ConnectionPool) createHostPool(host string) *HostPool {
 			}
 
 			if tcpConn, ok := conn.(*net.TCPConn); ok {
-				tcpConn.SetKeepAlive(true)
-				tcpConn.SetKeepAlivePeriod(cp.config.KeepAliveTimeout)
+				_ = tcpConn.SetKeepAlive(true)
+				_ = tcpConn.SetKeepAlivePeriod(cp.config.KeepAliveTimeout)
 			}
 
 			return conn, nil
@@ -317,7 +318,8 @@ func (cp *ConnectionPool) RecordRequest(host string, success bool, latency time.
 	} else {
 		// Calculate rolling average
 		oldAvg := float64(hostStats.AverageLatency.Nanoseconds())
-		newAvg := (oldAvg*float64(hostStats.TotalRequests-1) + float64(latency.Nanoseconds())) / float64(hostStats.TotalRequests)
+		newAvg := (oldAvg*float64(hostStats.TotalRequests-1) +
+			float64(latency.Nanoseconds())) / float64(hostStats.TotalRequests)
 		hostStats.AverageLatency = time.Duration(int64(newAvg))
 	}
 
@@ -385,11 +387,8 @@ func (cp *ConnectionPool) startOptimization() {
 	ticker := time.NewTicker(cp.config.OptimizationInterval)
 	defer ticker.Stop()
 
-	for {
-		select {
-		case <-ticker.C:
-			cp.optimizeConnections()
-		}
+	for range ticker.C {
+		cp.optimizeConnections()
 	}
 }
 
@@ -464,8 +463,8 @@ func (cp *ConnectionPool) optimizeForLowLoad(hostPool *HostPool) {
 	// Reduce connection limits to save resources
 	transport := hostPool.transport
 
-	newMaxConns := max(transport.MaxConnsPerHost/2, 1)
-	newMaxIdle := max(transport.MaxIdleConnsPerHost/2, 1)
+	newMaxConns := maxInt(transport.MaxConnsPerHost/2, 1)
+	newMaxIdle := maxInt(transport.MaxIdleConnsPerHost/2, 1)
 
 	if newMaxConns < transport.MaxConnsPerHost {
 		transport.MaxConnsPerHost = newMaxConns
@@ -640,7 +639,7 @@ func (hc *HealthChecker) checkHealth() {
 	}
 
 	if resp.Body != nil {
-		resp.Body.Close()
+		_ = resp.Body.Close()
 	}
 
 	hc.recordSuccess()
@@ -736,14 +735,7 @@ func (pm *PoolMonitor) logPoolMetrics() {
 
 // Helper functions
 
-func minInt(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func max(a, b int) int {
+func maxInt(a, b int) int {
 	if a > b {
 		return a
 	}

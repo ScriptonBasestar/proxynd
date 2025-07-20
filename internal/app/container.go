@@ -189,7 +189,7 @@ func (c *Container) startConfigWatcher() {
 
 	// 고루틴에서 파일 변경 감지
 	go func() {
-		defer watcher.Close()
+		defer func() { _ = watcher.Close() }()
 
 		for {
 			select {
@@ -246,12 +246,12 @@ func (c *Container) notifyConfigChange(config *configs.UnifiedConfig) {
 }
 
 // isConfigEqual compares two configurations for equality (simplified check)
-func (c *Container) isConfigEqual(old, new *configs.UnifiedConfig) bool {
+func (c *Container) isConfigEqual(old, newVal *configs.UnifiedConfig) bool {
 	// 간단한 구조체 비교 (실제로는 더 정교한 비교가 필요할 수 있음)
-	return old.Server.Port == new.Server.Port &&
-		old.Server.Host == new.Server.Host &&
-		old.Cache.Backend == new.Cache.Backend &&
-		old.Logging.Level == new.Logging.Level
+	return old.Server.Port == newVal.Server.Port &&
+		old.Server.Host == newVal.Server.Host &&
+		old.Cache.Backend == newVal.Cache.Backend &&
+		old.Logging.Level == newVal.Logging.Level
 }
 
 // GetCacheRepository returns the cache repository instance

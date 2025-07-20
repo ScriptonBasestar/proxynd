@@ -1,3 +1,4 @@
+// Package npm provides NPM domain logic and models
 package npm
 
 import (
@@ -30,7 +31,7 @@ func NewDomain() *Domain {
 }
 
 // ParseRequest parses and validates an NPM proxy request
-func (d *Domain) ParseRequest(ctx context.Context, req *common.ProxyRequest) error {
+func (d *Domain) ParseRequest(_ context.Context, req *common.ProxyRequest) error {
 	if req.Method != "GET" && req.Method != "HEAD" {
 		return fmt.Errorf("unsupported method for NPM proxy: %s", req.Method)
 	}
@@ -137,7 +138,7 @@ func (d *Domain) ExtractMetadata(requestPath string) (*common.PackageMetadata, e
 }
 
 // TransformResponse transforms the upstream response if needed
-func (d *Domain) TransformResponse(ctx context.Context, resp *common.ProxyResponse) error {
+func (d *Domain) TransformResponse(_ context.Context, _ *common.ProxyResponse) error {
 	// NPM responses may need transformation to update tarball URLs
 	// This would require parsing and modifying the JSON response
 	// For now, we'll leave responses as-is

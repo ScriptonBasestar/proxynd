@@ -8,9 +8,16 @@ import (
 	"testing"
 )
 
+// Test-specific constants
+const (
+	testProviderGitLab = "gitlab"
+	testPathAPIV4User  = "/api/v4/user"
+	testHostGitLab     = "gitlab.com"
+)
+
 func TestNewGitLabProvider(t *testing.T) {
 	config := ProviderConfig{
-		Name:         "gitlab",
+		Name:         testProviderGitLab,
 		ClientID:     "test_client_id",
 		ClientSecret: "test_client_secret",
 		RedirectURI:  "https://example.com/callback",
@@ -18,8 +25,8 @@ func TestNewGitLabProvider(t *testing.T) {
 
 	provider := NewGitLabProvider(config)
 
-	if provider.GetName() != "gitlab" {
-		t.Errorf("Expected provider name 'gitlab', got '%s'", provider.GetName())
+	if provider.GetName() != testProviderGitLab {
+		t.Errorf("Expected provider name '%s', got '%s'", testProviderGitLab, provider.GetName())
 	}
 
 	// GitLab 기본값이 설정되었는지 확인
@@ -51,12 +58,12 @@ func TestNewGitLabProvider(t *testing.T) {
 
 func TestGitLabProvider_GetUserInfo(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/api/v4/user" {
+		if r.URL.Path == testPathAPIV4User {
 			userResponse := GitLabUser{
 				ID:           123456,
 				Username:     "testuser",
 				Name:         "Test User",
-				Email:        "test@example.com",
+				Email:        testEmail,
 				AvatarURL:    "https://gitlab.com/uploads/-/system/user/avatar/123456/avatar.png",
 				State:        "active",
 				Bio:          "Software Developer",
@@ -67,7 +74,7 @@ func TestGitLabProvider_GetUserInfo(t *testing.T) {
 				UpdatedAt:    "2021-01-01",
 				IsAdmin:      false,
 			}
-			json.NewEncoder(w).Encode(userResponse)
+			_ = json.NewEncoder(w).Encode(userResponse)
 		} else {
 			w.WriteHeader(http.StatusNotFound)
 		}
@@ -75,8 +82,8 @@ func TestGitLabProvider_GetUserInfo(t *testing.T) {
 	defer server.Close()
 
 	config := ProviderConfig{
-		Name:        "gitlab",
-		UserInfoURL: server.URL + "/api/v4/user",
+		Name:        testProviderGitLab,
+		UserInfoURL: server.URL + testPathAPIV4User,
 	}
 
 	provider := NewGitLabProvider(config)
@@ -104,8 +111,8 @@ func TestGitLabProvider_GetUserInfo(t *testing.T) {
 	if userInfo.Name != "Test User" {
 		t.Errorf("Expected name 'Test User', got '%s'", userInfo.Name)
 	}
-	if userInfo.Email != "test@example.com" {
-		t.Errorf("Expected email 'test@example.com', got '%s'", userInfo.Email)
+	if userInfo.Email != testEmail {
+		t.Errorf("Expected email '%s', got '%s'", testEmail, userInfo.Email)
 	}
 	if userInfo.Company != "GitLab Inc" {
 		t.Errorf("Expected company 'GitLab Inc', got '%s'", userInfo.Company)
@@ -125,7 +132,7 @@ func TestGitLabProvider_GetUserOrganizations(t *testing.T) {
 				{ID: 1, Name: "GitLab Inc", Path: "gitlab-inc", Visibility: "private"},
 				{ID: 2, Name: "Open Source", Path: "open-source", Visibility: "public"},
 			}
-			json.NewEncoder(w).Encode(groupsResponse)
+			_ = json.NewEncoder(w).Encode(groupsResponse)
 		} else {
 			w.WriteHeader(http.StatusNotFound)
 		}
@@ -133,7 +140,7 @@ func TestGitLabProvider_GetUserOrganizations(t *testing.T) {
 	defer server.Close()
 
 	config := ProviderConfig{
-		Name: "gitlab",
+		Name: testProviderGitLab,
 	}
 
 	provider := NewGitLabProvider(config)
@@ -146,7 +153,7 @@ func TestGitLabProvider_GetUserOrganizations(t *testing.T) {
 	DefaultHTTPClient = &MockHTTPClient{
 		DoFunc: func(req *http.Request) (*http.Response, error) {
 			if req.URL.Path == "/api/v4/groups" {
-				req.URL.Scheme = "http"
+				req.URL.Scheme = testSchemeHTTP
 				req.URL.Host = server.URL[7:] // "http://" 제거
 			}
 			return http.DefaultClient.Do(req)
@@ -174,14 +181,14 @@ func TestGitLabProvider_GetUserOrganizations(t *testing.T) {
 
 func TestGitLabProvider_ValidateToken(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/api/v4/user" {
+		if r.URL.Path == testPathAPIV4User {
 			userResponse := GitLabUser{
 				ID:       123456,
 				Username: "testuser",
 				Name:     "Test User",
-				Email:    "test@example.com",
+				Email:    testEmail,
 			}
-			json.NewEncoder(w).Encode(userResponse)
+			_ = json.NewEncoder(w).Encode(userResponse)
 		} else {
 			w.WriteHeader(http.StatusNotFound)
 		}
@@ -189,8 +196,8 @@ func TestGitLabProvider_ValidateToken(t *testing.T) {
 	defer server.Close()
 
 	config := ProviderConfig{
-		Name:        "gitlab",
-		UserInfoURL: server.URL + "/api/v4/user",
+		Name:        testProviderGitLab,
+		UserInfoURL: server.URL + testPathAPIV4User,
 		Scopes:      []string{"read_user"},
 	}
 
@@ -222,14 +229,14 @@ func TestGitLabProvider_ValidateToken(t *testing.T) {
 }
 
 func TestGitLabProvider_ValidateToken_Invalid(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 	}))
 	defer server.Close()
 
 	config := ProviderConfig{
-		Name:        "gitlab",
-		UserInfoURL: server.URL + "/api/v4/user",
+		Name:        testProviderGitLab,
+		UserInfoURL: server.URL + testPathAPIV4User,
 	}
 
 	provider := NewGitLabProvider(config)
@@ -276,7 +283,7 @@ func TestGitLabProvider_GetUserProjects(t *testing.T) {
 					Visibility:        "public",
 				},
 			}
-			json.NewEncoder(w).Encode(projectsResponse)
+			_ = json.NewEncoder(w).Encode(projectsResponse)
 		} else {
 			w.WriteHeader(http.StatusNotFound)
 		}
@@ -284,7 +291,7 @@ func TestGitLabProvider_GetUserProjects(t *testing.T) {
 	defer server.Close()
 
 	config := ProviderConfig{
-		Name: "gitlab",
+		Name: testProviderGitLab,
 	}
 
 	provider := NewGitLabProvider(config).(*GitLabProvider)
@@ -297,7 +304,7 @@ func TestGitLabProvider_GetUserProjects(t *testing.T) {
 	DefaultHTTPClient = &MockHTTPClient{
 		DoFunc: func(req *http.Request) (*http.Response, error) {
 			if req.URL.Path == "/api/v4/projects" {
-				req.URL.Scheme = "http"
+				req.URL.Scheme = testSchemeHTTP
 				req.URL.Host = server.URL[7:] // "http://" 제거
 			}
 			return http.DefaultClient.Do(req)
@@ -328,7 +335,7 @@ func TestGitLabProvider_CheckProjectAccess(t *testing.T) {
 		switch r.URL.Path {
 		case "/api/v4/projects/testuser/accessible-project":
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(map[string]interface{}{
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
 				"id":   1,
 				"name": "accessible-project",
 			})
@@ -341,7 +348,7 @@ func TestGitLabProvider_CheckProjectAccess(t *testing.T) {
 	defer server.Close()
 
 	config := ProviderConfig{
-		Name: "gitlab",
+		Name: testProviderGitLab,
 	}
 
 	provider := NewGitLabProvider(config).(*GitLabProvider)
@@ -353,10 +360,10 @@ func TestGitLabProvider_CheckProjectAccess(t *testing.T) {
 	// Mock 서버 URL을 사용하도록 설정
 	DefaultHTTPClient = &MockHTTPClient{
 		DoFunc: func(req *http.Request) (*http.Response, error) {
-			if req.URL.Host == "gitlab.com" {
-				req.URL.Scheme = "http"
+			if req.URL.Host == testHostGitLab {
+				req.URL.Scheme = testSchemeHTTP
 				req.URL.Host = server.URL[7:] // "http://" 제거
-				req.URL.Path = req.URL.Path   // Path 유지
+				// req.URL.Path = req.URL.Path   // Path 유지 (self-assignment removed)
 			}
 			return http.DefaultClient.Do(req)
 		},
@@ -400,7 +407,7 @@ func TestGitLabProvider_GetGroupMembers(t *testing.T) {
 					"access_level": 30, // Developer
 				},
 			}
-			json.NewEncoder(w).Encode(membersResponse)
+			_ = json.NewEncoder(w).Encode(membersResponse)
 		} else {
 			w.WriteHeader(http.StatusNotFound)
 		}
@@ -408,7 +415,7 @@ func TestGitLabProvider_GetGroupMembers(t *testing.T) {
 	defer server.Close()
 
 	config := ProviderConfig{
-		Name: "gitlab",
+		Name: testProviderGitLab,
 	}
 
 	provider := NewGitLabProvider(config).(*GitLabProvider)
@@ -420,10 +427,10 @@ func TestGitLabProvider_GetGroupMembers(t *testing.T) {
 	// Mock 서버 URL을 사용하도록 설정
 	DefaultHTTPClient = &MockHTTPClient{
 		DoFunc: func(req *http.Request) (*http.Response, error) {
-			if req.URL.Host == "gitlab.com" {
-				req.URL.Scheme = "http"
+			if req.URL.Host == testHostGitLab {
+				req.URL.Scheme = testSchemeHTTP
 				req.URL.Host = server.URL[7:] // "http://" 제거
-				req.URL.Path = req.URL.Path   // Path 유지
+				// req.URL.Path = req.URL.Path   // Path 유지 (self-assignment removed)
 			}
 			return http.DefaultClient.Do(req)
 		},
@@ -482,11 +489,11 @@ func TestGitLabProvider_CheckAdminStatus(t *testing.T) {
 				Username: "admin",
 				IsAdmin:  true,
 			}
-			json.NewEncoder(w).Encode(userResponse)
+			_ = json.NewEncoder(w).Encode(userResponse)
 		case "/api/v4/users":
 			// 관리자만 접근 가능한 엔드포인트
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode([]map[string]interface{}{
+			_ = json.NewEncoder(w).Encode([]map[string]interface{}{
 				{"id": 1, "username": "user1"},
 				{"id": 2, "username": "user2"},
 			})
@@ -497,8 +504,8 @@ func TestGitLabProvider_CheckAdminStatus(t *testing.T) {
 	defer server.Close()
 
 	config := ProviderConfig{
-		Name:        "gitlab",
-		UserInfoURL: server.URL + "/api/v4/user",
+		Name:        testProviderGitLab,
+		UserInfoURL: server.URL + testPathAPIV4User,
 	}
 
 	provider := NewGitLabProvider(config).(*GitLabProvider)
@@ -510,10 +517,10 @@ func TestGitLabProvider_CheckAdminStatus(t *testing.T) {
 	// Mock 서버 URL을 사용하도록 설정
 	DefaultHTTPClient = &MockHTTPClient{
 		DoFunc: func(req *http.Request) (*http.Response, error) {
-			if req.URL.Host == "gitlab.com" {
-				req.URL.Scheme = "http"
+			if req.URL.Host == testHostGitLab {
+				req.URL.Scheme = testSchemeHTTP
 				req.URL.Host = server.URL[7:] // "http://" 제거
-				req.URL.Path = req.URL.Path   // Path 유지
+				// req.URL.Path = req.URL.Path   // Path 유지 (self-assignment removed)
 			}
 			return http.DefaultClient.Do(req)
 		},
@@ -556,7 +563,7 @@ func TestGitLabProvider_Registration(t *testing.T) {
 
 	found := false
 	for _, name := range providers {
-		if name == "gitlab" {
+		if name == testProviderGitLab {
 			found = true
 			break
 		}
@@ -568,13 +575,13 @@ func TestGitLabProvider_Registration(t *testing.T) {
 
 	// 제공자 생성 테스트
 	config := ProviderConfig{
-		Name:         "gitlab",
+		Name:         testProviderGitLab,
 		ClientID:     "test_id",
 		ClientSecret: "test_secret",
 		RedirectURI:  "https://example.com/callback",
 	}
 
-	provider := CreateProvider("gitlab", config)
+	provider := CreateProvider(testProviderGitLab, config)
 	if provider == nil {
 		t.Error("Expected GitLab provider to be created")
 	}
@@ -584,7 +591,7 @@ func TestGitLabProvider_Registration(t *testing.T) {
 		t.Error("Expected provider to be GitLabProvider instance")
 	}
 
-	if gitlabProvider.GetName() != "gitlab" {
-		t.Errorf("Expected provider name 'gitlab', got '%s'", gitlabProvider.GetName())
+	if gitlabProvider.GetName() != testProviderGitLab {
+		t.Errorf("Expected provider name '%s', got '%s'", testProviderGitLab, gitlabProvider.GetName())
 	}
 }

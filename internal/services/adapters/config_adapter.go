@@ -32,7 +32,7 @@ func (a *ConfigAdapter) GetGlobalConfig(ctx context.Context) (interface{}, error
 }
 
 // ReloadConfig reloads configuration from disk
-func (a *ConfigAdapter) ReloadConfig(ctx context.Context) error {
+func (a *ConfigAdapter) ReloadConfig(_ context.Context) error {
 	// The file repository automatically reloads on access
 	// This could trigger a manual reload if needed
 	return nil

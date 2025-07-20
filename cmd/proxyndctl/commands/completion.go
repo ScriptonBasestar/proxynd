@@ -47,7 +47,7 @@ bash, zsh, fish, powershell 쉘을 지원합니다.`,
 		DisableFlagsInUseLine: true,
 		ValidArgs:             []string{"bash"},
 		Args:                  cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			return rootCmd.GenBashCompletion(os.Stdout)
 		},
 	}
@@ -80,7 +80,7 @@ bash, zsh, fish, powershell 쉘을 지원합니다.`,
 		DisableFlagsInUseLine: true,
 		ValidArgs:             []string{"zsh"},
 		Args:                  cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			return rootCmd.GenZshCompletion(os.Stdout)
 		},
 	}
@@ -103,7 +103,7 @@ bash, zsh, fish, powershell 쉘을 지원합니다.`,
 		DisableFlagsInUseLine: true,
 		ValidArgs:             []string{"fish"},
 		Args:                  cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			return rootCmd.GenFishCompletion(os.Stdout, true)
 		},
 	}
@@ -129,7 +129,7 @@ PowerShell 프로필이 없는 경우 먼저 생성:
 		DisableFlagsInUseLine: true,
 		ValidArgs:             []string{"powershell"},
 		Args:                  cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			return rootCmd.GenPowerShellCompletionWithDesc(os.Stdout)
 		},
 	}
@@ -144,7 +144,7 @@ PowerShell 프로필이 없는 경우 먼저 생성:
 
 // InstallCompletionGuide 자동완성 설치 가이드 출력
 func InstallCompletionGuide() {
-	fmt.Println(`
+	fmt.Print(`
 자동완성 스크립트 설치 가이드
 ============================
 

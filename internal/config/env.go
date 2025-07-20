@@ -1,3 +1,4 @@
+// Package config provides configuration management utilities
 package config
 
 import (
@@ -9,10 +10,14 @@ import (
 	"github.com/joho/godotenv"
 )
 
+// Environment constants
+const (
+	// EnvProduction is a const that env production
+	EnvProduction = "production"
+)
+
 // Env holds all environment variables
 type Env struct {
-	mu sync.RWMutex
-
 	// Server
 	ServerHost string
 	ServerPort string
@@ -54,6 +59,7 @@ type Env struct {
 	Development DevConfig
 }
 
+// DatabaseConfig represents the configuration for database settings
 type DatabaseConfig struct {
 	Host     string
 	Port     string
@@ -63,6 +69,7 @@ type DatabaseConfig struct {
 	SSLMode  string
 }
 
+// RedisConfig represents the configuration for redis settings
 type RedisConfig struct {
 	Host     string
 	Port     string
@@ -71,56 +78,66 @@ type RedisConfig struct {
 	URL      string
 }
 
+// JWTConfig represents the configuration for jwt settings
 type JWTConfig struct {
 	Secret            string
 	ExpiryHours       int
 	RefreshExpireDays int
 }
 
+// OAuthConfig represents the configuration for oauth settings
 type OAuthConfig struct {
 	Github OAuthProvider
 	Gitlab OAuthProvider
 	Google OAuthProvider
 }
 
+// OAuthProvider represents a oauth provider
 type OAuthProvider struct {
 	ClientID     string
 	ClientSecret string
 }
 
+// RegistryConfig represents the configuration for registry settings
 type RegistryConfig struct {
 	Maven  RegistryCredentials
 	NPM    RegistryCredentials
 	Docker RegistryCredentials
 }
 
+// RegistryCredentials represents a registry credentials
 type RegistryCredentials struct {
 	Username string
 	Password string
 	Token    string
 }
 
+// SecurityConfig represents the configuration for security settings
 type SecurityConfig struct {
 	EncryptionKey string
 	SigningKey    string
 }
 
+// CacheConfig represents the configuration for cache settings
 type CacheConfig struct {
 	Type    string
 	TTL     int
 	MaxSize int
 }
 
+// LogConfig represents the configuration for log settings
 type LogConfig struct {
 	Level  string
 	Format string
 }
 
+// MetricsConfig represents the configuration for metrics settings
 type MetricsConfig struct {
 	Enabled bool
 	Port    string
 }
 
+// DevConfig represents the configuration for dev settings
 type DevConfig struct {
 	Debug     bool
 	HotReload bool
@@ -231,7 +248,7 @@ func Load() (*Env, error) {
 		}
 
 		// Validate required fields in production
-		if env.ServerEnv == "production" {
+		if env.ServerEnv == EnvProduction {
 			err = env.validateProduction()
 		}
 	})
@@ -243,8 +260,8 @@ func Load() (*Env, error) {
 func Get() *Env {
 	if env == nil {
 		// 개발 환경에서는 기본값으로 로드 시도
-		if os.Getenv("SERVER_ENV") != "production" {
-			Load()
+		if os.Getenv("SERVER_ENV") != EnvProduction {
+			_, _ = Load()
 		}
 		if env == nil {
 			// 여전히 nil인 경우 에러 로그 후 기본 환경 반환
@@ -261,7 +278,7 @@ func Get() *Env {
 
 // IsProduction checks if running in production environment
 func (e *Env) IsProduction() bool {
-	return e.ServerEnv == "production"
+	return e.ServerEnv == EnvProduction
 }
 
 // IsDevelopment checks if running in development environment
@@ -274,16 +291,6 @@ func getEnvOrDefault(key, defaultValue string) string {
 		return value
 	}
 	return defaultValue
-}
-
-func getEnvOrPanic(key string) string {
-	value := os.Getenv(key)
-	if value == "" {
-		// panic 대신 로그 기록 후 빈 문자열 반환
-		fmt.Printf("ERROR: required environment variable %s is not set\n", key)
-		return ""
-	}
-	return value
 }
 
 func getEnvAsInt(key string, defaultValue int) int {
@@ -315,7 +322,7 @@ func getJWTSecret() string {
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
 		// Generate a warning but use default for development
-		if os.Getenv("SERVER_ENV") == "production" {
+		if os.Getenv("SERVER_ENV") == EnvProduction {
 			fmt.Printf("ERROR: JWT_SECRET is required in production\n")
 			return ""
 		}
@@ -325,7 +332,7 @@ func getJWTSecret() string {
 
 	// Validate minimum length
 	if len(secret) < 32 {
-		if os.Getenv("SERVER_ENV") == "production" {
+		if os.Getenv("SERVER_ENV") == EnvProduction {
 			fmt.Printf("ERROR: JWT_SECRET must be at least 32 characters long\n")
 			return ""
 		}
@@ -340,7 +347,7 @@ func getSecurityKey(key string) string {
 	value := os.Getenv(key)
 	if value == "" {
 		// Generate a warning but use default for development
-		if os.Getenv("SERVER_ENV") == "production" {
+		if os.Getenv("SERVER_ENV") == EnvProduction {
 			fmt.Printf("ERROR: %s is required in production\n", key)
 			return ""
 		}
@@ -350,7 +357,7 @@ func getSecurityKey(key string) string {
 
 	// Validate minimum length
 	if len(value) < 32 {
-		if os.Getenv("SERVER_ENV") == "production" {
+		if os.Getenv("SERVER_ENV") == EnvProduction {
 			fmt.Printf("ERROR: %s must be at least 32 characters long\n", key)
 			return ""
 		}

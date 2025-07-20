@@ -79,7 +79,7 @@ jobs:
     needs: code-quality
     strategy:
       matrix:
-        test-type: [unit, integration, handlers]
+        test-type: [unit, integration, handlers, benchmark-validation]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -104,18 +104,12 @@ jobs:
       - name: Run unit tests
         if: matrix.test-type == 'unit'
         run: |
-          go test -v -race -coverprofile=reports/coverage/unit.out -covermode=atomic ./...
+          make test-unit
 
       - name: Run integration tests
         if: matrix.test-type == 'integration'
         run: |
-          # Run our comprehensive integration tests
-          if [ -d "tests/integration" ]; then
-            go test -v -timeout=300s ./tests/integration/...
-          fi
-          if [ -d "test/integration" ]; then
-            go test -v -timeout=300s ./test/integration/...
-          fi
+          make test-integration
 
       - name: Run handler tests
         if: matrix.test-type == 'handlers'
@@ -123,6 +117,23 @@ jobs:
           # Run comprehensive handler tests
           go test -v -race -coverprofile=reports/coverage/handlers.out ./handlers/...
           go test -v -race -coverprofile=reports/coverage/internal-handlers.out ./internal/handlers/...
+
+      - name: Test benchmark script functionality
+        if: matrix.test-type == 'integration'
+        run: |
+          # Test that our benchmark script is functional
+          chmod +x scripts/run-benchmarks.sh
+          # Run a quick benchmark test to ensure the script works
+          ./scripts/run-benchmarks.sh --quick --time 1s
+          echo "✅ Benchmark script functionality verified"
+
+      - name: Benchmark validation
+        if: matrix.test-type == 'benchmark-validation'
+        run: |
+          # Validate that all benchmark tests compile and can run
+          echo "Validating benchmark tests compilation..."
+          make test-benchmark BENCHMARK_TIME=100ms
+          echo "✅ All benchmark tests compile and execute successfully"
 
       - name: Check test coverage
         if: matrix.test-type == 'unit'

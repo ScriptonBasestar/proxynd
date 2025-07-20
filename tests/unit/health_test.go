@@ -20,12 +20,12 @@ import (
 
 func TestHealthChecker_Environment(t *testing.T) {
 	// 환경 변수 설정
-	os.Setenv("TEST_VAR1", "value1")
-	os.Setenv("TEST_VAR2", "value2")
+	_ = os.Setenv("TEST_VAR1", "value1")
+	_ = os.Setenv("TEST_VAR2", "value2")
 	defer func() {
-		os.Unsetenv("TEST_VAR1")
-		os.Unsetenv("TEST_VAR2")
-		os.Unsetenv("TEST_VAR3")
+		_ = os.Unsetenv("TEST_VAR1")
+		_ = os.Unsetenv("TEST_VAR2")
+		_ = os.Unsetenv("TEST_VAR3")
 	}()
 
 	// 환경 변수 체커 생성
@@ -83,8 +83,8 @@ func TestHealthService(t *testing.T) {
 	service := health.NewHealthService(100 * time.Millisecond)
 
 	// 테스트 체커 등록
-	os.Setenv("TEST_ENV", "test")
-	defer os.Unsetenv("TEST_ENV")
+	_ = os.Setenv("TEST_ENV", "test")
+	defer func() { _ = os.Unsetenv("TEST_ENV") }()
 
 	service.RegisterChecker(health.NewEnvironmentChecker([]string{"TEST_ENV"}))
 
@@ -171,6 +171,7 @@ func TestHealthEndpoint(t *testing.T) {
 			resp, err := app.Test(req, -1)
 
 			assert.Equal(t, nil, err)
+			defer func() { _ = resp.Body.Close() }()
 			assert.Equal(t, tt.expectedStatus, resp.StatusCode)
 
 			body, _ := io.ReadAll(resp.Body)
@@ -187,22 +188,24 @@ func TestHealthEndpoint_Debug(t *testing.T) {
 	routers.HealthRouter(app)
 
 	// Production 환경에서는 접근 불가
-	os.Setenv("ENVIRONMENT", "production")
+	_ = os.Setenv("ENVIRONMENT", "production")
 	req := httptest.NewRequest("GET", "/health/debug", nil)
 	resp, err := app.Test(req)
 
 	assert.Equal(t, nil, err)
+	defer func() { _ = resp.Body.Close() }()
 	assert.Equal(t, 403, resp.StatusCode)
 
 	// Development 환경에서는 접근 가능
-	os.Setenv("ENVIRONMENT", "development")
+	_ = os.Setenv("ENVIRONMENT", "development")
 	req = httptest.NewRequest("GET", "/health/debug", nil)
 	resp, err = app.Test(req)
 
 	assert.Equal(t, nil, err)
+	defer func() { _ = resp.Body.Close() }()
 	assert.Equal(t, 200, resp.StatusCode)
 
-	os.Unsetenv("ENVIRONMENT")
+	_ = os.Unsetenv("ENVIRONMENT")
 }
 
 func TestHTTPChecker(t *testing.T) {
@@ -210,7 +213,7 @@ func TestHTTPChecker(t *testing.T) {
 	testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/health" {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("OK"))
+			_, _ = w.Write([]byte("OK"))
 		} else {
 			w.WriteHeader(http.StatusNotFound)
 		}
@@ -239,12 +242,12 @@ func TestHTTPChecker(t *testing.T) {
 
 func TestCacheBackendChecker(t *testing.T) {
 	// 성공하는 체크 함수
-	successCheck := func(ctx context.Context) error {
+	successCheck := func(_ context.Context) error {
 		return nil
 	}
 
 	// 실패하는 체크 함수
-	failCheck := func(ctx context.Context) error {
+	failCheck := func(_ context.Context) error {
 		return fmt.Errorf("connection failed")
 	}
 

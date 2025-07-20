@@ -13,8 +13,8 @@ import (
 func LoadConfigFromEnv() LogConfig {
 	config := LogConfig{
 		Level:      LevelInfo,
-		Format:     "json",
-		Output:     "stdout",
+		Format:     formatJSON,
+		Output:     outputStdout,
 		TimeFormat: "2006-01-02T15:04:05.000Z07:00",
 		File: FileConfig{
 			MaxSize:    100, // 100MB
@@ -56,14 +56,15 @@ func LoadConfigFromEnv() LogConfig {
 	// 로그 파일
 	if logFile := os.Getenv("LOG_FILE"); logFile != "" {
 		config.File.Path = logFile
-		if config.Output == "stdout" {
-			config.Output = "both"
+		if config.Output == outputStdout {
+			config.Output = outputBoth
 		}
 	}
 
 	// 액세스 로그 파일
 	if accessLogPath := os.Getenv("ACCESS_LOG_PATH"); accessLogPath != "" {
 		// 액세스 로그는 별도 처리
+		_ = accessLogPath // 환경변수 체크만 수행
 	}
 
 	// 시간 포맷
@@ -108,8 +109,8 @@ func LoadConfigFromEnv() LogConfig {
 func LoadConfigFromFile(configPath string) (LogConfig, error) {
 	config := LogConfig{
 		Level:         LevelInfo,
-		Format:        "json",
-		Output:        "stdout",
+		Format:        formatJSON,
+		Output:        outputStdout,
 		DefaultFields: make(map[string]interface{}),
 	}
 
@@ -128,7 +129,7 @@ func LoadConfigFromFile(configPath string) (LogConfig, error) {
 }
 
 // LoadConfigFromUnified 통합 설정에서 로그 설정 추출
-func LoadConfigFromUnified(unifiedConfig interface{}) LogConfig {
+func LoadConfigFromUnified(_ interface{}) LogConfig {
 	// TODO: 통합 설정 구조체에서 로그 설정 추출
 	// 현재는 기본값 반환
 	return LoadConfigFromEnv()
@@ -152,9 +153,9 @@ func ValidateConfig(config LogConfig) error {
 
 	// 포맷 검증
 	validFormats := map[string]bool{
-		"json":    true,
-		"text":    true,
-		"console": true,
+		formatJSON: true,
+		"text":     true,
+		"console":  true,
 	}
 
 	if !validFormats[config.Format] {
@@ -163,10 +164,10 @@ func ValidateConfig(config LogConfig) error {
 
 	// 출력 검증
 	validOutputs := map[string]bool{
-		"stdout": true,
-		"stderr": true,
-		"file":   true,
-		"both":   true,
+		outputStdout: true,
+		"stderr":     true,
+		"file":       true,
+		outputBoth:   true,
 	}
 
 	if !validOutputs[config.Output] {
@@ -174,7 +175,7 @@ func ValidateConfig(config LogConfig) error {
 	}
 
 	// 파일 출력 설정 검증
-	if config.Output == "file" || config.Output == "both" {
+	if config.Output == "file" || config.Output == outputBoth {
 		if config.File.Path == "" {
 			return fmt.Errorf("log file path is required for file output")
 		}

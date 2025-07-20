@@ -20,16 +20,17 @@ func TestHealthRouter(t *testing.T) {
 
 	t.Run("Health Check Success", func(t *testing.T) {
 		// 필요한 환경 변수 설정
-		os.Setenv("CONFIG_DIR", "/tmp")
-		os.Setenv("STORAGE_DIR", "/tmp")
+		_ = os.Setenv("CONFIG_DIR", "/tmp")
+		_ = os.Setenv("STORAGE_DIR", "/tmp")
 		defer func() {
-			os.Unsetenv("CONFIG_DIR")
-			os.Unsetenv("STORAGE_DIR")
+			_ = os.Unsetenv("CONFIG_DIR")
+			_ = os.Unsetenv("STORAGE_DIR")
 		}()
 
 		req := httptest.NewRequest("GET", "/healthz", nil)
 		resp, err := app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 
 		assert.Equal(t, 200, resp.StatusCode)
 		assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
@@ -44,12 +45,13 @@ func TestHealthRouter(t *testing.T) {
 
 	t.Run("Health Check Failure", func(t *testing.T) {
 		// 환경 변수 제거
-		os.Unsetenv("CONFIG_DIR")
-		os.Unsetenv("STORAGE_DIR")
+		_ = os.Unsetenv("CONFIG_DIR")
+		_ = os.Unsetenv("STORAGE_DIR")
 
 		req := httptest.NewRequest("GET", "/healthz", nil)
 		resp, err := app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 
 		assert.Equal(t, 503, resp.StatusCode)
 
@@ -65,6 +67,7 @@ func TestHealthRouter(t *testing.T) {
 		req := httptest.NewRequest("POST", "/healthz", nil)
 		resp, err := app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 
 		// POST는 허용되지 않아야 함
 		assert.Equal(t, 405, resp.StatusCode)
@@ -74,8 +77,8 @@ func TestHealthRouter(t *testing.T) {
 // TestProxyRouter 프록시 라우터 테스트
 func TestProxyRouter(t *testing.T) {
 	// 테스트를 위한 환경 변수 설정
-	os.Setenv("CONFIG_DIR", "../../sample-conf")
-	defer os.Unsetenv("CONFIG_DIR")
+	_ = os.Setenv("CONFIG_DIR", "../../sample-conf")
+	defer func() { _ = os.Unsetenv("CONFIG_DIR") }()
 
 	app := fiber.New()
 
@@ -100,6 +103,7 @@ func TestProxyRouter(t *testing.T) {
 		req := httptest.NewRequest("GET", "/proxy/npm/express", nil)
 		resp, err := app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 
 		assert.Equal(t, 200, resp.StatusCode)
 
@@ -114,6 +118,7 @@ func TestProxyRouter(t *testing.T) {
 		req := httptest.NewRequest("GET", "/proxy/pip/simple/requests/", nil)
 		resp, err := app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 
 		assert.Equal(t, 200, resp.StatusCode)
 
@@ -128,6 +133,7 @@ func TestProxyRouter(t *testing.T) {
 		req := httptest.NewRequest("GET", "/proxy/apt/ubuntu/dists/jammy/Release", nil)
 		resp, err := app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 
 		assert.Equal(t, 200, resp.StatusCode)
 
@@ -142,6 +148,7 @@ func TestProxyRouter(t *testing.T) {
 		req := httptest.NewRequest("GET", "/proxy/docker/v2/library/nginx/manifests/latest", nil)
 		resp, err := app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 
 		assert.Equal(t, 200, resp.StatusCode)
 
@@ -156,6 +163,7 @@ func TestProxyRouter(t *testing.T) {
 		req := httptest.NewRequest("GET", "/proxy/", nil)
 		resp, err := app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 
 		// 라우트가 매칭되지 않으므로 404
 		assert.Equal(t, 404, resp.StatusCode)
@@ -165,6 +173,7 @@ func TestProxyRouter(t *testing.T) {
 		req := httptest.NewRequest("GET", "/invalid", nil)
 		resp, err := app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 
 		assert.Equal(t, 404, resp.StatusCode)
 	})
@@ -173,6 +182,7 @@ func TestProxyRouter(t *testing.T) {
 		req := httptest.NewRequest("GET", "/proxy/npm/@types/node", nil)
 		resp, err := app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 
 		assert.Equal(t, 200, resp.StatusCode)
 
@@ -187,6 +197,7 @@ func TestProxyRouter(t *testing.T) {
 		req := httptest.NewRequest("GET", "/proxy/pip/packages/source/r/requests/requests-2.28.2.tar.gz", nil)
 		resp, err := app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 
 		assert.Equal(t, 200, resp.StatusCode)
 
@@ -223,6 +234,7 @@ func TestRouterParameterExtraction(t *testing.T) {
 		req := httptest.NewRequest("GET", "/proxy/npm/%40types%2Fnode", nil)
 		resp, err := app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 
 		assert.Equal(t, 200, resp.StatusCode)
 
@@ -238,6 +250,7 @@ func TestRouterParameterExtraction(t *testing.T) {
 		req := httptest.NewRequest("GET", "/proxy/npm/express?version=4.18.2", nil)
 		resp, err := app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 
 		assert.Equal(t, 200, resp.StatusCode)
 
@@ -253,6 +266,7 @@ func TestRouterParameterExtraction(t *testing.T) {
 		req := httptest.NewRequest("GET", "/proxy/docker/v2/library/nginx/blobs/sha256:abc123def456", nil)
 		resp, err := app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 
 		assert.Equal(t, 200, resp.StatusCode)
 
@@ -267,6 +281,7 @@ func TestRouterParameterExtraction(t *testing.T) {
 		req := httptest.NewRequest("GET", "/proxy/npm/", nil)
 		resp, err := app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 
 		assert.Equal(t, 200, resp.StatusCode)
 
@@ -322,6 +337,7 @@ func TestRouterMiddlewareChain(t *testing.T) {
 		req := httptest.NewRequest("GET", "/proxy/npm/express", nil)
 		resp, err := app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 
 		assert.Equal(t, 200, resp.StatusCode)
 

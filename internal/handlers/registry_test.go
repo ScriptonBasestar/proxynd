@@ -18,7 +18,7 @@ func TestHandlerRegistry(t *testing.T) {
 		Port:      "8080",
 	}
 	container := app.NewContainer(cfg)
-	defer container.Close()
+	defer func() { _ = container.Close() }()
 
 	t.Run("Registry creation", func(t *testing.T) {
 		registry := NewHandlerRegistry(container)
@@ -324,7 +324,7 @@ func TestHandlerRegistry(t *testing.T) {
 		assert.Contains(t, err.Error(), "unknown handler type")
 
 		// 에러 발생하는 핸들러 등록
-		registry.Register("error", func(container *app.Container) Handler {
+		registry.Register("error", func(_ *app.Container) Handler {
 			return nil // nil 반환
 		})
 

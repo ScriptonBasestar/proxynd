@@ -1,3 +1,4 @@
+// Package config provides configuration service interfaces
 package config
 
 //go:generate mockery --name Service --output ./mocks --outpkg mocks --filename service.go

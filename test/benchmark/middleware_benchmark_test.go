@@ -20,6 +20,11 @@ import (
 	"proxynd/logging"
 )
 
+// Constants for benchmark tests
+const (
+	httpMethodPOST = "POST"
+)
+
 // BenchmarkMiddlewareStack 미들웨어 스택 성능 벤치마크
 func BenchmarkMiddlewareStack(b *testing.B) {
 	testCases := []struct {
@@ -55,7 +60,7 @@ func BenchmarkMiddlewareStack(b *testing.B) {
 			name: "FullMiddleware",
 			setupApp: func() *fiber.App {
 				app := fiber.New(fiber.Config{DisableStartupMessage: true})
-				
+
 				// 모든 미들웨어 적용
 				app.Use(recover.New())
 				app.Use(logger.New(logger.Config{
@@ -72,7 +77,7 @@ func BenchmarkMiddlewareStack(b *testing.B) {
 					Max:        1000,
 					Expiration: time.Minute,
 				}))
-				
+
 				app.Get("/test", func(c *fiber.Ctx) error {
 					return c.SendString("OK")
 				})
@@ -84,13 +89,13 @@ func BenchmarkMiddlewareStack(b *testing.B) {
 			name: "ProxyNDMiddleware",
 			setupApp: func() *fiber.App {
 				app := fiber.New(fiber.Config{DisableStartupMessage: true})
-				
+
 				// ProxyND 실제 미들웨어 스택
 				app.Use(logging.RequestLogger())
 				app.Use(logging.New())
 				app.Use(logging.ErrorLogger())
 				app.Use(logging.RecoveryLogger())
-				
+
 				app.Get("/test", func(c *fiber.Ctx) error {
 					return c.SendString("OK")
 				})
@@ -103,10 +108,10 @@ func BenchmarkMiddlewareStack(b *testing.B) {
 	for _, tc := range testCases {
 		b.Run(tc.name, func(b *testing.B) {
 			app := tc.setupApp()
-			
+
 			b.ResetTimer()
 			b.ReportAllocs()
-			
+
 			b.RunParallel(func(pb *testing.PB) {
 				for pb.Next() {
 					req, err := http.NewRequest("GET", "/test", nil)
@@ -114,9 +119,9 @@ func BenchmarkMiddlewareStack(b *testing.B) {
 
 					resp, err := app.Test(req, -1)
 					require.NoError(b, err)
-					
-					io.Copy(io.Discard, resp.Body)
-					resp.Body.Close()
+
+					_, _ = io.Copy(io.Discard, resp.Body)
+					_ = resp.Body.Close()
 				}
 			})
 		})
@@ -130,7 +135,7 @@ func BenchmarkLoggingMiddleware(b *testing.B) {
 		config logger.Config
 	}{
 		{
-			name: "DefaultLogger",
+			name:   "DefaultLogger",
 			config: logger.Config{},
 		},
 		{
@@ -163,16 +168,16 @@ func BenchmarkLoggingMiddleware(b *testing.B) {
 
 			b.ResetTimer()
 			b.ReportAllocs()
-			
+
 			for i := 0; i < b.N; i++ {
 				req, err := http.NewRequest("GET", "/test", nil)
 				require.NoError(b, err)
 
 				resp, err := app.Test(req, -1)
 				require.NoError(b, err)
-				
-				io.Copy(io.Discard, resp.Body)
-				resp.Body.Close()
+
+				_, _ = io.Copy(io.Discard, resp.Body)
+				_ = resp.Body.Close()
 			}
 		})
 	}
@@ -205,20 +210,20 @@ func BenchmarkCompressionMiddleware(b *testing.B) {
 		for _, cl := range compressionLevels {
 			b.Run(fmt.Sprintf("%s_%s", ds.name, cl.name), func(b *testing.B) {
 				app := fiber.New(fiber.Config{DisableStartupMessage: true})
-				
+
 				if cl.level != compress.LevelDisabled {
 					app.Use(compress.New(compress.Config{
 						Level: cl.level,
 					}))
 				}
-				
+
 				// 반복 가능한 텍스트 데이터 생성 (압축률 높음)
 				testData := strings.Repeat("Hello, World! This is test data for compression benchmark. ", ds.size/60)
 				if len(testData) < ds.size {
 					testData += strings.Repeat("X", ds.size-len(testData))
 				}
 				testData = testData[:ds.size]
-				
+
 				app.Get("/test", func(c *fiber.Ctx) error {
 					return c.SendString(testData)
 				})
@@ -226,7 +231,7 @@ func BenchmarkCompressionMiddleware(b *testing.B) {
 				b.SetBytes(int64(ds.size))
 				b.ResetTimer()
 				b.ReportAllocs()
-				
+
 				for i := 0; i < b.N; i++ {
 					req, err := http.NewRequest("GET", "/test", nil)
 					req.Header.Set("Accept-Encoding", "gzip")
@@ -234,11 +239,11 @@ func BenchmarkCompressionMiddleware(b *testing.B) {
 
 					resp, err := app.Test(req, -1)
 					require.NoError(b, err)
-					
+
 					n, err := io.Copy(io.Discard, resp.Body)
 					require.NoError(b, err)
-					resp.Body.Close()
-					
+					_ = resp.Body.Close()
+
 					// 압축 효율성 체크
 					if cl.level != compress.LevelDisabled {
 						require.Less(b, n, int64(ds.size), "압축된 데이터가 원본보다 작아야 함")
@@ -256,7 +261,7 @@ func BenchmarkCORSMiddleware(b *testing.B) {
 		config cors.Config
 	}{
 		{
-			name: "DefaultCORS",
+			name:   "DefaultCORS",
 			config: cors.Config{},
 		},
 		{
@@ -287,21 +292,21 @@ func BenchmarkCORSMiddleware(b *testing.B) {
 	}
 
 	requestTypes := []struct {
-		name   string
-		method string
-		origin string
+		name    string
+		method  string
+		origin  string
 		headers map[string]string
 	}{
 		{
-			name:   "SimpleGET",
-			method: "GET",
-			origin: "https://example.com",
+			name:    "SimpleGET",
+			method:  "GET",
+			origin:  "https://example.com",
 			headers: map[string]string{},
 		},
 		{
-			name:   "SimpleGET-NoOrigin",
-			method: "GET",
-			origin: "",
+			name:    "SimpleGET-NoOrigin",
+			method:  "GET",
+			origin:  "",
 			headers: map[string]string{},
 		},
 		{
@@ -315,7 +320,7 @@ func BenchmarkCORSMiddleware(b *testing.B) {
 		},
 		{
 			name:   "CrossOrigin",
-			method: "POST",
+			method: httpMethodPOST,
 			origin: "https://malicious.com",
 			headers: map[string]string{
 				"Content-Type": "application/json",
@@ -334,24 +339,24 @@ func BenchmarkCORSMiddleware(b *testing.B) {
 
 				b.ResetTimer()
 				b.ReportAllocs()
-				
+
 				for i := 0; i < b.N; i++ {
 					req, err := http.NewRequest(rt.method, "/test", nil)
 					require.NoError(b, err)
-					
+
 					if rt.origin != "" {
 						req.Header.Set("Origin", rt.origin)
 					}
-					
+
 					for key, value := range rt.headers {
 						req.Header.Set(key, value)
 					}
 
 					resp, err := app.Test(req, -1)
 					require.NoError(b, err)
-					
-					io.Copy(io.Discard, resp.Body)
-					resp.Body.Close()
+
+					_, _ = io.Copy(io.Discard, resp.Body)
+					_ = resp.Body.Close()
 				}
 			})
 		}
@@ -404,28 +409,28 @@ func BenchmarkRateLimitingMiddleware(b *testing.B) {
 
 			b.ResetTimer()
 			b.ReportAllocs()
-			
+
 			successCount := 0
 			limitedCount := 0
-			
+
 			for i := 0; i < b.N; i++ {
 				req, err := http.NewRequest("GET", "/test", nil)
 				require.NoError(b, err)
 
 				resp, err := app.Test(req, -1)
 				require.NoError(b, err)
-				
+
 				switch resp.StatusCode {
 				case 200:
 					successCount++
 				case 429:
 					limitedCount++
 				}
-				
-				io.Copy(io.Discard, resp.Body)
-				resp.Body.Close()
+
+				_, _ = io.Copy(io.Discard, resp.Body)
+				_ = resp.Body.Close()
 			}
-			
+
 			// 결과 리포트
 			b.ReportMetric(float64(successCount), "success")
 			b.ReportMetric(float64(limitedCount), "limited")
@@ -447,13 +452,13 @@ func BenchmarkRecoveryMiddleware(b *testing.B) {
 		},
 		{
 			name: "StringPanic",
-			handler: func(c *fiber.Ctx) error {
+			handler: func(_ *fiber.Ctx) error {
 				panic("test panic")
 			},
 		},
 		{
 			name: "ErrorPanic",
-			handler: func(c *fiber.Ctx) error {
+			handler: func(_ *fiber.Ctx) error {
 				panic(fmt.Errorf("test error panic"))
 			},
 		},
@@ -476,16 +481,16 @@ func BenchmarkRecoveryMiddleware(b *testing.B) {
 
 			b.ResetTimer()
 			b.ReportAllocs()
-			
+
 			for i := 0; i < b.N; i++ {
 				req, err := http.NewRequest("GET", "/test", nil)
 				require.NoError(b, err)
 
 				resp, err := app.Test(req, -1)
 				require.NoError(b, err)
-				
-				io.Copy(io.Discard, resp.Body)
-				resp.Body.Close()
+
+				_, _ = io.Copy(io.Discard, resp.Body)
+				_ = resp.Body.Close()
 			}
 		})
 	}
@@ -542,7 +547,7 @@ func BenchmarkCustomMiddleware(b *testing.B) {
 			name: "ContentTypeValidation",
 			middleware: func(c *fiber.Ctx) error {
 				contentType := c.Get("Content-Type")
-				if c.Method() == "POST" && contentType == "" {
+				if c.Method() == httpMethodPOST && contentType == "" {
 					return c.Status(400).SendString("Content-Type required")
 				}
 				return c.Next()
@@ -563,29 +568,29 @@ func BenchmarkCustomMiddleware(b *testing.B) {
 
 			b.ResetTimer()
 			b.ReportAllocs()
-			
+
 			b.RunParallel(func(pb *testing.PB) {
 				for pb.Next() {
 					// GET과 POST 요청을 번갈아 테스트
 					method := "GET"
 					body := io.Reader(nil)
 					if pb.Next() {
-						method = "POST"
+						method = httpMethodPOST
 						body = bytes.NewReader([]byte(`{"test": "data"}`))
 					}
-					
+
 					req, err := http.NewRequest(method, "/test", body)
 					require.NoError(b, err)
-					
-					if method == "POST" {
+
+					if method == httpMethodPOST {
 						req.Header.Set("Content-Type", "application/json")
 					}
 
 					resp, err := app.Test(req, -1)
 					require.NoError(b, err)
-					
-					io.Copy(io.Discard, resp.Body)
-					resp.Body.Close()
+
+					_, _ = io.Copy(io.Discard, resp.Body)
+					_ = resp.Body.Close()
 				}
 			})
 		})
@@ -595,7 +600,7 @@ func BenchmarkCustomMiddleware(b *testing.B) {
 // BenchmarkMiddlewareMemoryUsage 미들웨어 메모리 사용량 벤치마크
 func BenchmarkMiddlewareMemoryUsage(b *testing.B) {
 	app := fiber.New(fiber.Config{DisableStartupMessage: true})
-	
+
 	// 메모리 집약적인 미들웨어들
 	app.Use(logger.New(logger.Config{
 		Format: "[${time}] ${pid} ${locals:requestid} ${status} - ${method} ${path} ${ip} ${latency} ${body}\n",
@@ -608,17 +613,17 @@ func BenchmarkMiddlewareMemoryUsage(b *testing.B) {
 		c.Locals("large_data", make([]byte, 1024)) // 1KB
 		return c.Next()
 	})
-	
+
 	// 큰 응답 데이터
 	largeResponse := strings.Repeat("Large response data for memory benchmark. ", 1000) // ~40KB
-	
+
 	app.Get("/test", func(c *fiber.Ctx) error {
 		return c.SendString(largeResponse)
 	})
 
 	b.ResetTimer()
 	b.ReportAllocs()
-	
+
 	for i := 0; i < b.N; i++ {
 		req, err := http.NewRequest("GET", "/test", nil)
 		req.Header.Set("Accept-Encoding", "gzip")
@@ -626,9 +631,9 @@ func BenchmarkMiddlewareMemoryUsage(b *testing.B) {
 
 		resp, err := app.Test(req, -1)
 		require.NoError(b, err)
-		
-		io.Copy(io.Discard, resp.Body)
-		resp.Body.Close()
+
+		_, _ = io.Copy(io.Discard, resp.Body)
+		_ = resp.Body.Close()
 	}
 }
 
@@ -639,7 +644,7 @@ func BenchmarkMiddlewareChainDepth(b *testing.B) {
 	for _, depth := range chainDepths {
 		b.Run(fmt.Sprintf("Depth-%d", depth), func(b *testing.B) {
 			app := fiber.New(fiber.Config{DisableStartupMessage: true})
-			
+
 			// 지정된 깊이만큼 미들웨어 체인 생성
 			for i := 0; i < depth; i++ {
 				app.Use(func(c *fiber.Ctx) error {
@@ -647,23 +652,23 @@ func BenchmarkMiddlewareChainDepth(b *testing.B) {
 					return c.Next()
 				})
 			}
-			
+
 			app.Get("/test", func(c *fiber.Ctx) error {
 				return c.SendString("OK")
 			})
 
 			b.ResetTimer()
 			b.ReportAllocs()
-			
+
 			for i := 0; i < b.N; i++ {
 				req, err := http.NewRequest("GET", "/test", nil)
 				require.NoError(b, err)
 
 				resp, err := app.Test(req, -1)
 				require.NoError(b, err)
-				
-				io.Copy(io.Discard, resp.Body)
-				resp.Body.Close()
+
+				_, _ = io.Copy(io.Discard, resp.Body)
+				_ = resp.Body.Close()
 			}
 		})
 	}

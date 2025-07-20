@@ -7,6 +7,11 @@ import (
 	"time"
 )
 
+// Constants for TTL collector
+const (
+	expiryReasonEarlyExpiration = "early_expiration"
+)
+
 // TTLStats TTL 통계 정보
 type TTLStats struct {
 	TotalCalculations   int64     `json:"total_calculations"`
@@ -111,7 +116,7 @@ func (c *TTLCollector) RecordTTLExpiration(packageType, expirationType string) {
 			// 최근 항목 중 해당하는 것 찾아서 만료 표시
 			if expirationType == "early" {
 				entry.IsExpired = true
-				entry.ExpiryReason = "early_expiration"
+				entry.ExpiryReason = expiryReasonEarlyExpiration
 				break
 			}
 		}
@@ -210,7 +215,7 @@ func (c *TTLCollector) calculateStats(registryType string) *TTLStats {
 		sum += int64(entry.CalculatedTTL)
 		sourceCounts[entry.Source]++
 
-		if entry.IsExpired && entry.ExpiryReason == "early_expiration" {
+		if entry.IsExpired && entry.ExpiryReason == expiryReasonEarlyExpiration {
 			earlyExpirations++
 		}
 	}
@@ -220,8 +225,8 @@ func (c *TTLCollector) calculateStats(registryType string) *TTLStats {
 	// 통계 계산
 	total := int64(len(filteredEntries))
 	average := float64(sum) / float64(total)
-	min := ttlValues[0]
-	max := ttlValues[len(ttlValues)-1]
+	minVal := ttlValues[0]
+	maxVal := ttlValues[len(ttlValues)-1]
 
 	median := calculatePercentile(ttlValues, 50)
 	p90 := calculatePercentile(ttlValues, 90)
@@ -236,8 +241,8 @@ func (c *TTLCollector) calculateStats(registryType string) *TTLStats {
 	return &TTLStats{
 		TotalCalculations:   total,
 		AverageTTL:          average,
-		MinTTL:              min,
-		MaxTTL:              max,
+		MinTTL:              minVal,
+		MaxTTL:              maxVal,
 		MedianTTL:           median,
 		P90TTL:              p90,
 		P95TTL:              p95,

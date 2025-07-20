@@ -60,7 +60,7 @@ func NewLogAlerter(config LogAlerterConfig) (*LogAlerter, error) {
 }
 
 // Send 알림 전송
-func (la *LogAlerter) Send(ctx context.Context, event *AlertEvent) error {
+func (la *LogAlerter) Send(_ context.Context, event *AlertEvent) error {
 	la.mutex.Lock()
 	defer la.mutex.Unlock()
 

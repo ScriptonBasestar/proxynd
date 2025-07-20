@@ -9,7 +9,7 @@ import (
 // ApkProxy APK 프록시 서버 정보
 type ApkProxy struct {
 	Name string `yaml:"name" validate:"required,min=1,max=100"`
-	Url  string `yaml:"url" validate:"required,url"`
+	URL  string `yaml:"url" validate:"required,url"`
 }
 
 // ApkVerificationConfig APK 서명 검증 설정

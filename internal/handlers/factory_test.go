@@ -17,7 +17,7 @@ func TestHandlerFactory(t *testing.T) {
 		Port:      "8080",
 	}
 	container := app.NewContainer(cfg)
-	defer container.Close()
+	defer func() { _ = container.Close() }()
 
 	t.Run("Factory creation", func(t *testing.T) {
 		factory := NewHandlerFactory(container)

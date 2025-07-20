@@ -16,7 +16,7 @@ func TestYAMLHelper(t *testing.T) {
 	// 테스트용 임시 디렉토리 생성
 	tempDir, err := os.MkdirTemp("", "proxynd-yaml-test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	t.Run("Write and Read YAML", func(t *testing.T) {
 		// 테스트 데이터 구조체

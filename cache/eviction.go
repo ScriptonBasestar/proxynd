@@ -21,6 +21,7 @@ type EvictionPolicy interface {
 // LRUEvictionPolicy LRU (Least Recently Used) 정책
 type LRUEvictionPolicy struct{}
 
+// ShouldEvict determines if a cache item should be evicted based on TTL and size constraints.
 func (p *LRUEvictionPolicy) ShouldEvict(currentSize, maxSize int64, item *CacheMetadata) bool {
 	// TTL 만료 확인
 	if item.TTL > 0 && time.Since(item.CreatedAt) > item.TTL {
@@ -31,6 +32,7 @@ func (p *LRUEvictionPolicy) ShouldEvict(currentSize, maxSize int64, item *CacheM
 	return currentSize > maxSize
 }
 
+// SelectEvictionCandidates selects cache items for eviction to free the required space.
 func (p *LRUEvictionPolicy) SelectEvictionCandidates(items []*CacheMetadata, requiredSpace int64) []string {
 	// 접근 시간 기준으로 정렬
 	h := &metadataHeap{items: items}
@@ -48,7 +50,11 @@ func (p *LRUEvictionPolicy) SelectEvictionCandidates(items []*CacheMetadata, req
 	return candidates
 }
 
-// CacheEvictor 캐시 제거 관리자
+// Evictor is an alias for CacheEvictor to avoid stuttering
+type Evictor = CacheEvictor
+
+// CacheEvictor manages cache eviction policies and cleanup operations.
+// Note: Named CacheEvictor for clarity despite package name repetition.
 type CacheEvictor struct {
 	backend CacheBackend
 	policy  EvictionPolicy
@@ -161,7 +167,7 @@ func (e *CacheEvictor) evictExpiredFromFileSystem(backend *FileSystemBackend) er
 }
 
 // evictExpiredFromS3 S3에서 만료 항목 제거
-func (e *CacheEvictor) evictExpiredFromS3(backend *S3Backend) error {
+func (e *CacheEvictor) evictExpiredFromS3(_ *S3Backend) error {
 	// S3 객체 목록 스캔 필요
 	// 구현 간소화를 위해 생략
 	return nil
@@ -201,21 +207,26 @@ type metadataHeap struct {
 	items []*CacheMetadata
 }
 
+// Len returns the number of items in the heap
 func (h metadataHeap) Len() int { return len(h.items) }
 
+// Less reports whether the element with index i should sort before the element with index j
 func (h metadataHeap) Less(i, j int) bool {
 	// 접근 시간이 오래된 것이 우선
 	return h.items[i].AccessedAt.Before(h.items[j].AccessedAt)
 }
 
+// Swap swaps the elements with indexes i and j
 func (h metadataHeap) Swap(i, j int) {
 	h.items[i], h.items[j] = h.items[j], h.items[i]
 }
 
+// Push pushes the element x onto the heap
 func (h *metadataHeap) Push(x interface{}) {
 	h.items = append(h.items, x.(*CacheMetadata))
 }
 
+// Pop removes and returns the minimum element from the heap
 func (h *metadataHeap) Pop() interface{} {
 	old := h.items
 	n := len(old)

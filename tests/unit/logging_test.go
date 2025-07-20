@@ -16,8 +16,15 @@ import (
 	"proxynd/middlewares"
 )
 
-func TestLogger_Basic(t *testing.T) {
+// Define context key types for tests
+type contextKey string
 
+const (
+	contextKeyRequestID contextKey = "request_id"
+	contextKeyUserID    contextKey = "user_id"
+)
+
+func TestLogger_Basic(t *testing.T) {
 	// 테스트용 로그 설정
 	config := logging.LogConfig{
 		Level:  logging.LevelDebug,
@@ -51,25 +58,25 @@ func TestLogger_Basic(t *testing.T) {
 	loggerWithField.Info("Message with single field")
 }
 
-func TestLogger_Context(t *testing.T) {
+func TestLogger_Context(_ *testing.T) {
 	// 컨텍스트 생성
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, "request_id", "test-request-123")
-	ctx = context.WithValue(ctx, "user_id", "user-456")
+	ctx = context.WithValue(ctx, contextKeyRequestID, "test-request-123")
+	ctx = context.WithValue(ctx, contextKeyUserID, "user-456")
 
 	// 컨텍스트 로거
 	logger := logging.GetLogger().WithContext(ctx)
 	logger.Info("Message with context")
 }
 
-func TestLogger_Printf(t *testing.T) {
+func TestLogger_Printf(_ *testing.T) {
 	logger := logging.GetLogger()
 
 	// Printf 호환성 테스트
 	logger.Printf("Test message: %s, number: %d", "hello", 42)
 }
 
-func TestLogger_Migration(t *testing.T) {
+func TestLogger_Migration(_ *testing.T) {
 	// 레거시 로거 생성
 	legacy := logging.NewLegacyLogger("test-component")
 
@@ -81,18 +88,18 @@ func TestLogger_Migration(t *testing.T) {
 
 func TestLogger_EnvConfig(t *testing.T) {
 	// 환경 변수 설정
-	os.Setenv("LOG_LEVEL", "debug")
-	os.Setenv("LOG_FORMAT", "json")
-	os.Setenv("LOG_OUTPUT", "stdout")
-	os.Setenv("ENVIRONMENT", "test")
-	os.Setenv("VERSION", "1.0.0")
+	_ = os.Setenv("LOG_LEVEL", "debug")
+	_ = os.Setenv("LOG_FORMAT", "json")
+	_ = os.Setenv("LOG_OUTPUT", "stdout")
+	_ = os.Setenv("ENVIRONMENT", "test")
+	_ = os.Setenv("VERSION", "1.0.0")
 
 	defer func() {
-		os.Unsetenv("LOG_LEVEL")
-		os.Unsetenv("LOG_FORMAT")
-		os.Unsetenv("LOG_OUTPUT")
-		os.Unsetenv("ENVIRONMENT")
-		os.Unsetenv("VERSION")
+		_ = os.Unsetenv("LOG_LEVEL")
+		_ = os.Unsetenv("LOG_FORMAT")
+		_ = os.Unsetenv("LOG_OUTPUT")
+		_ = os.Unsetenv("ENVIRONMENT")
+		_ = os.Unsetenv("VERSION")
 	}()
 
 	// 환경 변수에서 설정 로드
@@ -128,7 +135,7 @@ func TestLoggingMiddleware(t *testing.T) {
 		})
 	})
 
-	app.Get("/error", func(c *fiber.Ctx) error {
+	app.Get("/error", func(_ *fiber.Ctx) error {
 		return fiber.NewError(500, "Test error")
 	})
 
@@ -150,6 +157,7 @@ func TestLoggingMiddleware(t *testing.T) {
 
 			resp, err := app.Test(req)
 			assert.Equal(t, nil, err)
+			defer func() { _ = resp.Body.Close() }()
 			assert.Equal(t, tt.expectedStatus, resp.StatusCode)
 		})
 	}
@@ -183,6 +191,7 @@ func TestStructuredAccessLog(t *testing.T) {
 
 	resp, err := app.Test(req)
 	assert.Equal(t, nil, err)
+	defer func() { _ = resp.Body.Close() }()
 	assert.Equal(t, 200, resp.StatusCode)
 }
 
@@ -195,7 +204,7 @@ func TestRecoveryLogger(t *testing.T) {
 	app.Use(logging.RecoveryLogger())
 
 	// 패닉을 발생시키는 핸들러
-	app.Get("/panic", func(c *fiber.Ctx) error {
+	app.Get("/panic", func(_ *fiber.Ctx) error {
 		panic("test panic")
 	})
 
@@ -204,6 +213,7 @@ func TestRecoveryLogger(t *testing.T) {
 	resp, err := app.Test(req, -1)
 
 	assert.Equal(t, nil, err)
+	defer func() { _ = resp.Body.Close() }()
 	assert.Equal(t, 500, resp.StatusCode)
 
 	// 응답 본문 확인
@@ -211,7 +221,7 @@ func TestRecoveryLogger(t *testing.T) {
 	assert.Equal(t, true, strings.Contains(string(body), "Internal Server Error"))
 }
 
-func TestLoggerHelpers(t *testing.T) {
+func TestLoggerHelpers(_ *testing.T) {
 	// 편의 함수 테스트
 	logging.Debug("Debug helper", logging.F("test", true))
 	logging.Info("Info helper", logging.F("count", 10))

@@ -15,13 +15,13 @@ type MockAlertManager struct {
 	sentAlerts []*alerts.AlertEvent
 }
 
-func (m *MockAlertManager) RegisterAlerter(alerter alerts.Alerter) {}
-func (m *MockAlertManager) UnregisterAlerter(name string)          {}
-func (m *MockAlertManager) Send(ctx context.Context, event *alerts.AlertEvent) error {
+func (m *MockAlertManager) RegisterAlerter(_ alerts.Alerter) {}
+func (m *MockAlertManager) UnregisterAlerter(_ string)       {}
+func (m *MockAlertManager) Send(_ context.Context, event *alerts.AlertEvent) error {
 	m.sentAlerts = append(m.sentAlerts, event)
 	return nil
 }
-func (m *MockAlertManager) SendToChannel(ctx context.Context, channelName string, event *alerts.AlertEvent) error {
+func (m *MockAlertManager) SendToChannel(_ context.Context, _ string, event *alerts.AlertEvent) error {
 	m.sentAlerts = append(m.sentAlerts, event)
 	return nil
 }
@@ -52,7 +52,8 @@ func TestPackageVerifier_NPM(t *testing.T) {
 	// 테스트 케이스 1: 올바른 integrity
 	t.Run("Valid NPM Package", func(t *testing.T) {
 		metadata := map[string]string{
-			"npm-integrity": "sha512-" + "ee26b0dd4af7e749aa1a8ee3c10ae9923f618980772e473f8819a5d4940e0db27ac185f8a0e1b5cc7821e8f9c0a081c4b8f6263e8716cc9f7b3a5e29a5a",
+			"npm-integrity": "sha512-" + "ee26b0dd4af7e749aa1a8ee3c10ae9923f618980772e473f8819a5d4940e0db27ac" +
+				"185f8a0e1b5cc7821e8f9c0a081c4b8f6263e8716cc9f7b3a5e29a5a",
 		}
 
 		result, err := verifier.VerifyPackage(context.Background(), "npm", "test-package", testData, metadata)
@@ -165,7 +166,8 @@ func TestPackageVerifier_Docker(t *testing.T) {
 			"docker-content-digest": "sha256:abcdef1234567890",
 		}
 
-		result, err := verifier.VerifyPackage(context.Background(), "docker", "library/nginx/blobs/sha256:abcdef", testData, metadata)
+		result, err := verifier.VerifyPackage(context.Background(), "docker",
+			"library/nginx/blobs/sha256:abcdef", testData, metadata)
 
 		assert.Equal(t, nil, err)
 		// 실제 해시와 다르므로 실패해야 함
@@ -212,7 +214,8 @@ func TestPackageVerifier_Maven(t *testing.T) {
 			"sha256": "abcdef1234567890",
 		}
 
-		result, err := verifier.VerifyPackage(context.Background(), "maven", "com/example/artifact/1.0/artifact-1.0.jar", testData, metadata)
+		result, err := verifier.VerifyPackage(context.Background(), "maven",
+			"com/example/artifact/1.0/artifact-1.0.jar", testData, metadata)
 
 		assert.Equal(t, nil, err)
 		assert.Equal(t, false, result.Valid)
@@ -225,7 +228,8 @@ func TestPackageVerifier_Maven(t *testing.T) {
 			"sha1": "abcdef1234567890",
 		}
 
-		result, err := verifier.VerifyPackage(context.Background(), "maven", "com/example/artifact/1.0/artifact-1.0.jar", testData, metadata)
+		result, err := verifier.VerifyPackage(context.Background(), "maven",
+			"com/example/artifact/1.0/artifact-1.0.jar", testData, metadata)
 
 		assert.Equal(t, nil, err)
 		assert.Equal(t, false, result.Valid)

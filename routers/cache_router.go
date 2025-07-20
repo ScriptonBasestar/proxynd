@@ -14,6 +14,11 @@ import (
 	"proxynd/logging"
 )
 
+// Constants for cache router
+const (
+	confirmTrue = "true"
+)
+
 // CacheListResponse 캐시 목록 응답 구조체
 type CacheListResponse struct {
 	Items []CacheItem `json:"items"`
@@ -139,7 +144,7 @@ func getCacheList(c *fiber.Ctx) error {
 		})
 	}
 
-	globalConfig.ReadConfig()
+	_ = globalConfig.ReadConfig()
 	// storageDir := getStorageDir(globalConfig) // 추후 캐시 스캔에 사용
 
 	// 캐시 항목 스캔 (간단한 구현)
@@ -174,7 +179,7 @@ func getCacheSize(c *fiber.Ctx) error {
 		})
 	}
 
-	globalConfig.ReadConfig()
+	_ = globalConfig.ReadConfig()
 	storageDir := getStorageDir(globalConfig)
 
 	// 각 프록시 타입별 크기 계산
@@ -206,7 +211,7 @@ func getCacheSize(c *fiber.Ctx) error {
 			aptConfig := configs.AptProxyConfig{}
 			enabled = aptConfig.ConfigExists()
 			if enabled {
-				aptConfig.ReadConfig()
+				_ = aptConfig.ReadConfig()
 				configPath = "apt-proxy.yaml"
 				proxyCount = len(aptConfig.Proxies)
 			}
@@ -214,7 +219,7 @@ func getCacheSize(c *fiber.Ctx) error {
 			npmConfig := configs.NpmProxyConfig{}
 			enabled = npmConfig.ConfigExists()
 			if enabled {
-				npmConfig.ReadConfig()
+				_ = npmConfig.ReadConfig()
 				configPath = "npm-proxy.yaml"
 				proxyCount = len(npmConfig.Proxies)
 			}
@@ -222,7 +227,7 @@ func getCacheSize(c *fiber.Ctx) error {
 			mavenConfig := configs.MavenProxyConfig{}
 			enabled = mavenConfig.ConfigExists()
 			if enabled {
-				mavenConfig.ReadConfig()
+				_ = mavenConfig.ReadConfig()
 				configPath = "maven-proxy.yaml"
 				proxyCount = len(mavenConfig.Proxies)
 			}
@@ -268,7 +273,7 @@ func clearAllCache(c *fiber.Ctx) error {
 
 	// 확인 파라미터 체크
 	confirm := c.Query("confirm", "")
-	if confirm != "true" {
+	if confirm != confirmTrue {
 		return c.Status(400).JSON(fiber.Map{
 			"error": "Confirmation required. Add ?confirm=true to proceed",
 		})
@@ -283,7 +288,7 @@ func clearAllCache(c *fiber.Ctx) error {
 		})
 	}
 
-	globalConfig.ReadConfig()
+	_ = globalConfig.ReadConfig()
 	storageDir := getStorageDir(globalConfig)
 
 	// 캐시 디렉토리 정리
@@ -324,7 +329,7 @@ func clearCacheByType(c *fiber.Ctx) error {
 
 	// 확인 파라미터 체크
 	confirm := c.Query("confirm", "")
-	if confirm != "true" {
+	if confirm != confirmTrue {
 		return c.Status(400).JSON(fiber.Map{
 			"error": "Confirmation required. Add ?confirm=true to proceed",
 		})
@@ -364,7 +369,7 @@ func deleteCacheItem(c *fiber.Ctx) error {
 		})
 	}
 
-	globalConfig.ReadConfig()
+	_ = globalConfig.ReadConfig()
 	storageDir := getStorageDir(globalConfig)
 
 	// 안전한 경로 조합
@@ -413,7 +418,7 @@ func getCacheStats(c *fiber.Ctx) error {
 }
 
 // calculateDirectorySize 디렉토리 크기 계산 (헬퍼 함수)
-func calculateDirectorySize(dirPath string) (int64, int64) {
+func calculateDirectorySize(_ string) (int64, int64) {
 	// 실제 구현에서는 filepath.Walk 사용
 	// 여기서는 간단한 구현
 	return 0, 0
@@ -443,7 +448,7 @@ func getTTLPolicy(c *fiber.Ctx) error {
 		})
 	}
 
-	globalConfig.ReadConfig()
+	_ = globalConfig.ReadConfig()
 	cache := globalConfig.Cache
 
 	// 설정되지 않은 값들을 기본값으로 설정
@@ -512,7 +517,7 @@ func getTTLPolicy(c *fiber.Ctx) error {
 		logging.F("stale_while_revalidate", cache.StaleWhileRevalidate))
 
 	// examples 쿼리 파라미터가 있으면 계산 예제도 포함
-	if c.Query("examples") == "true" {
+	if c.Query("examples") == confirmTrue {
 		return c.JSON(fiber.Map{
 			"policy":   response,
 			"examples": examples,

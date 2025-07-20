@@ -59,7 +59,7 @@ func SecurityMiddleware(config SecurityConfig) fiber.Handler {
 				return c.Status(fiber.StatusBadRequest).SendString("Hash verification failed")
 			}
 			// 해시 불일치 로그 기록
-			_, _ = os.Stderr.WriteString(fmt.Sprintf("Hash mismatch: expected=%s, calculated=%s\n", expectedHash, bodyHash))
+			_, _ = fmt.Fprintf(os.Stderr, "Hash mismatch: expected=%s, calculated=%s\n", expectedHash, bodyHash)
 		}
 
 		// 검증된 해시를 컨텍스트에 저장

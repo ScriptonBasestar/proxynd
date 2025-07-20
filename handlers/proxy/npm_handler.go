@@ -33,9 +33,9 @@ func NpmProxy(c *fiber.Ctx) error {
 	// 설정 읽기
 	storageDir := helpers.GetStorageDir()
 	globalConfig := configs.GlobalConfig{}
-	globalConfig.ReadConfig()
+	_ = globalConfig.ReadConfig()
 	config := configs.NpmProxyConfig{}
-	config.ReadConfig()
+	_ = config.ReadConfig()
 
 	// 미들웨어에서 전달된 캐시 정보 확인
 	cacheHit, _ := c.Locals("cache_hit").(bool)
@@ -67,7 +67,7 @@ func NpmProxy(c *fiber.Ctx) error {
 	// 캐시가 히트하지 않았을 때만 다운로드
 	if !cacheHit {
 		dirpath := filepath.Dir(filefullpath)
-		os.MkdirAll(dirpath, 0766)
+		_ = os.MkdirAll(dirpath, 0766)
 
 		// HTTP 클라이언트 생성 (프록시 최적화 설정)
 		proxyClient := httpclient.NewProxyClient()
@@ -93,7 +93,7 @@ func NpmProxy(c *fiber.Ctx) error {
 				log.Printf("Error fetching from proxy %s: %v", server.Name, err)
 				continue
 			}
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 
 			if resp.StatusCode == http.StatusOK {
 				bytes, _ := io.ReadAll(resp.Body)
@@ -162,7 +162,7 @@ func isNpmMetadataRequest(path string) bool {
 }
 
 // rewriteNpmMetadata NPM 메타데이터의 URL을 프록시 서버로 재작성
-func rewriteNpmMetadata(data []byte, baseURL, requestPath string) []byte {
+func rewriteNpmMetadata(data []byte, baseURL, _ string) []byte {
 	var metadata map[string]interface{}
 	if err := json.Unmarshal(data, &metadata); err != nil {
 		return data
@@ -207,12 +207,12 @@ func getNpmContentType(filename, path string) string {
 	// 패키지 파일
 	switch {
 	case strings.HasSuffix(filename, ".tgz"):
-		return "application/x-gzip"
+		return mimeApplicationXGzip
 	case strings.HasSuffix(filename, ".tar.gz"):
-		return "application/x-gzip"
+		return mimeApplicationXGzip
 	case strings.HasSuffix(filename, ".json"):
 		return "application/json"
 	default:
-		return "application/octet-stream"
+		return mimeApplicationOctetStream
 	}
 }

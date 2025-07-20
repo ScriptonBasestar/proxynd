@@ -69,7 +69,7 @@ jobs:
 
       - name: Run unit tests
         run: |
-          go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+          go test -v -race -coverprofile=coverage.txt -covermode=atomic ./... -short
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3

@@ -13,15 +13,15 @@ func TestAPTHandlerV2_Simple(t *testing.T) {
 	originalConfigDir := os.Getenv("CONFIG_DIR")
 	defer func() {
 		if originalConfigDir != "" {
-			os.Setenv("CONFIG_DIR", originalConfigDir)
+			_ = os.Setenv("CONFIG_DIR", originalConfigDir)
 		} else {
-			os.Unsetenv("CONFIG_DIR")
+			_ = os.Unsetenv("CONFIG_DIR")
 		}
 	}()
 
 	// 임시 디렉토리 설정
 	tempDir := t.TempDir()
-	os.Setenv("CONFIG_DIR", tempDir)
+	_ = os.Setenv("CONFIG_DIR", tempDir)
 
 	// 기본 테스트
 	t.Run("Type returns apt", func(t *testing.T) {

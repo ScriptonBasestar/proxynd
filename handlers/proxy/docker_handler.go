@@ -31,7 +31,7 @@ func DockerProxy(c *fiber.Ctx) error {
 	// 설정 읽기
 	storageDir := helpers.GetStorageDir()
 	config := configs.DockerProxyConfig{}
-	config.ReadConfig()
+	_ = config.ReadConfig()
 
 	// 미들웨어에서 전달된 캐시 정보 확인
 	cacheHit, _ := c.Locals("cache_hit").(bool)
@@ -61,7 +61,7 @@ func DockerProxy(c *fiber.Ctx) error {
 	// 캐시가 히트하지 않았을 때만 다운로드
 	if !cacheHit {
 		dirpath := filepath.Dir(filefullpath)
-		os.MkdirAll(dirpath, 0766)
+		_ = os.MkdirAll(dirpath, 0766)
 
 		// Docker 레지스트리에서 데이터 가져오기
 		var responseContent []byte
@@ -103,27 +103,27 @@ func DockerProxy(c *fiber.Ctx) error {
 				err = os.WriteFile(filefullpath, bytes, 0766)
 				if err != nil {
 					log.Printf("Error writing file: %v", err)
-					resp.Body.Close()
+					_ = resp.Body.Close()
 					return c.Status(fiber.StatusInternalServerError).SendString("Error writing file")
 				}
 
 				// 헤더 정보도 저장 (매니페스트의 경우)
 				if isManifest {
-					saveDockerHeaders(filefullpath+".headers", headers)
+					_ = saveDockerHeaders(filefullpath+".headers", headers)
 				}
 
 				responseContent = bytes
-				resp.Body.Close()
+				_ = resp.Body.Close()
 				log.Printf("Successfully fetched from %s\n", server.Name)
 				break
 			} else if resp.StatusCode == http.StatusUnauthorized {
 				// 인증 챌린지 반환
 				copyResponseHeaders(resp.Header, c)
-				resp.Body.Close()
+				_ = resp.Body.Close()
 				return c.Status(resp.StatusCode).Send(nil)
 			}
 
-			resp.Body.Close()
+			_ = resp.Body.Close()
 		}
 
 		if responseContent == nil {

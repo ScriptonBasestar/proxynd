@@ -155,7 +155,7 @@ func (s *MavenService) fetchFromUpstream(ctx context.Context, req ProxyRequest) 
 
 		// Close the body if not successful
 		if response.Body != nil {
-			response.Body.Close()
+			_ = response.Body.Close()
 		}
 	}
 

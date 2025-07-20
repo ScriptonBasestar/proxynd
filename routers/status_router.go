@@ -186,9 +186,9 @@ func getServerStatus(c *fiber.Ctx) error {
 	runtime.ReadMemStats(&m)
 
 	// 헬스 서비스 상태 (있는 경우)
-	var overallStatus string = "healthy"
-	var checks map[string]interface{} = nil
-	var uptime string = "0s"
+	var overallStatus = statusHealthy
+	var checks map[string]interface{}
+	uptime := "0s"
 
 	if healthService != nil {
 		status, healthChecks := healthService.GetStatus()
@@ -196,9 +196,9 @@ func getServerStatus(c *fiber.Ctx) error {
 		checks = make(map[string]interface{})
 		for name, check := range healthChecks {
 			checks[name] = map[string]interface{}{
-				"status":  string(check.Status),
-				"message": check.Message,
-				"checked": check.LastChecked,
+				fieldStatus: string(check.Status),
+				"message":   check.Message,
+				"checked":   check.LastChecked,
 			}
 		}
 		uptime = formatUptime(healthService.GetUptime())
@@ -258,9 +258,9 @@ func getServerStatus(c *fiber.Ctx) error {
 func getHealthCheck(c *fiber.Ctx) error {
 	logger := logging.GetLogger()
 
-	var status health.Status = health.StatusHealthy
-	var healthChecks map[string]*health.CheckResult = make(map[string]*health.CheckResult)
-	var uptime string = "0s"
+	status := health.StatusHealthy
+	healthChecks := make(map[string]*health.CheckResult)
+	uptime := "0s"
 
 	if healthService != nil {
 		status, healthChecks = healthService.GetStatus()
@@ -382,7 +382,7 @@ func getMetrics(c *fiber.Ctx) error {
 
 	// 헬스 메트릭
 	healthMetrics := HealthMetrics{
-		OverallStatus:   "healthy",
+		OverallStatus:   statusHealthy,
 		HealthyServices: 0,
 		TotalServices:   0,
 		HealthScore:     100.0,
@@ -426,13 +426,13 @@ func getDependencies(c *fiber.Ctx) error {
 		{
 			Name:    "File System",
 			Type:    "storage",
-			Status:  "healthy",
+			Status:  statusHealthy,
 			Latency: "1ms",
 		},
 		{
 			Name:    "Cache Backend",
 			Type:    "cache",
-			Status:  "healthy",
+			Status:  statusHealthy,
 			Latency: "2ms",
 		},
 	}
@@ -441,9 +441,9 @@ func getDependencies(c *fiber.Ctx) error {
 
 	return c.JSON(fiber.Map{
 		"dependencies": dependencies,
-		"timestamp":    time.Now(),
+		fieldTimestamp: time.Now(),
 		"total":        len(dependencies),
-		"healthy":      len(dependencies), // 간단한 구현
+		statusHealthy:  len(dependencies), // 간단한 구현
 	})
 }
 
@@ -455,14 +455,14 @@ func getRealTimeStats(c *fiber.Ctx) error {
 	runtime.ReadMemStats(&m)
 
 	stats := fiber.Map{
-		"timestamp":   time.Now(),
-		"goroutines":  runtime.NumGoroutine(),
-		"memory_mb":   float64(m.Alloc) / 1024 / 1024,
-		"gc_cycles":   m.NumGC,
-		"cpu_count":   runtime.NumCPU(),
-		"requests":    0, // 실제로는 메트릭에서 가져와야 함
-		"errors":      0,
-		"connections": runtime.NumGoroutine() - 10,
+		fieldTimestamp: time.Now(),
+		"goroutines":   runtime.NumGoroutine(),
+		"memory_mb":    float64(m.Alloc) / 1024 / 1024,
+		"gc_cycles":    m.NumGC,
+		"cpu_count":    runtime.NumCPU(),
+		"requests":     0, // 실제로는 메트릭에서 가져와야 함
+		"errors":       0,
+		"connections":  runtime.NumGoroutine() - 10,
 	}
 
 	logger.Info("Real-time stats requested")
@@ -498,7 +498,7 @@ func getPID() int {
 	return 1
 }
 
-func getEnv(key string) string {
+func getEnv(_ string) string {
 	// 환경 변수 가져오기 (helpers 패키지 사용할 수 있음)
 	return ""
 }

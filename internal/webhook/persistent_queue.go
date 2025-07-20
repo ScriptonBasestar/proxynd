@@ -36,7 +36,8 @@ type FailedWebhookItem struct {
 }
 
 // NewPersistentFailureQueue 새로운 영속성 실패 큐 생성
-func NewPersistentFailureQueue(storageDir string, maxRetries int, retryTTL time.Duration) (*PersistentFailureQueue, error) {
+func NewPersistentFailureQueue(storageDir string, maxRetries int,
+	retryTTL time.Duration) (*PersistentFailureQueue, error) {
 	logger := logging.GetLogger()
 
 	// 저장 디렉토리 생성
@@ -54,7 +55,7 @@ func NewPersistentFailureQueue(storageDir string, maxRetries int, retryTTL time.
 
 	// 기존 실패 항목 로드
 	if err := queue.loadFromDisk(); err != nil {
-		logger.Error("기존 실패 항목 로드 실패", logging.F("error", err))
+		logger.Error("기존 실패 항목 로드 실패", logging.F(fieldError, err))
 	}
 
 	return queue, nil
@@ -84,16 +85,16 @@ func (pq *PersistentFailureQueue) AddFailedEvent(event *alerts.AlertEvent, endpo
 	// 디스크에 저장
 	if err := pq.saveToDisk(item); err != nil {
 		pq.logger.Error("실패 항목 저장 오류",
-			logging.F("item_id", itemID),
-			logging.F("error", err))
+			logging.F(fieldItemID, itemID),
+			logging.F(fieldError, err))
 		return err
 	}
 
 	pq.logger.Info("실패한 웹훅 이벤트 저장됨",
-		logging.F("item_id", itemID),
+		logging.F(fieldItemID, itemID),
 		logging.F("event_id", event.ID),
 		logging.F("endpoint", endpoint),
-		logging.F("next_retry", item.NextRetry))
+		logging.F(fieldNextRetry, item.NextRetry))
 
 	return nil
 }
@@ -131,8 +132,8 @@ func (pq *PersistentFailureQueue) UpdateRetryAttempt(itemID string, success bool
 		delete(pq.items, itemID)
 		pq.removeFromDisk(itemID)
 		pq.logger.Info("웹훅 재시도 성공, 항목 제거됨",
-			logging.F("item_id", itemID),
-			logging.F("attempts", item.Attempts))
+			logging.F(fieldItemID, itemID),
+			logging.F(fieldAttempts, item.Attempts))
 	} else {
 		// 실패 시 재시도 정보 업데이트
 		item.Attempts++
@@ -152,22 +153,22 @@ func (pq *PersistentFailureQueue) UpdateRetryAttempt(itemID string, success bool
 		// 최대 재시도 횟수 초과 시 만료 처리
 		if item.Attempts >= item.MaxRetries {
 			pq.logger.Warn("웹훅 최대 재시도 횟수 초과",
-				logging.F("item_id", itemID),
-				logging.F("attempts", item.Attempts),
+				logging.F(fieldItemID, itemID),
+				logging.F(fieldAttempts, item.Attempts),
 				logging.F("max_retries", item.MaxRetries))
 			// 항목은 유지하되 재시도하지 않음 (수동 검토를 위해)
 		} else {
 			pq.logger.Info("웹훅 재시도 실패, 다음 시도 예약됨",
-				logging.F("item_id", itemID),
-				logging.F("attempts", item.Attempts),
-				logging.F("next_retry", item.NextRetry))
+				logging.F(fieldItemID, itemID),
+				logging.F(fieldAttempts, item.Attempts),
+				logging.F(fieldNextRetry, item.NextRetry))
 		}
 
 		// 디스크에 업데이트
 		if err := pq.saveToDisk(item); err != nil {
 			pq.logger.Error("실패 항목 업데이트 저장 오류",
-				logging.F("item_id", itemID),
-				logging.F("error", err))
+				logging.F(fieldItemID, itemID),
+				logging.F(fieldError, err))
 			return err
 		}
 	}
@@ -202,7 +203,7 @@ func (pq *PersistentFailureQueue) RemoveExpiredItems() int {
 			pq.removeFromDisk(id)
 			expiredCount++
 			pq.logger.Info("만료된 실패 항목 제거됨",
-				logging.F("item_id", id),
+				logging.F(fieldItemID, id),
 				logging.F("age", now.Sub(item.CreatedAt)))
 		}
 	}
@@ -257,16 +258,16 @@ func (pq *PersistentFailureQueue) loadFromDisk() error {
 		data, err := os.ReadFile(file)
 		if err != nil {
 			pq.logger.Error("실패 항목 파일 읽기 오류",
-				logging.F("file", file),
-				logging.F("error", err))
+				logging.F(fieldFile, file),
+				logging.F(fieldError, err))
 			continue
 		}
 
 		var item FailedWebhookItem
 		if err := json.Unmarshal(data, &item); err != nil {
 			pq.logger.Error("실패 항목 JSON 파싱 오류",
-				logging.F("file", file),
-				logging.F("error", err))
+				logging.F(fieldFile, file),
+				logging.F(fieldError, err))
 			continue
 		}
 
@@ -298,8 +299,8 @@ func (pq *PersistentFailureQueue) removeFromDisk(itemID string) {
 	filePath := filepath.Join(pq.storageDir, fmt.Sprintf("%s.json", itemID))
 	if err := os.Remove(filePath); err != nil && !os.IsNotExist(err) {
 		pq.logger.Error("실패 항목 파일 삭제 오류",
-			logging.F("file", filePath),
-			logging.F("error", err))
+			logging.F(fieldFile, filePath),
+			logging.F(fieldError, err))
 	}
 }
 

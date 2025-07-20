@@ -38,7 +38,7 @@ func (m *Manager) Get(key string) ([]byte, bool) {
 		m.stats.Misses++
 		return nil, false
 	}
-	defer reader.Close()
+	defer func() { _ = reader.Close() }()
 
 	// 읽기 성공
 	m.stats.Hits++
@@ -77,6 +77,7 @@ func (m *Manager) Put(key string, data []byte, ttl time.Duration) error {
 		if err := m.evictor.evictByPolicy(requiredSpace); err != nil {
 			// 정리 실패 시 로그 출력하고 계속 진행
 			// 로그는 단순화
+			_ = err // 에러를 명시적으로 무시
 		}
 	}
 
@@ -143,6 +144,7 @@ type bytesReader struct {
 	pos  int
 }
 
+// Read reads data into p from the internal byte slice
 func (r *bytesReader) Read(p []byte) (n int, err error) {
 	if r.pos >= len(r.data) {
 		return 0, io.EOF

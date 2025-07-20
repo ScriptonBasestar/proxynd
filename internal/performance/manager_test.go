@@ -11,8 +11,22 @@ import (
 	"proxynd/logging"
 )
 
+// testLogger is a simple logger implementation for testing
+type testLogger struct{}
+
+func (l *testLogger) Debug(_ string, _ ...logging.Field)               {}
+func (l *testLogger) Info(_ string, _ ...logging.Field)                {}
+func (l *testLogger) Warn(_ string, _ ...logging.Field)                {}
+func (l *testLogger) Error(_ string, _ ...logging.Field)               {}
+func (l *testLogger) Fatal(_ string, _ ...logging.Field)               {}
+func (l *testLogger) Panic(_ string, _ ...logging.Field)               {}
+func (l *testLogger) WithContext(_ context.Context) logging.Logger     { return l }
+func (l *testLogger) WithFields(_ ...logging.Field) logging.Logger     { return l }
+func (l *testLogger) WithField(_ string, _ interface{}) logging.Logger { return l }
+func (l *testLogger) Printf(_ string, _ ...interface{})                {}
+
 func TestNewManager(t *testing.T) {
-	logger := logging.NewTestLogger()
+	logger := &testLogger{}
 	config := DefaultManagerConfig()
 
 	manager, err := NewManager(logger, config)
@@ -22,7 +36,7 @@ func TestNewManager(t *testing.T) {
 }
 
 func TestManagerStartStop(t *testing.T) {
-	logger := logging.NewTestLogger()
+	logger := &testLogger{}
 	config := DefaultManagerConfig()
 
 	manager, err := NewManager(logger, config)
@@ -50,7 +64,7 @@ func TestManagerStartStop(t *testing.T) {
 }
 
 func TestManagerComponents(t *testing.T) {
-	logger := logging.NewTestLogger()
+	logger := &testLogger{}
 	config := DefaultManagerConfig()
 
 	manager, err := NewManager(logger, config)
@@ -65,7 +79,7 @@ func TestManagerComponents(t *testing.T) {
 }
 
 func TestManagerMetrics(t *testing.T) {
-	logger := logging.NewTestLogger()
+	logger := &testLogger{}
 	config := DefaultManagerConfig()
 
 	manager, err := NewManager(logger, config)
@@ -78,7 +92,7 @@ func TestManagerMetrics(t *testing.T) {
 }
 
 func TestManagerHealthStatus(t *testing.T) {
-	logger := logging.NewTestLogger()
+	logger := &testLogger{}
 	config := DefaultManagerConfig()
 
 	manager, err := NewManager(logger, config)
@@ -87,7 +101,7 @@ func TestManagerHealthStatus(t *testing.T) {
 	ctx := context.Background()
 	err = manager.Start(ctx)
 	require.NoError(t, err)
-	defer manager.Stop()
+	defer func() { _ = manager.Stop() }()
 
 	// Test health status
 	health := manager.GetHealthStatus()
@@ -131,7 +145,7 @@ func TestDefaultConfig(t *testing.T) {
 }
 
 func TestManagerGlobalOptimization(t *testing.T) {
-	logger := logging.NewTestLogger()
+	logger := &testLogger{}
 	config := DefaultManagerConfig()
 
 	// Reduce optimization interval for testing
@@ -145,7 +159,7 @@ func TestManagerGlobalOptimization(t *testing.T) {
 
 	err = manager.Start(ctx)
 	require.NoError(t, err)
-	defer manager.Stop()
+	defer func() { _ = manager.Stop() }()
 
 	// Wait for some optimization cycles
 	time.Sleep(500 * time.Millisecond)
@@ -156,7 +170,7 @@ func TestManagerGlobalOptimization(t *testing.T) {
 }
 
 func TestManagerComponentIntegration(t *testing.T) {
-	logger := logging.NewTestLogger()
+	logger := &testLogger{}
 	config := DefaultManagerConfig()
 
 	manager, err := NewManager(logger, config)
@@ -165,7 +179,7 @@ func TestManagerComponentIntegration(t *testing.T) {
 	ctx := context.Background()
 	err = manager.Start(ctx)
 	require.NoError(t, err)
-	defer manager.Stop()
+	defer func() { _ = manager.Stop() }()
 
 	// Test cache optimizer integration
 	cacheOptimizer := manager.GetCacheOptimizer()
@@ -189,7 +203,7 @@ func TestManagerComponentIntegration(t *testing.T) {
 }
 
 func BenchmarkManagerMetrics(b *testing.B) {
-	logger := logging.NewTestLogger()
+	logger := &testLogger{}
 	config := DefaultManagerConfig()
 
 	manager, err := NewManager(logger, config)
@@ -204,7 +218,7 @@ func BenchmarkManagerMetrics(b *testing.B) {
 }
 
 func BenchmarkManagerHealthStatus(b *testing.B) {
-	logger := logging.NewTestLogger()
+	logger := &testLogger{}
 	config := DefaultManagerConfig()
 
 	manager, err := NewManager(logger, config)
@@ -213,7 +227,7 @@ func BenchmarkManagerHealthStatus(b *testing.B) {
 	ctx := context.Background()
 	err = manager.Start(ctx)
 	require.NoError(b, err)
-	defer manager.Stop()
+	defer func() { _ = manager.Stop() }()
 
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {

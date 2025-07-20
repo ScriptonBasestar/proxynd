@@ -1,3 +1,4 @@
+// Package maven provides Maven domain logic and models
 package maven
 
 import (
@@ -10,6 +11,12 @@ import (
 	"proxynd/internal/domain/common"
 )
 
+// Maven-specific constants
+const (
+	// ContentTypeJavaArchive is a const that content type java archive
+	ContentTypeJavaArchive = "application/java-archive"
+)
+
 // Domain implements Maven-specific proxy domain logic
 type Domain struct {
 	artifactPattern *regexp.Regexp
@@ -19,7 +26,7 @@ type Domain struct {
 // NewDomain creates a new Maven domain instance
 func NewDomain() *Domain {
 	return &Domain{
-		// Pattern for Maven artifacts: groupId/artifactId/version/artifactId-version[-classifier].extension
+		// Pattern for Maven artifacts: groupID/artifactID/version/artifactID-version[-classifier].extension
 		artifactPattern: regexp.MustCompile(`^(.+)/([^/]+)/([^/]+)/([^/]+)$`),
 		// Pattern for Maven metadata files
 		metadataPattern: regexp.MustCompile(`^(.+)/maven-metadata\.xml(\.sha1|\.md5)?$`),
@@ -27,7 +34,7 @@ func NewDomain() *Domain {
 }
 
 // ParseRequest parses and validates a Maven proxy request
-func (d *Domain) ParseRequest(ctx context.Context, req *common.ProxyRequest) error {
+func (d *Domain) ParseRequest(_ context.Context, req *common.ProxyRequest) error {
 	if req.Method != "GET" && req.Method != "HEAD" && req.Method != "PUT" {
 		return fmt.Errorf("unsupported method for Maven proxy: %s", req.Method)
 	}
@@ -93,22 +100,22 @@ func (d *Domain) ExtractMetadata(requestPath string) (*common.PackageMetadata, e
 	}
 
 	groupPath := matches[1]
-	artifactId := matches[2]
+	artifactID := matches[2]
 	version := matches[3]
 	// filename := matches[4] // Currently unused, but available if needed
 
-	// Convert group path to groupId (replace / with .)
-	groupId := strings.ReplaceAll(groupPath, "/", ".")
+	// Convert group path to groupID (replace / with .)
+	groupID := strings.ReplaceAll(groupPath, "/", ".")
 
 	return &common.PackageMetadata{
-		Name:    fmt.Sprintf("%s:%s", groupId, artifactId),
+		Name:    fmt.Sprintf("%s:%s", groupID, artifactID),
 		Version: version,
 		// Additional metadata would be extracted from POM file
 	}, nil
 }
 
 // TransformResponse transforms the upstream response if needed
-func (d *Domain) TransformResponse(ctx context.Context, resp *common.ProxyResponse) error {
+func (d *Domain) TransformResponse(_ context.Context, _ *common.ProxyResponse) error {
 	// Maven responses typically don't need transformation
 	// This could be extended to modify repository URLs in metadata files
 	return nil
@@ -122,11 +129,11 @@ func (d *Domain) GetContentType(filename string) string {
 	case ".pom", ".xml":
 		return "application/xml"
 	case ".jar":
-		return "application/java-archive"
+		return ContentTypeJavaArchive
 	case ".war":
-		return "application/java-archive"
+		return ContentTypeJavaArchive
 	case ".ear":
-		return "application/java-archive"
+		return ContentTypeJavaArchive
 	case ".sha1", ".md5":
 		return "text/plain"
 	case ".asc":
@@ -167,19 +174,19 @@ func (d *Domain) ParseArtifactPath(path string) (*ArtifactInfo, error) {
 	}
 
 	groupPath := matches[1]
-	artifactId := matches[2]
+	artifactID := matches[2]
 	version := matches[3]
 	filename := matches[4]
 
-	// Convert group path to groupId
-	groupId := strings.ReplaceAll(groupPath, "/", ".")
+	// Convert group path to groupID
+	groupID := strings.ReplaceAll(groupPath, "/", ".")
 
 	// Extract classifier and extension from filename
-	classifier, extension := d.parseFilename(filename, artifactId, version)
+	classifier, extension := d.parseFilename(filename, artifactID, version)
 
 	return &ArtifactInfo{
-		GroupId:    groupId,
-		ArtifactId: artifactId,
+		GroupID:    groupID,
+		ArtifactID: artifactID,
 		Version:    version,
 		Classifier: classifier,
 		Extension:  extension,
@@ -188,9 +195,9 @@ func (d *Domain) ParseArtifactPath(path string) (*ArtifactInfo, error) {
 }
 
 // parseFilename extracts classifier and extension from a Maven filename
-func (d *Domain) parseFilename(filename, artifactId, version string) (classifier, extension string) {
-	// Expected format: artifactId-version[-classifier].extension
-	prefix := fmt.Sprintf("%s-%s", artifactId, version)
+func (d *Domain) parseFilename(filename, artifactID, version string) (classifier, extension string) {
+	// Expected format: artifactID-version[-classifier].extension
+	prefix := fmt.Sprintf("%s-%s", artifactID, version)
 
 	if !strings.HasPrefix(filename, prefix) {
 		// Unexpected format, just return extension
@@ -223,8 +230,8 @@ func (d *Domain) parseFilename(filename, artifactId, version string) (classifier
 
 // ArtifactInfo represents parsed Maven artifact information
 type ArtifactInfo struct {
-	GroupId    string
-	ArtifactId string
+	GroupID    string
+	ArtifactID string
 	Version    string
 	Classifier string
 	Extension  string

@@ -1,3 +1,4 @@
+// Package dtos provides data transfer objects for API communication
 package dtos
 
 import (
@@ -5,8 +6,8 @@ import (
 	"net/http"
 )
 
-// ApiResponse API 표준 응답 구조체
-type ApiResponse struct {
+// APIResponse API 표준 응답 구조체
+type APIResponse struct {
 	Success bool        `json:"success"`
 	Message string      `json:"message"`
 	Data    interface{} `json:"data,omitempty"`

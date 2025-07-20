@@ -124,9 +124,9 @@ func testAllProxies(c *fiber.Ctx) error {
 
 		// 요약 통계 업데이트
 		switch result.Status {
-		case "passed":
+		case statusPassed:
 			summary.Passed++
-		case "failed":
+		case statusFailed:
 			summary.Failed++
 		case "skipped":
 			summary.Skipped++
@@ -141,8 +141,8 @@ func testAllProxies(c *fiber.Ctx) error {
 
 	logger.Info("All proxy tests completed",
 		logging.F("total", summary.Total),
-		logging.F("passed", summary.Passed),
-		logging.F("failed", summary.Failed))
+		logging.F(statusPassed, summary.Passed),
+		logging.F(statusFailed, summary.Failed))
 
 	return c.JSON(response)
 }
@@ -209,7 +209,7 @@ func performProxyTest(proxyType string, req ProxyTestRequest) ProxyTestResult {
 	case "apk":
 		result = testApkProxy(req)
 	default:
-		result.Status = "failed"
+		result.Status = statusFailed
 		result.Message = fmt.Sprintf("지원하지 않는 프록시 타입: %s", proxyType)
 	}
 
@@ -236,20 +236,20 @@ func checkConnectivity(proxyType string) ProxyTestResult {
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Get(proxyURL)
 	if err != nil {
-		result.Status = "failed"
+		result.Status = statusFailed
 		result.Message = fmt.Sprintf("연결 실패: %v", err)
 		return result
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	result.StatusCode = resp.StatusCode
 	result.Details["headers"] = resp.Header
 
 	if resp.StatusCode < 500 {
-		result.Status = "passed"
+		result.Status = statusPassed
 		result.Message = "연결 성공"
 	} else {
-		result.Status = "failed"
+		result.Status = statusFailed
 		result.Message = fmt.Sprintf("서버 오류: HTTP %d", resp.StatusCode)
 	}
 
@@ -259,7 +259,7 @@ func checkConnectivity(proxyType string) ProxyTestResult {
 // 프록시별 테스트 함수들
 
 func testAptProxy(req ProxyTestRequest) ProxyTestResult {
-	result := ProxyTestResult{Status: "passed", Message: "APT 프록시 테스트 성공"}
+	result := ProxyTestResult{Status: statusPassed, Message: "APT 프록시 테스트 성공"}
 
 	// 실제 APT 패키지 인덱스 파일 요청 테스트
 	testURL := "/proxy/apt/dists/jammy/Release"
@@ -267,11 +267,11 @@ func testAptProxy(req ProxyTestRequest) ProxyTestResult {
 		testURL = req.Target
 	}
 
-	statusCode, err := makeTestRequest("GET", testURL, req.Timeout)
+	statusCode, err := makeTestRequest(methodGET, testURL, req.Timeout)
 	result.StatusCode = statusCode
 
 	if err != nil {
-		result.Status = "failed"
+		result.Status = statusFailed
 		result.Message = fmt.Sprintf("APT 프록시 테스트 실패: %v", err)
 	}
 
@@ -280,7 +280,7 @@ func testAptProxy(req ProxyTestRequest) ProxyTestResult {
 }
 
 func testNpmProxy(req ProxyTestRequest) ProxyTestResult {
-	result := ProxyTestResult{Status: "passed", Message: "NPM 프록시 테스트 성공"}
+	result := ProxyTestResult{Status: statusPassed, Message: "NPM 프록시 테스트 성공"}
 
 	// NPM 레지스트리 정보 요청 테스트
 	testURL := "/proxy/npm/"
@@ -288,11 +288,11 @@ func testNpmProxy(req ProxyTestRequest) ProxyTestResult {
 		testURL = req.Target
 	}
 
-	statusCode, err := makeTestRequest("GET", testURL, req.Timeout)
+	statusCode, err := makeTestRequest(methodGET, testURL, req.Timeout)
 	result.StatusCode = statusCode
 
 	if err != nil {
-		result.Status = "failed"
+		result.Status = statusFailed
 		result.Message = fmt.Sprintf("NPM 프록시 테스트 실패: %v", err)
 	}
 
@@ -301,7 +301,7 @@ func testNpmProxy(req ProxyTestRequest) ProxyTestResult {
 }
 
 func testMavenProxy(req ProxyTestRequest) ProxyTestResult {
-	result := ProxyTestResult{Status: "passed", Message: "Maven 프록시 테스트 성공"}
+	result := ProxyTestResult{Status: statusPassed, Message: "Maven 프록시 테스트 성공"}
 
 	// Maven 중앙 저장소 메타데이터 요청 테스트
 	testURL := "/proxy/maven/maven-metadata.xml"
@@ -309,11 +309,11 @@ func testMavenProxy(req ProxyTestRequest) ProxyTestResult {
 		testURL = req.Target
 	}
 
-	statusCode, err := makeTestRequest("GET", testURL, req.Timeout)
+	statusCode, err := makeTestRequest(methodGET, testURL, req.Timeout)
 	result.StatusCode = statusCode
 
 	if err != nil {
-		result.Status = "failed"
+		result.Status = statusFailed
 		result.Message = fmt.Sprintf("Maven 프록시 테스트 실패: %v", err)
 	}
 
@@ -322,7 +322,7 @@ func testMavenProxy(req ProxyTestRequest) ProxyTestResult {
 }
 
 func testPipProxy(req ProxyTestRequest) ProxyTestResult {
-	result := ProxyTestResult{Status: "passed", Message: "Pip 프록시 테스트 성공"}
+	result := ProxyTestResult{Status: statusPassed, Message: "Pip 프록시 테스트 성공"}
 
 	// PyPI 인덱스 요청 테스트
 	testURL := "/proxy/pip/simple/"
@@ -330,11 +330,11 @@ func testPipProxy(req ProxyTestRequest) ProxyTestResult {
 		testURL = req.Target
 	}
 
-	statusCode, err := makeTestRequest("GET", testURL, req.Timeout)
+	statusCode, err := makeTestRequest(methodGET, testURL, req.Timeout)
 	result.StatusCode = statusCode
 
 	if err != nil {
-		result.Status = "failed"
+		result.Status = statusFailed
 		result.Message = fmt.Sprintf("Pip 프록시 테스트 실패: %v", err)
 	}
 
@@ -343,7 +343,7 @@ func testPipProxy(req ProxyTestRequest) ProxyTestResult {
 }
 
 func testDockerProxy(req ProxyTestRequest) ProxyTestResult {
-	result := ProxyTestResult{Status: "passed", Message: "Docker 프록시 테스트 성공"}
+	result := ProxyTestResult{Status: statusPassed, Message: "Docker 프록시 테스트 성공"}
 
 	// Docker 레지스트리 v2 API 테스트
 	testURL := "/proxy/docker/v2/"
@@ -351,11 +351,11 @@ func testDockerProxy(req ProxyTestRequest) ProxyTestResult {
 		testURL = req.Target
 	}
 
-	statusCode, err := makeTestRequest("GET", testURL, req.Timeout)
+	statusCode, err := makeTestRequest(methodGET, testURL, req.Timeout)
 	result.StatusCode = statusCode
 
 	if err != nil {
-		result.Status = "failed"
+		result.Status = statusFailed
 		result.Message = fmt.Sprintf("Docker 프록시 테스트 실패: %v", err)
 	}
 
@@ -364,7 +364,7 @@ func testDockerProxy(req ProxyTestRequest) ProxyTestResult {
 }
 
 func testYumProxy(req ProxyTestRequest) ProxyTestResult {
-	result := ProxyTestResult{Status: "passed", Message: "YUM 프록시 테스트 성공"}
+	result := ProxyTestResult{Status: statusPassed, Message: "YUM 프록시 테스트 성공"}
 
 	// YUM 저장소 메타데이터 요청 테스트
 	testURL := "/proxy/yum/repodata/repomd.xml"
@@ -372,11 +372,11 @@ func testYumProxy(req ProxyTestRequest) ProxyTestResult {
 		testURL = req.Target
 	}
 
-	statusCode, err := makeTestRequest("GET", testURL, req.Timeout)
+	statusCode, err := makeTestRequest(methodGET, testURL, req.Timeout)
 	result.StatusCode = statusCode
 
 	if err != nil {
-		result.Status = "failed"
+		result.Status = statusFailed
 		result.Message = fmt.Sprintf("YUM 프록시 테스트 실패: %v", err)
 	}
 
@@ -385,7 +385,7 @@ func testYumProxy(req ProxyTestRequest) ProxyTestResult {
 }
 
 func testApkProxy(req ProxyTestRequest) ProxyTestResult {
-	result := ProxyTestResult{Status: "passed", Message: "APK 프록시 테스트 성공"}
+	result := ProxyTestResult{Status: statusPassed, Message: "APK 프록시 테스트 성공"}
 
 	// Alpine APK 인덱스 요청 테스트
 	testURL := "/proxy/apk/main/APKINDEX.tar.gz"
@@ -393,11 +393,11 @@ func testApkProxy(req ProxyTestRequest) ProxyTestResult {
 		testURL = req.Target
 	}
 
-	statusCode, err := makeTestRequest("GET", testURL, req.Timeout)
+	statusCode, err := makeTestRequest(methodGET, testURL, req.Timeout)
 	result.StatusCode = statusCode
 
 	if err != nil {
-		result.Status = "failed"
+		result.Status = statusFailed
 		result.Message = fmt.Sprintf("APK 프록시 테스트 실패: %v", err)
 	}
 
@@ -473,7 +473,7 @@ func makeTestRequest(method, path string, timeoutSec int) (int, error) {
 		}
 		return 0, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	return resp.StatusCode, nil
 }

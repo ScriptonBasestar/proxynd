@@ -164,7 +164,7 @@ func (wa *WebhookAlerter) sendRequest(ctx context.Context, payload []byte) error
 	if err != nil {
 		return fmt.Errorf("failed to send request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// 응답 상태 확인
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {

@@ -8,17 +8,17 @@ import (
 	"proxynd/internal/services/proxy"
 )
 
-// MockProxyService는 proxy.ProxyService 인터페이스의 모의 구현
+// MockProxyService is a mock implementation of the proxy.ProxyService interface
 type MockProxyService struct {
 	mock.Mock
 }
 
-// NewMockProxyService는 새로운 MockProxyService를 생성
+// NewMockProxyService creates a new MockProxyService instance
 func NewMockProxyService() *MockProxyService {
 	return &MockProxyService{}
 }
 
-// HandleRequest는 프록시 요청을 처리
+// HandleRequest processes a proxy request
 func (m *MockProxyService) HandleRequest(ctx context.Context, req proxy.ProxyRequest) (*proxy.ProxyResponse, error) {
 	args := m.Called(ctx, req)
 	if args.Get(0) == nil {
@@ -27,13 +27,13 @@ func (m *MockProxyService) HandleRequest(ctx context.Context, req proxy.ProxyReq
 	return args.Get(0).(*proxy.ProxyResponse), args.Error(1)
 }
 
-// ValidateRequest는 요청의 유효성을 검사
+// ValidateRequest validates the request
 func (m *MockProxyService) ValidateRequest(req proxy.ProxyRequest) error {
 	args := m.Called(req)
 	return args.Error(0)
 }
 
-// GetProxyType은 프록시 타입을 반환
+// GetProxyType returns the proxy type
 func (m *MockProxyService) GetProxyType() string {
 	args := m.Called()
 	return args.String(0)

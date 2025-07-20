@@ -9,7 +9,7 @@ import (
 // YumProxy yum 프록시 서버 정보
 type YumProxy struct {
 	Name string `yaml:"name" validate:"required,min=1,max=100"`
-	Url  string `yaml:"url" validate:"required,url"`
+	URL  string `yaml:"url" validate:"required,url"`
 }
 
 // YumProxyConfig yum 프록시 설정 구조체

@@ -22,7 +22,7 @@ type UnifiedConfig struct {
 	Registries RegistryConfig `yaml:"registries" json:"registries"`
 
 	// 인증 및 접근 제어
-	Security SecurityConfig `yaml:"security" json:"security"`
+	Security UnifiedSecurityConfig `yaml:"security" json:"security"`
 
 	// 패키지 검증 설정
 	Verification verification.VerifierConfig `yaml:"verification" json:"verification"`
@@ -31,7 +31,7 @@ type UnifiedConfig struct {
 	Alerts alerts.AlertConfig `yaml:"alerts" json:"alerts"`
 
 	// 로깅 설정
-	Logging LoggingConfig `yaml:"logging" json:"logging"`
+	Logging UnifiedLoggingConfig `yaml:"logging" json:"logging"`
 
 	// 메트릭 설정
 	Metrics MetricsConfig `yaml:"metrics" json:"metrics"`
@@ -205,8 +205,8 @@ type MavenRepositoryConfig struct {
 	Snapshots bool   `yaml:"snapshots" json:"snapshots" default:"true"`
 }
 
-// SecurityConfig 보안 설정
-type SecurityConfig struct {
+// UnifiedSecurityConfig 보안 설정
+type UnifiedSecurityConfig struct {
 	// 인증 방식
 	Authentication AuthenticationConfig `yaml:"authentication" json:"authentication"`
 
@@ -291,8 +291,8 @@ type HashVerificationConfig struct {
 	FailOnMismatch      bool     `yaml:"fail_on_mismatch" json:"fail_on_mismatch"`
 }
 
-// LoggingConfig 로깅 설정
-type LoggingConfig struct {
+// UnifiedLoggingConfig represents the configuration for unifiedlogging settings
+type UnifiedLoggingConfig struct {
 	Level     string          `yaml:"level" json:"level" default:"info"`
 	Format    string          `yaml:"format" json:"format" default:"json"`
 	Output    string          `yaml:"output" json:"output" default:"stdout"`
@@ -328,7 +328,7 @@ type MetricsConfig struct {
 // AdvancedConfig 고급 설정
 type AdvancedConfig struct {
 	// 성능 튜닝
-	Performance PerformanceConfig `yaml:"performance" json:"performance"`
+	Performance UnifiedPerformanceConfig `yaml:"performance" json:"performance"`
 
 	// 재시도 정책
 	Retry RetryConfig `yaml:"retry" json:"retry"`
@@ -337,8 +337,8 @@ type AdvancedConfig struct {
 	CircuitBreaker CircuitBreakerConfig `yaml:"circuit_breaker" json:"circuit_breaker"`
 }
 
-// PerformanceConfig 성능 설정
-type PerformanceConfig struct {
+// UnifiedPerformanceConfig 성능 설정
+type UnifiedPerformanceConfig struct {
 	MaxConnections     int           `yaml:"max_connections" json:"max_connections" default:"1000"`
 	MaxIdleConnections int           `yaml:"max_idle_connections" json:"max_idle_connections" default:"100"`
 	ConnectionTimeout  time.Duration `yaml:"connection_timeout" json:"connection_timeout" default:"30s"`
@@ -426,6 +426,40 @@ func (c *UnifiedConfig) applyEnvironmentOverrides() {
 // Validate 설정 검증
 func (c *UnifiedConfig) Validate() error {
 	// 서버 설정 검증
+	if err := c.validateServer(); err != nil {
+		return err
+	}
+
+	// TLS 설정 검증
+	if err := c.validateTLS(); err != nil {
+		return err
+	}
+
+	// 캐시 설정 검증
+	if err := c.validateCache(); err != nil {
+		return err
+	}
+
+	// 로깅 설정 검증
+	if err := c.validateLogging(); err != nil {
+		return err
+	}
+
+	// 메트릭 설정 검증
+	if err := c.validateMetrics(); err != nil {
+		return err
+	}
+
+	// 레지스트리 설정 검증
+	if err := c.validateRegistries(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// validateServer 서버 설정 검증
+func (c *UnifiedConfig) validateServer() error {
 	if c.Server.Port < 1 || c.Server.Port > 65535 {
 		return &ValidationError{
 			Field:   "server.port",
@@ -433,72 +467,64 @@ func (c *UnifiedConfig) Validate() error {
 			Value:   c.Server.Port,
 		}
 	}
+	return nil
+}
 
-	// TLS 설정 검증
-	if c.Server.TLS.Enabled {
-		if c.Server.TLS.CertFile == "" {
-			return &ValidationError{
-				Field:   "server.tls.cert_file",
-				Message: "TLS가 활성화되었으나 인증서 파일이 지정되지 않음",
-				Value:   c.Server.TLS.CertFile,
-			}
-		}
+// validateTLS TLS 설정 검증
+func (c *UnifiedConfig) validateTLS() error {
+	if !c.Server.TLS.Enabled {
+		return nil
+	}
 
-		if c.Server.TLS.KeyFile == "" {
-			return &ValidationError{
-				Field:   "server.tls.key_file",
-				Message: "TLS가 활성화되었으나 키 파일이 지정되지 않음",
-				Value:   c.Server.TLS.KeyFile,
-			}
-		}
-
-		// 파일 존재 확인 (개발 환경에서는 skip)
-		if _, err := os.Stat(c.Server.TLS.CertFile); err != nil {
-			return &ValidationError{
-				Field:   "server.tls.cert_file",
-				Message: "TLS 인증서 파일을 찾을 수 없음",
-				Value:   c.Server.TLS.CertFile,
-			}
-		}
-		if _, err := os.Stat(c.Server.TLS.KeyFile); err != nil {
-			return &ValidationError{
-				Field:   "server.tls.key_file",
-				Message: "TLS 키 파일을 찾을 수 없음",
-				Value:   c.Server.TLS.KeyFile,
-			}
+	if c.Server.TLS.CertFile == "" {
+		return &ValidationError{
+			Field:   "server.tls.cert_file",
+			Message: "TLS가 활성화되었으나 인증서 파일이 지정되지 않음",
+			Value:   c.Server.TLS.CertFile,
 		}
 	}
 
-	// 캐시 설정 검증
-	switch c.Cache.Backend {
-	case "file":
-		if c.Cache.File.Directory == "" {
-			c.Cache.File.Directory = filepath.Join(os.TempDir(), "proxynd-cache")
+	if c.Server.TLS.KeyFile == "" {
+		return &ValidationError{
+			Field:   "server.tls.key_file",
+			Message: "TLS가 활성화되었으나 키 파일이 지정되지 않음",
+			Value:   c.Server.TLS.KeyFile,
 		}
-	case "s3":
-		if c.Cache.S3.Bucket == "" {
-			return &ValidationError{
-				Field:   "cache.s3.bucket",
-				Message: "S3 캐시가 활성화되었으나 버킷이 지정되지 않음",
-				Value:   c.Cache.S3.Bucket,
-			}
+	}
+
+	// 파일 존재 확인
+	if err := validateFileExists(c.Server.TLS.CertFile, "server.tls.cert_file", "TLS 인증서 파일을 찾을 수 없음"); err != nil {
+		return err
+	}
+	if err := validateFileExists(c.Server.TLS.KeyFile, "server.tls.key_file", "TLS 키 파일을 찾을 수 없음"); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// validateFileExists 파일 존재 확인 헬퍼
+func validateFileExists(filePath, field, message string) error {
+	if _, err := os.Stat(filePath); err != nil {
+		return &ValidationError{
+			Field:   field,
+			Message: message,
+			Value:   filePath,
 		}
-		if c.Cache.S3.Region == "" {
-			return &ValidationError{
-				Field:   "cache.s3.region",
-				Message: "S3 캐시가 활성화되었으나 리전이 지정되지 않음",
-				Value:   c.Cache.S3.Region,
-			}
-		}
-	case "redis":
-		if c.Cache.Redis.Address == "" {
-			return &ValidationError{
-				Field:   "cache.redis.address",
-				Message: "Redis 캐시가 활성화되었으나 주소가 지정되지 않음",
-				Value:   c.Cache.Redis.Address,
-			}
-		}
-	default:
+	}
+	return nil
+}
+
+// validateCache 캐시 설정 검증
+func (c *UnifiedConfig) validateCache() error {
+	validators := map[string]func() error{
+		"file":  c.validateFileCache,
+		"s3":    c.validateS3Cache,
+		"redis": c.validateRedisCache,
+	}
+
+	validator, exists := validators[c.Cache.Backend]
+	if !exists {
 		return &ValidationError{
 			Field:   "cache.backend",
 			Message: "지원하지 않는 캐시 백엔드",
@@ -506,104 +532,109 @@ func (c *UnifiedConfig) Validate() error {
 		}
 	}
 
-	// 로깅 설정 검증
-	validLevels := []string{"debug", "info", "warn", "error"}
-	levelValid := false
-	for _, v := range validLevels {
-		if c.Logging.Level == v {
-			levelValid = true
-			break
+	return validator()
+}
+
+// validateFileCache 파일 캐시 설정 검증
+func (c *UnifiedConfig) validateFileCache() error {
+	if c.Cache.File.Directory == "" {
+		c.Cache.File.Directory = filepath.Join(os.TempDir(), "proxynd-cache")
+	}
+	return nil
+}
+
+// validateS3Cache S3 캐시 설정 검증
+func (c *UnifiedConfig) validateS3Cache() error {
+	if c.Cache.S3.Bucket == "" {
+		return &ValidationError{
+			Field:   "cache.s3.bucket",
+			Message: "S3 캐시가 활성화되었으나 버킷이 지정되지 않음",
+			Value:   c.Cache.S3.Bucket,
 		}
 	}
-	if !levelValid {
+	if c.Cache.S3.Region == "" {
+		return &ValidationError{
+			Field:   "cache.s3.region",
+			Message: "S3 캐시가 활성화되었으나 리전이 지정되지 않음",
+			Value:   c.Cache.S3.Region,
+		}
+	}
+	return nil
+}
+
+// validateRedisCache Redis 캐시 설정 검증
+func (c *UnifiedConfig) validateRedisCache() error {
+	if c.Cache.Redis.Address == "" {
+		return &ValidationError{
+			Field:   "cache.redis.address",
+			Message: "Redis 캐시가 활성화되었으나 주소가 지정되지 않음",
+			Value:   c.Cache.Redis.Address,
+		}
+	}
+	return nil
+}
+
+// validateLogging 로깅 설정 검증
+func (c *UnifiedConfig) validateLogging() error {
+	validLevels := map[string]bool{
+		"debug": true,
+		"info":  true,
+		"warn":  true,
+		"error": true,
+	}
+
+	if !validLevels[c.Logging.Level] {
 		return &ValidationError{
 			Field:   "logging.level",
 			Message: "유효하지 않은 로그 레벨",
 			Value:   c.Logging.Level,
 		}
 	}
+	return nil
+}
 
-	// 메트릭 설정 검증
-	if c.Metrics.Enabled && c.Metrics.Port != 0 {
-		if c.Metrics.Port < 1 || c.Metrics.Port > 65535 {
-			return &ValidationError{
-				Field:   "metrics.port",
-				Message: "메트릭 포트 번호가 유효하지 않습니다",
-				Value:   c.Metrics.Port,
-			}
-		}
+// validateMetrics 메트릭 설정 검증
+func (c *UnifiedConfig) validateMetrics() error {
+	if !c.Metrics.Enabled || c.Metrics.Port == 0 {
+		return nil
+	}
 
-		// 메트릭 포트가 서버 포트와 겹치지 않도록 검증
-		if c.Metrics.Port == c.Server.Port {
-			return &ValidationError{
-				Field:   "metrics.port",
-				Message: "메트릭 포트가 서버 포트와 같습니다",
-				Value:   c.Metrics.Port,
-			}
+	if c.Metrics.Port < 1 || c.Metrics.Port > 65535 {
+		return &ValidationError{
+			Field:   "metrics.port",
+			Message: "메트릭 포트 번호가 유효하지 않습니다",
+			Value:   c.Metrics.Port,
 		}
 	}
 
-	// 각 레지스트리 설정 검증
-	// NPM 레지스트리 검증
-	if c.Registries.NPM.Enabled {
-		if c.Registries.NPM.Upstream == "" {
-			return &ValidationError{
-				Field:   "registries.npm.upstream",
-				Message: "NPM 업스트림 URL이 설정되지 않음",
-				Value:   c.Registries.NPM.Upstream,
-			}
+	if c.Metrics.Port == c.Server.Port {
+		return &ValidationError{
+			Field:   "metrics.port",
+			Message: "메트릭 포트가 서버 포트와 같습니다",
+			Value:   c.Metrics.Port,
 		}
 	}
 
-	// PyPI 레지스트리 검증
-	if c.Registries.PyPI.Enabled {
-		if c.Registries.PyPI.Upstream == "" {
-			return &ValidationError{
-				Field:   "registries.pypi.upstream",
-				Message: "PyPI 업스트림 URL이 설정되지 않음",
-				Value:   c.Registries.PyPI.Upstream,
-			}
-		}
+	return nil
+}
+
+// validateRegistries 레지스트리 설정 검증
+func (c *UnifiedConfig) validateRegistries() error {
+	registryValidators := []struct {
+		enabled   bool
+		validator func() error
+	}{
+		{c.Registries.NPM.Enabled, c.validateNPMRegistry},
+		{c.Registries.PyPI.Enabled, c.validatePyPIRegistry},
+		{c.Registries.APT.Enabled, c.validateAPTRegistry},
+		{c.Registries.Docker.Enabled, c.validateDockerRegistry},
+		{c.Registries.Maven.Enabled, c.validateMavenRegistry},
 	}
 
-	// APT 레지스트리 검증
-	if c.Registries.APT.Enabled {
-		if len(c.Registries.APT.Mirrors) == 0 {
-			return &ValidationError{
-				Field:   "registries.apt.mirrors",
-				Message: "APT 미러가 설정되지 않음",
-				Value:   c.Registries.APT.Mirrors,
-			}
-		}
-		for distro, mirrors := range c.Registries.APT.Mirrors {
-			if len(mirrors) == 0 {
-				return &ValidationError{
-					Field:   fmt.Sprintf("registries.apt.mirrors.%s", distro),
-					Message: "배포판에 대한 미러가 설정되지 않음",
-					Value:   mirrors,
-				}
-			}
-		}
-	}
-
-	// Docker 레지스트리 검증
-	if c.Registries.Docker.Enabled {
-		if len(c.Registries.Docker.Registries) == 0 {
-			return &ValidationError{
-				Field:   "registries.docker.registries",
-				Message: "Docker 레지스트리가 설정되지 않음",
-				Value:   c.Registries.Docker.Registries,
-			}
-		}
-	}
-
-	// Maven 레지스트리 검증
-	if c.Registries.Maven.Enabled {
-		if len(c.Registries.Maven.Repositories) == 0 {
-			return &ValidationError{
-				Field:   "registries.maven.repositories",
-				Message: "Maven 리포지토리가 설정되지 않음",
-				Value:   c.Registries.Maven.Repositories,
+	for _, rv := range registryValidators {
+		if rv.enabled {
+			if err := rv.validator(); err != nil {
+				return err
 			}
 		}
 	}
@@ -611,8 +642,78 @@ func (c *UnifiedConfig) Validate() error {
 	return nil
 }
 
+// validateNPMRegistry NPM 레지스트리 검증
+func (c *UnifiedConfig) validateNPMRegistry() error {
+	if c.Registries.NPM.Upstream == "" {
+		return &ValidationError{
+			Field:   "registries.npm.upstream",
+			Message: "NPM 업스트림 URL이 설정되지 않음",
+			Value:   c.Registries.NPM.Upstream,
+		}
+	}
+	return nil
+}
+
+// validatePyPIRegistry PyPI 레지스트리 검증
+func (c *UnifiedConfig) validatePyPIRegistry() error {
+	if c.Registries.PyPI.Upstream == "" {
+		return &ValidationError{
+			Field:   "registries.pypi.upstream",
+			Message: "PyPI 업스트림 URL이 설정되지 않음",
+			Value:   c.Registries.PyPI.Upstream,
+		}
+	}
+	return nil
+}
+
+// validateAPTRegistry APT 레지스트리 검증
+func (c *UnifiedConfig) validateAPTRegistry() error {
+	if len(c.Registries.APT.Mirrors) == 0 {
+		return &ValidationError{
+			Field:   "registries.apt.mirrors",
+			Message: "APT 미러가 설정되지 않음",
+			Value:   c.Registries.APT.Mirrors,
+		}
+	}
+
+	for distro, mirrors := range c.Registries.APT.Mirrors {
+		if len(mirrors) == 0 {
+			return &ValidationError{
+				Field:   fmt.Sprintf("registries.apt.mirrors.%s", distro),
+				Message: "배포판에 대한 미러가 설정되지 않음",
+				Value:   mirrors,
+			}
+		}
+	}
+	return nil
+}
+
+// validateDockerRegistry Docker 레지스트리 검증
+func (c *UnifiedConfig) validateDockerRegistry() error {
+	if len(c.Registries.Docker.Registries) == 0 {
+		return &ValidationError{
+			Field:   "registries.docker.registries",
+			Message: "Docker 레지스트리가 설정되지 않음",
+			Value:   c.Registries.Docker.Registries,
+		}
+	}
+	return nil
+}
+
+// validateMavenRegistry Maven 레지스트리 검증
+func (c *UnifiedConfig) validateMavenRegistry() error {
+	if len(c.Registries.Maven.Repositories) == 0 {
+		return &ValidationError{
+			Field:   "registries.maven.repositories",
+			Message: "Maven 리포지토리가 설정되지 않음",
+			Value:   c.Registries.Maven.Repositories,
+		}
+	}
+	return nil
+}
+
 // Helper functions
-func unmarshalYAML(data []byte, v interface{}) error {
+func unmarshalYAML(_ []byte, _ interface{}) error {
 	// YAML 파싱 구현
 	// 실제 YAML 파싱 라이브러리가 필요하면 gopkg.in/yaml.v3 사용
 	// 현재는 기본 구현으로 처리

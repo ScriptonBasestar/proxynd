@@ -1,3 +1,4 @@
+// Package testutil provides testing utilities and assertions
 package testutil
 
 import (

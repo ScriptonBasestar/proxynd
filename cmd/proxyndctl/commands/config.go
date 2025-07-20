@@ -116,7 +116,7 @@ func newConfigValidateCmd() *cobra.Command {
 		Short: "설정 파일 문법 검증",
 		Long: `설정 파일의 문법을 검증합니다.
 필수 항목 존재 확인, 네트워크 연결성 테스트를 포함합니다.`,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			return runConfigValidate(detailed, checkNet)
 		},
 	}
@@ -140,7 +140,7 @@ func newConfigShowCmd() *cobra.Command {
 		Short: "현재 설정 표시",
 		Long: `현재 설정을 표시합니다.
 민감한 정보는 마스킹되며, 설정 소스 파일 경로를 표시합니다.`,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			return runConfigShow(proxyType, sources, env)
 		},
 	}
@@ -153,7 +153,7 @@ func newConfigShowCmd() *cobra.Command {
 }
 
 // runConfigValidate 설정 검증 실행
-func runConfigValidate(detailed, checkNetwork bool) error {
+func runConfigValidate(detailed, _ bool) error {
 	serverURL := getServerURL()
 	apiURL := fmt.Sprintf("%s/api/config/validate", serverURL)
 

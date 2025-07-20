@@ -1,3 +1,4 @@
+// Package integration provides integration test suites
 package integration
 
 import (
@@ -65,7 +66,7 @@ func TestAPTProxy_FullFlow(t *testing.T) {
 			url := server.ProxyURL("apt", tt.path)
 			resp, err := http.Get(url)
 			require.NoError(t, err)
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 
 			// Then: 응답 검증
 			assert.Equal(t, tt.expectedStatus, resp.StatusCode)
@@ -85,7 +86,7 @@ func TestAPTProxy_FullFlow(t *testing.T) {
 				if tt.expectCached {
 					resp2, err := http.Get(url)
 					require.NoError(t, err)
-					defer resp2.Body.Close()
+					defer func() { _ = resp2.Body.Close() }()
 
 					assert.Equal(t, 200, resp2.StatusCode)
 					assert.Equal(t, "HIT", resp2.Header.Get("X-Cache-Status"))
@@ -111,7 +112,7 @@ func TestAPTProxy_Headers(t *testing.T) {
 	url := server.ProxyURL("apt", "dists/focal/Release")
 	resp, err := http.Get(url)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Then: 헤더 검증
 	assert.Equal(t, 200, resp.StatusCode)
@@ -205,7 +206,7 @@ func TestAPTProxy_ErrorHandling(t *testing.T) {
 	url := server.ProxyURL("apt", "invalid/path/that/does/not/exist")
 	resp, err := http.Get(url)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Then: 적절한 에러 응답
 	assert.Equal(t, 404, resp.StatusCode)
@@ -228,7 +229,7 @@ func TestAPTProxy_LargeResponse(t *testing.T) {
 	url := server.ProxyURL("apt", "dists/focal/main/binary-amd64/Packages")
 	resp, err := http.Get(url)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Then: 응답 처리 확인
 	assert.Equal(t, 200, resp.StatusCode)
@@ -259,7 +260,7 @@ func performRequest(url string) TestResult {
 			Error:    err,
 		}
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// 응답 본문 읽기 (실제 처리 시뮬레이션)
 	_, readErr := io.ReadAll(resp.Body)

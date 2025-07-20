@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
 	"proxynd/configs"
 )
 
@@ -37,7 +38,7 @@ cache:
 		{
 			name:      "missing config directory",
 			configDir: "/non/existent/path",
-			setupFunc: func(t *testing.T, dir string) {},
+			setupFunc: func(_ *testing.T, _ string) {},
 			wantErr:   true,
 			errMsg:    "failed to load configurations",
 		},
@@ -62,8 +63,8 @@ cache:
 
 			// Set config directory environment variable
 			oldConfigDir := os.Getenv("CONFIG_DIR")
-			os.Setenv("CONFIG_DIR", tempDir)
-			defer os.Setenv("CONFIG_DIR", oldConfigDir)
+			_ = os.Setenv("CONFIG_DIR", tempDir)
+			defer func() { _ = os.Setenv("CONFIG_DIR", oldConfigDir) }()
 
 			// Setup test configs
 			tt.setupFunc(t, tempDir)
@@ -400,8 +401,8 @@ cache:
 
 	// Set config directory
 	oldConfigDir := os.Getenv("CONFIG_DIR")
-	os.Setenv("CONFIG_DIR", tempDir)
-	defer os.Setenv("CONFIG_DIR", oldConfigDir)
+	_ = os.Setenv("CONFIG_DIR", tempDir)
+	defer func() { _ = os.Setenv("CONFIG_DIR", oldConfigDir) }()
 
 	svc := &service{
 		configDir:  tempDir,
@@ -420,7 +421,7 @@ cache:
 }
 
 // TestService_Concurrency tests concurrent access to configs
-func TestService_Concurrency(t *testing.T) {
+func TestService_Concurrency(_ *testing.T) {
 	ctx := context.Background()
 	svc := &service{
 		globalConfig: &configs.UnifiedConfig{
@@ -467,7 +468,7 @@ type mockValidator struct {
 	errMsg     string
 }
 
-func (m *mockValidator) Validate(config interface{}) error {
+func (m *mockValidator) Validate(_ interface{}) error {
 	if m.shouldFail {
 		return assert.AnError
 	}

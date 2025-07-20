@@ -14,10 +14,18 @@ func init() {
 	validate = validator.New()
 
 	// Register custom validators
-	validate.RegisterValidation("duration", validateDuration)
-	validate.RegisterValidation("url", validateURL)
-	validate.RegisterValidation("path", validatePath)
-	validate.RegisterValidation("port", validatePort)
+	if err := validate.RegisterValidation("duration", validateDuration); err != nil {
+		panic(fmt.Sprintf("Failed to register duration validator: %v", err))
+	}
+	if err := validate.RegisterValidation("url", validateURL); err != nil {
+		panic(fmt.Sprintf("Failed to register url validator: %v", err))
+	}
+	if err := validate.RegisterValidation("path", validatePath); err != nil {
+		panic(fmt.Sprintf("Failed to register path validator: %v", err))
+	}
+	if err := validate.RegisterValidation("port", validatePort); err != nil {
+		panic(fmt.Sprintf("Failed to register port validator: %v", err))
+	}
 }
 
 // ValidateStruct validates a struct using struct tags
@@ -165,6 +173,7 @@ type ValidationError struct {
 	Value   interface{}
 }
 
+// Error performs error operation
 func (e *ValidationError) Error() string {
 	return fmt.Sprintf("validation failed for field '%s': %s (value: %v)",
 		e.Field, e.Message, e.Value)

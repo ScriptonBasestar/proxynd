@@ -26,9 +26,9 @@ func BaseRouter() *fiber.App {
 
 	app.Get("/", func(c *fiber.Ctx) error {
 		mvnSite := configs.MavenProxyConfig{}
-		mvnSite.ReadConfig()
+		_ = mvnSite.ReadConfig()
 		aptSite := configs.AptProxyConfig{}
-		aptSite.ReadConfig()
+		_ = aptSite.ReadConfig()
 		return c.Render("dashboard", fiber.Map{
 			"mavenProxy": mvnSite.Proxies,
 			"aptProxy":   aptSite.Proxies,

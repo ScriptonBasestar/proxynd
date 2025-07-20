@@ -104,6 +104,7 @@ func TestInputValidation(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to perform request: %v", err)
 			}
+			defer func() { _ = resp.Body.Close() }()
 
 			if resp.StatusCode != tt.expectedStatus {
 				t.Errorf("%s: expected status %d, got %d",
@@ -188,6 +189,7 @@ func TestInputValidationWithConfig(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to perform request: %v", err)
 			}
+			defer func() { _ = resp.Body.Close() }()
 
 			if resp.StatusCode != tt.expectedStatus {
 				t.Errorf("Expected status %d, got %d", tt.expectedStatus, resp.StatusCode)
@@ -220,6 +222,7 @@ func TestRateLimit(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Request %d failed: %v", i+1, err)
 		}
+		defer func() { _ = resp.Body.Close() }()
 		if resp.StatusCode != 200 {
 			t.Errorf("Request %d: expected status 200, got %d", i+1, resp.StatusCode)
 		}
@@ -232,6 +235,7 @@ func TestRateLimit(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Rate limit test request failed: %v", err)
 	}
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != 429 {
 		t.Errorf("Expected rate limit status 429, got %d", resp.StatusCode)
 	}
@@ -263,6 +267,7 @@ func TestRateLimitDifferentIPs(t *testing.T) {
 		req.Header.Set("User-Agent", "test-client/1.0")
 		req.Header.Set("X-Forwarded-For", "192.168.1.1")
 		resp, _ := app.Test(req)
+		defer func() { _ = resp.Body.Close() }()
 		if resp.StatusCode != 200 {
 			t.Errorf("IP1 request %d should succeed", i+1)
 		}
@@ -273,6 +278,7 @@ func TestRateLimitDifferentIPs(t *testing.T) {
 	req1.Header.Set("User-Agent", "test-client/1.0")
 	req1.Header.Set("X-Forwarded-For", "192.168.1.1")
 	resp1, _ := app.Test(req1)
+	defer func() { _ = resp1.Body.Close() }()
 	if resp1.StatusCode != 429 {
 		t.Error("IP1 should be rate limited")
 	}
@@ -282,6 +288,7 @@ func TestRateLimitDifferentIPs(t *testing.T) {
 	req2.Header.Set("User-Agent", "test-client/1.0")
 	req2.Header.Set("X-Forwarded-For", "192.168.1.2")
 	resp2, _ := app.Test(req2)
+	defer func() { _ = resp2.Body.Close() }()
 	if resp2.StatusCode != 200 {
 		t.Error("IP2 should not be rate limited")
 	}
@@ -336,6 +343,7 @@ func TestSecurityHeaders(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to perform request: %v", err)
 			}
+			defer func() { _ = resp.Body.Close() }()
 
 			if resp.StatusCode != 200 {
 				t.Errorf("Expected status 200, got %d", resp.StatusCode)
@@ -366,6 +374,7 @@ func TestProductionSecurityHeaders(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to perform request: %v", err)
 	}
+	defer func() { _ = resp.Body.Close() }()
 
 	// HSTS 헤더 확인 (프로덕션 설정에서는 활성화)
 	hsts := resp.Header.Get("Strict-Transport-Security")
@@ -393,6 +402,7 @@ func TestBurstRateLimit(t *testing.T) {
 		req := httptest.NewRequest("GET", "/test", nil)
 		req.Header.Set("User-Agent", "test-client/1.0")
 		resp, _ := app.Test(req)
+		defer func() { _ = resp.Body.Close() }()
 		if resp.StatusCode != 200 {
 			t.Errorf("Burst request %d should succeed", i+1)
 		}
@@ -402,6 +412,7 @@ func TestBurstRateLimit(t *testing.T) {
 	req := httptest.NewRequest("GET", "/test", nil)
 	req.Header.Set("User-Agent", "test-client/1.0")
 	resp, _ := app.Test(req)
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != 429 {
 		t.Error("Should hit burst rate limit")
 	}
@@ -420,7 +431,8 @@ func BenchmarkInputValidation(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, _ = app.Test(req)
+		resp, _ := app.Test(req)
+		_ = resp.Body.Close()
 	}
 }
 
@@ -437,6 +449,7 @@ func BenchmarkRateLimit(b *testing.B) {
 		req := httptest.NewRequest("GET", "/test", nil)
 		req.Header.Set("User-Agent", "test-client/1.0")
 		req.Header.Set("X-Forwarded-For", fmt.Sprintf("192.168.1.%d", i%254+1))
-		_, _ = app.Test(req)
+		resp, _ := app.Test(req)
+		_ = resp.Body.Close()
 	}
 }

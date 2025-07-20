@@ -8,6 +8,14 @@ import (
 	"proxynd/logging"
 )
 
+// Health status constants
+const (
+	// HealthStatusHealthy is a const that health status healthy
+	// HealthStatusDegraded is a const that health status degraded
+	HealthStatusHealthy  = "healthy"
+	HealthStatusDegraded = "degraded"
+)
+
 // Manager coordinates all performance optimization components
 type Manager struct {
 	logger           logging.Logger
@@ -302,22 +310,26 @@ func (m *Manager) generateRecommendations(metrics *GlobalMetrics) []string {
 
 	// Resource recommendations
 	if metrics.MemoryUsage > 0.8 {
-		recommendations = append(recommendations, "High memory usage detected - consider increasing available memory or optimizing memory-intensive operations")
+		recommendations = append(recommendations,
+			"High memory usage detected - consider increasing available memory or optimizing memory-intensive operations")
 	}
 
 	if metrics.GoroutineCount > 1000 {
-		recommendations = append(recommendations, "High goroutine count - review goroutine lifecycle management and consider pooling")
+		recommendations = append(recommendations,
+			"High goroutine count - review goroutine lifecycle management and consider pooling")
 	}
 
 	// Performance recommendations
 	if metrics.AverageResponseTime > 2*time.Second {
-		recommendations = append(recommendations, "High average response time - analyze slow endpoints and consider optimization")
+		recommendations = append(recommendations,
+			"High average response time - analyze slow endpoints and consider optimization")
 	}
 
 	// Connection recommendations
 	utilizationRate := float64(metrics.ActiveConnections) / float64(metrics.ConnectionsCreated)
 	if utilizationRate > 0.9 {
-		recommendations = append(recommendations, "High connection pool utilization - consider increasing pool size or optimizing connection reuse")
+		recommendations = append(recommendations,
+			"High connection pool utilization - consider increasing pool size or optimizing connection reuse")
 	}
 
 	return recommendations
@@ -380,7 +392,7 @@ func (m *Manager) GetGlobalMetrics() *GlobalMetrics {
 // GetHealthStatus returns comprehensive health status
 func (m *Manager) GetHealthStatus() map[string]interface{} {
 	status := map[string]interface{}{
-		"overall_status": "healthy",
+		"overall_status": HealthStatusHealthy,
 		"components":     map[string]interface{}{},
 		"metrics":        m.GetGlobalMetrics(),
 		"last_check":     time.Now(),
@@ -418,7 +430,7 @@ func (m *Manager) GetHealthStatus() map[string]interface{} {
 	// Check resource monitor health
 	if m.resourceMonitor != nil {
 		resourceHealthStatus := m.resourceMonitor.GetHealthStatus()
-		resourceHealthy := resourceHealthStatus["overall_status"] == "healthy"
+		resourceHealthy := resourceHealthStatus["overall_status"] == HealthStatusHealthy
 		status["components"].(map[string]interface{})["resource_monitor"] = resourceHealthStatus
 		if !resourceHealthy {
 			overallHealthy = false
@@ -442,7 +454,7 @@ func (m *Manager) GetHealthStatus() map[string]interface{} {
 	// Check middleware health
 	if m.middleware != nil {
 		middlewareHealthStatus := m.middleware.GetHealthStatus()
-		middlewareHealthy := middlewareHealthStatus["overall_status"] == "healthy"
+		middlewareHealthy := middlewareHealthStatus["overall_status"] == HealthStatusHealthy
 		status["components"].(map[string]interface{})["middleware"] = middlewareHealthStatus
 		if !middlewareHealthy {
 			overallHealthy = false
@@ -450,7 +462,7 @@ func (m *Manager) GetHealthStatus() map[string]interface{} {
 	}
 
 	if !overallHealthy {
-		status["overall_status"] = "degraded"
+		status["overall_status"] = HealthStatusDegraded
 	}
 
 	return status
@@ -492,12 +504,12 @@ func (m *Manager) IsRunning() bool {
 
 func getHealthStatusString(healthy bool) string {
 	if healthy {
-		return "healthy"
+		return HealthStatusHealthy
 	}
 	return "unhealthy"
 }
 
-// DefaultConfig returns a default performance configuration
+// DefaultManagerConfig returns a default manager configuration
 func DefaultManagerConfig() *ManagerConfig {
 	return &ManagerConfig{
 		CacheOptimizer: &CacheOptimizerConfig{

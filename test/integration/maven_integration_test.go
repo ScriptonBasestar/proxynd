@@ -61,7 +61,7 @@ func TestMavenProxy_ArtifactDownload(t *testing.T) {
 			url := server.ProxyURL("maven", tt.path)
 			resp, err := http.Get(url)
 			require.NoError(t, err)
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 
 			// Then
 			assert.Equal(t, 200, resp.StatusCode)
@@ -100,7 +100,7 @@ func TestMavenProxy_NotFound(t *testing.T) {
 	url := server.ProxyURL("maven", "com/nonexistent/artifact/1.0.0/artifact-1.0.0.jar")
 	resp, err := http.Get(url)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Then
 	assert.Equal(t, 404, resp.StatusCode)
@@ -125,7 +125,7 @@ func TestMavenProxy_ChecksumValidation(t *testing.T) {
 	jarURL := server.ProxyURL("maven", jarPath)
 	jarResp, err := http.Get(jarURL)
 	require.NoError(t, err)
-	defer jarResp.Body.Close()
+	defer func() { _ = jarResp.Body.Close() }()
 
 	require.Equal(t, 200, jarResp.StatusCode)
 
@@ -220,7 +220,7 @@ func TestMavenProxy_LargeArtifact(t *testing.T) {
 	url := server.ProxyURL("maven", "org/springframework/spring-core/5.3.21/spring-core-5.3.21.jar")
 	resp, err := http.Get(url)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Then
 	assert.Equal(t, 200, resp.StatusCode)
@@ -266,7 +266,7 @@ func TestMavenProxy_MetadataFiles(t *testing.T) {
 	url := server.ProxyURL("maven", "org/springframework/spring-core/5.3.21/spring-core-5.3.21.pom")
 	resp, err := http.Get(url)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Then
 	assert.Equal(t, 200, resp.StatusCode)
@@ -297,7 +297,7 @@ func TestMavenProxy_SnapshotHandling(t *testing.T) {
 	url := server.ProxyURL("maven", "org/springframework/spring-core/5.3.22-SNAPSHOT/spring-core-5.3.22-SNAPSHOT.jar")
 	resp, err := http.Get(url)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Then: SNAPSHOT은 캐시되지 않아야 하므로 적절한 처리 확인
 	assert.Equal(t, 404, resp.StatusCode) // 테스트 환경에서는 존재하지 않음

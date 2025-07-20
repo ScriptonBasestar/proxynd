@@ -11,7 +11,10 @@ import (
 type OperationMode string
 
 const (
-	ProxyMode  OperationMode = "proxy"  // On-Demand: 요청 시점에 업스트림에서 받아오는 방식
+	// ProxyMode is exported
+	// ProxyMode is exported
+	ProxyMode OperationMode = "proxy" // On-Demand: 요청 시점에 업스트림에서 받아오는 방식
+	// MirrorMode is a const that mirror mode
 	MirrorMode OperationMode = "mirror" // Pre-fetch: 모든 패키지를 미리 받아놓는 방식
 )
 

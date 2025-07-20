@@ -48,7 +48,7 @@ type CacheOptimizerConfig struct {
 	// Size optimization
 	EnableSizeOptimization   bool          `yaml:"enable_size_optimization" json:"enable_size_optimization" default:"true"`
 	MaxCacheSize             int64         `yaml:"max_cache_size" json:"max_cache_size" default:"1073741824"` // 1GB
-	SizeOptimizationInterval time.Duration `yaml:"size_optimization_interval" json:"size_optimization_interval" default:"10m"`
+	SizeOptimizationInterval time.Duration `yaml:"size_opt_interval" json:"size_opt_interval" default:"10m"`
 
 	// Prewarming
 	EnablePrewarming   bool     `yaml:"enable_prewarming" json:"enable_prewarming" default:"true"`
@@ -118,12 +118,12 @@ type RequestOptimizerConfig struct {
 	CompressibleTypes    []string `yaml:"compressible_types,omitempty" json:"compressible_types,omitempty"`
 
 	// Caching optimization
-	EnableCacheOptimization bool          `yaml:"enable_cache_optimization" json:"enable_cache_optimization" default:"true"`
+	EnableCacheOptimization bool          `yaml:"enable_cache_opt" json:"enable_cache_opt" default:"true"`
 	CacheControlMaxAge      time.Duration `yaml:"cache_control_max_age" json:"cache_control_max_age" default:"1h"`
 	ETags                   bool          `yaml:"etags" json:"etags" default:"true"`
 
 	// Rate limiting
-	EnableAdaptiveRateLimit bool          `yaml:"enable_adaptive_rate_limit" json:"enable_adaptive_rate_limit" default:"true"`
+	EnableAdaptiveRateLimit bool          `yaml:"enable_adaptive_rate" json:"enable_adaptive_rate" default:"true"`
 	BaseRateLimit           int           `yaml:"base_rate_limit" json:"base_rate_limit" default:"1000"`
 	BurstLimit              int           `yaml:"burst_limit" json:"burst_limit" default:"100"`
 	RateLimitWindow         time.Duration `yaml:"rate_limit_window" json:"rate_limit_window" default:"1m"`
@@ -152,7 +152,7 @@ type PerformanceMiddlewareConfig struct {
 
 	// Performance thresholds
 	SlowRequestThreshold     time.Duration `yaml:"slow_request_threshold" json:"slow_request_threshold" default:"2s"`
-	CriticalRequestThreshold time.Duration `yaml:"critical_request_threshold" json:"critical_request_threshold" default:"5s"`
+	CriticalRequestThreshold time.Duration `yaml:"critical_req_threshold" json:"critical_req_threshold" default:"5s"`
 
 	// Optimization settings
 	EnableRequestOptimization bool `yaml:"enable_request_optimization" json:"enable_request_optimization" default:"true"`
@@ -169,6 +169,7 @@ type PerformanceMiddlewareConfig struct {
 
 // Default performance configurations
 var (
+	// DefaultPerformanceConfig provides the default performanceconfig
 	DefaultPerformanceConfig = PerformanceConfig{
 		Enabled: true,
 		CacheOptimizer: &CacheOptimizerConfig{

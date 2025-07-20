@@ -1,3 +1,4 @@
+// Package plugins provides plugin base implementations
 package plugins
 
 import (
@@ -11,8 +12,13 @@ import (
 	"proxynd/logging"
 )
 
+// ErrNotImplemented is exported
+// ErrNotImplemented represents an error condition
 var (
-	ErrNotImplemented  = errors.New("method not implemented")
+	ErrNotImplemented = errors.New("method not implemented")
+	// ErrUnsupportedMode is a var that err unsupported mode
+	// ErrHandlerNotReady is a var that err handler not ready
+	// ErrInvalidConfig is a var that err invalid config
 	ErrUnsupportedMode = errors.New("operation mode not supported")
 	ErrHandlerNotReady = errors.New("handler not ready")
 	ErrInvalidConfig   = errors.New("invalid configuration")
@@ -93,7 +99,7 @@ func (h *BasePackageHandler) Initialize(config interface{}) error {
 }
 
 // Shutdown 핸들러 종료 (기본 구현)
-func (h *BasePackageHandler) Shutdown(ctx context.Context) error {
+func (h *BasePackageHandler) Shutdown(_ context.Context) error {
 	h.logger.Info("Shutting down handler",
 		logging.F("type", h.packageType),
 		logging.F("name", h.name))
@@ -132,7 +138,7 @@ func (h *BasePackageHandler) SetCachePolicy(policy CachePolicy) {
 }
 
 // HealthCheck 헬스체크 (기본 구현)
-func (h *BasePackageHandler) HealthCheck(ctx context.Context) error {
+func (h *BasePackageHandler) HealthCheck(_ context.Context) error {
 	if !h.initialized {
 		return ErrHandlerNotReady
 	}
@@ -145,7 +151,7 @@ func (h *BasePackageHandler) HealthCheck(ctx context.Context) error {
 }
 
 // ValidateConfig 설정 검증 (기본 구현)
-func (h *BasePackageHandler) ValidateConfig(config interface{}) error {
+func (h *BasePackageHandler) ValidateConfig(_ interface{}) error {
 	// nil 설정도 허용 (기본값 사용)
 	// 하위 클래스에서 더 상세한 검증 구현
 	return nil

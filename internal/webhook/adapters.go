@@ -1,3 +1,4 @@
+// Package webhook provides webhook adapter implementations
 package webhook
 
 import (
@@ -29,7 +30,7 @@ func NewGenericWebhookAdapter() *GenericWebhookAdapter {
 
 // Name 어댑터 이름 반환
 func (gwa *GenericWebhookAdapter) Name() string {
-	return "generic"
+	return webhookTypeGeneric
 }
 
 // SupportedFormats 지원하는 포맷 목록 반환
@@ -38,7 +39,8 @@ func (gwa *GenericWebhookAdapter) SupportedFormats() []string {
 }
 
 // Send 웹훅 전송
-func (gwa *GenericWebhookAdapter) Send(ctx context.Context, event *alerts.AlertEvent, endpoint configs.WebhookEndpointConfig) error {
+func (gwa *GenericWebhookAdapter) Send(ctx context.Context, event *alerts.AlertEvent,
+	endpoint configs.WebhookEndpointConfig) error {
 	// 메시지 포맷팅
 	payload, err := gwa.FormatMessage(event, endpoint.Format)
 	if err != nil {
@@ -233,16 +235,17 @@ func NewSlackWebhookAdapter() *SlackWebhookAdapter {
 
 // Name 어댑터 이름 반환
 func (swa *SlackWebhookAdapter) Name() string {
-	return "slack"
+	return webhookTypeSlack
 }
 
 // SupportedFormats 지원하는 포맷 목록 반환
 func (swa *SlackWebhookAdapter) SupportedFormats() []string {
-	return []string{"slack", "slack-blocks", "slack-text"}
+	return []string{webhookTypeSlack, "slack-blocks", "slack-text"}
 }
 
 // Send Slack 웹훅 전송
-func (swa *SlackWebhookAdapter) Send(ctx context.Context, event *alerts.AlertEvent, endpoint configs.WebhookEndpointConfig) error {
+func (swa *SlackWebhookAdapter) Send(ctx context.Context, event *alerts.AlertEvent,
+	endpoint configs.WebhookEndpointConfig) error {
 	// Slack 메시지 포맷팅
 	payload, err := swa.FormatMessage(event, endpoint.Format)
 	if err != nil {
@@ -281,7 +284,7 @@ func (swa *SlackWebhookAdapter) Send(ctx context.Context, event *alerts.AlertEve
 // FormatMessage Slack 메시지 포맷팅
 func (swa *SlackWebhookAdapter) FormatMessage(event *alerts.AlertEvent, format string) (interface{}, error) {
 	switch format {
-	case "slack", "":
+	case webhookTypeSlack, "":
 		return swa.formatAttachment(event), nil
 	case "slack-blocks":
 		return swa.formatBlocks(event), nil
@@ -430,7 +433,7 @@ func NewDiscordWebhookAdapter() *DiscordWebhookAdapter {
 
 // Name 어댑터 이름 반환
 func (dwa *DiscordWebhookAdapter) Name() string {
-	return "discord"
+	return webhookTypeDiscord
 }
 
 // SupportedFormats 지원하는 포맷 목록 반환
@@ -439,7 +442,8 @@ func (dwa *DiscordWebhookAdapter) SupportedFormats() []string {
 }
 
 // Send Discord 웹훅 전송
-func (dwa *DiscordWebhookAdapter) Send(ctx context.Context, event *alerts.AlertEvent, endpoint configs.WebhookEndpointConfig) error {
+func (dwa *DiscordWebhookAdapter) Send(ctx context.Context, event *alerts.AlertEvent,
+	endpoint configs.WebhookEndpointConfig) error {
 	// Discord 메시지 포맷팅
 	payload, err := dwa.FormatMessage(event, endpoint.Format)
 	if err != nil {
@@ -479,7 +483,7 @@ func (dwa *DiscordWebhookAdapter) Send(ctx context.Context, event *alerts.AlertE
 // FormatMessage Discord 메시지 포맷팅
 func (dwa *DiscordWebhookAdapter) FormatMessage(event *alerts.AlertEvent, format string) (interface{}, error) {
 	switch format {
-	case "discord", "discord-embed", "":
+	case webhookTypeDiscord, "discord-embed", "":
 		return dwa.formatEmbed(event), nil
 	case "discord-text":
 		return dwa.formatDiscordText(event), nil
@@ -517,7 +521,7 @@ func (dwa *DiscordWebhookAdapter) formatDiscordText(event *alerts.AlertEvent) ma
 
 	content := fmt.Sprintf("%s **ProxyND Alert**\n\n", emoji)
 	content += fmt.Sprintf("**%s**\n", event.Title)
-	content += fmt.Sprintf("%s", event.Message)
+	content += event.Message
 
 	return map[string]interface{}{
 		"content": content,

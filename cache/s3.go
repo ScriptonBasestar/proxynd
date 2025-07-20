@@ -88,6 +88,8 @@ func (s *S3Backend) Get(key string) (io.ReadCloser, error) {
 		go func() {
 			if err := s.Delete(key); err != nil {
 				// 만료된 캐시 삭제 실패 시 로그 (백그라운드 작업이므로 에러 무시)
+				// 다음 액세스 시 자동으로 재검증됨
+				_ = err // 에러를 명시적으로 무시
 			}
 		}()
 		return nil, fmt.Errorf("cache expired")
@@ -325,7 +327,7 @@ func (s *S3Backend) getMetadata(ctx context.Context, key string) (*CacheMetadata
 	if err != nil {
 		return nil, err
 	}
-	defer result.Body.Close()
+	defer func() { _ = result.Body.Close() }()
 
 	var meta CacheMetadata
 	if err := json.NewDecoder(result.Body).Decode(&meta); err != nil {
@@ -366,5 +368,7 @@ func (s *S3Backend) updateAccessTime(key string) {
 	meta.AccessedAt = time.Now()
 	if err := s.putMetadata(ctx, key, meta); err != nil {
 		// 메타데이터 업데이트 실패 시 에러 무시 (액세스 시간 업데이트는 선택적)
+		// 캐시 데이터 자체는 유효하므로 계속 진행
+		_ = err // 에러를 명시적으로 무시
 	}
 }

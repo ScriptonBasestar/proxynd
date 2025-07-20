@@ -19,7 +19,6 @@ import (
 	"proxynd/logging"
 )
 
-// APTHandler APT 패키지 매니저 프록시 핸들러
 // Handler 기본 핸들러 인터페이스 (inline to avoid import cycle)
 type Handler interface {
 	Handle(c *fiber.Ctx) error
@@ -27,6 +26,8 @@ type Handler interface {
 	Type() string
 }
 
+// APTHandler is exported
+// APTHandler handles HTTP requests
 type APTHandler struct {
 	client    *http.Client
 	mirrorIdx int // 라운드로빈을 위한 인덱스
@@ -145,15 +146,15 @@ func (h *APTHandler) downloadFromUpstream(filePath string, proxies []configs.Apt
 	// 여러 미러 시도
 	var lastErr error
 	for _, proxy := range proxies {
-		if err := h.tryDownloadFromMirror(filePath, proxy.URL, packagePath); err == nil {
+		err := h.tryDownloadFromMirror(filePath, proxy.URL, packagePath)
+		if err == nil {
 			return nil // 성공
-		} else {
-			lastErr = err
-			h.logger.Warn("Mirror download failed, trying next",
-				logging.F("mirror", proxy.URL),
-				logging.F("error", err),
-			)
 		}
+		lastErr = err
+		h.logger.Warn("Mirror download failed, trying next",
+			logging.F("mirror", proxy.URL),
+			logging.F("error", err),
+		)
 	}
 
 	return fmt.Errorf("all mirrors failed: %w", lastErr)
@@ -169,7 +170,7 @@ func (h *APTHandler) tryDownloadFromMirror(filePath, mirrorURL, packagePath stri
 	if err != nil {
 		return fmt.Errorf("failed to fetch from mirror: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// 상태 코드 확인
 	if resp.StatusCode != http.StatusOK {
@@ -189,7 +190,7 @@ func (h *APTHandler) tryDownloadFromMirror(filePath, mirrorURL, packagePath stri
 
 	// 데이터 복사
 	if _, err := io.Copy(out, resp.Body); err != nil {
-		os.Remove(filePath) // 실패 시 파일 삭제
+		_ = os.Remove(filePath) // 실패 시 파일 삭제
 		return fmt.Errorf("failed to write file: %w", err)
 	}
 
@@ -237,7 +238,7 @@ func (h *APTHandler) logRequest(c *fiber.Ctx) {
 func (h *APTHandler) logResponse(c *fiber.Ctx, duration time.Duration) {
 	level := "info"
 	if c.Response().StatusCode() >= 400 {
-		level = "error"
+		level = logLevelError
 	}
 
 	message := "Request completed"
@@ -250,7 +251,7 @@ func (h *APTHandler) logResponse(c *fiber.Ctx, duration time.Duration) {
 	}
 
 	switch level {
-	case "error":
+	case logLevelError:
 		h.logger.Error(message, fields...)
 	default:
 		h.logger.Info(message, fields...)

@@ -13,14 +13,14 @@ import (
 func TestPersistentFailureQueue_AddAndRetrieve(t *testing.T) {
 	// 임시 저장소 디렉토리 생성
 	tempDir := filepath.Join(os.TempDir(), "webhook-test", "failures")
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// 큐 생성
 	queue, err := NewPersistentFailureQueue(tempDir, 3, time.Hour*24)
 	if err != nil {
 		t.Fatalf("Failed to create queue: %v", err)
 	}
-	defer queue.Close()
+	defer func() { _ = queue.Close() }()
 
 	// 테스트 이벤트 생성
 	event := &alerts.AlertEvent{
@@ -56,13 +56,13 @@ func TestPersistentFailureQueue_AddAndRetrieve(t *testing.T) {
 
 func TestPersistentFailureQueue_RetryLogic(t *testing.T) {
 	tempDir := filepath.Join(os.TempDir(), "webhook-test", "retries")
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	queue, err := NewPersistentFailureQueue(tempDir, 2, time.Hour*24)
 	if err != nil {
 		t.Fatalf("Failed to create queue: %v", err)
 	}
-	defer queue.Close()
+	defer func() { _ = queue.Close() }()
 
 	event := &alerts.AlertEvent{
 		ID:        "test-event-2",
@@ -108,7 +108,7 @@ func TestPersistentFailureQueue_RetryLogic(t *testing.T) {
 
 func TestPersistentFailureQueue_Persistence(t *testing.T) {
 	tempDir := filepath.Join(os.TempDir(), "webhook-test", "persistence")
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// 첫 번째 큐 인스턴스
 	queue1, err := NewPersistentFailureQueue(tempDir, 3, time.Hour*24)
@@ -130,14 +130,14 @@ func TestPersistentFailureQueue_Persistence(t *testing.T) {
 		t.Fatalf("Failed to add event: %v", err)
 	}
 
-	queue1.Close()
+	_ = queue1.Close()
 
 	// 두 번째 큐 인스턴스 (재시작 시뮬레이션)
 	queue2, err := NewPersistentFailureQueue(tempDir, 3, time.Hour*24)
 	if err != nil {
 		t.Fatalf("Failed to create queue: %v", err)
 	}
-	defer queue2.Close()
+	defer func() { _ = queue2.Close() }()
 
 	// 기존 데이터가 로드되었는지 확인
 	items := queue2.GetFailedItems()
@@ -159,14 +159,14 @@ func TestPersistentFailureQueue_Persistence(t *testing.T) {
 
 func TestPersistentFailureQueue_ExpiredItemsCleanup(t *testing.T) {
 	tempDir := filepath.Join(os.TempDir(), "webhook-test", "cleanup")
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// 짧은 TTL로 큐 생성
 	queue, err := NewPersistentFailureQueue(tempDir, 3, time.Millisecond*100)
 	if err != nil {
 		t.Fatalf("Failed to create queue: %v", err)
 	}
-	defer queue.Close()
+	defer func() { _ = queue.Close() }()
 
 	event := &alerts.AlertEvent{
 		ID:        "expiring-event",

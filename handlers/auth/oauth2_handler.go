@@ -282,7 +282,10 @@ func HandleOAuth2Callback(c *fiber.Ctx) error {
 	// 상태 정리
 	delete(stateStore, state)
 
-	logging.GetLogger().Info("OAuth2 login successful", logging.F("email", userInfo.Email), logging.F("name", userInfo.Name), logging.F("provider", providerName))
+	logging.GetLogger().Info("OAuth2 login successful",
+		logging.F("email", userInfo.Email),
+		logging.F("name", userInfo.Name),
+		logging.F("provider", providerName))
 
 	// 원래 요청한 페이지로 리다이렉트
 	redirectURL := oauth2State.RedirectURL

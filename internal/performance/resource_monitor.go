@@ -9,6 +9,14 @@ import (
 	"proxynd/logging"
 )
 
+// Severity constants
+const (
+	// SeverityWarning is a const that severity warning
+	// SeverityCritical is a const that severity critical
+	SeverityWarning  = "warning"
+	SeverityCritical = "critical"
+)
+
 // ResourceMonitor monitors system resource usage
 type ResourceMonitor struct {
 	logger    logging.Logger
@@ -412,7 +420,7 @@ func (rm *ResourceMonitor) triggerGC() {
 func (rm *ResourceMonitor) triggerMemoryAlert() {
 	alert := ResourceAlert{
 		Type:      "memory",
-		Severity:  "warning",
+		Severity:  SeverityWarning,
 		Message:   "High memory usage detected",
 		Value:     rm.stats.MemoryPercent,
 		Threshold: rm.config.MemoryThreshold,
@@ -438,7 +446,7 @@ func (rm *ResourceMonitor) triggerMemoryAlert() {
 func (rm *ResourceMonitor) triggerGoroutineAlert() {
 	alert := ResourceAlert{
 		Type:      "goroutine",
-		Severity:  "warning",
+		Severity:  SeverityWarning,
 		Message:   "High goroutine count detected",
 		Value:     rm.stats.GoroutineCount,
 		Threshold: rm.config.GoroutineThreshold,
@@ -462,7 +470,7 @@ func (rm *ResourceMonitor) triggerGoroutineAlert() {
 func (rm *ResourceMonitor) triggerDiskAlert() {
 	alert := ResourceAlert{
 		Type:      "disk",
-		Severity:  "critical",
+		Severity:  SeverityCritical,
 		Message:   "High disk usage detected",
 		Value:     rm.stats.DiskPercent,
 		Threshold: rm.config.DiskThreshold,
@@ -524,12 +532,12 @@ func (rm *ResourceMonitor) GetHealthStatus() map[string]interface{} {
 	overallHealthy := true
 
 	if stats.MemoryPercent > rm.config.MemoryThreshold {
-		status["memory"].(map[string]interface{})["status"] = "warning"
+		status["memory"].(map[string]interface{})["status"] = SeverityWarning
 		overallHealthy = false
 	}
 
 	if stats.CPUPercent > rm.config.CPUThreshold {
-		status["cpu"].(map[string]interface{})["status"] = "warning"
+		status["cpu"].(map[string]interface{})["status"] = SeverityWarning
 		overallHealthy = false
 	}
 
@@ -539,7 +547,7 @@ func (rm *ResourceMonitor) GetHealthStatus() map[string]interface{} {
 	}
 
 	if stats.GoroutineCount > rm.config.GoroutineThreshold {
-		status["goroutines"].(map[string]interface{})["status"] = "warning"
+		status["goroutines"].(map[string]interface{})["status"] = SeverityWarning
 		overallHealthy = false
 	}
 

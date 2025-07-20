@@ -9,7 +9,7 @@ import (
 //    fmt.Println(result1)
 //}
 
-func TestJoinURL(t *testing.T) {
+func TestJoinURL(_ *testing.T) {
 	result1 := JoinURL("http://naver.com/", "/download")
 	fmt.Println(result1)
 }

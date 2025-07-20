@@ -8,7 +8,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -339,21 +338,4 @@ func hashPassword(password string) (string, error) {
 	hash := sha256.Sum256([]byte(password + hex.EncodeToString(salt)))
 
 	return hex.EncodeToString(salt) + ":" + hex.EncodeToString(hash[:]), nil
-}
-
-// verifyPassword 비밀번호 검증 (향후 사용을 위한 함수)
-func verifyPassword(password, hashedPassword string) bool {
-	parts := strings.Split(hashedPassword, ":")
-	if len(parts) != 2 {
-		return false
-	}
-
-	salt := parts[0]
-	expectedHash := parts[1]
-
-	// 같은 방식으로 해시 생성
-	hash := sha256.Sum256([]byte(password + salt))
-	actualHash := hex.EncodeToString(hash[:])
-
-	return actualHash == expectedHash
 }

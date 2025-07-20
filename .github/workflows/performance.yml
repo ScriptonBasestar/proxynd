@@ -53,38 +53,35 @@ jobs:
         run: |
           mkdir -p reports/benchmarks
           mkdir -p tmp/benchmark-cache
-          chmod +x scripts/run_benchmarks.sh
+          chmod +x scripts/run-benchmarks.sh
 
       - name: Run benchmarks
         run: |
           case "${{ matrix.benchmark_type }}" in
             "cache")
-              go test -bench=BenchmarkSimpleCache -benchmem -benchtime=${{ env.BENCHMARK_TIME }} ./tests/benchmark/ -run=^$ > reports/benchmarks/cache_${{ github.sha }}.txt
-              go test -bench=BenchmarkDataSizes -benchmem -benchtime=${{ env.BENCHMARK_TIME }} ./tests/benchmark/ -run=^$ >> reports/benchmarks/cache_${{ github.sha }}.txt
-              go test -bench=BenchmarkConcurrentAccess -benchmem -benchtime=${{ env.BENCHMARK_TIME }} ./tests/benchmark/ -run=^$ >> reports/benchmarks/cache_${{ github.sha }}.txt
+              go test -bench=BenchmarkCacheSimple -benchmem -benchtime=${{ env.BENCHMARK_TIME }} ./test/benchmark/ -run=^$ > reports/benchmarks/cache_${{ github.sha }}.txt
+              go test -bench=BenchmarkCacheDataSizes -benchmem -benchtime=${{ env.BENCHMARK_TIME }} ./test/benchmark/ -run=^$ >> reports/benchmarks/cache_${{ github.sha }}.txt
+              go test -bench=BenchmarkCacheConcurrency -benchmem -benchtime=${{ env.BENCHMARK_TIME }} ./test/benchmark/ -run=^$ >> reports/benchmarks/cache_${{ github.sha }}.txt
               ;;
             "proxy")
-              # Re-enable proxy benchmarks when they're fixed
-              echo "Proxy benchmarks temporarily disabled due to interface changes"
-              echo "BenchmarkProxy-Placeholder	1	1000000 ns/op	0 B/op	0 allocs/op" > reports/benchmarks/proxy_${{ github.sha }}.txt
+              go test -bench=BenchmarkProxyThroughput -benchmem -benchtime=${{ env.BENCHMARK_TIME }} ./test/benchmark/ -run=^$ > reports/benchmarks/proxy_${{ github.sha }}.txt
+              go test -bench=BenchmarkProxyConcurrency -benchmem -benchtime=${{ env.BENCHMARK_TIME }} ./test/benchmark/ -run=^$ >> reports/benchmarks/proxy_${{ github.sha }}.txt
               ;;
             "middleware")
-              # Re-enable middleware benchmarks when they're fixed
-              echo "Middleware benchmarks temporarily disabled due to interface changes"
-              echo "BenchmarkMiddleware-Placeholder	1	1000000 ns/op	0 B/op	0 allocs/op" > reports/benchmarks/middleware_${{ github.sha }}.txt
+              go test -bench=BenchmarkMiddlewareStack -benchmem -benchtime=${{ env.BENCHMARK_TIME }} ./test/benchmark/ -run=^$ > reports/benchmarks/middleware_${{ github.sha }}.txt
+              go test -bench=BenchmarkLoggingMiddleware -benchmem -benchtime=${{ env.BENCHMARK_TIME }} ./test/benchmark/ -run=^$ >> reports/benchmarks/middleware_${{ github.sha }}.txt
               ;;
             "config")
-              # Re-enable config benchmarks when they're fixed
-              echo "Config benchmarks temporarily disabled due to interface changes" 
-              echo "BenchmarkConfig-Placeholder	1	1000000 ns/op	0 B/op	0 allocs/op" > reports/benchmarks/config_${{ github.sha }}.txt
+              go test -bench=BenchmarkConfigLoading -benchmem -benchtime=${{ env.BENCHMARK_TIME }} ./test/benchmark/ -run=^$ > reports/benchmarks/config_${{ github.sha }}.txt
+              go test -bench=BenchmarkConfigValidation -benchmem -benchtime=${{ env.BENCHMARK_TIME }} ./test/benchmark/ -run=^$ >> reports/benchmarks/config_${{ github.sha }}.txt
               ;;
           esac
 
       - name: Run memory benchmarks
         if: matrix.benchmark_type == 'cache'
         run: |
-          go test -bench=BenchmarkMemoryAllocation -benchmem -benchtime=${{ env.BENCHMARK_TIME }} ./tests/benchmark/ -run=^$ >> reports/benchmarks/memory_${{ github.sha }}.txt
-          go test -bench=BenchmarkStringOperations -benchmem -benchtime=${{ env.BENCHMARK_TIME }} ./tests/benchmark/ -run=^$ >> reports/benchmarks/string_${{ github.sha }}.txt
+          go test -bench=BenchmarkCacheMemory -benchmem -benchtime=${{ env.BENCHMARK_TIME }} ./test/benchmark/ -run=^$ >> reports/benchmarks/memory_${{ github.sha }}.txt
+          go test -bench=BenchmarkCacheSizes -benchmem -benchtime=${{ env.BENCHMARK_TIME }} ./test/benchmark/ -run=^$ >> reports/benchmarks/cache_sizes_${{ github.sha }}.txt
 
       - name: Generate performance report
         run: |
@@ -139,7 +136,7 @@ jobs:
           mkdir -p reports/baseline/
           
           # Run baseline benchmarks (quick version)
-          go test -bench=BenchmarkSimpleCache -benchmem -benchtime=5s ./tests/benchmark/ -run=^$ > reports/baseline/cache_baseline.txt || echo "Baseline benchmark failed"
+          go test -bench=BenchmarkCacheSimple -benchmem -benchtime=5s ./test/benchmark/ -run=^$ > reports/baseline/cache_baseline.txt || echo "Baseline benchmark failed"
 
       - name: Install benchcmp
         run: |
@@ -261,7 +258,7 @@ jobs:
           STRESS_PID=$!
           
           # Run benchmarks under stress
-          go test -bench=BenchmarkConcurrentAccess -benchmem -benchtime=60s ./tests/benchmark/ -run=^$ > stress-benchmark-results.txt
+          go test -bench=BenchmarkCacheConcurrency -benchmem -benchtime=60s ./test/benchmark/ -run=^$ > stress-benchmark-results.txt
           
           # Cleanup
           kill $HTOP_PID $STRESS_PID 2>/dev/null || true

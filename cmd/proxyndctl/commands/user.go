@@ -68,7 +68,7 @@ func newUserListCmd() *cobra.Command {
 		Use:   "list",
 		Short: "사용자 목록 조회",
 		Long:  "등록된 모든 사용자의 목록을 조회합니다.",
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			return runUserList(showDetails)
 		},
 	}
@@ -92,7 +92,7 @@ func newUserAddCmd() *cobra.Command {
 		Use:   "add",
 		Short: "사용자 추가",
 		Long:  "새로운 사용자를 추가합니다.",
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			if interactive {
 				return runUserAddInteractive()
 			}
@@ -118,7 +118,7 @@ func newUserDeleteCmd() *cobra.Command {
 		Short: "사용자 삭제",
 		Long:  "지정된 사용자를 삭제합니다.",
 		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			return runUserDelete(args[0], force)
 		},
 	}
@@ -135,7 +135,7 @@ func newUserInfoCmd() *cobra.Command {
 		Short: "사용자 정보 조회",
 		Long:  "지정된 사용자의 상세 정보를 조회합니다.",
 		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			return runUserInfo(args[0])
 		},
 	}
@@ -151,26 +151,26 @@ func runUserList(showDetails bool) error {
 	// API 호출
 	resp, err := http.Get(apiURL)
 	if err != nil {
-		return fmt.Errorf("서버 연결 실패: %v", err)
+		return fmt.Errorf(errServerConnection, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("API 요청 실패: HTTP %d", resp.StatusCode)
+		return fmt.Errorf(errAPIRequest, resp.StatusCode)
 	}
 
 	// 응답 파싱
 	var result UserListResponse
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return fmt.Errorf("응답 파싱 실패: %v", err)
+		return fmt.Errorf(errResponseParsing, err)
 	}
 
 	// 결과 출력
 	outputFormat := getOutputFormat()
 	switch outputFormat {
-	case "json":
+	case formatJSON:
 		return outputJSON(result)
-	case "yaml":
+	case formatYAML:
 		return outputYAML(result)
 	default:
 		return outputUserListTable(result, showDetails)
@@ -206,9 +206,9 @@ func runUserAdd(username, password, role, description string) error {
 
 	resp, err := http.Post(apiURL, "application/json", bytes.NewBuffer(data))
 	if err != nil {
-		return fmt.Errorf("서버 연결 실패: %v", err)
+		return fmt.Errorf(errServerConnection, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusCreated {
 		fmt.Printf("✅ 사용자 '%s'가 성공적으로 추가되었습니다.\n", username)
@@ -237,7 +237,7 @@ func runUserAddInteractive() error {
 
 	// 비밀번호 입력 (숨김)
 	fmt.Print("비밀번호: ")
-	passwordBytes, err := term.ReadPassword(int(syscall.Stdin))
+	passwordBytes, err := term.ReadPassword(syscall.Stdin)
 	if err != nil {
 		return fmt.Errorf("비밀번호 입력 실패: %v", err)
 	}
@@ -246,7 +246,7 @@ func runUserAddInteractive() error {
 
 	// 비밀번호 확인
 	fmt.Print("비밀번호 확인: ")
-	confirmBytes, err := term.ReadPassword(int(syscall.Stdin))
+	confirmBytes, err := term.ReadPassword(syscall.Stdin)
 	if err != nil {
 		return fmt.Errorf("비밀번호 확인 입력 실패: %v", err)
 	}
@@ -260,7 +260,7 @@ func runUserAddInteractive() error {
 	// 역할 입력
 	var role string
 	fmt.Print("역할 [user]: ")
-	fmt.Scanln(&role)
+	_, _ = fmt.Scanln(&role)
 	if role == "" {
 		role = "user"
 	}
@@ -268,7 +268,7 @@ func runUserAddInteractive() error {
 	// 설명 입력
 	var description string
 	fmt.Print("설명 (선택사항): ")
-	fmt.Scanln(&description)
+	_, _ = fmt.Scanln(&description)
 
 	fmt.Println()
 
@@ -281,7 +281,7 @@ func runUserDelete(username string, force bool) error {
 	if !force {
 		fmt.Printf("사용자 '%s'를 정말 삭제하시겠습니까? (y/N): ", username)
 		var confirm string
-		fmt.Scanln(&confirm)
+		_, _ = fmt.Scanln(&confirm)
 		if confirm != "y" && confirm != "Y" {
 			fmt.Println("삭제가 취소되었습니다.")
 			return nil
@@ -311,9 +311,9 @@ func runUserDelete(username string, force bool) error {
 
 	resp, err := client.Do(req2)
 	if err != nil {
-		return fmt.Errorf("서버 연결 실패: %v", err)
+		return fmt.Errorf(errServerConnection, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusOK {
 		fmt.Printf("✅ 사용자 '%s'가 성공적으로 삭제되었습니다.\n", username)
@@ -336,29 +336,29 @@ func runUserInfo(username string) error {
 	// API 호출
 	resp, err := http.Get(apiURL)
 	if err != nil {
-		return fmt.Errorf("서버 연결 실패: %v", err)
+		return fmt.Errorf(errServerConnection, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		if resp.StatusCode == http.StatusNotFound {
 			return fmt.Errorf("사용자 '%s'를 찾을 수 없습니다", username)
 		}
-		return fmt.Errorf("API 요청 실패: HTTP %d", resp.StatusCode)
+		return fmt.Errorf(errAPIRequest, resp.StatusCode)
 	}
 
 	// 응답 파싱
 	var result UserInfo
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return fmt.Errorf("응답 파싱 실패: %v", err)
+		return fmt.Errorf(errResponseParsing, err)
 	}
 
 	// 결과 출력
 	outputFormat := getOutputFormat()
 	switch outputFormat {
-	case "json":
+	case formatJSON:
 		return outputJSON(result)
-	case "yaml":
+	case formatYAML:
 		return outputYAML(result)
 	default:
 		return outputUserInfoTable(result)
@@ -368,7 +368,7 @@ func runUserInfo(username string) error {
 // outputUserListTable 사용자 목록을 테이블 형태로 출력
 func outputUserListTable(result UserListResponse, showDetails bool) error {
 	fmt.Printf("👥 사용자 목록 (총 %d명)\n", result.Total)
-	fmt.Printf("조회 시간: %s\n\n", result.Timestamp.Format("2006-01-02 15:04:05"))
+	fmt.Printf("조회 시간: %s\n\n", result.Timestamp.Format(dateTimeFormat))
 
 	if len(result.Users) == 0 {
 		fmt.Println("등록된 사용자가 없습니다.")
@@ -378,18 +378,18 @@ func outputUserListTable(result UserListResponse, showDetails bool) error {
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 
 	if showDetails {
-		fmt.Fprintln(w, "사용자명\t역할\t상태\t생성일\t마지막로그인\t설명")
-		fmt.Fprintln(w, "--------\t----\t----\t------\t----------\t----")
+		_, _ = fmt.Fprintln(w, "사용자명\t역할\t상태\t생성일\t마지막로그인\t설명")
+		_, _ = fmt.Fprintln(w, "--------\t----\t----\t------\t----------\t----")
 
 		for _, user := range result.Users {
-			status := "✅"
+			status := iconSuccess
 			if !user.Active {
-				status = "❌"
+				status = iconError
 			}
 
 			lastLogin := "-"
 			if user.LastLogin != nil {
-				lastLogin = user.LastLogin.Format("2006-01-02")
+				lastLogin = user.LastLogin.Format(dateFormat)
 			}
 
 			description := user.Description
@@ -397,48 +397,48 @@ func outputUserListTable(result UserListResponse, showDetails bool) error {
 				description = "-"
 			}
 
-			fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\n",
+			_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\n",
 				user.Username,
 				user.Role,
 				status,
-				user.CreatedAt.Format("2006-01-02"),
+				user.CreatedAt.Format(dateFormat),
 				lastLogin,
 				description,
 			)
 		}
 	} else {
-		fmt.Fprintln(w, "사용자명\t역할\t상태\t생성일")
-		fmt.Fprintln(w, "--------\t----\t----\t------")
+		_, _ = fmt.Fprintln(w, "사용자명\t역할\t상태\t생성일")
+		_, _ = fmt.Fprintln(w, "--------\t----\t----\t------")
 
 		for _, user := range result.Users {
-			status := "✅"
+			status := iconSuccess
 			if !user.Active {
-				status = "❌"
+				status = iconError
 			}
 
-			fmt.Fprintf(w, "%s\t%s\t%s\t%s\n",
+			_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\n",
 				user.Username,
 				user.Role,
 				status,
-				user.CreatedAt.Format("2006-01-02"),
+				user.CreatedAt.Format(dateFormat),
 			)
 		}
 	}
 
-	w.Flush()
+	_ = w.Flush()
 	return nil
 }
 
 // outputUserInfoTable 사용자 정보를 테이블 형태로 출력
 func outputUserInfoTable(user UserInfo) error {
-	status := "✅ 활성"
+	status := statusActive
 	if !user.Active {
-		status = "❌ 비활성"
+		status = statusInactive
 	}
 
 	lastLogin := "없음"
 	if user.LastLogin != nil {
-		lastLogin = user.LastLogin.Format("2006-01-02 15:04:05")
+		lastLogin = user.LastLogin.Format(dateTimeFormat)
 	}
 
 	description := user.Description
@@ -449,7 +449,7 @@ func outputUserInfoTable(user UserInfo) error {
 	fmt.Printf("👤 사용자 정보: %s\n\n", user.Username)
 	fmt.Printf("역할: %s\n", user.Role)
 	fmt.Printf("상태: %s\n", status)
-	fmt.Printf("생성일: %s\n", user.CreatedAt.Format("2006-01-02 15:04:05"))
+	fmt.Printf("생성일: %s\n", user.CreatedAt.Format(dateTimeFormat))
 	fmt.Printf("마지막 로그인: %s\n", lastLogin)
 	fmt.Printf("설명: %s\n", description)
 

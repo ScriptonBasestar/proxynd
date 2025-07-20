@@ -1,3 +1,4 @@
+// Package verification provides package verification functionality
 package verification
 
 import (
@@ -18,12 +19,20 @@ import (
 // HashType 해시 타입
 type HashType string
 
+// HashTypeSHA1 is exported
+// HashTypeSHA1 represents a type identifier
 const (
-	HashTypeSHA1   HashType = "sha1"
+	HashTypeSHA1 HashType = "sha1"
+	// HashTypeSHA256 is a const that hash type s h a256
+	// HashTypeSHA512 is a const that hash type s h a512
+	// HashTypeMD5 is a const that hash type m d5
 	HashTypeSHA256 HashType = "sha256"
 	HashTypeSHA512 HashType = "sha512"
 	HashTypeMD5    HashType = "md5" // 보안상 권장하지 않음
 )
+
+// Result is an alias for VerificationResult to avoid package stuttering
+type Result = VerificationResult
 
 // VerificationResult 검증 결과
 type VerificationResult struct {
@@ -126,8 +135,8 @@ func (pv *PackageVerifier) VerifyPackage(
 
 // verifyNpmPackage NPM 패키지 검증
 func (pv *PackageVerifier) verifyNpmPackage(
-	ctx context.Context,
-	packagePath string,
+	_ context.Context,
+	_ string,
 	data []byte,
 	metadata map[string]string,
 ) (*VerificationResult, error) {
@@ -164,7 +173,7 @@ func (pv *PackageVerifier) verifyNpmPackage(
 
 // verifyPipPackage PyPI 패키지 검증
 func (pv *PackageVerifier) verifyPipPackage(
-	ctx context.Context,
+	_ context.Context,
 	packagePath string,
 	data []byte,
 	metadata map[string]string,
@@ -208,8 +217,8 @@ func (pv *PackageVerifier) verifyPipPackage(
 
 // verifyAptPackage APT 패키지 검증
 func (pv *PackageVerifier) verifyAptPackage(
-	ctx context.Context,
-	packagePath string,
+	_ context.Context,
+	_ string,
 	data []byte,
 	metadata map[string]string,
 ) (*VerificationResult, error) {
@@ -244,7 +253,7 @@ func (pv *PackageVerifier) verifyAptPackage(
 
 // verifyDockerPackage Docker 이미지/레이어 검증
 func (pv *PackageVerifier) verifyDockerPackage(
-	ctx context.Context,
+	_ context.Context,
 	packagePath string,
 	data []byte,
 	metadata map[string]string,
@@ -291,8 +300,8 @@ func (pv *PackageVerifier) verifyDockerPackage(
 
 // verifyMavenPackage Maven 패키지 검증
 func (pv *PackageVerifier) verifyMavenPackage(
-	ctx context.Context,
-	packagePath string,
+	_ context.Context,
+	_ string,
 	data []byte,
 	metadata map[string]string,
 ) (*VerificationResult, error) {
@@ -452,6 +461,9 @@ func extractPackageName(path string, packageType string) string {
 	}
 	return path
 }
+
+// Middleware is an alias for VerificationMiddleware to avoid package stuttering
+var Middleware = VerificationMiddleware
 
 // VerificationMiddleware Fiber 미들웨어로 패키지 검증 통합
 func VerificationMiddleware(verifier *PackageVerifier) fiber.Handler {

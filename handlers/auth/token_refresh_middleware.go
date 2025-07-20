@@ -141,7 +141,7 @@ func attemptTokenRefresh(c *fiber.Ctx, sess fiber.Map, userMap fiber.Map) error 
 }
 
 // performTokenRefresh 실제 토큰 갱신 수행
-func performTokenRefresh(c *fiber.Ctx, sess fiber.Map, userMap fiber.Map) error {
+func performTokenRefresh(_ *fiber.Ctx, sess fiber.Map, userMap fiber.Map) error {
 	jwtRefreshToken, exists := sess["jwt_refresh_token"]
 	if !exists || jwtRefreshToken == nil {
 		return fiber.NewError(fiber.StatusUnauthorized, "No refresh token available")
@@ -230,7 +230,10 @@ func clearSession(sess fiber.Map, userMap fiber.Map) {
 	}
 
 	// 세션 데이터 삭제
-	keysToDelete := []string{"user", "jwt_access_token", "jwt_refresh_token", "oauth2_access_token", "oauth2_refresh_token"}
+	keysToDelete := []string{
+		"user", "jwt_access_token", "jwt_refresh_token",
+		"oauth2_access_token", "oauth2_refresh_token",
+	}
 	for _, key := range keysToDelete {
 		delete(sess, key)
 	}

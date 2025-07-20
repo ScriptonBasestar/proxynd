@@ -8,7 +8,14 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+
 	"proxynd/configs"
+)
+
+// Test constants for proxy types
+const (
+	proxyTypeNpm    = "npm"
+	proxyTypeDocker = "docker"
 )
 
 func TestNewProxyServiceFactory(t *testing.T) {
@@ -69,38 +76,38 @@ func TestProxyServiceFactory_CreateProxyService(t *testing.T) {
 		},
 		{
 			name:      "create npm service",
-			proxyType: "npm",
+			proxyType: proxyTypeNpm,
 			setupMocks: func(config *MockConfigService) {
 				npmConfig := &configs.NpmProxyConfig{
 					Path:     "/npm",
 					UseCache: true,
 				}
-				config.On("GetProxyConfig", mock.Anything, "npm").Return(npmConfig, nil)
+				config.On("GetProxyConfig", mock.Anything, proxyTypeNpm).Return(npmConfig, nil)
 			},
 			wantErr: false,
 			checkType: func(s ProxyService) bool {
-				return s.GetProxyType() == "npm"
+				return s.GetProxyType() == proxyTypeNpm
 			},
 		},
 		{
 			name:      "create docker service",
-			proxyType: "docker",
+			proxyType: proxyTypeDocker,
 			setupMocks: func(config *MockConfigService) {
 				dockerConfig := &configs.DockerProxyConfig{
 					Path:     "/docker",
 					UseCache: true,
 				}
-				config.On("GetProxyConfig", mock.Anything, "docker").Return(dockerConfig, nil)
+				config.On("GetProxyConfig", mock.Anything, proxyTypeDocker).Return(dockerConfig, nil)
 			},
 			wantErr: false,
 			checkType: func(s ProxyService) bool {
-				return s.GetProxyType() == "docker"
+				return s.GetProxyType() == proxyTypeDocker
 			},
 		},
 		{
 			name:      "unknown proxy type",
 			proxyType: "unknown",
-			setupMocks: func(config *MockConfigService) {
+			setupMocks: func(_ *MockConfigService) {
 				// No setup needed
 			},
 			wantErr: true,
@@ -109,7 +116,7 @@ func TestProxyServiceFactory_CreateProxyService(t *testing.T) {
 		{
 			name:      "empty proxy type",
 			proxyType: "",
-			setupMocks: func(config *MockConfigService) {
+			setupMocks: func(_ *MockConfigService) {
 				// No setup needed
 			},
 			wantErr: true,
@@ -161,7 +168,7 @@ func TestProxyServiceFactory_CreateProxyService(t *testing.T) {
 func TestProxyServiceFactory_AllProxyTypes(t *testing.T) {
 	ctx := context.Background()
 
-	proxyTypes := []string{"apt", "maven", "npm", "docker"}
+	proxyTypes := []string{"apt", "maven", proxyTypeNpm, proxyTypeDocker}
 
 	for _, proxyType := range proxyTypes {
 		t.Run(proxyType, func(t *testing.T) {
@@ -175,9 +182,9 @@ func TestProxyServiceFactory_AllProxyTypes(t *testing.T) {
 				config.On("GetProxyConfig", mock.Anything, proxyType).Return(&configs.AptProxyConfig{}, nil)
 			case "maven":
 				config.On("GetProxyConfig", mock.Anything, proxyType).Return(&configs.MavenProxyConfig{}, nil)
-			case "npm":
+			case proxyTypeNpm:
 				config.On("GetProxyConfig", mock.Anything, proxyType).Return(&configs.NpmProxyConfig{}, nil)
-			case "docker":
+			case proxyTypeDocker:
 				config.On("GetProxyConfig", mock.Anything, proxyType).Return(&configs.DockerProxyConfig{}, nil)
 			case "pip":
 				config.On("GetProxyConfig", mock.Anything, proxyType).Return(struct{}{}, nil)

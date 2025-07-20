@@ -1,6 +1,7 @@
 package configs
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -320,7 +321,7 @@ func TestUnifiedConfig_Validate(t *testing.T) {
 						Directory: "/tmp/cache",
 					},
 				},
-				Logging: LoggingConfig{
+				Logging: UnifiedLoggingConfig{
 					Level: "info",
 				},
 			},
@@ -335,7 +336,7 @@ func TestUnifiedConfig_Validate(t *testing.T) {
 				Cache: CacheConfig{
 					Backend: "file",
 				},
-				Logging: LoggingConfig{
+				Logging: UnifiedLoggingConfig{
 					Level: "info",
 				},
 			},
@@ -355,7 +356,7 @@ func TestUnifiedConfig_Validate(t *testing.T) {
 				Cache: CacheConfig{
 					Backend: "file",
 				},
-				Logging: LoggingConfig{
+				Logging: UnifiedLoggingConfig{
 					Level: "info",
 				},
 			},
@@ -371,7 +372,7 @@ func TestUnifiedConfig_Validate(t *testing.T) {
 				Cache: CacheConfig{
 					Backend: "invalid",
 				},
-				Logging: LoggingConfig{
+				Logging: UnifiedLoggingConfig{
 					Level: "info",
 				},
 			},
@@ -387,7 +388,7 @@ func TestUnifiedConfig_Validate(t *testing.T) {
 				Cache: CacheConfig{
 					Backend: "s3",
 				},
-				Logging: LoggingConfig{
+				Logging: UnifiedLoggingConfig{
 					Level: "info",
 				},
 			},
@@ -403,7 +404,7 @@ func TestUnifiedConfig_Validate(t *testing.T) {
 				Cache: CacheConfig{
 					Backend: "file",
 				},
-				Logging: LoggingConfig{
+				Logging: UnifiedLoggingConfig{
 					Level: "invalid",
 				},
 			},
@@ -419,7 +420,7 @@ func TestUnifiedConfig_Validate(t *testing.T) {
 				Cache: CacheConfig{
 					Backend: "file",
 				},
-				Logging: LoggingConfig{
+				Logging: UnifiedLoggingConfig{
 					Level: "info",
 				},
 				Metrics: MetricsConfig{
@@ -439,7 +440,7 @@ func TestUnifiedConfig_Validate(t *testing.T) {
 				Cache: CacheConfig{
 					Backend: "file",
 				},
-				Logging: LoggingConfig{
+				Logging: UnifiedLoggingConfig{
 					Level: "info",
 				},
 				Registries: RegistryConfig{
@@ -461,7 +462,7 @@ func TestUnifiedConfig_Validate(t *testing.T) {
 				Cache: CacheConfig{
 					Backend: "file",
 				},
-				Logging: LoggingConfig{
+				Logging: UnifiedLoggingConfig{
 					Level: "info",
 				},
 				Registries: RegistryConfig{
@@ -483,7 +484,7 @@ func TestUnifiedConfig_Validate(t *testing.T) {
 				Cache: CacheConfig{
 					Backend: "file",
 				},
-				Logging: LoggingConfig{
+				Logging: UnifiedLoggingConfig{
 					Level: "info",
 				},
 				Registries: RegistryConfig{

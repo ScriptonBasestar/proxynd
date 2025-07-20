@@ -11,13 +11,14 @@ type PipService struct {
 }
 
 // NewPipService creates a new PIP proxy service
-func NewPipService(cache CacheService, configService ConfigService, upstreamClient UpstreamClient) (*PipService, error) {
+func NewPipService(cache CacheService, configService ConfigService,
+	upstreamClient UpstreamClient) (*PipService, error) {
 	base := NewBaseProxyService("pip", cache, configService, upstreamClient)
 	return &PipService{BaseProxyService: base}, nil
 }
 
 // HandleRequest processes a PIP proxy request
-func (s *PipService) HandleRequest(ctx context.Context, req ProxyRequest) (*ProxyResponse, error) {
+func (s *PipService) HandleRequest(_ context.Context, _ ProxyRequest) (*ProxyResponse, error) {
 	return s.HandleError(fmt.Errorf("PIP service not yet implemented"), 501), nil
 }
 
@@ -27,13 +28,14 @@ type YumService struct {
 }
 
 // NewYumService creates a new YUM proxy service
-func NewYumService(cache CacheService, configService ConfigService, upstreamClient UpstreamClient) (*YumService, error) {
+func NewYumService(cache CacheService, configService ConfigService,
+	upstreamClient UpstreamClient) (*YumService, error) {
 	base := NewBaseProxyService("yum", cache, configService, upstreamClient)
 	return &YumService{BaseProxyService: base}, nil
 }
 
 // HandleRequest processes a YUM proxy request
-func (s *YumService) HandleRequest(ctx context.Context, req ProxyRequest) (*ProxyResponse, error) {
+func (s *YumService) HandleRequest(_ context.Context, _ ProxyRequest) (*ProxyResponse, error) {
 	return s.HandleError(fmt.Errorf("YUM service not yet implemented"), 501), nil
 }
 
@@ -43,12 +45,13 @@ type ApkService struct {
 }
 
 // NewApkService creates a new APK proxy service
-func NewApkService(cache CacheService, configService ConfigService, upstreamClient UpstreamClient) (*ApkService, error) {
+func NewApkService(cache CacheService, configService ConfigService,
+	upstreamClient UpstreamClient) (*ApkService, error) {
 	base := NewBaseProxyService("apk", cache, configService, upstreamClient)
 	return &ApkService{BaseProxyService: base}, nil
 }
 
 // HandleRequest processes an APK proxy request
-func (s *ApkService) HandleRequest(ctx context.Context, req ProxyRequest) (*ProxyResponse, error) {
+func (s *ApkService) HandleRequest(_ context.Context, _ ProxyRequest) (*ProxyResponse, error) {
 	return s.HandleError(fmt.Errorf("APK service not yet implemented"), 501), nil
 }

@@ -98,7 +98,6 @@ func (q *MemoryEventQueue) NotifyCh() <-chan struct{} {
 type PersistentEventQueue struct {
 	filePath string
 	memory   *MemoryEventQueue
-	mu       sync.RWMutex
 }
 
 // NewPersistentEventQueue 새로운 영속성 이벤트 큐 생성

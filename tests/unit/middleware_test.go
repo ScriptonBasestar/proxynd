@@ -35,6 +35,7 @@ func TestIPFilterMiddleware(t *testing.T) {
 
 		resp, err := app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 		assert.Equal(t, 200, resp.StatusCode)
 
 		// 허용되지 않은 IP에서 요청
@@ -43,6 +44,7 @@ func TestIPFilterMiddleware(t *testing.T) {
 
 		resp, err = app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 		assert.Equal(t, 403, resp.StatusCode)
 	})
 
@@ -65,6 +67,7 @@ func TestIPFilterMiddleware(t *testing.T) {
 
 		resp, err := app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 		assert.Equal(t, 200, resp.StatusCode)
 
 		// CIDR 범위 외 IP
@@ -73,6 +76,7 @@ func TestIPFilterMiddleware(t *testing.T) {
 
 		resp, err = app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 		assert.Equal(t, 403, resp.StatusCode)
 	})
 
@@ -95,6 +99,7 @@ func TestIPFilterMiddleware(t *testing.T) {
 
 		resp, err := app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 		assert.Equal(t, 200, resp.StatusCode)
 	})
 }
@@ -125,6 +130,7 @@ func TestBasicAuthMiddleware(t *testing.T) {
 
 		resp, err := app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 		assert.Equal(t, 200, resp.StatusCode)
 
 		body, err := io.ReadAll(resp.Body)
@@ -153,6 +159,7 @@ func TestBasicAuthMiddleware(t *testing.T) {
 
 		resp, err := app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 		assert.Equal(t, 401, resp.StatusCode)
 		assert.Contains(t, resp.Header.Get("WWW-Authenticate"), "Basic realm=")
 	})
@@ -173,6 +180,7 @@ func TestBasicAuthMiddleware(t *testing.T) {
 
 		resp, err := app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 		assert.Equal(t, 401, resp.StatusCode)
 	})
 
@@ -194,6 +202,7 @@ func TestBasicAuthMiddleware(t *testing.T) {
 
 		resp, err := app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 		assert.Equal(t, 401, resp.StatusCode)
 	})
 }
@@ -225,6 +234,7 @@ func TestPermissionMiddleware(t *testing.T) {
 		req := httptest.NewRequest("GET", "/data", nil)
 		resp, err := app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 		assert.Equal(t, 200, resp.StatusCode)
 	})
 
@@ -252,6 +262,7 @@ func TestPermissionMiddleware(t *testing.T) {
 		req := httptest.NewRequest("POST", "/data", nil)
 		resp, err := app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 		assert.Equal(t, 403, resp.StatusCode)
 	})
 
@@ -272,6 +283,7 @@ func TestPermissionMiddleware(t *testing.T) {
 		req := httptest.NewRequest("GET", "/public", nil)
 		resp, err := app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 		assert.Equal(t, 200, resp.StatusCode)
 	})
 }
@@ -298,12 +310,14 @@ func TestPackageFilterMiddleware(t *testing.T) {
 		req := httptest.NewRequest("GET", "/proxy/npm/express", nil)
 		resp, err := app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 		assert.Equal(t, 200, resp.StatusCode)
 
 		// 와일드카드 패턴 매칭
 		req = httptest.NewRequest("GET", "/proxy/npm/@types/node", nil)
 		resp, err = app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 		assert.Equal(t, 200, resp.StatusCode)
 	})
 
@@ -326,12 +340,14 @@ func TestPackageFilterMiddleware(t *testing.T) {
 		req := httptest.NewRequest("GET", "/proxy/npm/lodash", nil)
 		resp, err := app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 		assert.Equal(t, 403, resp.StatusCode)
 
 		// 허용되지 않은 타입
 		req = httptest.NewRequest("GET", "/proxy/maven/com.example", nil)
 		resp, err = app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 		assert.Equal(t, 403, resp.StatusCode)
 	})
 
@@ -354,6 +370,7 @@ func TestPackageFilterMiddleware(t *testing.T) {
 		req := httptest.NewRequest("GET", "/proxy/npm/lodash", nil)
 		resp, err := app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 		assert.Equal(t, 200, resp.StatusCode)
 	})
 }
@@ -387,6 +404,7 @@ func TestSecurityMiddleware(t *testing.T) {
 
 		resp, err := app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 		assert.Equal(t, 200, resp.StatusCode)
 	})
 
@@ -413,6 +431,7 @@ func TestSecurityMiddleware(t *testing.T) {
 
 		resp, err := app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 		assert.Equal(t, 400, resp.StatusCode)
 	})
 
@@ -435,6 +454,7 @@ func TestSecurityMiddleware(t *testing.T) {
 
 		resp, err := app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 		assert.Equal(t, 200, resp.StatusCode)
 	})
 
@@ -461,6 +481,7 @@ func TestSecurityMiddleware(t *testing.T) {
 
 		resp, err := app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 		assert.Equal(t, 200, resp.StatusCode)
 	})
 
@@ -482,6 +503,7 @@ func TestSecurityMiddleware(t *testing.T) {
 
 		resp, err := app.Test(req)
 		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
 		assert.Equal(t, 200, resp.StatusCode)
 	})
 }

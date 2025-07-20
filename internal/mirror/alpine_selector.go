@@ -1,3 +1,4 @@
+// Package mirror provides mirror selection and management
 package mirror
 
 import (
@@ -13,6 +14,22 @@ import (
 
 	"proxynd/configs"
 	"proxynd/logging"
+)
+
+// Region constants
+const (
+	// RegionKorea is a const that region korea
+	// RegionJapan is a const that region japan
+	// RegionChina is a const that region china
+	// RegionAsia is a const that region asia
+	// RegionOfficial is a const that region official
+	// RegionGlobal is a const that region global
+	RegionKorea    = "korea"
+	RegionJapan    = "japan"
+	RegionChina    = "china"
+	RegionAsia     = "asia"
+	RegionOfficial = "official"
+	RegionGlobal   = "global"
 )
 
 // AlpineVersion Alpine 버전 정보
@@ -94,12 +111,12 @@ func (ams *AlpineMirrorSelector) Start(config AlpineMirrorConfig, proxies []conf
 	// 미러 헬스 정보 초기화
 	ams.healthMutex.Lock()
 	for _, proxy := range proxies {
-		region := ams.detectRegion(proxy.Url)
+		region := ams.detectRegion(proxy.URL)
 		priority := ams.calculatePriority(region, config.PreferredRegions)
 
 		ams.mirrorHealth[proxy.Name] = &MirrorHealth{
 			Name:         proxy.Name,
-			URL:          proxy.Url,
+			URL:          proxy.URL,
 			ResponseTime: 0,
 			LastCheck:    time.Time{},
 			IsHealthy:    true, // 초기에는 healthy로 가정
@@ -191,8 +208,8 @@ func (ams *AlpineMirrorSelector) extractAlpineVersion(requestPath string) Alpine
 			parts := strings.Split(versionStr[1:], ".")
 			if len(parts) >= 2 {
 				var major, minor int
-				fmt.Sscanf(parts[0], "%d", &major)
-				fmt.Sscanf(parts[1], "%d", &minor)
+				_, _ = fmt.Sscanf(parts[0], "%d", &major)
+				_, _ = fmt.Sscanf(parts[1], "%d", &minor)
 				return AlpineVersion{
 					Major:   major,
 					Minor:   minor,
@@ -220,25 +237,25 @@ func (ams *AlpineMirrorSelector) detectRegion(url string) string {
 	// 한국
 	if strings.Contains(lowerURL, "kakao.com") || strings.Contains(lowerURL, "naver") ||
 		strings.Contains(lowerURL, "korea") || strings.Contains(lowerURL, ".kr") {
-		return "korea"
+		return RegionKorea
 	}
 
 	// 일본
 	if strings.Contains(lowerURL, "japan") || strings.Contains(lowerURL, ".jp") ||
 		strings.Contains(lowerURL, "riken") {
-		return "japan"
+		return RegionJapan
 	}
 
 	// 중국
 	if strings.Contains(lowerURL, "china") || strings.Contains(lowerURL, ".cn") ||
 		strings.Contains(lowerURL, "tsinghua") || strings.Contains(lowerURL, "ustc") {
-		return "china"
+		return RegionChina
 	}
 
 	// 아시아
 	if strings.Contains(lowerURL, "asia") || strings.Contains(lowerURL, "singapore") ||
 		strings.Contains(lowerURL, ".sg") {
-		return "asia"
+		return RegionAsia
 	}
 
 	// 유럽
@@ -256,10 +273,10 @@ func (ams *AlpineMirrorSelector) detectRegion(url string) string {
 
 	// 공식/글로벌
 	if strings.Contains(lowerURL, "alpinelinux.org") || strings.Contains(lowerURL, "dl-cdn") {
-		return "official"
+		return RegionOfficial
 	}
 
-	return "global"
+	return RegionGlobal
 }
 
 // calculatePriority 지역과 선호도에 따른 우선순위 계산
@@ -272,13 +289,13 @@ func (ams *AlpineMirrorSelector) calculatePriority(region string, preferredRegio
 
 	// 기본 우선순위
 	switch region {
-	case "korea":
+	case RegionKorea:
 		return 10
-	case "japan", "asia":
+	case RegionJapan, RegionAsia:
 		return 20
-	case "china":
+	case RegionChina:
 		return 25
-	case "official":
+	case RegionOfficial:
 		return 30
 	case "europe":
 		return 40
@@ -293,7 +310,7 @@ func (ams *AlpineMirrorSelector) calculatePriority(region string, preferredRegio
 func (ams *AlpineMirrorSelector) detectClientRegion() string {
 	// 현재는 기본값으로 korea 반환
 	// 향후 GeoIP나 다른 방법으로 확장 가능
-	return "korea"
+	return RegionKorea
 }
 
 // performHealthCheck 모든 미러에 대한 헬스체크 수행
@@ -349,7 +366,7 @@ func (ams *AlpineMirrorSelector) checkMirrorHealth(mirror *MirrorHealth, config 
 		ams.recordMirrorError(mirror)
 		return
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	responseTime := time.Since(start)
 
@@ -412,7 +429,11 @@ func (ams *AlpineMirrorSelector) getHealthyMirrors(proxies []configs.ApkProxy) [
 }
 
 // rankMirrors 미러들을 우선순위에 따라 정렬
-func (ams *AlpineMirrorSelector) rankMirrors(proxies []configs.ApkProxy, version AlpineVersion, clientRegion string) []configs.ApkProxy {
+func (ams *AlpineMirrorSelector) rankMirrors(
+	proxies []configs.ApkProxy,
+	version AlpineVersion,
+	clientRegion string,
+) []configs.ApkProxy {
 	ams.healthMutex.RLock()
 	defer ams.healthMutex.RUnlock()
 
@@ -443,7 +464,8 @@ func (ams *AlpineMirrorSelector) rankMirrors(proxies []configs.ApkProxy, version
 }
 
 // calculateMirrorScore 미러 점수 계산
-func (ams *AlpineMirrorSelector) calculateMirrorScore(proxy configs.ApkProxy, version AlpineVersion, clientRegion string) float64 {
+func (ams *AlpineMirrorSelector) calculateMirrorScore(
+	proxy configs.ApkProxy, _ AlpineVersion, clientRegion string) float64 {
 	health, exists := ams.mirrorHealth[proxy.Name]
 	if !exists {
 		return 50.0 // 기본 점수
@@ -493,25 +515,25 @@ func (ams *AlpineMirrorSelector) calculateRegionScore(mirrorRegion, clientRegion
 	}
 
 	// 지역별 근접도 점수
-	switch {
-	case clientRegion == "korea":
+	switch clientRegion {
+	case RegionKorea:
 		switch mirrorRegion {
-		case "japan", "asia":
+		case RegionJapan, RegionAsia:
 			return 25.0
-		case "china":
+		case RegionChina:
 			return 20.0
-		case "official":
+		case RegionOfficial:
 			return 15.0
-		case "global":
+		case RegionGlobal:
 			return 10.0
 		default:
 			return 5.0
 		}
 	default:
 		switch mirrorRegion {
-		case "official":
+		case RegionOfficial:
 			return 20.0
-		case "global":
+		case RegionGlobal:
 			return 15.0
 		default:
 			return 10.0

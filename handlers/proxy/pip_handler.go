@@ -32,9 +32,9 @@ func PipProxy(c *fiber.Ctx) error {
 	// 설정 읽기
 	storageDir := helpers.GetStorageDir()
 	globalConfig := configs.GlobalConfig{}
-	globalConfig.ReadConfig()
+	_ = globalConfig.ReadConfig()
 	config := configs.PipProxyConfig{}
-	config.ReadConfig()
+	_ = config.ReadConfig()
 
 	// 미들웨어에서 전달된 캐시 정보 확인
 	cacheHit, _ := c.Locals("cache_hit").(bool)
@@ -60,7 +60,7 @@ func PipProxy(c *fiber.Ctx) error {
 	// 캐시가 히트하지 않았을 때만 다운로드
 	if !cacheHit {
 		dirpath := filepath.Dir(filefullpath)
-		os.MkdirAll(dirpath, 0766)
+		_ = os.MkdirAll(dirpath, 0766)
 
 		// HTTP 클라이언트 생성 (프록시 최적화 설정)
 		proxyClient := httpclient.NewProxyClient()
@@ -80,7 +80,7 @@ func PipProxy(c *fiber.Ctx) error {
 				log.Printf("Error fetching from proxy %s: %v", server.Name, err)
 				continue
 			}
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 
 			if resp.StatusCode == http.StatusOK {
 				bytes, _ := io.ReadAll(resp.Body)
@@ -154,16 +154,16 @@ func getPipContentType(filename, path string) string {
 	// 패키지 파일
 	switch {
 	case strings.HasSuffix(filename, ".whl"):
-		return "application/zip"
+		return mimeApplicationZip
 	case strings.HasSuffix(filename, ".tar.gz"):
 		return "application/x-gzip"
 	case strings.HasSuffix(filename, ".tar.bz2"):
 		return "application/x-bzip2"
 	case strings.HasSuffix(filename, ".zip"):
-		return "application/zip"
+		return mimeApplicationZip
 	case strings.HasSuffix(filename, ".egg"):
-		return "application/zip"
+		return mimeApplicationZip
 	default:
-		return "application/octet-stream"
+		return mimeApplicationOctetStream
 	}
 }

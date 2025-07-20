@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestReadYaml(t *testing.T) {
+func TestReadYaml(_ *testing.T) {
 	var cfg struct {
 		Server map[string]interface{} `yaml:"server"`
 	}

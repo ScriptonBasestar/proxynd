@@ -10,9 +10,9 @@ func TestValidateRequiredEnvVars(t *testing.T) {
 	originalJWT := os.Getenv("JWT_SECRET")
 	defer func() {
 		if originalJWT != "" {
-			os.Setenv("JWT_SECRET", originalJWT)
+			_ = os.Setenv("JWT_SECRET", originalJWT)
 		} else {
-			os.Unsetenv("JWT_SECRET")
+			_ = os.Unsetenv("JWT_SECRET")
 		}
 	}()
 
@@ -38,9 +38,9 @@ func TestValidateRequiredEnvVars(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.jwtSecret != "" {
-				os.Setenv("JWT_SECRET", tt.jwtSecret)
+				_ = os.Setenv("JWT_SECRET", tt.jwtSecret)
 			} else {
-				os.Unsetenv("JWT_SECRET")
+				_ = os.Unsetenv("JWT_SECRET")
 			}
 
 			err := ValidateRequiredEnvVars()
@@ -67,9 +67,9 @@ func TestLoadSecureConfig(t *testing.T) {
 	originalJWT := os.Getenv("JWT_SECRET")
 	defer func() {
 		if originalJWT != "" {
-			os.Setenv("JWT_SECRET", originalJWT)
+			_ = os.Setenv("JWT_SECRET", originalJWT)
 		} else {
-			os.Unsetenv("JWT_SECRET")
+			_ = os.Unsetenv("JWT_SECRET")
 		}
 	}()
 
@@ -106,7 +106,7 @@ func TestLoadSecureConfig(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			os.Setenv("JWT_SECRET", tt.jwtSecret)
+			_ = os.Setenv("JWT_SECRET", tt.jwtSecret)
 
 			err := LoadSecureConfig()
 
@@ -181,7 +181,7 @@ func TestValidateConditionalEnvVars(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			os.Setenv("OAUTH_ENABLED", tt.oauthEnabled)
+			_ = os.Setenv("OAUTH_ENABLED", tt.oauthEnabled)
 			setEnvVar("OAUTH_GITHUB_CLIENT_ID", tt.githubClientID)
 			setEnvVar("OAUTH_GITHUB_CLIENT_SECRET", tt.githubClientSecret)
 
@@ -246,16 +246,16 @@ func findSubstring(s, substr string) bool {
 
 func setEnvVar(key, value string) {
 	if value != "" {
-		os.Setenv(key, value)
+		_ = os.Setenv(key, value)
 	} else {
-		os.Unsetenv(key)
+		_ = os.Unsetenv(key)
 	}
 }
 
 func restoreEnvVar(key, originalValue string) {
 	if originalValue != "" {
-		os.Setenv(key, originalValue)
+		_ = os.Setenv(key, originalValue)
 	} else {
-		os.Unsetenv(key)
+		_ = os.Unsetenv(key)
 	}
 }

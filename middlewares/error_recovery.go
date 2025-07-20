@@ -66,7 +66,11 @@ func ErrorRecovery() fiber.Handler {
 				}
 
 				// 패닉 상황에서는 직접 응답
-				c.Status(fiber.StatusInternalServerError).JSON(response)
+				if err := c.Status(fiber.StatusInternalServerError).JSON(response); err != nil {
+					recovery.logger.Error("Failed to send panic response",
+						logging.F("error", err.Error()),
+						logging.F("trace_id", traceID))
+				}
 			}
 		}()
 
@@ -152,7 +156,11 @@ func RecoveryWithConfig(config RecoveryConfig) fiber.Handler {
 					Timestamp: panicErr.Timestamp,
 				}
 
-				c.Status(fiber.StatusInternalServerError).JSON(response)
+				if err := c.Status(fiber.StatusInternalServerError).JSON(response); err != nil {
+					recovery.logger.Error("Failed to send panic response",
+						logging.F("error", err.Error()),
+						logging.F("trace_id", traceID))
+				}
 			}
 		}()
 

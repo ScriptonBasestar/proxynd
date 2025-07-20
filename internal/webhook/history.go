@@ -150,7 +150,8 @@ func (whm *WebhookHistoryManager) AddHistory(item *WebhookHistoryItem) error {
 }
 
 // GetHistory 이력 조회 (페이징 지원)
-func (whm *WebhookHistoryManager) GetHistory(endpointName string, limit int, offset int) ([]WebhookHistoryItem, int, error) {
+func (whm *WebhookHistoryManager) GetHistory(endpointName string, limit int,
+	offset int) ([]WebhookHistoryItem, int, error) {
 	whm.mu.RLock()
 	defer whm.mu.RUnlock()
 
@@ -200,7 +201,8 @@ func (whm *WebhookHistoryManager) GetHistory(endpointName string, limit int, off
 }
 
 // GetStatistics 통계 정보 조회
-func (whm *WebhookHistoryManager) GetStatistics(endpointName string, timeRange *TimeRangeStats) (*WebhookStatistics, error) {
+func (whm *WebhookHistoryManager) GetStatistics(endpointName string,
+	timeRange *TimeRangeStats) (*WebhookStatistics, error) {
 	whm.mu.RLock()
 	defer whm.mu.RUnlock()
 
@@ -304,7 +306,9 @@ func (whm *WebhookHistoryManager) GetStatistics(endpointName string, timeRange *
 
 		if history.ResponseTime > 0 {
 			// 엔드포인트별 평균 응답 시간 계산을 위한 누적
-			epStats.AverageResponseTime = ((epStats.AverageResponseTime * time.Duration(epStats.TotalSent-1)) + history.ResponseTime) / time.Duration(epStats.TotalSent)
+			epStats.AverageResponseTime = ((epStats.AverageResponseTime *
+				time.Duration(epStats.TotalSent-1)) + history.ResponseTime) /
+				time.Duration(epStats.TotalSent)
 		}
 	}
 

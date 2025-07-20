@@ -1,3 +1,4 @@
+// Package docker provides Docker domain logic and models
 package docker
 
 import (
@@ -17,7 +18,7 @@ func NewDomain() *Domain {
 }
 
 // ParseRequest parses and validates a Docker proxy request
-func (d *Domain) ParseRequest(ctx context.Context, req *common.ProxyRequest) error {
+func (d *Domain) ParseRequest(_ context.Context, req *common.ProxyRequest) error {
 	// Docker registry supports GET, HEAD, PUT, POST, DELETE
 	validMethods := map[string]bool{
 		"GET":    true,
@@ -79,7 +80,7 @@ func (d *Domain) ExtractMetadata(path string) (*common.PackageMetadata, error) {
 }
 
 // TransformResponse transforms the upstream response if needed
-func (d *Domain) TransformResponse(ctx context.Context, resp *common.ProxyResponse) error {
+func (d *Domain) TransformResponse(_ context.Context, _ *common.ProxyResponse) error {
 	// Docker responses typically don't need transformation
 	return nil
 }

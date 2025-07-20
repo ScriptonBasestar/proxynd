@@ -85,7 +85,7 @@ func TestMemoryEventQueueClear(t *testing.T) {
 			"테스트",
 			"테스트 메시지",
 		)
-		queue.Push(event)
+		_ = queue.Push(event)
 	}
 
 	assert.Equal(t, queue.Size(), 5)
@@ -108,7 +108,7 @@ func TestMemoryEventQueueClose(t *testing.T) {
 		"테스트",
 		"테스트 메시지",
 	)
-	queue.Push(event)
+	_ = queue.Push(event)
 
 	assert.Equal(t, queue.Size(), 1)
 

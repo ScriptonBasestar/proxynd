@@ -47,7 +47,7 @@ func TestServerStatusResponse(t *testing.T) {
 		},
 	}
 
-	if response.Status != "healthy" {
+	if response.Status != statusHealthy {
 		t.Errorf("Expected status to be 'healthy', got %s", response.Status)
 	}
 

@@ -35,11 +35,17 @@ type CheckResult struct {
 	LastChecked time.Time              `json:"last_checked"`
 }
 
+// Checker is an alias for HealthChecker to avoid stuttering
+type Checker = HealthChecker
+
 // HealthChecker is the interface that health check implementations must satisfy.
 type HealthChecker interface {
 	Check(ctx context.Context) *CheckResult
 	Name() string
 }
+
+// Service is an alias for HealthService to avoid stuttering
+type Service = HealthService
 
 // HealthService manages multiple health checkers and provides aggregated health status.
 type HealthService struct {
@@ -61,12 +67,12 @@ func NewHealthService(checkInterval time.Duration) *HealthService {
 	}
 }
 
-// RegisterChecker 체커 등록
+// RegisterChecker registers a health checker with the service
 func (hs *HealthService) RegisterChecker(checker HealthChecker) {
 	hs.checkers = append(hs.checkers, checker)
 }
 
-// Start 주기적 체크 시작
+// Start begins periodic health checks
 func (hs *HealthService) Start(ctx context.Context) {
 	// 초기 체크
 	hs.runChecks(ctx)
@@ -85,7 +91,7 @@ func (hs *HealthService) Start(ctx context.Context) {
 	}
 }
 
-// runChecks 모든 체크 실행
+// runChecks executes all registered health checks
 func (hs *HealthService) runChecks(ctx context.Context) {
 	var wg sync.WaitGroup
 
@@ -109,7 +115,7 @@ func (hs *HealthService) runChecks(ctx context.Context) {
 	wg.Wait()
 }
 
-// GetStatus 전체 건강 상태 반환
+// GetStatus returns the overall health status and individual check results
 func (hs *HealthService) GetStatus() (Status, map[string]*CheckResult) {
 	hs.resultsMutex.RLock()
 	defer hs.resultsMutex.RUnlock()
@@ -141,27 +147,30 @@ func (hs *HealthService) GetStatus() (Status, map[string]*CheckResult) {
 	return overallStatus, results
 }
 
-// GetUptime 가동 시간 반환
+// GetUptime returns the service uptime duration
 func (hs *HealthService) GetUptime() time.Duration {
 	return time.Since(hs.startTime)
 }
 
 // 기본 체커 구현들
 
-// EnvironmentChecker 환경 변수 체커
+// EnvironmentChecker checks for required environment variables
 type EnvironmentChecker struct {
 	requiredVars []string
 }
 
+// NewEnvironmentChecker creates a new instance of EnvironmentChecker
 func NewEnvironmentChecker(vars []string) *EnvironmentChecker {
 	return &EnvironmentChecker{requiredVars: vars}
 }
 
+// Name returns the name of the component
 func (ec *EnvironmentChecker) Name() string {
 	return "environment"
 }
 
-func (ec *EnvironmentChecker) Check(ctx context.Context) *CheckResult {
+// Check performs the environment variable check
+func (ec *EnvironmentChecker) Check(_ context.Context) *CheckResult {
 	start := time.Now()
 	result := &CheckResult{
 		Name:        ec.Name(),
@@ -190,13 +199,14 @@ func (ec *EnvironmentChecker) Check(ctx context.Context) *CheckResult {
 	return result
 }
 
-// DiskSpaceChecker 디스크 공간 체커
+// DiskSpaceChecker checks for available disk space
 type DiskSpaceChecker struct {
 	path           string
 	minFreeBytes   uint64
 	minFreePercent float64
 }
 
+// NewDiskSpaceChecker creates a new disk space checker
 func NewDiskSpaceChecker(path string, minFreeBytes uint64, minFreePercent float64) *DiskSpaceChecker {
 	return &DiskSpaceChecker{
 		path:           path,
@@ -205,11 +215,13 @@ func NewDiskSpaceChecker(path string, minFreeBytes uint64, minFreePercent float6
 	}
 }
 
+// Name returns the name of the disk space checker
 func (dc *DiskSpaceChecker) Name() string {
 	return "disk_space"
 }
 
-func (dc *DiskSpaceChecker) Check(ctx context.Context) *CheckResult {
+// Check performs the disk space check
+func (dc *DiskSpaceChecker) Check(_ context.Context) *CheckResult {
 	start := time.Now()
 	result := &CheckResult{
 		Name:        dc.Name(),
@@ -250,20 +262,23 @@ func (dc *DiskSpaceChecker) Check(ctx context.Context) *CheckResult {
 	return result
 }
 
-// WritableChecker 쓰기 가능 체커
+// WritableChecker checks if a directory is writable
 type WritableChecker struct {
 	path string
 }
 
+// NewWritableChecker creates a new WritableChecker
 func NewWritableChecker(path string) *WritableChecker {
 	return &WritableChecker{path: path}
 }
 
+// Name returns the name of the writable checker
 func (wc *WritableChecker) Name() string {
 	return "writable_" + filepath.Base(wc.path)
 }
 
-func (wc *WritableChecker) Check(ctx context.Context) *CheckResult {
+// Check performs the writable check
+func (wc *WritableChecker) Check(_ context.Context) *CheckResult {
 	start := time.Now()
 	result := &CheckResult{
 		Name:        wc.Name(),
@@ -304,7 +319,7 @@ func (wc *WritableChecker) Check(ctx context.Context) *CheckResult {
 		result.Status = StatusUnhealthy
 		result.Message = fmt.Sprintf("Cannot write to directory: %v", err)
 	} else {
-		os.Remove(testFile)
+		_ = os.Remove(testFile)
 		result.Message = "Directory is writable"
 	}
 
@@ -312,7 +327,7 @@ func (wc *WritableChecker) Check(ctx context.Context) *CheckResult {
 	return result
 }
 
-// HTTPChecker HTTP 엔드포인트 체커
+// HTTPChecker checks HTTP endpoint health
 type HTTPChecker struct {
 	name    string
 	url     string
@@ -320,6 +335,7 @@ type HTTPChecker struct {
 	client  *http.Client
 }
 
+// NewHTTPChecker creates a new HTTP health checker
 func NewHTTPChecker(name, url string, timeout time.Duration) *HTTPChecker {
 	return &HTTPChecker{
 		name:    name,
@@ -331,10 +347,12 @@ func NewHTTPChecker(name, url string, timeout time.Duration) *HTTPChecker {
 	}
 }
 
+// Name returns the name of the HTTP checker
 func (hc *HTTPChecker) Name() string {
 	return hc.name
 }
 
+// Check performs the HTTP health check
 func (hc *HTTPChecker) Check(ctx context.Context) *CheckResult {
 	start := time.Now()
 	result := &CheckResult{
@@ -361,7 +379,7 @@ func (hc *HTTPChecker) Check(ctx context.Context) *CheckResult {
 		result.Duration = time.Since(start)
 		return result
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	result.Details["status_code"] = resp.StatusCode
 
@@ -376,12 +394,13 @@ func (hc *HTTPChecker) Check(ctx context.Context) *CheckResult {
 	return result
 }
 
-// CacheBackendChecker 캐시 백엔드 체커
+// CacheBackendChecker checks cache backend health
 type CacheBackendChecker struct {
 	backendType string
 	checkFunc   func(ctx context.Context) error
 }
 
+// NewCacheBackendChecker creates a new cache backend checker
 func NewCacheBackendChecker(backendType string, checkFunc func(ctx context.Context) error) *CacheBackendChecker {
 	return &CacheBackendChecker{
 		backendType: backendType,
@@ -389,10 +408,12 @@ func NewCacheBackendChecker(backendType string, checkFunc func(ctx context.Conte
 	}
 }
 
+// Name returns the name of the cache backend checker
 func (cc *CacheBackendChecker) Name() string {
 	return "cache_" + cc.backendType
 }
 
+// Check performs the cache backend health check
 func (cc *CacheBackendChecker) Check(ctx context.Context) *CheckResult {
 	start := time.Now()
 	result := &CheckResult{

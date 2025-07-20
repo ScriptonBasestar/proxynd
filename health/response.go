@@ -4,6 +4,9 @@ import (
 	"time"
 )
 
+// Response is an alias for HealthResponse to avoid stuttering
+type Response = HealthResponse
+
 // HealthResponse 건강 상태 응답
 type HealthResponse struct {
 	Status      Status                  `json:"status"`

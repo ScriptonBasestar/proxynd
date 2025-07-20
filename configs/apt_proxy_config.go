@@ -8,11 +8,15 @@ import (
 	"proxynd/helpers"
 )
 
+// AptProxy is exported
+// AptProxy represents a data structure
 type AptProxy struct {
 	Name string `yaml:"name,omitempty" validate:"required,min=1,max=100"`
 	URL  string `yaml:"url,omitempty" validate:"required,url"`
+	// AptProxyConfig is exported
 }
 
+// AptProxyConfig represents the configuration for APT proxy settings
 type AptProxyConfig struct {
 	Path      string                `yaml:"path,omitempty" validate:"required,min=1"`
 	UseCache  bool                  `yaml:"use_cache,omitempty" default:"true"`
@@ -20,11 +24,13 @@ type AptProxyConfig struct {
 	Proxies   map[string][]AptProxy `yaml:"proxies" validate:"required,min=1,dive,keys,min=1,endkeys,min=1,dive"`
 }
 
+// ConfigExists checks if the APT proxy configuration file exists
 func (cfg *AptProxyConfig) ConfigExists() bool {
 	confDir := helpers.GetConfigDir()
 	return helpers.FileExists(path.Join(confDir, "apt-proxy.yaml"))
 }
 
+// ReadConfig reads and validates the APT proxy configuration
 func (cfg *AptProxyConfig) ReadConfig() error {
 	confDir := helpers.GetConfigDir()
 	if err := helpers.ReadYamlSafe(path.Join(confDir, "apt-proxy.yaml"), cfg); err != nil {

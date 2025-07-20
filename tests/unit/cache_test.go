@@ -18,7 +18,7 @@ func TestFileSystemBackend(t *testing.T) {
 	// 임시 디렉토리 생성
 	tempDir, err := os.MkdirTemp("", "proxynd-cache-test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// 백엔드 생성
 	backend, err := cache.NewFileSystemBackendWithConfig(cache.FileSystemConfig{
@@ -38,7 +38,7 @@ func TestFileSystemBackend(t *testing.T) {
 		// 데이터 조회
 		reader, err := backend.Get(key)
 		require.NoError(t, err)
-		defer reader.Close()
+		defer func() { _ = reader.Close() }()
 
 		// 데이터 비교
 		buf := new(bytes.Buffer)
@@ -136,7 +136,7 @@ func TestCacheManager(t *testing.T) {
 	// 임시 디렉토리 생성
 	tempDir, err := os.MkdirTemp("", "proxynd-manager-test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// 백엔드 생성
 	backend, err := cache.NewFileSystemBackendWithConfig(cache.FileSystemConfig{

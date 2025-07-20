@@ -53,21 +53,21 @@ func (a *ConfigServiceAdapter) ReloadConfig(ctx context.Context) error {
 }
 
 // WatchConfig sets up configuration watching with a callback
-func (a *ConfigServiceAdapter) WatchConfig(callback func(proxyType string, config interface{})) error {
+func (a *ConfigServiceAdapter) WatchConfig(_ func(proxyType string, config interface{})) error {
 	// The centralized config service handles validation on load
 	// This method is kept for interface compatibility
 	return nil
 }
 
 // SaveProxyConfig saves a proxy configuration
-func (a *ConfigServiceAdapter) SaveProxyConfig(proxyType string, config interface{}) error {
+func (a *ConfigServiceAdapter) SaveProxyConfig(_ string, _ interface{}) error {
 	// Not implemented for centralized config service
 	// Configuration should be managed through files
 	return fmt.Errorf("saving configuration through service is not supported")
 }
 
 // SaveGlobalConfig saves the global configuration
-func (a *ConfigServiceAdapter) SaveGlobalConfig(config interface{}) error {
+func (a *ConfigServiceAdapter) SaveGlobalConfig(_ interface{}) error {
 	// Not implemented for centralized config service
 	// Configuration should be managed through files
 	return fmt.Errorf("saving configuration through service is not supported")

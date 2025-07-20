@@ -208,15 +208,15 @@ func (s *ProxyIntegrationTestSuite) setupUpstreamServers() {
 		case strings.Contains(r.URL.Path, "/dists/jammy/Release"):
 			w.Header().Set("Content-Type", "text/plain")
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("Origin: Ubuntu\nLabel: Ubuntu\nSuite: jammy\n"))
+			_, _ = w.Write([]byte("Origin: Ubuntu\nLabel: Ubuntu\nSuite: jammy\n"))
 		case strings.Contains(r.URL.Path, "/Packages.gz"):
 			w.Header().Set("Content-Type", "application/x-gzip")
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte{0x1f, 0x8b, 0x08, 0x00}) // gzip magic bytes
+			_, _ = w.Write([]byte{0x1f, 0x8b, 0x08, 0x00}) // gzip magic bytes
 		case strings.Contains(r.URL.Path, ".deb"):
 			w.Header().Set("Content-Type", "application/vnd.debian.binary-package")
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("fake deb content"))
+			_, _ = w.Write([]byte("fake deb content"))
 		default:
 			w.WriteHeader(http.StatusNotFound)
 		}
@@ -228,7 +228,7 @@ func (s *ProxyIntegrationTestSuite) setupUpstreamServers() {
 		case strings.HasSuffix(r.URL.Path, "/maven-metadata.xml"):
 			w.Header().Set("Content-Type", "application/xml")
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`<?xml version="1.0" encoding="UTF-8"?>
+			_, _ = w.Write([]byte(`<?xml version="1.0" encoding="UTF-8"?>
 <metadata>
   <groupId>com.example</groupId>
   <artifactId>test</artifactId>
@@ -240,14 +240,14 @@ func (s *ProxyIntegrationTestSuite) setupUpstreamServers() {
 		case strings.HasSuffix(r.URL.Path, ".jar"):
 			w.Header().Set("Content-Type", "application/java-archive")
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("fake jar content"))
+			_, _ = w.Write([]byte("fake jar content"))
 		case strings.HasSuffix(r.URL.Path, ".jar.sha1"):
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("da39a3ee5e6b4b0d3255bfef95601890afd80709"))
+			_, _ = w.Write([]byte("da39a3ee5e6b4b0d3255bfef95601890afd80709"))
 		case strings.HasSuffix(r.URL.Path, ".pom"):
 			w.Header().Set("Content-Type", "application/xml")
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`<?xml version="1.0" encoding="UTF-8"?>
+			_, _ = w.Write([]byte(`<?xml version="1.0" encoding="UTF-8"?>
 <project>
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.example</groupId>
@@ -265,7 +265,7 @@ func (s *ProxyIntegrationTestSuite) setupUpstreamServers() {
 		case strings.Contains(r.URL.Path, "/express"):
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{
+			_, _ = w.Write([]byte(`{
 				"name": "express",
 				"version": "4.18.2",
 				"dist": {
@@ -275,11 +275,11 @@ func (s *ProxyIntegrationTestSuite) setupUpstreamServers() {
 		case strings.HasSuffix(r.URL.Path, ".tgz"):
 			w.Header().Set("Content-Type", "application/x-gzip")
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte{0x1f, 0x8b, 0x08, 0x00}) // gzip magic bytes
+			_, _ = w.Write([]byte{0x1f, 0x8b, 0x08, 0x00}) // gzip magic bytes
 		case strings.Contains(r.URL.Path, "/@types/node"):
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{
+			_, _ = w.Write([]byte(`{
 				"name": "@types/node",
 				"version": "18.0.0"
 			}`))
@@ -633,7 +633,7 @@ func TestLargeFileHandling(t *testing.T) {
 		// 청크로 데이터 전송
 		chunk := make([]byte, 1024*1024) // 1MB chunks
 		for i := 0; i < 10; i++ {
-			w.Write(chunk)
+			_, _ = w.Write(chunk)
 		}
 	}))
 	defer largeFileServer.Close()
@@ -677,11 +677,11 @@ func TestAuthenticationFlow(t *testing.T) {
 		auth := r.Header.Get("Authorization")
 		if auth != "Bearer valid-token" {
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Write([]byte("Unauthorized"))
+			_, _ = w.Write([]byte("Unauthorized"))
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"name": "private-package"}`))
+		_, _ = w.Write([]byte(`{"name": "private-package"}`))
 	}))
 	defer authServer.Close()
 
@@ -757,7 +757,7 @@ func TestErrorHandling(t *testing.T) {
 		badServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("not-json"))
+			_, _ = w.Write([]byte("not-json"))
 		}))
 		defer badServer.Close()
 
@@ -837,7 +837,7 @@ func TestMetricsCollection(t *testing.T) {
 			Path:    path,
 			Headers: make(map[string]string),
 		}
-		npmService.HandleRequest(ctx, req)
+		_, _ = npmService.HandleRequest(ctx, req)
 	}
 
 	// 메트릭 확인 (실제 구현에서는 Prometheus 메트릭 확인)
@@ -925,7 +925,7 @@ func BenchmarkProxyRequests(b *testing.B) {
 	}
 
 	// 캐시 워밍업
-	npmService.HandleRequest(ctx, req)
+	_, _ = npmService.HandleRequest(ctx, req)
 
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
@@ -935,8 +935,8 @@ func BenchmarkProxyRequests(b *testing.B) {
 				b.Error(err)
 			}
 			if resp != nil {
-				io.Copy(io.Discard, resp.Body)
-				resp.Body.Close()
+				_, _ = io.Copy(io.Discard, resp.Body)
+				_ = resp.Body.Close()
 			}
 		}
 	})

@@ -9,7 +9,7 @@ import (
 
 func TestNewWebhookHistoryManager(t *testing.T) {
 	tempDir := filepath.Join(os.TempDir(), "webhook_history_test")
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	manager := NewWebhookHistoryManager(tempDir, 1000, 24*time.Hour)
 	if manager == nil {
@@ -36,7 +36,7 @@ func TestNewWebhookHistoryManager(t *testing.T) {
 
 func TestWebhookHistoryManager_AddHistory(t *testing.T) {
 	tempDir := filepath.Join(os.TempDir(), "webhook_history_add_test")
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	manager := NewWebhookHistoryManager(tempDir, 1000, 24*time.Hour)
 
@@ -46,7 +46,7 @@ func TestWebhookHistoryManager_AddHistory(t *testing.T) {
 		URL:          "https://example.com/webhook",
 		EventID:      "event-123",
 		EventType:    "test.event",
-		Status:       "success",
+		Status:       statusSuccess,
 		Timestamp:    time.Now(),
 		ResponseTime: 150 * time.Millisecond,
 		StatusCode:   200,
@@ -74,7 +74,7 @@ func TestWebhookHistoryManager_AddHistory(t *testing.T) {
 
 func TestWebhookHistoryManager_GetHistory(t *testing.T) {
 	tempDir := filepath.Join(os.TempDir(), "webhook_history_get_test")
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	manager := NewWebhookHistoryManager(tempDir, 1000, 24*time.Hour)
 
@@ -85,7 +85,7 @@ func TestWebhookHistoryManager_GetHistory(t *testing.T) {
 			EndpointName: "endpoint-1",
 			URL:          "https://example.com/webhook1",
 			EventID:      "event-1",
-			Status:       "success",
+			Status:       statusSuccess,
 			Timestamp:    now,
 		},
 		{
@@ -99,7 +99,7 @@ func TestWebhookHistoryManager_GetHistory(t *testing.T) {
 			EndpointName: "endpoint-1",
 			URL:          "https://example.com/webhook1",
 			EventID:      "event-3",
-			Status:       "success",
+			Status:       statusSuccess,
 			Timestamp:    now.Add(2 * time.Minute),
 		},
 	}
@@ -165,7 +165,7 @@ func TestWebhookHistoryManager_GetHistory(t *testing.T) {
 
 func TestWebhookHistoryManager_GetStatistics(t *testing.T) {
 	tempDir := filepath.Join(os.TempDir(), "webhook_history_stats_test")
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	manager := NewWebhookHistoryManager(tempDir, 1000, 24*time.Hour)
 
@@ -174,7 +174,7 @@ func TestWebhookHistoryManager_GetStatistics(t *testing.T) {
 	items := []*WebhookHistoryItem{
 		{
 			EndpointName: "endpoint-1",
-			Status:       "success",
+			Status:       statusSuccess,
 			Timestamp:    now.Add(-1 * time.Hour),
 			ResponseTime: 100 * time.Millisecond,
 		},
@@ -186,13 +186,13 @@ func TestWebhookHistoryManager_GetStatistics(t *testing.T) {
 		},
 		{
 			EndpointName: "endpoint-2",
-			Status:       "success",
+			Status:       statusSuccess,
 			Timestamp:    now.Add(-15 * time.Minute),
 			ResponseTime: 150 * time.Millisecond,
 		},
 		{
 			EndpointName: "endpoint-1",
-			Status:       "success",
+			Status:       statusSuccess,
 			Timestamp:    now.Add(-5 * time.Minute),
 			ResponseTime: 120 * time.Millisecond,
 		},
@@ -276,7 +276,7 @@ func TestWebhookHistoryManager_GetStatistics(t *testing.T) {
 
 func TestWebhookHistoryManager_GetStatistics_WithTimeRange(t *testing.T) {
 	tempDir := filepath.Join(os.TempDir(), "webhook_history_timerange_test")
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	manager := NewWebhookHistoryManager(tempDir, 1000, 24*time.Hour)
 
@@ -285,12 +285,12 @@ func TestWebhookHistoryManager_GetStatistics_WithTimeRange(t *testing.T) {
 	items := []*WebhookHistoryItem{
 		{
 			EndpointName: "endpoint-1",
-			Status:       "success",
+			Status:       statusSuccess,
 			Timestamp:    now.Add(-2 * time.Hour), // 범위 밖
 		},
 		{
 			EndpointName: "endpoint-1",
-			Status:       "success",
+			Status:       statusSuccess,
 			Timestamp:    now.Add(-30 * time.Minute), // 범위 안
 		},
 		{
@@ -345,7 +345,7 @@ func TestWebhookHistoryManager_GetStatistics_WithTimeRange(t *testing.T) {
 
 func TestWebhookHistoryManager_GetRecentActivity(t *testing.T) {
 	tempDir := filepath.Join(os.TempDir(), "webhook_history_recent_test")
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	manager := NewWebhookHistoryManager(tempDir, 1000, 24*time.Hour)
 
@@ -355,7 +355,7 @@ func TestWebhookHistoryManager_GetRecentActivity(t *testing.T) {
 		{
 			EndpointName: "endpoint-1",
 			EventID:      "event-1",
-			Status:       "success",
+			Status:       statusSuccess,
 			Timestamp:    now,
 		},
 		{
@@ -367,7 +367,7 @@ func TestWebhookHistoryManager_GetRecentActivity(t *testing.T) {
 		{
 			EndpointName: "endpoint-3",
 			EventID:      "event-3",
-			Status:       "success",
+			Status:       statusSuccess,
 			Timestamp:    now.Add(2 * time.Minute),
 		},
 	}
@@ -400,7 +400,7 @@ func TestWebhookHistoryManager_GetRecentActivity(t *testing.T) {
 
 func TestWebhookHistoryManager_CleanupOldHistories(t *testing.T) {
 	tempDir := filepath.Join(os.TempDir(), "webhook_history_cleanup_test")
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// 짧은 보관 기간으로 매니저 생성 (테스트용)
 	manager := NewWebhookHistoryManager(tempDir, 1000, 1*time.Hour)
@@ -409,14 +409,14 @@ func TestWebhookHistoryManager_CleanupOldHistories(t *testing.T) {
 	oldDate := time.Now().Add(-3 * 24 * time.Hour)
 	oldItem := &WebhookHistoryItem{
 		EndpointName: "endpoint-1",
-		Status:       "success",
+		Status:       statusSuccess,
 		Timestamp:    oldDate,
 	}
 
 	// 최근 이력 추가 (오늘)
 	recentItem := &WebhookHistoryItem{
 		EndpointName: "endpoint-1",
-		Status:       "success",
+		Status:       statusSuccess,
 		Timestamp:    time.Now(),
 	}
 

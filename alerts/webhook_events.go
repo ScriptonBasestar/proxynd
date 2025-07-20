@@ -12,77 +12,122 @@ import (
 type WebhookEventType string
 
 const (
-	// Cache-related events
-	EventCacheExpiry     WebhookEventType = "cache.expiry"     // Cache entry expired
-	EventCacheMiss       WebhookEventType = "cache.miss"       // Cache miss occurred
-	EventCacheEviction   WebhookEventType = "cache.eviction"   // Cache entry evicted
-	EventCacheFull       WebhookEventType = "cache.full"       // Cache capacity exceeded
-	EventCacheError      WebhookEventType = "cache.error"      // Cache operation error
-	EventCacheCleared    WebhookEventType = "cache.cleared"    // Cache cleared
-	EventCacheCorruption WebhookEventType = "cache.corruption" // Cache corruption detected
+	// EventCacheExpiry represents cache entry expiration event
+	EventCacheExpiry WebhookEventType = "cache.expiry"
+	// EventCacheMiss represents cache miss occurrence event
+	EventCacheMiss WebhookEventType = "cache.miss"
+	// EventCacheEviction represents cache entry eviction event
+	EventCacheEviction WebhookEventType = "cache.eviction"
+	// EventCacheFull represents cache capacity exceeded event
+	EventCacheFull WebhookEventType = "cache.full"
+	// EventCacheError represents cache operation error event
+	EventCacheError WebhookEventType = "cache.error"
+	// EventCacheCleared represents cache cleared event
+	EventCacheCleared WebhookEventType = "cache.cleared"
+	// EventCacheCorruption represents cache corruption detected event
+	EventCacheCorruption WebhookEventType = "cache.corruption"
 
-	// Authentication and authorization events
-	EventAuthFailure        WebhookEventType = "auth.failure"           // Authentication failed
-	EventAuthSuccess        WebhookEventType = "auth.success"           // Authentication succeeded
-	EventAuthBlocked        WebhookEventType = "auth.blocked"           // Authentication blocked
-	EventAuthRateLimit      WebhookEventType = "auth.rate_limit"        // Authentication rate limited
-	EventPermissionDenied   WebhookEventType = "auth.permission_denied" // Permission denied
-	EventUnauthorizedAccess WebhookEventType = "auth.unauthorized"      // Unauthorized access attempt
+	// EventAuthFailure represents authentication failure event
+	EventAuthFailure WebhookEventType = "auth.failure"
+	// EventAuthSuccess represents authentication success event
+	EventAuthSuccess WebhookEventType = "auth.success"
+	// EventAuthBlocked represents authentication blocked event
+	EventAuthBlocked WebhookEventType = "auth.blocked"
+	// EventAuthRateLimit represents authentication rate limit event
+	EventAuthRateLimit WebhookEventType = "auth.rate_limit"
+	// EventPermissionDenied represents permission denied event
+	EventPermissionDenied WebhookEventType = "auth.permission_denied"
+	// EventUnauthorizedAccess represents unauthorized access attempt event
+	EventUnauthorizedAccess WebhookEventType = "auth.unauthorized"
 
-	// Policy violation events
-	EventPolicyViolation WebhookEventType = "policy.violation"       // Policy violation detected
-	EventPackageBlocked  WebhookEventType = "policy.package_blocked" // Package blocked by policy
-	EventSizeExceeded    WebhookEventType = "policy.size_exceeded"   // Size limit exceeded
-	EventRateLimited     WebhookEventType = "policy.rate_limited"    // Rate limit exceeded
-	EventIPBlocked       WebhookEventType = "policy.ip_blocked"      // IP address blocked
-	EventQuotaExceeded   WebhookEventType = "policy.quota_exceeded"  // Quota exceeded
+	// EventPolicyViolation represents policy violation detected event
+	EventPolicyViolation WebhookEventType = "policy.violation"
+	// EventPackageBlocked represents package blocked by policy event
+	EventPackageBlocked WebhookEventType = "policy.package_blocked"
+	// EventSizeExceeded represents size limit exceeded event
+	EventSizeExceeded WebhookEventType = "policy.size_exceeded"
+	// EventRateLimited represents rate limit exceeded event
+	EventRateLimited WebhookEventType = "policy.rate_limited"
+	// EventIPBlocked represents IP address blocked event
+	EventIPBlocked WebhookEventType = "policy.ip_blocked"
+	// EventQuotaExceeded represents quota exceeded event
+	EventQuotaExceeded WebhookEventType = "policy.quota_exceeded"
 
-	// Server state change events
-	EventServerStarted     WebhookEventType = "server.started"         // Server started
-	EventServerStopped     WebhookEventType = "server.stopped"         // Server stopped
-	EventServerRestarted   WebhookEventType = "server.restarted"       // Server restarted
-	EventHealthCheckFailed WebhookEventType = "server.health_failed"   // Health check failed
-	EventHealthCheckPassed WebhookEventType = "server.health_passed"   // Health check passed
-	EventConfigReloaded    WebhookEventType = "server.config_reloaded" // Configuration reloaded
-	EventConfigError       WebhookEventType = "server.config_error"    // Configuration error
+	// EventServerStarted represents server started event
+	EventServerStarted WebhookEventType = "server.started"
+	// EventServerStopped represents server stopped event
+	EventServerStopped WebhookEventType = "server.stopped"
+	// EventServerRestarted represents server restarted event
+	EventServerRestarted WebhookEventType = "server.restarted"
+	// EventHealthCheckFailed represents health check failed event
+	EventHealthCheckFailed WebhookEventType = "server.health_failed"
+	// EventHealthCheckPassed represents health check passed event
+	EventHealthCheckPassed WebhookEventType = "server.health_passed"
+	// EventConfigReloaded represents configuration reloaded event
+	EventConfigReloaded WebhookEventType = "server.config_reloaded"
+	// EventConfigError represents configuration error event
+	EventConfigError WebhookEventType = "server.config_error"
 
-	// Package-related events
-	EventPackageDownloaded       WebhookEventType = "package.downloaded"        // Package downloaded
-	EventPackageUploaded         WebhookEventType = "package.uploaded"          // Package uploaded
-	EventPackageCorrupted        WebhookEventType = "package.corrupted"         // Package corrupted
-	EventPackageVerifyFailed     WebhookEventType = "package.verify_failed"     // Package verification failed
-	EventPackageSignatureInvalid WebhookEventType = "package.signature_invalid" // 서명 무효
-	EventPackageHashMismatch     WebhookEventType = "package.hash_mismatch"     // 해시 불일치
+	// EventPackageDownloaded represents package downloaded event
+	EventPackageDownloaded WebhookEventType = "package.downloaded"
+	// EventPackageUploaded represents package uploaded event
+	EventPackageUploaded WebhookEventType = "package.uploaded"
+	// EventPackageCorrupted represents package corrupted event
+	EventPackageCorrupted WebhookEventType = "package.corrupted"
+	// EventPackageVerifyFailed represents package verification failed event
+	EventPackageVerifyFailed WebhookEventType = "package.verify_failed"
+	// EventPackageSignatureInvalid represents package signature invalid event
+	EventPackageSignatureInvalid WebhookEventType = "package.signature_invalid"
+	// EventPackageHashMismatch represents package hash mismatch event
+	EventPackageHashMismatch WebhookEventType = "package.hash_mismatch"
 
-	// 미러 및 프록시 이벤트
-	EventMirrorDown      WebhookEventType = "mirror.down"      // 미러 서버 다운
-	EventMirrorUp        WebhookEventType = "mirror.up"        // 미러 서버 복구
-	EventMirrorSlow      WebhookEventType = "mirror.slow"      // 미러 서버 응답 지연
-	EventMirrorError     WebhookEventType = "mirror.error"     // 미러 서버 오류
-	EventProxyFallback   WebhookEventType = "proxy.fallback"   // 프록시 폴백
-	EventUpstreamTimeout WebhookEventType = "upstream.timeout" // 업스트림 타임아웃
+	// EventMirrorDown represents mirror server down event
+	EventMirrorDown WebhookEventType = "mirror.down"
+	// EventMirrorUp represents mirror server recovery event
+	EventMirrorUp WebhookEventType = "mirror.up"
+	// EventMirrorSlow represents mirror server slow response event
+	EventMirrorSlow WebhookEventType = "mirror.slow"
+	// EventMirrorError represents mirror server error event
+	EventMirrorError WebhookEventType = "mirror.error"
+	// EventProxyFallback represents proxy fallback event
+	EventProxyFallback WebhookEventType = "proxy.fallback"
+	// EventUpstreamTimeout represents upstream timeout event
+	EventUpstreamTimeout WebhookEventType = "upstream.timeout"
 
-	// 보안 관련 이벤트
-	EventSecurityThreat     WebhookEventType = "security.threat"        // 보안 위협
-	EventMalwareDetected    WebhookEventType = "security.malware"       // 악성코드 감지
-	EventVulnerabilityFound WebhookEventType = "security.vulnerability" // 취약점 발견
-	EventAuditLogFull       WebhookEventType = "security.audit_full"    // 감사 로그 가득참
-	EventSuspiciousActivity WebhookEventType = "security.suspicious"    // 의심스러운 활동
+	// EventSecurityThreat represents security threat event
+	EventSecurityThreat WebhookEventType = "security.threat"
+	// EventMalwareDetected represents malware detected event
+	EventMalwareDetected WebhookEventType = "security.malware"
+	// EventVulnerabilityFound represents vulnerability found event
+	EventVulnerabilityFound WebhookEventType = "security.vulnerability"
+	// EventAuditLogFull represents audit log full event
+	EventAuditLogFull WebhookEventType = "security.audit_full"
+	// EventSuspiciousActivity represents suspicious activity event
+	EventSuspiciousActivity WebhookEventType = "security.suspicious"
 
-	// 시스템 리소스 이벤트
-	EventDiskFull     WebhookEventType = "system.disk_full"     // 디스크 가득참
-	EventDiskLow      WebhookEventType = "system.disk_low"      // 디스크 부족
-	EventMemoryHigh   WebhookEventType = "system.memory_high"   // 메모리 사용량 높음
-	EventCPUHigh      WebhookEventType = "system.cpu_high"      // CPU 사용량 높음
-	EventNetworkError WebhookEventType = "system.network_error" // 네트워크 오류
+	// EventDiskFull represents disk full event
+	EventDiskFull WebhookEventType = "system.disk_full"
+	// EventDiskLow represents disk low event
+	EventDiskLow WebhookEventType = "system.disk_low"
+	// EventMemoryHigh represents memory high usage event
+	EventMemoryHigh WebhookEventType = "system.memory_high"
+	// EventCPUHigh represents CPU high usage event
+	EventCPUHigh WebhookEventType = "system.cpu_high"
+	// EventNetworkError represents network error event
+	EventNetworkError WebhookEventType = "system.network_error"
 
-	// 사용자 및 관리 이벤트
-	EventUserCreated     WebhookEventType = "user.created"           // 사용자 생성
-	EventUserDeleted     WebhookEventType = "user.deleted"           // 사용자 삭제
-	EventUserModified    WebhookEventType = "user.modified"          // 사용자 수정
-	EventConfigChanged   WebhookEventType = "admin.config_changed"   // 설정 변경
-	EventBackupCompleted WebhookEventType = "admin.backup_completed" // 백업 완료
-	EventBackupFailed    WebhookEventType = "admin.backup_failed"    // 백업 실패
+	// EventUserCreated represents user created event
+	EventUserCreated WebhookEventType = "user.created"
+	// EventUserDeleted represents user deleted event
+	EventUserDeleted WebhookEventType = "user.deleted"
+	// EventUserModified represents user modified event
+	EventUserModified WebhookEventType = "user.modified"
+	// EventConfigChanged represents configuration changed event
+	EventConfigChanged WebhookEventType = "admin.config_changed"
+	// EventBackupCompleted represents backup completed event
+	EventBackupCompleted WebhookEventType = "admin.backup_completed"
+	// EventBackupFailed represents backup failed event
+	EventBackupFailed WebhookEventType = "admin.backup_failed"
 )
 
 // WebhookEventContext 웹훅 이벤트 컨텍스트 정보
@@ -162,7 +207,12 @@ func CreatePolicyEvent(eventType WebhookEventType, policyName, violationDetail s
 }
 
 // CreateServerEvent 서버 상태 이벤트 생성
-func CreateServerEvent(eventType WebhookEventType, serviceName string, status string, details map[string]interface{}) *AlertEvent {
+func CreateServerEvent(
+	eventType WebhookEventType,
+	serviceName string,
+	status string,
+	details map[string]interface{},
+) *AlertEvent {
 	level := AlertLevelInfo
 	switch status {
 	case "error", "failed":
@@ -171,7 +221,8 @@ func CreateServerEvent(eventType WebhookEventType, serviceName string, status st
 		level = AlertLevelWarning
 	}
 
-	event := CreateWebhookEvent(eventType, level, string(eventType), fmt.Sprintf("Service %s status: %s", serviceName, status))
+	message := fmt.Sprintf("Service %s status: %s", serviceName, status)
+	event := CreateWebhookEvent(eventType, level, string(eventType), message)
 	event.Metadata["service_name"] = serviceName
 	event.Metadata["status"] = status
 	for k, v := range details {
@@ -194,7 +245,12 @@ func CreatePackageEvent(eventType WebhookEventType, packageInfo *PackageInfo, me
 }
 
 // CreateSecurityEvent 보안 관련 이벤트 생성
-func CreateSecurityEvent(eventType WebhookEventType, threatLevel string, description string, details map[string]interface{}) *AlertEvent {
+func CreateSecurityEvent(
+	eventType WebhookEventType,
+	threatLevel string,
+	description string,
+	details map[string]interface{},
+) *AlertEvent {
 	level := AlertLevelWarning
 	if threatLevel == "high" || threatLevel == "critical" {
 		level = AlertLevelCritical
@@ -209,7 +265,12 @@ func CreateSecurityEvent(eventType WebhookEventType, threatLevel string, descrip
 }
 
 // CreateSystemEvent 시스템 리소스 이벤트 생성
-func CreateSystemEvent(eventType WebhookEventType, resourceType string, currentValue, threshold float64, unit string) *AlertEvent {
+func CreateSystemEvent(
+	eventType WebhookEventType,
+	resourceType string,
+	currentValue, threshold float64,
+	unit string,
+) *AlertEvent {
 	level := AlertLevelWarning
 	if currentValue >= threshold*1.5 {
 		level = AlertLevelCritical

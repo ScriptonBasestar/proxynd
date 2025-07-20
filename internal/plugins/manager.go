@@ -13,8 +13,11 @@ import (
 )
 
 var (
+	// ErrManagerNotStarted is exported
+	// ErrManagerNotStarted is exported
 	ErrManagerNotStarted = errors.New("plugin manager not started")
-	ErrManagerStopped    = errors.New("plugin manager stopped")
+	// ErrManagerStopped is a var that err manager stopped
+	ErrManagerStopped = errors.New("plugin manager stopped")
 )
 
 // PluginManager 플러그인 관리자

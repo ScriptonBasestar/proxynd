@@ -166,7 +166,7 @@ func NewStatusCmd() *cobra.Command {
 		Use:   "status",
 		Short: "서버 상태 확인",
 		Long:  "ProxyND 서버의 전반적인 상태를 확인합니다.",
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			return runServerStatus(detailed)
 		},
 	}
@@ -184,7 +184,7 @@ func NewHealthCmd() *cobra.Command {
 		Use:   "health",
 		Short: "헬스체크 수행",
 		Long:  "ProxyND 서버의 헬스체크를 수행하고 업스트림 연결 상태를 확인합니다.",
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			return runHealthCheck(showDependencies)
 		},
 	}
@@ -205,7 +205,7 @@ func NewMetricsCmd() *cobra.Command {
 		Use:   "metrics",
 		Short: "메트릭 조회",
 		Long:  "ProxyND 서버의 Prometheus 메트릭을 사용자 친화적 형태로 조회합니다.",
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			return runMetrics(category, detailed)
 		},
 	}
@@ -224,9 +224,9 @@ func runServerStatus(detailed bool) error {
 	// API 호출
 	resp, err := http.Get(apiURL)
 	if err != nil {
-		return fmt.Errorf("서버 연결 실패: %v", err)
+		return fmt.Errorf(errServerConnection, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("API 요청 실패: HTTP %d", resp.StatusCode)
@@ -235,15 +235,15 @@ func runServerStatus(detailed bool) error {
 	// 응답 파싱
 	var result ServerStatusResponse
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return fmt.Errorf("응답 파싱 실패: %v", err)
+		return fmt.Errorf(errResponseParsing, err)
 	}
 
 	// 결과 출력
 	outputFormat := getOutputFormat()
 	switch outputFormat {
-	case "json":
+	case formatJSON:
 		return outputJSON(result)
-	case "yaml":
+	case formatYAML:
 		return outputYAML(result)
 	default:
 		return outputServerStatusTable(result, detailed)
@@ -258,9 +258,9 @@ func runHealthCheck(showDependencies bool) error {
 	// API 호출
 	resp, err := http.Get(apiURL)
 	if err != nil {
-		return fmt.Errorf("서버 연결 실패: %v", err)
+		return fmt.Errorf(errServerConnection, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("API 요청 실패: HTTP %d", resp.StatusCode)
@@ -269,15 +269,15 @@ func runHealthCheck(showDependencies bool) error {
 	// 응답 파싱
 	var result HealthCheckResponse
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return fmt.Errorf("응답 파싱 실패: %v", err)
+		return fmt.Errorf(errResponseParsing, err)
 	}
 
 	// 결과 출력
 	outputFormat := getOutputFormat()
 	switch outputFormat {
-	case "json":
+	case formatJSON:
 		return outputJSON(result)
-	case "yaml":
+	case formatYAML:
 		return outputYAML(result)
 	default:
 		return outputHealthCheckTable(result, showDependencies)
@@ -292,9 +292,9 @@ func runMetrics(category string, detailed bool) error {
 	// API 호출
 	resp, err := http.Get(apiURL)
 	if err != nil {
-		return fmt.Errorf("서버 연결 실패: %v", err)
+		return fmt.Errorf(errServerConnection, err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("API 요청 실패: HTTP %d", resp.StatusCode)
@@ -303,15 +303,15 @@ func runMetrics(category string, detailed bool) error {
 	// 응답 파싱
 	var result MetricsResponse
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return fmt.Errorf("응답 파싱 실패: %v", err)
+		return fmt.Errorf(errResponseParsing, err)
 	}
 
 	// 결과 출력
 	outputFormat := getOutputFormat()
 	switch outputFormat {
-	case "json":
+	case formatJSON:
 		return outputJSON(result)
-	case "yaml":
+	case formatYAML:
 		return outputYAML(result)
 	default:
 		return outputMetricsTable(result, category, detailed)
@@ -321,9 +321,9 @@ func runMetrics(category string, detailed bool) error {
 // outputServerStatusTable 서버 상태를 테이블 형태로 출력
 func outputServerStatusTable(result ServerStatusResponse, detailed bool) error {
 	// 상태 아이콘
-	statusIcon := "✅"
-	if result.Status != "healthy" {
-		statusIcon = "❌"
+	statusIcon := iconSuccess
+	if result.Status != statusHealthy {
+		statusIcon = iconError
 	}
 
 	fmt.Printf("🖥️ ProxyND 서버 상태: %s %s\n\n", statusIcon, result.Status)
@@ -375,20 +375,20 @@ func outputServerStatusTable(result ServerStatusResponse, detailed bool) error {
 	if detailed && len(result.Checks) > 0 {
 		fmt.Printf("\n🔍 헬스체크 상태:\n")
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-		fmt.Fprintln(w, "이름\t상태\t메시지")
-		fmt.Fprintln(w, "----\t----\t------")
+		_, _ = fmt.Fprintln(w, "이름\t상태\t메시지")
+		_, _ = fmt.Fprintln(w, "----\t----\t------")
 
 		for name, check := range result.Checks {
 			if checkMap, ok := check.(map[string]interface{}); ok {
-				status := "❓"
+				status := iconUnknown
 				if statusStr, exists := checkMap["status"].(string); exists {
 					switch statusStr {
-					case "healthy":
-						status = "✅"
-					case "unhealthy":
-						status = "❌"
-					case "degraded":
-						status = "⚠️"
+					case statusHealthy:
+						status = iconSuccess
+					case statusUnhealthy:
+						status = iconError
+					case statusDegraded:
+						status = iconWarning
 					}
 				}
 
@@ -397,10 +397,10 @@ func outputServerStatusTable(result ServerStatusResponse, detailed bool) error {
 					message = msg
 				}
 
-				fmt.Fprintf(w, "%s\t%s\t%s\n", name, status, message)
+				_, _ = fmt.Fprintf(w, "%s\t%s\t%s\n", name, status, message)
 			}
 		}
-		w.Flush()
+		_ = w.Flush()
 	}
 
 	return nil
@@ -409,9 +409,9 @@ func outputServerStatusTable(result ServerStatusResponse, detailed bool) error {
 // outputHealthCheckTable 헬스체크 결과를 테이블 형태로 출력
 func outputHealthCheckTable(result HealthCheckResponse, showDependencies bool) error {
 	// 전체 상태
-	statusIcon := "✅"
-	if result.Status != "healthy" {
-		statusIcon = "❌"
+	statusIcon := iconSuccess
+	if result.Status != statusHealthy {
+		statusIcon = iconError
 	}
 
 	fmt.Printf("🏥 헬스체크 결과: %s %s\n\n", statusIcon, result.Status)
@@ -430,21 +430,21 @@ func outputHealthCheckTable(result HealthCheckResponse, showDependencies bool) e
 	if len(result.Checks) > 0 {
 		fmt.Println("🔍 개별 체크 결과:")
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-		fmt.Fprintln(w, "이름\t상태\t마지막체크\t소요시간\t메시지")
-		fmt.Fprintln(w, "----\t----\t--------\t--------\t------")
+		_, _ = fmt.Fprintln(w, "이름\t상태\t마지막체크\t소요시간\t메시지")
+		_, _ = fmt.Fprintln(w, "----\t----\t--------\t--------\t------")
 
 		for name, check := range result.Checks {
-			status := "❓"
+			status := iconUnknown
 			switch check.Status {
-			case "healthy":
-				status = "✅"
-			case "unhealthy":
-				status = "❌"
-			case "degraded":
-				status = "⚠️"
+			case statusHealthy:
+				status = iconSuccess
+			case statusUnhealthy:
+				status = iconError
+			case statusDegraded:
+				status = iconWarning
 			}
 
-			fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
+			_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
 				name,
 				status,
 				check.LastChecked.Format("15:04:05"),
@@ -452,7 +452,7 @@ func outputHealthCheckTable(result HealthCheckResponse, showDependencies bool) e
 				check.Message,
 			)
 		}
-		w.Flush()
+		_ = w.Flush()
 		fmt.Println()
 	}
 
@@ -460,18 +460,18 @@ func outputHealthCheckTable(result HealthCheckResponse, showDependencies bool) e
 	if showDependencies && len(result.Dependencies) > 0 {
 		fmt.Println("🔗 의존성 상태:")
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-		fmt.Fprintln(w, "이름\t타입\t상태\t지연시간\t오류")
-		fmt.Fprintln(w, "----\t----\t----\t--------\t----")
+		_, _ = fmt.Fprintln(w, "이름\t타입\t상태\t지연시간\t오류")
+		_, _ = fmt.Fprintln(w, "----\t----\t----\t--------\t----")
 
 		for _, dep := range result.Dependencies {
-			status := "❓"
+			status := iconUnknown
 			switch dep.Status {
-			case "healthy":
-				status = "✅"
-			case "unhealthy":
-				status = "❌"
-			case "degraded":
-				status = "⚠️"
+			case statusHealthy:
+				status = iconSuccess
+			case statusUnhealthy:
+				status = iconError
+			case statusDegraded:
+				status = iconWarning
 			}
 
 			errorMsg := dep.Error
@@ -479,7 +479,7 @@ func outputHealthCheckTable(result HealthCheckResponse, showDependencies bool) e
 				errorMsg = "-"
 			}
 
-			fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
+			_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\n",
 				dep.Name,
 				dep.Type,
 				status,
@@ -487,14 +487,14 @@ func outputHealthCheckTable(result HealthCheckResponse, showDependencies bool) e
 				errorMsg,
 			)
 		}
-		w.Flush()
+		_ = w.Flush()
 	}
 
 	return nil
 }
 
 // outputMetricsTable 메트릭을 테이블 형태로 출력
-func outputMetricsTable(result MetricsResponse, category string, detailed bool) error {
+func outputMetricsTable(result MetricsResponse, category string, _ bool) error {
 	fmt.Printf("📊 메트릭 정보 (%s)\n\n", result.Timestamp.Format("2006-01-02 15:04:05"))
 
 	// 카테고리별 출력 또는 전체 출력
@@ -513,11 +513,11 @@ func outputMetricsTable(result MetricsResponse, category string, detailed bool) 
 	if category == "" || category == "cache" {
 		fmt.Println("🗄️ 캐시 메트릭:")
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-		fmt.Fprintln(w, "타입\t히트\t미스\t히트률\t크기\t항목수")
-		fmt.Fprintln(w, "----\t----\t----\t------\t----\t------")
+		_, _ = fmt.Fprintln(w, "타입\t히트\t미스\t히트률\t크기\t항목수")
+		_, _ = fmt.Fprintln(w, "----\t----\t----\t------\t----\t------")
 
 		for cacheType, metrics := range result.Cache {
-			fmt.Fprintf(w, "%s\t%d\t%d\t%.1f%%\t%s\t%d\n",
+			_, _ = fmt.Fprintf(w, "%s\t%d\t%d\t%.1f%%\t%s\t%d\n",
 				cacheType,
 				metrics.Hits,
 				metrics.Misses,
@@ -526,7 +526,7 @@ func outputMetricsTable(result MetricsResponse, category string, detailed bool) 
 				metrics.ItemsCount,
 			)
 		}
-		w.Flush()
+		_ = w.Flush()
 		fmt.Println()
 	}
 
@@ -542,16 +542,16 @@ func outputMetricsTable(result MetricsResponse, category string, detailed bool) 
 	if category == "" || category == "registry" {
 		fmt.Println("📦 레지스트리 메트릭:")
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-		fmt.Fprintln(w, "타입\t활성\t요청\t오류\t성공률\t지연시간")
-		fmt.Fprintln(w, "----\t----\t----\t----\t------\t--------")
+		_, _ = fmt.Fprintln(w, "타입\t활성\t요청\t오류\t성공률\t지연시간")
+		_, _ = fmt.Fprintln(w, "----\t----\t----\t----\t------\t--------")
 
 		for regType, metrics := range result.Registry {
-			enabled := "❌"
+			enabled := iconError
 			if metrics.Enabled {
-				enabled = "✅"
+				enabled = iconSuccess
 			}
 
-			fmt.Fprintf(w, "%s\t%s\t%d\t%d\t%.1f%%\t%.1f ms\n",
+			_, _ = fmt.Fprintf(w, "%s\t%s\t%d\t%d\t%.1f%%\t%.1f ms\n",
 				regType,
 				enabled,
 				metrics.Requests,
@@ -560,7 +560,7 @@ func outputMetricsTable(result MetricsResponse, category string, detailed bool) 
 				metrics.AverageLatency,
 			)
 		}
-		w.Flush()
+		_ = w.Flush()
 		fmt.Println()
 	}
 

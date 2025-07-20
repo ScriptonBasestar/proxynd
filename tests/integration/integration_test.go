@@ -250,7 +250,7 @@ func (s *IntegrationTestSuite) TestDockerProxyScenario() {
 			client := &http.Client{}
 			resp, err := client.Do(req)
 			require.NoError(t, err)
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 
 			// 응답 상태 확인
 			assert.True(t, resp.StatusCode == tc.expectedCode || resp.StatusCode >= 400)
@@ -325,7 +325,7 @@ func (s *IntegrationTestSuite) TestSecurityScenario() {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	require.NoError(s.T(), err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// 해시 불일치 시 적절한 응답 확인
 	s.T().Logf("Security test response: %d", resp.StatusCode)

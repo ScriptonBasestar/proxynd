@@ -57,7 +57,7 @@ func TestLoad(t *testing.T) {
 
 			// Set test environment variables
 			for key, value := range tt.envVars {
-				os.Setenv(key, value)
+				_ = os.Setenv(key, value)
 			}
 
 			// Test Load function
@@ -110,7 +110,7 @@ func TestGetAfterLoad(t *testing.T) {
 	once = sync.Once{}
 
 	// Set development environment
-	os.Setenv("SERVER_ENV", "development")
+	_ = os.Setenv("SERVER_ENV", "development")
 
 	// Load environment
 	_, err := Load()
@@ -164,13 +164,13 @@ func TestEnvironmentChecks(t *testing.T) {
 			env = nil
 			once = sync.Once{}
 
-			os.Setenv("SERVER_ENV", tt.serverEnv)
+			_ = os.Setenv("SERVER_ENV", tt.serverEnv)
 
 			// Set required production secrets if needed
 			if tt.wantProd {
-				os.Setenv("JWT_SECRET", "this-is-a-very-secure-jwt-secret-key-that-is-long-enough")
-				os.Setenv("ENCRYPTION_KEY", "this-is-a-very-secure-encryption-key-that-is-long-enough")
-				os.Setenv("SIGNING_KEY", "this-is-a-very-secure-signing-key-that-is-long-enough")
+				_ = os.Setenv("JWT_SECRET", "this-is-a-very-secure-jwt-secret-key-that-is-long-enough")
+				_ = os.Setenv("ENCRYPTION_KEY", "this-is-a-very-secure-encryption-key-that-is-long-enough")
+				_ = os.Setenv("SIGNING_KEY", "this-is-a-very-secure-signing-key-that-is-long-enough")
 			}
 
 			loadedEnv, err := Load()
@@ -225,9 +225,9 @@ func TestJWTSecretValidation(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			os.Clearenv()
-			os.Setenv("SERVER_ENV", tt.serverEnv)
+			_ = os.Setenv("SERVER_ENV", tt.serverEnv)
 			if tt.secret != "" {
-				os.Setenv("JWT_SECRET", tt.secret)
+				_ = os.Setenv("JWT_SECRET", tt.secret)
 			}
 
 			defer func() {

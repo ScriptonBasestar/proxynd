@@ -8,20 +8,29 @@ import (
 	"proxynd/helpers"
 )
 
+// MavenProxyServer is exported
+// MavenProxyServer provides server functionality
 type MavenProxyServer struct {
-	Id          string    `yaml:"id,omitempty" validate:"omitempty,min=1,max=100"`
+	ID          string    `yaml:"id,omitempty" validate:"omitempty,min=1,max=100"`
 	Name        string    `yaml:"name" validate:"required,min=1,max=100"`
 	URL         string    `yaml:"url,omitempty" validate:"required,url"`
 	Description string    `yaml:"description" validate:"omitempty,max=500"`
 	Enabled     bool      `yaml:"enabled,omitempty" default:"true"`
 	BasicAuth   BasicAuth `yaml:"basic_auth,omitempty"`
+	// BasicAuth is exported
 }
 
+// BasicAuth is exported
+
+// BasicAuth represents a basic auth
 type BasicAuth struct {
+	// MavenProxyConfig is exported
 	Username string `yaml:"username,omitempty"`
 	Password string `yaml:"password,omitempty"`
+	// MavenProxyConfig is exported
 }
 
+// MavenProxyConfig represents the configuration for mavenproxy settings
 type MavenProxyConfig struct {
 	Path     string                `yaml:"path,omitempty" validate:"required,min=1"`
 	UseCache bool                  `yaml:"use_cache,omitempty" default:"true"`
@@ -29,15 +38,18 @@ type MavenProxyConfig struct {
 	Cache    MavenProxyCacheConfig `yaml:"cache,omitempty"`
 }
 
+// MavenProxyCacheConfig represents the configuration for mavenproxycache settings
 type MavenProxyCacheConfig struct {
 	Enabled bool `yaml:"enabled,omitempty" default:"true"`
 }
 
+// ConfigExists checks if the configuration file exists
 func (cfg *MavenProxyConfig) ConfigExists() bool {
 	confDir := helpers.GetConfigDir()
 	return helpers.FileExists(path.Join(confDir, "maven-proxy.yaml"))
 }
 
+// ReadConfig reads the configuration from file
 func (cfg *MavenProxyConfig) ReadConfig() error {
 	confDir := helpers.GetConfigDir()
 	if err := helpers.ReadYamlSafe(path.Join(confDir, "maven-proxy.yaml"), cfg); err != nil {

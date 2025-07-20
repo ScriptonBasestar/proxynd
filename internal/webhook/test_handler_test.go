@@ -14,7 +14,7 @@ func TestWebhookTester_ValidateEndpointConfig(t *testing.T) {
 		Name:    "test-endpoint",
 		URL:     "https://example.com/webhook",
 		Enabled: true,
-		Method:  "POST",
+		Method:  methodPOST,
 		Format:  "json",
 		Timeout: "30s",
 		Credentials: configs.WebhookCredentials{
@@ -30,7 +30,7 @@ func TestWebhookTester_ValidateEndpointConfig(t *testing.T) {
 	// 잘못된 설정 테스트 - URL 누락
 	invalidEndpoint := configs.WebhookEndpointConfig{
 		Name:   "invalid-endpoint",
-		Method: "POST",
+		Method: methodPOST,
 	}
 
 	errors = tester.ValidateEndpointConfig(invalidEndpoint)
@@ -85,7 +85,7 @@ func TestWebhookTester_ValidateEndpointConfig_Format(t *testing.T) {
 	endpoint := configs.WebhookEndpointConfig{
 		Name:   "test-endpoint",
 		URL:    "https://example.com/webhook",
-		Method: "POST",
+		Method: methodPOST,
 		Format: "invalid-format",
 	}
 
@@ -113,7 +113,7 @@ func TestWebhookTester_ValidateEndpointConfig_Timeout(t *testing.T) {
 	endpoint := configs.WebhookEndpointConfig{
 		Name:    "test-endpoint",
 		URL:     "https://example.com/webhook",
-		Method:  "POST",
+		Method:  methodPOST,
 		Timeout: "invalid-timeout",
 	}
 
@@ -141,7 +141,7 @@ func TestWebhookTester_ValidateEndpointConfig_BasicAuth(t *testing.T) {
 	endpoint := configs.WebhookEndpointConfig{
 		Name:   "test-endpoint",
 		URL:    "https://example.com/webhook",
-		Method: "POST",
+		Method: methodPOST,
 		Credentials: configs.WebhookCredentials{
 			Type:     "basic",
 			Password: "password",
@@ -172,7 +172,7 @@ func TestWebhookTester_ValidateEndpointConfig_BearerAuth(t *testing.T) {
 	endpoint := configs.WebhookEndpointConfig{
 		Name:   "test-endpoint",
 		URL:    "https://example.com/webhook",
-		Method: "POST",
+		Method: methodPOST,
 		Credentials: configs.WebhookCredentials{
 			Type: "bearer",
 		},
@@ -202,7 +202,7 @@ func TestWebhookTester_ValidateEndpointConfig_AuthType(t *testing.T) {
 	endpoint := configs.WebhookEndpointConfig{
 		Name:   "test-endpoint",
 		URL:    "https://example.com/webhook",
-		Method: "POST",
+		Method: methodPOST,
 		Credentials: configs.WebhookCredentials{
 			Type: "invalid-auth",
 		},
@@ -261,6 +261,7 @@ func TestWebhookTester_TestSingleEndpoint_DisabledEndpoint(t *testing.T) {
 	}
 	if result == nil {
 		t.Error("Expected result for disabled endpoint")
+		return
 	}
 	if result.Success {
 		t.Error("Expected failure for disabled endpoint")
@@ -291,6 +292,7 @@ func TestNewWebhookTester(t *testing.T) {
 	tester := NewWebhookTester(config, sender)
 	if tester == nil {
 		t.Error("Expected non-nil tester")
+		return
 	}
 	if tester.config.Enabled != config.Enabled {
 		t.Error("Expected config to be set correctly")

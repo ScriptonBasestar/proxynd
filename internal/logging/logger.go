@@ -73,10 +73,14 @@ type StructuredLogger struct {
 type contextKey string
 
 const (
+	// CorrelationIDKey is the context key for correlation ID
 	CorrelationIDKey contextKey = "correlation_id"
-	RequestIDKey     contextKey = "request_id"
-	UserIDKey        contextKey = "user_id"
-	SessionIDKey     contextKey = "session_id"
+	// RequestIDKey is the context key for request ID
+	RequestIDKey contextKey = "request_id"
+	// UserIDKey is the context key for user ID
+	UserIDKey contextKey = "user_id"
+	// SessionIDKey is the context key for session ID
+	SessionIDKey contextKey = "session_id"
 )
 
 // NewLogger creates a new structured logger
@@ -279,7 +283,7 @@ func (l *StructuredLogger) fieldsToLogrus(fields ...Field) logrus.Fields {
 	return logrusFields
 }
 
-// Helper functions for getting values from context
+// GetCorrelationID returns the correlation ID from context
 func GetCorrelationID(ctx context.Context) string {
 	if id, ok := ctx.Value(CorrelationIDKey).(string); ok {
 		return id
@@ -287,6 +291,7 @@ func GetCorrelationID(ctx context.Context) string {
 	return ""
 }
 
+// GetRequestID returns the request ID from context
 func GetRequestID(ctx context.Context) string {
 	if id, ok := ctx.Value(RequestIDKey).(string); ok {
 		return id
@@ -294,6 +299,7 @@ func GetRequestID(ctx context.Context) string {
 	return ""
 }
 
+// GetUserID returns the user ID from context
 func GetUserID(ctx context.Context) string {
 	if id, ok := ctx.Value(UserIDKey).(string); ok {
 		return id
@@ -301,6 +307,7 @@ func GetUserID(ctx context.Context) string {
 	return ""
 }
 
+// GetSessionID returns the session ID from context
 func GetSessionID(ctx context.Context) string {
 	if id, ok := ctx.Value(SessionIDKey).(string); ok {
 		return id
@@ -353,31 +360,37 @@ func NewField(key string, value interface{}) Field {
 	return Field{Key: key, Value: value}
 }
 
-// Convenience field creators
+// String creates a string field
 func String(key, value string) Field {
 	return NewField(key, value)
 }
 
+// Int creates an integer field
 func Int(key string, value int) Field {
 	return NewField(key, value)
 }
 
+// Float64 creates a float64 field
 func Float64(key string, value float64) Field {
 	return NewField(key, value)
 }
 
+// Bool creates a boolean field
 func Bool(key string, value bool) Field {
 	return NewField(key, value)
 }
 
+// Duration creates a duration field
 func Duration(key string, value time.Duration) Field {
 	return NewField(key, value)
 }
 
+// Error creates an error field
 func Error(err error) Field {
 	return NewField("error", err.Error())
 }
 
+// StackTrace creates a stack trace field
 func StackTrace(err error) Field {
 	return NewField("stack_trace", fmt.Sprintf("%+v", err))
 }

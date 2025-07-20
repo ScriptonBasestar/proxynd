@@ -42,7 +42,7 @@ func SetupTestEnvironment(t *testing.T) *TestEnvironment {
 	dirs := []string{configDir, storageDir, cacheDir, logDir}
 	for _, dir := range dirs {
 		if err := os.MkdirAll(dir, 0755); err != nil {
-			os.RemoveAll(tempDir) // 정리
+			_ = os.RemoveAll(tempDir) // 정리
 			t.Fatalf("Failed to create dir %s: %v", dir, err)
 		}
 	}
@@ -57,12 +57,12 @@ func SetupTestEnvironment(t *testing.T) *TestEnvironment {
 		"LOG_LEVEL",
 	})
 
-	os.Setenv("CONFIG_DIR", configDir)
-	os.Setenv("STORAGE_DIR", storageDir)
-	os.Setenv("CACHE_DIR", cacheDir)
-	os.Setenv("LOG_DIR", logDir)
-	os.Setenv("SERVER_PORT", "0")   // 임의 포트 사용
-	os.Setenv("LOG_LEVEL", "error") // 테스트 시 로그 최소화
+	_ = os.Setenv("CONFIG_DIR", configDir)
+	_ = os.Setenv("STORAGE_DIR", storageDir)
+	_ = os.Setenv("CACHE_DIR", cacheDir)
+	_ = os.Setenv("LOG_DIR", logDir)
+	_ = os.Setenv("SERVER_PORT", "0")   // 임의 포트 사용
+	_ = os.Setenv("LOG_LEVEL", "error") // 테스트 시 로그 최소화
 
 	env := &TestEnvironment{
 		TempDir:    tempDir,
@@ -72,7 +72,7 @@ func SetupTestEnvironment(t *testing.T) *TestEnvironment {
 		LogDir:     logDir,
 		Cleanup: func() {
 			restoreEnv(originalEnv)
-			os.RemoveAll(tempDir)
+			_ = os.RemoveAll(tempDir)
 		},
 	}
 
@@ -95,9 +95,9 @@ func backupEnv(keys []string) map[string]string {
 func restoreEnv(backup map[string]string) {
 	for key, value := range backup {
 		if value == "" {
-			os.Unsetenv(key)
+			_ = os.Unsetenv(key)
 		} else {
-			os.Setenv(key, value)
+			_ = os.Setenv(key, value)
 		}
 	}
 }
@@ -208,8 +208,8 @@ func CaptureLogs(t *testing.T, fn func()) string {
 	if err != nil {
 		t.Fatalf("Failed to create temp log file: %v", err)
 	}
-	defer os.Remove(tempFile.Name())
-	defer tempFile.Close()
+	defer func() { _ = os.Remove(tempFile.Name()) }()
+	defer func() { _ = tempFile.Close() }()
 
 	// 원본 stdout 백업
 	originalStdout := os.Stdout
@@ -222,7 +222,7 @@ func CaptureLogs(t *testing.T, fn func()) string {
 	os.Stdout = originalStdout
 
 	// 로그 내용 읽기
-	tempFile.Seek(0, 0)
+	_, _ = tempFile.Seek(0, 0)
 	logContent, err := io.ReadAll(tempFile)
 	if err != nil {
 		t.Fatalf("Failed to read log content: %v", err)
@@ -240,10 +240,10 @@ func MockProxyUpstream(t *testing.T, responses map[string]string) *httptest.Serv
 		if response, exists := responses[path]; exists {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			fmt.Fprint(w, response)
+			_, _ = fmt.Fprint(w, response)
 		} else {
 			w.WriteHeader(http.StatusNotFound)
-			fmt.Fprint(w, "Not found")
+			_, _ = fmt.Fprint(w, "Not found")
 		}
 	})
 }

@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Standalone tests without logging dependencies
+// TestSecurityHeadersStandalone tests security headers without logging dependencies.
 func TestSecurityHeadersStandalone(t *testing.T) {
 	app := fiber.New()
 
@@ -30,6 +30,7 @@ func TestSecurityHeadersStandalone(t *testing.T) {
 	req := httptest.NewRequest("GET", "/test", nil)
 	resp, err := app.Test(req)
 	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, 200, resp.StatusCode)
 	assert.Equal(t, "nosniff", resp.Header.Get("X-Content-Type-Options"))
@@ -37,6 +38,8 @@ func TestSecurityHeadersStandalone(t *testing.T) {
 	assert.Equal(t, "1; mode=block", resp.Header.Get("X-XSS-Protection"))
 }
 
+// TestBasicInputValidationStandalone is exported
+// TestBasicInputValidationStandalone is a test function
 func TestBasicInputValidationStandalone(t *testing.T) {
 	app := fiber.New()
 
@@ -78,11 +81,16 @@ func TestBasicInputValidationStandalone(t *testing.T) {
 
 			resp, err := app.Test(req)
 			require.NoError(t, err)
+			defer func() { _ = resp.Body.Close() }()
 			assert.Equal(t, tt.expectedStatus, resp.StatusCode)
 		})
 	}
+	// TestSimpleRateLimitStandalone is exported
 }
 
+// TestSimpleRateLimitStandalone is exported
+
+// TestSimpleRateLimitStandalone performs test simple rate limit standalone operation
 func TestSimpleRateLimitStandalone(t *testing.T) {
 	app := fiber.New()
 
@@ -106,21 +114,25 @@ func TestSimpleRateLimitStandalone(t *testing.T) {
 	req1 := httptest.NewRequest("GET", "/test", nil)
 	resp1, err := app.Test(req1)
 	require.NoError(t, err)
+	defer func() { _ = resp1.Body.Close() }()
 	assert.Equal(t, 200, resp1.StatusCode)
 
 	// Second request should succeed
 	req2 := httptest.NewRequest("GET", "/test", nil)
 	resp2, err := app.Test(req2)
 	require.NoError(t, err)
+	defer func() { _ = resp2.Body.Close() }()
 	assert.Equal(t, 200, resp2.StatusCode)
 
 	// Third request should fail
 	req3 := httptest.NewRequest("GET", "/test", nil)
 	resp3, err := app.Test(req3)
 	require.NoError(t, err)
+	defer func() { _ = resp3.Body.Close() }()
 	assert.Equal(t, 429, resp3.StatusCode)
 }
 
+// TestCORSHeadersStandalone tests CORS headers in standalone mode
 func TestCORSHeadersStandalone(t *testing.T) {
 	app := fiber.New()
 
@@ -178,13 +190,16 @@ func TestCORSHeadersStandalone(t *testing.T) {
 
 			resp, err := app.Test(req)
 			require.NoError(t, err)
+			defer func() { _ = resp.Body.Close() }()
 
+			// TestContentTypeValidationStandalone is exported
 			assert.Equal(t, 200, resp.StatusCode)
 			assert.Equal(t, tt.expectedOrigin, resp.Header.Get("Access-Control-Allow-Origin"))
 		})
 	}
 }
 
+// TestContentTypeValidationStandalone tests content type validation in standalone mode
 func TestContentTypeValidationStandalone(t *testing.T) {
 	app := fiber.New()
 
@@ -246,6 +261,7 @@ func TestContentTypeValidationStandalone(t *testing.T) {
 
 			resp, err := app.Test(req)
 			require.NoError(t, err)
+			defer func() { _ = resp.Body.Close() }()
 			assert.Equal(t, tt.expectedStatus, resp.StatusCode)
 		})
 	}

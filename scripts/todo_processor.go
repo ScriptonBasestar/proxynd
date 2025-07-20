@@ -1,3 +1,4 @@
+// Package main provides utility scripts for development
 package main
 
 import (
@@ -8,8 +9,12 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
+// TodoItem represents a todo item
 type TodoItem struct {
 	File     string `json:"file"`
 	Line     int    `json:"line"`
@@ -18,12 +23,14 @@ type TodoItem struct {
 	Type     string `json:"type"` // TODO or FIXME
 }
 
+// TodoProcessor processes todo items in source code
 type TodoProcessor struct {
 	items []TodoItem
 }
 
+// ProcessDirectory processes all Go files in a directory for todo items
 func (p *TodoProcessor) ProcessDirectory(dir string) error {
-	return filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+	return filepath.Walk(dir, func(path string, _ os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -47,7 +54,7 @@ func (p *TodoProcessor) processFile(filename string) error {
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	scanner := bufio.NewScanner(file)
 	lineNum := 0
@@ -113,6 +120,7 @@ func (p *TodoProcessor) determinePriority(content string) string {
 	return "medium" // 기본값
 }
 
+// GenerateReport generates a text report of todo items
 func (p *TodoProcessor) GenerateReport() {
 	priorities := map[string]int{
 		"critical": 0,
@@ -129,8 +137,9 @@ func (p *TodoProcessor) GenerateReport() {
 	}
 
 	fmt.Println("=== TODO/FIXME 우선순위별 분포 ===")
+	caser := cases.Title(language.English)
 	for priority, count := range priorities {
-		fmt.Printf("%s: %d개\n", strings.Title(priority), count)
+		fmt.Printf("%s: %d개\n", caser.String(priority), count)
 	}
 
 	fmt.Println("\n=== 파일별 분포 (상위 10개) ===")
@@ -144,8 +153,9 @@ func (p *TodoProcessor) GenerateReport() {
 	fmt.Printf("\n총 %d개의 TODO/FIXME 항목이 발견되었습니다.\n", len(p.items))
 }
 
+// GenerateMarkdownReport generates a markdown report of todo items
 func (p *TodoProcessor) GenerateMarkdownReport() {
-	fmt.Println("# TODO/FIXME 분석 보고서\n")
+	fmt.Print("# TODO/FIXME 분석 보고서\n\n")
 
 	// 우선순위별 그룹화
 	priorityGroups := make(map[string][]TodoItem)
@@ -162,7 +172,8 @@ func (p *TodoProcessor) GenerateMarkdownReport() {
 			continue
 		}
 
-		fmt.Printf("## %s Priority (%d개)\n\n", strings.Title(priority), len(items))
+		caser := cases.Title(language.English)
+		fmt.Printf("## %s Priority (%d개)\n\n", caser.String(priority), len(items))
 
 		for _, item := range items {
 			fmt.Printf("### %s:%d\n", item.File, item.Line)
@@ -172,6 +183,7 @@ func (p *TodoProcessor) GenerateMarkdownReport() {
 	}
 }
 
+// ExportJSON exports todo items to a JSON file
 func (p *TodoProcessor) ExportJSON() error {
 	data, err := json.MarshalIndent(p.items, "", "  ")
 	if err != nil {

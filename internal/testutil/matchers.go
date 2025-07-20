@@ -62,9 +62,9 @@ func (m *Matchers) StringHasSuffix(suffix string) interface{} {
 }
 
 // DurationBetween returns a matcher for durations within a range
-func (m *Matchers) DurationBetween(min, max time.Duration) interface{} {
+func (m *Matchers) DurationBetween(minDur, maxDur time.Duration) interface{} {
 	return mock.MatchedBy(func(d time.Duration) bool {
-		return d >= min && d <= max
+		return d >= minDur && d <= maxDur
 	})
 }
 

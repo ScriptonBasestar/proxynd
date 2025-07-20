@@ -213,6 +213,10 @@ func GetLogger() Logger {
 			Output: "stdout",
 		}); err != nil {
 			// 기본 로거 초기화 실패 시에도 전역 로거는 사용 가능하도록 유지
+			// 실패한 경우에도 globalLogger는 이미 유효한 상태이므로 계속 진행
+			if globalLogger != nil {
+				globalLogger.Error("Failed to initialize default logger", Field{Key: "error", Value: err})
+			}
 		}
 	})
 	return globalLogger
@@ -251,7 +255,7 @@ func createFileWriter(config FileConfig) io.Writer {
 	// 디렉토리 생성
 	dir := filepath.Dir(config.Path)
 	if err := os.MkdirAll(dir, 0755); err != nil {
-		log.Error().Err(err).Str("path", dir).Msg("Failed to create log directory")
+		log.Error().Err(err).Str(fieldPath, dir).Msg("Failed to create log directory")
 	}
 
 	// lumberjack을 사용한 로그 로테이션
@@ -267,54 +271,61 @@ func createFileWriter(config FileConfig) io.Writer {
 
 // ZeroLogger 메서드 구현
 
+// Debug performs debug operation
 func (zl *ZeroLogger) Debug(msg string, fields ...Field) {
 	event := zl.logger.Debug()
 	zl.applyFields(event, fields...)
 	event.Msg(msg)
 }
 
+// Info logs an informational message
 func (zl *ZeroLogger) Info(msg string, fields ...Field) {
 	event := zl.logger.Info()
 	zl.applyFields(event, fields...)
 	event.Msg(msg)
 }
 
+// Warn logs a warning message
 func (zl *ZeroLogger) Warn(msg string, fields ...Field) {
 	event := zl.logger.Warn()
 	zl.applyFields(event, fields...)
 	event.Msg(msg)
 }
 
+// Error logs an error message
 func (zl *ZeroLogger) Error(msg string, fields ...Field) {
 	event := zl.logger.Error()
 	zl.applyFields(event, fields...)
 	event.Msg(msg)
 }
 
+// Fatal logs a fatal message and exits
 func (zl *ZeroLogger) Fatal(msg string, fields ...Field) {
 	event := zl.logger.Fatal()
 	zl.applyFields(event, fields...)
 	event.Msg(msg)
 }
 
+// Panic logs a panic message
 func (zl *ZeroLogger) Panic(msg string, fields ...Field) {
 	event := zl.logger.Panic()
 	zl.applyFields(event, fields...)
 	event.Msg(msg)
 }
 
+// WithContext creates a logger with context information
 func (zl *ZeroLogger) WithContext(ctx context.Context) Logger {
 	// 컨텍스트에서 값 추출
 	newLogger := zl.logger.With().Logger()
 
 	// Request ID 추출
-	if reqID := ctx.Value("request_id"); reqID != nil {
-		newLogger = newLogger.With().Str("request_id", fmt.Sprintf("%v", reqID)).Logger()
+	if reqID := ctx.Value(fieldRequestID); reqID != nil {
+		newLogger = newLogger.With().Str(fieldRequestID, fmt.Sprintf("%v", reqID)).Logger()
 	}
 
 	// User ID 추출
-	if userID := ctx.Value("user_id"); userID != nil {
-		newLogger = newLogger.With().Str("user_id", fmt.Sprintf("%v", userID)).Logger()
+	if userID := ctx.Value(fieldUserID); userID != nil {
+		newLogger = newLogger.With().Str(fieldUserID, fmt.Sprintf("%v", userID)).Logger()
 	}
 
 	return &ZeroLogger{
@@ -323,6 +334,7 @@ func (zl *ZeroLogger) WithContext(ctx context.Context) Logger {
 	}
 }
 
+// WithFields creates a logger with multiple fields
 func (zl *ZeroLogger) WithFields(fields ...Field) Logger {
 	newLogger := zl.logger.With().Logger()
 	newFields := zl.copyFields()
@@ -338,10 +350,12 @@ func (zl *ZeroLogger) WithFields(fields ...Field) Logger {
 	}
 }
 
+// WithField creates a logger with a single field
 func (zl *ZeroLogger) WithField(key string, value interface{}) Logger {
 	return zl.WithFields(Field{Key: key, Value: value})
 }
 
+// Printf implements the Printf method for compatibility
 func (zl *ZeroLogger) Printf(format string, v ...interface{}) {
 	zl.logger.Info().Msgf(format, v...)
 }
@@ -418,9 +432,9 @@ func Duration(key string, value time.Duration) Field {
 // ErrorField creates an error field
 func ErrorField(err error) Field {
 	if err == nil {
-		return F("error", nil)
+		return F(fieldError, nil)
 	}
-	return F("error", err.Error())
+	return F(fieldError, err.Error())
 }
 
 // Uint32 creates a uint32 field

@@ -1,3 +1,4 @@
+// Package context provides context utilities for request handling
 package context
 
 import (
@@ -7,6 +8,11 @@ import (
 
 // 기본 타임아웃 상수 정의
 const (
+	// DefaultTimeout provides the default timeout
+	// DownloadTimeout is a const that download timeout
+	// UploadTimeout is a const that upload timeout
+	// ShortTimeout is a const that short timeout
+	// LongTimeout is a const that long timeout
 	DefaultTimeout  = 30 * time.Second // 기본 요청 타임아웃
 	DownloadTimeout = 5 * time.Minute  // 파일 다운로드 타임아웃
 	UploadTimeout   = 10 * time.Minute // 파일 업로드 타임아웃

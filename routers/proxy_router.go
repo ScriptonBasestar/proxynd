@@ -10,10 +10,12 @@ import (
 	"proxynd/middlewares"
 )
 
+// ProxyRouter is exported
+// ProxyRouter performs an operation
 func ProxyRouter(app *fiber.App) {
 	// Read global configuration
 	globalConfig := configs.GlobalConfig{}
-	globalConfig.ReadConfig()
+	_ = globalConfig.ReadConfig()
 
 	// Initialize alert manager
 	alertConfig := loadAlertConfig()

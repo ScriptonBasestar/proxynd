@@ -1,3 +1,4 @@
+// Package apk provides APK package verification functionality
 package apk
 
 import (

@@ -15,9 +15,13 @@ import (
 )
 
 var (
-	ErrInvalidLicense     = errors.New("invalid license")
-	ErrExpiredLicense     = errors.New("license expired")
-	ErrInvalidSignature   = errors.New("invalid license signature")
+	// ErrInvalidLicense is returned when license is invalid
+	ErrInvalidLicense = errors.New("invalid license")
+	// ErrExpiredLicense is returned when license has expired
+	ErrExpiredLicense = errors.New("license expired")
+	// ErrInvalidSignature is returned when license signature is invalid
+	ErrInvalidSignature = errors.New("invalid license signature")
+	// ErrFeatureNotLicensed is returned when feature is not licensed
 	ErrFeatureNotLicensed = errors.New("feature not licensed")
 )
 
@@ -29,7 +33,7 @@ MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1234567890...
 -----END PUBLIC KEY-----
 `
 
-// License 라이센스 정보
+// License represents license information
 type License struct {
 	ID         string    `json:"id"`
 	Company    string    `json:"company"`
@@ -43,13 +47,13 @@ type License struct {
 	Signature  string    `json:"signature"`
 }
 
-// Validator 라이센스 검증기
+// Validator handles license validation
 type Validator struct {
 	publicKey *rsa.PublicKey
 	license   *License
 }
 
-// NewValidator 새 검증기 생성
+// NewValidator creates a new license validator
 func NewValidator() (*Validator, error) {
 	block, _ := pem.Decode([]byte(publicKeyPEM))
 	if block == nil {
@@ -71,7 +75,7 @@ func NewValidator() (*Validator, error) {
 	}, nil
 }
 
-// LoadLicense 라이센스 파일 로드 및 검증
+// LoadLicense loads and validates license data
 func (v *Validator) LoadLicense(licenseData []byte) error {
 	var license License
 	if err := json.Unmarshal(licenseData, &license); err != nil {
@@ -92,7 +96,7 @@ func (v *Validator) LoadLicense(licenseData []byte) error {
 	return nil
 }
 
-// verifySignature 라이센스 서명 검증
+// verifySignature verifies the license signature
 func (v *Validator) verifySignature(license *License) error {
 	// 서명 제외한 라이센스 데이터 직렬화
 	sig := license.Signature
@@ -123,7 +127,7 @@ func (v *Validator) verifySignature(license *License) error {
 	return nil
 }
 
-// IsValid 라이센스 유효성 확인
+// IsValid checks if the license is valid
 func (v *Validator) IsValid() bool {
 	if v.license == nil {
 		return false
@@ -131,7 +135,7 @@ func (v *Validator) IsValid() bool {
 	return time.Now().Before(v.license.ExpiresAt)
 }
 
-// HasFeature 특정 기능 라이센스 확인
+// HasFeature checks if a specific feature is licensed
 func (v *Validator) HasFeature(feature string) bool {
 	if v.license == nil || !v.IsValid() {
 		return false
@@ -150,7 +154,7 @@ func (v *Validator) HasFeature(feature string) bool {
 	return false
 }
 
-// GetLicense 현재 라이센스 정보 반환
+// GetLicense returns the current license information
 func (v *Validator) GetLicense() *License {
 	if v.license == nil || !v.IsValid() {
 		return nil
@@ -158,7 +162,7 @@ func (v *Validator) GetLicense() *License {
 	return v.license
 }
 
-// GetLicenseInfo 라이센스 정보 요약
+// GetLicenseInfo returns a summary of license information
 func (v *Validator) GetLicenseInfo() map[string]interface{} {
 	if v.license == nil {
 		return map[string]interface{}{
@@ -178,7 +182,7 @@ func (v *Validator) GetLicenseInfo() map[string]interface{} {
 	}
 }
 
-// CheckServerLimit 서버 수 제한 확인
+// CheckServerLimit validates server count against license limits
 func (v *Validator) CheckServerLimit(currentServers int) error {
 	if v.license == nil || !v.IsValid() {
 		return ErrInvalidLicense
@@ -191,17 +195,17 @@ func (v *Validator) CheckServerLimit(currentServers int) error {
 	return nil
 }
 
-// FeatureGate 기능 게이트
+// FeatureGate controls feature access based on license
 type FeatureGate struct {
 	validator *Validator
 }
 
-// NewFeatureGate 새 기능 게이트 생성
+// NewFeatureGate creates a new feature gate
 func NewFeatureGate(validator *Validator) *FeatureGate {
 	return &FeatureGate{validator: validator}
 }
 
-// IsEnabled 기능 활성화 여부 확인
+// IsEnabled checks if a feature is enabled
 func (fg *FeatureGate) IsEnabled(feature string) bool {
 	if fg.validator == nil {
 		return false
@@ -209,7 +213,7 @@ func (fg *FeatureGate) IsEnabled(feature string) bool {
 	return fg.validator.HasFeature(feature)
 }
 
-// RequireFeature 기능 필수 확인
+// RequireFeature ensures a feature is available or returns an error
 func (fg *FeatureGate) RequireFeature(feature string) error {
 	if !fg.IsEnabled(feature) {
 		return fmt.Errorf("%w: %s", ErrFeatureNotLicensed, feature)

@@ -39,7 +39,7 @@ func NewProxyServiceFactory(
 }
 
 // CreateProxyService creates a proxy service for the given type (alias for compatibility)
-func (f *ServiceFactory) CreateProxyService(ctx context.Context, proxyType string) (ProxyService, error) {
+func (f *ServiceFactory) CreateProxyService(_ context.Context, proxyType string) (ProxyService, error) {
 	return f.GetService(proxyType)
 }
 

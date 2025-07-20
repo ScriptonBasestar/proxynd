@@ -87,6 +87,7 @@ func TestStartOAuth2Login(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to perform request: %v", err)
 	}
+	defer func() { _ = resp.Body.Close() }()
 
 	// 리다이렉트 응답 확인
 	if resp.StatusCode != http.StatusFound && resp.StatusCode != http.StatusTemporaryRedirect {
@@ -137,6 +138,7 @@ func TestHandleOAuth2Callback_MissingParameters(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to perform request: %v", err)
 			}
+			defer func() { _ = resp.Body.Close() }()
 
 			if resp.StatusCode != tt.expectCode {
 				body, _ := io.ReadAll(resp.Body)
@@ -155,13 +157,14 @@ func TestHandleOAuth2Callback_InvalidState(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to perform request: %v", err)
 	}
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusBadRequest {
 		t.Errorf("Expected status 400 for invalid state, got %d", resp.StatusCode)
 	}
 
 	var response map[string]interface{}
-	json.NewDecoder(resp.Body).Decode(&response)
+	_ = json.NewDecoder(resp.Body).Decode(&response)
 
 	if !strings.Contains(response["error"].(string), "Invalid") {
 		t.Errorf("Expected invalid state error, got: %s", response["error"])
@@ -176,13 +179,14 @@ func TestGetAuthStatus_NotAuthenticated(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to perform request: %v", err)
 	}
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
 	var response map[string]interface{}
-	json.NewDecoder(resp.Body).Decode(&response)
+	_ = json.NewDecoder(resp.Body).Decode(&response)
 
 	if response["authenticated"].(bool) {
 		t.Error("Expected authenticated to be false")
@@ -201,13 +205,14 @@ func TestGetCurrentUser_NotAuthenticated(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to perform request: %v", err)
 	}
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusUnauthorized {
 		t.Errorf("Expected status 401, got %d", resp.StatusCode)
 	}
 
 	var response map[string]interface{}
-	json.NewDecoder(resp.Body).Decode(&response)
+	_ = json.NewDecoder(resp.Body).Decode(&response)
 
 	if response["error"] != "Not authenticated" {
 		t.Errorf("Expected 'Not authenticated' error, got: %s", response["error"])
@@ -225,6 +230,7 @@ func TestHandleLogout_WithSession(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to perform request: %v", err)
 	}
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
@@ -233,7 +239,7 @@ func TestHandleLogout_WithSession(t *testing.T) {
 	}
 
 	var response map[string]interface{}
-	json.NewDecoder(resp.Body).Decode(&response)
+	_ = json.NewDecoder(resp.Body).Decode(&response)
 
 	if response["message"] != "Logged out successfully" {
 		t.Errorf("Expected logout success message, got: %s", response["message"])
@@ -248,13 +254,14 @@ func TestRefreshToken_NoRefreshToken(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to perform request: %v", err)
 	}
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusUnauthorized {
 		t.Errorf("Expected status 401, got %d", resp.StatusCode)
 	}
 
 	var response map[string]interface{}
-	json.NewDecoder(resp.Body).Decode(&response)
+	_ = json.NewDecoder(resp.Body).Decode(&response)
 
 	if response["error"] != "No refresh token available" {
 		t.Errorf("Expected 'No refresh token available' error, got: %s", response["error"])
@@ -378,13 +385,14 @@ func TestSessionHelpers(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to perform request: %v", err)
 	}
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("Expected status 200, got %d", resp.StatusCode)
 	}
 
 	var response map[string]interface{}
-	json.NewDecoder(resp.Body).Decode(&response)
+	_ = json.NewDecoder(resp.Body).Decode(&response)
 
 	if response["value"] != "test_value" {
 		t.Errorf("Expected 'test_value', got '%s'", response["value"])
@@ -424,6 +432,7 @@ func TestOAuth2Flow_Integration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to start login: %v", err)
 	}
+	defer func() { _ = loginResp.Body.Close() }()
 
 	// 설정이 없으면 에러가 날 수 있음
 	if loginResp.StatusCode == http.StatusInternalServerError {
@@ -455,6 +464,7 @@ func TestOAuth2Flow_Integration(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to perform callback: %v", err)
 		}
+		defer func() { _ = callbackResp.Body.Close() }()
 
 		if callbackResp.StatusCode != http.StatusBadRequest {
 			t.Errorf("Expected 400 for invalid state, got %d", callbackResp.StatusCode)
@@ -467,13 +477,14 @@ func TestOAuth2Flow_Integration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to check status: %v", err)
 	}
+	defer func() { _ = statusResp.Body.Close() }()
 
 	if statusResp.StatusCode != http.StatusOK {
 		t.Errorf("Expected status 200, got %d", statusResp.StatusCode)
 	}
 
 	var statusResponse map[string]interface{}
-	json.NewDecoder(statusResp.Body).Decode(&statusResponse)
+	_ = json.NewDecoder(statusResp.Body).Decode(&statusResponse)
 
 	if statusResponse["authenticated"].(bool) {
 		t.Error("User should not be authenticated after failed callback")

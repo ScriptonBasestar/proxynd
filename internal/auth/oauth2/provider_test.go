@@ -6,6 +6,12 @@ import (
 	"time"
 )
 
+// Test-specific constants
+const (
+	testEmail    = "test@example.com"
+	testUserName = "Test User"
+)
+
 func TestProviderRegistry(t *testing.T) {
 	// 테스트용 팩토리 함수
 	testFactory := func(config ProviderConfig) Provider {
@@ -171,8 +177,8 @@ func TestTokenResponse(t *testing.T) {
 func TestUserInfo(t *testing.T) {
 	userInfo := &UserInfo{
 		ID:        "user123",
-		Email:     "test@example.com",
-		Name:      "Test User",
+		Email:     testEmail,
+		Name:      testUserName,
 		Username:  "testuser",
 		Avatar:    "https://example.com/avatar.jpg",
 		Company:   "Test Company",
@@ -186,12 +192,12 @@ func TestUserInfo(t *testing.T) {
 		t.Errorf("Expected ID 'user123', got '%s'", userInfo.ID)
 	}
 
-	if userInfo.Email != "test@example.com" {
-		t.Errorf("Expected email 'test@example.com', got '%s'", userInfo.Email)
+	if userInfo.Email != testEmail {
+		t.Errorf("Expected email '%s', got '%s'", testEmail, userInfo.Email)
 	}
 
-	if userInfo.Name != "Test User" {
-		t.Errorf("Expected name 'Test User', got '%s'", userInfo.Name)
+	if userInfo.Name != testUserName {
+		t.Errorf("Expected name '%s', got '%s'", testUserName, userInfo.Name)
 	}
 }
 

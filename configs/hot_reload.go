@@ -151,7 +151,9 @@ func (uhr *UnifiedHotReload) Stop() error {
 	uhr.cancel()
 
 	if uhr.watcher != nil {
-		uhr.watcher.Close()
+		if err := uhr.watcher.Close(); err != nil {
+			log.Printf("[UnifiedHotReload] Failed to close watcher: %v", err)
+		}
 	}
 
 	uhr.running = false
@@ -179,7 +181,9 @@ func (uhr *UnifiedHotReload) setupLegacyWatch() error {
 
 	// 설정 파일 감시
 	if err := watcher.Add(uhr.legacyLoader.configPath); err != nil {
-		watcher.Close()
+		if closeErr := watcher.Close(); closeErr != nil {
+			log.Printf("[UnifiedHotReload] Failed to close watcher after add error: %v", closeErr)
+		}
 		return fmt.Errorf("failed to watch config file: %w", err)
 	}
 
@@ -339,12 +343,12 @@ func (uhr *UnifiedHotReload) IsRunning() bool {
 func MakeLoggingHandler() ReloadHandler {
 	return &genericReloadHandler{
 		name: "LoggingHandler",
-		fn: func(old, new *UnifiedConfig) error {
-			if old.Logging.Level != new.Logging.Level {
-				log.Printf("[Logging] Level changed: %s -> %s", old.Logging.Level, new.Logging.Level)
+		fn: func(old, newVal *UnifiedConfig) error {
+			if old.Logging.Level != newVal.Logging.Level {
+				log.Printf("[Logging] Level changed: %s -> %s", old.Logging.Level, newVal.Logging.Level)
 			}
-			if old.Logging.Format != new.Logging.Format {
-				log.Printf("[Logging] Format changed: %s -> %s", old.Logging.Format, new.Logging.Format)
+			if old.Logging.Format != newVal.Logging.Format {
+				log.Printf("[Logging] Format changed: %s -> %s", old.Logging.Format, newVal.Logging.Format)
 			}
 			return nil
 		},
@@ -355,13 +359,13 @@ func MakeLoggingHandler() ReloadHandler {
 func MakeCacheHandler() ReloadHandler {
 	return &genericReloadHandler{
 		name: "CacheHandler",
-		fn: func(old, new *UnifiedConfig) error {
-			if old.Cache.Backend != new.Cache.Backend {
+		fn: func(old, newVal *UnifiedConfig) error {
+			if old.Cache.Backend != newVal.Cache.Backend {
 				return fmt.Errorf("cache backend change requires restart: %s -> %s",
-					old.Cache.Backend, new.Cache.Backend)
+					old.Cache.Backend, newVal.Cache.Backend)
 			}
-			if old.Cache.TTL != new.Cache.TTL {
-				log.Printf("[Cache] TTL changed: %s -> %s", old.Cache.TTL, new.Cache.TTL)
+			if old.Cache.TTL != newVal.Cache.TTL {
+				log.Printf("[Cache] TTL changed: %s -> %s", old.Cache.TTL, newVal.Cache.TTL)
 			}
 			return nil
 		},
@@ -372,9 +376,9 @@ func MakeCacheHandler() ReloadHandler {
 func MakeMetricsHandler() ReloadHandler {
 	return &genericReloadHandler{
 		name: "MetricsHandler",
-		fn: func(old, new *UnifiedConfig) error {
-			if old.Metrics.Enabled != new.Metrics.Enabled {
-				if new.Metrics.Enabled {
+		fn: func(old, newVal *UnifiedConfig) error {
+			if old.Metrics.Enabled != newVal.Metrics.Enabled {
+				if newVal.Metrics.Enabled {
 					log.Println("[Metrics] Enabling metrics")
 				} else {
 					log.Println("[Metrics] Disabling metrics")
@@ -388,13 +392,15 @@ func MakeMetricsHandler() ReloadHandler {
 // genericReloadHandler 범용 리로드 핸들러
 type genericReloadHandler struct {
 	name string
-	fn   func(old, new *UnifiedConfig) error
+	fn   func(old, newVal *UnifiedConfig) error
 }
 
+// OnConfigReload handles configuration reload events using the stored function
 func (h *genericReloadHandler) OnConfigReload(oldConfig, newConfig *UnifiedConfig) error {
 	return h.fn(oldConfig, newConfig)
 }
 
+// Name returns the name of the reload handler
 func (h *genericReloadHandler) Name() string {
 	return h.name
 }
@@ -423,9 +429,10 @@ func QuickSetupHotReload(configPath string, useViper bool) (*UnifiedHotReload, e
 
 // LoggingReloadHandler 로깅 리로드 핸들러
 type LoggingReloadHandler struct {
-	logger interface{}
+	_ interface{} // reserved for future logger implementation
 }
 
+// OnConfigReload handles logging configuration changes during reload
 func (h *LoggingReloadHandler) OnConfigReload(oldConfig, newConfig *UnifiedConfig) error {
 	if oldConfig.Logging.Level != newConfig.Logging.Level {
 		log.Printf("Changing log level from %s to %s", oldConfig.Logging.Level, newConfig.Logging.Level)
@@ -438,15 +445,17 @@ func (h *LoggingReloadHandler) OnConfigReload(oldConfig, newConfig *UnifiedConfi
 	return nil
 }
 
+// Name returns the name of the logging reload handler
 func (h *LoggingReloadHandler) Name() string {
 	return "LoggingReloadHandler"
 }
 
 // CacheReloadHandler 캐시 리로드 핸들러
 type CacheReloadHandler struct {
-	cacheManager interface{}
+	_ interface{} // reserved for future cache manager implementation
 }
 
+// OnConfigReload handles cache configuration changes during reload
 func (h *CacheReloadHandler) OnConfigReload(oldConfig, newConfig *UnifiedConfig) error {
 	if oldConfig.Cache.Backend != newConfig.Cache.Backend {
 		return fmt.Errorf("cache backend change requires restart")
@@ -458,15 +467,17 @@ func (h *CacheReloadHandler) OnConfigReload(oldConfig, newConfig *UnifiedConfig)
 	return nil
 }
 
+// Name returns the name of the cache reload handler
 func (h *CacheReloadHandler) Name() string {
 	return "CacheReloadHandler"
 }
 
 // MetricsReloadHandler 메트릭 리로드 핸들러
 type MetricsReloadHandler struct {
-	metricsServer interface{}
+	_ interface{} // reserved for future metrics server implementation
 }
 
+// OnConfigReload handles metrics configuration changes during reload
 func (h *MetricsReloadHandler) OnConfigReload(oldConfig, newConfig *UnifiedConfig) error {
 	if oldConfig.Metrics.Enabled != newConfig.Metrics.Enabled {
 		if newConfig.Metrics.Enabled {
@@ -480,15 +491,17 @@ func (h *MetricsReloadHandler) OnConfigReload(oldConfig, newConfig *UnifiedConfi
 	return nil
 }
 
+// Name returns the name of the metrics reload handler
 func (h *MetricsReloadHandler) Name() string {
 	return "MetricsReloadHandler"
 }
 
 // SecurityReloadHandler 보안 리로드 핸들러
 type SecurityReloadHandler struct {
-	authManager interface{}
+	_ interface{} // reserved for future auth manager implementation
 }
 
+// OnConfigReload handles security configuration changes during reload
 func (h *SecurityReloadHandler) OnConfigReload(oldConfig, newConfig *UnifiedConfig) error {
 	// Check if BasicAuth configuration changed
 	if oldConfig.Security.Authentication.BasicAuth != nil && newConfig.Security.Authentication.BasicAuth != nil {
@@ -508,6 +521,7 @@ func (h *SecurityReloadHandler) OnConfigReload(oldConfig, newConfig *UnifiedConf
 	return nil
 }
 
+// Name returns the name of the security reload handler
 func (h *SecurityReloadHandler) Name() string {
 	return "SecurityReloadHandler"
 }

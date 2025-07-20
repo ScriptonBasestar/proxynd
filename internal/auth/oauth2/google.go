@@ -102,6 +102,7 @@ func (g *GoogleProvider) GetUserInfo(ctx context.Context, accessToken string) (*
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user info: %w", err)
 	}
+	defer func() { _ = resp.Body.Close() }()
 
 	var googleUser GoogleUser
 	if err := ParseAPIResponse(resp, &googleUser); err != nil {
@@ -126,7 +127,7 @@ func (g *GoogleProvider) GetUserInfo(ctx context.Context, accessToken string) (*
 }
 
 // GetUserOrganizations Google은 조직 개념이 없으므로 빈 배열 반환
-func (g *GoogleProvider) GetUserOrganizations(ctx context.Context, accessToken string) ([]string, error) {
+func (g *GoogleProvider) GetUserOrganizations(_ context.Context, _ string) ([]string, error) {
 	// Google은 GitHub/GitLab과 달리 조직 개념이 없음
 	// G Suite/Google Workspace 도메인 정보는 ID Token에서만 확인 가능
 	return []string{}, nil
@@ -219,6 +220,7 @@ func (g *GoogleProvider) GetGoogleProfile(ctx context.Context, accessToken strin
 	if err != nil {
 		return nil, fmt.Errorf("failed to get profile: %w", err)
 	}
+	defer func() { _ = resp.Body.Close() }()
 
 	var profileResp map[string]interface{}
 	if err := ParseAPIResponse(resp, &profileResp); err != nil {

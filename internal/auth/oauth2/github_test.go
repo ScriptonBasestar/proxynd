@@ -8,6 +8,12 @@ import (
 	"testing"
 )
 
+// Test-specific constants
+const (
+	testProviderGitHub = "github"
+	testSchemeHTTP     = "http"
+)
+
 // MockHTTPClient 테스트용 HTTP 클라이언트
 type MockHTTPClient struct {
 	DoFunc func(req *http.Request) (*http.Response, error)
@@ -19,7 +25,7 @@ func (m *MockHTTPClient) Do(req *http.Request) (*http.Response, error) {
 
 func TestNewGitHubProvider(t *testing.T) {
 	config := ProviderConfig{
-		Name:         "github",
+		Name:         testProviderGitHub,
 		ClientID:     "test_client_id",
 		ClientSecret: "test_client_secret",
 		RedirectURI:  "https://example.com/callback",
@@ -27,8 +33,8 @@ func TestNewGitHubProvider(t *testing.T) {
 
 	provider := NewGitHubProvider(config)
 
-	if provider.GetName() != "github" {
-		t.Errorf("Expected provider name 'github', got '%s'", provider.GetName())
+	if provider.GetName() != testProviderGitHub {
+		t.Errorf("Expected provider name '%s', got '%s'", testProviderGitHub, provider.GetName())
 	}
 
 	// GitHub 기본값이 설정되었는지 확인
@@ -63,8 +69,8 @@ func TestGitHubProvider_GetUserInfo(t *testing.T) {
 			userResponse := GitHubUser{
 				ID:        123456,
 				Login:     "testuser",
-				Name:      "Test User",
-				Email:     "test@example.com",
+				Name:      testUserName,
+				Email:     testEmail,
 				AvatarURL: "https://github.com/images/error/testuser_happy.gif",
 				Company:   "GitHub",
 				Location:  "San Francisco",
@@ -72,13 +78,13 @@ func TestGitHubProvider_GetUserInfo(t *testing.T) {
 				CreatedAt: "2008-01-14T04:33:35Z",
 				UpdatedAt: "2008-01-14T04:33:35Z",
 			}
-			json.NewEncoder(w).Encode(userResponse)
+			_ = json.NewEncoder(w).Encode(userResponse)
 		case "/user/emails":
 			emailResponse := []GitHubEmails{
-				{Email: "test@example.com", Primary: true, Verified: true},
+				{Email: testEmail, Primary: true, Verified: true},
 				{Email: "secondary@example.com", Primary: false, Verified: true},
 			}
-			json.NewEncoder(w).Encode(emailResponse)
+			_ = json.NewEncoder(w).Encode(emailResponse)
 		default:
 			w.WriteHeader(http.StatusNotFound)
 		}
@@ -86,7 +92,7 @@ func TestGitHubProvider_GetUserInfo(t *testing.T) {
 	defer server.Close()
 
 	config := ProviderConfig{
-		Name:        "github",
+		Name:        testProviderGitHub,
 		UserInfoURL: server.URL + "/user",
 	}
 
@@ -112,11 +118,11 @@ func TestGitHubProvider_GetUserInfo(t *testing.T) {
 	if userInfo.Username != "testuser" {
 		t.Errorf("Expected username 'testuser', got '%s'", userInfo.Username)
 	}
-	if userInfo.Name != "Test User" {
-		t.Errorf("Expected name 'Test User', got '%s'", userInfo.Name)
+	if userInfo.Name != testUserName {
+		t.Errorf("Expected name '%s', got '%s'", testUserName, userInfo.Name)
 	}
-	if userInfo.Email != "test@example.com" {
-		t.Errorf("Expected email 'test@example.com', got '%s'", userInfo.Email)
+	if userInfo.Email != testEmail {
+		t.Errorf("Expected email '%s', got '%s'", testEmail, userInfo.Email)
 	}
 	if userInfo.Company != "GitHub" {
 		t.Errorf("Expected company 'GitHub', got '%s'", userInfo.Company)
@@ -130,7 +136,7 @@ func TestGitHubProvider_GetUserOrganizations(t *testing.T) {
 				{ID: 1, Login: "github", DisplayName: "GitHub"},
 				{ID: 2, Login: "octocat", DisplayName: "Octocat"},
 			}
-			json.NewEncoder(w).Encode(orgsResponse)
+			_ = json.NewEncoder(w).Encode(orgsResponse)
 		} else {
 			w.WriteHeader(http.StatusNotFound)
 		}
@@ -138,7 +144,7 @@ func TestGitHubProvider_GetUserOrganizations(t *testing.T) {
 	defer server.Close()
 
 	config := ProviderConfig{
-		Name: "github",
+		Name: testProviderGitHub,
 	}
 
 	provider := NewGitHubProvider(config)
@@ -154,7 +160,7 @@ func TestGitHubProvider_GetUserOrganizations(t *testing.T) {
 	DefaultHTTPClient = &MockHTTPClient{
 		DoFunc: func(req *http.Request) (*http.Response, error) {
 			if req.URL.Path == "/user/orgs" {
-				req.URL.Scheme = "http"
+				req.URL.Scheme = testSchemeHTTP
 				req.URL.Host = server.URL[7:] // "http://" 제거
 			}
 			return http.DefaultClient.Do(req)
@@ -186,10 +192,10 @@ func TestGitHubProvider_ValidateToken(t *testing.T) {
 			userResponse := GitHubUser{
 				ID:    123456,
 				Login: "testuser",
-				Name:  "Test User",
-				Email: "test@example.com",
+				Name:  testUserName,
+				Email: testEmail,
 			}
-			json.NewEncoder(w).Encode(userResponse)
+			_ = json.NewEncoder(w).Encode(userResponse)
 		} else {
 			w.WriteHeader(http.StatusNotFound)
 		}
@@ -197,7 +203,7 @@ func TestGitHubProvider_ValidateToken(t *testing.T) {
 	defer server.Close()
 
 	config := ProviderConfig{
-		Name:        "github",
+		Name:        testProviderGitHub,
 		UserInfoURL: server.URL + "/user",
 		Scopes:      []string{"user:email"},
 	}
@@ -230,13 +236,13 @@ func TestGitHubProvider_ValidateToken(t *testing.T) {
 }
 
 func TestGitHubProvider_ValidateToken_Invalid(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 	}))
 	defer server.Close()
 
 	config := ProviderConfig{
-		Name:        "github",
+		Name:        testProviderGitHub,
 		UserInfoURL: server.URL + "/user",
 	}
 
@@ -268,7 +274,7 @@ func TestGitHubProvider_GetUserRepositories(t *testing.T) {
 				{"full_name": "testuser/repo1", "name": "repo1"},
 				{"full_name": "testuser/repo2", "name": "repo2"},
 			}
-			json.NewEncoder(w).Encode(reposResponse)
+			_ = json.NewEncoder(w).Encode(reposResponse)
 		} else {
 			w.WriteHeader(http.StatusNotFound)
 		}
@@ -276,7 +282,7 @@ func TestGitHubProvider_GetUserRepositories(t *testing.T) {
 	defer server.Close()
 
 	config := ProviderConfig{
-		Name: "github",
+		Name: testProviderGitHub,
 	}
 
 	provider := NewGitHubProvider(config).(*GitHubProvider)
@@ -292,7 +298,7 @@ func TestGitHubProvider_GetUserRepositories(t *testing.T) {
 	DefaultHTTPClient = &MockHTTPClient{
 		DoFunc: func(req *http.Request) (*http.Response, error) {
 			if req.URL.Path == "/user/repos" {
-				req.URL.Scheme = "http"
+				req.URL.Scheme = testSchemeHTTP
 				req.URL.Host = server.URL[7:] // "http://" 제거
 			}
 			return http.DefaultClient.Do(req)
@@ -323,7 +329,7 @@ func TestGitHubProvider_CheckRepositoryAccess(t *testing.T) {
 		switch r.URL.Path {
 		case "/repos/testuser/accessible-repo":
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(map[string]interface{}{
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
 				"full_name": "testuser/accessible-repo",
 			})
 		case "/repos/testuser/private-repo":
@@ -335,7 +341,7 @@ func TestGitHubProvider_CheckRepositoryAccess(t *testing.T) {
 	defer server.Close()
 
 	config := ProviderConfig{
-		Name: "github",
+		Name: testProviderGitHub,
 	}
 
 	provider := NewGitHubProvider(config).(*GitHubProvider)
@@ -358,7 +364,7 @@ func TestGitHubProvider_CheckRepositoryAccess(t *testing.T) {
 		DoFunc: func(req *http.Request) (*http.Response, error) {
 			// GitHub API URL을 테스트 서버 URL로 변경
 			if req.URL.Host == "api.github.com" {
-				req.URL.Scheme = "http"
+				req.URL.Scheme = testSchemeHTTP
 				req.URL.Host = server.URL[7:] // "http://" 제거
 			}
 			return http.DefaultClient.Do(req)
@@ -394,7 +400,7 @@ func TestGitHubProvider_GetRateLimit(t *testing.T) {
 					"reset":     1372700873,
 				},
 			}
-			json.NewEncoder(w).Encode(rateLimitResponse)
+			_ = json.NewEncoder(w).Encode(rateLimitResponse)
 		} else {
 			w.WriteHeader(http.StatusNotFound)
 		}
@@ -402,7 +408,7 @@ func TestGitHubProvider_GetRateLimit(t *testing.T) {
 	defer server.Close()
 
 	config := ProviderConfig{
-		Name: "github",
+		Name: testProviderGitHub,
 	}
 
 	provider := NewGitHubProvider(config).(*GitHubProvider)
@@ -416,7 +422,7 @@ func TestGitHubProvider_GetRateLimit(t *testing.T) {
 		DoFunc: func(req *http.Request) (*http.Response, error) {
 			// GitHub API URL을 테스트 서버 URL로 변경
 			if req.URL.Host == "api.github.com" {
-				req.URL.Scheme = "http"
+				req.URL.Scheme = testSchemeHTTP
 				req.URL.Host = server.URL[7:] // "http://" 제거
 			}
 			return http.DefaultClient.Do(req)
@@ -469,7 +475,7 @@ func TestGitHubProvider_Registration(t *testing.T) {
 
 	found := false
 	for _, name := range providers {
-		if name == "github" {
+		if name == testProviderGitHub {
 			found = true
 			break
 		}
@@ -481,13 +487,13 @@ func TestGitHubProvider_Registration(t *testing.T) {
 
 	// 제공자 생성 테스트
 	config := ProviderConfig{
-		Name:         "github",
+		Name:         testProviderGitHub,
 		ClientID:     "test_id",
 		ClientSecret: "test_secret",
 		RedirectURI:  "https://example.com/callback",
 	}
 
-	provider := CreateProvider("github", config)
+	provider := CreateProvider(testProviderGitHub, config)
 	if provider == nil {
 		t.Error("Expected GitHub provider to be created")
 	}
@@ -497,7 +503,7 @@ func TestGitHubProvider_Registration(t *testing.T) {
 		t.Error("Expected provider to be GitHubProvider instance")
 	}
 
-	if githubProvider.GetName() != "github" {
-		t.Errorf("Expected provider name 'github', got '%s'", githubProvider.GetName())
+	if githubProvider.GetName() != testProviderGitHub {
+		t.Errorf("Expected provider name '%s', got '%s'", testProviderGitHub, githubProvider.GetName())
 	}
 }

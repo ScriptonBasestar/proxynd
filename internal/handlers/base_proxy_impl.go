@@ -97,12 +97,14 @@ func (b *BaseProxyHandlerImpl) Handle(c *fiber.Ctx) error {
 	agent := b.client.Get(upstreamURL)
 
 	// 기본 헤더 복사 (hop-by-hop 헤더 제외)
-	c.Request().Header.VisitAll(func(key, value []byte) {
-		keyStr := string(key)
-		if !b.isHopByHopHeader(keyStr) {
-			agent.Set(keyStr, string(value))
+	for key, values := range c.GetReqHeaders() {
+		if !b.isHopByHopHeader(key) {
+			// 복수 값이 있는 경우 첫 번째 값 사용
+			if len(values) > 0 {
+				agent.Set(key, values[0])
+			}
 		}
-	})
+	}
 
 	// 프록시별 요청 변환
 	if err := b.handler.TransformRequest(c, agent); err != nil {

@@ -15,14 +15,14 @@ import (
 // APTHandlerV2 Template Method 패턴을 사용하는 APT 핸들러
 type APTHandlerV2 struct {
 	logger logging.Logger
-	config *configs.AptProxyConfig
+	Config *configs.AptProxyConfig
 }
 
 // NewAPTHandlerV2 새로운 APT 핸들러 v2 생성
 func NewAPTHandlerV2() *APTHandlerV2 {
 	return &APTHandlerV2{
 		logger: logging.GetLogger(),
-		config: &configs.AptProxyConfig{},
+		Config: &configs.AptProxyConfig{},
 	}
 }
 
@@ -35,11 +35,11 @@ func (h *APTHandlerV2) Type() string {
 
 // IsEnabled 활성화 상태 확인
 func (h *APTHandlerV2) IsEnabled() bool {
-	if err := h.config.ReadConfig(); err != nil {
+	if err := h.Config.ReadConfig(); err != nil {
 		h.logger.Error("Failed to read APT config", logging.F("error", err))
 		return false
 	}
-	return len(h.config.Proxies) > 0
+	return len(h.Config.Proxies) > 0
 }
 
 // GenerateCacheKey 캐시 키 생성
@@ -51,7 +51,7 @@ func (h *APTHandlerV2) GenerateCacheKey(c *fiber.Ctx) string {
 
 // BuildUpstreamURL 업스트림 URL 구성
 func (h *APTHandlerV2) BuildUpstreamURL(c *fiber.Ctx) (string, error) {
-	if err := h.config.ReadConfig(); err != nil {
+	if err := h.Config.ReadConfig(); err != nil {
 		return "", fmt.Errorf("APT 설정 로드 실패: %w", err)
 	}
 
@@ -59,7 +59,7 @@ func (h *APTHandlerV2) BuildUpstreamURL(c *fiber.Ctx) (string, error) {
 	packagePath := c.Params("*")
 
 	// OS별 프록시 설정 확인
-	proxies, exists := h.config.Proxies[osType]
+	proxies, exists := h.Config.Proxies[osType]
 	if !exists || len(proxies) == 0 {
 		return "", fmt.Errorf("OS 타입 '%s'에 대한 APT 미러가 설정되지 않았습니다", osType)
 	}
@@ -190,7 +190,7 @@ func (h *APTHandlerV2) GetCacheTTL(c *fiber.Ctx) time.Duration {
 }
 
 // HandleError 에러 처리
-func (h *APTHandlerV2) HandleError(err error, c *fiber.Ctx) error {
+func (h *APTHandlerV2) HandleError(err error, _ *fiber.Ctx) error {
 	// APT 도메인 에러로 변환
 	if strings.Contains(err.Error(), "미러가 설정되지 않았습니다") {
 		return errors.WrapAPTError(err, "APT002", "APT 미러 서버에 접근할 수 없습니다")
@@ -230,12 +230,12 @@ func (h *APTHandlerV2) shouldAddProxyInfo() bool {
 
 // GetUpstreamAuth 업스트림 인증 정보 반환
 func (h *APTHandlerV2) GetUpstreamAuth(c *fiber.Ctx) (string, string, error) {
-	if err := h.config.ReadConfig(); err != nil {
+	if err := h.Config.ReadConfig(); err != nil {
 		return "", "", err
 	}
 
 	osType := c.Params("osType", "ubuntu")
-	proxies, exists := h.config.Proxies[osType]
+	proxies, exists := h.Config.Proxies[osType]
 	if !exists || len(proxies) == 0 {
 		return "", "", nil // 인증 정보 없음
 	}
@@ -245,7 +245,7 @@ func (h *APTHandlerV2) GetUpstreamAuth(c *fiber.Ctx) (string, string, error) {
 }
 
 // ValidateClientAuth 클라이언트 인증 검증
-func (h *APTHandlerV2) ValidateClientAuth(c *fiber.Ctx) error {
+func (h *APTHandlerV2) ValidateClientAuth(_ *fiber.Ctx) error {
 	// 현재는 클라이언트 인증 없음
 	return nil
 }
@@ -281,17 +281,17 @@ func (h *APTHandlerV2) RecordCacheMetrics(cacheKey string, hit bool, size int) {
 
 // HealthCheck APT 핸들러 헬스체크
 func (h *APTHandlerV2) HealthCheck() error {
-	if err := h.config.ReadConfig(); err != nil {
+	if err := h.Config.ReadConfig(); err != nil {
 		return fmt.Errorf("APT 설정 파일 읽기 실패: %w", err)
 	}
 
-	if len(h.config.Proxies) == 0 {
+	if len(h.Config.Proxies) == 0 {
 		return fmt.Errorf("APT 프록시가 설정되지 않았습니다")
 	}
 
 	// 최소 하나의 유효한 미러가 있는지 확인
 	hasValidMirror := false
-	for osType, proxies := range h.config.Proxies {
+	for osType, proxies := range h.Config.Proxies {
 		for _, proxy := range proxies {
 			if proxy.URL != "" {
 				h.logger.Debug("Found valid APT mirror",

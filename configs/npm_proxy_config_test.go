@@ -7,15 +7,16 @@ import (
 	"testing"
 
 	"github.com/go-playground/assert/v2"
+	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 
 	"proxynd/helpers"
 )
 
 func TestNpmConfig_NpmProxy(t *testing.T) {
-	os.Setenv("CONFIG_DIR", "../sample-conf/")
+	require.NoError(t, os.Setenv("CONFIG_DIR", "../sample-conf/"))
 	cfg := NpmProxyConfig{}
-	cfg.ReadConfig()
+	require.NoError(t, cfg.ReadConfig())
 	//fmt.Println(cfg)
 	assert.Equal(t, cfg.Path, "proxy/npm")
 	fmt.Println(helpers.ToStringYaml(cfg))
@@ -53,7 +54,7 @@ func TestNpmYamlMake(t *testing.T) {
 	fmt.Println(string(yamlFile))
 }
 
-func TestNpmYaml(t *testing.T) {
+func TestNpmYaml(_ *testing.T) {
 	yamlFile, err := os.ReadFile("../configs/maven-proxy.yaml")
 	if err != nil {
 		log.Printf("yamlFile.Get err   #%v ", err)

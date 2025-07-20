@@ -267,7 +267,7 @@ install-golangci-lint:
 .PHONY: lint
 lint: install-golangci-lint
 	@echo "Running golangci-lint..."
-	golangci-lint run ./... --skip-files "examples/.*"
+	golangci-lint run ./...
 
 .PHONY: lint-fix
 lint-fix: install-golangci-lint

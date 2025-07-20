@@ -58,8 +58,14 @@ func (fs *FileSystemBackend) Get(key string) (io.ReadCloser, error) {
 		// 만료된 캐시 삭제
 		fs.mu.RUnlock()
 		fs.mu.Lock()
-		os.Remove(filePath)
-		os.Remove(fs.getMetadataPath(key))
+		if err := os.Remove(filePath); err != nil && !os.IsNotExist(err) {
+			// 에러 로깅 (파일이 이미 없는 경우는 무시)
+			fmt.Printf("[FileSystemBackend] Failed to remove expired cache file: %v\n", err)
+		}
+		if err := os.Remove(fs.getMetadataPath(key)); err != nil && !os.IsNotExist(err) {
+			// 에러 로깅 (파일이 이미 없는 경우는 무시)
+			fmt.Printf("[FileSystemBackend] Failed to remove expired metadata: %v\n", err)
+		}
 		fs.mu.Unlock()
 		fs.mu.RLock()
 		return nil, fmt.Errorf("cache expired")
@@ -99,15 +105,25 @@ func (fs *FileSystemBackend) Put(key string, data io.Reader, ttl time.Duration) 
 
 	// 데이터 복사
 	size, err := io.Copy(file, data)
-	file.Close()
+	closeErr := file.Close()
 	if err != nil {
-		os.Remove(tempFile)
+		if removeErr := os.Remove(tempFile); removeErr != nil && !os.IsNotExist(removeErr) {
+			fmt.Printf("[FileSystemBackend] Failed to remove temp file after copy error: %v\n", removeErr)
+		}
 		return fmt.Errorf("failed to write data: %w", err)
+	}
+	if closeErr != nil {
+		if removeErr := os.Remove(tempFile); removeErr != nil && !os.IsNotExist(removeErr) {
+			fmt.Printf("[FileSystemBackend] Failed to remove temp file after close error: %v\n", removeErr)
+		}
+		return fmt.Errorf("failed to close temp file: %w", closeErr)
 	}
 
 	// 원본 파일로 이동
 	if err := os.Rename(tempFile, filePath); err != nil {
-		os.Remove(tempFile)
+		if removeErr := os.Remove(tempFile); removeErr != nil && !os.IsNotExist(removeErr) {
+			fmt.Printf("[FileSystemBackend] Failed to remove temp file after rename error: %v\n", removeErr)
+		}
 		return fmt.Errorf("failed to rename temp file: %w", err)
 	}
 
@@ -276,5 +292,7 @@ func (fs *FileSystemBackend) updateAccessTime(key string) {
 	meta.AccessedAt = time.Now()
 	if err := fs.saveMetadata(key, meta); err != nil {
 		// 메타데이터 저장 실패 시 에러 무시 (액세스 시간 업데이트는 선택적)
+		// 로그만 남기고 계속 진행
+		_ = err // 에러를 명시적으로 무시
 	}
 }

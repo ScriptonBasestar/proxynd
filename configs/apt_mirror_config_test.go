@@ -6,12 +6,13 @@ import (
 	"testing"
 
 	"github.com/go-playground/assert/v2"
+	"github.com/stretchr/testify/require"
 
 	"proxynd/helpers"
 )
 
 func TestAptMirrorConfig_ReadConfig(t *testing.T) {
-	os.Setenv("CONFIG_DIR", "../sample-conf/")
+	require.NoError(t, os.Setenv("CONFIG_DIR", "../sample-conf/"))
 	cfg := AptMirrorConfig{}
 	cfg.ReadConfig()
 	fmt.Println(cfg)

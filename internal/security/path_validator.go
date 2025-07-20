@@ -1,3 +1,4 @@
+// Package security provides security utilities and validators
 package security
 
 import (
@@ -6,8 +7,11 @@ import (
 	"strings"
 )
 
+// ErrInvalidPath is exported
+// ErrInvalidPath represents an error condition
 var (
-	ErrInvalidPath     = errors.New("invalid path: potential directory traversal attack")
+	ErrInvalidPath = errors.New("invalid path: potential directory traversal attack")
+	// ErrPathOutsideRoot is a var that err path outside root
 	ErrPathOutsideRoot = errors.New("path is outside allowed root directory")
 )
 

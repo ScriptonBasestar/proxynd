@@ -6,15 +6,16 @@ import (
 	"testing"
 
 	"github.com/go-playground/assert/v2"
+	"github.com/stretchr/testify/require"
 
 	"proxynd/helpers"
 )
 
 func TestRead_GlobalConfig(t *testing.T) {
-	os.Setenv("CONFIG_DIR", "../sample-conf/")
-	os.Setenv("STORAGE_DIR", "../sample-conf/")
+	require.NoError(t, os.Setenv("CONFIG_DIR", "../sample-conf/"))
+	require.NoError(t, os.Setenv("STORAGE_DIR", "../sample-conf/"))
 	cfg := GlobalConfig{}
-	cfg.ReadConfig()
+	require.NoError(t, cfg.ReadConfig())
 	assert.Equal(t, cfg.Cache.TTL, 3600)
 	//assert.Equal(t, cfg.ConfigDir, "~/tmp/config")
 	fmt.Println(helpers.ToStringYaml(cfg))
