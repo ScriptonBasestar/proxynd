@@ -132,15 +132,15 @@ func (a *StandardFiberProxyAdapter) Adapt(handler ProxyHandler) fiber.Handler {
 func (a *StandardFiberProxyAdapter) buildProxyRequest(c *fiber.Ctx, proxyType ProxyType) *ProxyRequest {
 	// Extract headers
 	headers := make(map[string]string)
-	c.Request().Header.VisitAll(func(key, value []byte) {
+	for key, value := range c.Request().Header.All() {
 		headers[string(key)] = string(value)
-	})
+	}
 
 	// Extract query parameters
 	queryParams := make(map[string]string)
-	c.Request().URI().QueryArgs().VisitAll(func(key, value []byte) {
+	for key, value := range c.Request().URI().QueryArgs().All() {
 		queryParams[string(key)] = string(value)
-	})
+	}
 
 	// Get request path
 	path := c.Params("*")

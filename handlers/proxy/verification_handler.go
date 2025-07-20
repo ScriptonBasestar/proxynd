@@ -284,9 +284,9 @@ func (vh *VerificationHandler) VerificationMiddleware() fiber.Handler {
 			if len(body) > 0 {
 				// 응답 헤더 수집
 				headers := make(map[string]string)
-				c.Response().Header.VisitAll(func(key, value []byte) {
+				for key, value := range c.Response().Header.All() {
 					headers[string(key)] = string(value)
-				})
+				}
 
 				// 검증 수행
 				if err := vh.VerifyDownloadedPackage(c, proxyType, packagePath, body, headers); err != nil {

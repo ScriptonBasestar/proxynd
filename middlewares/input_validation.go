@@ -143,7 +143,7 @@ func validateQueryParams(c *fiber.Ctx, cfg ValidationConfig, logger logging.Logg
 	}
 
 	// 각 쿼리 파라미터 검증
-	c.Context().QueryArgs().VisitAll(func(key, value []byte) {
+	for key, value := range c.Context().QueryArgs().All() {
 		keyStr := string(key)
 		valueStr := string(value)
 
@@ -156,7 +156,7 @@ func validateQueryParams(c *fiber.Ctx, cfg ValidationConfig, logger logging.Logg
 					logging.F("value_length", len(valueStr)),
 					logging.F("path", c.Path()))
 			}
-			return
+			return fmt.Errorf("query parameter too long (max %d characters)", cfg.MaxQueryLength)
 		}
 
 		// 위험한 패턴 검증
@@ -170,10 +170,10 @@ func validateQueryParams(c *fiber.Ctx, cfg ValidationConfig, logger logging.Logg
 						logging.F("pattern", pattern),
 						logging.F("path", c.Path()))
 				}
-				return
+				return fmt.Errorf("dangerous pattern detected in query parameter")
 			}
 		}
-	})
+	}
 
 	return nil
 }

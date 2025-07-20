@@ -222,12 +222,12 @@ func addOptionalFields(fields []Field, c *fiber.Ctx, data *requestData) []Field 
 // collectSafeHeaders collects headers that are safe to log
 func collectSafeHeaders(c *fiber.Ctx) map[string]string {
 	headers := make(map[string]string)
-	c.Request().Header.VisitAll(func(key, value []byte) {
+	for key, value := range c.Request().Header.All() {
 		headerKey := string(key)
 		if isSafeHeader(headerKey) {
 			headers[headerKey] = string(value)
 		}
-	})
+	}
 	return headers
 }
 

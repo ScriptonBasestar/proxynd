@@ -322,12 +322,12 @@ func extractHeaders(c *fiber.Ctx, headersToLog []string, _ bool) map[string]stri
 		}
 	} else {
 		// 모든 헤더 로깅 (민감한 정보 제외)
-		c.Request().Header.VisitAll(func(key, value []byte) {
+		for key, value := range c.Request().Header.All() {
 			k := string(key)
 			if !sensitiveHeaders[strings.ToLower(k)] {
 				headers[k] = string(value)
 			}
-		})
+		}
 	}
 
 	return headers
@@ -340,11 +340,11 @@ func extractResponseHeaders(c *fiber.Ctx, headersToLog []string) map[string]stri
 	if len(headersToLog) > 0 {
 		// 특정 헤더만 로깅
 		for _, header := range headersToLog {
-			c.Response().Header.VisitAll(func(key, value []byte) {
+			for key, value := range c.Response().Header.All() {
 				if string(key) == header {
 					headers[header] = string(value)
 				}
-			})
+			}
 		}
 	}
 

@@ -869,9 +869,9 @@ func TestFiberIntegration(t *testing.T) {
 		}
 
 		// 헤더 복사
-		c.Request().Header.VisitAll(func(key, value []byte) {
+		for key, value := range c.Request().Header.All() {
 			req.Headers[string(key)] = string(value)
-		})
+		}
 
 		// 바디 처리는 ProxyRequest에 Body 필드가 없으므로 주석 처리
 		// if c.Method() != "GET" && c.Method() != "HEAD" {
