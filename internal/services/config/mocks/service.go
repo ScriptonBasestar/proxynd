@@ -4,7 +4,6 @@ package mocks
 
 import (
 	context "context"
-
 	configs "proxynd/configs"
 
 	mock "github.com/stretchr/testify/mock"
