@@ -135,8 +135,8 @@ linters-settings:
     min-complexity: 30
 
   govet:
-    # report about shadowed variables
-    check-shadowing: true
+    # Shadow checking disabled - not available in this golangci-lint version
+    # check-shadowing: true
     # settings per analyzer
     settings:
       printf: # analyzer name, run `go tool vet help` to see all analyzers
