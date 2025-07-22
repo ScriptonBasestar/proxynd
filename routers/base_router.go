@@ -2,6 +2,7 @@ package routers
 
 import (
 	"log"
+	"os"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/template/html/v2"
@@ -37,23 +38,33 @@ func BaseRouter() *fiber.App {
 			log.Printf("Warning: Failed to read APT config for dashboard: %v", err)
 		}
 
-		// 현재 서버의 호스트와 포트 정보 가져오기
-		host := c.Hostname()
-		if host == "" {
-			host = "localhost"
+		// 요청의 실제 호스트와 포트 정보를 기반으로 baseURL 구성
+		scheme := "http"
+		if c.Protocol() == "https" {
+			scheme = "https"
 		}
-		port := c.Port()
-		if port == "" {
-			port = "8080"
+
+		// 환경변수에서 포트를 가져오거나 기본값 사용
+		port := "8080" // 기본 포트
+		if envPort := os.Getenv("SERVER_PORT"); envPort != "" {
+			port = envPort
 		}
-		baseURL := "http://" + host + ":" + port
+
+		// 간단하고 확실한 방법: localhost:port 형식으로 고정
+		baseURL := scheme + "://localhost:" + port
+
+		// Maven과 APT 프록시 URL을 올바르게 구성
+		mavenProxyURL := baseURL + "/proxy/maven"
+		aptProxyURL := baseURL + "/proxy/apt"
 
 		return c.Render("dashboard", fiber.Map{
-			"mavenProxy": mvnSite.Proxies,
-			"aptProxy":   aptSite.Proxies,
-			"mavenPath":  mvnSite.Path,
-			"aptPath":    aptSite.Path,
-			"baseURL":    baseURL,
+			"mavenProxy":    mvnSite.Proxies,
+			"aptProxy":      aptSite.Proxies,
+			"mavenPath":     mvnSite.Path,
+			"aptPath":       aptSite.Path,
+			"baseURL":       baseURL,
+			"mavenProxyURL": mavenProxyURL,
+			"aptProxyURL":   aptProxyURL,
 		})
 	})
 

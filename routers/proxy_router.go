@@ -39,23 +39,33 @@ func ProxyRouter(app *fiber.App) {
 
 	// Setup unified proxy router
 	// Handle all proxy requests with /proxy/:type/*path format
-	proxyGroup := app.Group("/proxy")
-
-	// Apply proxy middleware
-	proxyGroup.Use(middlewares.ProxyPolicyMiddleware())
-	proxyGroup.Use(middlewares.DefaultAccessLogMiddleware())
-
-	// Apply unified auth middleware (JWT token first, BasicAuth fallback)
-	proxyGroup.Use(authHandlers.OptionalAuth())      // Optional OAuth2/JWT authentication
-	proxyGroup.Use(authHandlers.BasicAuthFallback()) // BasicAuth fallback
-
-	// Add package verification middleware
-	proxyGroup.Use(verificationHandler.VerificationMiddleware())
+	// Note: Using direct app registration instead of Group to ensure correct routing
 
 	// Handle all proxy types with unified proxy handler
-	proxyGroup.Get("/:type/*", proxynd.UnifiedProxyHandler)
-	proxyGroup.Post("/:type/*", proxynd.UnifiedProxyHandler)
-	proxyGroup.Put("/:type/*", proxynd.UnifiedProxyHandler)
+	app.Get("/proxy/:type/*",
+		middlewares.ProxyPolicyMiddleware(),
+		middlewares.DefaultAccessLogMiddleware(),
+		authHandlers.OptionalAuth(),      // Optional OAuth2/JWT authentication
+		authHandlers.BasicAuthFallback(), // BasicAuth fallback
+		verificationHandler.VerificationMiddleware(),
+		proxynd.UnifiedProxyHandler,
+	)
+	app.Post("/proxy/:type/*",
+		middlewares.ProxyPolicyMiddleware(),
+		middlewares.DefaultAccessLogMiddleware(),
+		authHandlers.OptionalAuth(),      // Optional OAuth2/JWT authentication
+		authHandlers.BasicAuthFallback(), // BasicAuth fallback
+		verificationHandler.VerificationMiddleware(),
+		proxynd.UnifiedProxyHandler,
+	)
+	app.Put("/proxy/:type/*",
+		middlewares.ProxyPolicyMiddleware(),
+		middlewares.DefaultAccessLogMiddleware(),
+		authHandlers.OptionalAuth(),      // Optional OAuth2/JWT authentication
+		authHandlers.BasicAuthFallback(), // BasicAuth fallback
+		verificationHandler.VerificationMiddleware(),
+		proxynd.UnifiedProxyHandler,
+	)
 
 	// Keep existing individual routes for backward compatibility (optional)
 	// Can be removed in the future

@@ -21,11 +21,13 @@ func ProxyPolicyMiddleware() fiber.Handler {
 		proxyType := c.Params("type")
 		requestPath := c.Params("*")
 
-		log.Printf("ProxyPolicy middleware - type: %s, path: %s\n", proxyType, requestPath)
+		log.Printf("ProxyPolicy middleware - original_url: %s, type: %s, path: %s, route: %s\n",
+			c.OriginalURL(), proxyType, requestPath, c.Route().Path)
 
 		// 1. 요청 허용/차단 정책 체크
 		if !isProxyTypeAllowed(proxyType) {
-			return c.Status(fiber.StatusForbidden).SendString("Proxy type not allowed: " + proxyType)
+			log.Printf("BLOCKED - Proxy type not allowed: '%s' (length: %d)\n", proxyType, len(proxyType))
+			return c.Status(fiber.StatusForbidden).SendString("Proxy type not allowed: '" + proxyType + "'")
 		}
 
 		// 2. 인증/허가 체크 (현재는 기본 구현)

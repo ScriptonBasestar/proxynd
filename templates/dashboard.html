@@ -104,6 +104,17 @@
 
 <h2>Maven 프록시</h2>
 <div id="mavenSection">
+	<!-- Maven 프록시 URL (공통) -->
+	<div class="info-box" style="background: #e8f5e8; border-left: 4px solid #009587;">
+		<h4>🔗 Maven 프록시 URL</h4>
+		<p style="margin: 8px 0; font-family: monospace; font-size: 14px;">
+			<a href="{{.mavenProxyURL}}" style="color: #009587; text-decoration: none;">{{.mavenProxyURL}}</a>
+		</p>
+		<p style="margin: 8px 0; font-size: 12px; color: #666;">
+			모든 Maven 아티팩트는 위 프록시 URL을 통해 접근할 수 있습니다.
+		</p>
+	</div>
+
 	<!-- Maven 패키지 검색 -->
 	<div class="info-box" style="background: #e8f5e8; border-left: 4px solid #009587;">
 		<h4>☕ Maven 아티팩트 검색</h4>
@@ -114,15 +125,27 @@
 		<div id="mavenSearchResults" style="margin-top: 15px; display: none;"></div>
 	</div>
 
-{{range .mavenProxy}}
-<div class="info-box proxy-item" data-name="{{.Name}}" data-url="{{.URL}}" data-type="maven">
-	<h4>{{.Name}}</h4>
-	<p><strong>프록시 URL:</strong> <a href="{{$.baseURL}}{{$.mavenPath}}">{{$.baseURL}}{{$.mavenPath}}</a></p>
-	<p><strong>원격 URL:</strong> <a href="{{ .URL }}" target="_blank">{{.URL}}</a> 🔗</p>
-	{{if .Description}}<p><strong>설명:</strong> {{.Description}}</p>{{end}}
-	<p><strong>상태:</strong> <span class="{{if .Enabled}}status-enabled{{else}}status-disabled{{end}}">{{if .Enabled}}✅ 활성화됨{{else}}❌ 비활성화됨{{end}}</span></p>
-</div>
-{{end}}
+	<!-- 원격 미러 목록 -->
+	<div class="info-box" style="background: #f8f9fa; border-left: 4px solid #6c757d;">
+		<h4>🌐 원격 미러 목록 ({{len .mavenProxy}}개)</h4>
+		<p style="margin: 8px 0; font-size: 12px; color: #666;">
+			프록시가 사용하는 원격 Maven 저장소들:
+		</p>
+		{{range .mavenProxy}}
+		<div class="proxy-item" data-name="{{.Name}}" data-url="{{.URL}}" data-type="maven" style="margin: 8px 0; padding: 8px 12px; background: #fff; border: 1px solid #ddd; border-radius: 4px;">
+			<div style="display: flex; align-items: center; justify-content: space-between;">
+				<div>
+					<strong style="color: #495057;">{{.Name}}</strong>
+					{{if .Description}}<span style="margin-left: 8px; font-size: 12px; color: #666;">({{.Description}})</span>{{end}}
+				</div>
+				<div style="display: flex; align-items: center; gap: 10px;">
+					<a href="{{ .URL }}" target="_blank" style="color: #6c757d; text-decoration: none; font-size: 11px;">🌐 원본</a>
+					<span class="{{if .Enabled}}status-enabled{{else}}status-disabled{{end}}" style="font-size: 11px;">{{if .Enabled}}✅{{else}}❌{{end}}</span>
+				</div>
+			</div>
+		</div>
+		{{end}}
+	</div>
 </div>
 
 <h2>APT 프록시</h2>
@@ -345,35 +368,113 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            displayMavenResults(data.results, data.result_count);
+            displayMavenResults(data, data.result_count);
 
         } catch (error) {
             showMavenError('검색 중 오류가 발생했습니다: ' + error.message);
         }
     }
 
-    function displayMavenResults(results, totalCount) {
-        let html = `<h5>☕ Maven 검색 결과 (${totalCount}개)</h5>`;
+    function displayMavenResults(data, totalCount) {
+        let html = `<h5>☕ Maven 검색 결과 (${totalCount || 0}개)</h5>`;
 
-        results.forEach(function(result) {
-            const versionInfo = result.version ? ` (v${result.version})` : '';
+        // data가 null이거나 undefined인 경우 처리
+        if (!data) {
+            html += '<p>검색 결과를 불러올 수 없습니다.</p>';
+            mavenSearchResults.innerHTML = html;
+            return;
+        }
 
-            html += `
-                <div style="border: 1px solid #009587; padding: 10px; margin: 8px 0; border-radius: 5px; background: #f0f8f0;">
-                    <h6 style="margin: 0 0 5px 0; color: #009587;">
-                        ☕ ${result.name}${versionInfo}
-                    </h6>
-                    <p style="margin: 5px 0; font-size: 13px; color: #666;">
-                        ${result.description}
-                    </p>
-                    <div style="margin-top: 8px; font-size: 12px;">
-                        <strong>프록시:</strong> <a href="${result.proxy_url}" style="color: #009587;">${result.proxy_url}</a><br>
-                        <strong>원본:</strong> <a href="${result.url}" target="_blank" style="color: #666;">${result.url}</a> 🔗<br>
-                        <small style="color: #999;">소스: ${result.source}</small>
+        // 그룹화된 결과가 있는 경우 (Maven)
+        if (data.grouped_results && Array.isArray(data.grouped_results) && data.grouped_results.length > 0) {
+            data.grouped_results.forEach(function(group) {
+                html += `
+                    <div style="border: 1px solid #009587; padding: 15px; margin: 8px 0; border-radius: 8px; background: #f0f8f0;">
+                        <div style="padding-bottom: 12px;">
+                            <h6 style="margin: 0; color: #009587; font-size: 16px;">
+                                ☕ ${group.group_id}:<strong>${group.artifact_id}</strong>
+                            </h6>
+                            <div style="margin-top: 4px; margin-bottom: 8px;">
+                                <span style="background: #009587; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px;">v${group.version}</span>
+                                <span style="margin-left: 8px; font-size: 13px; color: #666;">${group.description}</span>
+                            </div>
+
+                            <!-- 프록시 URL (제목 바로 아래) -->
+                            <div style="margin-top: 8px; padding: 8px 12px; background: #e8f5e8; border-left: 4px solid #009587; border-radius: 4px;">
+                                <div style="font-size: 13px; color: #555; margin-bottom: 4px;">
+                                    <strong>🔗 프록시 URL:</strong>
+                                </div>
+                                <a href="${group.proxy_url}" style="color: #009587; text-decoration: none; font-family: monospace; font-size: 12px;">
+                                    ${group.proxy_url}
+                                </a>
+                            </div>
+                        </div>
+
+                        <div style="border-bottom: 1px solid #ddd; margin-bottom: 12px;"></div>
+
+                        <!-- 원본 미러들 -->
+                        <div style="margin-top: 10px;">`;
+
+                // sources가 존재하고 배열인 경우에만 미러 정보 표시
+                if (group.sources && Array.isArray(group.sources) && group.sources.length > 0) {
+                    html += `<strong style="font-size: 13px; color: #555;">🌐 원본 미러 (${group.sources.length}개):</strong>
+                            <div style="margin-top: 6px; margin-left: 10px;">`;
+
+                    group.sources.forEach(function(source, index) {
+                        html += `
+                            <div style="margin: 4px 0; padding: 6px 10px; background: #fff; border: 1px solid #ddd; border-radius: 4px;">
+                                <div style="display: flex; align-items: center; justify-content: space-between;">
+                                    <span style="font-weight: bold; color: #666;">${source.name}</span>
+                                    <a href="${source.url}" target="_blank" style="color: #666; text-decoration: none; font-size: 11px;">
+                                        🌐 원본 사이트
+                                    </a>
+                                </div>
+                            </div>`;
+                    });
+                    html += `</div>`;
+                } else {
+                    // sources가 없는 경우 기본 메시지 표시
+                    html += `<div style="font-size: 13px; color: #888; font-style: italic;">
+                        📦 Maven 중앙 저장소에서 제공
+                    </div>`;
+                }
+
+                html += `
+                        </div>
+                    </div>`;
+            });
+        }
+        // 기존 형태의 결과가 있는 경우 (APT 등)
+        else if (data.results && Array.isArray(data.results) && data.results.length > 0) {
+            data.results.forEach(function(result) {
+                const versionInfo = result.version ? ` (v${result.version})` : '';
+
+                html += `
+                    <div style="border: 1px solid #009587; padding: 10px; margin: 8px 0; border-radius: 5px; background: #f0f8f0;">
+                        <h6 style="margin: 0 0 5px 0; color: #009587;">
+                            ☕ ${result.name}${versionInfo}
+                        </h6>
+                        <p style="margin: 5px 0; font-size: 13px; color: #666;">
+                            ${result.description}
+                        </p>
+                        <div style="margin-top: 8px; font-size: 12px;">
+                            <strong>프록시:</strong> <a href="${result.proxy_url}" style="color: #009587;">${result.proxy_url}</a><br>
+                            <strong>원본:</strong> <a href="${result.url}" target="_blank" style="color: #666;">${result.url}</a> 🔗<br>
+                            <small style="color: #999;">소스: ${result.source}</small>
+                        </div>
                     </div>
+                `;
+            });
+        }
+        // 결과가 없는 경우
+        else {
+            html += `
+                <div style="text-align: center; padding: 20px; color: #999; border: 1px solid #ddd; border-radius: 5px;">
+                    <p>🔍 검색 결과가 없습니다.</p>
+                    <p>다른 키워드로 다시 검색해보세요.</p>
                 </div>
             `;
-        });
+        }
 
         mavenSearchResults.innerHTML = html;
     }
