@@ -8,45 +8,478 @@
 	<title>Proxynd Dashboard</title>
 	<style type="text/css">
         body {
-            margin: 0 auto;
-            padding: 0;
-            min-width: 100%;
-            font-family: sans-serif;
+            margin: 20px auto;
+            padding: 20px;
+            max-width: 1200px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f0f0;
+        }
+        h1 {
+            color: #009587;
+            text-align: center;
+            border-bottom: 3px solid #009587;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #007066;
+            margin-top: 30px;
+        }
+        .info-box {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        a {
+            color: #009587;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .status-enabled {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        .status-disabled {
+            color: #f44336;
+            font-weight: bold;
+        }
+        .search-container {
+            margin: 20px 0;
+            text-align: center;
+        }
+        .search-box {
+            width: 100%;
+            max-width: 500px;
+            padding: 12px 20px;
+            font-size: 16px;
+            border: 2px solid #009587;
+            border-radius: 25px;
+            outline: none;
+            box-shadow: 0 2px 10px rgba(0,149,135,0.2);
+        }
+        .search-box:focus {
+            box-shadow: 0 2px 15px rgba(0,149,135,0.4);
+        }
+        .search-stats {
+            margin: 10px 0;
+            font-size: 14px;
+            color: #666;
+        }
+        .hidden {
+            display: none;
+        }
+        .highlight {
+            background-color: yellow;
+            padding: 2px;
+            border-radius: 3px;
+        }
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-style: italic;
         }
 	</style>
 </head>
 
-<body bgcolor="#009587">
+<body>
 
 <h1>Proxynd Dashboard</h1>
 
-<h2>Status</h2>
-<div>Running: {{.running}}</div>
-<div>Healthz: <a href="/healthz">status</a></div>
+<!-- 프록시 서버 검색 기능 -->
+<div class="search-container">
+	<input type="text" id="searchBox" class="search-box" placeholder="🔍 프록시 이름이나 URL로 검색하세요...">
+	<div class="search-stats" id="searchStats"></div>
+</div>
 
-<h2>Maven</h2>
+<h2>서버 상태</h2>
+<div class="info-box">
+	<p><strong>서버 실행:</strong> <span class="status-enabled">✅ 실행 중</span></p>
+	<p><strong>헬스체크:</strong> <a href="/healthz">상태 확인</a></p>
+	<p><strong>메트릭:</strong> <a href="/metrics">메트릭 보기</a></p>
+</div>
+
+<h2>Maven 프록시</h2>
+<div id="mavenSection">
+	<!-- Maven 패키지 검색 -->
+	<div class="info-box" style="background: #e8f5e8; border-left: 4px solid #009587;">
+		<h4>☕ Maven 아티팩트 검색</h4>
+		<div style="display: flex; gap: 10px; margin-top: 10px;">
+			<input type="text" id="mavenSearchBox" placeholder="예: spring-boot, junit, jackson..." style="flex: 1; padding: 8px; border: 2px solid #009587; border-radius: 5px;">
+			<button id="mavenSearchBtn" style="padding: 8px 16px; background: #009587; color: white; border: none; border-radius: 5px; cursor: pointer;">🔍 검색</button>
+		</div>
+		<div id="mavenSearchResults" style="margin-top: 15px; display: none;"></div>
+	</div>
+
 {{range .mavenProxy}}
-<div style="margin: 10px 0; padding: 10px; border: 1px solid #ccc; background: #f9f9f9;">
+<div class="info-box proxy-item" data-name="{{.Name}}" data-url="{{.URL}}" data-type="maven">
 	<h4>{{.Name}}</h4>
 	<p><strong>프록시 URL:</strong> <a href="{{$.baseURL}}{{$.mavenPath}}">{{$.baseURL}}{{$.mavenPath}}</a></p>
-	<p><strong>원격 URL:</strong> <a href="{{ .URL }}" target="_blank">{{.URL}}</a></p>
+	<p><strong>원격 URL:</strong> <a href="{{ .URL }}" target="_blank">{{.URL}}</a> 🔗</p>
 	{{if .Description}}<p><strong>설명:</strong> {{.Description}}</p>{{end}}
-	<p><strong>상태:</strong> {{if .Enabled}}활성화됨{{else}}비활성화됨{{end}}</p>
+	<p><strong>상태:</strong> <span class="{{if .Enabled}}status-enabled{{else}}status-disabled{{end}}">{{if .Enabled}}✅ 활성화됨{{else}}❌ 비활성화됨{{end}}</span></p>
 </div>
 {{end}}
+</div>
 
-<h2>Apt</h2>
+<h2>APT 프록시</h2>
+<div id="aptSection">
+	<!-- APT 패키지 검색 -->
+	<div class="info-box" style="background: #e8f4fd; border-left: 4px solid #2196F3;">
+		<h4>🐧 APT 패키지 검색</h4>
+		<div style="display: flex; gap: 10px; margin-top: 10px;">
+			<input type="text" id="aptSearchBox" placeholder="예: nginx, docker, python3..." style="flex: 1; padding: 8px; border: 2px solid #2196F3; border-radius: 5px;">
+			<select id="aptDistroSelect" style="padding: 8px; border: 2px solid #2196F3; border-radius: 5px;">
+				<option value="all">모든 배포판</option>
+				{{range $key, $proxies := .aptProxy}}
+				<option value="{{ $key }}">{{ $key }}</option>
+				{{end}}
+			</select>
+			<button id="aptSearchBtn" style="padding: 8px 16px; background: #2196F3; color: white; border: none; border-radius: 5px; cursor: pointer;">🔍 검색</button>
+		</div>
+		<div id="aptSearchResults" style="margin-top: 15px; display: none;"></div>
+	</div>
+
 {{range $key, $proxies := .aptProxy}}
-<div>
-	<h3>{{ $key }}</h3> <!-- Map의 키를 출력 (예: "ubuntu", "debian") -->
+<div class="info-box distro-group" style="background: #f8f9fa;" data-distro="{{ $key }}">
+	<h3>🐧 {{ $key }} (배포판)</h3>
 	{{range $proxies}}
-	<div>
-		<a href="{{ .URL }}">{{ .Name }}</a> {{ .URL }}
+	<div class="info-box proxy-item" style="margin-left: 20px;" data-name="{{ .Name }}" data-url="{{ .URL }}" data-type="apt" data-distro="{{ $key }}">
+		<h4>{{ .Name }}</h4>
+		<p><strong>프록시 URL:</strong> <a href="{{$.baseURL}}{{$.aptPath}}/{{ $key }}">{{$.baseURL}}{{$.aptPath}}/{{ $key }}</a></p>
+		<p><strong>원격 URL:</strong> <a href="{{ .URL }}" target="_blank">{{ .URL }}</a> 🔗</p>
 	</div>
 	{{end}}
 </div>
 {{end}}
+</div>
 
+<!-- 검색 결과가 없을 때 표시할 메시지 -->
+<div id="noResults" class="no-results hidden">
+	<h3>🔍 검색 결과가 없습니다</h3>
+	<p>다른 키워드로 다시 검색해보세요.</p>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchBox = document.getElementById('searchBox');
+    const searchStats = document.getElementById('searchStats');
+    const noResults = document.getElementById('noResults');
+    const proxyItems = document.querySelectorAll('.proxy-item');
+    const distroGroups = document.querySelectorAll('.distro-group');
+
+    let totalProxies = proxyItems.length;
+
+    // 초기 통계 표시
+    updateStats(totalProxies, totalProxies);
+
+    // Maven 패키지 검색 기능
+    const mavenSearchBox = document.getElementById('mavenSearchBox');
+    const mavenSearchBtn = document.getElementById('mavenSearchBtn');
+    const mavenSearchResults = document.getElementById('mavenSearchResults');
+
+    mavenSearchBtn.addEventListener('click', function() {
+        performMavenSearch();
+    });
+
+    mavenSearchBox.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            performMavenSearch();
+        }
+    });
+
+    // APT 패키지 검색 기능
+    const aptSearchBox = document.getElementById('aptSearchBox');
+    const aptSearchBtn = document.getElementById('aptSearchBtn');
+    const aptDistroSelect = document.getElementById('aptDistroSelect');
+    const aptSearchResults = document.getElementById('aptSearchResults');
+
+    aptSearchBtn.addEventListener('click', function() {
+        performAptSearch();
+    });
+
+    aptSearchBox.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            performAptSearch();
+        }
+    });
+
+    // 검색 기능
+    searchBox.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase().trim();
+        let visibleCount = 0;
+
+        if (searchTerm === '') {
+            // 검색어가 없으면 모든 항목 표시
+            showAllItems();
+            updateStats(totalProxies, totalProxies);
+            hideNoResults();
+            return;
+        }
+
+        // 각 프록시 아이템 검색
+        proxyItems.forEach(function(item) {
+            const name = item.dataset.name.toLowerCase();
+            const url = item.dataset.url.toLowerCase();
+            const type = item.dataset.type.toLowerCase();
+            const distro = item.dataset.distro ? item.dataset.distro.toLowerCase() : '';
+
+            const matches = name.includes(searchTerm) ||
+                           url.includes(searchTerm) ||
+                           type.includes(searchTerm) ||
+                           distro.includes(searchTerm);
+
+            if (matches) {
+                item.classList.remove('hidden');
+                highlightText(item, searchTerm);
+                visibleCount++;
+            } else {
+                item.classList.add('hidden');
+                removeHighlight(item);
+            }
+        });
+
+        // APT 배포판 그룹 처리 (해당 그룹에 표시된 아이템이 없으면 그룹도 숨김)
+        distroGroups.forEach(function(group) {
+            const visibleItems = group.querySelectorAll('.proxy-item:not(.hidden)');
+            if (visibleItems.length > 0) {
+                group.classList.remove('hidden');
+            } else {
+                group.classList.add('hidden');
+            }
+        });
+
+        updateStats(visibleCount, totalProxies);
+
+        if (visibleCount === 0) {
+            showNoResults();
+        } else {
+            hideNoResults();
+        }
+    });
+
+    function showAllItems() {
+        proxyItems.forEach(function(item) {
+            item.classList.remove('hidden');
+            removeHighlight(item);
+        });
+        distroGroups.forEach(function(group) {
+            group.classList.remove('hidden');
+        });
+    }
+
+    function updateStats(visible, total) {
+        searchStats.textContent = `총 ${total}개 프록시 중 ${visible}개 표시`;
+    }
+
+    function showNoResults() {
+        noResults.classList.remove('hidden');
+    }
+
+    function hideNoResults() {
+        noResults.classList.add('hidden');
+    }
+
+    function highlightText(element, searchTerm) {
+        const walker = document.createTreeWalker(
+            element,
+            NodeFilter.SHOW_TEXT,
+            null,
+            false
+        );
+
+        const textNodes = [];
+        let node;
+        while (node = walker.nextNode()) {
+            textNodes.push(node);
+        }
+
+        textNodes.forEach(function(textNode) {
+            const text = textNode.textContent;
+            const regex = new RegExp(`(${searchTerm})`, 'gi');
+            if (regex.test(text)) {
+                const highlightedText = text.replace(regex, '<span class="highlight">$1</span>');
+                const wrapper = document.createElement('span');
+                wrapper.innerHTML = highlightedText;
+                textNode.parentNode.replaceChild(wrapper, textNode);
+            }
+        });
+    }
+
+    function removeHighlight(element) {
+        const highlights = element.querySelectorAll('.highlight');
+        highlights.forEach(function(highlight) {
+            const parent = highlight.parentNode;
+            parent.replaceChild(document.createTextNode(highlight.textContent), highlight);
+            parent.normalize();
+        });
+    }
+
+    // Maven 패키지 검색 함수
+    async function performMavenSearch() {
+        const query = mavenSearchBox.value.trim();
+
+        if (!query) {
+            alert('Maven 아티팩트명을 입력하세요.');
+            return;
+        }
+
+        // UI 상태 업데이트
+        mavenSearchResults.style.display = 'block';
+        mavenSearchResults.innerHTML = '<p>🔍 Maven 아티팩트 검색 중...</p>';
+
+        try {
+            const response = await fetch(`/api/search?q=${encodeURIComponent(query)}&type=maven&limit=20`);
+            const data = await response.json();
+
+            if (data.error) {
+                showMavenError(data.error);
+                return;
+            }
+
+            if (data.result_count === 0) {
+                showMavenNoResults(query);
+                return;
+            }
+
+            displayMavenResults(data.results, data.result_count);
+
+        } catch (error) {
+            showMavenError('검색 중 오류가 발생했습니다: ' + error.message);
+        }
+    }
+
+    function displayMavenResults(results, totalCount) {
+        let html = `<h5>☕ Maven 검색 결과 (${totalCount}개)</h5>`;
+
+        results.forEach(function(result) {
+            const versionInfo = result.version ? ` (v${result.version})` : '';
+
+            html += `
+                <div style="border: 1px solid #009587; padding: 10px; margin: 8px 0; border-radius: 5px; background: #f0f8f0;">
+                    <h6 style="margin: 0 0 5px 0; color: #009587;">
+                        ☕ ${result.name}${versionInfo}
+                    </h6>
+                    <p style="margin: 5px 0; font-size: 13px; color: #666;">
+                        ${result.description}
+                    </p>
+                    <div style="margin-top: 8px; font-size: 12px;">
+                        <strong>프록시:</strong> <a href="${result.proxy_url}" style="color: #009587;">${result.proxy_url}</a><br>
+                        <strong>원본:</strong> <a href="${result.url}" target="_blank" style="color: #666;">${result.url}</a> 🔗<br>
+                        <small style="color: #999;">소스: ${result.source}</small>
+                    </div>
+                </div>
+            `;
+        });
+
+        mavenSearchResults.innerHTML = html;
+    }
+
+    function showMavenNoResults(query) {
+        mavenSearchResults.innerHTML = `
+            <div style="text-align: center; padding: 20px; color: #999; border: 1px solid #ddd; border-radius: 5px;">
+                <p>🔍 "${query}"에 대한 Maven 아티팩트를 찾을 수 없습니다.</p>
+                <p>다른 키워드로 다시 검색해보세요.</p>
+            </div>
+        `;
+    }
+
+    function showMavenError(message) {
+        mavenSearchResults.innerHTML = `
+            <div style="text-align: center; padding: 20px; color: #f44336; border: 1px solid #f44336; border-radius: 5px;">
+                <p>❌ ${message}</p>
+            </div>
+        `;
+    }
+
+    // APT 패키지 검색 함수
+    async function performAptSearch() {
+        const query = aptSearchBox.value.trim();
+        const distro = aptDistroSelect.value;
+
+        if (!query) {
+            alert('APT 패키지명을 입력하세요.');
+            return;
+        }
+
+        // UI 상태 업데이트
+        aptSearchResults.style.display = 'block';
+        aptSearchResults.innerHTML = '<p>🔍 APT 패키지 검색 중...</p>';
+
+        try {
+            let searchUrl = `/api/search?q=${encodeURIComponent(query)}&type=apt&limit=20`;
+            if (distro !== 'all') {
+                searchUrl += `&distro=${distro}`;
+            }
+
+            const response = await fetch(searchUrl);
+            const data = await response.json();
+
+            if (data.error) {
+                showAptError(data.error);
+                return;
+            }
+
+            if (data.result_count === 0) {
+                showAptNoResults(query, distro);
+                return;
+            }
+
+            displayAptResults(data.results, data.result_count);
+
+        } catch (error) {
+            showAptError('검색 중 오류가 발생했습니다: ' + error.message);
+        }
+    }
+
+    function displayAptResults(results, totalCount) {
+        let html = `<h5>🐧 APT 검색 결과 (${totalCount}개)</h5>`;
+
+        results.forEach(function(result) {
+            const versionInfo = result.version ? ` (v${result.version})` : '';
+
+            html += `
+                <div style="border: 1px solid #2196F3; padding: 10px; margin: 8px 0; border-radius: 5px; background: #f0f4ff;">
+                    <h6 style="margin: 0 0 5px 0; color: #2196F3;">
+                        🐧 ${result.name}${versionInfo}
+                    </h6>
+                    <p style="margin: 5px 0; font-size: 13px; color: #666;">
+                        ${result.description}
+                    </p>
+                    <div style="margin-top: 8px; font-size: 12px;">
+                        <strong>프록시:</strong> <a href="${result.proxy_url}" style="color: #2196F3;">${result.proxy_url}</a><br>
+                        <strong>원본:</strong> <a href="${result.url}" target="_blank" style="color: #666;">${result.url}</a> 🔗<br>
+                        <small style="color: #999;">소스: ${result.source}</small>
+                    </div>
+                </div>
+            `;
+        });
+
+        aptSearchResults.innerHTML = html;
+    }
+
+    function showAptNoResults(query, distro) {
+        const distroText = distro === 'all' ? '모든 배포판' : distro;
+        aptSearchResults.innerHTML = `
+            <div style="text-align: center; padding: 20px; color: #999; border: 1px solid #ddd; border-radius: 5px;">
+                <p>🔍 "${query}"에 대한 APT 패키지를 ${distroText}에서 찾을 수 없습니다.</p>
+                <p>다른 키워드나 배포판으로 다시 검색해보세요.</p>
+            </div>
+        `;
+    }
+
+    function showAptError(message) {
+        aptSearchResults.innerHTML = `
+            <div style="text-align: center; padding: 20px; color: #f44336; border: 1px solid #f44336; border-radius: 5px;">
+                <p>❌ ${message}</p>
+            </div>
+        `;
+    }
+});
+</script>
 
 </body>
 </html>

@@ -7,6 +7,7 @@ import (
 	"github.com/gofiber/template/html/v2"
 
 	"proxynd/configs"
+	"proxynd/handlers"
 	"proxynd/logging"
 )
 
@@ -55,6 +56,9 @@ func BaseRouter() *fiber.App {
 			"baseURL":    baseURL,
 		})
 	})
+
+	// Add search API
+	app.Get("/api/search", handlers.SearchHandler)
 
 	// Add metrics router (use default if no config)
 	MetricsRouter(app, nil)
