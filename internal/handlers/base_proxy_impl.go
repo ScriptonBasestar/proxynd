@@ -63,7 +63,7 @@ func (b *BaseProxyHandlerImpl) Handle(c *fiber.Ctx) error {
 	cacheKey := b.handler.GenerateCacheKey(c)
 
 	// 3. 캐시 조회
-	if cachedData, err := b.cache.Get(cacheKey); err == nil && cachedData != nil {
+	if cachedData, found := b.cache.Get(cacheKey); found && cachedData != nil {
 		// 캐시 히트
 		c.Set("X-Cache-Status", "HIT")
 		c.Set("X-Proxy-Type", proxyType)
@@ -154,7 +154,7 @@ func (b *BaseProxyHandlerImpl) Handle(c *fiber.Ctx) error {
 	if b.handler.ShouldCache(c, statusCode) {
 		ttl := b.handler.GetCacheTTL(c)
 		go func() {
-			if err := b.cache.SetWithTTL(cacheKey, transformed, ttl); err != nil {
+			if err := b.cache.Put(cacheKey, transformed, ttl); err != nil {
 				b.logCacheError("save", err, proxyType)
 			} else {
 				// 캐시 메트릭 기록

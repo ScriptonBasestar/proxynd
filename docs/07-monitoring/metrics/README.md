@@ -191,7 +191,7 @@ scrape_configs:
       - targets: ['localhost:8080']
     metrics_path: '/metrics'
     scrape_interval: 15s
-    
+
     # Basic Auth 사용 시
     basic_auth:
       username: 'metrics'
@@ -214,11 +214,11 @@ sum by (registry_type) (rate(proxynd_http_requests_total[5m]))
 ### 캐시 효율성
 ```promql
 # 캐시 히트율
-sum(rate(proxynd_cache_hits_total[5m])) / 
+sum(rate(proxynd_cache_hits_total[5m])) /
 (sum(rate(proxynd_cache_hits_total[5m])) + sum(rate(proxynd_cache_misses_total[5m])))
 
 # 레지스트리별 캐시 히트율
-sum by (registry_type) (rate(proxynd_cache_hits_total[5m])) / 
+sum by (registry_type) (rate(proxynd_cache_hits_total[5m])) /
 sum by (registry_type) (rate(proxynd_cache_hits_total[5m]) + rate(proxynd_cache_misses_total[5m]))
 ```
 
@@ -234,11 +234,11 @@ proxynd_cache_bandwidth_saved_bytes
 ### 오류율
 ```promql
 # 오류율 (5xx 응답)
-sum(rate(proxynd_http_requests_total{status=~"5.."}[5m])) / 
+sum(rate(proxynd_http_requests_total{status=~"5.."}[5m])) /
 sum(rate(proxynd_http_requests_total[5m]))
 
 # 프록시 오류율
-sum(rate(proxynd_proxy_errors_total[5m])) / 
+sum(rate(proxynd_proxy_errors_total[5m])) /
 sum(rate(proxynd_proxy_requests_total[5m]))
 ```
 
@@ -264,7 +264,7 @@ groups:
       # 높은 오류율
       - alert: HighErrorRate
         expr: |
-          sum(rate(proxynd_http_requests_total{status=~"5.."}[5m])) / 
+          sum(rate(proxynd_http_requests_total{status=~"5.."}[5m])) /
           sum(rate(proxynd_http_requests_total[5m])) > 0.05
         for: 5m
         labels:
@@ -272,11 +272,11 @@ groups:
         annotations:
           summary: "High error rate detected"
           description: "Error rate is {{ $value | humanizePercentage }}"
-      
+
       # 낮은 캐시 히트율
       - alert: LowCacheHitRate
         expr: |
-          sum(rate(proxynd_cache_hits_total[5m])) / 
+          sum(rate(proxynd_cache_hits_total[5m])) /
           (sum(rate(proxynd_cache_hits_total[5m])) + sum(rate(proxynd_cache_misses_total[5m]))) < 0.5
         for: 10m
         labels:
@@ -284,7 +284,7 @@ groups:
         annotations:
           summary: "Low cache hit rate"
           description: "Cache hit rate is {{ $value | humanizePercentage }}"
-      
+
       # 높은 메모리 사용량
       - alert: HighMemoryUsage
         expr: proxynd_go_memory_alloc_bytes > 1e9  # 1GB
@@ -294,11 +294,11 @@ groups:
         annotations:
           summary: "High memory usage"
           description: "Memory usage is {{ $value | humanize1024 }}B"
-      
+
       # 검증 실패율
       - alert: HighVerificationFailureRate
         expr: |
-          sum(rate(proxynd_package_verifications_total{result="failure"}[5m])) / 
+          sum(rate(proxynd_package_verifications_total{result="failure"}[5m])) /
           sum(rate(proxynd_package_verifications_total[5m])) > 0.1
         for: 5m
         labels:

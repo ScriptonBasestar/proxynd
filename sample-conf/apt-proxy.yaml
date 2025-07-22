@@ -24,24 +24,24 @@ proxies:
       url: "http://us.archive.ubuntu.com/ubuntu"
     - name: "Ubuntu Mirror - UK"
       url: "http://gb.archive.ubuntu.com/ubuntu"
-  
+
   # Ubuntu 22.04 LTS (Jammy) - arm64
   ubuntu_jammy_arm64:
     - name: "Ubuntu ARM64 Official"
       url: "http://ports.ubuntu.com/ubuntu-ports"
-  
+
   # Ubuntu 20.04 LTS (Focal) - amd64
   ubuntu_focal_amd64:
     - name: "Ubuntu Official Mirror"
       url: "http://archive.ubuntu.com/ubuntu"
     - name: "Ubuntu Mirror - US"
       url: "http://us.archive.ubuntu.com/ubuntu"
-  
+
   # Ubuntu 20.04 LTS (Focal) - arm64
   ubuntu_focal_arm64:
     - name: "Ubuntu ARM64 Official"
       url: "http://ports.ubuntu.com/ubuntu-ports"
-  
+
   # Debian 12 (Bookworm) - amd64
   debian_bookworm_amd64:
     - name: "Debian Official Mirror"
@@ -50,92 +50,92 @@ proxies:
       url: "http://cdn-fastly.deb.debian.org/debian"
     - name: "Debian Mirror - US"
       url: "http://ftp.us.debian.org/debian"
-  
+
   # Debian 12 (Bookworm) - arm64
   debian_bookworm_arm64:
     - name: "Debian Official Mirror"
       url: "http://deb.debian.org/debian"
     - name: "Debian CDN"
       url: "http://cdn-fastly.deb.debian.org/debian"
-  
+
   # Debian 11 (Bullseye) - amd64
   debian_bullseye_amd64:
     - name: "Debian Official Mirror"
       url: "http://deb.debian.org/debian"
     - name: "Debian CDN"
       url: "http://cdn-fastly.deb.debian.org/debian"
-  
+
   # Debian Security Updates
   debian_security:
     - name: "Debian Security"
       url: "http://security.debian.org/debian-security"
     - name: "Debian Security CDN"
       url: "http://cdn-fastly.deb.debian.org/debian-security"
-  
+
   # Ubuntu Security Updates
   ubuntu_security:
     - name: "Ubuntu Security"
       url: "http://security.ubuntu.com/ubuntu"
-  
+
   # Custom/Private Repository Example
   # custom_internal:
   #   - name: "Internal APT Repository"
   #     url: "http://apt.internal.company.com/debian"
-  
+
   # Third-party repositories
   # docker_ce:
   #   - name: "Docker CE Official"
   #     url: "https://download.docker.com/linux/ubuntu"
-  
+
   # kubernetes:
   #   - name: "Kubernetes Official"
   #     url: "https://apt.kubernetes.io"
 
 # Additional Configuration Options (when extended features are implemented)
-# 
+#
 # # Mirror selection strategy
 # mirror_strategy: "round_robin"  # Options: round_robin, fastest, priority
-# 
+#
 # # Health check configuration for mirrors
 # health_check:
 #   enabled: true
 #   interval: 300  # seconds
 #   timeout: 10    # seconds
 #   failure_threshold: 3
-# 
+#
 # # GPG key handling
 # gpg:
 #   # Automatically fetch and cache GPG keys
 #   auto_import: true
 #   # Trust all GPG keys (DANGEROUS - only for testing)
 #   trust_all: false
-# 
+#
 # # Package filtering
 # filters:
 #   # Block specific packages
 #   blocked_packages:
 #     - "dangerous-package"
 #     - "obsolete-package"
-#   
+#
 #   # Allow only specific packages (if set, only these are allowed)
 #   # allowed_packages:
 #   #   - "nginx"
 #   #   - "apache2"
-# 
+#
 # # Architecture support
 # architectures:
 #   - "amd64"
 #   - "arm64"
 #   - "armhf"
 #   - "i386"
-# 
+#
 # # Repository components to proxy
 # components:
 #   - "main"
 #   - "restricted"
 #   - "universe"
 #   - "multiverse"
-# 
+#
 # # Bandwidth limits (per connection)
 # bandwidth:
 #   download_limit: "10MB/s"  # Per-connection download limit

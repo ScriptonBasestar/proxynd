@@ -115,7 +115,7 @@ declare -A PLATFORM_MATRIX=(
 # 빌드할 플랫폼 목록 생성
 get_build_platforms() {
     local platforms=""
-    
+
     case $PLATFORMS in
         "all")
             platforms="linux-amd64 linux-arm64 darwin-amd64 darwin-arm64 windows-amd64"
@@ -134,7 +134,7 @@ get_build_platforms() {
             platforms="$PLATFORMS"
             ;;
     esac
-    
+
     echo "$platforms"
 }
 
@@ -143,13 +143,13 @@ setup_version() {
     if [ -z "$VERSION" ]; then
         # Git 태그에서 버전 추출
         VERSION=$(git describe --tags --exact-match 2>/dev/null || echo "")
-        
+
         if [ -z "$VERSION" ]; then
             # 최신 태그 + 커밋 정보
             LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
             COMMIT_COUNT=$(git rev-list --count HEAD ^${LATEST_TAG} 2>/dev/null || echo "0")
             COMMIT_SHA=$(git rev-parse --short HEAD)
-            
+
             if [ "$COMMIT_COUNT" = "0" ]; then
                 VERSION="$LATEST_TAG"
             else
@@ -157,10 +157,10 @@ setup_version() {
             fi
         fi
     fi
-    
+
     BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
     COMMIT_SHA=$(git rev-parse --short HEAD)
-    
+
     log_info "버전: $VERSION"
     log_info "빌드 시간: $BUILD_TIME"
     log_info "커밋 SHA: $COMMIT_SHA"
@@ -169,28 +169,28 @@ setup_version() {
 # 환경 확인
 check_environment() {
     log_step "환경 확인 중..."
-    
+
     # Go 설치 확인
     if ! command -v go &> /dev/null; then
         log_error "Go가 설치되지 않았습니다."
         exit 1
     fi
-    
+
     GO_VERSION=$(go version | cut -d' ' -f3)
     log_info "Go 버전: $GO_VERSION"
-    
+
     # Git 확인
     if ! command -v git &> /dev/null; then
         log_error "Git이 설치되지 않았습니다."
         exit 1
     fi
-    
+
     # 프로젝트 루트 확인
     if [ ! -f "go.mod" ] || [ ! -f "main.go" ]; then
         log_error "프로젝트 루트 디렉토리에서 실행해주세요."
         exit 1
     fi
-    
+
     log_info "환경 확인 완료"
 }
 
@@ -216,25 +216,25 @@ build_binary() {
     local platform=$1
     local goos=$(echo $platform | cut -d'-' -f1)
     local goarch=$(echo $platform | cut -d'-' -f2)
-    
+
     log_step "빌드 중: $platform"
-    
+
     # 출력 디렉토리 생성
     local platform_dir="$OUTPUT_DIR/$platform"
     mkdir -p "$platform_dir"
-    
+
     # 바이너리 이름 설정
     local server_name="proxynd"
     local cli_name="proxyndctl"
-    
+
     if [ "$goos" = "windows" ]; then
         server_name="proxynd.exe"
         cli_name="proxyndctl.exe"
     fi
-    
+
     # 빌드 플래그
     local ldflags="-w -s -X main.Version=${VERSION} -X main.BuildTime=${BUILD_TIME} -X main.CommitSHA=${COMMIT_SHA}"
-    
+
     # ProxyND 서버 빌드
     log_info "  - ProxyND 서버 빌드 중..."
     CGO_ENABLED=0 GOOS=$goos GOARCH=$goarch go build \
@@ -242,7 +242,7 @@ build_binary() {
         -trimpath \
         -o "$platform_dir/$server_name" \
         main.go
-    
+
     # ProxyND CLI 빌드
     log_info "  - ProxyND CLI 빌드 중..."
     CGO_ENABLED=0 GOOS=$goos GOARCH=$goarch go build \
@@ -250,11 +250,11 @@ build_binary() {
         -trimpath \
         -o "$platform_dir/$cli_name" \
         ./cmd/proxyndctl/main.go
-    
+
     # 아카이브 생성
     log_info "  - 아카이브 생성 중..."
     cd "$platform_dir"
-    
+
     if [ "$goos" = "windows" ]; then
         # Windows용 ZIP
         zip "../proxynd-${VERSION}-${platform}.zip" "$server_name" "$cli_name"
@@ -264,13 +264,13 @@ build_binary() {
         tar czf "../proxynd-${VERSION}-${platform}.tar.gz" "$server_name" "$cli_name"
         tar czf "../proxyndctl-${VERSION}-${platform}.tar.gz" "$cli_name"
     fi
-    
+
     cd - > /dev/null
-    
+
     # 파일 크기 정보
     local server_size=$(du -h "$platform_dir/$server_name" | cut -f1)
     local cli_size=$(du -h "$platform_dir/$cli_name" | cut -f1)
-    
+
     log_info "  - ProxyND 서버: $server_size"
     log_info "  - ProxyND CLI: $cli_size"
     log_info "  ✅ $platform 빌드 완료"
@@ -279,14 +279,14 @@ build_binary() {
 # 체크섬 생성
 generate_checksums() {
     log_step "체크섬 생성 중..."
-    
+
     cd "$OUTPUT_DIR"
-    
+
     # 아카이브 파일들의 체크섬 생성
     sha256sum *.tar.gz *.zip > checksums.txt 2>/dev/null || true
-    
+
     log_info "체크섬 파일 생성: $OUTPUT_DIR/checksums.txt"
-    
+
     cd - > /dev/null
 }
 
@@ -295,61 +295,61 @@ test_build() {
     if [ "$TEST" = false ]; then
         return
     fi
-    
+
     log_step "빌드 테스트 중..."
-    
+
     # 현재 플랫폼 확인
     local current_os=$(go env GOOS)
     local current_arch=$(go env GOARCH)
     local current_platform="${current_os}-${current_arch}"
-    
+
     local platform_dir="$OUTPUT_DIR/$current_platform"
-    
+
     if [ ! -d "$platform_dir" ]; then
         log_warn "현재 플랫폼($current_platform)의 빌드가 없어 테스트를 건너뜁니다."
         return
     fi
-    
+
     # 바이너리 이름
     local server_name="proxynd"
     local cli_name="proxyndctl"
-    
+
     if [ "$current_os" = "windows" ]; then
         server_name="proxynd.exe"
         cli_name="proxyndctl.exe"
     fi
-    
+
     # 실행 권한 확인
     if [ "$current_os" != "windows" ]; then
         chmod +x "$platform_dir/$server_name"
         chmod +x "$platform_dir/$cli_name"
     fi
-    
+
     # 버전 확인 테스트
     log_info "  - ProxyND 서버 버전 확인..."
     "$platform_dir/$server_name" --version || log_warn "서버 버전 확인 실패"
-    
+
     log_info "  - ProxyND CLI 버전 확인..."
     "$platform_dir/$cli_name" --version || log_warn "CLI 버전 확인 실패"
-    
+
     log_info "✅ 빌드 테스트 완료"
 }
 
 # 빌드 결과 요약
 show_summary() {
     log_step "빌드 결과 요약"
-    
+
     echo ""
     echo "📦 빌드된 파일:"
     find "$OUTPUT_DIR" -type f \( -name "*.tar.gz" -o -name "*.zip" \) -exec ls -lh {} \; | \
         awk '{printf "  %s %s\n", $9, $5}'
-    
+
     echo ""
     echo "📋 체크섬 파일:"
     if [ -f "$OUTPUT_DIR/checksums.txt" ]; then
         echo "  $OUTPUT_DIR/checksums.txt"
     fi
-    
+
     echo ""
     echo "🎉 빌드 완료!"
     echo "출력 디렉토리: $OUTPUT_DIR"
@@ -358,22 +358,22 @@ show_summary() {
 # 메인 함수
 main() {
     log_info "ProxyND 릴리스 빌드 시작"
-    
+
     # 환경 확인
     check_environment
-    
+
     # 버전 정보 설정
     setup_version
-    
+
     # 기존 빌드 정리
     clean_build
-    
+
     # 의존성 설치
     install_dependencies
-    
+
     # 빌드할 플랫폼 목록 가져오기
     local build_platforms=$(get_build_platforms)
-    
+
     # 각 플랫폼별 빌드
     for platform in $build_platforms; do
         if [[ "${PLATFORM_MATRIX[$platform]}" ]]; then
@@ -382,13 +382,13 @@ main() {
             log_warn "알 수 없는 플랫폼: $platform"
         fi
     done
-    
+
     # 체크섬 생성
     generate_checksums
-    
+
     # 빌드 테스트
     test_build
-    
+
     # 결과 요약
     show_summary
 }

@@ -78,7 +78,13 @@ func requireJWTFromSession(c *fiber.Ctx) error {
 		})
 	}
 
-	return validateJWTToken(c, jwtAccessToken.(string))
+	tokenStr, ok := jwtAccessToken.(string)
+	if !ok {
+		return c.Status(http.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Invalid token type",
+		})
+	}
+	return validateJWTToken(c, tokenStr)
 }
 
 // validateJWTToken JWT 토큰 검증
@@ -154,8 +160,12 @@ func RequireRole(requiredRoles ...string) fiber.Handler {
 			return c.Next()
 		}
 
+		email, ok := userMap["email"].(string)
+		if !ok {
+			email = "unknown"
+		}
 		logging.GetLogger().Warn("Access denied",
-			logging.F("email", userMap["email"].(string)),
+			logging.F("email", email),
 			logging.F("role", userRole),
 			logging.F("path", c.Path()))
 
@@ -342,10 +352,13 @@ func autoRefreshToken(_ *fiber.Ctx, sess fiber.Map, userMap fiber.Map) error {
 	jwtService := jwt.NewJWTService(oauth2Config)
 
 	// OAuth2 토큰이 있는 경우 권한 동기화를 위해 사용
-	oauth2AccessToken, _ := userMap["oauth2_access_token"].(string)
+	oauth2AccessToken, ok := userMap["oauth2_access_token"].(string)
+	if !ok {
+		oauth2AccessToken = ""
+	}
 
 	// 실시간 권한 동기화를 위해 OAuth2 제공자 정보 조회
-	if providerName, ok := userMap["provider"].(string); ok && oauth2AccessToken != "" {
+	if providerName, providerOk := userMap["provider"].(string); providerOk && oauth2AccessToken != "" {
 		// 제공자별 인터페이스 구현체 생성 (실제 구현은 추후 추가)
 		_ = createOAuth2Provider(providerName, oauth2Config)
 	}
@@ -355,7 +368,11 @@ func autoRefreshToken(_ *fiber.Ctx, sess fiber.Map, userMap fiber.Map) error {
 	var err error
 
 	// 현재는 기존 권한 유지 (실시간 동기화는 추후 구현)
-	newTokenPair, err = jwtService.RefreshAccessToken(jwtRefreshToken.(string))
+	refreshToken, ok := jwtRefreshToken.(string)
+	if !ok {
+		return errors.New("invalid refresh token type")
+	}
+	newTokenPair, err = jwtService.RefreshAccessToken(refreshToken)
 
 	if err != nil {
 		return errors.New("failed to refresh JWT token: " + err.Error())

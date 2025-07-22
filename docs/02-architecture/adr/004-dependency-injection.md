@@ -44,14 +44,14 @@ func InitializeApp(cfg *config.Config) (*App, error) {
     // Create repositories
     cacheRepo := repositories.NewFileCacheRepository(cfg.CacheDir)
     configRepo := repositories.NewYamlConfigRepository(cfg.ConfigDir)
-    
+
     // Create services
     cacheService := services.NewCacheService(cacheRepo, cfg.Cache)
     proxyService := services.NewProxyService(cacheService, configRepo)
-    
+
     // Create handlers
     aptHandler := handlers.NewAptHandler(proxyService)
-    
+
     // Create app
     return &App{
         Config: cfg,

@@ -69,13 +69,13 @@ func initializeMirrorSelector(apkConfig configs.ApkProxyConfig) {
 // convertToMirrorConfig 설정 변환
 func convertToMirrorConfig(config configs.ApkMirrorSelectionConfig) mirror.AlpineMirrorConfig {
 	// 문자열을 time.Duration으로 변환
-	healthCheckInterval, _ := time.ParseDuration(config.HealthCheckInterval)
-	if healthCheckInterval == 0 {
+	healthCheckInterval, err := time.ParseDuration(config.HealthCheckInterval)
+	if err != nil || healthCheckInterval == 0 {
 		healthCheckInterval = 5 * time.Minute
 	}
 
-	healthCheckTimeout, _ := time.ParseDuration(config.HealthCheckTimeout)
-	if healthCheckTimeout == 0 {
+	healthCheckTimeout, err := time.ParseDuration(config.HealthCheckTimeout)
+	if err != nil || healthCheckTimeout == 0 {
 		healthCheckTimeout = 10 * time.Second
 	}
 
@@ -106,9 +106,13 @@ func ApkProxyHandler(c *fiber.Ctx) error {
 	// 설정 읽기
 	storageDir := helpers.GetStorageDir()
 	globalConfig := configs.GlobalConfig{}
-	_ = globalConfig.ReadConfig()
+	if err := globalConfig.ReadConfig(); err != nil {
+		return c.Status(fiber.StatusInternalServerError).SendString("Failed to read global config")
+	}
 	apkConfig := configs.ApkProxyConfig{}
-	_ = apkConfig.ReadConfig()
+	if err := apkConfig.ReadConfig(); err != nil {
+		return c.Status(fiber.StatusInternalServerError).SendString("Failed to read APK config")
+	}
 
 	// 파일 경로 생성
 	baseDir := filepath.Join(storageDir, apkConfig.Path)
@@ -137,7 +141,10 @@ func ApkProxyHandler(c *fiber.Ctx) error {
 		// APK 파일인 경우 서명 검증 수행
 		if apkConfig.Verification.Enabled && isApkFile(requestPath) {
 			if !verifyApkFileSignature(filefullpath, apkConfig, c) {
-				return nil // 검증 실패 시 응답은 이미 처리됨
+				return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+					"error":   "APK signature verification failed",
+					"message": "The requested APK file failed signature verification",
+				})
 			}
 		}
 
@@ -151,7 +158,9 @@ func ApkProxyHandler(c *fiber.Ctx) error {
 	// 캐시에 없으면 업스트림에서 가져오기
 	if _, err := os.Stat(filefullpath); os.IsNotExist(err) {
 		dirpath := filepath.Dir(filefullpath)
-		_ = os.MkdirAll(dirpath, os.ModePerm)
+		if err := os.MkdirAll(dirpath, os.ModePerm); err != nil {
+			return c.Status(fiber.StatusInternalServerError).SendString("Failed to create directory")
+		}
 		out, err := os.Create(filefullpath)
 		if err != nil {
 			log.Printf("Error creating file: %v", err)
@@ -199,7 +208,10 @@ func ApkProxyHandler(c *fiber.Ctx) error {
 	// 새로 다운로드한 APK 파일인 경우 서명 검증 수행
 	if apkConfig.Verification.Enabled && isApkFile(requestPath) {
 		if !verifyApkFileSignature(filefullpath, apkConfig, c) {
-			return nil // 검증 실패 시 응답은 이미 처리됨
+			return c.Status(fiber.StatusForbidden).JSON(fiber.Map{
+				"error":   "APK signature verification failed",
+				"message": "The requested APK file failed signature verification",
+			})
 		}
 	}
 
@@ -286,12 +298,6 @@ func verifyApkFileSignature(filePath string, config configs.ApkProxyConfig, c *f
 	if config.Verification.FailOnInvalid {
 		logger.Error("APK 서명 검증 실패로 요청 차단",
 			logging.F("file", filePath))
-
-		_ = c.Status(fiber.StatusForbidden).JSON(fiber.Map{
-			"error":   "APK signature verification failed",
-			"message": "The requested APK file failed signature verification",
-			"details": result.Error,
-		})
 		return false
 	}
 

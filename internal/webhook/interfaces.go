@@ -5,6 +5,8 @@ import (
 	"time"
 
 	"proxynd/alerts"
+	"proxynd/internal/webhook/retry"
+	"proxynd/internal/webhook/types"
 )
 
 // SenderInterface 웹훅 전송기 인터페이스
@@ -18,10 +20,10 @@ type SenderInterface interface {
 	SendEventSync(ctx context.Context, event *alerts.AlertEvent) error
 
 	// 어댑터 관리
-	RegisterAdapter(adapter WebhookAdapter)
+	RegisterAdapter(adapter types.WebhookAdapter)
 
 	// 메트릭 조회
-	GetMetrics() *SenderMetrics
+	GetMetrics() *types.SenderMetrics
 	GetHistoryManager() *WebhookHistoryManager
 }
 
@@ -41,7 +43,7 @@ type RetryManager interface {
 	ProcessRetries(ctx context.Context) error
 
 	// 재시도 정책
-	CalculateBackoffDelay(attempt int, policy RetryPolicy) time.Duration
+	CalculateBackoffDelay(attempt int, policy retry.Policy) time.Duration
 	IsRetryableError(err error) bool
 }
 
@@ -66,6 +68,6 @@ type MetricsCollector interface {
 type WorkerManager interface {
 	StartWorkers(ctx context.Context, count int) error
 	StopWorkers(ctx context.Context) error
-	GetLeastBusyWorker() *Worker
+	GetLeastBusyWorker() *types.WorkerInstance
 	GetWorkerStats() map[string]interface{}
 }

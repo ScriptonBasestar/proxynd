@@ -27,7 +27,7 @@ type ValidationError struct {
 }
 
 func (e *ValidationError) Error() string {
-    return fmt.Sprintf("validation failed for field '%s': %s (value: %v)", 
+    return fmt.Sprintf("validation failed for field '%s': %s (value: %v)",
         e.Field, e.Message, e.Value)
 }
 ```
@@ -43,7 +43,7 @@ func (c *APTProxyConfig) Validate() error {
             Value:   c.Mirrors,
         }
     }
-    
+
     for _, mirror := range c.Mirrors {
         if _, err := url.Parse(mirror); err != nil {
             return &ValidationError{
@@ -53,7 +53,7 @@ func (c *APTProxyConfig) Validate() error {
             }
         }
     }
-    
+
     return nil
 }
 ```
@@ -67,13 +67,13 @@ func (c *Config) Validate() error {
         &c.MavenProxy,
         &c.NPMProxy,
     }
-    
+
     for _, validator := range validators {
         if err := validator.Validate(); err != nil {
             return err
         }
     }
-    
+
     return nil
 }
 ```
@@ -95,7 +95,7 @@ func (n *ConfigChangeNotifier) AddListener(listener func(*configs.Config)) {
 func (n *ConfigChangeNotifier) NotifyChange(config *configs.Config) {
     n.mu.RLock()
     defer n.mu.RUnlock()
-    
+
     for _, listener := range n.listeners {
         go listener(config)
     }

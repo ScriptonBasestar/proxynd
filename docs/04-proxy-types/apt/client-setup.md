@@ -57,7 +57,7 @@ proxies:
       url: http://mirror.kakao.com/ubuntu
     - name: ubuntu-security
       url: http://security.ubuntu.com/ubuntu
-      
+
   debian:
     - name: official
       url: http://ftp.debian.org/debian

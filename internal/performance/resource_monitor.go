@@ -532,22 +532,30 @@ func (rm *ResourceMonitor) GetHealthStatus() map[string]interface{} {
 	overallHealthy := true
 
 	if stats.MemoryPercent > rm.config.MemoryThreshold {
-		status["memory"].(map[string]interface{})["status"] = SeverityWarning
+		if memory, ok := status["memory"].(map[string]interface{}); ok {
+			memory["status"] = SeverityWarning
+		}
 		overallHealthy = false
 	}
 
 	if stats.CPUPercent > rm.config.CPUThreshold {
-		status["cpu"].(map[string]interface{})["status"] = SeverityWarning
+		if cpu, ok := status["cpu"].(map[string]interface{}); ok {
+			cpu["status"] = SeverityWarning
+		}
 		overallHealthy = false
 	}
 
 	if stats.DiskPercent > rm.config.DiskThreshold {
-		status["disk"].(map[string]interface{})["status"] = "critical"
+		if disk, ok := status["disk"].(map[string]interface{}); ok {
+			disk["status"] = "critical"
+		}
 		overallHealthy = false
 	}
 
 	if stats.GoroutineCount > rm.config.GoroutineThreshold {
-		status["goroutines"].(map[string]interface{})["status"] = SeverityWarning
+		if goroutines, ok := status["goroutines"].(map[string]interface{}); ok {
+			goroutines["status"] = SeverityWarning
+		}
 		overallHealthy = false
 	}
 

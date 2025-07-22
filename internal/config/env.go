@@ -3,6 +3,7 @@ package config
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strconv"
 	"sync"
@@ -152,8 +153,11 @@ var (
 func Load() (*Env, error) {
 	var err error
 	once.Do(func() {
-		// Load .env file if exists
-		_ = godotenv.Load()
+		// Load .env file if exists (ignore errors - file may not exist)
+		if err := godotenv.Load(); err != nil {
+			// Log warning only if the error is not "file not found"
+			log.Printf("Note: .env file not loaded (this is normal if not using .env): %v", err)
+		}
 
 		env = &Env{
 			ServerHost: getEnvOrDefault("SERVER_HOST", "0.0.0.0"),
@@ -261,7 +265,9 @@ func Get() *Env {
 	if env == nil {
 		// 개발 환경에서는 기본값으로 로드 시도
 		if os.Getenv("SERVER_ENV") != EnvProduction {
-			_, _ = Load()
+			if _, err := Load(); err != nil {
+				log.Printf("Warning: Failed to load environment variables: %v", err)
+			}
 		}
 		if env == nil {
 			// 여전히 nil인 경우 에러 로그 후 기본 환경 반환

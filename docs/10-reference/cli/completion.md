@@ -107,7 +107,7 @@ New-Item -Path $PROFILE -Type File -Force
 
 ```bash
 $ proxyndctl [TAB]
-cache       config      health      metrics     test        
+cache       config      health      metrics     test  
 completion  help        status      user        version
 ```
 
@@ -119,10 +119,10 @@ completion  help        status      user        version
    ```bash
    # Ubuntu/Debian
    sudo apt-get install bash-completion
-   
+
    # RHEL/CentOS
    sudo yum install bash-completion
-   
+
    # macOS
    brew install bash-completion
    ```

@@ -40,12 +40,12 @@ logging:
       max_age: 7
       max_backups: 10
       compress: true
-  
+
   correlation:
     enabled: true
     header_name: "X-Correlation-ID"
     generate: true
-  
+
   middleware:
     enabled: true
     skip_paths: ["/health", "/metrics"]
@@ -75,18 +75,18 @@ func main() {
         },
         Correlation: true,
     }
-    
+
     logger, err := logging.NewLogger(config)
     if err != nil {
         panic(err)
     }
-    
+
     // Use structured logging
-    logger.Info("Service starting", 
+    logger.Info("Service starting",
         logging.String("service", "proxynd"),
         logging.String("version", "1.0.0"),
         logging.Int("port", 8080))
-    
+
     // Context-aware logging
     ctx := logging.WithCorrelationID(context.Background(), "req-123")
     logger.WithContext(ctx).Info("Processing request")
@@ -132,7 +132,7 @@ ProxyND automatically tracks requests across components using correlation IDs:
 ctx := logging.WithCorrelationID(c.UserContext(), c.Get("X-Correlation-ID"))
 
 // Use in service layers
-logger.WithContext(ctx).Info("Cache operation", 
+logger.WithContext(ctx).Info("Cache operation",
     logging.String("operation", "get"),
     logging.String("key", cacheKey))
 
@@ -385,20 +385,20 @@ logging:
   format: "text"
   output:
     - type: "stdout"
-  
+
   middleware:
     enabled: true
     log_request_body: true
     log_response_body: true
     max_body_size: 4096
-  
+
   audit:
     enabled: false
-  
+
   security:
     enabled: true
     threat_detection: false
-  
+
   performance:
     enabled: true
     slow_threshold: "500ms"
@@ -418,31 +418,31 @@ logging:
       max_age: 30
       max_backups: 50
       compress: true
-  
+
   correlation:
     enabled: true
-  
+
   middleware:
     enabled: true
     skip_success_logs: true
     log_request_body: false
     log_response_body: false
-  
+
   audit:
     enabled: true
     retention_days: 2555  # 7 years for compliance
-  
+
   security:
     enabled: true
     threat_detection: true
     alert_threshold: 5
     block_after: 20
-  
+
   performance:
     enabled: true
     memory_logging: true
     memory_interval: "1m"
-  
+
   aggregation:
     enabled: true
     analysis_window: "15m"
@@ -536,7 +536,7 @@ logging:
   middleware:
     skip_success_logs: true
     skip_paths: ["/health", "/metrics", "/static"]
-  
+
   sampling:
     enabled: true
     initial: 100
@@ -574,11 +574,11 @@ logging:
 logging:
   level: "warn"  # Reduce log volume
   format: "json" # Faster than text formatting
-  
+
   middleware:
     log_request_body: false
     log_response_body: false
-    
+
   performance:
     memory_interval: "10m"  # Less frequent memory logging
 ```
@@ -589,10 +589,10 @@ logging:
 1. **Use Fields Instead of String Formatting**
    ```go
    // Good
-   logger.Info("User login successful", 
+   logger.Info("User login successful",
        logging.String("user_id", userID),
        logging.String("ip", clientIP))
-   
+
    // Avoid
    logger.Info(fmt.Sprintf("User %s login from %s", userID, clientIP))
    ```
@@ -619,7 +619,7 @@ logging:
    logger.Info("User authenticated",
        logging.String("user_id", user.ID),
        logging.String("auth_method", "jwt"))
-   
+
    // Avoid - don't log passwords, tokens, or PII
    logger.Info("Login", logging.String("password", password))
    ```
@@ -628,7 +628,7 @@ logging:
    ```go
    // Failed auth should be WARNING, not ERROR
    securityLogger.LogAuthenticationFailure(ctx, c, "invalid_password", metadata)
-   
+
    // Successful operations can be INFO
    auditLogger.LogAuthentication(ctx, userID, "jwt", "success", metadata)
    ```
@@ -665,7 +665,7 @@ logging:
    ```bash
    # Monitor log directory size
    du -sh /var/log/proxynd/
-   
+
    # Set up alerts for disk usage
    df -h /var/log | awk 'NR==2 {if ($5 > 80) print "WARNING: Log disk usage high"}'
    ```

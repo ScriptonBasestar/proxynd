@@ -7,7 +7,7 @@ server:
   port: 80                         # 프로덕션 환경 포트
   read_timeout: 60s                # 프로덕션에서는 더 긴 타임아웃
   write_timeout: 60s
-  
+
   # TLS 설정 (HTTPS 활성화)
   tls:
     enabled: true
@@ -20,7 +20,7 @@ cache:
   backend: redis                   # 프로덕션에서는 Redis 사용
   ttl: 86400s                      # 프로덕션에서는 긴 TTL (24시간)
   max_size: 100GB                  # 프로덕션에서는 큰 캐시
-  
+
   redis:
     address: redis-cluster.internal:6379
     password: ${REDIS_PASSWORD}
@@ -33,18 +33,18 @@ security:
     basic_auth:
       enabled: true                # 프로덕션에서는 인증 활성화
       users_file: /etc/proxynd/users.yml
-  
+
   access_control:
     ip_whitelist:
       enabled: true                # 프로덕션에서는 IP 제한
       cidrs:
         - 10.0.0.0/8              # 내부 네트워크만 허용
         - 172.16.0.0/12
-  
+
   package_filter:
     enabled: true                  # 프로덕션에서는 패키지 필터 활성화
     mode: allowlist
-  
+
   hash_verification:
     enabled: true                  # 프로덕션에서는 해시 검증 필수
     fail_on_mismatch: true
@@ -52,7 +52,7 @@ security:
 # 알림 설정
 alerts:
   enabled: true
-  
+
   channels:
     - name: webhook
       type: webhook
@@ -66,14 +66,14 @@ logging:
   level: warn                      # 프로덕션에서는 경고 이상만 로그
   format: json                     # 프로덕션에서는 구조화된 로그
   output: file
-  
+
   file:
     path: /var/log/proxynd/proxynd.log
     max_size: 1GB
     max_backups: 30
     max_age: 90                    # 90일 보관
     compress: true
-  
+
   access_log:
     enabled: true
     path: /var/log/proxynd/access.log
@@ -94,13 +94,13 @@ advanced:
     connection_timeout: 60s
     keep_alive: 300s
     buffer_size: 8192
-  
+
   retry:
     max_attempts: 5                # 프로덕션에서는 더 많은 재시도
     initial_delay: 2s
     max_delay: 60s
     multiplier: 2.0
-  
+
   circuit_breaker:
     enabled: true                  # 프로덕션에서는 회로 차단기 활성화
     failure_threshold: 10

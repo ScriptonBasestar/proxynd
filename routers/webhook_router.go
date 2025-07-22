@@ -21,7 +21,10 @@ func WebhookRouter(app *fiber.App) {
 	// 웹훅 설정 로드
 	var webhookConfig configs.WebhookConfig
 	if webhookConfig.ConfigExists() {
-		_ = webhookConfig.ReadConfig()
+		if err := webhookConfig.ReadConfig(); err != nil {
+			logger.Warn("Failed to read webhook config, using defaults", logging.F("error", err))
+			webhookConfig = configs.GetDefaultWebhookConfig()
+		}
 	} else {
 		webhookConfig = configs.GetDefaultWebhookConfig()
 	}

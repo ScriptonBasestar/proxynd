@@ -25,7 +25,7 @@ func BenchmarkCacheFileSystem(b *testing.B) {
 		DefaultTTL: 3600 * time.Second,       // 1 hour
 	}
 	cacheRepo := cache.NewManager(cacheBackend, cacheOptions)
-	
+
 	// 테스트 데이터 크기별 벤치마크
 	testSizes := []struct {
 		name string
@@ -37,16 +37,16 @@ func BenchmarkCacheFileSystem(b *testing.B) {
 		{"1MB", 1024 * 1024},
 		{"10MB", 10 * 1024 * 1024},
 	}
-	
+
 	for _, testSize := range testSizes {
 		testData := make([]byte, testSize.size)
 		rand.Read(testData)
-		
+
 		b.Run(fmt.Sprintf("Set_%s", testSize.name), func(b *testing.B) {
 			b.SetBytes(int64(testSize.size))
 			b.ReportAllocs()
 			b.ResetTimer()
-			
+
 			for i := 0; i < b.N; i++ {
 				key := fmt.Sprintf("bench-set-%s-%d", testSize.name, i)
 				err := cacheRepo.Put(key, testData, 3600*time.Second)
@@ -55,18 +55,18 @@ func BenchmarkCacheFileSystem(b *testing.B) {
 				}
 			}
 		})
-		
+
 		// Get 벤치마크를 위한 데이터 준비
 		for i := 0; i < 100; i++ {
 			key := fmt.Sprintf("bench-get-%s-%d", testSize.name, i)
 			cacheRepo.Put(key, testData, 3600*time.Second)
 		}
-		
+
 		b.Run(fmt.Sprintf("Get_%s", testSize.name), func(b *testing.B) {
 			b.SetBytes(int64(testSize.size))
 			b.ReportAllocs()
 			b.ResetTimer()
-			
+
 			for i := 0; i < b.N; i++ {
 				key := fmt.Sprintf("bench-get-%s-%d", testSize.name, i%100)
 				data, exists := cacheRepo.Get(key)
@@ -95,20 +95,20 @@ func BenchmarkCacheConcurrency(b *testing.B) {
 		DefaultTTL: 3600 * time.Second,       // 1 hour
 	}
 	cacheRepo := cache.NewManager(cacheBackend, cacheOptions)
-	
+
 	testData := make([]byte, 1024) // 1KB 테스트 데이터
 	rand.Read(testData)
-	
+
 	// 초기 데이터 준비
 	for i := 0; i < 1000; i++ {
 		key := fmt.Sprintf("concurrent-key-%d", i)
 		cacheRepo.Put(key, testData, 3600*time.Second)
 	}
-	
+
 	b.Run("ConcurrentReads", func(b *testing.B) {
 		b.ReportAllocs()
 		b.ResetTimer()
-		
+
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
 				key := fmt.Sprintf("concurrent-key-%d", rand.Intn(1000))
@@ -119,11 +119,11 @@ func BenchmarkCacheConcurrency(b *testing.B) {
 			}
 		})
 	})
-	
+
 	b.Run("ConcurrentWrites", func(b *testing.B) {
 		b.ReportAllocs()
 		b.ResetTimer()
-		
+
 		var counter int64
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
@@ -136,11 +136,11 @@ func BenchmarkCacheConcurrency(b *testing.B) {
 			}
 		})
 	})
-	
+
 	b.Run("ConcurrentMixed", func(b *testing.B) {
 		b.ReportAllocs()
 		b.ResetTimer()
-		
+
 		var writeCounter int64
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
@@ -177,14 +177,14 @@ func BenchmarkCacheExpiration(b *testing.B) {
 		DefaultTTL: 3600 * time.Second,       // 1 hour
 	}
 	cacheRepo := cache.NewManager(cacheBackend, cacheOptions)
-	
+
 	testData := make([]byte, 1024)
 	rand.Read(testData)
-	
+
 	b.Run("SetWithShortTTL", func(b *testing.B) {
 		b.ReportAllocs()
 		b.ResetTimer()
-		
+
 		for i := 0; i < b.N; i++ {
 			key := fmt.Sprintf("short-ttl-%d", i)
 			err := cacheRepo.Put(key, testData, 1*time.Second)
@@ -193,11 +193,11 @@ func BenchmarkCacheExpiration(b *testing.B) {
 			}
 		}
 	})
-	
+
 	b.Run("SetWithLongTTL", func(b *testing.B) {
 		b.ReportAllocs()
 		b.ResetTimer()
-		
+
 		for i := 0; i < b.N; i++ {
 			key := fmt.Sprintf("long-ttl-%d", i)
 			err := cacheRepo.Put(key, testData, 86400*time.Second)
@@ -206,7 +206,7 @@ func BenchmarkCacheExpiration(b *testing.B) {
 			}
 		}
 	})
-	
+
 	// 만료된 키 처리 벤치마크
 	b.Run("GetExpiredKeys", func(b *testing.B) {
 		// 만료된 키들 준비
@@ -214,12 +214,12 @@ func BenchmarkCacheExpiration(b *testing.B) {
 			key := fmt.Sprintf("expired-key-%d", i)
 			cacheRepo.Put(key, testData, 1*time.Second)
 		}
-		
+
 		time.Sleep(2 * time.Second) // 키들이 만료되도록 대기
-		
+
 		b.ReportAllocs()
 		b.ResetTimer()
-		
+
 		for i := 0; i < b.N; i++ {
 			key := fmt.Sprintf("expired-key-%d", i%100)
 			_, exists := cacheRepo.Get(key)
@@ -245,17 +245,17 @@ func BenchmarkCacheOperationsScale(b *testing.B) {
 		DefaultTTL: 3600 * time.Second,       // 1 hour
 	}
 	cacheRepo := cache.NewManager(cacheBackend, cacheOptions)
-	
+
 	testData := make([]byte, 1024)
 	rand.Read(testData)
-	
+
 	scales := []int{100, 1000, 10000, 100000}
-	
+
 	for _, scale := range scales {
 		b.Run(fmt.Sprintf("Scale_%d_Set", scale), func(b *testing.B) {
 			b.ReportAllocs()
 			b.ResetTimer()
-			
+
 			for i := 0; i < b.N; i++ {
 				for j := 0; j < scale; j++ {
 					key := fmt.Sprintf("scale-%d-%d-%d", scale, i, j)
@@ -283,33 +283,33 @@ func BenchmarkCacheMemoryEfficiency(b *testing.B) {
 		DefaultTTL: 3600 * time.Second,       // 1 hour
 	}
 	cacheRepo := cache.NewManager(cacheBackend, cacheOptions)
-	
+
 	// 다양한 크기의 데이터로 메모리 효율성 테스트
 	dataSizes := []int{64, 256, 1024, 4096, 16384} // 64B ~ 16KB
-	
+
 	for _, size := range dataSizes {
 		testData := make([]byte, size)
 		rand.Read(testData)
-		
+
 		b.Run(fmt.Sprintf("MemoryEfficiency_%dB", size), func(b *testing.B) {
 			b.SetBytes(int64(size))
 			b.ReportAllocs()
 			b.ResetTimer()
-			
+
 			var wg sync.WaitGroup
 			for i := 0; i < b.N; i++ {
 				wg.Add(1)
 				go func(i int) {
 					defer wg.Done()
 					key := fmt.Sprintf("memory-test-%d-%d", size, i)
-					
+
 					// Set 작업
 					err := cacheRepo.Put(key, testData, 3600*time.Second)
 					if err != nil {
 						b.Errorf("Cache set failed: %v", err)
 						return
 					}
-					
+
 					// Get 작업
 					_, exists := cacheRepo.Get(key)
 					if !exists {
@@ -337,13 +337,13 @@ func BenchmarkCacheCleanup(b *testing.B) {
 		DefaultTTL: 3600 * time.Second,       // 1 hour
 	}
 	cacheRepo := cache.NewManager(cacheBackend, cacheOptions)
-	
+
 	testData := make([]byte, 1024)
 	rand.Read(testData)
-	
+
 	b.Run("CleanupExpiredEntries", func(b *testing.B) {
 		b.ReportAllocs()
-		
+
 		for i := 0; i < b.N; i++ {
 			// 만료될 항목들 생성
 			for j := 0; j < 1000; j++ {
@@ -354,10 +354,10 @@ func BenchmarkCacheCleanup(b *testing.B) {
 				}
 				cacheRepo.Put(key, testData, time.Duration(ttl)*time.Second)
 			}
-			
+
 			// 만료 대기
 			time.Sleep(2 * time.Second)
-			
+
 			b.StartTimer()
 			// 정리 작업 (실제 구현에서는 cleanup 메서드가 있어야 함)
 			// 여기서는 만료된 키 접근으로 시뮬레이션
@@ -384,20 +384,20 @@ func BenchmarkCacheStatistics(b *testing.B) {
 		DefaultTTL: 3600 * time.Second,       // 1 hour
 	}
 	cacheRepo := cache.NewManager(cacheBackend, cacheOptions)
-	
+
 	testData := make([]byte, 1024)
 	rand.Read(testData)
-	
+
 	// 캐시에 데이터 준비
 	for i := 0; i < 1000; i++ {
 		key := fmt.Sprintf("stats-key-%d", i)
 		cacheRepo.Put(key, testData, 3600*time.Second)
 	}
-	
+
 	b.Run("GetStatistics", func(b *testing.B) {
 		b.ReportAllocs()
 		b.ResetTimer()
-		
+
 		for i := 0; i < b.N; i++ {
 			// 통계 정보 수집 (실제 구현에서는 stats 메서드가 있어야 함)
 			// 여기서는 exists 체크로 시뮬레이션

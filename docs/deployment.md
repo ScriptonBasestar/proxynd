@@ -214,28 +214,28 @@ data:
     server:
       port: 8080
       host: "0.0.0.0"
-    
+
     cache:
       enabled: true
       directory: "/storage/cache"
       max_size: "10GB"
-    
+
     logging:
       level: "info"
       format: "json"
-    
+
     monitoring:
       enabled: true
       prometheus:
         enabled: true
         path: "/metrics"
-  
+
   apt-proxy.yaml: |
     apt-proxy:
       enabled: true
       upstream_url: "http://archive.ubuntu.com/ubuntu/"
       cache_dir: "/storage/apt-cache"
-  
+
   maven-proxy.yaml: |
     maven-proxy:
       enabled: true
@@ -484,7 +484,7 @@ config:
       max_size: "50GB"
     performance:
       enabled: true
-  
+
   proxies:
     apt:
       enabled: true

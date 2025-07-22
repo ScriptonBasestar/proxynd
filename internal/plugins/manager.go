@@ -113,7 +113,12 @@ func (pm *PluginManager) Stop(ctx context.Context) error {
 	}
 
 	// 레지스트리 종료
-	if err := pm.registry.(*DefaultPluginRegistry).Shutdown(ctx); err != nil {
+	registry, ok := pm.registry.(*DefaultPluginRegistry)
+	if !ok {
+		pm.logger.Error("Failed to type assert plugin registry")
+		return fmt.Errorf("failed to type assert plugin registry")
+	}
+	if err := registry.Shutdown(ctx); err != nil {
 		pm.logger.Error("Failed to shutdown plugin registry", logging.F("error", err))
 	}
 

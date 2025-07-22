@@ -241,9 +241,9 @@ func runServerStatus(detailed bool) error {
 	// 결과 출력
 	outputFormat := getOutputFormat()
 	switch outputFormat {
-	case formatJSON:
+	case outputFormatJSON:
 		return outputJSON(result)
-	case formatYAML:
+	case outputFormatYAML:
 		return outputYAML(result)
 	default:
 		return outputServerStatusTable(result, detailed)
@@ -275,9 +275,9 @@ func runHealthCheck(showDependencies bool) error {
 	// 결과 출력
 	outputFormat := getOutputFormat()
 	switch outputFormat {
-	case formatJSON:
+	case outputFormatJSON:
 		return outputJSON(result)
-	case formatYAML:
+	case outputFormatYAML:
 		return outputYAML(result)
 	default:
 		return outputHealthCheckTable(result, showDependencies)
@@ -309,9 +309,9 @@ func runMetrics(category string, detailed bool) error {
 	// 결과 출력
 	outputFormat := getOutputFormat()
 	switch outputFormat {
-	case formatJSON:
+	case outputFormatJSON:
 		return outputJSON(result)
-	case formatYAML:
+	case outputFormatYAML:
 		return outputYAML(result)
 	default:
 		return outputMetricsTable(result, category, detailed)

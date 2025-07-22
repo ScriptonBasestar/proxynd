@@ -46,7 +46,7 @@ func TestBatchManagerAddEvent(t *testing.T) {
 	}
 
 	sender := &WebhookSender{
-		adapters: make(map[string]WebhookAdapter),
+		adapters: make(map[string]CompatibleWebhookAdapter),
 	}
 	sender.adapters["generic"] = NewGenericWebhookAdapter()
 
@@ -150,7 +150,7 @@ func TestBatchManagerMaxSizeFlush(t *testing.T) {
 	}
 
 	sender := &WebhookSender{
-		adapters: make(map[string]WebhookAdapter),
+		adapters: make(map[string]CompatibleWebhookAdapter),
 	}
 	sender.adapters["generic"] = NewGenericWebhookAdapter()
 
@@ -291,7 +291,7 @@ func TestBatchManagerDisabled(t *testing.T) {
 	}
 
 	sender := &WebhookSender{
-		adapters: make(map[string]WebhookAdapter),
+		adapters: make(map[string]CompatibleWebhookAdapter),
 	}
 	sender.adapters["generic"] = NewGenericWebhookAdapter()
 

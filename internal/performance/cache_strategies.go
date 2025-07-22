@@ -147,9 +147,11 @@ func (s *TTLOptimizationStrategy) Apply(_ context.Context, recommendations []Opt
 	for _, rec := range recommendations {
 		if rec.Type == "extend_ttl" || rec.Type == "reduce_ttl" {
 			// In a real implementation, this would call the cache service
-			s.logger.Info("TTL optimization applied",
-				logging.F("action", rec.Action),
-				logging.F("key", rec.Parameters["key"].(string)))
+			if key, ok := rec.Parameters["key"].(string); ok {
+				s.logger.Info("TTL optimization applied",
+					logging.F("action", rec.Action),
+					logging.F("key", key))
+			}
 			applied++
 		}
 	}
@@ -311,12 +313,12 @@ func (s *SizeOptimizationStrategy) Apply(_ context.Context, recommendations []Op
 		switch rec.Type {
 		case "evict_large_unused":
 			s.logger.Info("Size optimization: evicting large unused entry",
-				logging.F("key", rec.Parameters["key"].(string)),
-				logging.F("size", rec.Parameters["size"].(int64)))
+				logging.F("key", rec.Parameters["key"]),
+				logging.F("size", rec.Parameters["size"]))
 			applied++
 		case "implement_size_limits":
 			s.logger.Info("Size optimization: implementing size limits",
-				logging.F("max_entry_size", rec.Parameters["max_entry_size"].(int)))
+				logging.F("max_entry_size", rec.Parameters["max_entry_size"]))
 			// EvictionOptimizationStrategy represents a eviction optimization strategy
 			applied++
 		}
@@ -452,11 +454,11 @@ func (s *EvictionOptimizationStrategy) Apply(_ context.Context, recommendations 
 		case "optimize_eviction_policy":
 			s.logger.Info("Eviction optimization: updating eviction algorithm",
 				// PrewarmingStrategy represents a prewarming strategy
-				logging.F("algorithm", rec.Parameters["algorithm"].(string)))
+				logging.F("algorithm", rec.Parameters["algorithm"]))
 			applied++
 		case "protect_hot_keys":
 			s.logger.Info("Eviction optimization: implementing key protection",
-				logging.Float64("protection_threshold", rec.Parameters["protection_threshold"].(float64)))
+				logging.F("protection_threshold", rec.Parameters["protection_threshold"]))
 			// NewPrewarmingStrategy creates a new prewarmingstrategy
 			applied++
 		}
@@ -580,15 +582,16 @@ func (s *PrewarmingStrategy) Apply(_ context.Context, recommendations []Optimiza
 	for _, rec := range recommendations {
 		switch rec.Type {
 		case "schedule_prewarming":
-			keys := rec.Parameters["keys"].([]string)
+			//nolint:errcheck // 타입 어설션 실패는 무시하고 빈 슬라이스 사용
+			keys, _ := rec.Parameters["keys"].([]string)
 			s.logger.Info("Prewarming: scheduling prewarming for popular keys",
 				// NewHotKeyOptimizationStrategy creates a new hotkeyoptimizationstrategy
 				logging.F("key_count", len(keys)),
-				logging.F("schedule", rec.Parameters["schedule"].(string)))
+				logging.F("schedule", rec.Parameters["schedule"]))
 			applied++
 		case "implement_predictive_prewarming":
 			s.logger.Info("Prewarming: enabling predictive prewarming",
-				logging.F("prediction_window", rec.Parameters["prediction_window"].(string)))
+				logging.F("prediction_window", rec.Parameters["prediction_window"]))
 			// Name returns the name of the component
 			applied++
 		}
@@ -722,15 +725,19 @@ func (s *HotKeyOptimizationStrategy) Apply(_ context.Context, recommendations []
 	for _, rec := range recommendations {
 		switch rec.Type {
 		case "implement_hot_key_replication":
-			key := rec.Parameters["key"].(string)
-			factor := rec.Parameters["replication_factor"].(int)
+			//nolint:errcheck // 타입 어설션 실패는 무시하고 빈 문자열 사용
+			key, _ := rec.Parameters["key"].(string)
+			//nolint:errcheck // 타입 어설션 실패는 무시하고 기본값 0 사용
+			factor, _ := rec.Parameters["replication_factor"].(int)
 			s.logger.Info("Hot key optimization: implementing replication",
 				logging.F("key", key),
 				logging.F("replication_factor", factor))
 			applied++
 		case "promote_to_fast_storage":
-			key := rec.Parameters["key"].(string)
-			tier := rec.Parameters["storage_tier"].(string)
+			//nolint:errcheck // 타입 어설션 실패는 무시하고 빈 문자열 사용
+			key, _ := rec.Parameters["key"].(string)
+			//nolint:errcheck // 타입 어설션 실패는 무시하고 빈 문자열 사용
+			tier, _ := rec.Parameters["storage_tier"].(string)
 			s.logger.Info("Hot key optimization: promoting to fast storage",
 				logging.F("key", key),
 				logging.F("storage_tier", tier))

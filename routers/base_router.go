@@ -1,6 +1,8 @@
 package routers
 
 import (
+	"log"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/template/html/v2"
 
@@ -26,9 +28,13 @@ func BaseRouter() *fiber.App {
 
 	app.Get("/", func(c *fiber.Ctx) error {
 		mvnSite := configs.MavenProxyConfig{}
-		_ = mvnSite.ReadConfig()
+		if err := mvnSite.ReadConfig(); err != nil {
+			log.Printf("Warning: Failed to read Maven config for dashboard: %v", err)
+		}
 		aptSite := configs.AptProxyConfig{}
-		_ = aptSite.ReadConfig()
+		if err := aptSite.ReadConfig(); err != nil {
+			log.Printf("Warning: Failed to read APT config for dashboard: %v", err)
+		}
 		return c.Render("dashboard", fiber.Map{
 			"mavenProxy": mvnSite.Proxies,
 			"aptProxy":   aptSite.Proxies,

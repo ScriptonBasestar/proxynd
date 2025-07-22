@@ -68,7 +68,10 @@ func (p *Providers) Get(key string, container *Container) (interface{}, error) {
 func ProvideCacheRepository(c *Container) (interface{}, error) {
 	// Check singleton
 	if instance, exists := c.GetSingleton("cache.Repository"); exists {
-		return instance.(cache.Repository), nil
+		if repo, ok := instance.(cache.Repository); ok {
+			return repo, nil
+		}
+		return nil, fmt.Errorf("cache repository instance has wrong type")
 	}
 
 	// Create new instance
@@ -91,7 +94,10 @@ func ProvideCacheRepository(c *Container) (interface{}, error) {
 func ProvideConfigRepository(c *Container) (interface{}, error) {
 	// Check singleton
 	if instance, exists := c.GetSingleton("config.Repository"); exists {
-		return instance.(config.Repository), nil
+		if repo, ok := instance.(config.Repository); ok {
+			return repo, nil
+		}
+		return nil, fmt.Errorf("config repository instance has wrong type")
 	}
 
 	// Create new instance
@@ -114,7 +120,9 @@ func ProvideCacheService(c *Container) (interface{}, error) {
 		return nil, err
 	}
 
-	_ = repoInterface.(cache.Repository)
+	if _, ok := repoInterface.(cache.Repository); !ok {
+		return nil, fmt.Errorf("invalid cache repository type")
+	}
 
 	// Create cache service (not singleton - stateless)
 	return c.GetCacheService()
@@ -128,7 +136,10 @@ func ProvideConfigService(c *Container) (interface{}, error) {
 		return nil, err
 	}
 
-	repo := repoInterface.(config.Repository)
+	repo, ok := repoInterface.(config.Repository)
+	if !ok {
+		return nil, fmt.Errorf("invalid config repository type")
+	}
 	_ = repo // Would be used in the adapter
 
 	// Create config service (not singleton - stateless)
@@ -145,7 +156,10 @@ func ProvideUpstreamClient(c *Container) (interface{}, error) {
 func ProvideServiceFactory(c *Container) (interface{}, error) {
 	// Check singleton
 	if instance, exists := c.GetSingleton("proxy.ServiceFactory"); exists {
-		return instance.(*proxy.ServiceFactory), nil
+		if factory, ok := instance.(*proxy.ServiceFactory); ok {
+			return factory, nil
+		}
+		return nil, fmt.Errorf("proxy service factory instance has wrong type")
 	}
 
 	// Get dependencies
@@ -178,7 +192,10 @@ func ProvideServiceFactory(c *Container) (interface{}, error) {
 func ProvideHandlerFactory(c *Container) (interface{}, error) {
 	// Check singleton
 	if instance, exists := c.GetSingleton("types.ProxyHandlerFactory"); exists {
-		return instance.(types.ProxyHandlerFactory), nil
+		if factory, ok := instance.(types.ProxyHandlerFactory); ok {
+			return factory, nil
+		}
+		return nil, fmt.Errorf("proxy handler factory instance has wrong type")
 	}
 
 	// Get service factory
@@ -187,7 +204,10 @@ func ProvideHandlerFactory(c *Container) (interface{}, error) {
 		return nil, err
 	}
 
-	serviceFactory := serviceFactoryInterface.(*proxy.ServiceFactory)
+	serviceFactory, ok := serviceFactoryInterface.(*proxy.ServiceFactory)
+	if !ok {
+		return nil, fmt.Errorf("service factory has wrong type")
+	}
 
 	// Create handler factory
 	factory := types.NewStandardProxyHandlerFactory()
@@ -211,7 +231,9 @@ func ProvideUnifiedRouter(c *Container) (interface{}, error) {
 		return nil, err
 	}
 
-	_ = serviceFactoryInterface.(*proxy.ServiceFactory)
+	if _, ok := serviceFactoryInterface.(*proxy.ServiceFactory); !ok {
+		return nil, fmt.Errorf("service factory has wrong type")
+	}
 
 	// Create unified router (placeholder implementation)
 	// TODO: Implement proper router when handlers are ready

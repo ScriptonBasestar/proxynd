@@ -25,7 +25,7 @@ tests/unit/
   - TTL 만료 처리
   - 캐시 크기 관리
   - 전체 삭제 (Clear)
-  
+
 - **CacheManager**: 캐시 매니저
   - 캐시 CRUD 동작
   - 통계 수집 (히트/미스)
@@ -156,7 +156,7 @@ func TestComponent(t *testing.T) {
     t.Run("Success Case", func(t *testing.T) {
         // 성공 케이스
     })
-    
+
     t.Run("Error Case", func(t *testing.T) {
         // 오류 케이스
     })
@@ -197,7 +197,7 @@ require.NotNil(t, object)
 ```go
 func BenchmarkCacheGet(b *testing.B) {
     // 설정...
-    
+
     b.ResetTimer()
     for i := 0; i < b.N; i++ {
         // 측정할 코드

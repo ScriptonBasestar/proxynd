@@ -50,6 +50,8 @@ func CreateMockServerWithResponses(responses map[string]MockResponse) *httptest.
 			w.Header().Set(k, v)
 		}
 		w.WriteHeader(resp.StatusCode)
+		// 테스트용 응답 쓰기 오류는 무시
+		//nolint:errcheck
 		_, _ = w.Write(resp.Body)
 	}))
 }

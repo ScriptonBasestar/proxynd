@@ -143,16 +143,16 @@ func TestMyService(t *testing.T) {
     factory := testutil.NewFactory(t)
     fixtures := testutil.NewFixtures()
     assertions := testutil.NewAssertions(t)
-    
+
     // 서비스 생성
     service := factory.ProxyService("npm")
-    
+
     // 테스트 데이터 사용
     req := fixtures.ProxyRequest("GET", "/express")
-    
+
     // 테스트 실행
     resp, err := service.HandleRequest(ctx, req)
-    
+
     // 검증
     assertions.AssertNoError(err)
     assertions.AssertStatusCode(200, resp.StatusCode)
@@ -166,16 +166,16 @@ func TestMyService(t *testing.T) {
 func TestIntegration(t *testing.T) {
     // Factory로 전체 환경 구성
     factory := testutil.NewFactory(t)
-    
+
     // 실제 서비스 생성
     configService := factory.ConfigService()
     cacheService := factory.CacheAdapter()
     upstreamClient := factory.UpstreamClient()
-    
+
     // 프록시 서비스 생성
     proxyFactory := proxy.NewFactory(configService, cacheService, upstreamClient)
     aptProxy, _ := proxyFactory.CreateProxy("apt")
-    
+
     // 테스트 실행...
 }
 ```
@@ -185,7 +185,7 @@ func TestIntegration(t *testing.T) {
 ```go
 func TestTableDriven(t *testing.T) {
     fixtures := testutil.NewFixtures()
-    
+
     tests := []struct {
         name     string
         config   func() interface{}
@@ -208,7 +208,7 @@ func TestTableDriven(t *testing.T) {
             expected: "/custom",
         },
     }
-    
+
     for _, tt := range tests {
         t.Run(tt.name, func(t *testing.T) {
             config := tt.config()

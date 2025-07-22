@@ -17,7 +17,7 @@ mkdir -p logs
 > logs/access.log
 > logs/verification-alerts.log
 mkdir -p tests/integration/logs
-> tests/integration/logs/access.log  
+> tests/integration/logs/access.log
 > tests/integration/logs/verification-alerts.log
 
 # Go 모듈 캐시 정리 (선택적)

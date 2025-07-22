@@ -54,7 +54,10 @@ func exchangeCodeGeneric(
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("token exchange failed with status %d: failed to read response body", resp.StatusCode)
+		}
 		return nil, fmt.Errorf("token exchange failed with status %d: %s", resp.StatusCode, string(body))
 	}
 
@@ -88,7 +91,10 @@ func getUserInfoGeneric(ctx context.Context, config ProviderConfig, accessToken 
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("user info request failed with status %d: failed to read response body", resp.StatusCode)
+		}
 		return nil, fmt.Errorf("user info request failed with status %d: %s", resp.StatusCode, string(body))
 	}
 
@@ -161,7 +167,10 @@ func refreshTokenGeneric(ctx context.Context, config ProviderConfig, refreshToke
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			body = []byte("failed to read response body")
+		}
 		return nil, fmt.Errorf("token refresh failed with status %d: %s", resp.StatusCode, string(body))
 	}
 
@@ -204,7 +213,10 @@ func revokeTokenGeneric(ctx context.Context, config ProviderConfig, token string
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
-		body, _ := io.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			body = []byte("failed to read response body")
+		}
 		return fmt.Errorf("token revocation failed with status %d: %s", resp.StatusCode, string(body))
 	}
 
@@ -309,7 +321,10 @@ func ParseAPIResponse(resp *http.Response, target interface{}) error {
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		body, _ := io.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			body = []byte("failed to read response body")
+		}
 		return fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, string(body))
 	}
 

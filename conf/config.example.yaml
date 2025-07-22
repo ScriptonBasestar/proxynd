@@ -8,22 +8,22 @@
 server:
   # 서버 포트 (기본값: 8080)
   port: 8080
-  
+
   # 바인드 호스트 (기본값: 0.0.0.0)
   host: "0.0.0.0"
-  
+
   # 읽기 타임아웃 (기본값: 30s)
   readTimeout: 30s
-  
+
   # 쓰기 타임아웃 (기본값: 30s)
   writeTimeout: 30s
-  
+
   # 유휴 타임아웃 (기본값: 60s)
   idleTimeout: 60s
-  
+
   # 최대 연결 수 (기본값: 1000)
   maxConnections: 1000
-  
+
   # TLS 설정 (HTTPS 사용시)
   # tls:
   #   enabled: true
@@ -40,16 +40,16 @@ server:
 logging:
   # 로그 레벨: debug, info, warn, error, fatal, panic
   level: info
-  
+
   # 로그 포맷: json, text, console
   format: json
-  
+
   # 로그 출력: stdout, stderr, file, both
   output: stdout
-  
+
   # 시간 포맷
   timeFormat: "2006-01-02T15:04:05.000Z07:00"
-  
+
   # 파일 로깅 설정 (output이 file 또는 both인 경우)
   file:
     path: "/var/log/proxynd/proxynd.log"
@@ -57,19 +57,19 @@ logging:
     maxBackups: 10    # 백업 파일 수
     maxAge: 30        # 일
     compress: true    # 백업 파일 압축
-  
+
   # 기본 필드
   defaultFields:
     service: "proxynd"
     environment: "production"
     version: "1.0.0"
-  
+
   # 로그 샘플링 (고용량 환경용)
   sampling:
     enabled: false
     initial: 100      # 처음 100개는 모두 로깅
     thereafter: 100   # 이후 100개 중 1개만 로깅
-  
+
   # 액세스 로그
   accessLog:
     enabled: true
@@ -83,21 +83,21 @@ logging:
 cache:
   # 캐시 타입: filesystem, s3, memory
   type: filesystem
-  
+
   # TTL (초) - 캐시 만료 시간
   ttl: 3600
-  
+
   # 최대 캐시 크기 (바이트)
   maxSize: 10737418240  # 10GB
-  
+
   # 정리 간격 (초)
   cleanupInterval: 300
-  
+
   # 파일시스템 캐시 설정
   filesystem:
     path: "/var/lib/proxynd/cache"
     permissions: 0755
-  
+
   # S3 캐시 설정
   s3:
     bucket: "proxynd-cache"
@@ -107,12 +107,12 @@ cache:
     secretAccessKey: ""  # 환경변수 사용 권장: AWS_SECRET_ACCESS_KEY
     prefix: "cache/"
     storageClass: "STANDARD"
-  
+
   # 메모리 캐시 설정
   memory:
     maxEntries: 10000
     evictionPolicy: "lru"
-  
+
   # LRU 설정
   lru:
     maxEntries: 10000
@@ -124,10 +124,10 @@ cache:
 auth:
   # 인증 활성화
   enabled: false
-  
+
   # 인증 타입: basic, token, oauth2
   type: basic
-  
+
   # Basic Auth 사용자
   users:
     - username: admin
@@ -135,23 +135,23 @@ auth:
       password: "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy"  # secret
       permissions: ["read", "write", "delete", "admin"]
       allowedProxies: ["*"]
-    
+
     - username: developer
       password: "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy"  # secret
       permissions: ["read", "write"]
       allowedProxies: ["npm", "pip", "docker"]
-    
+
     - username: readonly
       password: "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy"  # secret
       permissions: ["read"]
       allowedProxies: ["*"]
-  
+
   # JWT 토큰 설정 (type이 token인 경우)
   jwt:
     secret: "your-jwt-secret-key"
     expiration: "24h"
     issuer: "proxynd"
-  
+
   # OAuth2 설정 (type이 oauth2인 경우)
   oauth2:
     clientId: "proxynd-client"
@@ -167,18 +167,18 @@ auth:
 ipFilter:
   # IP 필터 활성화
   enabled: false
-  
+
   # 허용된 네트워크 (CIDR 표기법)
   allowedNetworks:
     - "192.168.0.0/16"    # 사설 네트워크
     - "10.0.0.0/8"        # 사설 네트워크
     - "172.16.0.0/12"     # 사설 네트워크
     - "127.0.0.1/32"      # 로컬호스트
-  
+
   # 차단된 네트워크
   blockedNetworks:
     - "0.0.0.0/0"  # 예시: 모든 IP 차단
-  
+
   # 신뢰할 수 있는 프록시 (X-Forwarded-For 헤더 처리용)
   trustedProxies:
     - "192.168.1.0/24"
@@ -189,16 +189,16 @@ ipFilter:
 npm:
   # NPM 프록시 활성화
   enabled: true
-  
+
   # 업스트림 레지스트리
   upstream: "https://registry.npmjs.org"
-  
+
   # 경로 설정
   path: "proxy/npm"
-  
+
   # 캐시 사용 여부
   useCache: true
-  
+
   # 허용된 패키지 (와일드카드 지원)
   allowedPackages:
     - "*"  # 모든 패키지 허용
@@ -206,17 +206,17 @@ npm:
     # - "lodash"
     # - "@types/*"
     # - "react*"
-  
+
   # 차단된 패키지
   blockedPackages:
     # - "malicious-package"
     # - "deprecated-*"
-  
+
   # 패키지별 TTL 오버라이드
   packageTTL:
     # "@types/*": 86400  # 24시간
     # "react*": 7200     # 2시간
-  
+
   # 업스트림 설정
   upstreamConfig:
     timeout: 30s
@@ -229,31 +229,31 @@ npm:
 pip:
   # PyPI 프록시 활성화
   enabled: true
-  
+
   # 업스트림 인덱스
   upstream: "https://pypi.org/simple"
-  
+
   # 경로 설정
   path: "proxy/pip"
-  
+
   # 캐시 사용 여부
   useCache: true
-  
+
   # 허용된 패키지
   allowedPackages:
     - "*"
     # - "requests"
     # - "django*"
     # - "flask"
-  
+
   # 차단된 패키지
   blockedPackages:
     # - "malicious-package"
-  
+
   # 추가 인덱스 서버
   extraIndexURLs:
     # - "https://test.pypi.org/simple/"
-  
+
   # 신뢰할 수 있는 호스트
   trustedHosts:
     - "pypi.org"
@@ -265,13 +265,13 @@ pip:
 apt:
   # APT 프록시 활성화
   enabled: true
-  
+
   # 경로 설정
   path: "proxy/apt"
-  
+
   # 캐시 사용 여부
   useCache: true
-  
+
   # 배포판 설정
   distributions:
     - name: ubuntu
@@ -279,13 +279,13 @@ apt:
       releases: ["jammy", "focal", "bionic"]
       components: ["main", "universe", "restricted", "multiverse"]
       architectures: ["amd64", "arm64", "armhf"]
-    
+
     - name: debian
       upstream: "http://deb.debian.org/debian"
       releases: ["bullseye", "bookworm", "sid"]
       components: ["main", "contrib", "non-free"]
       architectures: ["amd64", "arm64"]
-  
+
   # GPG 키 검증
   gpgVerification:
     enabled: true
@@ -299,39 +299,39 @@ apt:
 docker:
   # Docker 프록시 활성화
   enabled: true
-  
+
   # 업스트림 레지스트리
   upstream: "https://registry-1.docker.io"
-  
+
   # 경로 설정
   path: "proxy/docker"
-  
+
   # 캐시 사용 여부
   useCache: true
-  
+
   # Registry v2 API 버전
   apiVersion: "v2"
-  
+
   # 허용된 이미지
   allowedImages:
     - "*"
     # - "nginx*"
     # - "alpine*"
     # - "ubuntu:*"
-  
+
   # 차단된 이미지
   blockedImages:
     # - "malicious/*"
-  
+
   # 인증 설정 (private registry용)
   auth:
     enabled: false
     username: ""
     password: ""
-  
+
   # 매니페스트 캐시 TTL
   manifestTTL: 3600
-  
+
   # 블롭 캐시 TTL
   blobTTL: 86400
 
@@ -341,22 +341,22 @@ docker:
 verification:
   # 패키지 검증 활성화
   enabled: true
-  
+
   # 해시 검증
   hashVerification:
     enabled: true
     algorithms: ["sha256", "sha1", "md5"]
-  
+
   # 크기 검증
   sizeVerification:
     enabled: true
     tolerance: 0.1  # 10% 허용 오차
-  
+
   # 검증 실패시 액션
   onFailure:
     action: "block"  # block, warn, log
     notify: true
-  
+
   # 서명 검증 (GPG)
   signatureVerification:
     enabled: false
@@ -369,19 +369,19 @@ verification:
 alerts:
   # 알림 활성화
   enabled: false
-  
+
   # 로그 알림
   log:
     enabled: true
     level: "error"
-  
+
   # 웹훅 알림
   webhook:
     enabled: false
     url: "https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK"
     timeout: 10s
     retries: 3
-    
+
     # 알림 템플릿
     template: |
       {
@@ -404,7 +404,7 @@ alerts:
           }
         ]
       }
-  
+
   # 이메일 알림
   email:
     enabled: false
@@ -422,22 +422,22 @@ alerts:
 metrics:
   # 메트릭 활성화
   enabled: true
-  
+
   # 메트릭 경로
   path: "/metrics"
-  
+
   # 메트릭 인증
   auth:
     enabled: false
     username: "metrics"
     password: "secret"
-  
+
   # 수집 간격
   interval: 15s
-  
+
   # 히스토그램 버킷
   buckets: [0.1, 0.5, 1.0, 2.5, 5.0, 10.0]
-  
+
   # 추가 레이블
   labels:
     instance: "proxynd-01"
@@ -449,20 +449,20 @@ metrics:
 health:
   # 헬스체크 활성화
   enabled: true
-  
+
   # 헬스체크 경로
   path: "/healthz"
-  
+
   # 상세 헬스체크 경로
   readinessPath: "/health/ready"
   livenessPath: "/health/live"
-  
+
   # 체크 간격
   interval: 30s
-  
+
   # 타임아웃
   timeout: 5s
-  
+
   # 헬스체크 항목
   checks:
     # 디스크 사용량 체크
@@ -472,12 +472,12 @@ health:
       paths:
         - "/var/lib/proxynd"
         - "/tmp"
-    
+
     # 메모리 사용량 체크
     memoryUsage:
       enabled: true
       threshold: 80  # 80% 초과시 unhealthy
-    
+
     # 업스트림 연결 체크
     upstream:
       enabled: true
@@ -492,19 +492,19 @@ health:
 performance:
   # 워커 수 (0은 CPU 코어 수)
   workers: 0
-  
+
   # 연결 풀 설정
   connectionPool:
     maxIdleConns: 100
     maxIdleConnsPerHost: 10
     idleConnTimeout: 90s
-  
+
   # 압축 설정
   compression:
     enabled: true
     level: 6  # 1-9, 높을수록 압축률 향상
     minSize: 1024  # 최소 압축 크기 (바이트)
-  
+
   # 대역폭 제한
   rateLimit:
     enabled: false
@@ -517,16 +517,16 @@ performance:
 debug:
   # 디버그 모드
   enabled: false
-  
+
   # 프로파일링
   pprof:
     enabled: false
     address: "localhost:6060"
-  
+
   # 요청 덤프
   requestDump:
     enabled: false
     path: "/tmp/proxynd-dumps"
-  
+
   # 상세 로깅
   verbose: false

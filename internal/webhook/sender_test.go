@@ -10,7 +10,11 @@ import (
 
 	"proxynd/alerts"
 	"proxynd/configs"
+	"proxynd/internal/webhook/retry"
 )
+
+// RetryPolicy is an alias for retry.Policy for test compatibility
+type RetryPolicy = retry.Policy
 
 // TestNewWebhookSender 웹훅 전송기 생성 테스트
 func TestNewWebhookSender(t *testing.T) {

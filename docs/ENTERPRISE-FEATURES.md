@@ -10,11 +10,11 @@ enterprise:
       enabled: true
       server: "ldap://corp.example.com"
       baseDN: "dc=example,dc=com"
-    
+
     saml:
       enabled: true
       idp_url: "https://idp.example.com"
-      
+
     rbac:
       enabled: true
       roles:
@@ -46,7 +46,7 @@ enterprise:
       - name: "predictive"
         enabled: true
         ml_model: "arima"  # 시계열 예측
-        
+
       - name: "geo_distributed"
         enabled: true
         regions:
@@ -66,13 +66,13 @@ enterprise:
         - snyk
         - trivy
         - clair
-      
+
     license_scanning:
       enabled: true
       blocked_licenses:
         - "GPL-3.0"
         - "AGPL-3.0"
-      
+
     malware_scanning:
       enabled: true
       engine: "clamav"
@@ -83,13 +83,13 @@ enterprise:
 enterprise:
   analytics:
     enabled: true
-    
+
     dashboards:
       - usage_trends
       - cost_analysis
       - performance_metrics
       - security_insights
-    
+
     reports:
       - type: "monthly_usage"
         recipients: ["cto@example.com"]
@@ -108,7 +108,7 @@ enterprise:
         - require_signature: true
       apply_to:
         - environment: "production"
-    
+
     - name: "bandwidth_limit"
       rules:
         - max_download_rate: "100MB/s"
@@ -128,10 +128,10 @@ enterprise:
           then: "route_to_cdn"
         - if: "user.location == 'china'"
           then: "route_to_china_mirror"
-    
+
     request_coalescing:
       enabled: true  # 동일 요청 병합
-      
+
     prefetching:
       enabled: true
       patterns:
@@ -146,7 +146,7 @@ enterprise:
       enabled: true
       retention: "7 years"
       immutable: true
-      
+
     regulations:
       - gdpr:
           enabled: true
@@ -167,7 +167,7 @@ enterprise:
         high: "4 hours"
         medium: "1 business day"
         low: "3 business days"
-      
+
       channels:
         - phone: true
         - email: true
@@ -182,13 +182,13 @@ enterprise:
     graphql:
       enabled: true
       playground: true
-      
+
     webhooks:
       - event: "package_uploaded"
         url: "https://ci.example.com/trigger"
       - event: "security_issue_found"
         url: "https://security.example.com/alert"
-    
+
     terraform_provider:
       enabled: true
 ```

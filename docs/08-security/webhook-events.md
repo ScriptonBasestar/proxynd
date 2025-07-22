@@ -272,8 +272,8 @@ import "proxynd/alerts"
 // 캐시 만료 이벤트
 cacheEvent := alerts.CreateCacheEvent(
     alerts.EventCacheExpiry,
-    "/npm/express/4.18.0", 
-    1024000, 
+    "/npm/express/4.18.0",
+    1024000,
     "express 패키지 캐시가 만료되었습니다"
 )
 

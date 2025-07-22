@@ -121,7 +121,11 @@ func (sv *SignatureVerifier) loadPublicKey(keyPath string) error {
 
 // calculateFingerprint 공개키의 지문 계산
 func (sv *SignatureVerifier) calculateFingerprint(publicKey *rsa.PublicKey) string {
-	keyBytes, _ := x509.MarshalPKIXPublicKey(publicKey)
+	keyBytes, err := x509.MarshalPKIXPublicKey(publicKey)
+	if err != nil {
+		sv.logger.Error("Failed to marshal public key", logging.F("error", err))
+		return ""
+	}
 	hash := sha256.Sum256(keyBytes)
 	return hex.EncodeToString(hash[:])[:16] // 처음 16자만 사용
 }
@@ -173,14 +177,22 @@ func (sv *SignatureVerifier) findSignatureFile(apkPath string) string {
 	}
 
 	for _, pattern := range patterns {
-		matches, _ := filepath.Glob(filepath.Join(baseDir, pattern))
+		matches, err := filepath.Glob(filepath.Join(baseDir, pattern))
+		if err != nil {
+			continue
+		}
 		if len(matches) > 0 {
 			return matches[0]
 		}
 	}
 
 	// 동일 디렉토리에서 .SIGN.RSA.* 패턴 검색
-	files, _ := os.ReadDir(baseDir)
+	files, err := os.ReadDir(baseDir)
+	if err != nil {
+		sv.logger.Warn("Failed to read directory for signature search",
+			logging.F("dir", baseDir), logging.F("error", err))
+		return ""
+	}
 	for _, file := range files {
 		if strings.Contains(file.Name(), ".SIGN.RSA.") {
 			return filepath.Join(baseDir, file.Name())

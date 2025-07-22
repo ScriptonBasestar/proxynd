@@ -174,6 +174,11 @@ func (g *GenericWebhookAdapter) Validate(endpoint string) error {
 	return nil
 }
 
+// Name returns adapter name (test compatibility)
+func (g *GenericWebhookAdapter) Name() string {
+	return "generic"
+}
+
 // SlackWebhookAdapter placeholder
 type SlackWebhookAdapter struct{}
 
@@ -192,6 +197,11 @@ func (s *SlackWebhookAdapter) Validate(endpoint string) error {
 	return nil
 }
 
+// Name returns adapter name (test compatibility)
+func (s *SlackWebhookAdapter) Name() string {
+	return "slack"
+}
+
 // DiscordWebhookAdapter placeholder
 type DiscordWebhookAdapter struct{}
 
@@ -208,6 +218,11 @@ func (d *DiscordWebhookAdapter) Send(ctx context.Context, endpoint string, event
 // Validate validates endpoint
 func (d *DiscordWebhookAdapter) Validate(endpoint string) error {
 	return nil
+}
+
+// Name returns adapter name (test compatibility)
+func (d *DiscordWebhookAdapter) Name() string {
+	return "discord"
 }
 
 // Helper function to parse duration from config

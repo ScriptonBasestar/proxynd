@@ -303,7 +303,7 @@ gh workflow run release-automation.yml \
    ```bash
    # Check test logs
    gh run view $RUN_ID --log
-   
+
    # Re-run failed jobs
    gh run rerun $RUN_ID --failed
    ```
@@ -312,7 +312,7 @@ gh workflow run release-automation.yml \
    ```bash
    # Compare with baseline
    ./scripts/run_benchmarks.sh -c baseline.txt
-   
+
    # Update baseline if intentional
    cp current.txt baseline.txt
    ```
@@ -321,7 +321,7 @@ gh workflow run release-automation.yml \
    ```bash
    # Check deployment logs
    kubectl logs -n $NAMESPACE deployment/proxynd
-   
+
    # Manual rollback
    kubectl rollout undo deployment/proxynd -n $NAMESPACE
    ```

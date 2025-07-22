@@ -208,7 +208,10 @@ func (ams *AlpineMirrorSelector) extractAlpineVersion(requestPath string) Alpine
 			parts := strings.Split(versionStr[1:], ".")
 			if len(parts) >= 2 {
 				var major, minor int
+				// 버전 파싱 오류는 무시하고 기본값 0 사용
+				//nolint:errcheck
 				_, _ = fmt.Sscanf(parts[0], "%d", &major)
+				//nolint:errcheck
 				_, _ = fmt.Sscanf(parts[1], "%d", &minor)
 				return AlpineVersion{
 					Major:   major,

@@ -152,6 +152,7 @@ func TestGenericProviderUserOrganizations(t *testing.T) {
 }
 
 func TestTokenResponse(t *testing.T) {
+	//nolint:govet // 테스트용 구조체 생성에서 사용되지 않는 필드
 	tokenResp := &TokenResponse{
 		AccessToken:  "access_token_123",
 		TokenType:    "Bearer",
@@ -175,6 +176,7 @@ func TestTokenResponse(t *testing.T) {
 }
 
 func TestUserInfo(t *testing.T) {
+	//nolint:govet // 테스트용 구조체 생성에서 사용되지 않는 필드들
 	userInfo := &UserInfo{
 		ID:        "user123",
 		Email:     testEmail,
@@ -202,6 +204,7 @@ func TestUserInfo(t *testing.T) {
 }
 
 func TestTokenInfo(t *testing.T) {
+	//nolint:govet // 테스트용 구조체 생성에서 사용되지 않는 필드
 	tokenInfo := &TokenInfo{
 		Valid:     true,
 		ExpiresAt: time.Now().Add(time.Hour),

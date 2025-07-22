@@ -31,16 +31,16 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
-          
+
       - name: Clean build artifacts
         run: |
           make clean-all || echo "Clean target not available"
-          
+
       - name: Verify cleanup
         run: |
           if [ -f "proxynd" ] || [ -f "bin/proxynd" ] || [ -f "tmp/main" ]; then
@@ -48,12 +48,12 @@ jobs:
             exit 1
           fi
           echo "✅ Cleanup verification passed"
-          
+
       - name: Check for large files
         run: |
           echo "Checking for files larger than 10MB..."
           find . -type f -size +10M -not -path "./.git/*" || true
-          
+
       - name: Report disk usage
         run: |
           echo "Disk usage after cleanup:"
@@ -75,10 +75,10 @@ jobs:
               repo: context.repo.repo,
               per_page: 100
             });
-            
+
             const cutoffDate = new Date();
             cutoffDate.setDate(cutoffDate.getDate() - 30); // 30일 이전 아티팩트 삭제
-            
+
             let deletedCount = 0;
             for (const artifact of artifacts.data.artifacts) {
               const createdAt = new Date(artifact.created_at);
@@ -121,10 +121,10 @@ jobs:
               repo: context.repo.repo,
               per_page: 100
             });
-            
+
             const cutoffDate = new Date();
             cutoffDate.setDate(cutoffDate.getDate() - 7); // 7일 이전 캐시 삭제
-            
+
             let deletedCount = 0;
             for (const cache of caches.data.actions_caches) {
               const createdAt = new Date(cache.created_at);
@@ -189,13 +189,13 @@ jobs:
           title: 'chore: update Go dependencies'
           body: |
             ## 📦 Automated Dependency Updates
-            
+
             This PR updates Go module dependencies to their latest versions.
-            
+
             ### Changes
             - Updated go.mod and go.sum files
             - All tests have been run and passed
-            
+
             ### Checklist
             - [ ] Review dependency changes
             - [ ] Check for breaking changes in updated packages
@@ -271,7 +271,7 @@ jobs:
           echo "" >> cleanup_report.md
           echo "Generated: $(date)" >> cleanup_report.md
           echo "" >> cleanup_report.md
-          
+
           echo "## Job Results:" >> cleanup_report.md
           echo "- Cleanup Artifacts: ${{ needs.cleanup-artifacts.result }}" >> cleanup_report.md
           echo "- Cleanup GitHub Artifacts: ${{ needs.cleanup-github-artifacts.result }}" >> cleanup_report.md
@@ -279,7 +279,7 @@ jobs:
           echo "- Update Dependencies: ${{ needs.update-dependencies.result }}" >> cleanup_report.md
           echo "- Security Cleanup: ${{ needs.security-cleanup.result }}" >> cleanup_report.md
           echo "" >> cleanup_report.md
-          
+
           echo "## Summary:" >> cleanup_report.md
           echo "- Old artifacts and caches have been removed" >> cleanup_report.md
           echo "- Dependencies have been checked for updates" >> cleanup_report.md

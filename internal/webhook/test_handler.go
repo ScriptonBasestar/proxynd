@@ -182,7 +182,7 @@ func (wt *WebhookTester) testEndpoint(endpoint configs.WebhookEndpointConfig) (*
 	defer cancel()
 
 	// 실제 전송 시도
-	err := adapter.Send(ctx, testEvent, endpoint)
+	err := adapter.Send(ctx, endpoint.URL, testEvent)
 	responseTime := time.Since(startTime)
 
 	result := &TestResult{

@@ -20,6 +20,7 @@ type TokenStatusResponse struct {
 	RefreshRequired bool      `json:"refresh_required"`
 	RefreshEndpoint string    `json:"refresh_endpoint"`
 	UserInfo        fiber.Map `json:"user_info,omitempty"`
+	ValidationError string    `json:"validation_error,omitempty"`
 }
 
 // GetTokenStatus 토큰 상태 조회
@@ -53,7 +54,14 @@ func GetTokenStatus(c *fiber.Ctx) error {
 	jwtService := jwt.NewJWTService(oauth2Config)
 
 	// 토큰 검증
-	claims, err := jwtService.ValidateAccessToken(jwtAccessToken.(string))
+	accessToken, ok := jwtAccessToken.(string)
+	if !ok {
+		return c.JSON(TokenStatusResponse{
+			Valid:           false,
+			ValidationError: "Invalid token type",
+		})
+	}
+	claims, err := jwtService.ValidateAccessToken(accessToken)
 	if err != nil {
 		logging.GetLogger().Debug("Token validation failed", logging.F("error", err))
 

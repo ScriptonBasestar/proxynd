@@ -30,9 +30,13 @@ func YumProxyHandler(c *fiber.Ctx) error {
 	// 설정 읽기
 	storageDir := helpers.GetStorageDir()
 	globalConfig := configs.GlobalConfig{}
-	_ = globalConfig.ReadConfig()
+	if err := globalConfig.ReadConfig(); err != nil {
+		return c.Status(fiber.StatusInternalServerError).SendString("Failed to read global config")
+	}
 	yumConfig := configs.YumProxyConfig{}
-	_ = yumConfig.ReadConfig()
+	if err := yumConfig.ReadConfig(); err != nil {
+		return c.Status(fiber.StatusInternalServerError).SendString("Failed to read YUM config")
+	}
 
 	// 파일 경로 생성
 	baseDir := filepath.Join(storageDir, yumConfig.Path)
@@ -56,7 +60,9 @@ func YumProxyHandler(c *fiber.Ctx) error {
 	// 캐시에 없으면 업스트림에서 가져오기
 	if _, err := os.Stat(filefullpath); os.IsNotExist(err) {
 		dirpath := filepath.Dir(filefullpath)
-		_ = os.MkdirAll(dirpath, os.ModePerm)
+		if err := os.MkdirAll(dirpath, os.ModePerm); err != nil {
+			return c.Status(fiber.StatusInternalServerError).SendString("Failed to create directory")
+		}
 		out, err := os.Create(filefullpath)
 		if err != nil {
 			log.Printf("Error creating file: %v", err)

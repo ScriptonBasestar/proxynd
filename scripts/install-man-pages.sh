@@ -55,16 +55,16 @@ check_proxyndctl() {
 # man page 생성
 generate_man_pages() {
     local dir=$1
-    
+
     log_info "Man page 생성 중..."
-    
+
     # 디렉토리 생성
     mkdir -p "$dir"
-    
+
     # man page 생성
     if proxyndctl docs man "$dir"; then
         log_info "Man page가 성공적으로 생성되었습니다: $dir"
-        
+
         # 생성된 파일 목록
         local count=$(find "$dir" -name "*.1" | wc -l)
         log_info "생성된 man page 수: $count개"
@@ -77,15 +77,15 @@ generate_man_pages() {
 # man page 설치
 install_man_pages() {
     local dir=$1
-    
+
     log_info "Man page 설치 중..."
-    
+
     # 생성된 man page 확인
     if [ ! -d "$dir" ] || [ -z "$(ls -A $dir/*.1 2>/dev/null)" ]; then
         log_error "설치할 man page가 없습니다: $dir"
         return 1
     fi
-    
+
     # 설치 디렉토리 확인
     local man_dir="/usr/share/man/man1"
     if [ ! -d "$man_dir" ]; then
@@ -93,7 +93,7 @@ install_man_pages() {
         log_warn "다른 위치에 설치하려면 수동으로 복사하세요."
         return 1
     fi
-    
+
     # 관리자 권한 확인
     if [ "$EUID" -ne 0 ]; then
         log_info "관리자 권한이 필요합니다. sudo로 재실행합니다..."
@@ -107,7 +107,7 @@ install_man_pages() {
             return 1
         }
     fi
-    
+
     # man 데이터베이스 업데이트
     log_info "Man 데이터베이스 업데이트 중..."
     if command -v mandb &> /dev/null; then
@@ -125,7 +125,7 @@ install_man_pages() {
     else
         log_warn "man 데이터베이스 업데이트 명령어를 찾을 수 없습니다."
     fi
-    
+
     log_info "Man page 설치 완료!"
     log_info "사용 예: man proxyndctl"
 }
@@ -135,7 +135,7 @@ main() {
     local generate_only=false
     local install=true
     local man_dir="./man"
-    
+
     # 명령줄 인수 파싱
     while [[ $# -gt 0 ]]; do
         case $1 in
@@ -164,13 +164,13 @@ main() {
                 ;;
         esac
     done
-    
+
     # proxyndctl 확인
     check_proxyndctl
-    
+
     # man page 생성
     generate_man_pages "$man_dir" || exit 1
-    
+
     # 설치 (옵션에 따라)
     if [ "$install" = true ] && [ "$generate_only" = false ]; then
         install_man_pages "$man_dir"

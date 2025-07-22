@@ -376,13 +376,13 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        
+
         # 대용량 파일 지원
         client_max_body_size 0;
         proxy_buffering off;
         proxy_request_buffering off;
     }
-    
+
     location /healthz {
         proxy_pass http://proxynd/healthz;
         access_log off;

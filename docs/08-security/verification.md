@@ -36,13 +36,13 @@ ProxyND의 패키지 검증 시스템은 프록시를 통해 전달되는 패키
 verification:
   # 엄격 모드 활성화
   strict_mode: true
-  
+
   # 검증 실패 시 차단
   block_on_failure: true
-  
+
   # 검증 실패 시 알림
   alert_on_failure: true
-  
+
   # 패키지 타입별 설정
   package_types:
     npm:
@@ -57,7 +57,7 @@ verification:
 ```yaml
 alerts:
   enabled: true
-  
+
   channels:
     # 로그 기반 알림
     - name: log
@@ -66,7 +66,7 @@ alerts:
       config:
         log_file: "./logs/verification-alerts.log"
         json_format: true
-    
+
     # 웹훅 알림 (Slack 예시)
     - name: slack
       type: webhook

@@ -83,12 +83,12 @@ func (h *DatabaseReloadHandler) OnConfigReload(old, new *UnifiedConfig) error {
         h.db.SetMaxOpenConns(new.Database.MaxConnections)
         log.Printf("Updated max DB connections: %d", new.Database.MaxConnections)
     }
-    
+
     // 재시작이 필요한 변경은 에러 반환
     if old.Database.Host != new.Database.Host {
         return fmt.Errorf("database host change requires restart")
     }
-    
+
     return nil
 }
 
@@ -178,20 +178,20 @@ func (h *MyHandler) OnConfigReload(old, new *UnifiedConfig) error {
     if old.MyConfig == new.MyConfig {
         return nil // 변경 없음
     }
-    
+
     // 2. 검증
     if !isValid(new.MyConfig) {
         return fmt.Errorf("invalid config: %v", new.MyConfig)
     }
-    
+
     // 3. 적용
     if err := h.applyConfig(new.MyConfig); err != nil {
         return fmt.Errorf("failed to apply: %w", err)
     }
-    
+
     // 4. 로깅
     log.Printf("[%s] Config updated: %v", h.Name(), new.MyConfig)
-    
+
     return nil
 }
 ```
@@ -227,7 +227,7 @@ type ThreadSafeHandler struct {
 func (h *ThreadSafeHandler) OnConfigReload(old, new *UnifiedConfig) error {
     h.mu.Lock()
     defer h.mu.Unlock()
-    
+
     h.config = extractConfig(new)
     return nil
 }
@@ -235,7 +235,7 @@ func (h *ThreadSafeHandler) OnConfigReload(old, new *UnifiedConfig) error {
 func (h *ThreadSafeHandler) GetConfig() *Config {
     h.mu.RLock()
     defer h.mu.RUnlock()
-    
+
     return h.config
 }
 ```

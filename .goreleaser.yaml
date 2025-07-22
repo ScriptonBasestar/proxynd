@@ -141,7 +141,7 @@ docker_manifests:
     image_templates:
       - "ghcr.io/{{ .Env.GITHUB_REPOSITORY }}:{{ .Version }}-amd64"
       - "ghcr.io/{{ .Env.GITHUB_REPOSITORY }}:{{ .Version }}-arm64"
-  
+
   - name_template: "ghcr.io/{{ .Env.GITHUB_REPOSITORY }}:latest"
     image_templates:
       - "ghcr.io/{{ .Env.GITHUB_REPOSITORY }}:latest-amd64"
@@ -191,7 +191,7 @@ brews:
     install: |
       bin.install "proxynd"
       bin.install "proxyndctl"
-      
+
       # Install sample configuration
       etc.install "sample-conf" => "proxynd"
 
@@ -199,26 +199,26 @@ release:
   github:
     owner: "{{ .Env.GITHUB_REPOSITORY_OWNER }}"
     name: "{{ .Env.GITHUB_REPOSITORY_NAME }}"
-  
+
   header: |
     ## ProxyND v{{ .Version }}
-    
+
     High-performance package manager proxy/mirror server.
-  
+
   footer: |
     ## Thanks!
-    
+
     Thank you to all contributors who made this release possible!
-    
+
     **Full Changelog**: https://github.com/{{ .Env.GITHUB_REPOSITORY }}/compare/{{ .PreviousTag }}...{{ .Tag }}
-  
+
   name_template: "v{{.Version}}"
-  
+
 announce:
   slack:
     enabled: false
     message_template: 'ProxyND {{ .Version }} is out! Check it out: {{ .ReleaseURL }}'
-    
+
   discord:
     enabled: false
     message_template: 'ProxyND {{ .Version }} is out! Check it out: {{ .ReleaseURL }}'

@@ -1,6 +1,8 @@
 package routers
 
 import (
+	"log"
+
 	"github.com/gofiber/fiber/v2"
 
 	"proxynd/alerts"
@@ -15,7 +17,9 @@ import (
 func ProxyRouter(app *fiber.App) {
 	// Read global configuration
 	globalConfig := configs.GlobalConfig{}
-	_ = globalConfig.ReadConfig()
+	if err := globalConfig.ReadConfig(); err != nil {
+		log.Printf("Warning: Failed to read global config: %v", err)
+	}
 
 	// Initialize alert manager
 	alertConfig := loadAlertConfig()

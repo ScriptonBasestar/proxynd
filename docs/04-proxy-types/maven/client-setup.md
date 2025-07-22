@@ -12,7 +12,7 @@
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
                               http://maven.apache.org/xsd/settings-1.0.0.xsd">
-  
+
   <mirrors>
     <!-- ProxyND를 모든 저장소의 미러로 설정 -->
     <mirror>
@@ -22,7 +22,7 @@
       <url>http://your-proxy-server:8080/proxy/maven/</url>
     </mirror>
   </mirrors>
-  
+
   <!-- 프록시 서버 인증이 필요한 경우 -->
   <servers>
     <server>
@@ -31,7 +31,7 @@
       <password>your-password</password>
     </server>
   </servers>
-  
+
 </settings>
 ```
 
@@ -44,7 +44,7 @@
 ```xml
 <project>
   <!-- ... -->
-  
+
   <repositories>
     <repository>
       <id>proxynd-central</id>
@@ -57,7 +57,7 @@
       </snapshots>
     </repository>
   </repositories>
-  
+
   <pluginRepositories>
     <pluginRepository>
       <id>proxynd-plugins</id>
@@ -70,7 +70,7 @@
       </snapshots>
     </pluginRepository>
   </pluginRepositories>
-  
+
 </project>
 ```
 
@@ -196,11 +196,11 @@ mvn -Dhttp.nonProxyHosts="localhost|127.0.0.1|*.company.com" clean install
 ```groovy
 pipeline {
     agent any
-    
+
     tools {
         maven 'Maven-3.8.6'
     }
-    
+
     stages {
         stage('Build') {
             steps {
@@ -220,7 +220,7 @@ pipeline {
   with:
     java-version: '11'
     distribution: 'temurin'
-    
+
 - name: Configure Maven settings
   run: |
     mkdir -p ~/.m2
@@ -233,7 +233,7 @@ pipeline {
         </mirror>
       </mirrors>
     </settings>' > ~/.m2/settings.xml
-    
+
 - name: Build with Maven
   run: mvn clean install
 ```

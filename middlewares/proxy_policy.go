@@ -82,7 +82,9 @@ func checkCache(proxyType, requestPath string) CacheInfo {
 	switch proxyType {
 	case "maven":
 		config := configs.MavenProxyConfig{}
-		_ = config.ReadConfig()
+		if err := config.ReadConfig(); err != nil {
+			log.Printf("Warning: Failed to read Maven config, using defaults: %v", err)
+		}
 		baseDir := filepath.Join(storageDir, config.Path)
 		var err error
 		cachePath, err = security.SafeJoinPath(baseDir, requestPath)
@@ -93,7 +95,9 @@ func checkCache(proxyType, requestPath string) CacheInfo {
 
 	case "apt":
 		config := configs.AptProxyConfig{}
-		_ = config.ReadConfig()
+		if err := config.ReadConfig(); err != nil {
+			log.Printf("Warning: Failed to read APT config, using defaults: %v", err)
+		}
 		baseDir := filepath.Join(storageDir, config.Path)
 		// APT는 osType을 포함하므로 경로 처리가 다름
 		pathParts := strings.SplitN(requestPath, "/", 2)
@@ -112,7 +116,9 @@ func checkCache(proxyType, requestPath string) CacheInfo {
 
 	case "npm":
 		config := configs.NpmProxyConfig{}
-		_ = config.ReadConfig()
+		if err := config.ReadConfig(); err != nil {
+			log.Printf("Warning: Failed to read NPM config, using defaults: %v", err)
+		}
 		baseDir := filepath.Join(storageDir, config.Path)
 		var err error
 		cachePath, err = security.SafeJoinPath(baseDir, requestPath)
@@ -123,7 +129,9 @@ func checkCache(proxyType, requestPath string) CacheInfo {
 
 	case "pip":
 		config := configs.PipProxyConfig{}
-		_ = config.ReadConfig()
+		if err := config.ReadConfig(); err != nil {
+			log.Printf("Warning: Failed to read PIP config, using defaults: %v", err)
+		}
 		baseDir := filepath.Join(storageDir, config.Path)
 		var err error
 		cachePath, err = security.SafeJoinPath(baseDir, requestPath)
@@ -134,7 +142,9 @@ func checkCache(proxyType, requestPath string) CacheInfo {
 
 	case "docker":
 		config := configs.DockerProxyConfig{}
-		_ = config.ReadConfig()
+		if err := config.ReadConfig(); err != nil {
+			log.Printf("Warning: Failed to read Docker config, using defaults: %v", err)
+		}
 		baseDir := filepath.Join(storageDir, config.Path)
 		var err error
 		cachePath, err = security.SafeJoinPath(baseDir, requestPath)

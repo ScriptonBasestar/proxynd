@@ -63,7 +63,10 @@ func (h *HTTPBestPracticesHandler) HandleWithProperCleanup(c *fiber.Ctx) error {
 	// Check response status
 	if resp.StatusCode != http.StatusOK {
 		// Read error body for logging (with limit to prevent memory issues)
-		errorBody, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
+		errorBody, err := io.ReadAll(io.LimitReader(resp.Body, 1024))
+		if err != nil {
+			errorBody = []byte("failed to read error body")
+		}
 		h.logger.Warn("Non-OK response",
 			logging.F("status", resp.StatusCode),
 			logging.F("body", string(errorBody)))
@@ -133,7 +136,9 @@ func (h *HTTPBestPracticesHandler) makeRequest(ctx context.Context, url string) 
 	// Always close response body
 	defer func() {
 		// Drain and close body to allow connection reuse
-		_, _ = io.Copy(io.Discard, resp.Body)
+		if _, err := io.Copy(io.Discard, resp.Body); err != nil {
+			// Log if needed, but don't fail the operation
+		}
 		_ = resp.Body.Close()
 	}()
 
@@ -198,7 +203,9 @@ func (h *HTTPBestPracticesHandler) makeRequestWithCleanup(ctx context.Context, u
 	cleanup := func() {
 		if resp != nil && resp.Body != nil {
 			// Drain remaining body to allow connection reuse
-			_, _ = io.Copy(io.Discard, resp.Body)
+			if _, err := io.Copy(io.Discard, resp.Body); err != nil {
+				// Log if needed, but don't fail the operation
+			}
 			_ = resp.Body.Close()
 		}
 	}

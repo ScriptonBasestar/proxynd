@@ -44,9 +44,13 @@ func AptProxyUnified(c *fiber.Ctx) error {
 	// 의존성 주입으로 변경 필요 - 향후 Container에서 설정 주입
 	storageDir := helpers.GetStorageDir()
 	globalConfig := configs.GlobalConfig{}
-	_ = globalConfig.ReadConfig()
+	if err := globalConfig.ReadConfig(); err != nil {
+		return c.Status(fiber.StatusInternalServerError).SendString("Failed to read global config")
+	}
 	config := configs.AptProxyConfig{}
-	_ = config.ReadConfig()
+	if err := config.ReadConfig(); err != nil {
+		return c.Status(fiber.StatusInternalServerError).SendString("Failed to read APT config")
+	}
 
 	// Create the file
 	baseDir := filepath.Join(storageDir, config.Path)
@@ -57,7 +61,9 @@ func AptProxyUnified(c *fiber.Ctx) error {
 	filename := filepath.Base(filefullpath)
 	if _, err := os.Stat(filefullpath); os.IsNotExist(err) {
 		dirpath := filepath.Dir(filefullpath)
-		_ = os.MkdirAll(dirpath, os.ModePerm)
+		if err := os.MkdirAll(dirpath, os.ModePerm); err != nil {
+			return c.Status(fiber.StatusInternalServerError).SendString("Failed to create directory")
+		}
 		out, err := os.Create(filefullpath)
 		if err != nil {
 			log.Printf("Error creating file: %v", err)

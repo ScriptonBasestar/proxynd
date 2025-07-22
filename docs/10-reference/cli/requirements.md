@@ -150,7 +150,7 @@ proxyndctl user delete temp-user
 server:
   url: "http://localhost:8080"
   timeout: 30s
-  
+
 auth:
   type: "basic"  # basic, token, none
   username: "admin"

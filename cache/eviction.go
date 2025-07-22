@@ -42,9 +42,11 @@ func (p *LRUEvictionPolicy) SelectEvictionCandidates(items []*CacheMetadata, req
 	var freedSpace int64
 
 	for h.Len() > 0 && freedSpace < requiredSpace {
-		item := heap.Pop(h).(*CacheMetadata)
-		candidates = append(candidates, item.Key)
-		freedSpace += item.Size
+		itemInterface := heap.Pop(h)
+		if item, ok := itemInterface.(*CacheMetadata); ok {
+			candidates = append(candidates, item.Key)
+			freedSpace += item.Size
+		}
 	}
 
 	return candidates
@@ -223,7 +225,9 @@ func (h metadataHeap) Swap(i, j int) {
 
 // Push pushes the element x onto the heap
 func (h *metadataHeap) Push(x interface{}) {
-	h.items = append(h.items, x.(*CacheMetadata))
+	if item, ok := x.(*CacheMetadata); ok {
+		h.items = append(h.items, item)
+	}
 }
 
 // Pop removes and returns the minimum element from the heap

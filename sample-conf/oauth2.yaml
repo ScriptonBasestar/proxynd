@@ -16,7 +16,7 @@ providers:
     redirect_uri: "https://proxynd.example.com/auth/callback/github"
     scopes: ["user:email"]
     enable_pkce: true
-    
+
   # GitLab OAuth2 설정
   gitlab:
     client_id: "${GITLAB_CLIENT_ID}"
@@ -24,7 +24,7 @@ providers:
     redirect_uri: "https://proxynd.example.com/auth/callback/gitlab"
     scopes: ["read_user"]
     enable_pkce: true
-    
+
   # Google OAuth2 설정
   google:
     client_id: "${GOOGLE_CLIENT_ID}"
@@ -32,7 +32,7 @@ providers:
     redirect_uri: "https://proxynd.example.com/auth/callback/google"
     scopes: ["openid", "email", "profile"]
     enable_pkce: true
-    
+
   # Generic OAuth2 제공자 예제 (Azure AD)
   azure:
     client_id: "${AZURE_CLIENT_ID}"
@@ -51,19 +51,19 @@ providers:
 jwt:
   # JWT 서명 비밀키 (최소 32자 이상)
   secret: "${JWT_SECRET}"
-  
+
   # 액세스 토큰 유효 시간 (초)
   access_token_ttl: 3600    # 1시간
-  
+
   # 리프레시 토큰 유효 시간 (초)
   refresh_token_ttl: 604800 # 7일
-  
+
   # JWT 발급자
   issuer: "proxynd"
-  
+
   # JWT 대상
   audience: "proxynd-api"
-  
+
   # JWT 서명 알고리즘 (HS256, HS384, HS512, RS256, RS384, RS512, ES256, ES384, ES512)
   algorithm: "HS256"
 
@@ -71,26 +71,26 @@ jwt:
 user_mapping:
   # 신규 사용자 자동 생성 여부
   auto_create: true
-  
+
   # 기본 역할 (admin, maintainer, developer, viewer)
   default_role: "viewer"
-  
+
   # 관리자 사용자 목록 (이메일 주소)
   admin_users:
     - "admin@example.com"
     - "devops@example.com"
-  
+
   # 관리자 조직 목록
   admin_organizations:
     - "my-org"
     - "admin-team"
-  
+
   # 이메일 패턴별 역할 매핑
   role_mapping:
     "*@admin.example.com": "admin"
     "*@dev.example.com": "developer"
     "*@example.com": "viewer"
-  
+
   # 조직별 역할 매핑 (GitHub/GitLab 조직)
   organization_mapping:
     "engineering": "developer"
@@ -101,7 +101,7 @@ user_mapping:
 # 환경 변수 설정 예제:
 # export GITHUB_CLIENT_ID="your_github_client_id"
 # export GITHUB_CLIENT_SECRET="your_github_client_secret"
-# export GITLAB_CLIENT_ID="your_gitlab_client_id"  
+# export GITLAB_CLIENT_ID="your_gitlab_client_id"
 # export GITLAB_CLIENT_SECRET="your_gitlab_client_secret"
 # export GOOGLE_CLIENT_ID="your_google_client_id"
 # export GOOGLE_CLIENT_SECRET="your_google_client_secret"
@@ -109,5 +109,5 @@ user_mapping:
 
 # 각 OAuth2 제공자에서 콜백 URL 등록이 필요합니다:
 # GitHub: Settings > Developer settings > OAuth Apps
-# GitLab: User Settings > Applications  
+# GitLab: User Settings > Applications
 # Google: Google Cloud Console > APIs & Services > Credentials

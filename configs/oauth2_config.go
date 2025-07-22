@@ -198,7 +198,7 @@ func (u *UserMappingConfig) GetUserRoleWithPattern(email string, organizations [
 
 	// 2. 이메일 패턴 기반 역할 매핑
 	for pattern, role := range u.RoleMapping {
-		if matched, _ := filepath.Match(pattern, email); matched {
+		if matched, err := filepath.Match(pattern, email); err == nil && matched {
 			return role
 		}
 	}

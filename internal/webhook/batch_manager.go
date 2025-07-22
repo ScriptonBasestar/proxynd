@@ -310,7 +310,7 @@ func (bm *BatchManager) sendBatch(group *BatchGroup) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	return adapter.Send(ctx, batchEvent, batchEndpoint)
+	return adapter.Send(ctx, batchEndpoint.URL, batchEvent)
 }
 
 // createBatchPayload 배치 페이로드 생성
@@ -409,7 +409,11 @@ func (bm *BatchManager) retryBatch(group *BatchGroup) {
 
 	// 재시도는 개별 이벤트로 분해하여 처리
 	for _, event := range group.Events {
-		_ = bm.sender.SendEvent(event)
+		if err := bm.sender.SendEvent(event); err != nil {
+			bm.logger.Warn("Failed to resend individual event",
+				logging.F("event_id", event.ID),
+				logging.F("error", err))
+		}
 	}
 }
 
@@ -423,7 +427,7 @@ func (bm *BatchManager) sendSingleEvent(event *alerts.AlertEvent, endpoint confi
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	err := adapter.Send(ctx, event, endpoint)
+	err := adapter.Send(ctx, endpoint.URL, event)
 	if err != nil {
 		bm.logger.Error("단일 이벤트 전송 실패",
 			logging.F("event_id", event.ID),
@@ -450,7 +454,12 @@ func (bm *BatchManager) GetStats() map[string]interface{} {
 		eventCount := len(group.Events)
 		totalEvents += eventCount
 
-		stats["groups"].(map[string]interface{})[key] = map[string]interface{}{
+		groupsMap, ok := stats["groups"].(map[string]interface{})
+		if !ok {
+			bm.logger.Warn("Failed to type assert groups map")
+			continue
+		}
+		groupsMap[key] = map[string]interface{}{
 			"event_count": eventCount,
 			"created_at":  group.CreatedAt.Unix(),
 			"updated_at":  group.UpdatedAt.Unix(),

@@ -34,13 +34,13 @@ Alpine Linux의 APK 패키지는 RSA 서명을 통해 무결성과 신뢰성을 
 verification:
   # 서명 검증 활성화 여부
   enabled: true
-  
+
   # 신뢰할 수 있는 공개키 디렉토리
   key_directory: "/etc/apk/keys"
-  
+
   # 서명 검증 실패 시 요청 차단 여부
   fail_on_invalid: false
-  
+
   # 검증된 패키지만 캐시 여부
   cache_validated: false
 ```
@@ -211,7 +211,7 @@ GET /api/apk/verification/keys
   "key_count": 3,
   "keys": [
     "abcd1234efgh5678",
-    "1234567890abcdef", 
+    "1234567890abcdef",
     "fedcba0987654321"
   ]
 }

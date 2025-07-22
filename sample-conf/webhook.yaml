@@ -13,12 +13,12 @@ endpoints:
     method: "POST"
     timeout: "30s"
     format: "slack"  # Formats: slack, discord, teams, json
-    
+
     # HTTP headers
     headers:
       Content-Type: "application/json"
       User-Agent: "ProxyND-Webhook/1.0"
-    
+
     # Event types to subscribe (empty array = all events)
     # See alerts/webhook_events.go for full list
     event_types:
@@ -30,11 +30,11 @@ endpoints:
       - "policy.quota_exceeded" # Quota exceeded
       - "security.*"            # All security events
       - "server.*"              # All server events
-    
+
     # Authentication (Slack uses webhook URL token)
     credentials:
       type: "none"
-    
+
     # Event filtering
     filters:
       min_level: "WARNING"      # Only send WARNING and above
@@ -53,7 +53,7 @@ endpoints:
     method: "POST"
     timeout: "30s"
     format: "discord"
-    
+
     # Security events only
     event_types:
       - "security.*"
@@ -61,10 +61,10 @@ endpoints:
       - "auth.blocked"
       - "policy.violation"
       - "package.verify_failed"
-    
+
     credentials:
       type: "none"
-    
+
     filters:
       min_level: "ERROR"
 
@@ -75,17 +75,17 @@ endpoints:
     method: "POST"
     timeout: "30s"
     format: "teams"
-    
+
     # Operations events
     event_types:
       - "server.*"
       - "cache.full"
       - "storage.low_space"
       - "upstream.connection_failed"
-    
+
     credentials:
       type: "none"
-    
+
     filters:
       min_level: "INFO"
 
@@ -96,21 +96,21 @@ endpoints:
     method: "POST"
     timeout: "45s"
     format: "json"
-    
+
     # All events
     event_types: ["*"]
-    
+
     # Bearer token authentication
     credentials:
       type: "bearer"
       token: "your-bearer-token-here"
-    
+
     # Custom headers
     headers:
       X-Source: "proxynd"
       X-Environment: "production"
       X-Version: "1.0.0"
-    
+
     filters:
       min_level: "INFO"
 
@@ -121,16 +121,16 @@ endpoints:
     method: "POST"
     timeout: "30s"
     format: "json"
-    
+
     event_types: ["*"]
-    
+
     # HMAC signature authentication
     credentials:
       type: "hmac"
       secret: "your-hmac-secret-key"
       algorithm: "sha256"  # sha1, sha256, sha512
       header: "X-Hub-Signature-256"
-    
+
     filters:
       min_level: "WARNING"
 
@@ -152,7 +152,7 @@ retry:
   initial_delay: "1s"       # Initial retry delay
   max_delay: "30s"          # Maximum retry delay
   backoff_factor: 2.0       # Exponential backoff multiplier
-  
+
   # HTTP status codes that trigger retry
   retryable_status:
     - 408  # Request Timeout
@@ -161,7 +161,7 @@ retry:
     - 502  # Bad Gateway
     - 503  # Service Unavailable
     - 504  # Gateway Timeout
-  
+
   # Persist failed events for later retry
   persist_failures: true
   failure_storage_path: "/var/lib/proxynd/webhook-failures"
@@ -170,26 +170,26 @@ retry:
 event_processing:
   # Default notification level
   default_level: "INFO"
-  
+
   # Event type specific level overrides
   level_overrides:
     "cache.miss": "DEBUG"           # Cache misses are DEBUG level
     "auth.failure": "WARNING"       # Auth failures are WARNING
     "security.*": "ERROR"           # Security events are ERROR
     "server.stopped": "CRITICAL"    # Server stop is CRITICAL
-  
+
   # Event aggregation (reduce notification spam)
   aggregation:
     enabled: true
     window_size: "5m"        # Aggregate over 5 minute windows
     max_events: 100          # Max 100 events per window
-    
+
     # Aggregation strategies by event type
     strategies:
       "cache.*": "count"     # Count cache events
       "auth.*": "sample"     # Sample auth events
       "error.*": "merge"     # Merge similar errors
-  
+
   # Deduplication
   deduplication:
     enabled: true
@@ -209,7 +209,7 @@ security:
   verify_ssl: true          # Verify SSL certificates
   allow_insecure: false     # Don't allow insecure connections
   max_payload_size: 1048576 # Max payload size (1MB)
-  
+
   # IP whitelist/blacklist
   ip_whitelist: []          # Empty = allow all
   ip_blacklist: []          # IPs to block
@@ -217,12 +217,12 @@ security:
 # Monitoring and health checks
 monitoring:
   enabled: true
-  
+
   # Log webhook performance metrics
   log_performance: true
   log_failures: true
   log_success: false        # Don't log successful webhooks
-  
+
   # Health check webhooks
   health_check:
     enabled: true
@@ -244,7 +244,7 @@ templates:
       {{ $key }}: {{ $value }}
     {{- end }}
     {{- end }}
-  
+
   # Custom title template
   title_template: "ProxyND {{ .Level }}: {{ .EventType }}"
 
@@ -254,7 +254,7 @@ templates:
 #     condition:
 #       level: "CRITICAL"
 #     target: "pagerduty-webhook"
-#   
+#
 #   - name: "security-to-siem"
 #     condition:
 #       type_pattern: "security.*"

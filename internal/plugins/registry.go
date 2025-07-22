@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"sync"
 	"time"
 
@@ -203,7 +204,9 @@ func (r *DefaultPluginRegistry) RegisterPlugin(plugin Plugin) error {
 	handler := plugin.CreateHandler()
 	if err := r.Register(handler); err != nil {
 		// 플러그인 언로드
-		_ = plugin.Unload()
+		if err := plugin.Unload(); err != nil {
+			log.Printf("Warning: Failed to unload plugin: %v", err)
+		}
 		return fmt.Errorf("failed to register handler: %w", err)
 	}
 

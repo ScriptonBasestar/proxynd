@@ -57,7 +57,7 @@ echo "🔄 Checking for specific patterns..."
 echo "=== JWT Secrets ==="
 grep -rn -E 'jwt[_-]?secret\s*[:=]\s*"[^"]\+"' --include="*.go" . | grep -v "_test.go" | head -5 || echo "None found"
 
-echo "=== Database Passwords ==="  
+echo "=== Database Passwords ==="
 grep -rn -E 'db[_-]?password\s*[:=]\s*"[^"]\+"' --include="*.go" . | grep -v "_test.go" | head -5 || echo "None found"
 
 echo "=== API Keys ==="

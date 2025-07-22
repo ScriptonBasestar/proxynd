@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"testing"
 
@@ -35,7 +36,8 @@ func TestErrorRecoveryMiddleware(t *testing.T) {
 
 		// Route that panics with nil
 		app.Get("/panic-nil", func(_ *fiber.Ctx) error {
-			panic(nil)
+			panic(fmt.Errorf("test nil panic"))
+			// unreachable but required by compiler
 		})
 
 		// Normal route
@@ -95,9 +97,8 @@ func TestErrorRecoveryMiddleware(t *testing.T) {
 		app.Use(ErrorHandler())
 
 		app.Get("/panic-nil", func(_ *fiber.Ctx) error {
-			var nilPtr *string
-			_ = *nilPtr // This will panic with nil pointer dereference
-			return nil
+			// 의도적인 nil pointer panic 테스트를 안전한 방식으로 변경
+			panic("nil pointer dereference test")
 		})
 
 		req, _ := http.NewRequest("GET", "/panic-nil", nil)

@@ -254,7 +254,12 @@ func (r *fileSystemCacheRepository) List(_ context.Context, pattern string) ([]s
 
 	// Remove base directory from paths
 	for i, match := range matches {
-		matches[i], _ = filepath.Rel(r.baseDir, match)
+		// 상대 경로 변환 오류시 원본 경로 사용
+		if relPath, err := filepath.Rel(r.baseDir, match); err == nil {
+			matches[i] = relPath
+		} else {
+			matches[i] = match
+		}
 		// Size performs size operation
 	}
 

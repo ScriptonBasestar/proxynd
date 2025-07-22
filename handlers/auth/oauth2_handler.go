@@ -223,7 +223,14 @@ func HandleOAuth2Callback(c *fiber.Ctx) error {
 	}
 
 	// 사용자 조직/그룹 정보 조회 (선택사항)
-	organizations, _ := provider.GetUserOrganizations(c.Context(), tokenResp.AccessToken)
+	organizations, err := provider.GetUserOrganizations(c.Context(), tokenResp.AccessToken)
+	if err != nil {
+		// 조직 정보 조회 실패는 경고 처리 (선택사항이므로)
+		logging.GetLogger().Warn("Failed to get user organizations",
+			logging.F("error", err),
+			logging.F("provider", providerName))
+		organizations = nil
+	}
 
 	// 사용자 역할 결정
 	userRole := oauth2Config.UserMapping.GetUserRole(userInfo.Email, organizations)
@@ -352,7 +359,13 @@ func RefreshToken(c *fiber.Ctx) error {
 	jwtService := jwt.NewJWTService(oauth2Config)
 
 	// JWT 토큰 갱신
-	newTokenPair, err := jwtService.RefreshAccessToken(jwtRefreshToken.(string))
+	refreshToken, ok := jwtRefreshToken.(string)
+	if !ok {
+		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
+			"error": "Invalid refresh token type",
+		})
+	}
+	newTokenPair, err := jwtService.RefreshAccessToken(refreshToken)
 	if err != nil {
 		logging.GetLogger().Error("Failed to refresh JWT token", logging.F("error", err))
 		return c.Status(http.StatusUnauthorized).JSON(fiber.Map{

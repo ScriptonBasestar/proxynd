@@ -22,4 +22,4 @@
   - Use string templates or `.join()` instead of operational concatenation.
     It is critically important that you adhere to the above five rules.
 6. **Language** Use Korean for all comments and documentation:
-  - Even if I ask questions in English, please respond in Korean 
+  - Even if I ask questions in English, please respond in Korean

@@ -7,7 +7,7 @@ cache:
     region: ap-northeast-2
     # MinIO 등 S3 호환 서비스 사용 시
     # endpoint: http://localhost:9000
-    
+
   # 캐시 옵션
   options:
     default_ttl: 3600  # 1시간

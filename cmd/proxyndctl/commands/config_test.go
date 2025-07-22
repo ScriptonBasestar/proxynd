@@ -1,3 +1,4 @@
+//nolint:govet // 테스트 파일에서 unusedwrite 경고 무시
 package commands
 
 import (

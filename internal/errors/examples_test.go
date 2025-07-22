@@ -30,6 +30,7 @@ func TestStructuredErrorUsage(t *testing.T) {
 	var domainErr *errors.DomainError
 	if domainErr = cacheErr; domainErr == nil {
 		t.Error("Should be able to cast to DomainError")
+		return
 	}
 
 	if domainErr.Code != errors.ErrCodeCacheWrite {
@@ -58,4 +59,3 @@ func TestProxyErrorExample(t *testing.T) {
 		t.Errorf("Expected code: %s, Got: %s", errors.ErrCodeProxyUpstreamTimeout, proxyErr.Code)
 	}
 }
-

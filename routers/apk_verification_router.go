@@ -36,7 +36,11 @@ func getApkVerificationStatus(c *fiber.Ctx) error {
 
 	// APK 설정 읽기
 	apkConfig := configs.ApkProxyConfig{}
-	_ = apkConfig.ReadConfig()
+	if err := apkConfig.ReadConfig(); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to read APK config",
+		})
+	}
 
 	// 서명 검증기 생성
 	verifier := apk.NewSignatureVerifier()
@@ -127,7 +131,11 @@ func verifySpecificApkFile(c *fiber.Ctx) error {
 
 	// APK 설정 읽기
 	apkConfig := configs.ApkProxyConfig{}
-	_ = apkConfig.ReadConfig()
+	if err := apkConfig.ReadConfig(); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to read APK config",
+		})
+	}
 
 	// 서명 검증기 생성 및 키 로드
 	verifier := apk.NewSignatureVerifier()
@@ -161,7 +169,11 @@ func getTrustedKeys(c *fiber.Ctx) error {
 
 	// APK 설정 읽기
 	apkConfig := configs.ApkProxyConfig{}
-	_ = apkConfig.ReadConfig()
+	if err := apkConfig.ReadConfig(); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to read APK config",
+		})
+	}
 
 	if apkConfig.Verification.KeyDirectory == "" {
 		return c.JSON(fiber.Map{
@@ -193,7 +205,11 @@ func getTrustedKeys(c *fiber.Ctx) error {
 func getApkVerificationConfig(c *fiber.Ctx) error {
 	// APK 설정 읽기
 	apkConfig := configs.ApkProxyConfig{}
-	_ = apkConfig.ReadConfig()
+	if err := apkConfig.ReadConfig(); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to read APK config",
+		})
+	}
 
 	return c.JSON(fiber.Map{
 		"verification": apkConfig.Verification,

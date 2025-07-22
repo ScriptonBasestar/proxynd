@@ -22,7 +22,7 @@ This guide provides comprehensive information about monitoring ProxyND using Pro
 ProxyND → Prometheus → Grafana (Visualization)
          ↓
          AlertManager → Notifications
-         
+
 ProxyND → Promtail → Loki → Grafana (Logs)
 
 ProxyND → Jaeger → Grafana (Tracing)
@@ -122,7 +122,7 @@ var (
         },
         []string{"method", "status", "endpoint"},
     )
-    
+
     requestDuration = promauto.NewHistogramVec(
         prometheus.HistogramOpts{
             Name: "proxynd_http_request_duration_seconds",
@@ -131,7 +131,7 @@ var (
         },
         []string{"method", "endpoint"},
     )
-    
+
     cacheHits = promauto.NewCounterVec(
         prometheus.CounterOpts{
             Name: "proxynd_cache_hits_total",

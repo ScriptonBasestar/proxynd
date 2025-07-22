@@ -2,7 +2,7 @@
 
 ## Overview
 
-ProxyND는 인터페이스 기반 설계를 사용하여 테스트 시 Mock 객체를 쉽게 사용할 수 있도록 합니다. 
+ProxyND는 인터페이스 기반 설계를 사용하여 테스트 시 Mock 객체를 쉽게 사용할 수 있도록 합니다.
 [mockery](https://github.com/vektra/mockery)를 사용하여 자동으로 Mock을 생성합니다.
 
 ## Mock 생성
@@ -44,10 +44,10 @@ import (
 func TestMyService(t *testing.T) {
     // Mock 생성
     mockCache := proxymocks.NewMockCacheService(t)
-    
+
     // 기대값 설정
     mockCache.EXPECT().Get(mock.Anything, "key").Return(nil, false, nil)
-    
+
     // Mock을 사용한 서비스 테스트
     service := NewMyService(mockCache)
     // ...
@@ -153,15 +153,15 @@ func TestService_Method(t *testing.T) {
             wantErr: false,
         },
     }
-    
+
     for _, tt := range tests {
         t.Run(tt.name, func(t *testing.T) {
             mockCache := proxymocks.NewMockCacheService(t)
             tt.setupMocks(mockCache)
-            
+
             service := NewService(mockCache)
             got, err := service.Method()
-            
+
             if tt.wantErr {
                 assert.Error(t, err)
             } else {
@@ -181,10 +181,10 @@ func TestIntegration_PartialMock(t *testing.T) {
     realConfig := config.NewService("./config")
     mockCache := proxymocks.NewMockCacheService(t)
     mockUpstream := proxymocks.NewMockUpstreamClient(t)
-    
+
     // 특정 부분만 Mock으로 대체
     service := proxy.NewService(realConfig, mockCache, mockUpstream)
-    
+
     // 테스트 실행
     // ...
 }

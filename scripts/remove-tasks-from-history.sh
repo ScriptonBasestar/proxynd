@@ -22,18 +22,18 @@ read -r method
 case $method in
     1)
         echo "🔄 git filter-branch를 사용하여 tasks/ 디렉토리 제거 중..."
-        
+
         # filter-branch를 사용하여 모든 커밋에서 tasks/ 디렉토리 제거
         git filter-branch --force --index-filter \
             'git rm -r --cached --ignore-unmatch tasks/' \
             --prune-empty --tag-name-filter cat -- --all
-        
+
         echo "✅ filter-branch 완료"
         ;;
-        
+
     2)
         echo "🔄 git-filter-repo를 사용하여 tasks/ 디렉토리 제거 중..."
-        
+
         # git-filter-repo 설치 확인
         if ! command -v git-filter-repo &> /dev/null; then
             echo "git-filter-repo가 설치되어 있지 않습니다."
@@ -52,31 +52,31 @@ case $method in
                 exit 1
             fi
         fi
-        
+
         # git-filter-repo 실행
         git filter-repo --path tasks/ --invert-paths --force
-        
+
         echo "✅ git-filter-repo 완료"
         ;;
-        
+
     3)
         echo "🔄 BFG Repo-Cleaner를 사용하여 tasks/ 디렉토리 제거 중..."
-        
+
         # BFG 다운로드 확인
         if [[ ! -f "bfg.jar" ]]; then
             echo "BFG Repo-Cleaner 다운로드 중..."
             curl -L https://repo1.maven.org/maven2/com/madgag/bfg/1.14.0/bfg-1.14.0.jar -o bfg.jar
         fi
-        
+
         # BFG 실행
         java -jar bfg.jar --delete-folders tasks --no-blob-protection .
-        
+
         # 정리
         git reflog expire --expire=now --all && git gc --prune=now --aggressive
-        
+
         echo "✅ BFG Repo-Cleaner 완료"
         ;;
-        
+
     *)
         echo "잘못된 선택입니다."
         exit 1

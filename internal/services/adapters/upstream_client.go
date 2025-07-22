@@ -66,7 +66,10 @@ func (c *HTTPUpstreamClient) Fetch(ctx context.Context, url string,
 	// Check response status
 	if resp.StatusCode >= 400 {
 		// Read error body
-		body, _ := io.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			body = []byte("failed to read error response")
+		}
 		_ = resp.Body.Close()
 
 		return &proxy.ProxyResponse{

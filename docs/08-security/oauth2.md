@@ -83,32 +83,32 @@ Client Credentials -> Token 요청 -> Access Token
 oauth2:
   enabled: true
   default_provider: github
-  
+
   providers:
     github:
       client_id: "${GITHUB_CLIENT_ID}"
       client_secret: "${GITHUB_CLIENT_SECRET}"
       redirect_uri: "https://proxynd.example.com/auth/callback/github"
       scopes: ["user:email"]
-      
+
     gitlab:
       client_id: "${GITLAB_CLIENT_ID}"
       client_secret: "${GITLAB_CLIENT_SECRET}"
       redirect_uri: "https://proxynd.example.com/auth/callback/gitlab"
       scopes: ["read_user"]
-      
+
     google:
       client_id: "${GOOGLE_CLIENT_ID}"
       client_secret: "${GOOGLE_CLIENT_SECRET}"
       redirect_uri: "https://proxynd.example.com/auth/callback/google"
       scopes: ["openid", "email", "profile"]
-      
+
   # JWT 토큰 설정
   jwt:
     secret: "${JWT_SECRET}"
     access_token_ttl: 3600    # 1시간
     refresh_token_ttl: 604800 # 7일
-    
+
   # 사용자 매핑 설정
   user_mapping:
     auto_create: true

@@ -152,7 +152,7 @@ proxyndctl은 다양한 쉘에 대한 자동완성을 지원합니다.
 
 지원되는 쉘:
 - bash
-- zsh  
+- zsh
 - fish
 - powershell
 

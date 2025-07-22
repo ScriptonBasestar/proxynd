@@ -78,29 +78,29 @@ max_cache_size: 107374182400  # 100GB
 cache:
   # Global default TTL in seconds
   ttl: 3600  # 1 hour
-  
+
   # HTTP cache header support
   use_cache_headers: true
   max_cache_header_ttl: 86400  # 24 hours
   min_cache_header_ttl: 300    # 5 minutes
-  
+
   # Stale-while-revalidate
   stale_while_revalidate: true
   stale_max_age: 3600
-  
+
   # Package-type specific TTLs
   package_ttls:
     apt: 3600
     npm: 1800
     maven: 5400
     docker: 7200
-  
+
   # Pattern-based TTL overrides
   pattern_ttls:
     "*-SNAPSHOT": 300
     "*-dev": 600
     "*-alpha": 900
-  
+
   # Metadata file TTLs
   metadata_ttls:
     "Packages.gz": 600
@@ -117,7 +117,7 @@ authentication:
     realm: "ProxyND Restricted Area"
     users:
       admin: "password"  # Use bcrypt in production
-      
+
   # OAuth2 (see oauth2.yaml)
   oauth2:
     enabled: false
@@ -141,7 +141,7 @@ logging:
   level: "info"  # debug, info, warn, error, fatal
   format: "json" # json, text
   output: "stdout"  # stdout, stderr, file
-  
+
   file:
     path: "/var/log/proxynd/proxynd.log"
     max_size: 100     # MB
@@ -185,7 +185,7 @@ repositories:
       url: "https://repo1.maven.org/maven2"
     - name: "Maven Central Mirror"
       url: "https://repo.maven.apache.org/maven2"
-      
+
 # Snapshot handling
 snapshots:
   enabled: true
@@ -204,7 +204,7 @@ registries:
     url: "https://registry.npmjs.org"
   - name: "NPM Mirror"
     url: "https://registry.npmmirror.com"
-    
+
 # Scoped packages
 scopes:
   "@company":
@@ -222,11 +222,11 @@ registries:
   docker.io:
     - name: "Docker Hub"
       url: "https://registry-1.docker.io"
-      
+
   gcr.io:
     - name: "Google Container Registry"
       url: "https://gcr.io"
-      
+
 # Authentication
 auth:
   docker.io:
@@ -254,7 +254,7 @@ endpoints:
 rate_limit:
   enabled: true
   max_per_minute: 100
-  
+
 retry:
   enabled: true
   max_attempts: 3
@@ -286,7 +286,7 @@ gpg:
   enabled: true
   keyring_path: "/etc/proxynd/gpg"
   auto_import: true
-  
+
 # Checksum verification
 checksums:
   enabled: true

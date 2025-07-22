@@ -168,9 +168,9 @@ func runUserList(showDetails bool) error {
 	// 결과 출력
 	outputFormat := getOutputFormat()
 	switch outputFormat {
-	case formatJSON:
+	case outputFormatJSON:
 		return outputJSON(result)
-	case formatYAML:
+	case outputFormatYAML:
 		return outputYAML(result)
 	default:
 		return outputUserListTable(result, showDetails)
@@ -260,7 +260,10 @@ func runUserAddInteractive() error {
 	// 역할 입력
 	var role string
 	fmt.Print("역할 [user]: ")
-	_, _ = fmt.Scanln(&role)
+	if _, err := fmt.Scanln(&role); err != nil {
+		// 입력 오류 시 기본값 사용
+		role = "user"
+	}
 	if role == "" {
 		role = "user"
 	}
@@ -268,7 +271,10 @@ func runUserAddInteractive() error {
 	// 설명 입력
 	var description string
 	fmt.Print("설명 (선택사항): ")
-	_, _ = fmt.Scanln(&description)
+	if _, err := fmt.Scanln(&description); err != nil {
+		// 입력 오류 시 빈 문자열로 설정
+		description = ""
+	}
 
 	fmt.Println()
 
@@ -281,7 +287,10 @@ func runUserDelete(username string, force bool) error {
 	if !force {
 		fmt.Printf("사용자 '%s'를 정말 삭제하시겠습니까? (y/N): ", username)
 		var confirm string
-		_, _ = fmt.Scanln(&confirm)
+		if _, err := fmt.Scanln(&confirm); err != nil {
+			fmt.Printf("입력을 읽는 중 오류 발생: %v\n", err)
+			return err
+		}
 		if confirm != "y" && confirm != "Y" {
 			fmt.Println("삭제가 취소되었습니다.")
 			return nil
@@ -356,9 +365,9 @@ func runUserInfo(username string) error {
 	// 결과 출력
 	outputFormat := getOutputFormat()
 	switch outputFormat {
-	case formatJSON:
+	case outputFormatJSON:
 		return outputJSON(result)
-	case formatYAML:
+	case outputFormatYAML:
 		return outputYAML(result)
 	default:
 		return outputUserInfoTable(result)

@@ -2,13 +2,13 @@
 verification:
   # 엄격 모드 - 검증 실패 시 동작 방식
   strict_mode: true
-  
+
   # 검증 실패 시 패키지 다운로드 차단
   block_on_failure: true
-  
+
   # 검증 실패 시 알림 전송
   alert_on_failure: true
-  
+
   # 패키지 타입별 설정
   package_types:
     npm:
@@ -19,7 +19,7 @@ verification:
         - "https://registry.npmjs.org"
       skip_verification:
         - "/@types/" # TypeScript 정의 파일은 검증 제외
-    
+
     pip:
       enabled: true
       # PyPI는 SHA256 사용
@@ -28,7 +28,7 @@ verification:
         - "https://pypi.org"
         - "https://files.pythonhosted.org"
       skip_verification: []
-    
+
     apt:
       enabled: true
       # APT는 Release 파일의 SHA256 사용
@@ -40,7 +40,7 @@ verification:
       skip_verification:
         - "/Release" # Release 파일 자체는 GPG로 검증
         - "/Release.gpg"
-    
+
     docker:
       enabled: true
       # Docker는 manifest digest 사용 (SHA256)
@@ -49,7 +49,7 @@ verification:
         - "https://registry-1.docker.io"
         - "https://registry.docker.io"
       skip_verification: []
-    
+
     maven:
       enabled: true
       # Maven은 SHA1이 기본, SHA256도 지원
@@ -63,7 +63,7 @@ verification:
 # 알림 설정
 alerts:
   enabled: true
-  
+
   # 알림 채널 설정
   channels:
     # 로그 기반 알림
@@ -73,7 +73,7 @@ alerts:
       config:
         log_file: "./logs/verification-alerts.log"
         json_format: true
-    
+
     # 웹훅 알림 (Slack, Discord 등)
     - name: webhook
       type: webhook
@@ -86,7 +86,7 @@ alerts:
         timeout: "30s"
         retry_count: 3
         retry_interval: "5s"
-    
+
     # 이메일 알림 (추후 구현 예정)
     - name: email
       type: email
@@ -100,14 +100,14 @@ alerts:
         to:
           - "admin@example.com"
           - "security@example.com"
-  
+
   # 알림 속도 제한
   rate_limit:
     enabled: true
     max_per_minute: 10     # 분당 최대 알림 수
     max_per_hour: 100      # 시간당 최대 알림 수
     burst_size: 5          # 순간 최대 알림 수
-  
+
   # 알림 필터 규칙
   filter_rules:
     # 중요 알림은 모든 채널로
@@ -116,14 +116,14 @@ alerts:
       levels: ["CRITICAL"]
       types: ["package_verification_failed"]
       action: allow
-    
+
     # 경고는 로그만
     - name: warning_to_log
       enabled: true
       levels: ["WARNING"]
       action: redirect
       target: log
-    
+
     # 특정 패키지 타입 필터
     - name: docker_alerts
       enabled: true

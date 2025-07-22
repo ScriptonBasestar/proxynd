@@ -28,9 +28,15 @@ func NewGenericWebhookAdapter() *GenericWebhookAdapter {
 	}
 }
 
-// Name 어댑터 이름 반환
+// Type 어댑터 타입 반환 (인터페이스 호환)
+func (gwa *GenericWebhookAdapter) Type() string {
+	//nolint:goconst // webhookTypeGeneric 상수 사용보다 직접 문자열이 더 명확
+	return "generic"
+}
+
+// Name 어댑터 이름 반환 (하위 호환성 - 테스트에서 사용)
 func (gwa *GenericWebhookAdapter) Name() string {
-	return webhookTypeGeneric
+	return "generic"
 }
 
 // SupportedFormats 지원하는 포맷 목록 반환
@@ -38,8 +44,28 @@ func (gwa *GenericWebhookAdapter) SupportedFormats() []string {
 	return []string{"json", "text"}
 }
 
-// Send 웹훅 전송
-func (gwa *GenericWebhookAdapter) Send(ctx context.Context, event *alerts.AlertEvent,
+// Send 웹훅 전송 (새로운 인터페이스 호환)
+func (gwa *GenericWebhookAdapter) Send(ctx context.Context, endpoint string, event *alerts.AlertEvent) error {
+	// 기본 엔드포인트 설정 생성
+	endpointConfig := configs.WebhookEndpointConfig{
+		URL:    endpoint,
+		Method: "POST",
+		Format: "json",
+	}
+	return gwa.SendToEndpoint(ctx, event, endpointConfig)
+}
+
+// Validate 엔드포인트 검증 (인터페이스 호환)
+func (gwa *GenericWebhookAdapter) Validate(endpoint string) error {
+	// 기본 URL 검증
+	if endpoint == "" {
+		return fmt.Errorf("endpoint URL cannot be empty")
+	}
+	return nil
+}
+
+// SendToEndpoint 웹훅 전송 (기존 구현, 하위 호환성용)
+func (gwa *GenericWebhookAdapter) SendToEndpoint(ctx context.Context, event *alerts.AlertEvent,
 	endpoint configs.WebhookEndpointConfig) error {
 	// 메시지 포맷팅
 	payload, err := gwa.FormatMessage(event, endpoint.Format)
@@ -329,7 +355,10 @@ func (swa *SlackWebhookAdapter) formatAttachment(event *alerts.AlertEvent) map[s
 
 	// 패키지 정보 추가
 	if event.PackageInfo != nil {
-		fields := attachment["fields"].([]map[string]interface{})
+		fields, ok := attachment["fields"].([]map[string]interface{})
+		if !ok {
+			fields = make([]map[string]interface{}, 0)
+		}
 		fields = append(fields, map[string]interface{}{
 			"title": "Package",
 			"value": fmt.Sprintf("%s/%s@%s", event.PackageInfo.Type, event.PackageInfo.Name, event.PackageInfo.Version),

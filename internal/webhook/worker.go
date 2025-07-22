@@ -2,12 +2,54 @@ package webhook
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"proxynd/alerts"
 	"proxynd/configs"
+	"proxynd/internal/webhook/retry"
 	"proxynd/logging"
 )
+
+// Worker 웹훅 워커
+type Worker struct {
+	id      int
+	eventCh chan *alerts.AlertEvent
+	stopCh  chan struct{}
+	sender  *WebhookSender
+	logger  logging.Logger
+	retryQ  *RetryQueue
+}
+
+// RetryQueue 재시도 큐
+type RetryQueue struct {
+	items    []*RetryItem
+	mu       sync.Mutex
+	notifyCh chan struct{}
+}
+
+// RetryItem 재시도 항목
+type RetryItem struct {
+	Event     *alerts.AlertEvent
+	Endpoint  string
+	Attempt   int
+	NextRetry time.Time
+	LastError error
+	CreatedAt time.Time
+}
+
+// Add 재시도 항목 추가
+func (rq *RetryQueue) Add(item *RetryItem) {
+	rq.mu.Lock()
+	defer rq.mu.Unlock()
+	rq.items = append(rq.items, item)
+
+	// 알림 전송 (non-blocking)
+	select {
+	case rq.notifyCh <- struct{}{}:
+	default:
+	}
+}
 
 // Start 워커 시작
 func (w *Worker) Start(ctx context.Context) {
@@ -87,21 +129,9 @@ func NewRetryQueue() *RetryQueue {
 	}
 }
 
-// Add 재시도 항목 추가
-func (rq *RetryQueue) Add(item *RetryItem) {
-	rq.mu.Lock()
-	defer rq.mu.Unlock()
-
-	rq.items = append(rq.items, item)
-
-	// 알림 전송 (non-blocking)
-	select {
-	case rq.notifyCh <- struct{}{}:
-	default:
-	}
-}
-
 // processRetries 재시도 처리
+//
+//nolint:unused // 재시도 기능은 추후 구현 예정
 func (rq *RetryQueue) processRetries(ctx context.Context, sender *WebhookSender) {
 	rq.mu.Lock()
 	defer rq.mu.Unlock()
@@ -123,8 +153,8 @@ func (rq *RetryQueue) processRetries(ctx context.Context, sender *WebhookSender)
 				logging.F(fieldEndpoint, item.Endpoint),
 				logging.F("attempts", item.Attempt))
 
-			// 실패 처리 (Dead Letter Queue 등)
-			sender.handlePermanentFailure(item)
+			// 실패 처리 (Dead Letter Queue 등) - 추후 구현 예정
+			// TODO: Dead Letter Queue 구현
 			continue
 		}
 
@@ -148,7 +178,7 @@ func (rq *RetryQueue) processRetries(ctx context.Context, sender *WebhookSender)
 			// 실패 시 재시도 항목 업데이트
 			item.Attempt++
 			item.LastError = err
-			item.NextRetry = now.Add(sender.calculateBackoffDelay(item.Attempt, RetryPolicy{
+			item.NextRetry = now.Add(sender.calculateBackoffDelay(item.Attempt, retry.Policy{
 				MaxAttempts:   sender.config.Retry.MaxAttempts,
 				InitialDelay:  time.Second,
 				MaxDelay:      time.Minute * 5,
@@ -187,21 +217,4 @@ func (rq *RetryQueue) Clear() {
 	rq.mu.Lock()
 	defer rq.mu.Unlock()
 	rq.items = rq.items[:0]
-}
-
-// handlePermanentFailure 영구 실패 처리
-func (ws *WebhookSender) handlePermanentFailure(item *RetryItem) {
-	if !ws.config.Retry.PersistFailures {
-		return
-	}
-
-	// Dead Letter Queue에 저장 (파일 시스템 또는 별도 저장소)
-	ws.logger.Error("영구 실패 이벤트 저장",
-		logging.F(fieldEventID, item.Event.ID),
-		logging.F(fieldEndpoint, item.Endpoint),
-		logging.F("total_attempts", item.Attempt),
-		logging.F(fieldError, item.LastError.Error()))
-
-	// 실제 구현에서는 파일이나 데이터베이스에 저장
-	// 여기서는 로그만 기록
 }

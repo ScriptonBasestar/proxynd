@@ -55,24 +55,24 @@ logging:
   format: json
   output: both
   time_format: "2006-01-02T15:04:05.000Z07:00"
-  
+
   file:
     path: ./logs/proxynd.log
     max_size: 100       # MB
     max_backups: 10
     max_age: 30         # days
     compress: true
-  
+
   default_fields:
     service: proxynd
     environment: production
     version: 1.0.0
-  
+
   sampling:
     enabled: false
     initial: 100
     thereafter: 100
-  
+
   access_log:
     enabled: true
     path: ./logs/access.log
@@ -200,11 +200,11 @@ logger.Info("Cache initialized",
 func Handler(c *fiber.Ctx) error {
     // Get request logger
     logger := logging.GetRequestLogger(c)
-    
+
     logger.Info("Processing request",
         logging.F("package", c.Params("package")),
     )
-    
+
     // Logger automatically includes request_id
     return nil
 }

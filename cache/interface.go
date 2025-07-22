@@ -8,6 +8,39 @@ import (
 // Backend is an alias for CacheBackend to avoid stuttering
 type Backend = CacheBackend
 
+// Cache 캐시 인터페이스 (copylocks 문제 방지용)
+type Cache interface {
+	// Get 캐시에서 데이터 가져오기
+	Get(key string) ([]byte, bool)
+
+	// Put 캐시에 데이터 저장
+	Put(key string, data []byte, ttl time.Duration) error
+
+	// Exists 캐시 존재 여부 확인
+	Exists(key string) bool
+
+	// Delete 캐시 항목 삭제
+	Delete(key string) error
+
+	// Clear 전체 캐시 삭제
+	Clear() error
+
+	// GetStats 캐시 통계 조회
+	GetStats() CacheStats
+
+	// GetCachePath 캐시 경로 생성
+	GetCachePath(proxyType, requestPath string) string
+
+	// StartEviction 캐시 정리 프로세스 시작
+	StartEviction(ctx interface{}, interval time.Duration)
+
+	// StopEviction 캐시 정리 프로세스 중지
+	StopEviction()
+
+	// ForceEviction 강제 캐시 정리 수행
+	ForceEviction() error
+}
+
 // CacheBackend 캐시 백엔드 인터페이스
 type CacheBackend interface {
 	// Get 캐시에서 데이터 읽기

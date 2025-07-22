@@ -2,8 +2,10 @@ package types
 
 import (
 	"context"
+	"sync"
 
 	"proxynd/alerts"
+	"proxynd/logging"
 )
 
 // EventQueue 이벤트 큐 인터페이스
@@ -63,4 +65,44 @@ func (sm *SenderMetrics) UpdateQueueSize(size int64) {
 // UpdateWorkerCount 워커 수 업데이트
 func (sm *SenderMetrics) UpdateWorkerCount(count int64) {
 	sm.WorkerCount = count
+}
+
+// WorkerInstance 워커 인스턴스
+type WorkerInstance struct {
+	ID      int
+	EventCh chan *alerts.AlertEvent
+	StopCh  chan struct{}
+	Logger  logging.Logger
+	Busy    bool
+	mu      sync.RWMutex
+}
+
+// NewWorkerInstance 새로운 워커 인스턴스 생성
+func NewWorkerInstance(id int, logger logging.Logger) *WorkerInstance {
+	return &WorkerInstance{
+		ID:      id,
+		EventCh: make(chan *alerts.AlertEvent, 100),
+		StopCh:  make(chan struct{}),
+		Logger:  logger,
+		Busy:    false,
+	}
+}
+
+// IsBusy 워커가 바쁜지 확인
+func (w *WorkerInstance) IsBusy() bool {
+	w.mu.RLock()
+	defer w.mu.RUnlock()
+	return w.Busy
+}
+
+// SetBusy 워커 바쁨 상태 설정
+func (w *WorkerInstance) SetBusy(busy bool) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	w.Busy = busy
+}
+
+// Stop 워커 중지
+func (w *WorkerInstance) Stop() {
+	close(w.StopCh)
 }

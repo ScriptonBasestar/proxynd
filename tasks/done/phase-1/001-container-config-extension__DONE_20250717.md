@@ -26,12 +26,12 @@ type Container struct {
     mu            sync.RWMutex
     services      map[string]interface{}
     constructors  map[string]func() (interface{}, error)
-    
+
     // 설정 관련 추가
     config        *configs.Config
     configMu      sync.RWMutex
     configWatcher *fsnotify.Watcher
-    
+
     // 서비스 레지스트리
     handlers      map[string]fiber.Handler
     middlewares   []fiber.Handler
@@ -49,17 +49,17 @@ func (c *Container) Config() *configs.Config {
 func (c *Container) ReloadConfig() error {
     c.configMu.Lock()
     defer c.configMu.Unlock()
-    
+
     newConfig, err := configs.ReadConfig()
     if err != nil {
         return err
     }
-    
+
     // 검증
     if err := newConfig.Validate(); err != nil {
         return err
     }
-    
+
     c.config = newConfig
     c.notifyConfigChange()
     return nil

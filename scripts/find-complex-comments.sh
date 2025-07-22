@@ -4,7 +4,7 @@ echo "🔍 Finding files with complex comment blocks..."
 
 # 10줄 이상 연속 주석 블록 찾기
 find . -name "*.go" -not -path "./vendor/*" -not -path "./.git/*" -not -path "./backup/*" -exec awk '
-/^[[:space:]]*\/\// {count++; if (count == 1) start=NR} 
+/^[[:space:]]*\/\// {count++; if (count == 1) start=NR}
 !/^[[:space:]]*\/\// {
     if (count >= 10) print FILENAME":"start"-"NR-1" ("count" lines)"
     count=0

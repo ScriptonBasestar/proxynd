@@ -45,5 +45,3 @@ data:
       - name: spring_snapshots
         id: repo.spring.io-snapshots
         url: https://repo.spring.io/snapshot
-
-

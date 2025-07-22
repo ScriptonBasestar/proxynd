@@ -80,7 +80,7 @@ updates:
           - "patch"
         patterns:
           - "*"
-    
+
   # GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"

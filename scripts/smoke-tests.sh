@@ -149,7 +149,7 @@ make_request() {
     if [[ "$status_code" == "$expected_status" ]]; then
         log_success "$description - HTTP $status_code"
         TESTS_PASSED=$((TESTS_PASSED + 1))
-        
+
         if [[ "$VERBOSE" == true && -n "$body" ]]; then
             echo "Response body: $body"
         fi
@@ -158,7 +158,7 @@ make_request() {
         log_failure "$description - Expected HTTP $expected_status, got HTTP $status_code"
         TESTS_FAILED=$((TESTS_FAILED + 1))
         FAILED_TESTS+=("$description")
-        
+
         if [[ "$VERBOSE" == true && -n "$body" ]]; then
             echo "Response body: $body"
         fi
@@ -169,7 +169,7 @@ make_request() {
 # Test health endpoint
 test_health() {
     log_info "Testing health endpoints..."
-    
+
     make_request "$BASE_URL/health" 200 GET "Health check endpoint"
     make_request "$BASE_URL/health/ready" 200 GET "Readiness check endpoint"
     make_request "$BASE_URL/health/live" 200 GET "Liveness check endpoint"
@@ -178,41 +178,41 @@ test_health() {
 # Test metrics endpoint
 test_metrics() {
     log_info "Testing metrics endpoint..."
-    
+
     make_request "$BASE_URL/metrics" 200 GET "Prometheus metrics endpoint"
 }
 
 # Test version endpoint
 test_version() {
     log_info "Testing version endpoint..."
-    
+
     make_request "$BASE_URL/version" 200 GET "Version information endpoint"
 }
 
 # Test APT proxy endpoints
 test_apt_proxy() {
     log_info "Testing APT proxy endpoints..."
-    
+
     # Test APT repository structure
     make_request "$BASE_URL/proxy/apt/dists/" 200 GET "APT dists directory listing"
     make_request "$BASE_URL/proxy/apt/dists/jammy/Release" 200 GET "APT Release file"
     make_request "$BASE_URL/proxy/apt/dists/jammy/InRelease" 200 GET "APT InRelease file"
-    
+
     # Test package queries (might return 404 if not cached, which is acceptable)
     make_request "$BASE_URL/proxy/apt/pool/main/a/apt/apt_2.4.8_amd64.deb" 404 GET "APT package download (expected 404 if not cached)"
 }
 
-# Test Maven proxy endpoints  
+# Test Maven proxy endpoints
 test_maven_proxy() {
     log_info "Testing Maven proxy endpoints..."
-    
+
     # Test Maven repository structure
     make_request "$BASE_URL/proxy/maven/" 200 GET "Maven root directory"
     make_request "$BASE_URL/proxy/maven/org/springframework/" 200 GET "Maven group directory"
-    
+
     # Test metadata files
     make_request "$BASE_URL/proxy/maven/org/springframework/spring-core/maven-metadata.xml" 200 GET "Maven metadata XML"
-    
+
     # Test artifact download (might return 404 if not cached)
     make_request "$BASE_URL/proxy/maven/org/springframework/spring-core/5.3.21/spring-core-5.3.21.pom" 404 GET "Maven POM download (expected 404 if not cached)"
 }
@@ -220,11 +220,11 @@ test_maven_proxy() {
 # Test NPM proxy endpoints
 test_npm_proxy() {
     log_info "Testing NPM proxy endpoints..."
-    
+
     # Test NPM registry endpoints
     make_request "$BASE_URL/proxy/npm/" 200 GET "NPM registry root"
     make_request "$BASE_URL/proxy/npm/express" 200 GET "NPM package metadata"
-    
+
     # Test package download (might return 404 if not cached)
     make_request "$BASE_URL/proxy/npm/express/-/express-4.18.2.tgz" 404 GET "NPM package download (expected 404 if not cached)"
 }
@@ -232,13 +232,13 @@ test_npm_proxy() {
 # Test administrative endpoints
 test_admin_endpoints() {
     log_info "Testing administrative endpoints..."
-    
+
     # Test cache statistics
     make_request "$BASE_URL/admin/cache/stats" 200 GET "Cache statistics endpoint"
-    
-    # Test system statistics  
+
+    # Test system statistics
     make_request "$BASE_URL/admin/stats" 200 GET "System statistics endpoint"
-    
+
     # Test configuration endpoint
     make_request "$BASE_URL/admin/config" 200 GET "Configuration endpoint"
 }
@@ -246,7 +246,7 @@ test_admin_endpoints() {
 # Test security endpoints (should return 401/403 for unauthorized access)
 test_security() {
     log_info "Testing security endpoints..."
-    
+
     # Test admin endpoints without authentication (should be protected)
     make_request "$BASE_URL/admin/cache/clear" 401 POST "Cache clear endpoint (should require auth)"
     make_request "$BASE_URL/admin/config/reload" 401 POST "Config reload endpoint (should require auth)"
@@ -255,7 +255,7 @@ test_security() {
 # Test performance endpoints
 test_performance() {
     log_info "Testing performance endpoints..."
-    
+
     # Test performance metrics
     make_request "$BASE_URL/admin/performance/metrics" 200 GET "Performance metrics endpoint"
     make_request "$BASE_URL/admin/performance/health" 200 GET "Performance health endpoint"
@@ -264,11 +264,11 @@ test_performance() {
 # Test error handling
 test_error_handling() {
     log_info "Testing error handling..."
-    
+
     # Test 404 responses
     make_request "$BASE_URL/nonexistent" 404 GET "Non-existent endpoint (should return 404)"
     make_request "$BASE_URL/proxy/nonexistent/" 404 GET "Non-existent proxy type (should return 404)"
-    
+
     # Test method not allowed
     make_request "$BASE_URL/health" 405 DELETE "Health endpoint with DELETE method (should return 405)"
 }
@@ -302,13 +302,13 @@ generate_report() {
     echo -e "Total Tests: ${BLUE}$TESTS_TOTAL${NC}"
     echo -e "Passed: ${GREEN}$TESTS_PASSED${NC}"
     echo -e "Failed: ${RED}$TESTS_FAILED${NC}"
-    
+
     local success_rate=0
     if [[ $TESTS_TOTAL -gt 0 ]]; then
         success_rate=$((TESTS_PASSED * 100 / TESTS_TOTAL))
     fi
     echo -e "Success Rate: ${BLUE}${success_rate}%${NC}"
-    
+
     if [[ $TESTS_FAILED -gt 0 ]]; then
         echo
         log_failure "Failed Tests:"
@@ -316,7 +316,7 @@ generate_report() {
             echo -e "  ${RED}✗${NC} $test"
         done
     fi
-    
+
     echo
     if [[ $TESTS_FAILED -eq 0 ]]; then
         log_success "All smoke tests passed! 🎉"
@@ -331,32 +331,32 @@ generate_report() {
 main() {
     log_info "ProxyND Smoke Tests"
     log_info "==================="
-    
+
     parse_args "$@"
-    
+
     log_info "Starting smoke tests against: $BASE_URL"
     log_info "Timeout: ${TIMEOUT}s"
     log_info "Proxy types: ${PROXY_TYPES[*]}"
     echo
-    
+
     # Core functionality tests
     test_health
     test_version
     test_metrics
-    
+
     # Proxy-specific tests
     run_proxy_tests
-    
+
     # Administrative tests
     test_admin_endpoints
     test_performance
-    
+
     # Security tests
     test_security
-    
+
     # Error handling tests
     test_error_handling
-    
+
     # Generate final report
     generate_report
 }

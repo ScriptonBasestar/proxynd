@@ -58,7 +58,7 @@ proxynd:
   serverPort: 8080
   logLevel: info
   logFormat: json
-  
+
   # 캐시 설정
   cache:
     type: filesystem  # filesystem 또는 s3
@@ -76,18 +76,18 @@ proxynd:
     npm:
       enabled: true
       upstream: https://registry.npmjs.org
-    
+
     pip:
       enabled: true
       upstream: https://pypi.org/simple
-    
+
     apt:
       enabled: true
       distributions:
         - name: ubuntu
           upstream: http://archive.ubuntu.com/ubuntu
           architectures: ["amd64", "arm64"]
-    
+
     docker:
       enabled: true
       upstream: https://registry-1.docker.io
@@ -121,7 +121,7 @@ persistence:
   accessModes:
     - ReadWriteOnce
   size: 100Gi
-  
+
   # 기존 PVC 사용
   # existingClaim: my-existing-pvc
 ```
@@ -313,7 +313,7 @@ image:
 
 proxynd:
   logLevel: debug
-  
+
 persistence:
   enabled: false
 

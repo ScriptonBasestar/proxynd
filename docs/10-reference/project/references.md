@@ -44,7 +44,7 @@ GET /apt/ubuntu/pool/main/a/apache2/apache2_2.4.41-4ubuntu3_amd64.deb
 
 ## NPM
 ### NPM 패키지 흐름
-1. **요청 구조**: 
+1. **요청 구조**:
    - 패키지 메타데이터: `GET /npm/{package_name}`
    - 패키지 다운로드: `GET /npm/{package_name}/-/{package_name}-{version}.tgz`
 2. **캐시 경로**: `storage/proxy/npm/{package_name}/...`

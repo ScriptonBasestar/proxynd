@@ -33,13 +33,23 @@ func NpmProxy(c *fiber.Ctx) error {
 	// 설정 읽기
 	storageDir := helpers.GetStorageDir()
 	globalConfig := configs.GlobalConfig{}
-	_ = globalConfig.ReadConfig()
+	if err := globalConfig.ReadConfig(); err != nil {
+		return c.Status(fiber.StatusInternalServerError).SendString("Failed to read global config")
+	}
 	config := configs.NpmProxyConfig{}
-	_ = config.ReadConfig()
+	if err := config.ReadConfig(); err != nil {
+		return c.Status(fiber.StatusInternalServerError).SendString("Failed to read NPM config")
+	}
 
 	// 미들웨어에서 전달된 캐시 정보 확인
-	cacheHit, _ := c.Locals("cache_hit").(bool)
-	cachePath, _ := c.Locals("cache_path").(string)
+	cacheHit, ok := c.Locals("cache_hit").(bool)
+	if !ok {
+		cacheHit = false
+	}
+	cachePath, ok := c.Locals("cache_path").(string)
+	if !ok {
+		cachePath = ""
+	}
 
 	var filefullpath string
 	var filename string
@@ -67,7 +77,9 @@ func NpmProxy(c *fiber.Ctx) error {
 	// 캐시가 히트하지 않았을 때만 다운로드
 	if !cacheHit {
 		dirpath := filepath.Dir(filefullpath)
-		_ = os.MkdirAll(dirpath, 0766)
+		if err := os.MkdirAll(dirpath, 0766); err != nil {
+			return c.Status(fiber.StatusInternalServerError).SendString("Failed to create directory")
+		}
 
 		// HTTP 클라이언트 생성 (프록시 최적화 설정)
 		proxyClient := httpclient.NewProxyClient()
@@ -96,7 +108,11 @@ func NpmProxy(c *fiber.Ctx) error {
 			defer func() { _ = resp.Body.Close() }()
 
 			if resp.StatusCode == http.StatusOK {
-				bytes, _ := io.ReadAll(resp.Body)
+				bytes, err := io.ReadAll(resp.Body)
+				if err != nil {
+					log.Printf("Error reading response body: %v", err)
+					continue
+				}
 				contentType = resp.Header.Get("Content-Type")
 
 				// NPM 메타데이터는 URL 재작성이 필요할 수 있음
@@ -183,7 +199,11 @@ func rewriteNpmMetadata(data []byte, baseURL, _ string) []byte {
 		}
 	}
 
-	rewritten, _ := json.Marshal(metadata)
+	rewritten, err := json.Marshal(metadata)
+	if err != nil {
+		// 에러 발생 시 원본 데이터 반환
+		return data
+	}
 	return rewritten
 }
 

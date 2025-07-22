@@ -125,7 +125,9 @@ func (vh *VerificationHandler) VerifyUploadedPackage(
 
 	// 사용자 정보 추가
 	if username := c.Locals("username"); username != nil {
-		metadata["username"] = username.(string)
+		if usernameStr, ok := username.(string); ok {
+			metadata["username"] = usernameStr
+		}
 	}
 
 	ctx := c.Context()

@@ -193,7 +193,7 @@ linters-settings:
       # Explicitly disable exported rule
       - name: exported
         disabled: true
-      # Explicitly disable var-naming rule  
+      # Explicitly disable var-naming rule
       - name: var-naming
         disabled: true
 
@@ -276,12 +276,12 @@ issues:
         - errcheck
         - goconst
         - funlen
-        
+
     # Exclude stuttering and package naming issues
     - linters:
         - revive
       text: "stutters"
-      
+
     - linters:
         - revive
       text: "avoid meaningless package names"

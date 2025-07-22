@@ -11,7 +11,7 @@
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -21,7 +21,7 @@
             justify-content: center;
             padding: 20px;
         }
-        
+
         .login-container {
             background: white;
             border-radius: 16px;
@@ -31,46 +31,46 @@
             width: 100%;
             text-align: center;
         }
-        
+
         .logo {
             margin-bottom: 30px;
         }
-        
+
         .logo h1 {
             color: #2d3748;
             font-size: 2rem;
             font-weight: 700;
             margin-bottom: 8px;
         }
-        
+
         .logo p {
             color: #718096;
             font-size: 1rem;
         }
-        
+
         .login-title {
             margin-bottom: 30px;
         }
-        
+
         .login-title h2 {
             color: #2d3748;
             font-size: 1.5rem;
             font-weight: 600;
             margin-bottom: 8px;
         }
-        
+
         .login-title p {
             color: #718096;
             font-size: 0.9rem;
         }
-        
+
         .providers-list {
             display: flex;
             flex-direction: column;
             gap: 12px;
             margin-bottom: 30px;
         }
-        
+
         .provider-button {
             display: flex;
             align-items: center;
@@ -84,70 +84,70 @@
             position: relative;
             overflow: hidden;
         }
-        
+
         .provider-button:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
-        
+
         .provider-button.github {
             background: #24292e;
             color: white;
             border-color: #24292e;
         }
-        
+
         .provider-button.github:hover {
             background: #1a1e22;
         }
-        
+
         .provider-button.gitlab {
             background: #fc6d26;
             color: white;
             border-color: #fc6d26;
         }
-        
+
         .provider-button.gitlab:hover {
             background: #e55100;
         }
-        
+
         .provider-button.google {
             background: white;
             color: #5f6368;
             border-color: #dadce0;
         }
-        
+
         .provider-button.google:hover {
             background: #f8f9fa;
         }
-        
+
         .provider-button.azure {
             background: #0078d4;
             color: white;
             border-color: #0078d4;
         }
-        
+
         .provider-button.azure:hover {
             background: #106ebe;
         }
-        
+
         .provider-icon {
             width: 20px;
             height: 20px;
             margin-right: 12px;
             flex-shrink: 0;
         }
-        
+
         .provider-name {
             flex-grow: 1;
             text-align: center;
         }
-        
+
         .basic-auth-section {
             border-top: 1px solid #e2e8f0;
             padding-top: 20px;
             margin-top: 20px;
         }
-        
+
         .basic-auth-toggle {
             background: none;
             border: none;
@@ -157,20 +157,20 @@
             text-decoration: underline;
             margin-bottom: 15px;
         }
-        
+
         .basic-auth-form {
             display: none;
             text-align: left;
         }
-        
+
         .basic-auth-form.show {
             display: block;
         }
-        
+
         .form-group {
             margin-bottom: 15px;
         }
-        
+
         .form-group label {
             display: block;
             color: #4a5568;
@@ -178,7 +178,7 @@
             margin-bottom: 5px;
             font-weight: 500;
         }
-        
+
         .form-group input {
             width: 100%;
             padding: 10px 12px;
@@ -187,12 +187,12 @@
             font-size: 0.9rem;
             transition: border-color 0.2s ease;
         }
-        
+
         .form-group input:focus {
             outline: none;
             border-color: #667eea;
         }
-        
+
         .basic-auth-submit {
             width: 100%;
             padding: 10px;
@@ -205,36 +205,36 @@
             cursor: pointer;
             transition: background-color 0.2s ease;
         }
-        
+
         .basic-auth-submit:hover {
             background: #5a67d8;
         }
-        
+
         .footer {
             color: #a0aec0;
             font-size: 0.8rem;
             margin-top: 20px;
         }
-        
+
         .footer a {
             color: #667eea;
             text-decoration: none;
         }
-        
+
         .footer a:hover {
             text-decoration: underline;
         }
-        
+
         @media (max-width: 480px) {
             .login-container {
                 padding: 30px 20px;
                 margin: 10px;
             }
-            
+
             .logo h1 {
                 font-size: 1.5rem;
             }
-            
+
             .login-title h2 {
                 font-size: 1.3rem;
             }
@@ -247,12 +247,12 @@
             <h1>ProxyND</h1>
             <p>패키지 매니저 프록시 서버</p>
         </div>
-        
+
         <div class="login-title">
             <h2>로그인</h2>
             <p>계속하려면 로그인이 필요합니다</p>
         </div>
-        
+
         {{if .providers}}
         <div class="providers-list">
             {{range $name, $provider := .providers}}
@@ -279,39 +279,39 @@
             {{end}}
         </div>
         {{end}}
-        
+
         {{if .basic_auth_enabled}}
         <div class="basic-auth-section">
             <button type="button" class="basic-auth-toggle" onclick="toggleBasicAuth()">
                 사용자명/비밀번호로 로그인
             </button>
-            
+
             <form class="basic-auth-form" id="basicAuthForm" action="/auth/login/basic" method="post">
                 <div class="form-group">
                     <label for="username">사용자명</label>
                     <input type="text" id="username" name="username" required>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="password">비밀번호</label>
                     <input type="password" id="password" name="password" required>
                 </div>
-                
+
                 <button type="submit" class="basic-auth-submit">로그인</button>
             </form>
         </div>
         {{end}}
-        
+
         <div class="footer">
             <p>문제가 있으신가요? <a href="mailto:admin@example.com">관리자에게 문의</a></p>
         </div>
     </div>
-    
+
     <script>
         function toggleBasicAuth() {
             const form = document.getElementById('basicAuthForm');
             const toggle = document.querySelector('.basic-auth-toggle');
-            
+
             if (form.classList.contains('show')) {
                 form.classList.remove('show');
                 toggle.textContent = '사용자명/비밀번호로 로그인';
@@ -321,14 +321,14 @@
                 document.getElementById('username').focus();
             }
         }
-        
+
         // URL 파라미터에서 에러 메시지 확인
         const urlParams = new URLSearchParams(window.location.search);
         const error = urlParams.get('error');
-        
+
         if (error) {
             let message = '로그인 중 오류가 발생했습니다.';
-            
+
             switch (error) {
                 case 'access_denied':
                     message = '접근이 거부되었습니다. 권한을 확인해주세요.';
@@ -343,7 +343,7 @@
                     message = '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
                     break;
             }
-            
+
             // 에러 메시지 표시
             const errorDiv = document.createElement('div');
             errorDiv.style.cssText = `
@@ -356,11 +356,11 @@
                 text-align: center;
             `;
             errorDiv.textContent = message;
-            
+
             const container = document.querySelector('.login-container');
             container.insertBefore(errorDiv, container.firstChild.nextSibling.nextSibling);
         }
-        
+
         // 리다이렉트 URL 처리
         const redirect = urlParams.get('redirect');
         if (redirect) {
@@ -372,7 +372,7 @@
                 input.value = redirect;
                 form.appendChild(input);
             });
-            
+
             const links = document.querySelectorAll('.provider-button');
             links.forEach(link => {
                 link.href += '?redirect=' + encodeURIComponent(redirect);

@@ -2,6 +2,7 @@ package configs
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -136,7 +137,10 @@ func (vcl *ViperConfigLoader) loadDotEnvFile() {
 			if _, err := os.Stat(envPath); err == nil {
 				vcl.viper.SetConfigFile(envPath)
 				vcl.viper.SetConfigType("dotenv")
-				_ = vcl.viper.MergeInConfig() // 에러 무시 (선택사항)
+				if err := vcl.viper.MergeInConfig(); err != nil {
+					// 환경변수 파일 병합 실패는 경고로 처리 (선택사항이므로)
+					log.Printf("Warning: Failed to merge env config %s: %v", envPath, err)
+				}
 			}
 		}
 	}
@@ -176,7 +180,9 @@ func (vcl *ViperConfigLoader) bindEnvironmentVariables() {
 	}
 
 	for envVar, configPath := range environmentBindings {
-		_ = vcl.viper.BindEnv(configPath, envVar)
+		if err := vcl.viper.BindEnv(configPath, envVar); err != nil {
+			log.Printf("Warning: Failed to bind env variable %s to %s: %v", envVar, configPath, err)
+		}
 	}
 }
 

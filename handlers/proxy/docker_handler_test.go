@@ -268,4 +268,3 @@ func BenchmarkDockerProxy_V2Base(b *testing.B) {
 		}
 	}
 }
-

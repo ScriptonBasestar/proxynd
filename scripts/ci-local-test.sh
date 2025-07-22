@@ -84,7 +84,7 @@ echo ""
 log_info "단위 테스트 실행..."
 if go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...; then
     log_success "단위 테스트 통과"
-    
+
     # 커버리지 출력
     log_info "테스트 커버리지:"
     go tool cover -func=coverage.txt | tail -1
@@ -107,14 +107,14 @@ platforms=(
 for platform in "${platforms[@]}"; do
     GOOS=${platform%/*}
     GOARCH=${platform#*/}
-    
+
     log_info "빌드 중: $GOOS/$GOARCH"
-    
+
     output_name="proxynd-test-$GOOS-$GOARCH"
     if [ "$GOOS" = "windows" ]; then
         output_name="${output_name}.exe"
     fi
-    
+
     if CGO_ENABLED=0 GOOS=$GOOS GOARCH=$GOARCH go build -o /tmp/$output_name main.go; then
         log_success "$platform 빌드 성공"
         rm -f /tmp/$output_name
@@ -128,7 +128,7 @@ echo ""
 # 7. Docker 빌드 테스트 (Docker가 설치된 경우)
 if command -v docker &> /dev/null; then
     log_info "Docker 빌드 테스트..."
-    
+
     # Dockerfile 존재 확인
     if [ -f "Dockerfile.multiarch" ]; then
         # 빌드만 테스트 (푸시하지 않음)

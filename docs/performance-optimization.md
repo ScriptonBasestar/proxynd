@@ -158,7 +158,7 @@ package main
 import (
     "context"
     "log"
-    
+
     "github.com/scriptonbasestar/proxynd/internal/performance"
     "github.com/scriptonbasestar/proxynd/internal/logging"
 )
@@ -166,23 +166,23 @@ import (
 func main() {
     logger := logging.NewLogger()
     config := performance.DefaultConfig()
-    
+
     // Create performance manager
     manager, err := performance.NewManager(logger, config)
     if err != nil {
         log.Fatal(err)
     }
-    
+
     // Start performance optimization
     ctx := context.Background()
     if err := manager.Start(ctx); err != nil {
         log.Fatal(err)
     }
     defer manager.Stop()
-    
+
     // Get performance middleware for Fiber
     perfMiddleware := manager.GetMiddleware()
-    
+
     // Use in Fiber app
     app := fiber.New()
     app.Use(perfMiddleware.Handler())

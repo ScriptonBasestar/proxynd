@@ -4,6 +4,7 @@ package logging
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strings"
 	"time"
 
@@ -79,7 +80,12 @@ func (a *AuditLogger) LogEvent(ctx context.Context, event AuditEvent) {
 	}
 
 	// Convert event to JSON for structured logging
-	eventJSON, _ := json.Marshal(event)
+	eventJSON, err := json.Marshal(event)
+	if err != nil {
+		// 오류 발생 시 기본 이벤트 정보만 기록
+		eventJSON = []byte(fmt.Sprintf(`{"event_type":"%s","timestamp":"%s","error":"json_marshal_failed"}`,
+			event.EventType, event.Timestamp.Format(time.RFC3339)))
+	}
 
 	fields := []Field{
 		String("event_type", event.EventType),

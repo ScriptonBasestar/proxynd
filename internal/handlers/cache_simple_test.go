@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"errors"
 	"testing"
 	"time"
 
@@ -142,20 +141,20 @@ func TestBaseProxyHandlerImpl_SimpleCacheTest(t *testing.T) {
 		ttl := 1 * time.Hour
 
 		// 캐시 저장 성공
-		mockCache.On("SetWithTTL", cacheKey, data, ttl).Return(nil).Once()
-		err := mockCache.SetWithTTL(cacheKey, data, ttl)
+		mockCache.On("Put", cacheKey, data, ttl).Return(nil).Once()
+		err := mockCache.Put(cacheKey, data, ttl)
 		assert.NoError(t, err)
 
 		// 캐시 조회 성공
-		mockCache.On("Get", cacheKey).Return(data, nil).Once()
-		retrievedData, err := mockCache.Get(cacheKey)
-		assert.NoError(t, err)
+		mockCache.On("Get", cacheKey).Return(data, true).Once()
+		retrievedData, found := mockCache.Get(cacheKey)
+		assert.True(t, found)
 		assert.Equal(t, data, retrievedData)
 
 		// 캐시 미스
-		mockCache.On("Get", "nonexistent-key").Return(nil, errors.New("key not found")).Once()
-		retrievedData, err = mockCache.Get("nonexistent-key")
-		assert.Error(t, err)
+		mockCache.On("Get", "nonexistent-key").Return([]byte(nil), false).Once()
+		retrievedData, found = mockCache.Get("nonexistent-key")
+		assert.False(t, found)
 		assert.Nil(t, retrievedData)
 
 		mockCache.AssertExpectations(t)
@@ -174,7 +173,7 @@ func TestBaseProxyHandlerImpl_SimpleCacheTest(t *testing.T) {
 
 		// 캐시 히트 설정
 		cachedData := []byte("cached response")
-		mockCache.On("Get", "test-key").Return(cachedData, nil)
+		mockCache.On("Get", "test-key").Return(cachedData, true)
 
 		impl := NewBaseProxyHandlerImpl(mockContainer, mockHandler)
 

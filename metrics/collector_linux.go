@@ -56,9 +56,18 @@ func GetSystemMetrics() map[string]float64 {
 			if strings.HasPrefix(line, "cpu ") {
 				fields := strings.Fields(line)
 				if len(fields) >= 5 {
-					user, _ := strconv.ParseFloat(fields[1], 64)
-					system, _ := strconv.ParseFloat(fields[3], 64)
-					idle, _ := strconv.ParseFloat(fields[4], 64)
+					user, err := strconv.ParseFloat(fields[1], 64)
+					if err != nil {
+						user = 0
+					}
+					system, err := strconv.ParseFloat(fields[3], 64)
+					if err != nil {
+						system = 0
+					}
+					idle, err := strconv.ParseFloat(fields[4], 64)
+					if err != nil {
+						idle = 0
+					}
 					total := user + system + idle
 					if total > 0 {
 						metrics["cpu_usage"] = (user + system) / total
@@ -79,9 +88,13 @@ func GetSystemMetrics() map[string]float64 {
 			if len(fields) >= 2 {
 				switch fields[0] {
 				case "MemTotal:":
-					memTotal, _ = strconv.ParseFloat(fields[1], 64)
+					if val, err := strconv.ParseFloat(fields[1], 64); err == nil {
+						memTotal = val
+					}
 				case "MemAvailable:":
-					memAvailable, _ = strconv.ParseFloat(fields[1], 64)
+					if val, err := strconv.ParseFloat(fields[1], 64); err == nil {
+						memAvailable = val
+					}
 				}
 			}
 		}
@@ -97,13 +110,18 @@ func GetSystemMetrics() map[string]float64 {
 	if loadavg, err := os.ReadFile("/proc/loadavg"); err == nil {
 		fields := strings.Fields(string(loadavg))
 		if len(fields) >= 3 {
-			load1, _ := strconv.ParseFloat(fields[0], 64)
-			load5, _ := strconv.ParseFloat(fields[1], 64)
-			load15, _ := strconv.ParseFloat(fields[2], 64)
-
-			metrics["load_1m"] = load1
-			metrics["load_5m"] = load5
-			metrics["load_15m"] = load15
+			load1, err := strconv.ParseFloat(fields[0], 64)
+			if err == nil {
+				metrics["load_1m"] = load1
+			}
+			load5, err := strconv.ParseFloat(fields[1], 64)
+			if err == nil {
+				metrics["load_5m"] = load5
+			}
+			load15, err := strconv.ParseFloat(fields[2], 64)
+			if err == nil {
+				metrics["load_15m"] = load15
+			}
 		}
 	}
 
@@ -129,15 +147,26 @@ func GetNetworkMetrics() map[string]map[string]float64 {
 					continue
 				}
 
+				// ParseFloat 오류는 의도적으로 무시하고 기본값 0.0 사용
+				//nolint:errcheck
 				rxBytes, _ := strconv.ParseFloat(fields[1], 64)
+				//nolint:errcheck
 				rxPackets, _ := strconv.ParseFloat(fields[2], 64)
+				//nolint:errcheck
 				rxErrors, _ := strconv.ParseFloat(fields[3], 64)
+				//nolint:errcheck
 				rxDropped, _ := strconv.ParseFloat(fields[4], 64)
 
+				//nolint:errcheck
 				txBytes, _ := strconv.ParseFloat(fields[9], 64)
+				//nolint:errcheck
 				txPackets, _ := strconv.ParseFloat(fields[10], 64)
+				//nolint:errcheck
 				txErrors, _ := strconv.ParseFloat(fields[11], 64)
+				//nolint:errcheck
 				txDropped, _ := strconv.ParseFloat(fields[12], 64)
+
+				// Note: ParseFloat errors are ignored for network metrics as they default to 0
 
 				metrics[iface] = map[string]float64{
 					"rx_bytes":   rxBytes,

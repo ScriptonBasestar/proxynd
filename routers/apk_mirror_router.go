@@ -35,7 +35,11 @@ func getMirrorStatus(c *fiber.Ctx) error {
 
 	// APK 설정 읽기
 	apkConfig := configs.ApkProxyConfig{}
-	_ = apkConfig.ReadConfig()
+	if err := apkConfig.ReadConfig(); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to read APK config",
+		})
+	}
 
 	// 미러 선택기가 활성화되어 있는지 확인
 	if !apkConfig.MirrorSelection.Enabled {
@@ -79,7 +83,11 @@ func getMirrorHealth(c *fiber.Ctx) error {
 
 	// APK 설정 읽기
 	apkConfig := configs.ApkProxyConfig{}
-	_ = apkConfig.ReadConfig()
+	if err := apkConfig.ReadConfig(); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to read APK config",
+		})
+	}
 
 	if !apkConfig.MirrorSelection.Enabled {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -149,7 +157,11 @@ func testMirrorSelection(c *fiber.Ctx) error {
 
 	// APK 설정 읽기
 	apkConfig := configs.ApkProxyConfig{}
-	_ = apkConfig.ReadConfig()
+	if err := apkConfig.ReadConfig(); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to read APK config",
+		})
+	}
 
 	if !apkConfig.MirrorSelection.Enabled {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -201,7 +213,11 @@ func testMirrorSelection(c *fiber.Ctx) error {
 func getMirrorConfig(c *fiber.Ctx) error {
 	// APK 설정 읽기
 	apkConfig := configs.ApkProxyConfig{}
-	_ = apkConfig.ReadConfig()
+	if err := apkConfig.ReadConfig(); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to read APK config",
+		})
+	}
 
 	return c.JSON(fiber.Map{
 		"mirror_selection": apkConfig.MirrorSelection,
@@ -215,7 +231,11 @@ func refreshMirrorHealth(c *fiber.Ctx) error {
 
 	// APK 설정 읽기
 	apkConfig := configs.ApkProxyConfig{}
-	_ = apkConfig.ReadConfig()
+	if err := apkConfig.ReadConfig(); err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to read APK config",
+		})
+	}
 
 	if !apkConfig.MirrorSelection.Enabled {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{

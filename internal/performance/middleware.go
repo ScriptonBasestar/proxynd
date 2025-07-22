@@ -378,29 +378,39 @@ func (pm *PerformanceMiddleware) GetHealthStatus() map[string]interface{} {
 
 	// Check performance health
 	if metrics.AverageResponseTime > pm.config.SlowRequestThreshold {
-		status["performance"].(map[string]interface{})["status"] = HealthStatusDegraded
+		if performance, ok := status["performance"].(map[string]interface{}); ok {
+			performance["status"] = HealthStatusDegraded
+		}
 		overallHealthy = false
 	}
 
 	if metrics.ErrorRate > 0.05 { // 5% error rate threshold
-		status["performance"].(map[string]interface{})["status"] = "unhealthy"
+		if performance, ok := status["performance"].(map[string]interface{}); ok {
+			performance["status"] = "unhealthy"
+		}
 		overallHealthy = false
 	}
 
 	// Check resource health
 	if metrics.CPUUsage > 0.8 || metrics.MemoryUsage > 0.8 {
-		status["resources"].(map[string]interface{})["status"] = HealthStatusDegraded
+		if resources, ok := status["resources"].(map[string]interface{}); ok {
+			resources["status"] = HealthStatusDegraded
+		}
 		overallHealthy = false
 	}
 
 	// Check cache health
 	if metrics.CacheHitRate < 0.5 { // Less than 50% hit rate
-		status["cache"].(map[string]interface{})["status"] = HealthStatusDegraded
+		if cache, ok := status["cache"].(map[string]interface{}); ok {
+			cache["status"] = HealthStatusDegraded
+		}
 	}
 
 	// Check connection health
 	if metrics.PoolUtilization > 0.9 { // 90% pool utilization
-		status["connections"].(map[string]interface{})["status"] = HealthStatusDegraded
+		if connections, ok := status["connections"].(map[string]interface{}); ok {
+			connections["status"] = HealthStatusDegraded
+		}
 	}
 
 	if !overallHealthy {

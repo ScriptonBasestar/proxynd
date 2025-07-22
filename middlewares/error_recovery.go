@@ -39,8 +39,14 @@ func ErrorRecovery() fiber.Handler {
 					traceID = "unknown"
 				}
 
+				// TraceID 안전 변환
+				traceIDStr, ok := traceID.(string)
+				if !ok {
+					traceIDStr = "unknown"
+				}
+
 				// 패닉 정보 로깅
-				recovery.logPanic(c, r, stack, traceID.(string))
+				recovery.logPanic(c, r, stack, traceIDStr)
 
 				// 패닉 에러 생성
 				panicErr := errors.NewError("PANIC001", "서버 패닉이 발생했습니다").
@@ -61,7 +67,7 @@ func ErrorRecovery() fiber.Handler {
 					Error:     panicErr.Code,
 					Message:   panicErr.Message,
 					Domain:    panicErr.Domain,
-					TraceID:   traceID.(string),
+					TraceID:   traceIDStr,
 					Timestamp: panicErr.Timestamp,
 				}
 
@@ -119,10 +125,16 @@ func RecoveryWithConfig(config RecoveryConfig) fiber.Handler {
 					config.StackTraceHandler(c, r)
 				}
 
+				// TraceID 안전 변환
+				traceIDStr, ok := traceID.(string)
+				if !ok {
+					traceIDStr = "unknown"
+				}
+
 				// 기본 패닉 로깅
 				if config.EnableStackTrace {
 					stack := debug.Stack()
-					recovery.logPanic(c, r, stack, traceID.(string))
+					recovery.logPanic(c, r, stack, traceIDStr)
 				} else {
 					recovery.logger.Error("Panic recovered (stack trace disabled)",
 						logging.F("trace_id", traceID),
@@ -152,7 +164,7 @@ func RecoveryWithConfig(config RecoveryConfig) fiber.Handler {
 					Error:     panicErr.Code,
 					Message:   panicErr.Message,
 					Domain:    panicErr.Domain,
-					TraceID:   traceID.(string),
+					TraceID:   traceIDStr,
 					Timestamp: panicErr.Timestamp,
 				}
 

@@ -14,7 +14,7 @@ logging:
   level: debug        # 상세 로그
   format: console     # 사람이 읽기 쉬운 형태
   output: stdout
-  
+
   defaultFields:
     service: "proxynd"
     environment: "development"
@@ -24,7 +24,7 @@ cache:
   type: memory
   ttl: 1800           # 30분 (짧게 설정)
   maxSize: 1073741824 # 1GB
-  
+
   memory:
     maxEntries: 5000
     evictionPolicy: "lru"
@@ -43,7 +43,7 @@ npm:
   upstream: "https://registry.npmjs.org"
   useCache: true
   allowedPackages: ["*"]
-  
+
   # 개발용 빠른 응답
   upstreamConfig:
     timeout: 10s
@@ -60,7 +60,7 @@ pip:
 apt:
   enabled: true
   useCache: true
-  
+
   distributions:
     - name: ubuntu
       upstream: "http://archive.ubuntu.com/ubuntu"
@@ -81,10 +81,10 @@ verification:
   hashVerification:
     enabled: true
     algorithms: ["sha256"]
-  
+
   sizeVerification:
     enabled: false  # 개발시 비활성화
-  
+
   onFailure:
     action: "warn"  # 차단하지 않고 경고만
     notify: false
@@ -99,7 +99,7 @@ metrics:
   path: "/metrics"
   auth:
     enabled: false
-  
+
   labels:
     instance: "proxynd-dev"
     environment: "development"
@@ -108,14 +108,14 @@ metrics:
 health:
   enabled: true
   path: "/healthz"
-  
+
   checks:
     diskUsage:
       enabled: false  # 개발시 디스크 체크 비활성화
-    
+
     memoryUsage:
       enabled: false  # 메모리 체크 비활성화
-    
+
     upstream:
       enabled: true
       timeout: 5s
@@ -123,27 +123,27 @@ health:
 # 성능 설정 (개발용)
 performance:
   workers: 1  # 단일 워커
-  
+
   connectionPool:
     maxIdleConns: 10
     maxIdleConnsPerHost: 2
     idleConnTimeout: 30s
-  
+
   compression:
     enabled: false  # 디버깅 편의성을 위해 비활성화
 
 # 디버그 설정
 debug:
   enabled: true
-  
+
   # 프로파일링 활성화
   pprof:
     enabled: true
     address: "localhost:6060"
-  
+
   # 요청 덤프
   requestDump:
     enabled: true
     path: "/tmp/proxynd-dumps"
-  
+
   verbose: true

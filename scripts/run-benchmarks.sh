@@ -58,19 +58,19 @@ run_benchmark() {
     local name="$1"
     local pattern="$2"
     local extra_flags="$3"
-    
+
     echo -e "${YELLOW}=== $name 벤치마크 실행 ===${NC}"
-    
+
     local output_file="$OUTPUT_DIR/benchmark_${name,,}_$TIMESTAMP.txt"
     local cmd="go test -v ./test/benchmark/... -bench=\"$pattern\" -run=^$ -benchtime=$BENCHMARK_TIME -count=$BENCHMARK_COUNT $extra_flags"
-    
+
     echo "명령어: $cmd"
     echo "출력 파일: $output_file"
     echo
-    
+
     if eval "$cmd" | tee "$output_file"; then
         echo -e "${GREEN}✅ $name 벤치마크 완료${NC}"
-        
+
         # 결과 요약 생성
         if command -v benchstat > /dev/null 2>&1; then
             echo -e "${BLUE}📊 결과 요약:${NC}"
@@ -88,17 +88,17 @@ run_with_profiling() {
     local name="$1"
     local pattern="$2"
     local profile_type="$3"
-    
+
     echo -e "${YELLOW}=== $name 프로파일링 ($profile_type) ===${NC}"
-    
+
     local profile_dir="$OUTPUT_DIR/profiles_$TIMESTAMP"
     mkdir -p "$profile_dir"
-    
+
     local profile_file="$profile_dir/${name,,}_${profile_type}.prof"
     local cmd="go test -v ./test/benchmark/... -bench=\"$pattern\" -run=^$ -benchtime=$BENCHMARK_TIME -${profile_type}profile=\"$profile_file\""
-    
+
     echo "프로파일 파일: $profile_file"
-    
+
     if eval "$cmd"; then
         echo -e "${GREEN}✅ $name 프로파일링 완료${NC}"
         echo "프로파일 분석: go tool pprof $profile_file"
@@ -224,14 +224,14 @@ else
     if [[ "$INCLUDE_MEMORY" == "true" ]]; then
         extra_flags="-benchmem"
     fi
-    
+
     run_benchmark "Main" "$BENCHMARK_PATTERN" "$extra_flags"
-    
+
     # 프로파일링 실행
     if [[ "$ENABLE_CPU_PROFILE" == "true" ]]; then
         run_with_profiling "Main" "$BENCHMARK_PATTERN" "cpu"
     fi
-    
+
     if [[ "$ENABLE_MEM_PROFILE" == "true" ]]; then
         run_with_profiling "Main" "$BENCHMARK_PATTERN" "mem"
     fi

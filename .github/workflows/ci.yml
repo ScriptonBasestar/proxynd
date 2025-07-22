@@ -143,7 +143,7 @@ jobs:
           go tool cover -func=reports/coverage/unit.out > coverage-summary.txt
           coverage=$(grep "total:" coverage-summary.txt | awk '{print $3}' | sed 's/%//' || echo "0")
           echo "Test coverage: ${coverage}%"
-          
+
           if (( $(echo "$coverage < $COVERAGE_THRESHOLD" | bc -l) )); then
             echo "❌ Coverage below threshold: ${coverage}% < ${COVERAGE_THRESHOLD}%"
             exit 1
@@ -216,12 +216,12 @@ jobs:
           VERSION="${GITHUB_REF_NAME}-${GITHUB_SHA::8}"
           BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           COMMIT_SHA=${GITHUB_SHA::8}
-          
+
           output_name=proxynd-${{ matrix.goos }}-${{ matrix.goarch }}
           if [ "${{ matrix.goos }}" = "windows" ]; then
             output_name="${output_name}.exe"
           fi
-          
+
           go build \
             -ldflags="-w -s -X main.Version=${VERSION} -X main.BuildTime=${BUILD_TIME} -X main.CommitSHA=${COMMIT_SHA}" \
             -trimpath \
@@ -237,12 +237,12 @@ jobs:
           VERSION="${GITHUB_REF_NAME}-${GITHUB_SHA::8}"
           BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
           COMMIT_SHA=${GITHUB_SHA::8}
-          
+
           output_name=proxyndctl-${{ matrix.goos }}-${{ matrix.goarch }}
           if [ "${{ matrix.goos }}" = "windows" ]; then
             output_name="${output_name}.exe"
           fi
-          
+
           go build \
             -ldflags="-w -s -X main.Version=${VERSION} -X main.BuildTime=${BUILD_TIME} -X main.CommitSHA=${COMMIT_SHA}" \
             -trimpath \

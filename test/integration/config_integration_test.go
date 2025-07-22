@@ -168,7 +168,7 @@ use_cache: true
 proxies:
   - name: "proxy1"
     url: "http://localhost:8080/proxy/npm2"
-  - name: "proxy2" 
+  - name: "proxy2"
     url: "http://localhost:8080/proxy/npm"
 `
 
@@ -464,7 +464,7 @@ proxies:
 `, env.MockUpstreams["npm"].URL)
 
 		mavenConfig := fmt.Sprintf(`
-path: "/maven"  
+path: "/maven"
 use_cache: true
 proxies:
   - name: "central-multi"

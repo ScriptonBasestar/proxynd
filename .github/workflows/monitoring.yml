@@ -58,7 +58,7 @@ jobs:
           # 성능 트렌드 분석 스크립트
           cat > analyze_performance.go << 'EOF'
           package main
-          
+
           import (
             "bufio"
             "fmt"
@@ -67,7 +67,7 @@ jobs:
             "strconv"
             "strings"
           )
-          
+
           func main() {
             file, err := os.Open("benchmark_results.txt")
             if err != nil {
@@ -75,22 +75,22 @@ jobs:
               return
             }
             defer file.Close()
-            
+
             scanner := bufio.NewScanner(file)
             benchRe := regexp.MustCompile(`^Benchmark(\w+)\s+(\d+)\s+([\d.]+)\s+(\w+/op)`)
-            
+
             fmt.Println("## 📊 Performance Benchmark Results")
             fmt.Println("")
             fmt.Println("| Benchmark | Iterations | ns/op | Status |")
             fmt.Println("|-----------|------------|-------|--------|")
-            
+
             for scanner.Scan() {
               line := scanner.Text()
               if matches := benchRe.FindStringSubmatch(line); matches != nil {
                 name := matches[1]
                 iterations := matches[2]
                 nsPerOp, _ := strconv.ParseFloat(matches[3], 64)
-                
+
                 status := "✅ Good"
                 if nsPerOp > 1000000 { // 1ms 이상
                   status = "⚠️ Slow"
@@ -98,13 +98,13 @@ jobs:
                 if nsPerOp > 10000000 { // 10ms 이상
                   status = "❌ Critical"
                 }
-                
+
                 fmt.Printf("| %s | %s | %.0f | %s |\n", name, iterations, nsPerOp, status)
               }
             }
           }
           EOF
-          
+
           go run analyze_performance.go > performance_summary.md
 
       - name: Upload benchmark results
@@ -132,7 +132,7 @@ jobs:
       - name: Run memory profiling
         run: |
           go test -memprofile=mem.prof -run=^$ -bench=. ./...
-          
+
           # 메모리 사용량 분석
           go tool pprof -text -alloc_space mem.prof > memory_analysis.txt
           go tool pprof -text -alloc_objects mem.prof > memory_objects.txt
@@ -181,7 +181,7 @@ jobs:
           ./proxynd &
           SERVER_PID=$!
           echo "SERVER_PID=$SERVER_PID" >> $GITHUB_ENV
-          
+
           # 서버 시작 대기
           for i in {1..30}; do
             if curl -s http://localhost:8080/health > /dev/null; then
@@ -233,7 +233,7 @@ jobs:
             check(healthResponse, {
               'health check status is 200': (r) => r.status === 200,
             }) || errorRate.add(1);
-            
+
             responseTime.add(healthResponse.timings.duration);
 
             // Metrics endpoint
@@ -245,7 +245,7 @@ jobs:
             sleep(1);
           }
           EOF
-          
+
           # 로드 테스트 실행
           duration="${{ github.event.inputs.benchmark_duration || '1m' }}"
           k6 run --duration $duration load-test.js --out json=load-test-results.json
@@ -255,14 +255,14 @@ jobs:
           # 로드 테스트 결과 분석
           cat > analyze_load_test.js << 'EOF'
           const fs = require('fs');
-          
+
           const data = fs.readFileSync('load-test-results.json', 'utf8');
           const lines = data.trim().split('\n');
-          
+
           let totalRequests = 0;
           let errors = 0;
           let responseTimes = [];
-          
+
           lines.forEach(line => {
             try {
               const metric = JSON.parse(line);
@@ -279,11 +279,11 @@ jobs:
               // Skip invalid JSON lines
             }
           });
-          
+
           const errorRate = totalRequests > 0 ? (errors / totalRequests * 100).toFixed(2) : 0;
-          const avgResponseTime = responseTimes.length > 0 ? 
+          const avgResponseTime = responseTimes.length > 0 ?
             (responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length).toFixed(2) : 0;
-          
+
           console.log(`## 🚀 Load Test Results`);
           console.log(``);
           console.log(`| Metric | Value |`);
@@ -293,7 +293,7 @@ jobs:
           console.log(`| Avg Response Time | ${avgResponseTime}ms |`);
           console.log(`| Status | ${errorRate < 1 && avgResponseTime < 500 ? '✅ Good' : '⚠️ Needs Attention'} |`);
           EOF
-          
+
           node analyze_load_test.js > load_test_summary.md
 
       - name: Stop server
@@ -321,7 +321,7 @@ jobs:
         run: |
           # 빌드 시 리소스 사용량 모니터링
           echo "Starting resource monitoring..."
-          
+
           # 시스템 정보 수집
           echo "## 💻 System Information" > resource_report.md
           echo "" >> resource_report.md
@@ -330,13 +330,13 @@ jobs:
           lscpu | head -10 >> resource_report.md
           echo "\`\`\`" >> resource_report.md
           echo "" >> resource_report.md
-          
+
           echo "### Memory Information:" >> resource_report.md
           echo "\`\`\`" >> resource_report.md
           free -h >> resource_report.md
           echo "\`\`\`" >> resource_report.md
           echo "" >> resource_report.md
-          
+
           echo "### Disk Information:" >> resource_report.md
           echo "\`\`\`" >> resource_report.md
           df -h >> resource_report.md
@@ -348,17 +348,17 @@ jobs:
           echo "" >> resource_report.md
           echo "## ⚡ Build Performance" >> resource_report.md
           echo "" >> resource_report.md
-          
+
           echo "### Build Times:" >> resource_report.md
           echo "| Target | Time |" >> resource_report.md
           echo "|--------|------|" >> resource_report.md
-          
+
           start_time=$(date +%s%N)
           go build -o proxynd main.go
           end_time=$(date +%s%N)
           build_time=$(echo "scale=3; ($end_time - $start_time) / 1000000000" | bc)
           echo "| ProxyND Server | ${build_time}s |" >> resource_report.md
-          
+
           start_time=$(date +%s%N)
           go build -o proxyndctl ./cmd/proxyndctl/main.go
           end_time=$(date +%s%N)
@@ -387,31 +387,31 @@ jobs:
           echo "" >> comprehensive_report.md
           echo "Generated: $(date)" >> comprehensive_report.md
           echo "" >> comprehensive_report.md
-          
+
           # 벤치마크 결과 추가
           if [ -f benchmark-results/performance_summary.md ]; then
             cat benchmark-results/performance_summary.md >> comprehensive_report.md
             echo "" >> comprehensive_report.md
           fi
-          
+
           # 메모리 프로파일 결과 추가
           if [ -f memory-profile/memory_report.md ]; then
             cat memory-profile/memory_report.md >> comprehensive_report.md
             echo "" >> comprehensive_report.md
           fi
-          
+
           # 로드 테스트 결과 추가
           if [ -f load-test-results/load_test_summary.md ]; then
             cat load-test-results/load_test_summary.md >> comprehensive_report.md
             echo "" >> comprehensive_report.md
           fi
-          
+
           # 리소스 사용량 추가
           if [ -f resource-report/resource_report.md ]; then
             cat resource-report/resource_report.md >> comprehensive_report.md
             echo "" >> comprehensive_report.md
           fi
-          
+
           echo "## 📈 Recommendations" >> comprehensive_report.md
           echo "" >> comprehensive_report.md
           echo "- Monitor response times regularly" >> comprehensive_report.md

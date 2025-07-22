@@ -237,8 +237,12 @@ func (cp *ConnectionPool) createHostPool(host string) *HostPool {
 			}
 
 			if tcpConn, ok := conn.(*net.TCPConn); ok {
-				_ = tcpConn.SetKeepAlive(true)
-				_ = tcpConn.SetKeepAlivePeriod(cp.config.KeepAliveTimeout)
+				if err := tcpConn.SetKeepAlive(true); err != nil {
+					cp.logger.Warn("Failed to set keep alive", logging.F("error", err))
+				}
+				if err := tcpConn.SetKeepAlivePeriod(cp.config.KeepAliveTimeout); err != nil {
+					cp.logger.Warn("Failed to set keep alive period", logging.F("error", err))
+				}
 			}
 
 			return conn, nil

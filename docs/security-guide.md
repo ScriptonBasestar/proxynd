@@ -195,7 +195,7 @@ authorization:
         permissions: ["read", "download"]
       readonly:
         permissions: ["read"]
-    
+
     assignments:
       - user: "admin@example.com"
         role: "admin"

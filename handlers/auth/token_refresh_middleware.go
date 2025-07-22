@@ -157,8 +157,14 @@ func performTokenRefresh(_ *fiber.Ctx, sess fiber.Map, userMap fiber.Map) error 
 	jwtService := jwt.NewJWTService(oauth2Config)
 
 	// 권한 동기화를 위한 OAuth2 토큰 확인
-	oauth2AccessToken, _ := userMap["oauth2_access_token"].(string)
-	providerName, _ := userMap["provider"].(string)
+	oauth2AccessToken, ok := userMap["oauth2_access_token"].(string)
+	if !ok {
+		oauth2AccessToken = ""
+	}
+	providerName, ok := userMap["provider"].(string)
+	if !ok {
+		providerName = ""
+	}
 
 	var newTokenPair *jwt.TokenPair
 	var err error
@@ -166,10 +172,18 @@ func performTokenRefresh(_ *fiber.Ctx, sess fiber.Map, userMap fiber.Map) error 
 	// OAuth2 토큰이 있고 권한 동기화가 필요한 경우
 	if oauth2AccessToken != "" && providerName != "" {
 		// 실시간 권한 동기화 포함 갱신 (구현 필요)
-		newTokenPair, err = jwtService.RefreshAccessToken(jwtRefreshToken.(string))
+		refreshTokenStr, refreshOk := jwtRefreshToken.(string)
+		if !refreshOk {
+			return fiber.NewError(fiber.StatusBadRequest, "Invalid refresh token type")
+		}
+		newTokenPair, err = jwtService.RefreshAccessToken(refreshTokenStr)
 	} else {
 		// 기본 갱신 (기존 권한 유지)
-		newTokenPair, err = jwtService.RefreshAccessToken(jwtRefreshToken.(string))
+		refreshTokenStr, refreshOk := jwtRefreshToken.(string)
+		if !refreshOk {
+			return fiber.NewError(fiber.StatusBadRequest, "Invalid refresh token type")
+		}
+		newTokenPair, err = jwtService.RefreshAccessToken(refreshTokenStr)
 	}
 
 	if err != nil {
@@ -198,7 +212,10 @@ func performTokenRefresh(_ *fiber.Ctx, sess fiber.Map, userMap fiber.Map) error 
 	sess["jwt_refresh_token"] = newTokenPair.RefreshToken
 
 	// 성공 로그
-	email, _ := newSessionData["email"].(string)
+	email, ok := newSessionData["email"].(string)
+	if !ok {
+		email = "unknown"
+	}
 	logging.GetLogger().Info("Token auto-refreshed",
 		logging.F("email", email),
 		logging.F("user_id", newAccessClaims.UserID),

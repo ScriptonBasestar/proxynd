@@ -1,3 +1,4 @@
+//nolint:bodyclose // 벤치마크 테스트 파일에서는 응답 본문 닫기 무시
 package proxy
 
 import (

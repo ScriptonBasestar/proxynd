@@ -16,10 +16,10 @@ import (
 // BenchmarkConfigLoading 설정 로딩 성능 벤치마크
 func BenchmarkConfigLoading(b *testing.B) {
 	tempDir := b.TempDir()
-	
+
 	// 테스트 설정 파일들 생성
 	createTestConfigFiles(b, tempDir)
-	
+
 	// 환경 변수 설정
 	originalConfigDir := os.Getenv("CONFIG_DIR")
 	defer func() {
@@ -30,9 +30,9 @@ func BenchmarkConfigLoading(b *testing.B) {
 		}
 	}()
 	os.Setenv("CONFIG_DIR", tempDir)
-	
+
 	configTypes := []string{"global", "apt", "maven", "npm", "docker", "pip", "yum", "apk"}
-	
+
 	for _, configType := range configTypes {
 		b.Run(fmt.Sprintf("Load_%s_config", configType), func(b *testing.B) {
 			ctx := context.Background()
@@ -40,10 +40,10 @@ func BenchmarkConfigLoading(b *testing.B) {
 			if err != nil {
 				b.Fatalf("Failed to create config service: %v", err)
 			}
-			
+
 			b.ReportAllocs()
 			b.ResetTimer()
-			
+
 			for i := 0; i < b.N; i++ {
 				switch configType {
 				case "global":
@@ -105,14 +105,14 @@ func BenchmarkConfigParsing(b *testing.B) {
 		{"Large_100proxies", 100, 10},
 		{"XLarge_1000proxies", 1000, 20},
 	}
-	
+
 	for _, size := range configSizes {
 		b.Run(fmt.Sprintf("Parse_%s", size.name), func(b *testing.B) {
 			tempDir := b.TempDir()
-			
+
 			// 대용량 설정 파일 생성
 			createLargeConfigFile(b, tempDir, size.proxies, size.mirrors)
-			
+
 			originalConfigDir := os.Getenv("CONFIG_DIR")
 			defer func() {
 				if originalConfigDir != "" {
@@ -122,16 +122,16 @@ func BenchmarkConfigParsing(b *testing.B) {
 				}
 			}()
 			os.Setenv("CONFIG_DIR", tempDir)
-			
+
 			ctx := context.Background()
 			configService, err := config.NewService(ctx, tempDir)
 			if err != nil {
 				b.Fatalf("Failed to create config service: %v", err)
 			}
-			
+
 			b.ReportAllocs()
 			b.ResetTimer()
-			
+
 			for i := 0; i < b.N; i++ {
 				_, err := configService.GetAptConfig(ctx)
 				if err != nil {
@@ -146,7 +146,7 @@ func BenchmarkConfigParsing(b *testing.B) {
 func BenchmarkConfigConcurrency(b *testing.B) {
 	tempDir := b.TempDir()
 	createTestConfigFiles(b, tempDir)
-	
+
 	originalConfigDir := os.Getenv("CONFIG_DIR")
 	defer func() {
 		if originalConfigDir != "" {
@@ -156,22 +156,22 @@ func BenchmarkConfigConcurrency(b *testing.B) {
 		}
 	}()
 	os.Setenv("CONFIG_DIR", tempDir)
-	
+
 	configService, err := config.NewService(ctx, tempDir)
 	if err != nil {
 		b.Fatalf("Failed to create config service: %v", err)
 	}
 	ctx := context.Background()
-	
+
 	b.Run("ConcurrentReads", func(b *testing.B) {
 		b.ReportAllocs()
 		b.ResetTimer()
-		
+
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
 				configTypes := []string{"apt", "maven", "npm"}
 				configType := configTypes[b.N%len(configTypes)]
-				
+
 				switch configType {
 				case "apt":
 					_, err := configService.GetAptConfig(ctx)
@@ -253,12 +253,12 @@ func BenchmarkConfigValidation(b *testing.B) {
 			},
 		},
 	}
-	
+
 	for _, testCase := range validationCases {
 		b.Run(fmt.Sprintf("Validate_%s", testCase.name), func(b *testing.B) {
 			b.ReportAllocs()
 			b.ResetTimer()
-			
+
 			for i := 0; i < b.N; i++ {
 				// 설정 검증 로직 (실제 구현에서는 validator 사용)
 				err := validateConfig(testCase.config)
@@ -274,7 +274,7 @@ func BenchmarkConfigValidation(b *testing.B) {
 func BenchmarkConfigHotReload(b *testing.B) {
 	tempDir := b.TempDir()
 	createTestConfigFiles(b, tempDir)
-	
+
 	originalConfigDir := os.Getenv("CONFIG_DIR")
 	defer func() {
 		if originalConfigDir != "" {
@@ -284,21 +284,21 @@ func BenchmarkConfigHotReload(b *testing.B) {
 		}
 	}()
 	os.Setenv("CONFIG_DIR", tempDir)
-	
+
 	configService, err := config.NewService(ctx, tempDir)
 	if err != nil {
 		b.Fatalf("Failed to create config service: %v", err)
 	}
 	ctx := context.Background()
-	
+
 	b.Run("HotReload", func(b *testing.B) {
 		b.ReportAllocs()
 		b.ResetTimer()
-		
+
 		for i := 0; i < b.N; i++ {
 			// 설정 파일 수정 시뮬레이션
 			modifyConfigFile(tempDir, i)
-			
+
 			// 리로드 수행
 			err := configService.Reload(ctx)
 			if err != nil {
@@ -311,13 +311,13 @@ func BenchmarkConfigHotReload(b *testing.B) {
 // BenchmarkConfigMemoryUsage 설정 메모리 사용량 벤치마크
 func BenchmarkConfigMemoryUsage(b *testing.B) {
 	tempDir := b.TempDir()
-	
+
 	memorySizes := []int{10, 100, 1000, 10000}
-	
+
 	for _, size := range memorySizes {
 		b.Run(fmt.Sprintf("Memory_%dproxies", size), func(b *testing.B) {
 			createLargeConfigFile(b, tempDir, size, 5)
-			
+
 			originalConfigDir := os.Getenv("CONFIG_DIR")
 			defer func() {
 				if originalConfigDir != "" {
@@ -327,10 +327,10 @@ func BenchmarkConfigMemoryUsage(b *testing.B) {
 				}
 			}()
 			os.Setenv("CONFIG_DIR", tempDir)
-			
+
 			b.ReportAllocs()
 			b.ResetTimer()
-			
+
 			var configs []interface{}
 			for i := 0; i < b.N; i++ {
 				configService, err := config.NewService(ctx, tempDir)
@@ -338,14 +338,14 @@ func BenchmarkConfigMemoryUsage(b *testing.B) {
 		b.Fatalf("Failed to create config service: %v", err)
 	}
 				ctx := context.Background()
-				
+
 				aptConfig, err := configService.GetAptConfig(ctx)
 				if err != nil {
 					b.Fatalf("Failed to load config: %v", err)
 				}
 				configs = append(configs, aptConfig)
 			}
-			
+
 			// 메모리 사용량 측정을 위해 configs 사용
 			_ = len(configs)
 		})
@@ -355,7 +355,7 @@ func BenchmarkConfigMemoryUsage(b *testing.B) {
 // createTestConfigFiles 테스트용 설정 파일들 생성
 func createTestConfigFiles(b *testing.B, tempDir string) {
 	b.Helper()
-	
+
 	// global.yaml
 	globalConfig := `
 server:
@@ -381,7 +381,7 @@ cache:
 	if err != nil {
 		b.Fatalf("Failed to create global config: %v", err)
 	}
-	
+
 	// apt-proxy.yaml
 	aptConfig := `
 proxies:
@@ -406,7 +406,7 @@ proxies:
 	if err != nil {
 		b.Fatalf("Failed to create apt config: %v", err)
 	}
-	
+
 	// maven-proxy.yaml
 	mavenConfig := `
 proxies:
@@ -423,7 +423,7 @@ proxies:
 	if err != nil {
 		b.Fatalf("Failed to create maven config: %v", err)
 	}
-	
+
 	// npm-proxy.yaml
 	npmConfig := `
 proxies:
@@ -445,9 +445,9 @@ proxies:
 // createLargeConfigFile 대용량 설정 파일 생성
 func createLargeConfigFile(b *testing.B, tempDir string, proxies, mirrors int) {
 	b.Helper()
-	
+
 	config := "proxies:\n"
-	
+
 	for i := 0; i < proxies; i++ {
 		config += fmt.Sprintf(`  proxy%d:
     name: "proxy%d"
@@ -459,14 +459,14 @@ func createLargeConfigFile(b *testing.B, tempDir string, proxies, mirrors int) {
       enabled: true
     mirrors:
 `, i, i, i%mirrors, i+1)
-		
+
 		for j := 0; j < mirrors; j++ {
 			config += fmt.Sprintf(`      - url: "http://mirror%d-%d.example.com/ubuntu"
         priority: %d
 `, i, j, j+1)
 		}
 	}
-	
+
 	err := os.WriteFile(filepath.Join(tempDir, "apt-proxy.yaml"), []byte(config), 0644)
 	if err != nil {
 		b.Fatalf("Failed to create large config: %v", err)
@@ -476,7 +476,7 @@ func createLargeConfigFile(b *testing.B, tempDir string, proxies, mirrors int) {
 // modifyConfigFile 설정 파일 수정 (핫 리로드 테스트용)
 func modifyConfigFile(tempDir string, iteration int) {
 	configPath := filepath.Join(tempDir, "apt-proxy.yaml")
-	
+
 	config := fmt.Sprintf(`
 proxies:
   ubuntu:
@@ -496,7 +496,7 @@ proxies:
       ttl: 1800
       enabled: true
 `, 3600+iteration, iteration, iteration, iteration)
-	
+
 	os.WriteFile(configPath, []byte(config), 0644)
 }
 

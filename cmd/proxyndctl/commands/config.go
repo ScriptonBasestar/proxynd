@@ -177,9 +177,9 @@ func runConfigValidate(detailed, _ bool) error {
 	// 결과 출력
 	outputFormat := getOutputFormat()
 	switch outputFormat {
-	case formatJSON:
+	case outputFormatJSON:
 		return outputJSON(result)
-	case formatYAML:
+	case outputFormatYAML:
 		return outputYAML(result)
 	default:
 		return outputConfigValidationTable(result, detailed)
@@ -211,9 +211,9 @@ func runConfigShow(proxyType string, showSources, showEnv bool) error {
 	// 결과 출력
 	outputFormat := getOutputFormat()
 	switch outputFormat {
-	case formatJSON:
+	case outputFormatJSON:
 		return outputJSON(result)
-	case formatYAML:
+	case outputFormatYAML:
 		return outputYAML(result)
 	default:
 		return outputConfigShowTable(result, proxyType, showSources, showEnv)

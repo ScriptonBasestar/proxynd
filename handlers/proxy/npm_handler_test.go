@@ -281,4 +281,3 @@ func BenchmarkNpmProxy_ContentType(b *testing.B) {
 		}
 	}
 }
-

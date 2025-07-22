@@ -3,6 +3,7 @@ package integration
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -83,18 +84,24 @@ func (env *IntegrationTestEnvironment) setupMockUpstreams(_ *testing.T) {
 		case "/express":
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			_, _ = w.Write([]byte(`{
+			if _, err := w.Write([]byte(`{
 				"name": "express",
 				"version": "4.18.2",
 				"description": "Fast, unopinionated, minimalist web framework"
-			}`))
+			}`)); err != nil {
+				log.Printf("Failed to write NPM response: %v", err)
+			}
 		case "/express/-/express-4.18.2.tgz":
 			w.Header().Set("Content-Type", "application/octet-stream")
 			w.WriteHeader(http.StatusOK)
-			_, _ = w.Write([]byte("mock express tarball content"))
+			if _, err := w.Write([]byte("mock express tarball content")); err != nil {
+				log.Printf("Failed to write tarball content: %v", err)
+			}
 		default:
 			w.WriteHeader(http.StatusNotFound)
-			_, _ = w.Write([]byte(`{"error": "Not Found"}`))
+			if _, err := w.Write([]byte(`{"error": "Not Found"}`)); err != nil {
+				log.Printf("Failed to write error response: %v", err)
+			}
 		}
 	}))
 	env.MockUpstreams["npm"] = npmServer
@@ -106,19 +113,25 @@ func (env *IntegrationTestEnvironment) setupMockUpstreams(_ *testing.T) {
 		case "/junit/junit/4.13.2/junit-4.13.2.pom":
 			w.Header().Set("Content-Type", "application/xml")
 			w.WriteHeader(http.StatusOK)
-			_, _ = w.Write([]byte(`<?xml version="1.0" encoding="UTF-8"?>
+			if _, err := w.Write([]byte(`<?xml version="1.0" encoding="UTF-8"?>
 				<project xmlns="http://maven.apache.org/POM/4.0.0">
 					<groupId>junit</groupId>
 					<artifactId>junit</artifactId>
 					<version>4.13.2</version>
-				</project>`))
+				</project>`)); err != nil {
+				log.Printf("Failed to write Maven POM: %v", err)
+			}
 		case "/junit/junit/4.13.2/junit-4.13.2.jar":
 			w.Header().Set("Content-Type", "application/java-archive")
 			w.WriteHeader(http.StatusOK)
-			_, _ = w.Write([]byte("mock junit jar content"))
+			if _, err := w.Write([]byte("mock junit jar content")); err != nil {
+				log.Printf("Failed to write JAR content: %v", err)
+			}
 		default:
 			w.WriteHeader(http.StatusNotFound)
-			_, _ = w.Write([]byte("Not Found"))
+			if _, err := w.Write([]byte("Not Found")); err != nil {
+				log.Printf("Failed to write error response: %v", err)
+			}
 		}
 	}))
 	env.MockUpstreams["maven"] = mavenServer
@@ -130,22 +143,28 @@ func (env *IntegrationTestEnvironment) setupMockUpstreams(_ *testing.T) {
 		case "/ubuntu/dists/jammy/Release":
 			w.Header().Set("Content-Type", "text/plain")
 			w.WriteHeader(http.StatusOK)
-			_, _ = w.Write([]byte(`Origin: Ubuntu
+			if _, err := w.Write([]byte(`Origin: Ubuntu
 Label: Ubuntu
 Suite: jammy
 Version: 22.04
-Codename: jammy`))
+Codename: jammy`)); err != nil {
+				log.Printf("Failed to write APT Release: %v", err)
+			}
 		case "/ubuntu/dists/jammy/main/binary-amd64/Packages":
 			w.Header().Set("Content-Type", "text/plain")
 			w.WriteHeader(http.StatusOK)
-			_, _ = w.Write([]byte(`Package: nginx
+			if _, err := w.Write([]byte(`Package: nginx
 Version: 1.18.0-6ubuntu14.4
 Architecture: amd64
 Maintainer: Ubuntu Developers
-Description: small, powerful, scalable web/proxy server`))
+Description: small, powerful, scalable web/proxy server`)); err != nil {
+				log.Printf("Failed to write APT Packages: %v", err)
+			}
 		default:
 			w.WriteHeader(http.StatusNotFound)
-			_, _ = w.Write([]byte("Not Found"))
+			if _, err := w.Write([]byte("Not Found")); err != nil {
+				log.Printf("Failed to write error response: %v", err)
+			}
 		}
 	}))
 	env.MockUpstreams["apt"] = aptServer

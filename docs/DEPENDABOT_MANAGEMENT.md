@@ -8,7 +8,7 @@ ProxyND 프로젝트는 Dependabot을 사용하여 의존성 업데이트를 자
 
 ### GitHub Actions 자동 정리
 - **일정**: 매주 일요일 오전 2시 (UTC+9)
-- **조건**: 
+- **조건**:
   - 메인 브랜치에 병합된 브랜치
   - 30일 이상 오래된 브랜치
 - **워크플로우**: `.github/workflows/cleanup.yml`

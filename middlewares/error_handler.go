@@ -54,18 +54,25 @@ func ErrorHandler() fiber.Handler {
 			traceID = unknownTraceID
 		}
 
+		// TraceID 안전 변환
+		traceIDStr, ok := traceID.(string)
+		if !ok {
+			//nolint:goconst // unknownTraceID 상수보다 직접 문자열이 더 명확
+			traceIDStr = "unknown"
+		}
+
 		// 도메인 에러 처리
 		if domainErr, ok := err.(*errors.DomainError); ok {
-			return handler.handleDomainError(c, domainErr, traceID.(string))
+			return handler.handleDomainError(c, domainErr, traceIDStr)
 		}
 
 		// Fiber 에러 처리
 		if fiberErr, ok := err.(*fiber.Error); ok {
-			return handler.handleFiberError(c, fiberErr, traceID.(string))
+			return handler.handleFiberError(c, fiberErr, traceIDStr)
 		}
 
 		// 기본 에러 처리
-		return handler.handleGenericError(c, err, traceID.(string))
+		return handler.handleGenericError(c, err, traceIDStr)
 	}
 }
 

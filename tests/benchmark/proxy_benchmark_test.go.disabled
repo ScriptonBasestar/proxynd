@@ -27,9 +27,9 @@ type BenchmarkSetup struct {
 // setupBenchmarkTest 벤치마크 테스트 환경 설정
 func setupBenchmarkTest(b *testing.B, proxyType string) *BenchmarkSetup {
 	b.Helper()
-	
+
 	tempDir := b.TempDir()
-	
+
 	// Mock upstream 서버 설정
 	upstreamServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// 다양한 크기의 응답 시뮬레이션
@@ -50,7 +50,7 @@ func setupBenchmarkTest(b *testing.B, proxyType string) *BenchmarkSetup {
 			w.WriteHeader(http.StatusNotFound)
 		}
 	}))
-	
+
 	// 캐시 매니저 설정
 	cacheBackend, err := cache.NewFileSystemBackendWithConfig(cache.FileSystemConfig{
 		Path: filepath.Join(tempDir, "cache"),
@@ -59,17 +59,17 @@ func setupBenchmarkTest(b *testing.B, proxyType string) *BenchmarkSetup {
 		b.Fatalf("Failed to create cache backend: %v", err)
 	}
 	cacheManager := cache.NewManager(cacheBackend)
-	
+
 	// 업스트림 클라이언트 설정
 	upstreamClient := adapters.NewUpstreamClient(configs.UpstreamConfig{
 		Timeout:    30,
 		MaxRetries: 3,
 		UserAgent:  "ProxyND-Benchmark/1.0",
 	})
-	
+
 	// 캐시 어댑터 설정
 	cacheAdapter := adapters.NewCacheAdapter(cacheManager)
-	
+
 	// 설정 서비스 설정
 	var proxyConfig interface{}
 	switch proxyType {
@@ -119,15 +119,15 @@ func setupBenchmarkTest(b *testing.B, proxyType string) *BenchmarkSetup {
 			},
 		}
 	}
-	
+
 	configService := config.NewMockService(proxyConfig)
-	
+
 	// 프록시 서비스 생성
 	proxyService, err := proxy.NewService(proxyType, configService, cacheAdapter, upstreamClient)
 	if err != nil {
 		b.Fatalf("Failed to create proxy service: %v", err)
 	}
-	
+
 	return &BenchmarkSetup{
 		tempDir:        tempDir,
 		configService:  configService,
@@ -141,17 +141,17 @@ func setupBenchmarkTest(b *testing.B, proxyType string) *BenchmarkSetup {
 func BenchmarkProxyRequest_SmallPackage(b *testing.B) {
 	setup := setupBenchmarkTest(b, "npm")
 	defer setup.upstreamServer.Close()
-	
+
 	ctx := context.Background()
 	req := proxy.ProxyRequest{
 		Method:  "GET",
 		Path:    "/small-package",
 		Headers: make(map[string]string),
 	}
-	
+
 	b.ResetTimer()
 	b.ReportAllocs()
-	
+
 	for i := 0; i < b.N; i++ {
 		_, err := setup.proxyService.HandleRequest(ctx, req)
 		if err != nil {
@@ -164,17 +164,17 @@ func BenchmarkProxyRequest_SmallPackage(b *testing.B) {
 func BenchmarkProxyRequest_MediumPackage(b *testing.B) {
 	setup := setupBenchmarkTest(b, "npm")
 	defer setup.upstreamServer.Close()
-	
+
 	ctx := context.Background()
 	req := proxy.ProxyRequest{
 		Method:  "GET",
 		Path:    "/medium-package",
 		Headers: make(map[string]string),
 	}
-	
+
 	b.ResetTimer()
 	b.ReportAllocs()
-	
+
 	for i := 0; i < b.N; i++ {
 		_, err := setup.proxyService.HandleRequest(ctx, req)
 		if err != nil {
@@ -187,17 +187,17 @@ func BenchmarkProxyRequest_MediumPackage(b *testing.B) {
 func BenchmarkProxyRequest_LargePackage(b *testing.B) {
 	setup := setupBenchmarkTest(b, "npm")
 	defer setup.upstreamServer.Close()
-	
+
 	ctx := context.Background()
 	req := proxy.ProxyRequest{
 		Method:  "GET",
 		Path:    "/large-package",
 		Headers: make(map[string]string),
 	}
-	
+
 	b.ResetTimer()
 	b.ReportAllocs()
-	
+
 	for i := 0; i < b.N; i++ {
 		_, err := setup.proxyService.HandleRequest(ctx, req)
 		if err != nil {
@@ -210,23 +210,23 @@ func BenchmarkProxyRequest_LargePackage(b *testing.B) {
 func BenchmarkProxyRequest_CachedResponse(b *testing.B) {
 	setup := setupBenchmarkTest(b, "npm")
 	defer setup.upstreamServer.Close()
-	
+
 	ctx := context.Background()
 	req := proxy.ProxyRequest{
 		Method:  "GET",
 		Path:    "/metadata",
 		Headers: make(map[string]string),
 	}
-	
+
 	// 캐시 워밍업
 	_, err := setup.proxyService.HandleRequest(ctx, req)
 	if err != nil {
 		b.Fatalf("Cache warmup failed: %v", err)
 	}
-	
+
 	b.ResetTimer()
 	b.ReportAllocs()
-	
+
 	for i := 0; i < b.N; i++ {
 		_, err := setup.proxyService.HandleRequest(ctx, req)
 		if err != nil {
@@ -239,17 +239,17 @@ func BenchmarkProxyRequest_CachedResponse(b *testing.B) {
 func BenchmarkProxyRequest_ConcurrentRequests(b *testing.B) {
 	setup := setupBenchmarkTest(b, "npm")
 	defer setup.upstreamServer.Close()
-	
+
 	ctx := context.Background()
 	req := proxy.ProxyRequest{
 		Method:  "GET",
 		Path:    "/small-package",
 		Headers: make(map[string]string),
 	}
-	
+
 	b.ResetTimer()
 	b.ReportAllocs()
-	
+
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			_, err := setup.proxyService.HandleRequest(ctx, req)
@@ -264,17 +264,17 @@ func BenchmarkProxyRequest_ConcurrentRequests(b *testing.B) {
 func BenchmarkProxyRequest_APT(b *testing.B) {
 	setup := setupBenchmarkTest(b, "apt")
 	defer setup.upstreamServer.Close()
-	
+
 	ctx := context.Background()
 	req := proxy.ProxyRequest{
 		Method:  "GET",
 		Path:    "/dists/focal/Release",
 		Headers: make(map[string]string),
 	}
-	
+
 	b.ResetTimer()
 	b.ReportAllocs()
-	
+
 	for i := 0; i < b.N; i++ {
 		_, err := setup.proxyService.HandleRequest(ctx, req)
 		if err != nil {
@@ -287,17 +287,17 @@ func BenchmarkProxyRequest_APT(b *testing.B) {
 func BenchmarkProxyRequest_Maven(b *testing.B) {
 	setup := setupBenchmarkTest(b, "maven")
 	defer setup.upstreamServer.Close()
-	
+
 	ctx := context.Background()
 	req := proxy.ProxyRequest{
 		Method:  "GET",
 		Path:    "/org/springframework/spring-core/5.3.21/spring-core-5.3.21.jar",
 		Headers: make(map[string]string),
 	}
-	
+
 	b.ResetTimer()
 	b.ReportAllocs()
-	
+
 	for i := 0; i < b.N; i++ {
 		_, err := setup.proxyService.HandleRequest(ctx, req)
 		if err != nil {
@@ -316,9 +316,9 @@ func BenchmarkCacheOperationsSimple(b *testing.B) {
 		b.Fatalf("Failed to create cache backend: %v", err)
 	}
 	cacheManager := cache.NewManager(cacheBackend)
-	
+
 	testData := make([]byte, 1024) // 1KB 테스트 데이터
-	
+
 	b.Run("Put", func(b *testing.B) {
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
@@ -329,13 +329,13 @@ func BenchmarkCacheOperationsSimple(b *testing.B) {
 			}
 		}
 	})
-	
+
 	// 캐시에 데이터 준비
 	for i := 0; i < 100; i++ {
 		key := fmt.Sprintf("bench-key-%d", i)
 		cacheManager.Put(key, testData, 3600)
 	}
-	
+
 	b.Run("Get", func(b *testing.B) {
 		b.ReportAllocs()
 		for i := 0; i < b.N; i++ {
@@ -353,17 +353,17 @@ func BenchmarkCacheOperationsSimple(b *testing.B) {
 func BenchmarkMemoryUsage(b *testing.B) {
 	setup := setupBenchmarkTest(b, "npm")
 	defer setup.upstreamServer.Close()
-	
+
 	ctx := context.Background()
 	req := proxy.ProxyRequest{
 		Method:  "GET",
 		Path:    "/medium-package",
 		Headers: make(map[string]string),
 	}
-	
+
 	b.ResetTimer()
 	b.ReportAllocs()
-	
+
 	for i := 0; i < b.N; i++ {
 		_, err := setup.proxyService.HandleRequest(ctx, req)
 		if err != nil {

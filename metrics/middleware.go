@@ -207,7 +207,7 @@ func updateVerificationMetrics(c *fiber.Ctx, metrics *Metrics, registryType stri
 	// 패키지 검증 수행 여부
 	if verified := c.Locals("packageVerified"); verified != nil {
 		result := "success"
-		if !verified.(bool) {
+		if verifiedBool, ok := verified.(bool); ok && !verifiedBool {
 			result = resultFailure
 		}
 

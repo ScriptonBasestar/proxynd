@@ -26,9 +26,9 @@ mkdir -p $STORAGE_DIR
 run_integration_test() {
     local test_name=$1
     local test_path=$2
-    
+
     echo -e "\n${GREEN}Running integration test: ${test_name}${NC}"
-    
+
     if go test -v -timeout 30s -run "$test_name" "$test_path" -count=1; then
         echo -e "${GREEN}✓ ${test_name} passed${NC}"
         return 0

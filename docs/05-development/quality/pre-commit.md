@@ -161,7 +161,7 @@ export PATH="$HOME/.local/bin:$PATH"
 
 ## Configuration
 
-The `.pre-commit-config.yaml` file controls which hooks run. 
+The `.pre-commit-config.yaml` file controls which hooks run.
 
 ### Adding New Hooks
 

@@ -2,6 +2,7 @@ package routers
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -144,7 +145,9 @@ func getCacheList(c *fiber.Ctx) error {
 		})
 	}
 
-	_ = globalConfig.ReadConfig()
+	if err := globalConfig.ReadConfig(); err != nil {
+		log.Printf("Warning: Failed to read global config: %v", err)
+	}
 	// storageDir := getStorageDir(globalConfig) // 추후 캐시 스캔에 사용
 
 	// 캐시 항목 스캔 (간단한 구현)
@@ -179,7 +182,9 @@ func getCacheSize(c *fiber.Ctx) error {
 		})
 	}
 
-	_ = globalConfig.ReadConfig()
+	if err := globalConfig.ReadConfig(); err != nil {
+		log.Printf("Warning: Failed to read global config: %v", err)
+	}
 	storageDir := getStorageDir(globalConfig)
 
 	// 각 프록시 타입별 크기 계산
@@ -211,7 +216,9 @@ func getCacheSize(c *fiber.Ctx) error {
 			aptConfig := configs.AptProxyConfig{}
 			enabled = aptConfig.ConfigExists()
 			if enabled {
-				_ = aptConfig.ReadConfig()
+				if err := aptConfig.ReadConfig(); err != nil {
+					log.Printf("Warning: Failed to read APT config: %v", err)
+				}
 				configPath = "apt-proxy.yaml"
 				proxyCount = len(aptConfig.Proxies)
 			}
@@ -219,7 +226,9 @@ func getCacheSize(c *fiber.Ctx) error {
 			npmConfig := configs.NpmProxyConfig{}
 			enabled = npmConfig.ConfigExists()
 			if enabled {
-				_ = npmConfig.ReadConfig()
+				if err := npmConfig.ReadConfig(); err != nil {
+					log.Printf("Warning: Failed to read NPM config: %v", err)
+				}
 				configPath = "npm-proxy.yaml"
 				proxyCount = len(npmConfig.Proxies)
 			}
@@ -227,7 +236,9 @@ func getCacheSize(c *fiber.Ctx) error {
 			mavenConfig := configs.MavenProxyConfig{}
 			enabled = mavenConfig.ConfigExists()
 			if enabled {
-				_ = mavenConfig.ReadConfig()
+				if err := mavenConfig.ReadConfig(); err != nil {
+					log.Printf("Warning: Failed to read Maven config: %v", err)
+				}
 				configPath = "maven-proxy.yaml"
 				proxyCount = len(mavenConfig.Proxies)
 			}
@@ -288,7 +299,9 @@ func clearAllCache(c *fiber.Ctx) error {
 		})
 	}
 
-	_ = globalConfig.ReadConfig()
+	if err := globalConfig.ReadConfig(); err != nil {
+		log.Printf("Warning: Failed to read global config: %v", err)
+	}
 	storageDir := getStorageDir(globalConfig)
 
 	// 캐시 디렉토리 정리
@@ -369,7 +382,9 @@ func deleteCacheItem(c *fiber.Ctx) error {
 		})
 	}
 
-	_ = globalConfig.ReadConfig()
+	if err := globalConfig.ReadConfig(); err != nil {
+		log.Printf("Warning: Failed to read global config: %v", err)
+	}
 	storageDir := getStorageDir(globalConfig)
 
 	// 안전한 경로 조합
@@ -448,7 +463,9 @@ func getTTLPolicy(c *fiber.Ctx) error {
 		})
 	}
 
-	_ = globalConfig.ReadConfig()
+	if err := globalConfig.ReadConfig(); err != nil {
+		log.Printf("Warning: Failed to read global config: %v", err)
+	}
 	cache := globalConfig.Cache
 
 	// 설정되지 않은 값들을 기본값으로 설정

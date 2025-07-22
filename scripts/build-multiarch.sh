@@ -138,7 +138,7 @@ eval $BUILD_CMD .
 
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}빌드 성공!${NC}"
-    
+
     # 이미지 정보 출력
     if [ "$PUSH" = true ]; then
         echo -e "${GREEN}이미지가 레지스트리에 푸시되었습니다.${NC}"

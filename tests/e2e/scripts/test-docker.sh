@@ -91,7 +91,7 @@ fi
 
 # 실제 Docker 클라이언트 테스트 (주석 처리 - Docker 데몬 필요)
 # echo "🐳 Testing with Docker client..."
-# 
+#
 # # 레지스트리 미러 설정
 # mkdir -p /etc/docker
 # cat > /etc/docker/daemon.json << EOF
@@ -99,11 +99,11 @@ fi
 #   "registry-mirrors": ["${PROXY_URL}"]
 # }
 # EOF
-# 
+#
 # # Docker 데몬 재시작
 # if systemctl restart docker 2>/dev/null || service docker restart 2>/dev/null; then
 #     echo "✅ Docker daemon restarted with proxy mirror"
-#     
+#
 #     # 이미지 pull 테스트
 #     if docker pull hello-world; then
 #         echo "✅ Docker pull through proxy successful"

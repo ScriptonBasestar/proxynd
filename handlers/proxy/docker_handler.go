@@ -31,11 +31,19 @@ func DockerProxy(c *fiber.Ctx) error {
 	// 설정 읽기
 	storageDir := helpers.GetStorageDir()
 	config := configs.DockerProxyConfig{}
-	_ = config.ReadConfig()
+	if err := config.ReadConfig(); err != nil {
+		return c.Status(fiber.StatusInternalServerError).SendString("Failed to read Docker config")
+	}
 
 	// 미들웨어에서 전달된 캐시 정보 확인
-	cacheHit, _ := c.Locals("cache_hit").(bool)
-	cachePath, _ := c.Locals("cache_path").(string)
+	cacheHit, ok := c.Locals("cache_hit").(bool)
+	if !ok {
+		cacheHit = false
+	}
+	cachePath, ok := c.Locals("cache_path").(string)
+	if !ok {
+		cachePath = ""
+	}
 
 	var filefullpath string
 
@@ -61,7 +69,9 @@ func DockerProxy(c *fiber.Ctx) error {
 	// 캐시가 히트하지 않았을 때만 다운로드
 	if !cacheHit {
 		dirpath := filepath.Dir(filefullpath)
-		_ = os.MkdirAll(dirpath, 0766)
+		if err := os.MkdirAll(dirpath, 0766); err != nil {
+			return c.Status(fiber.StatusInternalServerError).SendString("Failed to create directory")
+		}
 
 		// Docker 레지스트리에서 데이터 가져오기
 		var responseContent []byte
@@ -96,7 +106,11 @@ func DockerProxy(c *fiber.Ctx) error {
 			}
 
 			if resp.StatusCode == http.StatusOK {
-				bytes, _ := io.ReadAll(resp.Body)
+				bytes, err := io.ReadAll(resp.Body)
+				if err != nil {
+					_ = resp.Body.Close()
+					continue
+				}
 				headers = resp.Header
 
 				// 파일 저장
@@ -109,7 +123,9 @@ func DockerProxy(c *fiber.Ctx) error {
 
 				// 헤더 정보도 저장 (매니페스트의 경우)
 				if isManifest {
-					_ = saveDockerHeaders(filefullpath+".headers", headers)
+					if err := saveDockerHeaders(filefullpath+".headers", headers); err != nil {
+						log.Printf("Warning: Failed to save Docker headers: %v", err)
+					}
 				}
 
 				responseContent = bytes

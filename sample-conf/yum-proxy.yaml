@@ -12,27 +12,27 @@ proxies:
   # CentOS 7
   - name: centos7
     url: http://mirror.centos.org/centos/7
-  
+
   # CentOS 8 Stream
   - name: centos8-stream
     url: http://mirror.centos.org/centos/8-stream
-  
+
   # Rocky Linux 8
   - name: rocky8
     url: https://download.rockylinux.org/pub/rocky/8
-  
+
   # Rocky Linux 9
   - name: rocky9
     url: https://download.rockylinux.org/pub/rocky/9
-  
+
   # EPEL (Extra Packages for Enterprise Linux)
   - name: epel
     url: https://download.fedoraproject.org/pub/epel
-  
+
   # 카카오 미러 (한국)
   - name: kakao
     url: https://mirror.kakao.com/centos
-  
+
   # 네이버 미러 (한국)
   - name: naver
     url: https://mirror.navercorp.com/centos

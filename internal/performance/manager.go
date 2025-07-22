@@ -404,9 +404,11 @@ func (m *Manager) GetHealthStatus() map[string]interface{} {
 	if m.cacheOptimizer != nil {
 		cacheMetrics := m.cacheOptimizer.GetCurrentMetrics()
 		cacheHealthy := cacheMetrics.HitRate > 0.5
-		status["components"].(map[string]interface{})["cache_optimizer"] = map[string]interface{}{
-			"status":   getHealthStatusString(cacheHealthy),
-			"hit_rate": cacheMetrics.HitRate,
+		if components, ok := status["components"].(map[string]interface{}); ok {
+			components["cache_optimizer"] = map[string]interface{}{
+				"status":   getHealthStatusString(cacheHealthy),
+				"hit_rate": cacheMetrics.HitRate,
+			}
 		}
 		if !cacheHealthy {
 			overallHealthy = false
@@ -417,10 +419,12 @@ func (m *Manager) GetHealthStatus() map[string]interface{} {
 	if m.connectionPool != nil {
 		poolStats := m.connectionPool.GetStats()
 		poolHealthy := poolStats.ConnectionFailures < 10
-		status["components"].(map[string]interface{})["connection_pool"] = map[string]interface{}{
-			"status":             getHealthStatusString(poolHealthy),
-			"active_connections": poolStats.ActiveConnections,
-			"failures":           poolStats.ConnectionFailures,
+		if components, ok := status["components"].(map[string]interface{}); ok {
+			components["connection_pool"] = map[string]interface{}{
+				"status":             getHealthStatusString(poolHealthy),
+				"active_connections": poolStats.ActiveConnections,
+				"failures":           poolStats.ConnectionFailures,
+			}
 		}
 		if !poolHealthy {
 			overallHealthy = false
@@ -431,7 +435,9 @@ func (m *Manager) GetHealthStatus() map[string]interface{} {
 	if m.resourceMonitor != nil {
 		resourceHealthStatus := m.resourceMonitor.GetHealthStatus()
 		resourceHealthy := resourceHealthStatus["overall_status"] == HealthStatusHealthy
-		status["components"].(map[string]interface{})["resource_monitor"] = resourceHealthStatus
+		if components, ok := status["components"].(map[string]interface{}); ok {
+			components["resource_monitor"] = resourceHealthStatus
+		}
 		if !resourceHealthy {
 			overallHealthy = false
 		}
@@ -441,10 +447,12 @@ func (m *Manager) GetHealthStatus() map[string]interface{} {
 	if m.requestOptimizer != nil {
 		reqStats := m.requestOptimizer.GetStats()
 		reqHealthy := reqStats.OptimizationErrors < 10
-		status["components"].(map[string]interface{})["request_optimizer"] = map[string]interface{}{
-			"status":              getHealthStatusString(reqHealthy),
-			"total_requests":      reqStats.TotalRequests,
-			"optimization_errors": reqStats.OptimizationErrors,
+		if components, ok := status["components"].(map[string]interface{}); ok {
+			components["request_optimizer"] = map[string]interface{}{
+				"status":              getHealthStatusString(reqHealthy),
+				"total_requests":      reqStats.TotalRequests,
+				"optimization_errors": reqStats.OptimizationErrors,
+			}
 		}
 		if !reqHealthy {
 			overallHealthy = false
@@ -455,7 +463,9 @@ func (m *Manager) GetHealthStatus() map[string]interface{} {
 	if m.middleware != nil {
 		middlewareHealthStatus := m.middleware.GetHealthStatus()
 		middlewareHealthy := middlewareHealthStatus["overall_status"] == HealthStatusHealthy
-		status["components"].(map[string]interface{})["middleware"] = middlewareHealthStatus
+		if components, ok := status["components"].(map[string]interface{}); ok {
+			components["middleware"] = middlewareHealthStatus
+		}
 		if !middlewareHealthy {
 			overallHealthy = false
 		}

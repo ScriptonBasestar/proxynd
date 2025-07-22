@@ -202,7 +202,10 @@ func runCacheClear(proxyType string, force, confirm bool) error {
 
 		fmt.Printf("%s (y/N): ", message)
 		var response string
-		_, _ = fmt.Scanln(&response)
+		if _, err := fmt.Scanln(&response); err != nil {
+			fmt.Printf("입력을 읽는 중 오류 발생: %v\n", err)
+			return err
+		}
 		if strings.ToLower(response) != "y" && strings.ToLower(response) != "yes" {
 			fmt.Println("캐시 정리가 취소되었습니다.")
 			return nil

@@ -178,7 +178,9 @@ func (pm *PluginMiddleware) ListHandlersHandler() fiber.Handler {
 					if handler.SupportsMode(MirrorMode) {
 						supportedModes = append(supportedModes, string(MirrorMode))
 					}
-					handlerDetails[packageType].(map[string]interface{})["supported_modes"] = supportedModes
+					if details, ok := handlerDetails[packageType].(map[string]interface{}); ok {
+						details["supported_modes"] = supportedModes
+					}
 				}
 			}
 		}

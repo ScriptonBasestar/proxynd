@@ -2,6 +2,7 @@ package routers
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -158,7 +159,9 @@ func validateConfig(c *fiber.Ctx) error {
 			Message: "글로벌 설정 파일이 존재하지 않습니다",
 		})
 	} else {
-		_ = globalConfig.ReadConfig()
+		if err := globalConfig.ReadConfig(); err != nil {
+			log.Printf("Warning: Failed to read global config: %v", err)
+		}
 	}
 
 	// 각 프록시 타입별 설정 검증
@@ -167,7 +170,9 @@ func validateConfig(c *fiber.Ctx) error {
 			config := configs.AptProxyConfig{}
 			exists := config.ConfigExists()
 			if exists {
-				_ = config.ReadConfig()
+				if err := config.ReadConfig(); err != nil {
+					log.Printf("Warning: Failed to read config: %v", err)
+				}
 				return exists, config, len(config.Proxies)
 			}
 			return exists, nil, 0
@@ -176,7 +181,9 @@ func validateConfig(c *fiber.Ctx) error {
 			config := configs.NpmProxyConfig{}
 			exists := config.ConfigExists()
 			if exists {
-				_ = config.ReadConfig()
+				if err := config.ReadConfig(); err != nil {
+					log.Printf("Warning: Failed to read config: %v", err)
+				}
 				return exists, config, len(config.Proxies)
 			}
 			return exists, nil, 0
@@ -185,7 +192,9 @@ func validateConfig(c *fiber.Ctx) error {
 			config := configs.MavenProxyConfig{}
 			exists := config.ConfigExists()
 			if exists {
-				_ = config.ReadConfig()
+				if err := config.ReadConfig(); err != nil {
+					log.Printf("Warning: Failed to read config: %v", err)
+				}
 				return exists, config, len(config.Proxies)
 			}
 			return exists, nil, 0
@@ -194,7 +203,9 @@ func validateConfig(c *fiber.Ctx) error {
 			config := configs.PipProxyConfig{}
 			exists := config.ConfigExists()
 			if exists {
-				_ = config.ReadConfig()
+				if err := config.ReadConfig(); err != nil {
+					log.Printf("Warning: Failed to read config: %v", err)
+				}
 				return exists, config, len(config.Proxies)
 			}
 			return exists, nil, 0
@@ -203,7 +214,9 @@ func validateConfig(c *fiber.Ctx) error {
 			config := configs.DockerProxyConfig{}
 			exists := config.ConfigExists()
 			if exists {
-				_ = config.ReadConfig()
+				if err := config.ReadConfig(); err != nil {
+					log.Printf("Warning: Failed to read config: %v", err)
+				}
 				return exists, config, len(config.Proxies)
 			}
 			return exists, nil, 0
@@ -212,7 +225,9 @@ func validateConfig(c *fiber.Ctx) error {
 			config := configs.YumProxyConfig{}
 			exists := config.ConfigExists()
 			if exists {
-				_ = config.ReadConfig()
+				if err := config.ReadConfig(); err != nil {
+					log.Printf("Warning: Failed to read config: %v", err)
+				}
 				return exists, config, len(config.Proxies)
 			}
 			return exists, nil, 0
@@ -225,7 +240,9 @@ func validateConfig(c *fiber.Ctx) error {
 			config := configs.ApkProxyConfig{}
 			exists := config.ConfigExists()
 			if exists {
-				_ = config.ReadConfig()
+				if err := config.ReadConfig(); err != nil {
+					log.Printf("Warning: Failed to read config: %v", err)
+				}
 				return exists, config, len(config.Proxies)
 			}
 			return exists, nil, 0
@@ -335,7 +352,9 @@ func showConfig(c *fiber.Ctx) error {
 	maskedGlobal := MaskedGlobalConfig{}
 
 	if globalConfig.ConfigExists() {
-		_ = globalConfig.ReadConfig()
+		if err := globalConfig.ReadConfig(); err != nil {
+			log.Printf("Warning: Failed to read global config: %v", err)
+		}
 		maskedGlobal = MaskedGlobalConfig{
 			StorageDir: getConfigStorageDir(globalConfig),
 			ConfigDir:  configDir,
@@ -350,7 +369,9 @@ func showConfig(c *fiber.Ctx) error {
 		"apt": func() interface{} {
 			config := configs.AptProxyConfig{}
 			if config.ConfigExists() {
-				_ = config.ReadConfig()
+				if err := config.ReadConfig(); err != nil {
+					log.Printf("Warning: Failed to read config: %v", err)
+				}
 				// 민감한 정보 마스킹 (필요시)
 				return maskSensitiveInfo(config)
 			}
@@ -359,7 +380,9 @@ func showConfig(c *fiber.Ctx) error {
 		"npm": func() interface{} {
 			config := configs.NpmProxyConfig{}
 			if config.ConfigExists() {
-				_ = config.ReadConfig()
+				if err := config.ReadConfig(); err != nil {
+					log.Printf("Warning: Failed to read config: %v", err)
+				}
 				return maskSensitiveInfo(config)
 			}
 			return nil
@@ -507,7 +530,13 @@ func getConfigFile(c *fiber.Ctx) error {
 	}
 
 	// 파일 정보
-	info, _ := os.Stat(filePath)
+	info, err := os.Stat(filePath)
+	if err != nil {
+		logger.Error("Failed to get file info", logging.F("path", filePath), logging.F("error", err))
+		return c.Status(500).JSON(fiber.Map{
+			"error": "Failed to get file information",
+		})
+	}
 
 	return c.JSON(fiber.Map{
 		"filename": filename,

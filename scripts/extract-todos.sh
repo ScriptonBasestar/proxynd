@@ -20,7 +20,7 @@ while IFS= read -r line; do
     file=$(echo "$line" | cut -d: -f1)
     line_num=$(echo "$line" | cut -d: -f2)
     content=$(echo "$line" | cut -d: -f3-)
-    
+
     echo "- **$file:$line_num** $content" >> todos_categorized.md
 done < todos_extracted.txt
 

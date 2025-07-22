@@ -28,7 +28,7 @@ We take security vulnerabilities seriously. If you discover a security vulnerabi
 - **Acknowledgment**: We will acknowledge receipt within 24 hours
 - **Initial Assessment**: Initial assessment within 72 hours
 - **Progress Updates**: Regular updates every 7 days until resolution
-- **Resolution Timeline**: 
+- **Resolution Timeline**:
   - Critical: 24-48 hours
   - High: 3-7 days
   - Medium: 14-30 days
@@ -46,7 +46,7 @@ We take security vulnerabilities seriously. If you discover a security vulnerabi
 ### For Users
 
 1. **Keep Updated**: Always use the latest stable version
-2. **Secure Configuration**: 
+2. **Secure Configuration**:
    - Use HTTPS for all endpoints
    - Enable authentication for admin endpoints
    - Configure proper firewall rules
@@ -91,11 +91,11 @@ server:
     enabled: true
     cert_file: "/etc/ssl/certs/proxynd.crt"
     key_file: "/etc/ssl/private/proxynd.key"
-  
+
 auth:
   enabled: true
   method: "jwt"
-  
+
 security:
   rate_limit:
     enabled: true

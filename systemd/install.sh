@@ -62,7 +62,7 @@ check_system() {
     if ! command -v systemctl &> /dev/null; then
         log_error "systemd가 설치되어 있지 않습니다."
     fi
-    
+
     if ! systemctl --version &> /dev/null; then
         log_error "systemd가 제대로 작동하지 않습니다."
     fi
@@ -81,25 +81,25 @@ create_user() {
 # 디렉토리 생성
 create_directories() {
     log_info "디렉토리 생성 중..."
-    
+
     # 설치 디렉토리
     mkdir -p "$INSTALL_DIR"
-    
+
     # 설정 디렉토리
     mkdir -p "$CONFIG_DIR"
     if [ -n "$INSTANCE" ]; then
         mkdir -p "$CONFIG_DIR/$INSTANCE"
     fi
-    
+
     # 데이터 디렉토리
     mkdir -p "$DATA_DIR"
     if [ -n "$INSTANCE" ]; then
         mkdir -p "$DATA_DIR/$INSTANCE"
     fi
-    
+
     # 로그 디렉토리
     mkdir -p "$LOG_DIR"
-    
+
     # 권한 설정
     chown -R $USER:$GROUP "$DATA_DIR" "$LOG_DIR"
     chmod 755 "$INSTALL_DIR" "$CONFIG_DIR"
@@ -111,16 +111,16 @@ install_binary() {
     if [ -z "$BINARY_PATH" ]; then
         log_error "바이너리 경로를 지정해주세요 (-b 옵션)"
     fi
-    
+
     if [ ! -f "$BINARY_PATH" ]; then
         log_error "바이너리 파일을 찾을 수 없습니다: $BINARY_PATH"
     fi
-    
+
     log_info "바이너리 설치 중..."
     cp "$BINARY_PATH" "$INSTALL_DIR/proxynd"
     chmod 755 "$INSTALL_DIR/proxynd"
     chown root:root "$INSTALL_DIR/proxynd"
-    
+
     # 버전 확인
     if "$INSTALL_DIR/proxynd" -version &> /dev/null; then
         VERSION=$("$INSTALL_DIR/proxynd" -version)
@@ -131,14 +131,14 @@ install_binary() {
 # 설정 파일 설치
 install_config() {
     log_info "설정 파일 설치 중..."
-    
+
     # 기본 환경 파일
     if [ -n "$INSTANCE" ]; then
         ENV_FILE="/etc/default/proxynd-$INSTANCE"
     else
         ENV_FILE="/etc/default/proxynd"
     fi
-    
+
     if [ ! -f "$ENV_FILE" ]; then
         cat > "$ENV_FILE" << EOF
 # ProxyND 환경 변수 설정
@@ -152,7 +152,7 @@ EOF
     else
         log_warning "환경 파일이 이미 존재합니다: $ENV_FILE"
     fi
-    
+
     # 샘플 설정 복사
     if [ -n "$CONFIG_PATH" ] && [ -d "$CONFIG_PATH" ]; then
         log_info "설정 파일 복사 중..."
@@ -167,7 +167,7 @@ EOF
 # systemd 서비스 설치
 install_service() {
     log_info "systemd 서비스 설치 중..."
-    
+
     if [ -n "$INSTANCE" ]; then
         # 인스턴스 서비스
         SERVICE_FILE="/etc/systemd/system/proxynd@.service"
@@ -181,10 +181,10 @@ install_service() {
         cp "$(dirname "$0")/proxynd.service" "$SERVICE_FILE"
         SERVICE_NAME="proxynd"
     fi
-    
+
     # systemd 리로드
     systemctl daemon-reload
-    
+
     # 서비스 활성화
     systemctl enable "$SERVICE_NAME"
     log_success "서비스 활성화됨: $SERVICE_NAME"
@@ -193,15 +193,15 @@ install_service() {
 # 서비스 시작
 start_service() {
     log_info "서비스 시작 중..."
-    
+
     if [ -n "$INSTANCE" ]; then
         SERVICE_NAME="proxynd@$INSTANCE"
     else
         SERVICE_NAME="proxynd"
     fi
-    
+
     systemctl start "$SERVICE_NAME"
-    
+
     # 상태 확인
     sleep 2
     if systemctl is-active --quiet "$SERVICE_NAME"; then
@@ -216,7 +216,7 @@ start_service() {
 # 제거
 uninstall() {
     log_info "ProxyND 제거 중..."
-    
+
     # 서비스 중지
     if [ -n "$INSTANCE" ]; then
         SERVICE_NAME="proxynd@$INSTANCE"
@@ -225,10 +225,10 @@ uninstall() {
         # 모든 인스턴스 중지
         systemctl stop 'proxynd@*' 2>/dev/null || true
     fi
-    
+
     systemctl stop "$SERVICE_NAME" 2>/dev/null || true
     systemctl disable "$SERVICE_NAME" 2>/dev/null || true
-    
+
     # 파일 제거
     if [ -z "$INSTANCE" ]; then
         # 전체 제거
@@ -236,7 +236,7 @@ uninstall() {
         rm -f /etc/systemd/system/proxynd@.service
         rm -rf "$INSTALL_DIR"
         rm -f /etc/default/proxynd*
-        
+
         # 사용자에게 확인
         read -p "설정과 데이터도 삭제하시겠습니까? (y/N) " -n 1 -r
         echo
@@ -252,7 +252,7 @@ uninstall() {
         rm -rf "$DATA_DIR/$INSTANCE"
         rm -f "/etc/default/proxynd-$INSTANCE"
     fi
-    
+
     systemctl daemon-reload
     log_success "ProxyND가 제거되었습니다."
 }
@@ -290,17 +290,17 @@ main() {
                 ;;
         esac
     done
-    
+
     # 권한 확인
     check_root
     check_system
-    
+
     # 제거 모드
     if [ "$UNINSTALL" = true ]; then
         uninstall
         exit 0
     fi
-    
+
     # 설치
     log_info "ProxyND 설치 시작..."
     create_user
@@ -309,7 +309,7 @@ main() {
     install_config
     install_service
     start_service
-    
+
     echo
     log_success "ProxyND 설치가 완료되었습니다!"
     echo

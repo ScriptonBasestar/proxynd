@@ -342,7 +342,7 @@ run_health_checks() {
     # Check deployment status
     log_info "Checking deployment status..."
     kubectl get deployment --namespace="$NAMESPACE"
-    
+
     # Check pod status
     log_info "Checking pod status..."
     kubectl get pods --namespace="$NAMESPACE" --selector="app.kubernetes.io/instance=$release_name"
@@ -359,15 +359,15 @@ run_health_checks() {
     log_info "Testing health endpoint via port-forward..."
     kubectl port-forward --namespace="$NAMESPACE" service/"$release_name" 8080:8080 &
     local port_forward_pid=$!
-    
+
     sleep 5
-    
+
     if curl -f http://localhost:8080/health &> /dev/null; then
         log_success "Health check passed"
     else
         log_warning "Health check endpoint not responding"
     fi
-    
+
     # Cleanup port forward
     kill $port_forward_pid 2>/dev/null || true
 

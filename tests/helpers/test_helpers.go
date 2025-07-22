@@ -222,7 +222,9 @@ func CaptureLogs(t *testing.T, fn func()) string {
 	os.Stdout = originalStdout
 
 	// 로그 내용 읽기
-	_, _ = tempFile.Seek(0, 0)
+	if _, err := tempFile.Seek(0, 0); err != nil {
+		t.Fatalf("Failed to seek temp file: %v", err)
+	}
 	logContent, err := io.ReadAll(tempFile)
 	if err != nil {
 		t.Fatalf("Failed to read log content: %v", err)

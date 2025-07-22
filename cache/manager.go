@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"sync"
 	"time"
 )
@@ -70,7 +71,12 @@ func (m *Manager) Put(key string, data []byte, ttl time.Duration) error {
 	}
 
 	// 캐시 크기 체크 및 정리
-	currentSize, _ := m.backend.Size()
+	currentSize, err := m.backend.Size()
+	if err != nil {
+		// 크기 조회 실패 시 경고 로그 후 계속 진행
+		log.Printf("Warning: Failed to get cache size: %v", err)
+		currentSize = 0
+	}
 	if m.options.MaxSize > 0 && currentSize+int64(len(data)) > m.options.MaxSize {
 		// 필요한 공간 계산
 		requiredSpace := currentSize + int64(len(data)) - m.options.MaxSize
@@ -114,7 +120,12 @@ func (m *Manager) GetStats() CacheStats {
 	defer m.mu.RUnlock()
 
 	stats := m.stats
-	stats.Size, _ = m.backend.Size()
+	size, err := m.backend.Size()
+	if err != nil {
+		log.Printf("Warning: Failed to get cache size for stats: %v", err)
+		size = 0
+	}
+	stats.Size = size
 	return stats
 }
 

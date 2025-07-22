@@ -226,7 +226,9 @@ func (h *BasePackageHandler) GetRequestMetadata(ctx *fiber.Ctx) map[string]strin
 
 	// 인증 정보
 	if username := ctx.Locals("username"); username != nil {
-		metadata["username"] = username.(string)
+		if usernameStr, ok := username.(string); ok {
+			metadata["username"] = usernameStr
+		}
 	}
 
 	// 추가 헤더 정보

@@ -140,7 +140,9 @@ func (r *FileRepository) Put(_ context.Context, key string, content io.Reader, t
 	}
 
 	// Save metadata
-	_ = r.saveMetadata()
+	if err := r.saveMetadata(); err != nil {
+		r.logger.Warn("Failed to save cache metadata", logging.F("error", err))
+	}
 
 	r.logger.Debug("Cached item", logging.F("key", key), logging.F("size", size))
 
@@ -186,7 +188,9 @@ func (r *FileRepository) Delete(_ context.Context, key string) error {
 	delete(r.metadata, key)
 
 	// Save metadata
-	_ = r.saveMetadata()
+	if err := r.saveMetadata(); err != nil {
+		r.logger.Warn("Failed to save cache metadata", logging.F("error", err))
+	}
 
 	r.logger.Debug("Deleted cache item", logging.F("key", key))
 
@@ -206,7 +210,7 @@ func (r *FileRepository) List(_ context.Context, pattern string) ([]string, erro
 		}
 
 		// Match pattern
-		if matched, _ := filepath.Match(pattern, key); matched {
+		if matched, err := filepath.Match(pattern, key); err == nil && matched {
 			keys = append(keys, key)
 		}
 	}
@@ -252,7 +256,9 @@ func (r *FileRepository) Clear(_ context.Context) error {
 
 	// Clear metadata
 	r.metadata = make(map[string]*CacheItem)
-	_ = r.saveMetadata()
+	if err := r.saveMetadata(); err != nil {
+		r.logger.Warn("Failed to save cache metadata", logging.F("error", err))
+	}
 
 	r.logger.Info("Cache cleared")
 
@@ -367,7 +373,9 @@ func (r *FileRepository) cleanup() {
 	}
 
 	if len(keysToDelete) > 0 {
-		_ = r.saveMetadata()
+		if err := r.saveMetadata(); err != nil {
+			r.logger.Warn("Failed to save cache metadata", logging.F("error", err))
+		}
 		r.logger.Info("Cleaned up expired cache items", logging.F("count", len(keysToDelete)))
 	}
 }

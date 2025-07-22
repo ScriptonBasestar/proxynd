@@ -181,27 +181,27 @@ jobs:
           body: |
             ## What's Changed
             ${{ steps.changelog.outputs.changelog }}
-            
+
             ## Docker Images
-            
+
             ```bash
             # GitHub Container Registry
             docker pull ghcr.io/${{ github.repository }}:${{ github.ref_name }}
-            
+
             # Docker Hub (if configured)
             docker pull ${{ secrets.DOCKERHUB_USERNAME }}/proxynd:${{ github.ref_name }}
             ```
-            
+
             ## Helm Installation
-            
+
             ```bash
             helm repo add proxynd https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}
             helm repo update
             helm install proxynd proxynd/proxynd
             ```
-            
+
             ## Binary Downloads
-            
+
             See the Assets section below for pre-compiled binaries for your platform.
 
   security-scan:
@@ -258,7 +258,7 @@ jobs:
       (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_staging == 'true') ||
       (github.event_name == 'push' && contains(github.ref, 'staging')) ||
       (github.event_name == 'push' && contains(github.ref, 'rc'))
-    environment: 
+    environment:
       name: staging
       url: https://staging.proxynd.example.com
     steps:
@@ -283,13 +283,13 @@ jobs:
           else
             VERSION=${GITHUB_REF#refs/tags/}
           fi
-          
+
           echo "Deploying version: $VERSION to staging"
-          
+
           # Add kubeconfig (placeholder - configure with actual cluster credentials)
           # echo "${{ secrets.STAGING_KUBECONFIG }}" | base64 -d > kubeconfig
           # export KUBECONFIG=kubeconfig
-          
+
           # Helm upgrade/install
           helm upgrade --install proxynd-staging ./helm \
             --namespace proxynd-staging \
@@ -301,7 +301,7 @@ jobs:
             --set resources.requests.cpu=250m \
             --set replicaCount=2 \
             --wait --timeout=300s
-          
+
           echo "Staging deployment completed successfully"
 
       - name: Run staging health check
@@ -325,7 +325,7 @@ jobs:
     if: |
       (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy_production == 'true') ||
       (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && !contains(github.ref, '-'))
-    environment: 
+    environment:
       name: production
       url: https://proxynd.example.com
     steps:
@@ -350,13 +350,13 @@ jobs:
           else
             VERSION=${GITHUB_REF#refs/tags/v}
           fi
-          
+
           echo "Deploying version: $VERSION to production"
-          
+
           # Add kubeconfig (placeholder - configure with actual cluster credentials)
           # echo "${{ secrets.PRODUCTION_KUBECONFIG }}" | base64 -d > kubeconfig
           # export KUBECONFIG=kubeconfig
-          
+
           # Production deployment with rolling update strategy
           helm upgrade --install proxynd ./helm \
             --namespace proxynd \
@@ -373,7 +373,7 @@ jobs:
             --set autoscaling.minReplicas=3 \
             --set autoscaling.maxReplicas=10 \
             --wait --timeout=600s
-          
+
           echo "Production deployment completed successfully"
 
       - name: Run production health check
@@ -431,13 +431,13 @@ jobs:
           else
             VERSION=${GITHUB_REF#refs/tags/}
           fi
-          
+
           echo "🎉 Release $VERSION completed successfully!"
           echo "✅ Docker images published"
           echo "✅ Helm charts released"
           echo "✅ Staging deployment completed"
           echo "✅ Production deployment completed"
-          
+
           # Add notification integrations (Slack, Teams, etc.)
           # Example Slack notification:
           # curl -X POST -H 'Content-type: application/json' \
@@ -457,7 +457,7 @@ jobs:
           else
             VERSION=${GITHUB_REF#refs/tags/}
           fi
-          
+
           echo "❌ Release $VERSION failed!"
           echo "Failed jobs:"
           echo "- GoReleaser: ${{ needs.goreleaser.result }}"
@@ -465,7 +465,7 @@ jobs:
           echo "- Helm Release: ${{ needs.helm-release.result }}"
           echo "- Staging Deploy: ${{ needs.deploy-staging.result }}"
           echo "- Production Deploy: ${{ needs.deploy-production.result }}"
-          
+
           # Add notification integrations
           # Example Slack notification:
           # curl -X POST -H 'Content-type: application/json' \

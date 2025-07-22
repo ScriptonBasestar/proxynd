@@ -36,13 +36,13 @@ Alpine APK 미러 자동 선택 기능은 클라이언트의 요청에 따라 �
 mirror_selection:
   # 미러 자동 선택 활성화 여부
   enabled: true
-  
+
   # 헬스체크 간격 (예: "5m", "10m", "1h")
   health_check_interval: "5m"
-  
+
   # 헬스체크 타임아웃 (예: "10s", "30s")
   health_check_timeout: "10s"
-  
+
   # 선호하는 지역 목록 (우선순위 순)
   preferred_regions:
     - "korea"      # 한국
@@ -50,13 +50,13 @@ mirror_selection:
     - "asia"       # 아시아
     - "official"   # 공식
     - "global"     # 글로벌
-  
+
   # 지역 미러가 모두 실패할 경우 글로벌 미러로 폴백
   fallback_to_global: true
-  
+
   # 미러를 비활성화하기 전 최대 허용 에러 횟수
   max_error_count: 3
-  
+
   # 지역 감지 모드
   region_detection_mode: "auto"
 ```
@@ -82,13 +82,13 @@ proxies:
     url: https://mirror.kakao.com/alpine
   - name: naver
     url: https://mirror.navercorp.com/alpine
-  
+
   # 아시아 미러들
   - name: riken-japan
     url: https://ftp.riken.jp/alpine
   - name: singapore
     url: https://mirrors.nus.edu.sg/alpine
-  
+
   # 공식 및 글로벌 미러들
   - name: alpine-official
     url: https://dl-cdn.alpinelinux.org/alpine
@@ -374,10 +374,10 @@ proxynd_mirror_errors_total{mirror="slow-mirror"} 5
 mirror_selection:
   # 헬스체크 간격 조정 (너무 빈번하면 부하 증가)
   health_check_interval: "10m"
-  
+
   # 타임아웃 조정 (너무 길면 느린 미러 감지 지연)
   health_check_timeout: "5s"
-  
+
   # 에러 허용 횟수 조정 (너무 낮으면 일시적 장애로 미러 제외)
   max_error_count: 5
 ```
@@ -405,7 +405,7 @@ proxies:
     url: https://mirror.kakao.com/alpine
   - name: naver  
     url: https://mirror.navercorp.com/alpine
-  
+
   # 백업 미러들
   - name: official
     url: https://dl-cdn.alpinelinux.org/alpine

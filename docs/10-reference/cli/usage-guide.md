@@ -343,10 +343,10 @@ SIZE=$(proxyndctl cache size --format json | jq -r '.total_size')
 # 10GB 이상이면 정리
 if [ $SIZE -gt 10737418240 ]; then
     echo "캐시 크기가 10GB를 초과했습니다. 정리를 시작합니다..."
-    
+
     # npm 캐시 정리
     proxyndctl cache clear -t npm -f
-    
+
     # 30일 이상 된 apt 캐시 정리
     proxyndctl cache clear -t apt -p "*" --older-than 30d -f
 fi
@@ -360,7 +360,7 @@ fi
 
 # 메트릭을 JSON으로 가져와서 변환
 proxyndctl metrics --format json | jq -r '
-    .cache | to_entries[] | 
+    .cache | to_entries[] |
     "proxynd_cache_hit_rate{type=\"\(.key)\"} \(.value.hit_rate)"
 '
 

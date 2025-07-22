@@ -10,11 +10,11 @@ data:
     server:
       port: {{ .Values.proxynd.serverPort }}
       host: "0.0.0.0"
-    
+
     logging:
       level: {{ .Values.proxynd.logLevel }}
       format: {{ .Values.proxynd.logFormat }}
-    
+
     cache:
       type: {{ .Values.proxynd.cache.type }}
       ttl: {{ .Values.proxynd.cache.ttl }}
@@ -27,7 +27,7 @@ data:
         endpoint: {{ .Values.proxynd.cache.s3.endpoint }}
         {{- end }}
       {{- end }}
-    
+
     {{- if .Values.proxynd.auth.enabled }}
     auth:
       enabled: true
@@ -44,20 +44,20 @@ data:
         {{- end }}
       {{- end }}
     {{- end }}
-    
+
     proxies:
       {{- if .Values.proxynd.proxies.npm.enabled }}
       npm:
         enabled: true
         upstream: {{ .Values.proxynd.proxies.npm.upstream }}
       {{- end }}
-      
+
       {{- if .Values.proxynd.proxies.pip.enabled }}
       pip:
         enabled: true
         upstream: {{ .Values.proxynd.proxies.pip.upstream }}
       {{- end }}
-      
+
       {{- if .Values.proxynd.proxies.apt.enabled }}
       apt:
         enabled: true
@@ -71,7 +71,7 @@ data:
               {{- end }}
           {{- end }}
       {{- end }}
-      
+
       {{- if .Values.proxynd.proxies.docker.enabled }}
       docker:
         enabled: true

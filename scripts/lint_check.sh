@@ -45,10 +45,10 @@ if [ $ISSUES_COUNT -gt 0 ]; then
     awk -F'\t' '{print $2}' "$LINT_OUTPUT" | sort | uniq -c | sort -rn | while read count linter; do
         echo -e "  ${RED}$count${NC} $linter"
     done
-    
+
     echo -e "\n${YELLOW}Top 10 issues:${NC}"
     head -n 10 "$LINT_OUTPUT"
-    
+
     echo -e "\n${YELLOW}To see all issues, run:${NC}"
     echo "  make lint"
     echo -e "\n${YELLOW}To auto-fix issues, run:${NC}"

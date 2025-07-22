@@ -2,6 +2,7 @@ package testutil
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -129,13 +130,19 @@ func (f *Fixtures) ProxyResponseWithHeaders(statusCode int, body string,
 
 // HTTPRequest creates a test HTTP request
 func (f *Fixtures) HTTPRequest(method, url string) *http.Request {
-	req, _ := http.NewRequest(method, url, nil)
+	req, err := http.NewRequest(method, url, nil)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create test request: %v", err))
+	}
 	return req
 }
 
 // HTTPRequestWithBody creates a test HTTP request with body
 func (f *Fixtures) HTTPRequestWithBody(method, url string, body []byte) *http.Request {
-	req, _ := http.NewRequest(method, url, bytes.NewReader(body))
+	req, err := http.NewRequest(method, url, bytes.NewReader(body))
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create test request with body: %v", err))
+	}
 	return req
 }
 

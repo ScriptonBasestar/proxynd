@@ -3,6 +3,7 @@ package config
 import (
 	"context"
 	"fmt"
+	"log"
 	"sync"
 
 	"proxynd/configs"
@@ -207,7 +208,9 @@ func (s *ViperConfigService) Reload(_ context.Context) error {
 	s.unifiedConfig = unifiedConfig
 
 	// 레거시 설정 재로드
-	_ = s.loadLegacyConfigs()
+	if err := s.loadLegacyConfigs(); err != nil {
+		log.Printf("Warning: Failed to load legacy configs: %v", err)
+	}
 
 	return nil
 }

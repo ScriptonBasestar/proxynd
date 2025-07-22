@@ -130,7 +130,10 @@ func (l *AccessLogger) Log(entry AccessLogEntry) {
 	// 로그 포맷에 따라 출력 생성
 	switch l.config.Format {
 	case "json":
-		data, _ := json.Marshal(entry)
+		data, err := json.Marshal(entry)
+		if err != nil {
+			data = []byte(fmt.Sprintf(`{"error": "Failed to marshal log entry: %v"}`, err))
+		}
 		logLine = string(data) + "\n"
 	default: // text
 		logLine = fmt.Sprintf("[%s] %s %s %s %d %dms %s %s %s\n",

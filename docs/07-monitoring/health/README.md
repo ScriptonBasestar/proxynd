@@ -218,7 +218,7 @@ func (dc *DatabaseChecker) Check(ctx context.Context) *health.CheckResult {
         Status:      health.StatusHealthy,
         LastChecked: time.Now(),
     }
-    
+
     // Ping database
     if err := dc.db.PingContext(ctx); err != nil {
         result.Status = health.StatusUnhealthy
@@ -226,7 +226,7 @@ func (dc *DatabaseChecker) Check(ctx context.Context) *health.CheckResult {
     } else {
         result.Message = "Database connection is healthy"
     }
-    
+
     result.Duration = time.Since(start)
     return result
 }

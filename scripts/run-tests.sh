@@ -110,7 +110,7 @@ fi
 # 단위 테스트 실행
 run_unit_tests() {
     echo "🔬 Running unit tests..."
-    
+
     # 특정 패키지들만 테스트 (빌드 오류 회피)
     UNIT_PACKAGES=(
         "./cache/..."
@@ -122,7 +122,7 @@ run_unit_tests() {
         "./internal/auth/oauth2/..."
         "./tests/helpers/..."
     )
-    
+
     for package in "${UNIT_PACKAGES[@]}"; do
         echo "Testing package: $package"
         go test $TEST_FLAGS -short "$package" || echo "⚠️  Package $package failed, continuing..."
@@ -132,12 +132,12 @@ run_unit_tests() {
 # 통합 테스트 실행
 run_integration_tests() {
     echo "🔗 Running integration tests..."
-    
+
     # 통합 테스트 환경 준비
     if [ ! -d "tmp" ]; then
         mkdir -p tmp/{config,storage,cache,logs}
     fi
-    
+
     # 통합 테스트 실행
     go test $TEST_FLAGS ./tests/integration/... || echo "⚠️  Integration tests failed"
 }
@@ -145,7 +145,7 @@ run_integration_tests() {
 # E2E 테스트 실행
 run_e2e_tests() {
     echo "🌐 Running E2E tests..."
-    
+
     if [ -f "tests/e2e/scripts/run-e2e-tests.sh" ]; then
         ./tests/e2e/scripts/run-e2e-tests.sh
     else
@@ -156,13 +156,13 @@ run_e2e_tests() {
 # 벤치마크 실행
 run_benchmarks() {
     echo "⚡ Running benchmarks..."
-    
+
     BENCHMARK_PACKAGES=(
         "./cache/..."
         "./internal/services/..."
         "./verification/..."
     )
-    
+
     for package in "${BENCHMARK_PACKAGES[@]}"; do
         echo "Benchmarking package: $package"
         go test -bench=. -benchmem "$package" || echo "⚠️  Benchmark for $package failed"

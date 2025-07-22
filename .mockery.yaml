@@ -5,6 +5,9 @@ outpkg: "mocks"
 filename: "{{.InterfaceName | snakecase}}.go"
 mockname: "Mock{{.InterfaceName}}"
 inpackage: false
+# 중복 생성 방지
+all: false
+recursive: false
 
 packages:
   # 서비스 인터페이스
@@ -37,11 +40,11 @@ packages:
       CacheManager:
       ConfigProvider:
 
-  # 인프라 인터페이스
+  # 인프라 인터페이스 (개별 지정으로 변경)
   proxynd/internal/interfaces:
-    config:
-      recursive: true
-      all: true
+    interfaces:
+      WebhookBatchManager:
+      WebhookSender:
 
   # 기타 인터페이스
   proxynd/cache:

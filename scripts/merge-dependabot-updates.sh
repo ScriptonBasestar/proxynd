@@ -39,15 +39,15 @@ git fetch origin
 # 각 브랜치 병합
 for branch in "${BRANCHES[@]}"; do
     echo -e "${YELLOW}처리 중: $branch${NC}"
-    
+
     # 브랜치가 존재하는지 확인
     if git ls-remote --heads origin | grep -q "$branch"; then
         # Cherry-pick 방식으로 변경사항 가져오기
         COMMIT=$(git ls-remote origin "refs/heads/$branch" | cut -f1)
-        
+
         if [ ! -z "$COMMIT" ]; then
             echo "커밋 $COMMIT 적용 중..."
-            
+
             # Cherry-pick 시도
             if git cherry-pick "$COMMIT" 2>/dev/null; then
                 echo -e "${GREEN}✅ 성공적으로 적용됨${NC}"
@@ -55,7 +55,7 @@ for branch in "${BRANCHES[@]}"; do
                 # 충돌 발생 시
                 if [ -n "$(git status --porcelain)" ]; then
                     echo -e "${RED}⚠️  충돌 발생. 자동 해결 시도...${NC}"
-                    
+
                     # 파일별 처리
                     if [[ "$branch" == *"fasthttp"* ]]; then
                         # fasthttp의 경우 최신 버전 사용
@@ -79,7 +79,7 @@ for branch in "${BRANCHES[@]}"; do
     else
         echo -e "${RED}❌ 브랜치를 찾을 수 없음${NC}"
     fi
-    
+
     echo ""
 done
 
@@ -92,10 +92,10 @@ if [ -n "$(git status --porcelain)" ]; then
     echo ""
     echo "📝 변경된 파일:"
     git status --porcelain
-    
+
     # 스테이징
     git add go.mod go.sum .github/workflows/*.yml 2>/dev/null
-    
+
     # 커밋
     echo ""
     echo "💾 변경사항 커밋 중..."
@@ -105,7 +105,7 @@ if [ -n "$(git status --porcelain)" ]; then
   - actions/setup-go: v2 → v5
   - azure/setup-helm: → v4
   - peter-evans/create-pull-request: → v7
-  
+
 - Go Modules:
   - aws-sdk-go-v2/service/s3: v1.82.0 → v1.83.0
   - valyala/fasthttp: v1.51.0 → v1.63.0

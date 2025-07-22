@@ -42,7 +42,7 @@ registries:
   npm:
     enabled: true
     upstream: https://registry.npmjs.org
-  
+
   maven:
     enabled: true
     repositories:
@@ -131,7 +131,7 @@ registries:
       ubuntu:
         - name: main
           url: http://archive.ubuntu.com/ubuntu
-  
+
   maven:
     enabled: true
     repositories:
@@ -152,7 +152,7 @@ registries:
 
 1. **레거시 호환성**: 기존 개별 설정 파일도 계속 지원되지만, 새로운 통합 설정 사용을 권장합니다.
 
-2. **환경 변수 네이밍**: 
+2. **환경 변수 네이밍**:
    - 기본 prefix: `PROXYND_`
    - 중첩 구조는 언더스코어로 구분: `PROXYND_CACHE_BACKEND`
 

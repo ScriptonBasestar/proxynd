@@ -39,7 +39,7 @@ receivers:
         body: |
           Alert: {{ .GroupLabels.alertname }}
           Severity: {{ .CommonLabels.severity }}
-          
+
           {{ range .Alerts }}
           Summary: {{ .Annotations.summary }}
           Description: {{ .Annotations.description }}
@@ -67,7 +67,7 @@ receivers:
         body: |
           Alert: {{ .GroupLabels.alertname }}
           Severity: {{ .CommonLabels.severity }}
-          
+
           {{ range .Alerts }}
           Summary: {{ .Annotations.summary }}
           Description: {{ .Annotations.description }}
@@ -91,7 +91,7 @@ receivers:
         subject: '🔴 EMERGENCY: ProxyND Service Down'
         body: |
           EMERGENCY: ProxyND service is down!
-          
+
           {{ range .Alerts }}
           Summary: {{ .Annotations.summary }}
           Description: {{ .Annotations.description }}
@@ -105,7 +105,7 @@ receivers:
         title: '🔴 EMERGENCY: ProxyND Service Down'
         text: |
           @here ProxyND service is down!
-          
+
           {{ range .Alerts }}
           *Summary:* {{ .Annotations.summary }}
           *Description:* {{ .Annotations.description }}

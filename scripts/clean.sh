@@ -11,7 +11,7 @@ echo "========================================="
 clean_with_confirm() {
     local target=$1
     local description=$2
-    
+
     if [ -e "$target" ] || [ -d "$target" ]; then
         echo -n "Remove $description? (y/N) "
         read -r response

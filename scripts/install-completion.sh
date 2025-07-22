@@ -55,7 +55,7 @@ check_proxyndctl() {
 # 현재 쉘 감지
 detect_shell() {
     local shell_name=""
-    
+
     if [ -n "$ZSH_VERSION" ]; then
         shell_name="zsh"
     elif [ -n "$BASH_VERSION" ]; then
@@ -66,17 +66,17 @@ detect_shell() {
         # $SHELL 변수에서 추출
         shell_name=$(basename "$SHELL")
     fi
-    
+
     echo "$shell_name"
 }
 
 # Bash 자동완성 설치
 install_bash() {
     local mode=$1
-    
+
     if [ "$mode" = "global" ]; then
         log_info "Bash 자동완성을 시스템 전체에 설치합니다..."
-        
+
         local completion_dir="/etc/bash_completion.d"
         if [ -d "$completion_dir" ]; then
             if proxyndctl completion bash | sudo tee "$completion_dir/proxyndctl" > /dev/null; then
@@ -94,12 +94,12 @@ install_bash() {
         fi
     else
         log_info "Bash 자동완성을 사용자 모드로 설치합니다..."
-        
+
         local bashrc="$HOME/.bashrc"
         if [ -f "$HOME/.bash_profile" ] && [ "$(uname)" = "Darwin" ]; then
             bashrc="$HOME/.bash_profile"
         fi
-        
+
         if ! grep -q "proxyndctl completion bash" "$bashrc" 2>/dev/null; then
             echo "" >> "$bashrc"
             echo "# ProxyND CLI 자동완성" >> "$bashrc"
@@ -109,7 +109,7 @@ install_bash() {
             log_warn "이미 설치되어 있습니다: $bashrc"
         fi
     fi
-    
+
     log_info "새 터미널을 열거나 다음 명령어를 실행하세요:"
     log_info "  source ~/.bashrc"
 }
@@ -117,16 +117,16 @@ install_bash() {
 # Zsh 자동완성 설치
 install_zsh() {
     local mode=$1
-    
+
     if [ "$mode" = "global" ]; then
         log_info "Zsh 자동완성을 시스템 전체에 설치합니다..."
-        
+
         # fpath 디렉토리 찾기
         local completion_dir="/usr/local/share/zsh/site-functions"
         if [ ! -d "$completion_dir" ]; then
             completion_dir="/usr/share/zsh/site-functions"
         fi
-        
+
         if [ -d "$completion_dir" ]; then
             if proxyndctl completion zsh | sudo tee "$completion_dir/_proxyndctl" > /dev/null; then
                 log_info "설치 완료: $completion_dir/_proxyndctl"
@@ -140,7 +140,7 @@ install_zsh() {
         fi
     else
         log_info "Zsh 자동완성을 사용자 모드로 설치합니다..."
-        
+
         # Oh My Zsh 확인
         if [ -d "$HOME/.oh-my-zsh" ]; then
             local omz_dir="$HOME/.oh-my-zsh/custom/plugins/proxyndctl"
@@ -164,7 +164,7 @@ install_zsh() {
             fi
         fi
     fi
-    
+
     log_info "새 터미널을 열거나 다음 명령어를 실행하세요:"
     log_info "  source ~/.zshrc"
 }
@@ -172,10 +172,10 @@ install_zsh() {
 # Fish 자동완성 설치
 install_fish() {
     local mode=$1
-    
+
     if [ "$mode" = "global" ]; then
         log_info "Fish 자동완성을 시스템 전체에 설치합니다..."
-        
+
         local completion_dir="/usr/share/fish/completions"
         if [ -d "$completion_dir" ]; then
             if proxyndctl completion fish | sudo tee "$completion_dir/proxyndctl.fish" > /dev/null; then
@@ -190,10 +190,10 @@ install_fish() {
         fi
     else
         log_info "Fish 자동완성을 사용자 모드로 설치합니다..."
-        
+
         local fish_dir="$HOME/.config/fish/completions"
         mkdir -p "$fish_dir"
-        
+
         if proxyndctl completion fish > "$fish_dir/proxyndctl.fish"; then
             log_info "설치 완료: $fish_dir/proxyndctl.fish"
         else
@@ -201,14 +201,14 @@ install_fish() {
             return 1
         fi
     fi
-    
+
     log_info "새 터미널을 열면 자동완성이 활성화됩니다."
 }
 
 # PowerShell 자동완성 설치
 install_powershell() {
     log_info "PowerShell 자동완성을 설치합니다..."
-    
+
     if command -v pwsh &> /dev/null; then
         pwsh -Command "proxyndctl completion powershell >> \$PROFILE"
         log_info "설치 완료: PowerShell 프로필에 추가됨"
@@ -225,7 +225,7 @@ install_powershell() {
 main() {
     local shell_type=""
     local install_mode="user"
-    
+
     # 명령줄 인수 파싱
     while [[ $# -gt 0 ]]; do
         case $1 in
@@ -252,16 +252,16 @@ main() {
                 ;;
         esac
     done
-    
+
     # proxyndctl 확인
     check_proxyndctl
-    
+
     # 쉘 타입이 지정되지 않았으면 자동 감지
     if [ -z "$shell_type" ]; then
         shell_type=$(detect_shell)
         log_info "감지된 쉘: $shell_type"
     fi
-    
+
     # 쉘별 설치 수행
     case $shell_type in
         bash)

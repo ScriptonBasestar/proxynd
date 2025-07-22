@@ -4,6 +4,8 @@ import (
 	"context"
 	"sync"
 	"time"
+
+	"proxynd/internal/webhook/types"
 )
 
 // TokenBucketLimiter 토큰 버킷 기반 속도 제한기
@@ -192,11 +194,11 @@ func (swl *SlidingWindowLimiter) SetLimit(limit int) {
 
 // CompositeRateLimiter 복합 속도 제한기 (여러 제한을 동시 적용)
 type CompositeRateLimiter struct {
-	limiters []RateLimiter
+	limiters []types.RateLimiter
 }
 
 // NewCompositeRateLimiter 새로운 복합 제한기 생성
-func NewCompositeRateLimiter(limiters ...RateLimiter) *CompositeRateLimiter {
+func NewCompositeRateLimiter(limiters ...types.RateLimiter) *CompositeRateLimiter {
 	return &CompositeRateLimiter{
 		limiters: limiters,
 	}

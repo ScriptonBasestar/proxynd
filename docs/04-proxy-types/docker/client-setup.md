@@ -90,7 +90,7 @@ services:
     image: your-proxy-server:8080/proxy/docker/library/nginx:latest
     ports:
       - "80:80"
-      
+
   db:
     image: your-proxy-server:8080/proxy/docker/library/postgres:15
     environment:
@@ -209,7 +209,7 @@ pipeline {
   environment {
     DOCKER_REGISTRY = 'your-proxy-server:8080/proxy/docker'
   }
-  
+
   stages {
     stage('Build') {
       steps {

@@ -216,9 +216,9 @@ func runTestAll(timeout int, showDetails bool) error {
 	// 결과 출력
 	outputFormat := getOutputFormat()
 	switch outputFormat {
-	case formatJSON:
+	case outputFormatJSON:
 		return outputJSON(result)
-	case formatYAML:
+	case outputFormatYAML:
 		return outputYAML(result)
 	default:
 		return outputTestResultsTable(result, showDetails)
@@ -250,9 +250,9 @@ func runTestConnectivity(proxyType string) error {
 	// 결과 출력
 	outputFormat := getOutputFormat()
 	switch outputFormat {
-	case formatJSON:
+	case outputFormatJSON:
 		return outputJSON(result)
-	case formatYAML:
+	case outputFormatYAML:
 		return outputYAML(result)
 	default:
 		return outputSingleTestResult(result)
@@ -284,9 +284,9 @@ func runTestTypes() error {
 	// 결과 출력
 	outputFormat := getOutputFormat()
 	switch outputFormat {
-	case formatJSON:
+	case outputFormatJSON:
 		return outputJSON(result)
-	case formatYAML:
+	case outputFormatYAML:
 		return outputYAML(result)
 	default:
 		return outputSupportedTypesTable(result)
@@ -330,9 +330,9 @@ func runProxyTest(proxyType, target string, timeout int) error {
 	// 결과 출력
 	outputFormat := getOutputFormat()
 	switch outputFormat {
-	case formatJSON:
+	case outputFormatJSON:
 		return outputJSON(result)
-	case formatYAML:
+	case outputFormatYAML:
 		return outputYAML(result)
 	default:
 		return outputSingleTestResult(result)
