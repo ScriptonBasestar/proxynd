@@ -12,14 +12,14 @@ type WebhookConfig struct {
 	Enabled bool `yaml:"enabled" json:"enabled"`
 	// 웹훅 엔드포인트 목록
 	Endpoints      []WebhookEndpointConfig     `yaml:"endpoints" json:"endpoints" validate:"dive"`
-	RateLimit      WebhookRateLimitConfig      `yaml:"rate_limit" json:"rate_limit" validate:"dive"`           // 속도 제한 설정
-	Retry          WebhookRetryConfig          `yaml:"retry" json:"retry" validate:"dive"`                     // 재시도 설정
-	FailureStorage WebhookFailureStorageConfig `yaml:"failure_storage" json:"failure_storage" validate:"dive"` // 실패 저장소 설정
-	EventFilter    WebhookEventFilter          `yaml:"event_filter" json:"event_filter" validate:"dive"`       // 이벤트 필터링
-	Buffering      WebhookBufferingConfig      `yaml:"buffering" json:"buffering" validate:"dive"`             // 버퍼링 설정
-	Batching       WebhookBatchingConfig       `yaml:"batching" json:"batching" validate:"dive"`               // 배치 전송 설정
-	Security       WebhookSecurityConfig       `yaml:"security" json:"security" validate:"dive"`               // 보안 설정
-	Monitoring     WebhookMonitoringConfig     `yaml:"monitoring" json:"monitoring" validate:"dive"`           // 모니터링 설정
+	RateLimit      WebhookRateLimitConfig      `yaml:"rate_limit" json:"rate_limit"`           // 속도 제한 설정
+	Retry          WebhookRetryConfig          `yaml:"retry" json:"retry"`                     // 재시도 설정
+	FailureStorage WebhookFailureStorageConfig `yaml:"failure_storage" json:"failure_storage"` // 실패 저장소 설정
+	EventFilter    WebhookEventFilter          `yaml:"event_filter" json:"event_filter"`       // 이벤트 필터링
+	Buffering      WebhookBufferingConfig      `yaml:"buffering" json:"buffering"`             // 버퍼링 설정
+	Batching       WebhookBatchingConfig       `yaml:"batching" json:"batching"`               // 배치 전송 설정
+	Security       WebhookSecurityConfig       `yaml:"security" json:"security"`               // 보안 설정
+	Monitoring     WebhookMonitoringConfig     `yaml:"monitoring" json:"monitoring"`           // 모니터링 설정
 }
 
 // WebhookEndpointConfig 개별 웹훅 엔드포인트 설정
@@ -43,9 +43,9 @@ type WebhookEndpointConfig struct {
 	// 커스텀 메시지 템플릿
 	Template string `yaml:"template" json:"template"`
 	// 인증 정보
-	Credentials WebhookCredentials `yaml:"credentials" json:"credentials" validate:"dive"`
+	Credentials WebhookCredentials `yaml:"credentials" json:"credentials"`
 	// 엔드포인트별 필터
-	Filters WebhookEndpointFilters `yaml:"filters" json:"filters" validate:"dive"`
+	Filters WebhookEndpointFilters `yaml:"filters" json:"filters"`
 }
 
 // WebhookCredentials 웹훅 인증 정보

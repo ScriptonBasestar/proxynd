@@ -63,9 +63,14 @@ func (s *service) GetGlobalConfig(_ context.Context) (*configs.GlobalConfig, err
 	}
 
 	// UnifiedConfig를 GlobalConfig로 변환
+	cacheDir := s.globalConfig.Cache.File.Directory
+	if cacheDir == "" {
+		cacheDir = "./tmp/storage" // 기본값
+	}
 	globalConfig := &configs.GlobalConfig{
 		ConfigDir:  s.configDir,
 		StorageDir: s.globalConfig.Cache.File.Directory,
+		CacheDir:   cacheDir,
 		Cache: configs.Cache{
 			TTL: 3600, // 기본값
 		},
@@ -236,7 +241,20 @@ func (s *service) ValidateAll(_ context.Context) error {
 
 	// Validate global config
 	if validator, exists := s.validators["global"]; exists && s.globalConfig != nil {
-		if err := validator.Validate(s.globalConfig); err != nil {
+		// Convert UnifiedConfig to GlobalConfig for validation
+		cacheDir := s.globalConfig.Cache.File.Directory
+		if cacheDir == "" {
+			cacheDir = "./tmp/storage" // 기본값
+		}
+		globalConfig := &configs.GlobalConfig{
+			ConfigDir:  s.configDir,
+			StorageDir: s.globalConfig.Cache.File.Directory,
+			CacheDir:   cacheDir,
+			Cache: configs.Cache{
+				TTL: 3600, // 기본값
+			},
+		}
+		if err := validator.Validate(globalConfig); err != nil {
 			return fmt.Errorf("global config validation failed: %w", err)
 		}
 	}

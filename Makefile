@@ -10,20 +10,20 @@
 PROJECTNAME := proxynd
 ENV := develop
 DOCKER_REGISTRY := scriptonbasestar
-VERSION ?= latest
+VERSION ?= $(shell git describe --always --abbrev=0 --tags 2>/dev/null || echo "dev")
 
 # Go configuration
 export GOPROXY=https://proxy.golang.org,direct
 export GOSUMDB=sum.golang.org
 
-# Colors for output
-CYAN := \033[36m
-GREEN := \033[32m
-YELLOW := \033[33m
-RED := \033[31m
-BLUE := \033[34m
-MAGENTA := \033[35m
-RESET := \033[0m
+# Colors for output (exported to all sub-makefiles)
+export CYAN := \\033[36m
+export GREEN := \\033[32m
+export YELLOW := \\033[33m
+export RED := \\033[31m
+export BLUE := \\033[34m
+export MAGENTA := \\033[35m
+export RESET := \\033[0m
 
 # ==============================================================================
 # Include Modular Makefiles
@@ -64,7 +64,7 @@ logs:                         ## show recent log files
 # Main Workflow Aliases
 # ==============================================================================
 
-.PHONY: quick full setup-all
+.PHONY: quick full setup-all dev-fast pr-check ci-local comments dev-status
 
 quick: fmt lint test-unit     ## quick development check (format + lint + unit tests)
 	@echo "$(GREEN)✅ Quick development check completed!$(RESET)"
@@ -74,6 +74,38 @@ full: quality check-all       ## full quality check (comprehensive)
 
 setup-all: dev install-all   ## complete project setup (dev environment + all tools)
 	@echo "$(GREEN)🎉 Complete project setup finished!$(RESET)"
+
+dev-fast: fmt test-unit       ## quick development cycle (format and unit tests only)
+	@echo "$(GREEN)✅ Fast development cycle completed!$(RESET)"
+
+pr-check: fmt lint test-coverage ## pre-PR submission check
+	@echo "$(GREEN)✅ Pre-PR check completed - ready for submission!$(RESET)"
+
+ci-local: clean quality test-all ## run full CI pipeline locally
+	@echo "$(GREEN)✅ Local CI pipeline completed!$(RESET)"
+
+comments: ## show all TODO/FIXME/NOTE comments in codebase
+	@echo "$(CYAN)=== TODO comments ===$(RESET)"
+	@grep -r "TODO" --include="*.go" . | grep -v vendor | grep -v .git || echo "$(GREEN)No TODOs found!$(RESET)"
+	@echo ""
+	@echo "$(CYAN)=== FIXME comments ===$(RESET)"
+	@grep -r "FIXME" --include="*.go" . | grep -v vendor | grep -v .git || echo "$(GREEN)No FIXMEs found!$(RESET)"
+	@echo ""
+	@echo "$(CYAN)=== NOTE comments ===$(RESET)"
+	@grep -r "NOTE" --include="*.go" . | grep -v vendor | grep -v .git || echo "$(GREEN)No NOTEs found!$(RESET)"
+
+dev-status: ## show current development status
+	@echo "$(CYAN)Development Status Check$(RESET)"
+	@echo "$(BLUE)========================$(RESET)"
+	@echo ""
+	@echo "$(GREEN)📊 Project Status:$(RESET)"
+	@printf "  %-20s " "Git Status:"; if git status --porcelain | grep -q .; then echo "$(YELLOW)Modified files$(RESET)"; else echo "$(GREEN)Clean$(RESET)"; fi
+	@printf "  %-20s " "Current Branch:"; git branch --show-current 2>/dev/null || echo "$(RED)Unknown$(RESET)"
+	@printf "  %-20s " "Last Commit:"; git log -1 --format="%h %s" 2>/dev/null | cut -c1-50 || echo "$(RED)No commits$(RESET)"
+	@echo ""
+	@echo "$(GREEN)🔧 Build Status:$(RESET)"
+	@printf "  %-20s " "Binary Exists:"; if [ -f "proxynd" ]; then echo "$(GREEN)Yes$(RESET)"; else echo "$(YELLOW)No$(RESET)"; fi
+	@printf "  %-20s " "Coverage File:"; if [ -f "coverage.out" ]; then echo "$(GREEN)Yes$(RESET)"; else echo "$(YELLOW)No$(RESET)"; fi
 
 # ==============================================================================
 # Enhanced Help System
@@ -106,10 +138,17 @@ help: ## show main help menu with categories
 	@echo "  $(CYAN)make restart$(RESET)       Restart development server"
 	@echo "  $(CYAN)make status$(RESET)        Check development server status"
 	@echo "  $(CYAN)make quick$(RESET)         Quick check (format + lint + unit tests)"
+	@echo "  $(CYAN)make dev-fast$(RESET)      Fast development cycle (format + unit tests)"
 	@echo "  $(CYAN)make full$(RESET)          Full quality check (comprehensive)"
+	@echo "  $(CYAN)make pr-check$(RESET)      Pre-PR submission check"
+	@echo "  $(CYAN)make ci-local$(RESET)      Run full CI pipeline locally"
 	@echo "  $(CYAN)make setup-all$(RESET)     Complete project setup"
 	@echo ""
-	@echo "$(GREEN)💡 Pro Tips:$(RESET)"
+	@echo "$(GREEN)🔍 Development Tools:$(RESET)"
+	@echo "  $(CYAN)make comments$(RESET)      Show all TODO/FIXME/NOTE comments"
+	@echo "  $(CYAN)make dev-status$(RESET)    Show current development status"
+	@echo ""
+	@echo "$(GREEN)� Pro Tips:$(RESET)"
 	@echo "  • Use $(YELLOW)'make quick'$(RESET) for fast development iteration"
 	@echo "  • Use $(YELLOW)'make full'$(RESET) before pushing to ensure quality"
 	@echo "  • Use $(YELLOW)'make setup-all'$(RESET) for first-time project setup"
@@ -188,5 +227,3 @@ info: ## show project information and current configuration
 	@echo "  • Docker         (Makefile.docker.mk)"
 	@echo "  • Tools          (Makefile.tools.mk)"
 	@echo "  • Cleanup        (Makefile.clean.mk)"
-
-about: info ## alias for info command

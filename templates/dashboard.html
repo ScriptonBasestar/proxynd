@@ -26,7 +26,13 @@
 
 <h2>Maven</h2>
 {{range .mavenProxy}}
-<div><a href="{{ .Url }}">{{.Name}}</a> {{.Url}}</div>
+<div style="margin: 10px 0; padding: 10px; border: 1px solid #ccc; background: #f9f9f9;">
+	<h4>{{.Name}}</h4>
+	<p><strong>프록시 URL:</strong> <a href="{{$.baseURL}}{{$.mavenPath}}">{{$.baseURL}}{{$.mavenPath}}</a></p>
+	<p><strong>원격 URL:</strong> <a href="{{ .URL }}" target="_blank">{{.URL}}</a></p>
+	{{if .Description}}<p><strong>설명:</strong> {{.Description}}</p>{{end}}
+	<p><strong>상태:</strong> {{if .Enabled}}활성화됨{{else}}비활성화됨{{end}}</p>
+</div>
 {{end}}
 
 <h2>Apt</h2>

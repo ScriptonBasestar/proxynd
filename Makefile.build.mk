@@ -67,7 +67,6 @@ uninstall: ## uninstall proxynd binary
 	@rm -f $(shell go env GOPATH)/bin/proxynd
 	@echo "✅ proxynd uninstalled"
 
-# Docker targets moved to Makefile.docker.mk
 
 # ==============================================================================
 # Code Generation
@@ -85,7 +84,6 @@ generate-mocks: install-mockery ## generate mock files
 	mockery --config .mockery.yaml
 	@echo "Mock generation complete!"
 
-# clean-mocks moved to Makefile.clean.mk
 
 update-mocks: clean-mocks generate-mocks ## update all mock files
 	@echo "Mocks updated!"

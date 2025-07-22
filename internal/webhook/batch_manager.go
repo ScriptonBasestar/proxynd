@@ -297,7 +297,7 @@ func (bm *BatchManager) sendBatch(group *BatchGroup) error {
 	// 어댑터를 통해 전송
 	adapter, exists := bm.sender.adapters[bm.getAdapterType(group.Endpoint.Format)]
 	if !exists {
-		adapter = bm.sender.adapters["generic"]
+		adapter = bm.sender.adapters[webhookTypeGeneric]
 	}
 
 	// 임시 엔드포인트 설정 (배치용)
@@ -397,7 +397,7 @@ func (bm *BatchManager) getAdapterType(format string) string {
 	if strings.HasPrefix(format, "discord") {
 		return "discord"
 	}
-	return "generic"
+	return webhookTypeGeneric
 }
 
 // retryBatch 실패한 배치 재시도
@@ -421,7 +421,7 @@ func (bm *BatchManager) retryBatch(group *BatchGroup) {
 func (bm *BatchManager) sendSingleEvent(event *alerts.AlertEvent, endpoint configs.WebhookEndpointConfig) {
 	adapter, exists := bm.sender.adapters[bm.getAdapterType(endpoint.Format)]
 	if !exists {
-		adapter = bm.sender.adapters["generic"]
+		adapter = bm.sender.adapters[webhookTypeGeneric]
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)

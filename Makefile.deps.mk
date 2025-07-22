@@ -9,12 +9,6 @@
 .PHONY: deps-outdated deps-security deps-audit deps-report deps-clean deps-help
 .PHONY: deps-update-minor deps-update-patch deps-update-major deps-interactive
 
-# Colors for output
-CYAN := \033[36m
-GREEN := \033[32m
-YELLOW := \033[33m
-RED := \033[31m
-RESET := \033[0m
 
 # ==============================================================================
 # Go Dependencies

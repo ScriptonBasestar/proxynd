@@ -542,7 +542,35 @@ func (cl *ConfigLoader) LoadDockerProxyConfig(_ context.Context) (*DockerProxyCo
 
 // LoadGlobalConfig 글로벌 설정 로드
 func (cl *ConfigLoader) LoadGlobalConfig(_ context.Context) (*UnifiedConfig, error) {
-	return cl.Load()
+	// 기본 설정으로 초기화
+	config := cl.newDefaultConfig()
+
+	// 글로벌 설정 파일 경로 구성
+	configPath := filepath.Join(cl.configPath, "global.yaml")
+
+	// 설정 파일이 존재하는지 확인
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		return config, nil // 기본값 반환
+	}
+
+	// YAML 파일 읽기
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read config file: %w", err)
+	}
+
+	// 환경 변수 치환
+	data = cl.expandEnvironmentVariables(data)
+
+	// YAML 파싱
+	if err := yaml.Unmarshal(data, config); err != nil {
+		return nil, fmt.Errorf("failed to parse config: %w", err)
+	}
+
+	// 필요한 Import 추가하고 환경 변수 오버라이드
+	cl.applyEnvironmentOverrides(config)
+
+	return config, nil
 }
 
 // LoadPipProxyConfig PIP 프록시 설정 로드

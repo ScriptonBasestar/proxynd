@@ -5,8 +5,6 @@
 # Docker Configuration
 # ==============================================================================
 
-# Docker variables
-DOCKER_REGISTRY=scriptonbasestar
 
 # ==============================================================================
 # Docker Build Targets

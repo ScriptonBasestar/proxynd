@@ -36,8 +36,8 @@ type ApkProxyConfig struct {
 	Path            string                   `yaml:"path" validate:"required,min=1"`
 	UseCache        bool                     `yaml:"use_cache" default:"true"`
 	Proxies         []ApkProxy               `yaml:"proxies" validate:"required,min=1,dive"`
-	Verification    ApkVerificationConfig    `yaml:"verification" validate:"dive"`
-	MirrorSelection ApkMirrorSelectionConfig `yaml:"mirror_selection" validate:"dive"`
+	Verification    ApkVerificationConfig    `yaml:"verification"`
+	MirrorSelection ApkMirrorSelectionConfig `yaml:"mirror_selection"`
 }
 
 // ConfigExists APK 프록시 설정 파일 존재 여부 확인

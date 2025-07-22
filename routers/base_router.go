@@ -35,9 +35,24 @@ func BaseRouter() *fiber.App {
 		if err := aptSite.ReadConfig(); err != nil {
 			log.Printf("Warning: Failed to read APT config for dashboard: %v", err)
 		}
+
+		// 현재 서버의 호스트와 포트 정보 가져오기
+		host := c.Hostname()
+		if host == "" {
+			host = "localhost"
+		}
+		port := c.Port()
+		if port == "" {
+			port = "8080"
+		}
+		baseURL := "http://" + host + ":" + port
+
 		return c.Render("dashboard", fiber.Map{
 			"mavenProxy": mvnSite.Proxies,
 			"aptProxy":   aptSite.Proxies,
+			"mavenPath":  mvnSite.Path,
+			"aptPath":    aptSite.Path,
+			"baseURL":    baseURL,
 		})
 	})
 

@@ -130,5 +130,3 @@ ci: deps lint test-coverage ## CI pipeline checks
 # ==============================================================================
 
 .PHONY: clean-test
-
-# clean-test moved to Makefile.clean.mk

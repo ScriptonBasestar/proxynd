@@ -25,7 +25,7 @@
 cache:
   # Global default TTL in seconds (0 = no caching)
   # Range: 0-604800 (up to 7 days)
-  ttl: 3600  # 1 hour
+  ttl: "1h"  # 1 hour
 
   # HTTP Cache Headers Support
   # When enabled, respects Cache-Control and Expires headers from upstream

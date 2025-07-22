@@ -188,8 +188,8 @@ type AuthenticationConfig struct {
 type GlobalConfig struct {
 	StorageDir     string                `yaml:"storage_dir,omitempty" validate:"omitempty,path"`
 	ConfigDir      string                `yaml:"config_dir,omitempty" validate:"omitempty,path"`
-	Cache          Cache                 `yaml:"cache,omitempty" validate:"dive"`
-	Authentication *AuthenticationConfig `yaml:"authentication,omitempty" validate:"omitempty,dive"`
+	Cache          Cache                 `yaml:"cache,omitempty"`
+	Authentication *AuthenticationConfig `yaml:"authentication,omitempty"`
 	CacheDir       string                `yaml:"cache_dir,omitempty" validate:"omitempty,path"`
 	CacheTTL       int                   `yaml:"cache_ttl,omitempty" validate:"min=0,max=604800"`
 	MaxCacheSize   int64                 `yaml:"max_cache_size,omitempty" validate:"min=0"`

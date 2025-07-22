@@ -11,7 +11,7 @@ import (
 type DockerProxyServer struct {
 	Name string     `yaml:"name,omitempty" validate:"required,min=1,max=100"`
 	URL  string     `yaml:"url,omitempty" validate:"required,url"`
-	Auth DockerAuth `yaml:"auth,omitempty" validate:"dive"`
+	Auth DockerAuth `yaml:"auth,omitempty"`
 	// DockerAuth is exported
 }
 
@@ -32,7 +32,7 @@ type DockerProxyConfig struct {
 // DockerProxyRegistryConfig represents configuration for a specific Docker registry
 type DockerProxyRegistryConfig struct {
 	URL      string     `yaml:"url" validate:"required,url"`
-	Auth     DockerAuth `yaml:"auth,omitempty" validate:"dive"`
+	Auth     DockerAuth `yaml:"auth,omitempty"`
 	Enabled  bool       `yaml:"enabled,omitempty" default:"true"`
 	UseCache bool       `yaml:"use_cache,omitempty" default:"true"`
 }

@@ -114,7 +114,6 @@ deps: ## manage go dependencies
 	go mod verify
 	@echo "Dependencies verified!"
 
-# deps-update moved to Makefile.deps.mk
 
 deps-graph: ## generate dependency graph
 	@echo "Generating dependency graph..."
