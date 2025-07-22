@@ -230,10 +230,39 @@ jobs:
         run: |
           go list -json -m all | docker run --rm -i sonatypecorp/nancy:latest sleuth
 
+  cleanup-dependabot-branches:
+    name: Cleanup Dependabot Branches
+    runs-on: ubuntu-latest
+    if: github.event.inputs.cleanup_type == 'all' || github.event_name == 'schedule'
+    permissions:
+      contents: write
+      pull-requests: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup GitHub CLI
+        run: |
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+          sudo apt update
+          sudo apt install gh -y
+
+      - name: Authenticate GitHub CLI
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+
+      - name: Run Dependabot branch cleanup
+        run: |
+          chmod +x scripts/cleanup-dependabot-branches.sh
+          ./scripts/cleanup-dependabot-branches.sh
+
   cleanup-report:
     name: Generate Cleanup Report
     runs-on: ubuntu-latest
-    needs: [cleanup-artifacts, cleanup-github-artifacts, cleanup-cache, update-dependencies, security-cleanup]
+    needs: [cleanup-artifacts, cleanup-github-artifacts, cleanup-cache, update-dependencies, security-cleanup, cleanup-dependabot-branches]
     if: always()
     steps:
       - name: Generate cleanup report

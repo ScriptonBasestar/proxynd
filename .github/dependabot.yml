@@ -22,7 +22,7 @@ updates:
       include: "scope"
     pull-request-branch-name:
       separator: "-"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 5
     rebase-strategy: "auto"
     allow:
       - dependency-type: "direct"
@@ -31,21 +31,55 @@ updates:
       # Ignore patch updates for stable dependencies
       - dependency-name: "github.com/gofiber/fiber/v2"
         update-types: ["version-update:semver-patch"]
+      # Ignore frequent AWS SDK updates unless security
+      - dependency-name: "github.com/aws/aws-sdk-go-v2*"
+        update-types: ["version-update:semver-patch"]
     groups:
-      # Group security updates together
+      # Group ALL AWS SDK updates together
+      aws-sdk:
+        patterns:
+          - "github.com/aws/aws-sdk-go-v2*"
+        update-types:
+          - "minor"
+          - "patch"
+      # Group security updates together (highest priority)
       security-updates:
         applies-to: security-updates
         patterns:
           - "*"
-      # Group minor and patch updates
+      # Group HTTP/networking libraries
+      networking:
+        patterns:
+          - "github.com/valyala/*"
+          - "github.com/gofiber/*"
+          - "golang.org/x/net"
+        update-types:
+          - "minor"
+          - "patch"
+      # Group testing and development tools
+      dev-tools:
+        patterns:
+          - "github.com/stretchr/*"
+          - "go.uber.org/*"
+          - "github.com/golang-jwt/*"
+        update-types:
+          - "minor"
+          - "patch"
+      # Group terminal and CLI tools
+      cli-tools:
+        patterns:
+          - "golang.org/x/term"
+          - "github.com/spf13/*"
+        update-types:
+          - "minor"
+          - "patch"
+      # Catch-all for remaining minor updates
       minor-updates:
         update-types:
           - "minor"
           - "patch"
         patterns:
-          - "github.com/gofiber/*"
-          - "github.com/stretchr/*"
-          - "go.uber.org/*"
+          - "*"
     
   # GitHub Actions
   - package-ecosystem: "github-actions"
@@ -65,7 +99,16 @@ updates:
       include: "scope"
     pull-request-branch-name:
       separator: "-"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 3
+    groups:
+      # Group all GitHub Actions updates together
+      github-actions:
+        patterns:
+          - "*"
+        update-types:
+          - "major"
+          - "minor"
+          - "patch"
 
   # Docker
   - package-ecosystem: "docker"
