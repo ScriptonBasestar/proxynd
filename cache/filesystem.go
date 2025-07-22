@@ -9,6 +9,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"proxynd/internal/errors"
 )
 
 // FileSystemConfig 파일 시스템 백엔드 설정
@@ -68,7 +70,15 @@ func (fs *FileSystemBackend) Get(key string) (io.ReadCloser, error) {
 		}
 		fs.mu.Unlock()
 		fs.mu.RLock()
-		return nil, fmt.Errorf("cache expired")
+		return nil, errors.NewError(errors.ErrCodeCacheRead, "cache entry has expired").
+			WithDomain("cache").
+			WithDetails(map[string]interface{}{
+				"key":       key,
+				"createdAt": meta.CreatedAt,
+				"ttl":       meta.TTL,
+				"now":       time.Now(),
+			}).
+			Build()
 	}
 
 	// 파일 열기
@@ -93,14 +103,28 @@ func (fs *FileSystemBackend) Put(key string, data io.Reader, ttl time.Duration) 
 	// 디렉토리 생성
 	dir := filepath.Dir(filePath)
 	if err := os.MkdirAll(dir, 0755); err != nil {
-		return fmt.Errorf("failed to create directory: %w", err)
+		return errors.NewError(errors.ErrCodeCacheWrite, "failed to create cache directory").
+			WithDomain("cache").
+			WithCause(err).
+			WithDetails(map[string]interface{}{
+				"key":       key,
+				"directory": dir,
+			}).
+			Build()
 	}
 
 	// 임시 파일에 쓰기
 	tempFile := filePath + ".tmp"
 	file, err := os.Create(tempFile)
 	if err != nil {
-		return fmt.Errorf("failed to create temp file: %w", err)
+		return errors.NewError(errors.ErrCodeCacheWrite, "failed to create temporary cache file").
+			WithDomain("cache").
+			WithCause(err).
+			WithDetails(map[string]interface{}{
+				"key":      key,
+				"tempFile": tempFile,
+			}).
+			Build()
 	}
 
 	// 데이터 복사
