@@ -56,7 +56,7 @@ func (ws *WebhookSender) SendEvent(event *alerts.AlertEvent) error {
 	if !ws.filter.ShouldSendEvent(event) {
 		return nil
 	}
-	
+
 	return ws.core.SendEvent(event)
 }
 
@@ -66,7 +66,7 @@ func (ws *WebhookSender) SendEventSync(ctx context.Context, event *alerts.AlertE
 	if !ws.filter.ShouldSendEvent(event) {
 		return nil
 	}
-	
+
 	return ws.core.SendEventSync(ctx, event)
 }
 

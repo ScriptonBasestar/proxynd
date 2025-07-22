@@ -93,7 +93,7 @@ func (q *MemoryEventQueue) Push(event *alerts.AlertEvent) error {
 	return nil
 }
 
-// Pop placeholder  
+// Pop placeholder
 func (q *MemoryEventQueue) Pop() (*alerts.AlertEvent, error) {
 	return nil, nil
 }

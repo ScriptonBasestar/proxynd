@@ -125,7 +125,7 @@ func (c *Core) Start(ctx context.Context) error {
 			FlushTimeout: parseDurationFromConfig(c.config.Batching.FlushInterval),
 		}
 		c.batchManager = NewBatchManager(batchConfig, c.logger)
-		
+
 		c.wg.Add(1)
 		go func() {
 			defer c.wg.Done()
@@ -143,7 +143,7 @@ func (c *Core) Start(ctx context.Context) error {
 	for i := 0; i < workerCount; i++ {
 		worker := NewWorker(i, c, c.logger)
 		c.workers = append(c.workers, worker)
-		
+
 		c.wg.Add(1)
 		go func(w *Worker) {
 			defer c.wg.Done()
@@ -303,7 +303,7 @@ func (c *Core) SendEventSync(ctx context.Context, event *alerts.AlertEvent) erro
 	var lastErr error
 	for _, endpoint := range c.config.Endpoints {
 		if err := c.sendToEndpoint(ctx, event, endpoint); err != nil {
-			c.logger.Error(fmt.Sprintf("Failed to send event %s to endpoint %s: %v", 
+			c.logger.Error(fmt.Sprintf("Failed to send event %s to endpoint %s: %v",
 				event.ID, endpoint.URL, err))
 			lastErr = err
 			c.metrics.IncrementFailed()
@@ -353,7 +353,7 @@ func (c *Core) queueMonitor(ctx context.Context) {
 		case <-ticker.C:
 			queueSize := int64(c.queue.Size())
 			c.metrics.UpdateQueueSize(queueSize)
-			
+
 			if queueSize > int64(c.config.Buffering.BufferSize)*8/10 {
 				c.logger.Warn(fmt.Sprintf("Queue size high: %d", queueSize))
 			}

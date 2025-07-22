@@ -12,14 +12,14 @@ type SenderInterface interface {
 	// 생명주기 관리
 	Start(ctx context.Context) error
 	Stop(ctx context.Context) error
-	
+
 	// 이벤트 전송
 	SendEvent(event *alerts.AlertEvent) error
 	SendEventSync(ctx context.Context, event *alerts.AlertEvent) error
-	
+
 	// 어댑터 관리
 	RegisterAdapter(adapter WebhookAdapter)
-	
+
 	// 메트릭 조회
 	GetMetrics() *SenderMetrics
 	GetHistoryManager() *WebhookHistoryManager
@@ -39,7 +39,7 @@ type RetryManager interface {
 	// 재시도 처리
 	ScheduleRetry(ctx context.Context, event *alerts.AlertEvent, endpoint string, attempt int, lastError error) error
 	ProcessRetries(ctx context.Context) error
-	
+
 	// 재시도 정책
 	CalculateBackoffDelay(attempt int, policy RetryPolicy) time.Duration
 	IsRetryableError(err error) bool

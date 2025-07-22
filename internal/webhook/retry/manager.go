@@ -58,9 +58,9 @@ func NewQueue() *Queue {
 func (rq *Queue) Push(item *Item) {
 	rq.mu.Lock()
 	defer rq.mu.Unlock()
-	
+
 	rq.items = append(rq.items, item)
-	
+
 	// 비동기 알림
 	select {
 	case rq.notifyCh <- struct{}{}:
@@ -72,7 +72,7 @@ func (rq *Queue) Push(item *Item) {
 func (rq *Queue) PopReady() *Item {
 	rq.mu.Lock()
 	defer rq.mu.Unlock()
-	
+
 	now := time.Now()
 	for i, item := range rq.items {
 		if now.After(item.NextRetry) || now.Equal(item.NextRetry) {
@@ -81,7 +81,7 @@ func (rq *Queue) PopReady() *Item {
 			return item
 		}
 	}
-	
+
 	return nil
 }
 
@@ -99,11 +99,11 @@ func (rq *Queue) NotifyCh() <-chan struct{} {
 
 // Manager 재시도 관리자
 type Manager struct {
-	policy   Policy
-	queue    *Queue
-	logger   logging.Logger
-	stopCh   chan struct{}
-	wg       sync.WaitGroup
+	policy Policy
+	queue  *Queue
+	logger logging.Logger
+	stopCh chan struct{}
+	wg     sync.WaitGroup
 }
 
 // NewManager 새로운 재시도 관리자 생성
@@ -122,10 +122,10 @@ func (rm *Manager) ScheduleRetry(ctx context.Context, event *alerts.AlertEvent, 
 		rm.logger.Warn(fmt.Sprintf("Max retry attempts reached for event %s to endpoint %s", event.ID, endpoint))
 		return fmt.Errorf("max retry attempts (%d) reached", rm.policy.MaxAttempts)
 	}
-	
+
 	delay := rm.CalculateBackoffDelay(attempt, rm.policy)
 	nextRetry := time.Now().Add(delay)
-	
+
 	item := &Item{
 		Event:     event,
 		Endpoint:  endpoint,
@@ -134,12 +134,12 @@ func (rm *Manager) ScheduleRetry(ctx context.Context, event *alerts.AlertEvent, 
 		LastError: lastError,
 		CreatedAt: time.Now(),
 	}
-	
+
 	rm.queue.Push(item)
-	
-	rm.logger.Debug(fmt.Sprintf("Scheduled retry %d for event %s to endpoint %s after %v", 
+
+	rm.logger.Debug(fmt.Sprintf("Scheduled retry %d for event %s to endpoint %s after %v",
 		item.Attempt, event.ID, endpoint, delay))
-	
+
 	return nil
 }
 
@@ -147,10 +147,10 @@ func (rm *Manager) ScheduleRetry(ctx context.Context, event *alerts.AlertEvent, 
 func (rm *Manager) ProcessRetries(ctx context.Context) error {
 	rm.wg.Add(1)
 	defer rm.wg.Done()
-	
+
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
-	
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -172,10 +172,10 @@ func (rm *Manager) processReadyRetries(ctx context.Context) {
 		if item == nil {
 			break
 		}
-		
+
 		// 여기서는 실제 재시도 로직을 호출해야 하지만,
 		// 이는 sender에서 구현되어야 하므로 로깅만 수행
-		rm.logger.Debug(fmt.Sprintf("Processing retry %d for event %s to endpoint %s", 
+		rm.logger.Debug(fmt.Sprintf("Processing retry %d for event %s to endpoint %s",
 			item.Attempt, item.Event.ID, item.Endpoint))
 	}
 }
@@ -185,15 +185,15 @@ func (rm *Manager) CalculateBackoffDelay(attempt int, policy Policy) time.Durati
 	if attempt <= 0 {
 		return policy.InitialDelay
 	}
-	
+
 	// 지수 백오프 계산
 	delay := float64(policy.InitialDelay) * math.Pow(policy.BackoffFactor, float64(attempt-1))
-	
+
 	// 최대 지연 시간 제한
 	if delay > float64(policy.MaxDelay) {
 		delay = float64(policy.MaxDelay)
 	}
-	
+
 	return time.Duration(delay)
 }
 
@@ -202,7 +202,7 @@ func (rm *Manager) IsRetryableError(err error) bool {
 	if err == nil {
 		return false
 	}
-	
+
 	// 일반적인 재시도 가능한 오류 패턴
 	errorMsg := err.Error()
 	retryablePatterns := []string{
@@ -215,13 +215,13 @@ func (rm *Manager) IsRetryableError(err error) bool {
 		"bad gateway",
 		"gateway timeout",
 	}
-	
+
 	for _, pattern := range retryablePatterns {
 		if contains(errorMsg, pattern) {
 			return true
 		}
 	}
-	
+
 	return false
 }
 
@@ -234,10 +234,10 @@ func (rm *Manager) Stop() {
 // GetStats 재시도 통계 반환
 func (rm *Manager) GetStats() map[string]interface{} {
 	return map[string]interface{}{
-		"queue_size":    rm.queue.Size(),
-		"max_attempts":  rm.policy.MaxAttempts,
-		"initial_delay": rm.policy.InitialDelay.String(),
-		"max_delay":     rm.policy.MaxDelay.String(),
+		"queue_size":     rm.queue.Size(),
+		"max_attempts":   rm.policy.MaxAttempts,
+		"initial_delay":  rm.policy.InitialDelay.String(),
+		"max_delay":      rm.policy.MaxDelay.String(),
 		"backoff_factor": rm.policy.BackoffFactor,
 	}
 }
@@ -245,8 +245,8 @@ func (rm *Manager) GetStats() map[string]interface{} {
 // contains 문자열 포함 여부 확인 (간단한 구현)
 func contains(str, substr string) bool {
 	return len(str) >= len(substr) && str[:len(substr)] == substr ||
-		   len(str) > len(substr) && str[len(str)-len(substr):] == substr ||
-		   findSubstring(str, substr)
+		len(str) > len(substr) && str[len(str)-len(substr):] == substr ||
+		findSubstring(str, substr)
 }
 
 // findSubstring 부분 문자열 검색
@@ -257,7 +257,7 @@ func findSubstring(str, substr string) bool {
 	if len(str) < len(substr) {
 		return false
 	}
-	
+
 	for i := 0; i <= len(str)-len(substr); i++ {
 		if str[i:i+len(substr)] == substr {
 			return true
