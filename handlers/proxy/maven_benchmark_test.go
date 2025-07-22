@@ -319,7 +319,7 @@ func BenchmarkMavenHandler_MemoryUsage(b *testing.B) {
 
 		req := httptest.NewRequest("GET", "/proxy/maven/org/springframework/spring-core/5.3.10/spring-core-5.3.10.jar", nil)
 		resp, _ := app.Test(req, -1)
-		resp.Body.Close()
+		_ = resp.Body.Close()
 	}
 }
 

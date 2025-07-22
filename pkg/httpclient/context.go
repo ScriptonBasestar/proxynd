@@ -120,6 +120,7 @@ func (p *ProxyClient) GetWithRetry(ctx context.Context, url string, maxRetries i
 		// Close body for retry
 		if _, err := io.Copy(io.Discard, resp.Body); err != nil {
 			// Log but don't fail on drain error
+			_ = err // explicitly ignore error for staticcheck
 		}
 		_ = resp.Body.Close()
 		lastErr = fmt.Errorf("server error: %d", resp.StatusCode)

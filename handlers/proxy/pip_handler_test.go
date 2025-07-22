@@ -79,7 +79,7 @@ func TestPipProxy_Integration(t *testing.T) {
 			resp, err := app.Test(req, 1000)
 
 			require.NoError(t, err)
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 
 			assert.Equal(t, tt.expectedStatus, resp.StatusCode)
 		})
@@ -122,7 +122,7 @@ func TestPipProxy_SecurityValidation(t *testing.T) {
 			resp, err := app.Test(req, 1000)
 
 			require.NoError(t, err)
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 
 			if tt.expectBlocked {
 				assert.NotEqual(t, 200, resp.StatusCode)
@@ -149,7 +149,7 @@ func BenchmarkPipProxy_BasicRequest(b *testing.B) {
 		req := httptest.NewRequest("GET", "/pip/simple/", nil)
 		resp, _ := app.Test(req, 100)
 		if resp != nil {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 		}
 	}
 }

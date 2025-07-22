@@ -137,7 +137,9 @@ func (ws *WebhookSender) matchesEndpointFilter(event *alerts.AlertEvent, endpoin
 }
 
 // sendToEndpoint 특정 엔드포인트로 이벤트 전송 (하위 호환성 메서드)
-func (ws *WebhookSender) sendToEndpoint(ctx context.Context, event *alerts.AlertEvent, endpoint configs.WebhookEndpointConfig) error {
+func (ws *WebhookSender) sendToEndpoint(
+	ctx context.Context, event *alerts.AlertEvent, endpoint configs.WebhookEndpointConfig,
+) error {
 	// Core의 내부 메서드를 통해 전송 (실제 구현에서는 더 정교한 위임 필요)
 	return ws.core.SendEventSync(ctx, event)
 }

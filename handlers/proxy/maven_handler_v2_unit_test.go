@@ -1117,14 +1117,14 @@ func TestMavenHandlerV2_Integration(t *testing.T) {
 		case "/org/springframework/spring-core/5.3.10/spring-core-5.3.10.jar":
 			w.Header().Set("Content-Type", "application/java-archive")
 			w.WriteHeader(200)
-			w.Write([]byte("fake jar content"))
+			_, _ = w.Write([]byte("fake jar content"))
 		case "/org/springframework/spring-core/5.3.10/spring-core-5.3.10.jar.sha1":
 			w.WriteHeader(200)
-			w.Write([]byte("a1b2c3d4e5f6789012345678901234567890abcd"))
+			_, _ = w.Write([]byte("a1b2c3d4e5f6789012345678901234567890abcd"))
 		case "/org/springframework/spring-core/maven-metadata.xml":
 			w.Header().Set("Content-Type", "application/xml")
 			w.WriteHeader(200)
-			w.Write([]byte(`<?xml version="1.0" encoding="UTF-8"?>
+			_, _ = w.Write([]byte(`<?xml version="1.0" encoding="UTF-8"?>
 <metadata>
     <groupId>org.springframework</groupId>
     <artifactId>spring-core</artifactId>
@@ -1134,7 +1134,7 @@ func TestMavenHandlerV2_Integration(t *testing.T) {
 </metadata>`))
 		default:
 			w.WriteHeader(404)
-			w.Write([]byte("Not Found"))
+			_, _ = w.Write([]byte("Not Found"))
 		}
 	}))
 	defer upstreamServer.Close()

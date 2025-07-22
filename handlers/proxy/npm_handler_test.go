@@ -180,7 +180,7 @@ func TestNpmProxy_Integration(t *testing.T) {
 			resp, err := app.Test(req, 1000) // 1 second timeout
 
 			require.NoError(t, err)
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 
 			assert.Equal(t, tt.expectedStatus, resp.StatusCode)
 		})
@@ -237,7 +237,7 @@ func TestNpmProxy_ErrorHandling(t *testing.T) {
 			resp, err := app.Test(req, 1000)
 
 			require.NoError(t, err)
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 
 			if tt.expectError {
 				assert.NotEqual(t, 200, resp.StatusCode)

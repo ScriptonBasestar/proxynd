@@ -942,10 +942,10 @@ func TestAPTHandlerV2_Integration(t *testing.T) {
 		case "/dists/focal/Release":
 			w.Header().Set("Content-Type", "text/plain")
 			w.WriteHeader(200)
-			w.Write([]byte("Origin: Ubuntu\nSuite: focal\nCodename: focal"))
+			_, _ = w.Write([]byte("Origin: Ubuntu\nSuite: focal\nCodename: focal"))
 		default:
 			w.WriteHeader(404)
-			w.Write([]byte("Not Found"))
+			_, _ = w.Write([]byte("Not Found"))
 		}
 	}))
 	defer upstreamServer.Close()

@@ -117,7 +117,9 @@ func NewManager(policy Policy) *Manager {
 }
 
 // ScheduleRetry 재시도 스케줄링
-func (rm *Manager) ScheduleRetry(ctx context.Context, event *alerts.AlertEvent, endpoint string, attempt int, lastError error) error {
+func (rm *Manager) ScheduleRetry(
+	ctx context.Context, event *alerts.AlertEvent, endpoint string, attempt int, lastError error,
+) error {
 	if attempt >= rm.policy.MaxAttempts {
 		rm.logger.Warn(fmt.Sprintf("Max retry attempts reached for event %s to endpoint %s", event.ID, endpoint))
 		return fmt.Errorf("max retry attempts (%d) reached", rm.policy.MaxAttempts)

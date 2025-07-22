@@ -138,6 +138,7 @@ func (h *HTTPBestPracticesHandler) makeRequest(ctx context.Context, url string) 
 		// Drain and close body to allow connection reuse
 		if _, err := io.Copy(io.Discard, resp.Body); err != nil {
 			// Log if needed, but don't fail the operation
+			_ = err // explicitly ignore error for staticcheck
 		}
 		_ = resp.Body.Close()
 	}()
@@ -205,6 +206,7 @@ func (h *HTTPBestPracticesHandler) makeRequestWithCleanup(ctx context.Context, u
 			// Drain remaining body to allow connection reuse
 			if _, err := io.Copy(io.Discard, resp.Body); err != nil {
 				// Log if needed, but don't fail the operation
+				_ = err // explicitly ignore error for staticcheck
 			}
 			_ = resp.Body.Close()
 		}

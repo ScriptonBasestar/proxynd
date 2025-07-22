@@ -243,6 +243,6 @@ func BenchmarkAPTHandler_MemoryUsage(b *testing.B) {
 
 		req := httptest.NewRequest("GET", "/proxy/apt/ubuntu/pool/main/v/vim/vim_8.2.2434-3+deb11u1_amd64.deb", nil)
 		resp, _ := app.Test(req, -1)
-		resp.Body.Close()
+		_ = resp.Body.Close()
 	}
 }

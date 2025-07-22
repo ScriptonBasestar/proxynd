@@ -66,7 +66,9 @@ func (bm *BatchManager) Stop() {
 type PersistentFailureQueue struct{}
 
 // NewPersistentFailureQueue creates a new persistent failure queue
-func NewPersistentFailureQueue(storageDir string, maxAttempts int, retention time.Duration) (*PersistentFailureQueue, error) {
+func NewPersistentFailureQueue(
+	storageDir string, maxAttempts int, retention time.Duration,
+) (*PersistentFailureQueue, error) {
 	return &PersistentFailureQueue{}, nil
 }
 

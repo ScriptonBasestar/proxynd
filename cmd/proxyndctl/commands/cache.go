@@ -15,6 +15,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// 출력 형식 상수
+const (
+	outputFormatJSON  = "json"
+	outputFormatYAML  = "yaml"
+	outputFormatTable = "table"
+)
+
 // CacheListResponse API 응답 구조체
 type CacheListResponse struct {
 	Items []CacheItem `json:"items"`
@@ -377,7 +384,7 @@ func getOutputFormat() string {
 	if format := os.Getenv("PROXYNDCTL_OUTPUT_FORMAT"); format != "" {
 		return format
 	}
-	return "table"
+	return outputFormatTable
 }
 
 func formatBytes(bytes int64) string {

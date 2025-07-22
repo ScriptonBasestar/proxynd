@@ -2,7 +2,7 @@
 # https://golangci-lint.run/usage/configuration/
 
 # This field is required for golangci-lint >= v1.50.0
-# version: 2  # Temporarily commented out for v1 compatibility
+version: 2
 
 run:
   # timeout for analysis
@@ -21,7 +21,7 @@ run:
 
 output:
   formats:
-    - format: colored-line-number
+    colored-line-number: stdout
   print-issued-lines: true
   print-linter-name: true
 

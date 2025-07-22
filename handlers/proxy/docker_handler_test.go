@@ -84,7 +84,7 @@ func TestDockerProxy_V2Base(t *testing.T) {
 			resp, err := app.Test(req, 1000)
 
 			require.NoError(t, err)
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 
 			assert.Equal(t, tt.expectedStatus, resp.StatusCode)
 
@@ -168,7 +168,7 @@ func TestDockerProxy_Integration(t *testing.T) {
 			resp, err := app.Test(req, 1000)
 
 			require.NoError(t, err)
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 
 			assert.Equal(t, tt.expectedStatus, resp.StatusCode)
 		})
@@ -211,7 +211,7 @@ func TestDockerProxy_SecurityValidation(t *testing.T) {
 			resp, err := app.Test(req, 1000)
 
 			require.NoError(t, err)
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 
 			if tt.expectBlocked {
 				assert.NotEqual(t, 200, resp.StatusCode)
@@ -236,7 +236,7 @@ func TestDockerProxy_HeaderHandling(t *testing.T) {
 
 	resp, err := app.Test(req, 1000)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// For v2 endpoint, we expect 200 status
 	assert.Equal(t, 200, resp.StatusCode)
@@ -264,7 +264,7 @@ func BenchmarkDockerProxy_V2Base(b *testing.B) {
 		req := httptest.NewRequest("GET", "/docker/v2", nil)
 		resp, _ := app.Test(req, 100)
 		if resp != nil {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 		}
 	}
 }

@@ -326,7 +326,9 @@ func (c *Core) GetHistoryManager() *WebhookHistoryManager {
 }
 
 // sendToEndpoint 특정 엔드포인트로 이벤트 전송 (내부 메서드)
-func (c *Core) sendToEndpoint(ctx context.Context, event *alerts.AlertEvent, endpoint configs.WebhookEndpointConfig) error {
+func (c *Core) sendToEndpoint(
+	ctx context.Context, event *alerts.AlertEvent, endpoint configs.WebhookEndpointConfig,
+) error {
 	// 이 메서드는 실제 전송 로직을 구현해야 하지만,
 	// 여기서는 간단한 로깅만 수행
 	c.logger.Debug(fmt.Sprintf("Sending event %s to endpoint %s", event.ID, endpoint.URL))
