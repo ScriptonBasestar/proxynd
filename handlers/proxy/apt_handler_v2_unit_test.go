@@ -59,7 +59,7 @@ func TestAPTHandlerV2_IsEnabled(t *testing.T) {
 				logger: logging.GetLogger(),
 				Config: tt.config,
 			}
-			
+
 			// IsEnabled 메서드를 실제로 호출하지만 config 읽기는 스킵
 			// 이미 설정된 Config를 사용하도록 로직을 테스트
 			result := len(handler.Config.Proxies) > 0
@@ -390,8 +390,8 @@ func TestAPTHandlerV2_TransformRequest(t *testing.T) {
 			},
 		},
 		{
-			name: "Packages 파일 요청",
-			path: "/proxy/apt/ubuntu/dists/focal/main/binary-amd64/Packages",
+			name:         "Packages 파일 요청",
+			path:         "/proxy/apt/ubuntu/dists/focal/main/binary-amd64/Packages",
 			inputHeaders: map[string]string{},
 			expectedHeaders: map[string]string{
 				"X-APT-Proxy":     "ProxyND",
@@ -493,7 +493,7 @@ Codename: focal`,
 				// 프록시 미들웨어에서 설정되는 헤더들을 먼저 설정
 				c.Set("X-Cache-Status", "MISS")
 				c.Set("X-Proxy-Type", "apt")
-				
+
 				// 입력 헤더 설정 (업스트림에서 받은 헤더 시뮬레이션)
 				for key, value := range tt.inputHeaders {
 					c.Set(key, value)
@@ -523,7 +523,6 @@ Codename: focal`,
 		})
 	}
 }
-
 
 // HTTP Transport Mock for integration testing
 type MockTransport struct {
@@ -673,12 +672,12 @@ func TestAPTHandlerV2_HealthCheck(t *testing.T) {
 
 func TestAPTHandlerV2_HandleError(t *testing.T) {
 	handler := NewAPTHandlerV2()
-	
+
 	tests := []struct {
-		name          string
-		inputError    error
-		expectedCode  string
-		expectedMsg   string
+		name         string
+		inputError   error
+		expectedCode string
+		expectedMsg  string
 	}{
 		{
 			name:         "미러 설정 에러",
@@ -709,10 +708,10 @@ func TestAPTHandlerV2_HandleError(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := handler.HandleError(tt.inputError, nil)
-			
+
 			// 에러가 반환되는지 확인
 			assert.Error(t, err)
-			
+
 			// 에러 메시지에 예상 코드와 메시지가 포함되는지 확인
 			errorStr := err.Error()
 			assert.Contains(t, errorStr, tt.expectedCode)
@@ -723,7 +722,7 @@ func TestAPTHandlerV2_HandleError(t *testing.T) {
 
 func TestAPTHandlerV2_RecordRequestMetrics(t *testing.T) {
 	handler := NewAPTHandlerV2()
-	
+
 	app := fiber.New()
 	app.Get("/proxy/apt/:osType/*", func(c *fiber.Ctx) error {
 		// RecordRequestMetrics를 호출하고 로그 출력 확인
@@ -739,7 +738,7 @@ func TestAPTHandlerV2_RecordRequestMetrics(t *testing.T) {
 
 func TestAPTHandlerV2_RecordCacheMetrics(t *testing.T) {
 	handler := NewAPTHandlerV2()
-	
+
 	tests := []struct {
 		name     string
 		cacheKey string
@@ -787,7 +786,7 @@ func TestAPTHandlerV2_GetUpstreamAuth(t *testing.T) {
 		// GetUpstreamAuth 로직을 인라인으로 테스트
 		osType := c.Params("osType", "ubuntu")
 		proxies, exists := handler.Config.Proxies[osType]
-		
+
 		if !exists || len(proxies) == 0 {
 			assert.Fail(t, "프록시가 존재해야 함")
 			return c.SendString("error")
@@ -797,7 +796,7 @@ func TestAPTHandlerV2_GetUpstreamAuth(t *testing.T) {
 		username, password := "", ""
 		assert.Empty(t, username)
 		assert.Empty(t, password)
-		
+
 		return c.SendString("ok")
 	})
 
@@ -809,7 +808,7 @@ func TestAPTHandlerV2_GetUpstreamAuth(t *testing.T) {
 
 func TestAPTHandlerV2_ValidateClientAuth(t *testing.T) {
 	handler := NewAPTHandlerV2()
-	
+
 	app := fiber.New()
 	app.Get("/proxy/apt/:osType/*", func(c *fiber.Ctx) error {
 		err := handler.ValidateClientAuth(c)
@@ -826,13 +825,13 @@ func TestAPTHandlerV2_ValidateClientAuth(t *testing.T) {
 func TestAPTHandlerV2_ActualMethodCalls(t *testing.T) {
 	// 실제 메서드들을 호출해서 config 읽기 오류 처리를 테스트
 	handler := NewAPTHandlerV2()
-	
+
 	t.Run("IsEnabled - config read error", func(t *testing.T) {
 		// IsEnabled은 설정 읽기에 실패하면 false를 반환
 		result := handler.IsEnabled()
 		assert.False(t, result) // 설정 파일이 없으므로 false
 	})
-	
+
 	t.Run("BuildUpstreamURL - config read error", func(t *testing.T) {
 		app := fiber.New()
 		app.Get("/proxy/apt/:osType/*", func(c *fiber.Ctx) error {
@@ -846,7 +845,7 @@ func TestAPTHandlerV2_ActualMethodCalls(t *testing.T) {
 		resp, _ := app.Test(req, -1)
 		assert.Equal(t, 200, resp.StatusCode) // 핸들러는 실행되지만 에러 반환
 	})
-	
+
 	t.Run("GetUpstreamAuth - config read error", func(t *testing.T) {
 		app := fiber.New()
 		app.Get("/proxy/apt/:osType/*", func(c *fiber.Ctx) error {
@@ -859,7 +858,7 @@ func TestAPTHandlerV2_ActualMethodCalls(t *testing.T) {
 		resp, _ := app.Test(req, -1)
 		assert.Equal(t, 200, resp.StatusCode)
 	})
-	
+
 	t.Run("HealthCheck - config read error", func(t *testing.T) {
 		err := handler.HealthCheck()
 		assert.Error(t, err) // 설정 읽기 실패로 에러 발생
@@ -902,7 +901,7 @@ func TestAPTHandlerV2_ErrorHandling(t *testing.T) {
 			app.Get("/proxy/apt/:osType/*", func(c *fiber.Ctx) error {
 				// BuildUpstreamURL 로직을 인라인으로 구현해서 테스트
 				osType := c.Params("osType", "ubuntu")
-				
+
 				// OS별 프록시 설정 확인
 				proxies, exists := tt.config.Proxies[osType]
 				if !exists || len(proxies) == 0 {

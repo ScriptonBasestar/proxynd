@@ -113,7 +113,7 @@ func TestNpmProxy_Integration(t *testing.T) {
 	// Setup test environment
 	originalConfigDir := os.Getenv("CONFIG_DIR")
 	originalStorageDir := os.Getenv("STORAGE_DIR")
-	
+
 	defer func() {
 		if originalConfigDir != "" {
 			_ = os.Setenv("CONFIG_DIR", originalConfigDir)
@@ -150,7 +150,7 @@ func TestNpmProxy_Integration(t *testing.T) {
 		{
 			name:           "NPM package request",
 			path:           "/npm/lodash",
-			method:         "GET", 
+			method:         "GET",
 			expectedStatus: 200,
 			skipReason:     "requires upstream npm registry",
 		},
@@ -208,10 +208,10 @@ func TestNpmProxy_ErrorHandling(t *testing.T) {
 	app.Get("/npm/*", NpmProxy)
 
 	tests := []struct {
-		name           string
-		path           string
-		expectError    bool
-		skipReason     string
+		name        string
+		path        string
+		expectError bool
+		skipReason  string
 	}{
 		{
 			name:        "invalid package path",
@@ -281,3 +281,4 @@ func BenchmarkNpmProxy_ContentType(b *testing.B) {
 		}
 	}
 }
+

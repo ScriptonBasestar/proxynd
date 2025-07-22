@@ -58,3 +58,4 @@ func TestProxyErrorExample(t *testing.T) {
 		t.Errorf("Expected code: %s, Got: %s", errors.ErrCodeProxyUpstreamTimeout, proxyErr.Code)
 	}
 }
+

@@ -138,7 +138,7 @@ func BenchmarkMavenHandler_RequestTransform(b *testing.B) {
 		app.Get("/proxy/maven/*", func(c *fiber.Ctx) error {
 			agent := fiber.AcquireAgent()
 			defer fiber.ReleaseAgent(agent)
-			
+
 			_ = handler.TransformRequest(c, agent)
 			return nil
 		})
@@ -230,11 +230,11 @@ func BenchmarkMavenHandler_CacheTTLCalculation(b *testing.B) {
 	app := fiber.New()
 
 	paths := []string{
-		"/proxy/maven/org/example/maven-metadata.xml",                 // 5분
-		"/proxy/maven/org/example/lib/1.0/lib-1.0.jar",               // 30일
-		"/proxy/maven/org/example/lib/1.0/lib-1.0.pom",               // 7일
-		"/proxy/maven/org/example/lib/1.0/lib-1.0.jar.sha1",          // 30일
-		"/proxy/maven/org/example/lib/1.0/other-file.txt",            // 1일
+		"/proxy/maven/org/example/maven-metadata.xml",       // 5분
+		"/proxy/maven/org/example/lib/1.0/lib-1.0.jar",      // 30일
+		"/proxy/maven/org/example/lib/1.0/lib-1.0.pom",      // 7일
+		"/proxy/maven/org/example/lib/1.0/lib-1.0.jar.sha1", // 30일
+		"/proxy/maven/org/example/lib/1.0/other-file.txt",   // 1일
 	}
 
 	b.ResetTimer()
@@ -272,14 +272,14 @@ func BenchmarkMavenHandler_URLBuildingParallel(b *testing.B) {
 			"/proxy/maven/org/springframework/spring-core/5.3.10/spring-core-5.3.10.jar",
 			"/proxy/maven/org/apache/maven/maven-core/3.8.4/maven-core-3.8.4.pom",
 		}
-		
+
 		i := 0
 		for pb.Next() {
 			path := paths[i%len(paths)]
 			app.Get("/proxy/maven/*", func(c *fiber.Ctx) error {
 				// BuildUpstreamURL 로직을 인라인으로 구현
 				artifactPath := c.Params("*")
-				
+
 				if len(config.Proxies) > 0 && config.Proxies[0].URL != "" {
 					baseURL := config.Proxies[0].URL
 					if baseURL[len(baseURL)-1] == '/' {
@@ -290,7 +290,7 @@ func BenchmarkMavenHandler_URLBuildingParallel(b *testing.B) {
 					}
 					_ = baseURL + "/" + artifactPath
 				}
-				
+
 				return nil
 			})
 
@@ -305,10 +305,10 @@ func BenchmarkMavenHandler_URLBuildingParallel(b *testing.B) {
 func BenchmarkMavenHandler_MemoryUsage(b *testing.B) {
 	handler := NewMavenHandlerV2()
 	app := fiber.New()
-	
+
 	b.ReportAllocs()
 	b.ResetTimer()
-	
+
 	for i := 0; i < b.N; i++ {
 		app.Get("/proxy/maven/*", func(c *fiber.Ctx) error {
 			key := handler.GenerateCacheKey(c)

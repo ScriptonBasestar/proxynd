@@ -61,7 +61,7 @@ func TestMavenHandlerV2_IsEnabled(t *testing.T) {
 				logger: logging.GetLogger(),
 				Config: tt.config,
 			}
-			
+
 			// 설정된 Config를 사용하여 로직 테스트
 			result := len(handler.Config.Proxies) > 0
 			assert.Equal(t, tt.expected, result)
@@ -219,7 +219,7 @@ func TestMavenHandlerV2_BuildUpstreamURL(t *testing.T) {
 			app.Get("/proxy/maven/*", func(c *fiber.Ctx) error {
 				// BuildUpstreamURL 로직을 인라인으로 구현
 				artifactPath := c.Params("*")
-				
+
 				if len(tt.config.Proxies) == 0 {
 					err = fmt.Errorf("maven 리포지토리가 설정되지 않았습니다")
 					return c.SendString("ok")
@@ -510,8 +510,8 @@ func TestMavenHandlerV2_TransformRequest(t *testing.T) {
 
 				// Basic Auth 설정
 				if len(tt.config.Proxies) > 0 && tt.config.Proxies[0].BasicAuth.Username != "" {
-					auth := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", 
-						tt.config.Proxies[0].BasicAuth.Username, 
+					auth := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s",
+						tt.config.Proxies[0].BasicAuth.Username,
 						tt.config.Proxies[0].BasicAuth.Password)))
 					agent.Set("Authorization", fmt.Sprintf("Basic %s", auth))
 				}
@@ -1104,7 +1104,6 @@ func TestMavenHandlerV2_validateArtifactPath(t *testing.T) {
 		})
 	}
 }
-
 
 func TestMavenHandlerV2_Integration(t *testing.T) {
 	if testing.Short() {

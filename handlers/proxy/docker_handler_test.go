@@ -24,7 +24,7 @@ func TestDockerProxy_URLBuilding(t *testing.T) {
 			expected:    "https://registry-1.docker.io/v2/library/alpine/manifests/latest",
 		},
 		{
-			name:        "root path", 
+			name:        "root path",
 			serverURL:   "https://registry-1.docker.io",
 			requestPath: "v2",
 			expected:    "https://registry-1.docker.io/v2/v2",
@@ -103,7 +103,7 @@ func TestDockerProxy_Integration(t *testing.T) {
 	// Setup test environment
 	originalConfigDir := os.Getenv("CONFIG_DIR")
 	originalStorageDir := os.Getenv("STORAGE_DIR")
-	
+
 	defer func() {
 		if originalConfigDir != "" {
 			_ = os.Setenv("CONFIG_DIR", originalConfigDir)
@@ -182,10 +182,10 @@ func TestDockerProxy_SecurityValidation(t *testing.T) {
 	app.Get("/docker/*", DockerProxy)
 
 	tests := []struct {
-		name           string
-		path           string
-		expectBlocked  bool
-		skipReason     string
+		name          string
+		path          string
+		expectBlocked bool
+		skipReason    string
 	}{
 		{
 			name:          "path traversal attempt",
@@ -195,7 +195,7 @@ func TestDockerProxy_SecurityValidation(t *testing.T) {
 		},
 		{
 			name:          "normal manifest path",
-			path:          "/docker/v2/library/alpine/manifests/latest", 
+			path:          "/docker/v2/library/alpine/manifests/latest",
 			expectBlocked: false,
 			skipReason:    "requires upstream registry configuration",
 		},
@@ -233,7 +233,7 @@ func TestDockerProxy_HeaderHandling(t *testing.T) {
 	req.Header.Set("Accept", "application/vnd.docker.distribution.manifest.v2+json")
 
 	app.Get("/docker/*", DockerProxy)
-	
+
 	resp, err := app.Test(req, 1000)
 	require.NoError(t, err)
 	defer resp.Body.Close()
@@ -268,3 +268,4 @@ func BenchmarkDockerProxy_V2Base(b *testing.B) {
 		}
 	}
 }
+

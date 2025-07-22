@@ -99,7 +99,7 @@ func BenchmarkAPTHandler_RequestTransform(b *testing.B) {
 		app.Get("/proxy/apt/:osType/*", func(c *fiber.Ctx) error {
 			agent := fiber.AcquireAgent()
 			defer fiber.ReleaseAgent(agent)
-			
+
 			_ = handler.TransformRequest(c, agent)
 			return nil
 		})
@@ -129,7 +129,7 @@ func BenchmarkAPTHandler_URLBuildingParallel(b *testing.B) {
 			"/proxy/apt/ubuntu/dists/focal/Release",
 			"/proxy/apt/debian/pool/main/v/vim/vim_8.2.deb",
 		}
-		
+
 		i := 0
 		for pb.Next() {
 			path := paths[i%len(paths)]
@@ -149,7 +149,7 @@ func BenchmarkAPTHandler_URLBuildingParallel(b *testing.B) {
 					}
 					_ = baseURL + "/" + packagePath
 				}
-				
+
 				return nil
 			})
 
@@ -189,10 +189,10 @@ func BenchmarkAPTHandler_CacheTTLCalculation(b *testing.B) {
 	app := fiber.New()
 
 	paths := []string{
-		"/proxy/apt/ubuntu/dists/focal/Release",              // 10분
-		"/proxy/apt/ubuntu/dists/focal/Packages",             // 30분
-		"/proxy/apt/ubuntu/pool/main/v/vim/vim_8.2.deb",     // 7일
-		"/proxy/apt/ubuntu/other/file",                       // 1시간
+		"/proxy/apt/ubuntu/dists/focal/Release",         // 10분
+		"/proxy/apt/ubuntu/dists/focal/Packages",        // 30분
+		"/proxy/apt/ubuntu/pool/main/v/vim/vim_8.2.deb", // 7일
+		"/proxy/apt/ubuntu/other/file",                  // 1시간
 	}
 
 	b.ResetTimer()
@@ -211,7 +211,7 @@ func BenchmarkAPTHandler_CacheTTLCalculation(b *testing.B) {
 // BenchmarkAPTHandler_ErrorHandling 에러 처리 성능 측정
 func BenchmarkAPTHandler_ErrorHandling(b *testing.B) {
 	handler := NewAPTHandlerV2()
-	
+
 	errors := []error{
 		fmt.Errorf("미러가 설정되지 않았습니다"),
 		fmt.Errorf("설정 로드 실패: config not found"),
@@ -229,10 +229,10 @@ func BenchmarkAPTHandler_ErrorHandling(b *testing.B) {
 func BenchmarkAPTHandler_MemoryUsage(b *testing.B) {
 	handler := NewAPTHandlerV2()
 	app := fiber.New()
-	
+
 	b.ReportAllocs()
 	b.ResetTimer()
-	
+
 	for i := 0; i < b.N; i++ {
 		app.Get("/proxy/apt/:osType/*", func(c *fiber.Ctx) error {
 			key := handler.GenerateCacheKey(c)

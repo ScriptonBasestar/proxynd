@@ -14,7 +14,7 @@ func TestPipProxy_Integration(t *testing.T) {
 	// Setup test environment
 	originalConfigDir := os.Getenv("CONFIG_DIR")
 	originalStorageDir := os.Getenv("STORAGE_DIR")
-	
+
 	defer func() {
 		if originalConfigDir != "" {
 			_ = os.Setenv("CONFIG_DIR", originalConfigDir)
@@ -93,10 +93,10 @@ func TestPipProxy_SecurityValidation(t *testing.T) {
 	app.Get("/pip/*", PipProxy)
 
 	tests := []struct {
-		name           string
-		path           string
-		expectBlocked  bool
-		skipReason     string
+		name          string
+		path          string
+		expectBlocked bool
+		skipReason    string
 	}{
 		{
 			name:          "path traversal attempt",
@@ -153,3 +153,4 @@ func BenchmarkPipProxy_BasicRequest(b *testing.B) {
 		}
 	}
 }
+
