@@ -74,8 +74,14 @@ func main() {
 	features := getFeaturesByType(*licenseType)
 
 	// 라이센스 생성
+	licenseID, err := generateID()
+	if err != nil {
+		fmt.Printf("Failed to generate license ID: %v\n", err)
+		os.Exit(1)
+	}
+
 	license := License{
-		ID:         generateID(),
+		ID:         licenseID,
 		Company:    *company,
 		Email:      *email,
 		Features:   features,
@@ -113,15 +119,14 @@ func main() {
 	fmt.Printf("Output: %s\n", *output)
 }
 
-func generateID() string {
+func generateID() (string, error) {
 	b := make([]byte, 16)
 	_, err := rand.Read(b)
 	if err != nil {
-		// rand.Read은 crypto/rand를 사용하므로 실패하기 어렵지만,
-		// 만약 실패하면 패닉을 발생시킴 (라이센스 생성에서 중요한 보안 요소)
-		panic(fmt.Sprintf("failed to generate random ID: %v", err))
+		// rand.Read uses crypto/rand, failure is rare but critical for license security
+		return "", fmt.Errorf("failed to generate random ID: %w", err)
 	}
-	return fmt.Sprintf("%x", b)
+	return fmt.Sprintf("%x", b), nil
 }
 
 func signLicense(license *License, privateKey *rsa.PrivateKey) (string, error) {

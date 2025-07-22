@@ -2,6 +2,7 @@ package configs
 
 import (
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/go-playground/validator/v10"
@@ -11,21 +12,32 @@ import (
 var validate *validator.Validate
 
 func init() {
-	validate = validator.New()
+	var err error
+	validate, err = createValidator()
+	if err != nil {
+		log.Fatalf("Failed to initialize validator: %v", err)
+	}
+}
+
+// createValidator creates and configures a new validator instance
+func createValidator() (*validator.Validate, error) {
+	v := validator.New()
 
 	// Register custom validators
-	if err := validate.RegisterValidation("duration", validateDuration); err != nil {
-		panic(fmt.Sprintf("Failed to register duration validator: %v", err))
+	if err := v.RegisterValidation("duration", validateDuration); err != nil {
+		return nil, fmt.Errorf("failed to register duration validator: %w", err)
 	}
-	if err := validate.RegisterValidation("url", validateURL); err != nil {
-		panic(fmt.Sprintf("Failed to register url validator: %v", err))
+	if err := v.RegisterValidation("url", validateURL); err != nil {
+		return nil, fmt.Errorf("failed to register url validator: %w", err)
 	}
-	if err := validate.RegisterValidation("path", validatePath); err != nil {
-		panic(fmt.Sprintf("Failed to register path validator: %v", err))
+	if err := v.RegisterValidation("path", validatePath); err != nil {
+		return nil, fmt.Errorf("failed to register path validator: %w", err)
 	}
-	if err := validate.RegisterValidation("port", validatePort); err != nil {
-		panic(fmt.Sprintf("Failed to register port validator: %v", err))
+	if err := v.RegisterValidation("port", validatePort); err != nil {
+		return nil, fmt.Errorf("failed to register port validator: %w", err)
 	}
+
+	return v, nil
 }
 
 // ValidateStruct validates a struct using struct tags
