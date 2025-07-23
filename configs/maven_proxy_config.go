@@ -32,15 +32,26 @@ type BasicAuth struct {
 
 // MavenProxyConfig represents the configuration for mavenproxy settings
 type MavenProxyConfig struct {
-	Path     string                `yaml:"path,omitempty" validate:"required,min=1"`
-	UseCache bool                  `yaml:"use_cache,omitempty" default:"true"`
-	Proxies  []MavenProxyServer    `yaml:"proxies" validate:"required,min=1,dive"`
-	Cache    MavenProxyCacheConfig `yaml:"cache,omitempty"`
+	Path        string                 `yaml:"path,omitempty" validate:"required,min=1"`
+	UseCache    bool                   `yaml:"use_cache,omitempty" default:"true"`
+	Proxies     []MavenProxyServer     `yaml:"proxies" validate:"required,min=1,dive"`
+	Cache       MavenProxyCacheConfig  `yaml:"cache,omitempty"`
+	SearchIndex MavenSearchIndexConfig `yaml:"search_index,omitempty"`
 }
 
 // MavenProxyCacheConfig represents the configuration for mavenproxycache settings
 type MavenProxyCacheConfig struct {
 	Enabled bool `yaml:"enabled,omitempty" default:"true"`
+}
+
+// MavenSearchIndexConfig 검색 인덱스 설정
+type MavenSearchIndexConfig struct {
+	// 서버 시작 시 자동으로 인덱스 빌드 여부 (기본값: false)
+	AutoBuildOnStartup bool `yaml:"auto_build_on_startup,omitempty" default:"false"`
+	// 인덱스 자동 갱신 주기 (시간 단위, 0이면 자동 갱신 안함, 기본값: 0)
+	AutoRebuildIntervalHours int `yaml:"auto_rebuild_interval_hours,omitempty" default:"0"`
+	// 인덱스 저장 경로 (기본값: STORAGE_DIR/maven-index)
+	StoragePath string `yaml:"storage_path,omitempty"`
 }
 
 // ConfigExists checks if the configuration file exists

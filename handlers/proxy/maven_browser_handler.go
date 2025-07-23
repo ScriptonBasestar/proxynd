@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
@@ -134,14 +136,32 @@ type cacheEntry struct {
 	timestamp time.Time
 }
 
+// SearchIndexEntry 검색 인덱스 엔트리
+type SearchIndexEntry struct {
+	Path       string
+	Name       string
+	Type       string
+	GroupID    string
+	ArtifactID string
+}
+
+// searchIndex 검색 인덱스
+type searchIndex struct {
+	entries   []SearchIndexEntry
+	mutex     sync.RWMutex
+	lastBuild time.Time
+}
+
 // MavenBrowserHandler Maven 리포지토리 브라우저 핸들러
 type MavenBrowserHandler struct {
-	client     *http.Client
-	logger     logging.Logger
-	config     *configs.MavenProxyConfig
-	cache      sync.Map // path -> cacheEntry
-	cacheTTL   time.Duration
-	indexCache sync.Map // 인덱스 프리로드용 캐시
+	client       *http.Client
+	logger       logging.Logger
+	config       *configs.MavenProxyConfig
+	cache        sync.Map // path -> cacheEntry
+	cacheTTL     time.Duration
+	indexCache   sync.Map // 인덱스 프리로드용 캐시
+	searchIndex  *searchIndex
+	indexStorage IndexStorage
 }
 
 // NewMavenBrowserHandler 새로운 Maven 브라우저 핸들러 생성
@@ -153,7 +173,14 @@ func NewMavenBrowserHandler() *MavenBrowserHandler {
 		logger:   logging.GetLogger(),
 		config:   &configs.MavenProxyConfig{},
 		cacheTTL: 5 * time.Minute, // 5분 캐시
+		searchIndex: &searchIndex{
+			entries: make([]SearchIndexEntry, 0, 10000), // 초기 용량 10000
+		},
 	}
+
+	// 설정에 따라 인덱스 로드 또는 빌드
+	// 설정은 나중에 로드되므로 여기서는 기본 경로로 초기화
+	go h.initializeIndex()
 
 	// 백그라운드에서 인기있는 경로 프리로드
 	go h.preloadPopularPaths()
@@ -234,12 +261,10 @@ func (h *MavenBrowserHandler) Handle(c *fiber.Ctx) error {
 		timestamp: time.Now(),
 	})
 
-	// 검색 쿼리가 있으면 트리에서 검색
+	// 검색 쿼리가 있으면 전체 검색 수행
 	if searchQuery != "" {
-		browserData.SearchQuery = searchQuery
-		if browserData.TreeRoot != nil {
-			searchInTree(browserData.TreeRoot, searchQuery)
-		}
+		// 모든 경로에서 검색 시 전체 검색 수행
+		return h.performGlobalSearch(c, searchQuery)
 	}
 
 	// JSON API 요청인 경우 (AJAX 요청 또는 format=json 파라미터)
@@ -946,6 +971,125 @@ func (h *MavenBrowserHandler) collectVersions(artifactPath string) ([]DirectoryE
 	return result, nil
 }
 
+// performGlobalSearch 전체 리포지토리 검색 수행
+func (h *MavenBrowserHandler) performGlobalSearch(c *fiber.Ctx, searchQuery string) error {
+	// 인덱스가 아직 빌드되지 않았으면 메시지 표시
+	h.searchIndex.mutex.RLock()
+	indexEntries := h.searchIndex.entries
+	h.searchIndex.mutex.RUnlock()
+
+	if len(indexEntries) == 0 {
+		// 인덱스가 없으면 간단한 메시지 반환
+		emptyData := &MavenBrowserData{
+			Path:        "/",
+			TreeRoot:    []*GAVTreeNode{},
+			SearchQuery: searchQuery,
+		}
+
+		if strings.Contains(c.Get("Accept"), "application/json") || c.Query("format") == "json" {
+			return c.JSON(emptyData)
+		}
+
+		return c.Status(503).SendString("검색 인덱스를 구축 중입니다. 잠시 후 다시 시도해주세요.")
+	}
+
+	// 인덱스에서 빠르게 검색
+	query := strings.ToLower(searchQuery)
+	matchingPaths := make(map[string]bool)
+
+	for _, entry := range indexEntries {
+		if strings.Contains(strings.ToLower(entry.Name), query) ||
+			strings.Contains(strings.ToLower(entry.GroupID), query) ||
+			strings.Contains(strings.ToLower(entry.ArtifactID), query) {
+			// 매칭되는 경로와 상위 경로들 추가
+			matchingPaths[entry.Path] = true
+
+			// 상위 경로들도 추가 (트리 구조 유지)
+			parts := strings.Split(strings.Trim(entry.Path, "/"), "/")
+			for i := 1; i <= len(parts); i++ {
+				parentPath := "/" + strings.Join(parts[:i], "/") + "/"
+				matchingPaths[parentPath] = true
+			}
+		}
+	}
+
+	// 매칭된 경로들로 트리 구성
+	searchResults := h.buildSearchResultTree(matchingPaths, query)
+
+	h.logger.Info("Index search completed",
+		logging.F("query", searchQuery),
+		logging.F("matches", len(matchingPaths)),
+		logging.F("results", len(searchResults)))
+
+	// 검색 결과로 새로운 트리 구성
+	resultData := &MavenBrowserData{
+		Path:         "/",
+		TreeRoot:     searchResults,
+		SearchQuery:  searchQuery,
+		TotalMirrors: len(h.config.Proxies),
+	}
+
+	// JSON API 요청인 경우
+	if strings.Contains(c.Get("Accept"), "application/json") || c.Query("format") == "json" {
+		return c.JSON(resultData)
+	}
+
+	return c.Render("maven-browser", resultData)
+}
+
+// searchRecursively 재귀적으로 검색 수행
+func (h *MavenBrowserHandler) searchRecursively(nodes []*GAVTreeNode, query string, parentPath string, results *[]*GAVTreeNode) {
+	query = strings.ToLower(query)
+
+	for _, node := range nodes {
+		// 노드 복사본 생성 (원본 수정 방지)
+		nodeCopy := &GAVTreeNode{
+			Name:       node.Name,
+			Type:       node.Type,
+			FullPath:   node.FullPath,
+			ChildCount: node.ChildCount,
+			Sources:    node.Sources,
+			GroupID:    node.GroupID,
+			ArtifactID: node.ArtifactID,
+			Version:    node.Version,
+		}
+
+		// 현재 노드가 매칭되는지 확인
+		nodeMatches := false
+		if strings.Contains(strings.ToLower(node.Name), query) ||
+			(node.GroupID != "" && strings.Contains(strings.ToLower(node.GroupID), query)) ||
+			(node.ArtifactID != "" && strings.Contains(strings.ToLower(node.ArtifactID), query)) {
+			nodeMatches = true
+			nodeCopy.IsHighlighted = true
+		}
+
+		// 하위 항목 검색
+		hasMatchingChildren := false
+		if node.Type == "group" || node.Type == "artifact" {
+			// 하위 디렉토리 로드
+			childPath := strings.TrimPrefix(node.FullPath, "/proxy/maven")
+			childData, err := h.collectDirectoryData(childPath)
+
+			if err == nil && childData.TreeRoot != nil && len(childData.TreeRoot) > 0 {
+				// 하위 항목에서 검색
+				childResults := make([]*GAVTreeNode, 0)
+				h.searchRecursively(childData.TreeRoot, query, node.FullPath, &childResults)
+
+				if len(childResults) > 0 {
+					hasMatchingChildren = true
+					nodeCopy.Children = childResults
+					nodeCopy.IsExpanded = true
+				}
+			}
+		}
+
+		// 현재 노드가 매칭되거나 하위에 매칭 항목이 있으면 결과에 추가
+		if nodeMatches || hasMatchingChildren {
+			*results = append(*results, nodeCopy)
+		}
+	}
+}
+
 // preloadPopularPaths 인기있는 경로를 미리 로드
 func (h *MavenBrowserHandler) preloadPopularPaths() {
 	// 설정 로드 대기
@@ -1001,4 +1145,354 @@ func (h *MavenBrowserHandler) preloadPopularPaths() {
 		// 과부하 방지를 위해 약간의 지연
 		time.Sleep(500 * time.Millisecond)
 	}
+}
+
+// initializeIndex 인덱스 초기화
+func (h *MavenBrowserHandler) initializeIndex() {
+	// 설정 로드 대기
+	time.Sleep(3 * time.Second)
+
+	if h.config == nil || len(h.config.Proxies) == 0 {
+		if err := h.config.ReadConfig(); err != nil {
+			h.logger.Error("Failed to read config for index",
+				logging.F("error", err))
+			return
+		}
+	}
+
+	// 저장 경로 결정
+	storageDir := h.config.SearchIndex.StoragePath
+	if storageDir == "" {
+		storageDir = os.Getenv("STORAGE_DIR")
+		if storageDir == "" {
+			storageDir = "/tmp"
+		}
+		storageDir = filepath.Join(storageDir, "maven-index")
+	}
+
+	// 인덱스 저장소 초기화
+	h.indexStorage = NewFileIndexStorage(storageDir)
+
+	// 기존 인덱스 로드
+	h.loadExistingIndex()
+}
+
+// loadExistingIndex 저장된 인덱스만 로드 (자동 빌드 안함)
+func (h *MavenBrowserHandler) loadExistingIndex() {
+	// 저장된 인덱스 로드 시도
+	if h.indexStorage != nil {
+		if entries, err := h.indexStorage.Load(); err == nil && len(entries) > 0 {
+			// 마지막 수정 시간 확인
+			if lastMod, err := h.indexStorage.GetLastModified(); err == nil {
+				h.searchIndex.mutex.Lock()
+				h.searchIndex.entries = entries
+				h.searchIndex.lastBuild = lastMod
+				h.searchIndex.mutex.Unlock()
+
+				h.logger.Info("Search index loaded from storage",
+					logging.F("entries", len(entries)),
+					logging.F("age", time.Since(lastMod)))
+
+				// 설정에 따라 자동 갱신 스케줄링
+				if h.config.SearchIndex.AutoRebuildIntervalHours > 0 {
+					go h.scheduleAutoRebuild()
+				}
+				return
+			}
+		}
+	}
+
+	// 저장된 인덱스가 없고 자동 빌드가 활성화되어 있으면 빌드
+	if h.config.SearchIndex.AutoBuildOnStartup {
+		h.logger.Info("Auto-building search index on startup")
+		go h.buildSearchIndex()
+	} else {
+		h.logger.Info("Search index not found. Use 'proxyndctl maven-index build' to create index")
+	}
+}
+
+// buildSearchIndex 검색 인덱스 구축
+func (h *MavenBrowserHandler) buildSearchIndex() {
+	startTime := time.Now()
+	h.logger.Info("Starting search index build")
+
+	newEntries := make([]SearchIndexEntry, 0, 10000)
+
+	// 병렬로 인덱싱 (최상위 디렉토리별)
+	rootData, err := h.collectDirectoryData("/")
+	if err != nil {
+		h.logger.Error("Failed to get root data for indexing",
+			logging.F("error", err))
+		return
+	}
+
+	var mutex sync.Mutex
+	var wg sync.WaitGroup
+
+	// 최상위 그룹별로 병렬 인덱싱
+	for _, node := range rootData.TreeRoot {
+		wg.Add(1)
+		go func(n *GAVTreeNode) {
+			defer wg.Done()
+
+			localEntries := make([]SearchIndexEntry, 0, 1000)
+			h.indexNode(n, "", &localEntries)
+
+			mutex.Lock()
+			newEntries = append(newEntries, localEntries...)
+			mutex.Unlock()
+		}(node)
+	}
+
+	wg.Wait()
+
+	// 인덱스 업데이트
+	h.searchIndex.mutex.Lock()
+	h.searchIndex.entries = newEntries
+	h.searchIndex.lastBuild = time.Now()
+	h.searchIndex.mutex.Unlock()
+
+	// 파일에 저장
+	if h.indexStorage != nil {
+		if err := h.indexStorage.Save(newEntries); err != nil {
+			h.logger.Error("Failed to save index", logging.F("error", err))
+		}
+	}
+
+	h.logger.Info("Search index build completed",
+		logging.F("entries", len(newEntries)),
+		logging.F("duration", time.Since(startTime)))
+
+	// 설정에 따라 자동 갱신 스케줄링
+	if h.config.SearchIndex.AutoRebuildIntervalHours > 0 {
+		go h.scheduleAutoRebuild()
+	}
+}
+
+// scheduleAutoRebuild 자동 인덱스 재구축 스케줄링
+func (h *MavenBrowserHandler) scheduleAutoRebuild() {
+	if h.config.SearchIndex.AutoRebuildIntervalHours <= 0 {
+		return
+	}
+
+	interval := time.Duration(h.config.SearchIndex.AutoRebuildIntervalHours) * time.Hour
+	h.logger.Info("Scheduling auto-rebuild of search index",
+		logging.F("interval", interval))
+
+	time.Sleep(interval)
+	h.buildSearchIndex()
+}
+
+// indexNode 노드를 인덱싱 (GAVTreeNode 사용)
+func (h *MavenBrowserHandler) indexNode(node *GAVTreeNode, parentGroupID string, entries *[]SearchIndexEntry) {
+	if node == nil || len(*entries) > 50000 {
+		return
+	}
+
+	// 인덱스 엔트리 생성
+	entry := SearchIndexEntry{
+		Path:       node.FullPath,
+		Name:       node.Name,
+		Type:       node.Type,
+		GroupID:    node.GroupID,
+		ArtifactID: node.ArtifactID,
+	}
+
+	// GroupID 설정
+	if entry.GroupID == "" && parentGroupID != "" {
+		if parentGroupID == "/" || parentGroupID == "" {
+			entry.GroupID = node.Name
+		} else {
+			entry.GroupID = parentGroupID + "." + node.Name
+		}
+	}
+
+	*entries = append(*entries, entry)
+
+	// 그룹이나 아티팩트면 하위 탐색
+	if node.Type == "group" || node.Type == "artifact" {
+		childPath := strings.TrimPrefix(node.FullPath, "/proxy/maven")
+
+		// 캐시 확인
+		var childNodes []*GAVTreeNode
+		if cached, found := h.cache.Load(childPath); found {
+			if cacheEntry, ok := cached.(*cacheEntry); ok && time.Since(cacheEntry.timestamp) < h.cacheTTL {
+				childNodes = cacheEntry.data.TreeRoot
+			}
+		}
+
+		// 캐시가 없으면 로드
+		if childNodes == nil {
+			if data, err := h.collectDirectoryData(childPath); err == nil {
+				childNodes = data.TreeRoot
+			}
+		}
+
+		// 하위 노드 인덱싱
+		for _, child := range childNodes {
+			h.indexNode(child, entry.GroupID, entries)
+		}
+	}
+}
+
+// indexDirectory 디렉토리를 재귀적으로 인덱싱
+func (h *MavenBrowserHandler) indexDirectory(path string, parentGroupID string, entries *[]SearchIndexEntry) {
+	// 캐시 확인
+	if cached, found := h.cache.Load(path); found {
+		if entry, ok := cached.(*cacheEntry); ok {
+			if time.Since(entry.timestamp) < h.cacheTTL && entry.data != nil {
+				// 캐시된 데이터에서 인덱싱
+				for _, node := range entry.data.TreeRoot {
+					h.addToIndex(node, path, parentGroupID, entries)
+				}
+				return
+			}
+		}
+	}
+
+	// 디렉토리 데이터 수집
+	data, err := h.collectDirectoryData(path)
+	if err != nil {
+		h.logger.Warn("Failed to collect data for indexing",
+			logging.F("path", path),
+			logging.F("error", err))
+		return
+	}
+
+	// 데이터에서 인덱싱
+	for _, node := range data.TreeRoot {
+		h.addToIndex(node, path, parentGroupID, entries)
+	}
+}
+
+// addToIndex 노드를 인덱스에 추가
+func (h *MavenBrowserHandler) addToIndex(node *GAVTreeNode, parentPath string, parentGroupID string, entries *[]SearchIndexEntry) {
+	if node == nil {
+		return
+	}
+
+	// 인덱스 엔트리 생성
+	entry := SearchIndexEntry{
+		Path:       node.FullPath,
+		Name:       node.Name,
+		Type:       node.Type,
+		GroupID:    node.GroupID,
+		ArtifactID: node.ArtifactID,
+	}
+
+	// GroupID 설정
+	if entry.GroupID == "" && parentGroupID != "" {
+		if parentGroupID == "/" {
+			entry.GroupID = node.Name
+		} else {
+			entry.GroupID = parentGroupID + "." + node.Name
+		}
+	}
+
+	*entries = append(*entries, entry)
+
+	// 너무 많은 엔트리 방지 (최대 50000개)
+	if len(*entries) > 50000 {
+		return
+	}
+
+	// 그룹이나 아티팩트면 하위 탐색
+	if node.Type == "group" || node.Type == "artifact" {
+		childPath := strings.TrimPrefix(node.FullPath, "/proxy/maven")
+		h.indexDirectory(childPath, entry.GroupID, entries)
+
+		// 메모리 부담 줄이기 위해 잠시 대기
+		if len(*entries)%1000 == 0 {
+			time.Sleep(100 * time.Millisecond)
+		}
+	}
+}
+
+// buildSearchResultTree 검색 결과로 트리 구성
+func (h *MavenBrowserHandler) buildSearchResultTree(matchingPaths map[string]bool, query string) []*GAVTreeNode {
+	// 루트 노드들 구성
+	rootNodes := make([]*GAVTreeNode, 0)
+
+	// 최상위 디렉토리 찾기
+	for path := range matchingPaths {
+		parts := strings.Split(strings.Trim(path, "/"), "/")
+		if len(parts) == 1 && parts[0] != "" {
+			// 최상위 노드
+			node := &GAVTreeNode{
+				Name:       parts[0],
+				Type:       "group",
+				FullPath:   path,
+				IsExpanded: true,
+			}
+
+			// 하위 노드들 추가
+			h.addChildrenFromPaths(node, matchingPaths, query)
+			rootNodes = append(rootNodes, node)
+		}
+	}
+
+	// 정렬
+	sort.Slice(rootNodes, func(i, j int) bool {
+		return rootNodes[i].Name < rootNodes[j].Name
+	})
+
+	return rootNodes
+}
+
+// addChildrenFromPaths 매칭된 경로에서 하위 노드 추가
+func (h *MavenBrowserHandler) addChildrenFromPaths(parent *GAVTreeNode, matchingPaths map[string]bool, query string) {
+	parentPath := strings.Trim(parent.FullPath, "/")
+
+	for path := range matchingPaths {
+		trimmedPath := strings.Trim(path, "/")
+
+		// 직접 하위 경로인지 확인
+		if strings.HasPrefix(trimmedPath, parentPath+"/") {
+			relativePath := strings.TrimPrefix(trimmedPath, parentPath+"/")
+			parts := strings.Split(relativePath, "/")
+
+			if len(parts) == 1 && parts[0] != "" {
+				// 직접 하위 노드
+				child := &GAVTreeNode{
+					Name:       parts[0],
+					Type:       "group", // 타입은 나중에 정제 필요
+					FullPath:   path,
+					IsExpanded: true,
+				}
+
+				// 검색어가 포함되면 하이라이트
+				if strings.Contains(strings.ToLower(child.Name), strings.ToLower(query)) {
+					child.IsHighlighted = true
+				}
+
+				// 재귀적으로 하위 추가
+				h.addChildrenFromPaths(child, matchingPaths, query)
+
+				parent.Children = append(parent.Children, child)
+			}
+		}
+	}
+
+	// 자식 노드 정렬
+	if len(parent.Children) > 0 {
+		sort.Slice(parent.Children, func(i, j int) bool {
+			return parent.Children[i].Name < parent.Children[j].Name
+		})
+	}
+}
+
+// SetConfig 설정 변경 (CLI 도구용)
+func (h *MavenBrowserHandler) SetConfig(config *configs.MavenProxyConfig) {
+	h.config = config
+}
+
+// CollectDirectoryData 디렉토리 데이터 수집 (CLI 도구용)
+func (h *MavenBrowserHandler) CollectDirectoryData(path string) (*MavenBrowserData, error) {
+	// 경로 정규화
+	if !strings.HasPrefix(path, "/") {
+		path = "/" + path
+	}
+
+	// 기존 collectDirectoryData 메서드 활용
+	return h.collectDirectoryData(path)
 }

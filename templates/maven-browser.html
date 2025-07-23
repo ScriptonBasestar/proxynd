@@ -196,6 +196,13 @@
         .tree-node-content.highlighted {
             background-color: #fff3cd;
             font-weight: 500;
+            border: 1px solid #ffeaa7;
+        }
+        
+        /* 검색 결과 강조 */
+        .tree-node-content.highlighted .tree-node-name {
+            color: #d63031;
+            font-weight: 600;
         }
 
         .tree-expand-icon {
@@ -380,7 +387,13 @@
         <!-- GAV Tree -->
         <div class="gav-tree-container">
             <div class="tree-header">
-                <div class="tree-title">Maven Repository</div>
+                <div class="tree-title">
+                    {{if .SearchQuery}}
+                        검색 결과: "{{.SearchQuery}}"
+                    {{else}}
+                        Maven Repository
+                    {{end}}
+                </div>
             </div>
 
             {{if .TreeRoot}}

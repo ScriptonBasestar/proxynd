@@ -79,6 +79,12 @@ var healthCmd = commands.NewHealthCmd()
 // metricsCmd는 메트릭 조회 명령어 (commands 패키지에서 가져옴)
 var metricsCmd = commands.NewMetricsCmd()
 
+// mavenIndexCmd는 Maven 인덱스 관리 명령어 (commands 패키지에서 가져옴)
+var mavenIndexCmd = commands.NewMavenIndexCmd()
+
+// mavenBackupCmd는 Maven 백업 관리 명령어 (commands 패키지에서 가져옴)
+var mavenBackupCmd = commands.NewMavenBackupCmd()
+
 // completionCmd는 자동완성 스크립트 생성 명령어
 var completionCmd *cobra.Command
 
@@ -106,6 +112,8 @@ func init() {
 	rootCmd.AddCommand(statusCmd)
 	rootCmd.AddCommand(healthCmd)
 	rootCmd.AddCommand(metricsCmd)
+	rootCmd.AddCommand(mavenIndexCmd)
+	rootCmd.AddCommand(mavenBackupCmd)
 	rootCmd.AddCommand(completionCmd)
 	rootCmd.AddCommand(docsCmd)
 
