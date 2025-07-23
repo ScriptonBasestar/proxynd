@@ -172,13 +172,15 @@ func indexOfSubstring(s, substr string) int {
 // BasicAuthConfig represents HTTP Basic Authentication configuration.
 // It contains a map of username/password pairs and an optional realm.
 type BasicAuthConfig struct {
-	Users map[string]string `yaml:"users,omitempty" validate:"dive,keys,min=1,endkeys,min=1"`
-	Realm string            `yaml:"realm,omitempty" default:"Restricted" validate:"min=1,max=100"`
+	Enabled *bool             `yaml:"enabled,omitempty" default:"true"`
+	Users   map[string]string `yaml:"users,omitempty" validate:"dive,keys,min=1,endkeys,min=1"`
+	Realm   string            `yaml:"realm,omitempty" default:"Restricted" validate:"min=1,max=100"`
 }
 
 // AuthenticationConfig represents the authentication configuration for ProxyND.
 // It supports both Basic Authentication and OAuth2.
 type AuthenticationConfig struct {
+	Enabled   *bool            `yaml:"enabled,omitempty" default:"true"`
 	BasicAuth *BasicAuthConfig `yaml:"basic_auth,omitempty"`
 	OAuth2    *OAuth2Config    `yaml:"oauth2,omitempty"`
 }

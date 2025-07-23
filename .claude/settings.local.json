@@ -55,7 +55,8 @@
       "Bash(export TERM=xterm)",
       "Bash(./temp_delete.sh:*)",
       "Bash(python3:*)",
-      "Bash(golangci-lint:*)"
+      "Bash(golangci-lint:*)",
+      "Bash(CONFIG_DIR=./tmp/config STORAGE_DIR=./tmp/storage SERVER_PORT=8080 go run main.go)"
     ],
     "deny": []
   }

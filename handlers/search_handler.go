@@ -146,7 +146,9 @@ func searchAptContent(query string, limit int) ([]SearchResult, error) {
 }
 
 // searchAptIndex searches APT repository using mock package data
-func searchAptIndex(distro string, proxy configs.AptProxy, query string, limit int, baseURL, proxyPath string) ([]SearchResult, error) {
+func searchAptIndex(
+	distro string, proxy configs.AptProxy, query string, limit int, baseURL, proxyPath string,
+) ([]SearchResult, error) {
 	var results []SearchResult
 
 	// APT 패키지 Mock 데이터
@@ -195,7 +197,7 @@ func searchMavenContentGrouped(query string, limit int) ([]GroupedSearchResult, 
 	// Maven 설정 로드
 	mavenConfig := configs.MavenProxyConfig{}
 	if err := mavenConfig.ReadConfig(); err != nil {
-		return nil, fmt.Errorf("Maven 설정 로드 실패: %w", err)
+		return nil, fmt.Errorf("maven 설정 로드 실패: %w", err)
 	}
 
 	baseURL := "http://localhost:8080"

@@ -284,12 +284,53 @@ func SessionTimeout() fiber.Handler {
 // BasicAuthFallback BasicAuth 폴백 미들웨어
 func BasicAuthFallback() fiber.Handler {
 	return func(c *fiber.Ctx) error {
+		logger := logging.GetLogger()
+		logger.Info("BasicAuthFallback middleware called",
+			logging.String("path", c.Path()))
+
 		// OAuth2 인증이 실패한 경우 BasicAuth 시도
 		userData := c.Locals("user")
 		if userData != nil {
 			// 이미 OAuth2로 인증됨
+			logger.Info("User already authenticated via OAuth2")
 			return c.Next()
 		}
+
+		// 인증 설정 확인
+		globalConfig := &configs.GlobalConfig{}
+		if err := globalConfig.ReadConfig(); err != nil {
+			// 설정 로드 실패 시 인증 없이 통과 (개발 모드)
+			logger.Info("Failed to load global config - skipping auth", logging.ErrorField(err))
+			return c.Next()
+		}
+		logger.Info("Global config loaded successfully")
+
+		// 전체 인증이 비활성화된 경우 인증 없이 통과
+		if globalConfig.Authentication == nil {
+			logger.Info("Authentication config is nil - skipping auth")
+			return c.Next()
+		}
+
+		if globalConfig.Authentication.Enabled != nil && !*globalConfig.Authentication.Enabled {
+			logger.Info("Authentication is globally disabled - skipping auth")
+			return c.Next()
+		}
+
+		logger.Info("Authentication is enabled",
+			logging.Bool("global_enabled", globalConfig.Authentication.Enabled == nil || *globalConfig.Authentication.Enabled))
+
+		// BasicAuth가 설정되어 있지 않거나 비활성화된 경우 인증 없이 통과
+		if globalConfig.Authentication.BasicAuth == nil {
+			logger.Info("BasicAuth config is nil - skipping auth")
+			return c.Next()
+		}
+
+		if globalConfig.Authentication.BasicAuth.Enabled != nil && !*globalConfig.Authentication.BasicAuth.Enabled {
+			logger.Info("BasicAuth is disabled - skipping auth")
+			return c.Next()
+		}
+
+		logger.Info("BasicAuth is enabled - requiring authentication")
 
 		// Authorization 헤더 확인
 		authHeader := c.Get("Authorization")
@@ -513,9 +554,24 @@ func validateBasicAuthUser(username, password string) error {
 		return errors.New("failed to load configuration")
 	}
 
+	// 전체 인증 설정 확인
+	if globalConfig.Authentication == nil {
+		return errors.New("authentication not configured")
+	}
+
+	// 전체 인증이 비활성화된 경우
+	if globalConfig.Authentication.Enabled != nil && !*globalConfig.Authentication.Enabled {
+		return errors.New("authentication is disabled")
+	}
+
 	// BasicAuth 설정이 있는지 확인
-	if globalConfig.Authentication == nil || globalConfig.Authentication.BasicAuth == nil {
+	if globalConfig.Authentication.BasicAuth == nil {
 		return errors.New("BasicAuth not configured")
+	}
+
+	// BasicAuth가 비활성화된 경우 인증 불가
+	if globalConfig.Authentication.BasicAuth.Enabled != nil && !*globalConfig.Authentication.BasicAuth.Enabled {
+		return errors.New("BasicAuth is disabled")
 	}
 
 	// 사용자 존재 확인

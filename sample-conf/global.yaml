@@ -124,9 +124,16 @@ cache:
 # Authentication Configuration
 # =============================================================================
 authentication:
+  # 전체 인증 시스템 활성화/비활성화 (기본값: true)
+  # 개발 환경에서는 false로 설정하여 모든 인증 비활성화 가능
+  enabled: true
+
   # Basic Authentication
   # Simple username/password authentication
   basic_auth:
+    # Basic Auth 개별 활성화/비활성화 (기본값: true)
+    enabled: true
+
     # Realm shown in authentication prompts
     realm: "ProxyND Restricted Area"
 
