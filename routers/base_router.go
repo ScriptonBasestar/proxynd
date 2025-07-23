@@ -17,6 +17,17 @@ func BaseRouter() *fiber.App {
 	// Setup template engine
 	engine := html.New("./templates", ".html")
 
+	// Add template helper functions
+	engine.AddFunc("sub", func(a, b int) int {
+		return a - b
+	})
+	engine.AddFunc("add", func(a, b int) int {
+		return a + b
+	})
+	engine.AddFunc("hasSuffix", func(s, suffix string) bool {
+		return len(s) >= len(suffix) && s[len(s)-len(suffix):] == suffix
+	})
+
 	// Create Fiber app
 	app := fiber.New(fiber.Config{
 		Views: engine,

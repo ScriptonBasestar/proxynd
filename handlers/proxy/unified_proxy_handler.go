@@ -24,9 +24,17 @@ func UnifiedProxyHandler(c *fiber.Ctx) error {
 		if !mavenConfig.ConfigExists() {
 			return renderConfigAlert(c, "maven-proxy.yaml")
 		}
-		// 새로운 DI 기반 Maven 핸들러 사용
-		handler := NewMavenHandler()
-		return handler.Handle(c)
+
+		// 브라우저 요청 vs 파일 다운로드 요청 구분
+		if IsBrowserRequest(c) && IsDirectoryPath(path) {
+			// 브라우저 인터페이스 요청
+			browserHandler := NewMavenBrowserHandler()
+			return browserHandler.Handle(c)
+		} else {
+			// 파일 다운로드 요청 - 향상된 핸들러 사용
+			handler := NewMavenHandler()
+			return handler.Handle(c)
+		}
 
 	case "apt":
 		// APT 설정 확인
@@ -34,7 +42,7 @@ func UnifiedProxyHandler(c *fiber.Ctx) error {
 		if !aptConfig.ConfigExists() {
 			return renderConfigAlert(c, "apt-proxy.yaml")
 		}
-		// 새로운 DI 기반 핸들러 사용
+		// 향상된 핸들러 사용
 		handler := NewAPTHandler()
 		return handler.Handle(c)
 

@@ -29,7 +29,7 @@ tmp_dir = "tmp"
   stop_on_root = false
 
   # Pre-build commands to set up development environment
-  pre_cmd = ["cp .env.dev .env", "mkdir -p tmp/storage"]
+  pre_cmd = ["mkdir -p tmp/storage"]
 
   # Set environment variables from .env file
   envs = ["CONFIG_DIR=./sample-conf", "STORAGE_DIR=./tmp/storage", "SERVER_PORT=8080", "LOG_LEVEL=debug"]

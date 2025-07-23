@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maven Repository Browser</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 0;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .header h1 {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            text-align: center;
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        /* 미러 상태 - 헤더 바로 아래 */
+        .mirrors-status {
+            background: white;
+            padding: 1rem;
+            border-radius: 0 0 8px 8px;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-top: 1px solid #e9ecef;
+        }
+
+        .mirrors-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #495057;
+        }
+
+        .mirrors-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .mirror-status {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.2rem 0.6rem;
+            border-radius: 16px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .mirror-available {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .mirror-unavailable {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .mirror-status::before {
+            content: "●";
+            margin-right: 0.3rem;
+            font-size: 0.6rem;
+        }
+
+        /* 검색 섹션 */
+        .search-section {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .search-container {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: 2px solid #e9ecef;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+
+        .search-button, .clear-button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            white-space: nowrap;
+        }
+
+        .search-button {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+        }
+
+        .search-button:hover {
+            background: linear-gradient(135deg, #0056b3, #004085);
+            transform: translateY(-1px);
+        }
+
+        .clear-button {
+            background: #6c757d;
+            color: white;
+        }
+
+        .clear-button:hover {
+            background: #545b62;
+            transform: translateY(-1px);
+        }
+
+        /* GAV 트리 스타일 */
+        .gav-tree-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .tree-header {
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .tree-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .tree-root {
+            padding: 0.5rem;
+        }
+
+        .tree-node {
+            margin: 0.25rem 0;
+        }
+
+        .tree-node-content {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .tree-node-content:hover {
+            background-color: #f8f9fa;
+        }
+
+        .tree-node-content.highlighted {
+            background-color: #fff3cd;
+            font-weight: 500;
+        }
+
+        .tree-expand-icon {
+            width: 16px;
+            height: 16px;
+            margin-right: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #6c757d;
+            user-select: none;
+        }
+
+        .tree-expand-icon.expandable {
+            cursor: pointer;
+            border: 1px solid #dee2e6;
+            border-radius: 3px;
+            background: white;
+        }
+
+        .tree-expand-icon.expandable:hover {
+            background: #e9ecef;
+        }
+
+        .tree-expand-icon.expanded::after {
+            content: '−';
+        }
+
+        .tree-expand-icon.collapsed::after {
+            content: '+';
+        }
+
+        .tree-node-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .tree-node-name {
+            flex: 1;
+            color: #333;
+            text-decoration: none;
+        }
+
+        .tree-node-name:hover {
+            text-decoration: underline;
+        }
+
+        .tree-node-count {
+            font-size: 0.75rem;
+            color: #6c757d;
+            background: #e9ecef;
+            padding: 0.125rem 0.5rem;
+            border-radius: 12px;
+            margin-left: 0.5rem;
+        }
+
+        .tree-node-type {
+            font-size: 0.7rem;
+            padding: 0.125rem 0.5rem;
+            border-radius: 12px;
+            margin-left: 0.5rem;
+            font-weight: 500;
+        }
+
+        .type-group {
+            background: #e8f5e8;
+            color: #2d7d32;
+        }
+
+        .type-artifact {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+
+        .type-version {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+
+        .tree-children {
+            margin-left: 2rem;
+            display: none;
+        }
+
+        .tree-children.expanded {
+            display: block;
+        }
+
+        .loading-indicator {
+            display: none;
+            margin-left: 0.5rem;
+            font-size: 0.8rem;
+            color: #6c757d;
+        }
+
+        .loading-indicator.active {
+            display: inline;
+        }
+
+        /* 빈 상태 */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #6c757d;
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .empty-state-message {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* 반응형 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .search-container {
+                flex-wrap: wrap;
+            }
+
+            .search-input {
+                width: 100%;
+                margin-bottom: 0.5rem;
+            }
+
+            .tree-children {
+                margin-left: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>📦 Maven Repository Browser</h1>
+            <p>Group → Artifact → Version 구조로 탐색하세요</p>
+        </div>
+
+        <!-- Mirror Status (헤더 바로 아래) -->
+        <div class="mirrors-status">
+            <div class="mirrors-title">
+                미러 상태 ({{len .Mirrors}}개 중 {{$available := 0}}{{range .Mirrors}}{{if .Available}}{{$available = add $available 1}}{{end}}{{end}}{{$available}}개 사용 가능)
+            </div>
+            <div class="mirrors-list">
+                {{range .Mirrors}}
+                    <div class="mirror-status {{if .Available}}mirror-available{{else}}mirror-unavailable{{end}}"
+                         title="{{.URL}}{{if not .Available}} - {{.Error}}{{end}}">
+                        {{.Name}}
+                    </div>
+                {{end}}
+            </div>
+        </div>
+
+        <!-- Search Section -->
+        <div class="search-section">
+            <div class="search-container">
+                <input type="text" id="searchInput" class="search-input"
+                       placeholder="group, artifact, version으로 검색..."
+                       value="{{.SearchQuery}}" />
+                <button id="searchButton" class="search-button">🔍 검색</button>
+                <button id="clearButton" class="clear-button">✕ 초기화</button>
+            </div>
+        </div>
+
+        <!-- GAV Tree -->
+        <div class="gav-tree-container">
+            <div class="tree-header">
+                <div class="tree-title">Maven Repository</div>
+            </div>
+
+            {{if .TreeRoot}}
+                <div class="tree-root" id="treeRoot">
+                    {{template "renderGAVTree" .TreeRoot}}
+                </div>
+            {{else}}
+                <div class="empty-state">
+                    <div class="empty-state-icon">📂</div>
+                    <div class="empty-state-message">리포지토리가 비어있습니다</div>
+                </div>
+            {{end}}
+        </div>
+    </div>
+
+    <!-- GAV 트리 노드 템플릿 -->
+    {{define "renderGAVTree"}}
+        {{range .}}
+            <div class="tree-node" data-path="{{.FullPath}}" data-type="{{.Type}}">
+                <div class="tree-node-content {{if .IsHighlighted}}highlighted{{end}}">
+                    <!-- 확장/축소 아이콘 -->
+                    {{if ne .Type "file"}}
+                        <span class="tree-expand-icon expandable {{if .IsExpanded}}expanded{{else}}collapsed{{end}}"
+                              data-path="{{.FullPath}}"></span>
+                    {{else}}
+                        <span class="tree-expand-icon"></span>
+                    {{end}}
+
+                    <!-- 타입 아이콘 -->
+                    <span class="tree-node-icon">
+                        {{if eq .Type "group"}}📦
+                        {{else if eq .Type "artifact"}}🎯
+                        {{else if eq .Type "version"}}🏷️
+                        {{else if eq .Type "file"}}📄
+                        {{else}}📁{{end}}
+                    </span>
+
+                    <!-- 이름 -->
+                    {{if eq .Type "file"}}
+                        <a href="{{.FullPath}}" class="tree-node-name">{{.Name}}</a>
+                    {{else if eq .Type "artifact"}}
+                        <a href="{{.FullPath}}" class="tree-node-name">{{.Name}}</a>
+                    {{else}}
+                        <span class="tree-node-name" data-path="{{.FullPath}}">{{.Name}}</span>
+                    {{end}}
+
+                    <!-- 하위 항목 개수 제거 -->
+
+                    <!-- 타입 뱃지 -->
+                    {{if eq .Type "group"}}
+                        <span class="tree-node-type type-group">Group</span>
+                    {{else if eq .Type "artifact"}}
+                        <span class="tree-node-type type-artifact">Artifact</span>
+                    {{else if eq .Type "version"}}
+                        <span class="tree-node-type type-version">Version</span>
+                    {{end}}
+
+                    <span class="loading-indicator">로딩 중...</span>
+                </div>
+
+                <!-- 자식 노드들 -->
+                {{if .Children}}
+                    <div class="tree-children {{if .IsExpanded}}expanded{{end}}" data-parent="{{.FullPath}}">
+                        {{template "renderGAVTree" .Children}}
+                    </div>
+                {{else if and (ne .Type "file") .ChildCount}}
+                    <div class="tree-children" data-parent="{{.FullPath}}">
+                        <!-- 동적으로 로드됨 -->
+                    </div>
+                {{end}}
+            </div>
+        {{end}}
+    {{end}}
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 검색 기능
+            const searchInput = document.getElementById('searchInput');
+            const searchButton = document.getElementById('searchButton');
+            const clearButton = document.getElementById('clearButton');
+
+            function performSearch() {
+                const query = searchInput.value.trim();
+                if (query) {
+                    window.location.href = `?search=${encodeURIComponent(query)}`;
+                } else {
+                    window.location.href = window.location.pathname;
+                }
+            }
+
+            function clearSearch() {
+                searchInput.value = '';
+                window.location.href = window.location.pathname;
+            }
+
+            searchButton.addEventListener('click', performSearch);
+            clearButton.addEventListener('click', clearSearch);
+
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    performSearch();
+                }
+            });
+
+            // 트리 확장/축소
+            document.addEventListener('click', function(e) {
+                // 확장 아이콘 클릭
+                if (e.target.classList.contains('tree-expand-icon') && e.target.classList.contains('expandable')) {
+                    e.stopPropagation();
+                    toggleNode(e.target);
+                }
+
+                // 노드 이름 클릭 (링크가 아닌 경우만)
+                if (e.target.classList.contains('tree-node-name') && !e.target.href) {
+                    const expandIcon = e.target.parentElement.querySelector('.tree-expand-icon.expandable');
+                    if (expandIcon) {
+                        toggleNode(expandIcon);
+                    }
+                }
+            });
+
+            function toggleNode(expandIcon) {
+                const path = expandIcon.getAttribute('data-path');
+                const nodeElement = expandIcon.closest('.tree-node');
+                const childrenContainer = nodeElement.querySelector('.tree-children[data-parent="' + path + '"]');
+                const loadingIndicator = expandIcon.parentElement.querySelector('.loading-indicator');
+
+                if (expandIcon.classList.contains('expanded')) {
+                    // 축소
+                    expandIcon.classList.remove('expanded');
+                    expandIcon.classList.add('collapsed');
+                    if (childrenContainer) {
+                        childrenContainer.classList.remove('expanded');
+                    }
+                } else {
+                    // 확장
+                    expandIcon.classList.add('expanded');
+                    expandIcon.classList.remove('collapsed');
+
+                    if (childrenContainer) {
+                        if (childrenContainer.children.length > 0) {
+                            // 이미 로드된 경우
+                            childrenContainer.classList.add('expanded');
+                        } else {
+                            // 동적 로드
+                            loadChildren(path, childrenContainer, loadingIndicator);
+                        }
+                    }
+                }
+            }
+
+            function loadChildren(path, container, loadingIndicator) {
+                if (loadingIndicator) {
+                    loadingIndicator.classList.add('active');
+                }
+
+                fetch(path + '?format=json', {
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (loadingIndicator) {
+                        loadingIndicator.classList.remove('active');
+                    }
+
+                    if (data.treeRoot && data.treeRoot.length > 0) {
+                        renderChildren(data.treeRoot, container);
+                        container.classList.add('expanded');
+                    }
+                })
+                .catch(error => {
+                    if (loadingIndicator) {
+                        loadingIndicator.classList.remove('active');
+                    }
+                    console.error('Failed to load children:', error);
+                });
+            }
+
+            function renderChildren(nodes, container) {
+                container.innerHTML = '';
+
+                nodes.forEach(node => {
+                    const nodeHtml = createNodeHtml(node);
+                    container.insertAdjacentHTML('beforeend', nodeHtml);
+                });
+            }
+
+            function createNodeHtml(node) {
+                const hasChildren = node.children && node.children.length > 0 || node.childCount > 0;
+                const expandIconHtml = hasChildren
+                    ? `<span class="tree-expand-icon expandable collapsed" data-path="${node.fullPath}"></span>`
+                    : '<span class="tree-expand-icon"></span>';
+
+                const iconMap = {
+                    'group': '📦',
+                    'artifact': '🎯',
+                    'version': '🏷️',
+                    'file': '📄'
+                };
+                const icon = iconMap[node.type] || '📁';
+
+                const nameHtml = node.type === 'file' || node.type === 'artifact'
+                    ? `<a href="${node.fullPath}" class="tree-node-name">${node.name}</a>`
+                    : `<span class="tree-node-name" data-path="${node.fullPath}">${node.name}</span>`;
+
+                let countHtml = ''; // 하위 항목 개수 표시 제거
+
+                let typeHtml = '';
+                if (node.type === 'group' || node.type === 'artifact' || node.type === 'version') {
+                    const typeClass = `type-${node.type}`;
+                    const typeText = node.type.charAt(0).toUpperCase() + node.type.slice(1);
+                    typeHtml = `<span class="tree-node-type ${typeClass}">${typeText}</span>`;
+                }
+
+                const childrenHtml = hasChildren
+                    ? `<div class="tree-children" data-parent="${node.fullPath}"></div>`
+                    : '';
+
+                return `
+                    <div class="tree-node" data-path="${node.fullPath}" data-type="${node.type}">
+                        <div class="tree-node-content">
+                            ${expandIconHtml}
+                            <span class="tree-node-icon">${icon}</span>
+                            ${nameHtml}
+                            ${countHtml}
+                            ${typeHtml}
+                            <span class="loading-indicator">로딩 중...</span>
+                        </div>
+                        ${childrenHtml}
+                    </div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>

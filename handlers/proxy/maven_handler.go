@@ -1,9 +1,9 @@
 package proxy
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -18,377 +18,384 @@ import (
 	"proxynd/logging"
 )
 
-// MavenHandlerInterface represents a maven handler interface
-type MavenHandlerInterface interface {
-	Handle(c *fiber.Ctx) error
-	Name() string
-	Type() string
-}
-
-// MavenHandler Maven 패키지 매니저 프록시 핸들러
+// MavenHandler V1과 V2의 기능을 통합한 Maven 핸들러
 type MavenHandler struct {
-	client           *http.Client
-	checksumVerifier *ChecksumVerifier
-	name             string
-	handlerType      string
-	logger           logging.Logger
-	config           *configs.MavenProxyConfig
-}
-
-// ChecksumVerifier 체크섬 검증기
-type ChecksumVerifier struct {
-	logger logging.Logger
+	logger     logging.Logger
+	Config     *configs.MavenProxyConfig
+	storageDir string
 }
 
 // NewMavenHandler 새로운 Maven 핸들러 생성
 func NewMavenHandler() *MavenHandler {
-	httpClient := &http.Client{
-		Timeout: 60 * time.Second, // Maven은 큰 파일이 많아서 긴 타임아웃
-	}
-
-	handler := &MavenHandler{
-		client:           httpClient,
-		checksumVerifier: NewChecksumVerifier(),
-		name:             "maven-proxy",
-		handlerType:      "maven",
-		logger:           logging.GetLogger(),
-		config:           &configs.MavenProxyConfig{},
-	}
-
-	return handler
-}
-
-// NewChecksumVerifier 새로운 체크섬 검증기 생성
-func NewChecksumVerifier() *ChecksumVerifier {
-	return &ChecksumVerifier{
-		logger: logging.GetLogger(),
+	return &MavenHandler{
+		logger:     logging.GetLogger(),
+		Config:     &configs.MavenProxyConfig{},
+		storageDir: helpers.GetStorageDir(),
 	}
 }
 
-// Handle Maven 프록시 요청 처리
-func (h *MavenHandler) Handle(c *fiber.Ctx) error {
-	h.logRequest(c)
-	start := time.Now()
-
-	// 설정 로드
-	if err := h.config.ReadConfig(); err != nil {
-		h.logger.Error("Failed to read Maven config", logging.F("error", err))
-		return errors.WrapMavenError(err, "MVN006", "Maven 설정 파일을 읽을 수 없습니다")
-	}
-
-	if len(h.config.Proxies) == 0 {
-		return errors.ErrMavenProxyDisabled
-	}
-
-	// 아티팩트 경로 파싱
-	artifactPath := c.Params("*")
-
-	// 보안 체크
-	if err := h.validatePath(artifactPath); err != nil {
-		return errors.WrapMavenError(err, "MVN005", "잘못된 Maven 아티팩트 경로입니다")
-	}
-
-	// SNAPSHOT 버전 처리
-	if strings.Contains(artifactPath, "-SNAPSHOT") {
-		return h.handleSnapshotArtifact(c, artifactPath, h.config)
-	}
-
-	// 파일 경로 생성
-	storageDir := helpers.GetStorageDir()
-	baseDir := filepath.Join(storageDir, h.config.Path)
-	filePath, err := security.SafeJoinPath(baseDir, artifactPath)
-	if err != nil {
-		return errors.WrapMavenError(err, "MVN005", "잘못된 Maven 아티팩트 경로입니다")
-	}
-
-	// 캐시 확인 (기존 파일이 있는지)
-	filename := filepath.Base(filePath)
-	if _, err := os.Stat(filePath); err == nil {
-		c.Set("X-Cache-Status", "HIT")
-		h.logResponse(c, time.Since(start))
-		return h.sendFile(c, filePath, filename)
-	}
-
-	// 업스트림에서 다운로드
-	responseContent, err := h.downloadFromUpstream(filePath, h.config.Proxies, artifactPath)
-	if err != nil {
-		h.logger.Error("Failed to download from upstream",
-			logging.F("path", artifactPath),
-			logging.F("error", err),
-		)
-		return errors.WrapMavenError(err, "MVN003", "Maven 리포지토리에 접근할 수 없습니다")
-	}
-
-	// 체크섬 검증 (체크섬 파일인 경우)
-	if h.isChecksumFile(artifactPath) {
-		if err := h.validateChecksum(responseContent, artifactPath); err != nil {
-			h.logger.Warn("Checksum validation failed",
-				logging.F("path", artifactPath),
-				logging.F("error", err),
-			)
-			// 체크섬 검증 실패는 경고만 로그, 클라이언트에는 정상 응답
-		}
-	}
-
-	c.Set("X-Cache-Status", "MISS")
-	h.logResponse(c, time.Since(start))
-	return h.sendMavenResponse(c, responseContent, filename)
-}
-
-// validatePath 경로 유효성 검사
-func (h *MavenHandler) validatePath(path string) error {
-	if strings.Contains(path, "..") {
-		return fmt.Errorf("invalid path: contains '..'")
-	}
-	if strings.HasPrefix(path, "/") {
-		return fmt.Errorf("invalid path: absolute path not allowed")
-	}
-	return nil
-}
-
-// downloadFromUpstream 업스트림에서 파일 다운로드
-func (h *MavenHandler) downloadFromUpstream(
-	filePath string, proxies []configs.MavenProxyServer, artifactPath string,
-) ([]byte, error) {
-	// 디렉토리 생성
-	dirPath := filepath.Dir(filePath)
-	if err := os.MkdirAll(dirPath, 0755); err != nil {
-		return nil, fmt.Errorf("failed to create directory: %w", err)
-	}
-
-	var lastErr error
-	var responseContent []byte
-
-	// 여러 미러 시도
-	for i, proxy := range proxies {
-		content, err := h.tryDownloadFromRepository(proxy.URL, artifactPath)
-		if err == nil {
-			responseContent = content
-			// 파일에 저장
-			if err := os.WriteFile(filePath, responseContent, 0644); err != nil {
-				h.logger.Warn("Failed to save to cache",
-					logging.F("path", filePath),
-					logging.F("error", err),
-				)
-			}
-			h.logger.Info("Downloaded from repository",
-				logging.F("repository", proxy.URL),
-				logging.F("index", i),
-			)
-			return responseContent, nil
-		}
-		lastErr = err
-		h.logger.Warn("Repository download failed, trying next",
-			logging.F("repository", proxy.URL),
-			logging.F("index", i),
-			logging.F("error", err),
-		)
-	}
-
-	return nil, fmt.Errorf("all repositories failed: %w", lastErr)
-}
-
-// tryDownloadFromRepository 특정 리포지토리에서 다운로드 시도
-func (h *MavenHandler) tryDownloadFromRepository(repositoryURL, artifactPath string) ([]byte, error) {
-	// URL 생성
-	downloadURL := helpers.JoinURL(repositoryURL, artifactPath)
-
-	// HTTP 요청
-	resp, err := h.client.Get(downloadURL)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch from repository: %w", err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	// 상태 코드 확인
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("bad status code: %d", resp.StatusCode)
-	}
-
-	// 데이터 읽기
-	content, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response: %w", err)
-	}
-
-	return content, nil
-}
-
-// handleSnapshotArtifact SNAPSHOT 버전 처리
-func (h *MavenHandler) handleSnapshotArtifact(c *fiber.Ctx, artifactPath string, _ *configs.MavenProxyConfig) error {
-	h.logger.Info("Handling SNAPSHOT artifact",
-		logging.F("path", artifactPath),
-	)
-
-	// SNAPSHOT은 항상 업스트림에서 최신 버전 가져오기 (캐시 안함)
-	responseContent, err := h.downloadSnapshotFromUpstream(h.config.Proxies, artifactPath)
-	if err != nil {
-		return errors.WrapMavenError(err, "MVN007", "SNAPSHOT 아티팩트 다운로드에 실패했습니다")
-	}
-
-	filename := filepath.Base(artifactPath)
-	c.Set("X-Cache-Status", "SNAPSHOT-BYPASS")
-	return h.sendMavenResponse(c, responseContent, filename)
-}
-
-// downloadSnapshotFromUpstream SNAPSHOT 버전을 업스트림에서 다운로드 (캐시 안함)
-func (h *MavenHandler) downloadSnapshotFromUpstream(
-	proxies []configs.MavenProxyServer, artifactPath string,
-) ([]byte, error) {
-	var lastErr error
-
-	for i, proxy := range proxies {
-		content, err := h.tryDownloadFromRepository(proxy.URL, artifactPath)
-		if err == nil {
-			h.logger.Info("Downloaded SNAPSHOT from repository",
-				logging.F("repository", proxy.URL),
-				logging.F("index", i),
-			)
-			return content, nil
-		}
-		lastErr = err
-		h.logger.Warn("SNAPSHOT download failed, trying next repository",
-			logging.F("repository", proxy.URL),
-			logging.F("error", err),
-		)
-	}
-
-	return nil, fmt.Errorf("all repositories failed for SNAPSHOT: %w", lastErr)
-}
-
-// isChecksumFile 체크섬 파일인지 확인
-func (h *MavenHandler) isChecksumFile(path string) bool {
-	return strings.HasSuffix(path, ".sha1") || strings.HasSuffix(path, ".md5")
-}
-
-// validateChecksum 체크섬 검증
-func (h *MavenHandler) validateChecksum(checksumData []byte, checksumPath string) error {
-	return h.checksumVerifier.ValidateChecksum(checksumData, checksumPath)
-}
-
-// sendFile 파일 전송
-func (h *MavenHandler) sendFile(c *fiber.Ctx, filePath, filename string) error {
-	// 캐시된 파일 읽기
-	content, err := os.ReadFile(filePath)
-	if err != nil {
-		return errors.WrapMavenError(err, "MVN001", "Maven 아티팩트를 찾을 수 없습니다")
-	}
-
-	return h.sendMavenResponse(c, content, filename)
-}
-
-// sendMavenResponse Maven 응답 전송 (파일 타입에 따른 Content-Type 설정)
-func (h *MavenHandler) sendMavenResponse(c *fiber.Ctx, content []byte, filename string) error {
-	ext := strings.ToLower(filepath.Ext(filename))
-
-	switch ext {
-	case ".pom", ".xml":
-		c.Set("Content-Type", "application/xml")
-		c.Set("Content-Disposition", "inline; filename="+filename)
-	case ".jar", ".war", ".ear":
-		c.Set("Content-Type", "application/java-archive")
-		c.Set("Content-Disposition", "attachment; filename="+filename)
-	case ".sha1", ".md5":
-		c.Set("Content-Type", "text/plain")
-		c.Set("Content-Disposition", "inline; filename="+filename)
-	default:
-		c.Set("Content-Type", "application/octet-stream")
-		c.Set("Content-Disposition", "attachment; filename="+filename)
-	}
-
-	return c.Send(content)
-}
-
-// ValidateChecksum 체크섬 검증 구현
-func (v *ChecksumVerifier) ValidateChecksum(checksumData []byte, checksumPath string) error {
-	// 체크섬 파일에서 예상 해시값 추출
-	expectedHash := strings.TrimSpace(string(checksumData))
-
-	// 원본 파일 경로 유추
-	originalPath := strings.TrimSuffix(checksumPath, filepath.Ext(checksumPath))
-
-	// 원본 파일 가져오기 (현재는 단순 검증만)
-	v.logger.Debug("Checksum validation",
-		logging.F("original_path", originalPath),
-		logging.F("expected_hash", expectedHash),
-		logging.F("checksum_type", filepath.Ext(checksumPath)),
-	)
-
-	// TODO: 실제 원본 파일과 비교하는 로직 구현
-	// 현재는 검증 성공으로 처리
-	return nil
-}
-
-// Name 핸들러 이름 반환
-func (h *MavenHandler) Name() string {
-	return h.name
-}
-
-// Type 핸들러 타입 반환
+// Type 프록시 타입 반환
 func (h *MavenHandler) Type() string {
-	return h.handlerType
+	return "maven"
 }
 
-// logRequest 요청 로깅
-func (h *MavenHandler) logRequest(c *fiber.Ctx) {
-	h.logger.Info("Request received",
-		logging.F("handler", h.name),
-		logging.F("method", c.Method()),
-		logging.F("path", c.Path()),
-		logging.F("user_agent", c.Get("User-Agent")),
-		logging.F("remote_ip", c.IP()),
-	)
-}
-
-// logResponse 응답 로깅
-func (h *MavenHandler) logResponse(c *fiber.Ctx, duration time.Duration) {
-	level := "info"
-	if c.Response().StatusCode() >= 400 {
-		level = "error"
-	}
-
-	message := "Request completed"
-	fields := []logging.Field{
-		logging.F("handler", h.name),
-		logging.F("method", c.Method()),
-		logging.F("path", c.Path()),
-		logging.F("status", c.Response().StatusCode()),
-		logging.F("duration_ms", duration.Milliseconds()),
-	}
-
-	switch level {
-	case "error":
-		h.logger.Error(message, fields...)
-	default:
-		h.logger.Info(message, fields...)
-	}
-}
-
-// IsEnabled 활성화 상태 확인 (v2 기능 통합)
+// IsEnabled 활성화 상태 확인
 func (h *MavenHandler) IsEnabled() bool {
-	if err := h.config.ReadConfig(); err != nil {
+	if err := h.Config.ReadConfig(); err != nil {
 		h.logger.Error("Failed to read Maven config", logging.F("error", err))
 		return false
 	}
-	return len(h.config.Proxies) > 0
+	return len(h.Config.Proxies) > 0
 }
 
-// GenerateCacheKey 캐시 키 생성 (v2 기능 통합)
+// GenerateCacheKey 캐시 키 생성
 func (h *MavenHandler) GenerateCacheKey(c *fiber.Ctx) string {
 	artifactPath := c.Params("*")
 	return fmt.Sprintf("maven:%s", strings.ReplaceAll(artifactPath, "/", "_"))
 }
 
-// HealthCheck Maven 핸들러 헬스체크
-func (h *MavenHandler) HealthCheck() error {
-	// Maven 설정 확인
-	if err := h.config.ReadConfig(); err != nil {
-		return fmt.Errorf("failed to read Maven configuration: %w", err)
+// Handle 파일 시스템 저장 및 다중 레포지토리 재시도를 포함한 핸들러
+func (h *MavenHandler) Handle(c *fiber.Ctx) error {
+	proxyType := h.Type()
+	startTime := time.Now()
+
+	// 요청 로깅
+	h.logger.Info("Maven request started",
+		logging.F("path", c.Path()),
+		logging.F("method", c.Method()),
+	)
+
+	defer func() {
+		h.logger.Info("Maven request completed",
+			logging.F("duration_ms", time.Since(startTime).Milliseconds()),
+		)
+	}()
+
+	// 1. 프록시 활성화 확인
+	if !h.IsEnabled() {
+		return errors.NewError("PROXY001", "프록시가 비활성화되어 있습니다").
+			WithDomain(proxyType).
+			Build()
 	}
 
-	if len(h.config.Proxies) == 0 {
-		return fmt.Errorf("maven proxy has no configured repositories")
+	// 2. 아티팩트 경로 파싱
+	artifactPath := c.Params("*")
+
+	// SNAPSHOT 버전 확인
+	isSnapshot := strings.Contains(artifactPath, "-SNAPSHOT")
+
+	// 3. 파일 시스템 캐시 확인 (SNAPSHOT이 아닌 경우만)
+	if !isSnapshot {
+		// 보안 경로 조합
+		safeBasePath := filepath.Join(h.storageDir, "maven")
+		safePath, err := security.SafeJoinPath(safeBasePath, artifactPath)
+		if err != nil {
+			return c.Status(fiber.StatusBadRequest).SendString("Invalid path")
+		}
+
+		// 파일이 이미 존재하는지 확인
+		if fileInfo, err := os.Stat(safePath); err == nil && !fileInfo.IsDir() {
+			h.logger.Debug("Serving from cache", logging.F("path", safePath))
+
+			// Content-Type 설정
+			c.Set("Content-Type", getMavenContentType(artifactPath))
+
+			// Content-Disposition 설정
+			filename := filepath.Base(artifactPath)
+			if shouldInlineMaven(artifactPath) {
+				c.Set("Content-Disposition", "inline")
+			} else {
+				c.Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+			}
+
+			c.Set("X-Cache-Status", "HIT")
+			c.Set("X-Proxy-Type", proxyType)
+			c.Set("X-Maven-Snapshot", "false")
+
+			return c.SendFile(safePath)
+		}
 	}
 
-	return nil
+	// 4. 업스트림에서 가져오기 (모든 레포지토리 시도)
+	if err := h.Config.ReadConfig(); err != nil {
+		return c.Status(fiber.StatusInternalServerError).SendString("Failed to load configuration")
+	}
+
+	if len(h.Config.Proxies) == 0 {
+		return c.Status(fiber.StatusNotFound).SendString("No Maven repositories configured")
+	}
+
+	var lastErr error
+	for i, repo := range h.Config.Proxies {
+		if repo.URL == "" {
+			continue
+		}
+
+		baseURL := strings.TrimRight(repo.URL, "/")
+		cleanPath := strings.TrimLeft(artifactPath, "/")
+		upstreamURL := fmt.Sprintf("%s/%s", baseURL, cleanPath)
+
+		h.logger.Debug("Trying repository",
+			logging.F("repo_index", i),
+			logging.F("repo_name", repo.Name),
+			logging.F("url", upstreamURL),
+		)
+
+		// Fiber Agent로 요청
+		agent := fiber.Get(upstreamURL)
+
+		// 헤더 설정
+		agent.Set("User-Agent", "ProxyND/1.0 Maven-Proxy")
+		agent.Set("X-Maven-Proxy", "ProxyND")
+
+		// 레포지토리 인증이 있는 경우
+		if repo.BasicAuth.Username != "" && repo.BasicAuth.Password != "" {
+			agent.BasicAuth(repo.BasicAuth.Username, repo.BasicAuth.Password)
+		}
+
+		// 요청 실행
+		statusCode, body, errs := agent.Bytes()
+		if len(errs) > 0 {
+			lastErr = errs[0]
+			h.logger.Error("Failed to fetch from repository",
+				logging.F("repo_index", i),
+				logging.F("repo_name", repo.Name),
+				logging.F("error", lastErr),
+			)
+			continue
+		}
+
+		if statusCode != fiber.StatusOK {
+			lastErr = fmt.Errorf("upstream returned status %d", statusCode)
+			h.logger.Error("Non-200 status from repository",
+				logging.F("repo_index", i),
+				logging.F("repo_name", repo.Name),
+				logging.F("status_code", statusCode),
+			)
+			continue
+		}
+
+		// 체크섬 검증 (체크섬 파일인 경우 제외)
+		if !isChecksumFile(artifactPath) && h.Config.UseCache {
+			// 체크섬 파일 다운로드 시도
+			checksumURL := upstreamURL + ".sha1"
+			checksumAgent := fiber.Get(checksumURL)
+			if repo.BasicAuth.Username != "" && repo.BasicAuth.Password != "" {
+				checksumAgent.BasicAuth(repo.BasicAuth.Username, repo.BasicAuth.Password)
+			}
+
+			if checksumCode, checksumBody, checksumErrs := checksumAgent.Bytes(); len(checksumErrs) == 0 && checksumCode == fiber.StatusOK {
+				expectedChecksum := strings.TrimSpace(string(checksumBody))
+				// SHA1 계산
+				hash := sha1.New()
+				hash.Write(body)
+				actualChecksum := hex.EncodeToString(hash.Sum(nil))
+
+				if expectedChecksum != actualChecksum {
+					h.logger.Error("Checksum verification failed",
+						logging.F("expected", expectedChecksum),
+						logging.F("actual", actualChecksum),
+					)
+					lastErr = fmt.Errorf("checksum verification failed")
+					continue
+				}
+			}
+		}
+
+		// 성공적으로 가져온 경우 파일로 저장 (SNAPSHOT이 아닌 경우만)
+		if !isSnapshot {
+			safeBasePath := filepath.Join(h.storageDir, "maven")
+			safePath, err := security.SafeJoinPath(safeBasePath, artifactPath)
+			if err == nil {
+				dir := filepath.Dir(safePath)
+				if err := os.MkdirAll(dir, 0755); err != nil {
+					h.logger.Error("Failed to create directory",
+						logging.F("dir", dir),
+						logging.F("error", err),
+					)
+				} else {
+					// 임시 파일에 쓰고 원자적으로 이동
+					tmpFile := safePath + ".tmp"
+					if err := os.WriteFile(tmpFile, body, 0644); err == nil {
+						if err := os.Rename(tmpFile, safePath); err != nil {
+							os.Remove(tmpFile)
+							h.logger.Error("Failed to rename temp file",
+								logging.F("error", err),
+							)
+						}
+					}
+				}
+			}
+		}
+
+		// 응답 헤더 설정
+		c.Set("Content-Type", getMavenContentType(artifactPath))
+
+		filename := filepath.Base(artifactPath)
+		if shouldInlineMaven(artifactPath) {
+			c.Set("Content-Disposition", "inline")
+		} else {
+			c.Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+		}
+
+		c.Set("X-Cache-Status", "MISS")
+		c.Set("X-Proxy-Type", proxyType)
+		c.Set("X-Maven-Snapshot", fmt.Sprintf("%v", isSnapshot))
+		c.Set("X-Maven-Repository", repo.Name)
+
+		// 메트릭 기록
+		h.RecordRequestMetrics(c, statusCode, time.Since(startTime))
+
+		return c.Send(body)
+	}
+
+	// 모든 레포지토리 실패
+	if lastErr != nil {
+		return h.HandleError(lastErr, c)
+	}
+
+	return c.Status(fiber.StatusNotFound).SendString("Artifact not found in any repository")
+}
+
+// ShouldCache 캐시 정책 결정
+func (h *MavenHandler) ShouldCache(c *fiber.Ctx, statusCode int) bool {
+	if statusCode != 200 && statusCode != 304 {
+		return false
+	}
+
+	path := c.Path()
+
+	// SNAPSHOT 버전은 캐시하지 않음
+	if strings.Contains(path, "-SNAPSHOT") || strings.Contains(path, "SNAPSHOT") {
+		return false
+	}
+
+	// 메타데이터 파일은 짧은 TTL로 캐시
+	if strings.HasSuffix(path, "maven-metadata.xml") {
+		return true
+	}
+
+	// 아티팩트 파일들은 캐시
+	if strings.HasSuffix(path, ".jar") || strings.HasSuffix(path, ".war") ||
+		strings.HasSuffix(path, ".ear") || strings.HasSuffix(path, ".pom") {
+		return true
+	}
+
+	// 체크섬 파일들도 캐시
+	if isChecksumFile(path) {
+		return true
+	}
+
+	return false
+}
+
+// GetCacheTTL 캐시 TTL 반환
+func (h *MavenHandler) GetCacheTTL(c *fiber.Ctx) time.Duration {
+	path := c.Path()
+
+	// SNAPSHOT 버전은 캐시하지 않음
+	if strings.Contains(path, "-SNAPSHOT") {
+		return 0
+	}
+
+	// 메타데이터 파일은 짧은 TTL (30분)
+	if strings.HasSuffix(path, "maven-metadata.xml") {
+		return 30 * time.Minute
+	}
+
+	// 체크섬 파일은 중간 TTL (1일)
+	if isChecksumFile(path) {
+		return 24 * time.Hour
+	}
+
+	// 릴리즈 아티팩트는 긴 TTL (30일)
+	if strings.HasSuffix(path, ".jar") || strings.HasSuffix(path, ".war") ||
+		strings.HasSuffix(path, ".ear") || strings.HasSuffix(path, ".pom") {
+		return 30 * 24 * time.Hour
+	}
+
+	// 기본 1일
+	return 24 * time.Hour
+}
+
+// HandleError 에러 처리
+func (h *MavenHandler) HandleError(err error, _ *fiber.Ctx) error {
+	// Maven 도메인 에러로 변환
+	if strings.Contains(err.Error(), "레포지토리가 설정되지 않았습니다") {
+		return errors.WrapMavenError(err, "MAVEN002", "Maven 레포지토리 서버에 접근할 수 없습니다")
+	}
+
+	if strings.Contains(err.Error(), "설정 로드 실패") {
+		return errors.WrapMavenError(err, "MAVEN006", "Maven 설정 파일을 읽을 수 없습니다")
+	}
+
+	if strings.Contains(err.Error(), "checksum") {
+		return errors.WrapMavenError(err, "MAVEN003", "체크섬 검증에 실패했습니다")
+	}
+
+	if strings.Contains(err.Error(), "path") {
+		return errors.WrapMavenError(err, "MAVEN005", "잘못된 아티팩트 경로입니다")
+	}
+
+	// 기본 Maven 에러
+	return errors.WrapMavenError(err, "MAVEN001", "Maven 아티팩트를 찾을 수 없습니다")
+}
+
+// RecordRequestMetrics 요청 메트릭 기록
+func (h *MavenHandler) RecordRequestMetrics(c *fiber.Ctx, statusCode int, duration time.Duration) {
+	artifactPath := c.Params("*")
+	h.logger.Info("Maven request metrics",
+		logging.F("status_code", statusCode),
+		logging.F("duration_ms", duration.Milliseconds()),
+		logging.F("artifact_path", artifactPath),
+		logging.F("method", c.Method()),
+		logging.F("is_snapshot", strings.Contains(artifactPath, "-SNAPSHOT")),
+		logging.F("is_checksum", isChecksumFile(artifactPath)),
+	)
+}
+
+// getMavenContentType Maven 아티팩트 타입에 따른 Content-Type 반환
+func getMavenContentType(path string) string {
+	switch {
+	case strings.HasSuffix(path, ".jar"):
+		return "application/java-archive"
+	case strings.HasSuffix(path, ".war"):
+		return "application/java-archive"
+	case strings.HasSuffix(path, ".ear"):
+		return "application/java-archive"
+	case strings.HasSuffix(path, ".pom"):
+		return "application/xml"
+	case strings.HasSuffix(path, ".xml"):
+		return "application/xml"
+	case strings.HasSuffix(path, ".sha1"):
+		return "text/plain"
+	case strings.HasSuffix(path, ".sha256"):
+		return "text/plain"
+	case strings.HasSuffix(path, ".md5"):
+		return "text/plain"
+	case strings.HasSuffix(path, ".asc"):
+		return "application/pgp-signature"
+	case strings.HasSuffix(path, ".zip"):
+		return "application/zip"
+	case strings.HasSuffix(path, ".tar.gz"):
+		return "application/gzip"
+	default:
+		return "application/octet-stream"
+	}
+}
+
+// shouldInlineMaven 인라인으로 표시할 파일인지 확인
+func shouldInlineMaven(path string) bool {
+	return strings.HasSuffix(path, ".pom") ||
+		strings.HasSuffix(path, ".xml") ||
+		strings.HasSuffix(path, ".sha1") ||
+		strings.HasSuffix(path, ".sha256") ||
+		strings.HasSuffix(path, ".md5")
+}
+
+// isChecksumFile 체크섬 파일인지 확인
+func isChecksumFile(path string) bool {
+	return strings.HasSuffix(path, ".sha1") ||
+		strings.HasSuffix(path, ".sha256") ||
+		strings.HasSuffix(path, ".md5")
 }
