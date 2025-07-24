@@ -101,7 +101,7 @@ format-file: ## format specific files with gofumpt and goimports (usage: make fo
 # Linting
 # ==============================================================================
 
-install-golangci-lint: ## install golangci-lint
+lint-install-tools:
 	@echo "Installing golangci-lint..."
 	@which golangci-lint > /dev/null || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
 	@echo "golangci-lint installed!"
@@ -110,34 +110,56 @@ lint: install-golangci-lint ## run golangci-lint
 	@echo "Running golangci-lint..."
 	golangci-lint run ./...
 
-lint-count: install-golangci-lint ## count total lint issues without fixing
-	@echo -e "$(CYAN)Counting lint issues...$(RESET)"
-	@ISSUES=$$(golangci-lint run --max-issues-per-linter=0 --max-same-issues=0 --out-format=line-number 2>/dev/null | grep -E "^[^[:space:]].*\\([^)]+\\)$$" | wc -l); \
-	echo -e "$(YELLOW)Total lint issues: $$ISSUES$(RESET)"
-
-lint-summary: install-golangci-lint ## show lint issues summary by linter
-	@echo -e "$(CYAN)Lint issues summary:$(RESET)"
+lint-summary: install-golangci-lint ## show lint issues summary by linter and problematic files
+	@echo -e "$(CYAN)📊 Lint Issues Summary$(RESET)"
+	@echo -e "$(CYAN)=====================$(RESET)"
+	@echo ""
+	@TOTAL=$$(golangci-lint run --max-issues-per-linter=0 --max-same-issues=0 --out-format=line-number 2>/dev/null | grep -E "^[^[:space:]].*\\([^)]+\\)$$" | wc -l); \
+	echo -e "$(YELLOW)Total Issues: $$TOTAL$(RESET)"; \
+	echo ""
+	@echo -e "$(GREEN)🏷️  Issues by Linter:$(RESET)"
 	@golangci-lint run --max-issues-per-linter=0 --max-same-issues=0 --out-format=line-number 2>/dev/null | \
 	grep -E "^[^[:space:]].*\\([^)]+\\)$$" | sed 's/.*(\\([^)]*\\))$$/\\1/' | sort | uniq -c | sort -nr | \
-	awk '{printf "  $(YELLOW)%-15s$(RESET) %d issues\\n", $$2, $$1}'
+	awk '{printf "  $(CYAN)%-15s$(RESET) %d issues\\n", $$2, $$1}'
+	@echo ""
+	@echo -e "$(GREEN)📁 Issues by File:$(RESET)"
+	@golangci-lint run --max-issues-per-linter=0 --max-same-issues=0 --out-format=line-number 2>/dev/null | \
+	grep -E "^[^[:space:]].*\\([^)]+\\)$$" | sed 's/^\\([^:]*\\):.*/\\1/' | sort | uniq -c | sort -nr | head -10 | \
+	awk '{printf "  $(MAGENTA)%-40s$(RESET) %d issues\\n", $$2, $$1}'
 
-lint-status: install-golangci-lint ## comprehensive lint status report
+lint-status: install-golangci-lint ## comprehensive lint status report with detailed analysis
 	@echo -e "$(BLUE)🔍 Comprehensive Lint Status Report$(RESET)"
 	@echo -e "$(BLUE)==================================$(RESET)"
 	@echo ""
-	@echo -e "$(GREEN)📊 Quick Stats:$(RESET)"
+	@echo -e "$(GREEN)📊 Overview:$(RESET)"
 	@TOTAL=$$(golangci-lint run --max-issues-per-linter=0 --max-same-issues=0 --out-format=line-number 2>/dev/null | grep -E "^[^[:space:]].*\\([^)]+\\)$$" | wc -l); \
+	FILES=$$(golangci-lint run --max-issues-per-linter=0 --max-same-issues=0 --out-format=line-number 2>/dev/null | grep -E "^[^[:space:]].*\\([^)]+\\)$$" | sed 's/^\\([^:]*\\):.*/\\1/' | sort | uniq | wc -l); \
+	LINTERS=$$(golangci-lint run --max-issues-per-linter=0 --max-same-issues=0 --out-format=line-number 2>/dev/null | grep -E "^[^[:space:]].*\\([^)]+\\)$$" | sed 's/.*(\\([^)]*\\))$$/\\1/' | sort | uniq | wc -l); \
 	echo -e "  $(YELLOW)Total Issues: $$TOTAL$(RESET)"; \
+	echo -e "  $(YELLOW)Affected Files: $$FILES$(RESET)"; \
+	echo -e "  $(YELLOW)Active Linters: $$LINTERS$(RESET)"; \
 	echo ""
-	@echo -e "$(GREEN)🏷️  Top 10 Linters:$(RESET)"
+	@echo -e "$(GREEN)🏆 Top 5 Issue Types:$(RESET)"
 	@golangci-lint run --max-issues-per-linter=0 --max-same-issues=0 --out-format=line-number 2>/dev/null | \
-	grep -E "^[^[:space:]].*\\([^)]+\\)$$" | sed 's/.*(\\([^)]*\\))$$/\\1/' | sort | uniq -c | sort -nr | head -10 | \
-	awk '{printf "  $(CYAN)%-15s$(RESET) %d issues\\n", $$2, $$1}'
+	grep -E "^[^[:space:]].*\\([^)]+\\)$$" | sed 's/.*(\\([^)]*\\))$$/\\1/' | sort | uniq -c | sort -nr | head -5 | \
+	awk '{printf "  $(RED)%-20s$(RESET) %d issues\\n", $$2, $$1}'
 	@echo ""
-	@echo -e "$(GREEN)📁 Most Problematic Files:$(RESET)"
+	@echo -e "$(GREEN)📂 Top 5 Problematic Files:$(RESET)"
 	@golangci-lint run --max-issues-per-linter=0 --max-same-issues=0 --out-format=line-number 2>/dev/null | \
 	grep -E "^[^[:space:]].*\\([^)]+\\)$$" | sed 's/^\\([^:]*\\):.*/\\1/' | sort | uniq -c | sort -nr | head -5 | \
-	awk '{printf "  $(MAGENTA)%-40s$(RESET) %d issues\\n", $$2, $$1}'
+	awk '{printf "  $(MAGENTA)%-50s$(RESET) %d issues\\n", $$2, $$1}'
+	@echo ""
+	@echo -e "$(GREEN)💡 Recommendations:$(RESET)"
+	@TOTAL=$$(golangci-lint run --max-issues-per-linter=0 --max-same-issues=0 --out-format=line-number 2>/dev/null | grep -E "^[^[:space:]].*\\([^)]+\\)$$" | wc -l); \
+	if [ $$TOTAL -eq 0 ]; then \
+		echo -e "  $(GREEN)✅ Perfect! No lint issues found.$(RESET)"; \
+	elif [ $$TOTAL -le 10 ]; then \
+		echo -e "  $(YELLOW)⭐ Great! Only $$TOTAL issues remaining. Run 'make lint-fix' to auto-fix.$(RESET)"; \
+	elif [ $$TOTAL -le 50 ]; then \
+		echo -e "  $(ORANGE)⚠️  $$TOTAL issues found. Focus on top linters. Run 'make lint-fix' first.$(RESET)"; \
+	else \
+		echo -e "  $(RED)🚨 $$TOTAL issues found. Significant cleanup needed. Start with 'make lint-fix'.$(RESET)"; \
+	fi
 
 lint-json: install-golangci-lint ## export lint results to JSON for further analysis
 	@echo -e "$(CYAN)Exporting lint results to lint-report.json...$(RESET)"
