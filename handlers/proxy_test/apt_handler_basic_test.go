@@ -18,8 +18,8 @@ func init() {
 	})
 }
 
-// TestAPTHandlerV2_Type tests the Type method
-func TestAPTHandlerV2_Type(t *testing.T) {
-	handler := &proxy.APTHandlerV2{}
+// TestAPTHandler_Type tests the Type method
+func TestAPTHandler_Type(t *testing.T) {
+	handler := proxy.NewAPTHandler()
 	assert.Equal(t, "apt", handler.Type())
 }

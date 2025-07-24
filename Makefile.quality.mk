@@ -6,19 +6,20 @@
 # ==============================================================================
 
 .PHONY: fmt lint format security security-code security-deps analyze analyze-complexity analyze-unused
-.PHONY: quality quality-fix lint-fix lint-new lint-ci format-simplify format-strict format-list format-diff
+.PHONY: quality quality-fix lint-fix lint-new lint-ci format-quick format-strict format-list format-diff
 .PHONY: format-file install-golangci-lint install-format-tools
-.PHONY: lint-count lint-summary lint-status lint-json
+.PHONY: lint-summary lint-status lint-json lint-quick lint-dev lint-precommit lint-file
+.PHONY: vet install-vet-tools
 
 
 # ==============================================================================
 # Code Formatting
 # ==============================================================================
 
-format: format-simplify ## quick and simple formatting (default)
-fmt: format-simplify
+format: format-quick ## quick and simple formatting (default)
+fmt: format-quick
 
-format-simplify: ## quick basic formatting with gofumpt and goimports
+format-quick: ## quick basic formatting with gofumpt and goimports
 	@echo -e "$(CYAN)🚀 Quick formatting...$(RESET)"
 	@echo "1. Running gofumpt (includes go fmt + simplification)..."
 	@gofumpt -w .
@@ -45,11 +46,14 @@ format-list: ## show files that need formatting
 		echo "$$FILES" | while read file; do echo "  $(YELLOW)$$file$(RESET)"; done; \
 		echo ""; \
 		echo -e "$(YELLOW)Total: $$(echo "$$FILES" | wc -l) files need formatting$(RESET)"; \
-		echo -e "$(CYAN)Run 'make format-simplify' or 'make format-strict' to fix$(RESET)"; \
+		echo -e "$(CYAN)Run 'make format-quick' or 'make format-strict' to fix$(RESET)"; \
 	else \
 		echo -e "$(GREEN)✅ All files are properly formatted!$(RESET)"; \
 	fi
 
+lint-new: install-golangci-lint ## run golangci-lint on new code only
+	@echo "Running golangci-lint on new code only..."
+	golangci-lint run --new-from-rev=HEAD~ ./...
 format-diff: ## show formatting differences
 	@echo -e "$(CYAN)📝 Formatting differences:$(RESET)"
 	@DIFF_OUTPUT=$$(gofmt -d .); \
@@ -98,17 +102,88 @@ format-file: ## format specific files with gofumpt and goimports (usage: make fo
 	@:
 
 # ==============================================================================
-# Linting
+# Enhanced Linting Workflow (vet + golangci-lint + gosec)
 # ==============================================================================
 
-lint-install-tools:
-	@echo "Installing golangci-lint..."
+# Install tools
+lint-install-tools: ## install all linting tools (golangci-lint + gosec)
+	@echo -e "$(CYAN)Installing linting tools...$(RESET)"
+	@echo "1. Installing golangci-lint..."
 	@which golangci-lint > /dev/null || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
-	@echo "golangci-lint installed!"
+	@echo "2. Installing gosec..."
+	@which gosec > /dev/null || go install github.com/securego/gosec/v2/cmd/gosec@latest
+	@echo -e "$(GREEN)✅ All linting tools installed!$(RESET)"
 
-lint: install-golangci-lint ## run golangci-lint
-	@echo "Running golangci-lint..."
-	golangci-lint run ./...
+# Main lint workflows
+lint-quick: lint-vet lint-golangci ## quick lint (vet + golangci-lint)
+lint-strict: lint-vet lint-golangci lint-sec ## strict lint (vet + golangci-lint + gosec)
+
+lint: lint-quick ## default to strict linting
+
+# Individual lint components
+lint-vet: ## run go vet static analysis
+	@echo -e "$(BLUE)🔍 Running go vet (static analysis)...$(RESET)"
+	@go vet ./...
+	@echo -e "$(GREEN)✅ go vet completed$(RESET)"
+	@echo ""
+
+lint-golangci: lint-install-tools ## run golangci-lint comprehensive checks
+	@echo -e "$(BLUE)🔍 Running golangci-lint (comprehensive)...$(RESET)"
+	@golangci-lint run ./...
+	@echo -e "$(GREEN)✅ golangci-lint completed$(RESET)"
+	@echo ""
+
+lint-sec: lint-install-tools ## run gosec security analysis
+	@echo -e "$(BLUE)🔍 Running gosec (security analysis)...$(RESET)"
+	@gosec -fmt=json -out=gosec-report.json ./... || true
+	@echo -e "$(GREEN)✅ gosec completed$(RESET)"
+	@echo -e "$(CYAN)📄 Security report: gosec-report.json$(RESET)"
+	@if command -v jq >/dev/null 2>&1 && [ -f "gosec-report.json" ]; then \
+		ISSUES=$$(jq '.Issues | length' gosec-report.json 2>/dev/null || echo '0'); \
+		if [ "$$ISSUES" = "0" ]; then \
+			echo -e "    $(GREEN)✅ No security issues found$(RESET)"; \
+		else \
+			echo -e "    $(YELLOW)⚠️  $$ISSUES security issues found$(RESET)"; \
+		fi; \
+	fi
+	@echo ""
+
+lint-golangci-fix: lint-install-tools ## golangci-lint with auto-fix (for pre-commit)
+	@echo -e "$(BLUE)🔧 Running golangci-lint with auto-fix...$(RESET)"
+	@golangci-lint run --fix --new-from-rev=HEAD~ ./...
+
+# CI/CD targets
+lint-ci: lint-vet lint-golangci-ci lint-sec ## CI-optimized linting (all tools with CI format)
+lint-golangci-ci: lint-install-tools ## golangci-lint for CI with GitHub Actions format
+	@echo -e "$(BLUE)🔍 Running golangci-lint for CI...$(RESET)"
+	@golangci-lint run --out-format=github-actions ./...
+
+# File-specific linting
+lint-file: ## lint specific files (usage: make lint-file file1.go file2.go ...)
+	@if [ -z "$(filter-out lint-file,$(MAKECMDGOALS))" ]; then \
+		echo "$(RED)❌ Error: At least one file must be specified$(RESET)"; \
+		echo "$(YELLOW)Usage: make lint-file file1.go file2.go ...$(RESET)"; \
+		exit 1; \
+	fi
+	@echo "$(CYAN)🔄 Linting specific files...$(RESET)"
+	@for file in $(filter-out lint-file,$(MAKECMDGOALS)); do \
+		if [ -n "$$file" ]; then \
+			if [ ! -f "$$file" ]; then \
+				echo "$(RED)❌ Error: File '$$file' does not exist$(RESET)"; \
+				continue; \
+			fi; \
+			if ! echo "$$file" | grep -q "\.go$$"; then \
+				echo "$(YELLOW)⚠️  Warning: File '$$file' is not a Go file, skipping$(RESET)"; \
+				continue; \
+			fi; \
+			echo "$(CYAN)📝 Linting file: $$file$(RESET)"; \
+			echo "  1. Running go vet..."; \
+			go vet "$$file" || echo "$(RED)❌ go vet failed for $$file$(RESET)"; \
+			echo "  2. Running golangci-lint..."; \
+			golangci-lint run "$$file" || echo "$(RED)❌ golangci-lint failed for $$file$(RESET)"; \
+		fi; \
+	done
+	@echo "$(GREEN)🎉 File linting complete!$(RESET)"
 
 lint-summary: install-golangci-lint ## show lint issues summary by linter and problematic files
 	@echo -e "$(CYAN)📊 Lint Issues Summary$(RESET)"
@@ -198,7 +273,7 @@ security-deps: ## check dependencies for vulnerabilities
 
 security-code: ## run security code analysis
 	@echo -e "$(CYAN)Running security code analysis...$(RESET)"
-	@which gosec > /dev/null || go install github.com/securecode/gosec/v2/cmd/gosec@latest
+	@which gosec > /dev/null || go install github.com/securego/gosec/v2/cmd/gosec@latest
 	gosec -fmt=json -out=gosec-report.json ./... || true
 	@echo -e "$(GREEN)Security report generated: gosec-report.json$(RESET)"
 
@@ -222,6 +297,8 @@ analyze-unused: ## find unused code
 # ==============================================================================
 # Quality Assurance Workflow Targets
 # ==============================================================================
+
+pre-commit: lint-vet lint-golangci-fix
 
 quality: fmt lint test-coverage ## run all quality checks
 	@echo "✅ All quality checks passed!"

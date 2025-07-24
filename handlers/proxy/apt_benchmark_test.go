@@ -13,7 +13,7 @@ import (
 
 // BenchmarkAPTHandler_CacheKeyGeneration 캐시 키 생성 성능 측정
 func BenchmarkAPTHandler_CacheKeyGeneration(b *testing.B) {
-	handler := NewAPTHandlerV2()
+	handler := NewAPTHandler()
 	app := fiber.New()
 
 	// 다양한 경로로 벤치마크
@@ -39,7 +39,7 @@ func BenchmarkAPTHandler_CacheKeyGeneration(b *testing.B) {
 
 // BenchmarkAPTHandler_CachePolicyDecision 캐시 정책 결정 성능 측정
 func BenchmarkAPTHandler_CachePolicyDecision(b *testing.B) {
-	handler := NewAPTHandlerV2()
+	handler := NewAPTHandler()
 	app := fiber.New()
 
 	testCases := []struct {
@@ -67,8 +67,6 @@ func BenchmarkAPTHandler_CachePolicyDecision(b *testing.B) {
 
 // BenchmarkAPTHandler_MetadataFileCheck 메타데이터 파일 판별 성능 측정
 func BenchmarkAPTHandler_MetadataFileCheck(b *testing.B) {
-	handler := NewAPTHandlerV2()
-
 	paths := []string{
 		"dists/focal/Release",
 		"dists/focal/Release.gpg",
@@ -80,13 +78,15 @@ func BenchmarkAPTHandler_MetadataFileCheck(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = handler.isMetadataFile(paths[i%len(paths)])
+		_ = isMetadataFile(paths[i%len(paths)])
 	}
 }
 
 // BenchmarkAPTHandler_RequestTransform APT 요청 변환 성능 측정
+// NOTE: TransformRequest 메서드가 존재하지 않아 주석 처리
+/*
 func BenchmarkAPTHandler_RequestTransform(b *testing.B) {
-	handler := NewAPTHandlerV2()
+	handler := NewAPTHandler()
 	app := fiber.New()
 
 	paths := []string{
@@ -109,6 +109,7 @@ func BenchmarkAPTHandler_RequestTransform(b *testing.B) {
 		_, _ = app.Test(req, -1)
 	}
 }
+*/
 
 // BenchmarkAPTHandler_URLBuildingParallel 병렬 URL 구성 성능 측정
 func BenchmarkAPTHandler_URLBuildingParallel(b *testing.B) {
@@ -162,8 +163,10 @@ func BenchmarkAPTHandler_URLBuildingParallel(b *testing.B) {
 }
 
 // BenchmarkAPTHandler_ResponseTransform APT 응답 변환 성능 측정
+// NOTE: TransformResponse 메서드가 존재하지 않아 주석 처리
+/*
 func BenchmarkAPTHandler_ResponseTransform(b *testing.B) {
-	handler := NewAPTHandlerV2()
+	handler := NewAPTHandler()
 	app := fiber.New()
 
 	responseData := []byte(`Origin: Ubuntu
@@ -183,10 +186,11 @@ Architectures: amd64 arm64 armhf i386`)
 		_, _ = app.Test(req, -1)
 	}
 }
+*/
 
 // BenchmarkAPTHandler_CacheTTLCalculation 캐시 TTL 계산 성능 측정
 func BenchmarkAPTHandler_CacheTTLCalculation(b *testing.B) {
-	handler := NewAPTHandlerV2()
+	handler := NewAPTHandler()
 	app := fiber.New()
 
 	paths := []string{
@@ -211,7 +215,7 @@ func BenchmarkAPTHandler_CacheTTLCalculation(b *testing.B) {
 
 // BenchmarkAPTHandler_ErrorHandling 에러 처리 성능 측정
 func BenchmarkAPTHandler_ErrorHandling(b *testing.B) {
-	handler := NewAPTHandlerV2()
+	handler := NewAPTHandler()
 
 	errors := []error{
 		fmt.Errorf("미러가 설정되지 않았습니다"),
@@ -228,7 +232,7 @@ func BenchmarkAPTHandler_ErrorHandling(b *testing.B) {
 
 // BenchmarkAPTHandler_MemoryUsage 메모리 할당 벤치마크
 func BenchmarkAPTHandler_MemoryUsage(b *testing.B) {
-	handler := NewAPTHandlerV2()
+	handler := NewAPTHandler()
 	app := fiber.New()
 
 	b.ReportAllocs()
