@@ -41,7 +41,7 @@ make docker-run
 - 구조화된 로깅 (JSON)
 - 핫 리로드 설정
 - Kubernetes/Helm 차트 제공
-- CLI 관리 도구 (proxyndctl)
+- 강력한 CLI 관리 도구 (proxyndctl)
 
 ## 🛠️ 기술 스택
 - **언어**: Go 1.23+
