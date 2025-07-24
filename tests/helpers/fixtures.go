@@ -64,7 +64,7 @@ func (f *Fixtures) LoadBytes(t *testing.T, filename string) []byte {
 func (f *Fixtures) SaveJSON(t *testing.T, filename string, data interface{}) {
 	t.Helper()
 
-	if err := os.MkdirAll(f.baseDir, 0755); err != nil {
+	if err := os.MkdirAll(f.baseDir, 0o755); err != nil {
 		t.Fatalf("Failed to create fixtures directory: %v", err)
 	}
 
@@ -74,7 +74,7 @@ func (f *Fixtures) SaveJSON(t *testing.T, filename string, data interface{}) {
 		t.Fatalf("Failed to marshal JSON: %v", err)
 	}
 
-	if err := os.WriteFile(filePath, jsonData, 0644); err != nil {
+	if err := os.WriteFile(filePath, jsonData, 0o644); err != nil {
 		t.Fatalf("Failed to write fixture file %s: %v", filePath, err)
 	}
 }
@@ -83,12 +83,12 @@ func (f *Fixtures) SaveJSON(t *testing.T, filename string, data interface{}) {
 func (f *Fixtures) SaveString(t *testing.T, filename, content string) {
 	t.Helper()
 
-	if err := os.MkdirAll(f.baseDir, 0755); err != nil {
+	if err := os.MkdirAll(f.baseDir, 0o755); err != nil {
 		t.Fatalf("Failed to create fixtures directory: %v", err)
 	}
 
 	filePath := filepath.Join(f.baseDir, filename)
-	if err := os.WriteFile(filePath, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(filePath, []byte(content), 0o644); err != nil {
 		t.Fatalf("Failed to write fixture file %s: %v", filePath, err)
 	}
 }
@@ -143,7 +143,7 @@ func CreateStandardFixtures(fixturesDir string) error {
 		}
 
 		filePath := filepath.Join(fixturesDir, filename)
-		if err := os.WriteFile(filePath, jsonData, 0644); err != nil {
+		if err := os.WriteFile(filePath, jsonData, 0o644); err != nil {
 			return fmt.Errorf("failed to write %s: %v", filename, err)
 		}
 	}
@@ -169,7 +169,7 @@ Date: Thu, 01 Jan 2024 00:00:00 UTC`,
 
 	for filename, content := range packageData {
 		filePath := filepath.Join(fixturesDir, filename)
-		if err := os.WriteFile(filePath, []byte(content), 0644); err != nil {
+		if err := os.WriteFile(filePath, []byte(content), 0o644); err != nil {
 			return fmt.Errorf("failed to write %s: %v", filename, err)
 		}
 	}
@@ -204,7 +204,7 @@ func CreateTempFixture(t *testing.T, filename, content string) string {
 	})
 
 	filePath := filepath.Join(tempDir, filename)
-	if err := os.WriteFile(filePath, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(filePath, []byte(content), 0o644); err != nil {
 		t.Fatalf("Failed to write temp fixture: %v", err)
 	}
 

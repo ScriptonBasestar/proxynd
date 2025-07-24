@@ -35,7 +35,8 @@ func NewHTTPUpstreamClient(timeout time.Duration) *HTTPUpstreamClient {
 
 // Fetch retrieves content from upstream
 func (c *HTTPUpstreamClient) Fetch(ctx context.Context, url string,
-	headers map[string]string) (*proxy.ProxyResponse, error) {
+	headers map[string]string,
+) (*proxy.ProxyResponse, error) {
 	// Create request with context
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {

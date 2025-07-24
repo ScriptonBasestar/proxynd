@@ -11,6 +11,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/gofiber/fiber/v2"
+
 	"proxynd/configs"
 	"proxynd/helpers"
 	"proxynd/internal/mirror"
@@ -18,8 +20,6 @@ import (
 	"proxynd/logging"
 	"proxynd/pkg/httpclient"
 	"proxynd/verification/apk"
-
-	"github.com/gofiber/fiber/v2"
 )
 
 var (

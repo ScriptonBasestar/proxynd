@@ -8,7 +8,7 @@ import (
 type PackageVerifier interface {
 	// VerifyPackage verifies a package based on its type
 	VerifyPackage(
-		ctx context.Context, packageType string, packagePath string,
+		ctx context.Context, packageType, packagePath string,
 		data []byte, metadata map[string]string,
 	) (*VerificationResult, error)
 

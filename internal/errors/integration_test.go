@@ -37,7 +37,6 @@ func setupTestApp() *fiber.App {
 	// Error handler middleware
 	app.Use(func(c *fiber.Ctx) error {
 		err := c.Next()
-
 		if err != nil {
 			return handleError(c, err)
 		}

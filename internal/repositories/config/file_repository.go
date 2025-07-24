@@ -34,7 +34,7 @@ type FileRepository struct {
 // NewFileRepository creates a new file-based configuration repository
 func NewFileRepository(configDir string) (*FileRepository, error) {
 	// Ensure config directory exists
-	if err := os.MkdirAll(configDir, 0755); err != nil {
+	if err := os.MkdirAll(configDir, 0o755); err != nil {
 		return nil, fmt.Errorf("failed to create config directory: %w", err)
 	}
 
@@ -300,7 +300,7 @@ func (r *FileRepository) saveYAMLFile(path string, v interface{}) error {
 		return err
 	}
 
-	return os.WriteFile(path, data, 0644)
+	return os.WriteFile(path, data, 0o644)
 }
 
 func (r *FileRepository) handleConfigChange(filename string, callback func(proxyType string, config interface{})) {

@@ -103,7 +103,7 @@ func EnhancedSessionTimeout() fiber.Handler {
 }
 
 // attemptTokenRefresh 토큰 갱신 시도 (동시성 제어 포함)
-func attemptTokenRefresh(c *fiber.Ctx, sess fiber.Map, userMap fiber.Map) error {
+func attemptTokenRefresh(c *fiber.Ctx, sess, userMap fiber.Map) error {
 	userID, ok := userMap["user_id"].(string)
 	if !ok {
 		return fiber.NewError(fiber.StatusInternalServerError, "Invalid user ID")
@@ -141,7 +141,7 @@ func attemptTokenRefresh(c *fiber.Ctx, sess fiber.Map, userMap fiber.Map) error 
 }
 
 // performTokenRefresh 실제 토큰 갱신 수행
-func performTokenRefresh(_ *fiber.Ctx, sess fiber.Map, userMap fiber.Map) error {
+func performTokenRefresh(_ *fiber.Ctx, sess, userMap fiber.Map) error {
 	jwtRefreshToken, exists := sess["jwt_refresh_token"]
 	if !exists || jwtRefreshToken == nil {
 		return fiber.NewError(fiber.StatusUnauthorized, "No refresh token available")
@@ -241,7 +241,7 @@ func extractTokenExpiration(tokenString string) (time.Time, error) {
 }
 
 // clearSession 세션 정리
-func clearSession(sess fiber.Map, userMap fiber.Map) {
+func clearSession(sess, userMap fiber.Map) {
 	if email, ok := userMap["email"].(string); ok {
 		logging.GetLogger().Info("Session cleared", logging.F("email", email))
 	}

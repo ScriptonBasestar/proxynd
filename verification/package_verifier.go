@@ -425,7 +425,7 @@ func (pv *PackageVerifier) sendVerificationAlert(
 }
 
 // extractPackageName 패키지 경로에서 이름 추출
-func extractPackageName(path string, packageType string) string {
+func extractPackageName(path, packageType string) string {
 	switch packageType {
 	case "npm":
 		// @scope/package 형식 처리

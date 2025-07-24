@@ -29,7 +29,7 @@ type FileRepository struct {
 // NewFileRepository creates a new file-based cache repository
 func NewFileRepository(basePath string, maxSize int64, maxAge time.Duration) (*FileRepository, error) {
 	// Ensure base path exists
-	if err := os.MkdirAll(basePath, 0755); err != nil {
+	if err := os.MkdirAll(basePath, 0o755); err != nil {
 		return nil, fmt.Errorf("failed to create cache directory: %w", err)
 	}
 
@@ -103,7 +103,7 @@ func (r *FileRepository) Put(_ context.Context, key string, content io.Reader, t
 
 	// Ensure directory exists
 	dir := filepath.Dir(filePath)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return fmt.Errorf("failed to create cache directory: %w", err)
 	}
 
@@ -249,7 +249,6 @@ func (r *FileRepository) Clear(_ context.Context) error {
 
 		return os.Remove(path)
 	})
-
 	if err != nil {
 		return fmt.Errorf("failed to clear cache: %w", err)
 	}
@@ -339,7 +338,7 @@ func (r *FileRepository) saveMetadata() error {
 		return err
 	}
 
-	return os.WriteFile(metaPath, data, 0644)
+	return os.WriteFile(metaPath, data, 0o644)
 }
 
 func (r *FileRepository) cleanupRoutine() {

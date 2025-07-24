@@ -254,7 +254,7 @@ func parseLevel(level LogLevel) zerolog.Level {
 func createFileWriter(config FileConfig) io.Writer {
 	// 디렉토리 생성
 	dir := filepath.Dir(config.Path)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0o755); err != nil {
 		log.Error().Err(err).Str(fieldPath, dir).Msg("Failed to create log directory")
 	}
 

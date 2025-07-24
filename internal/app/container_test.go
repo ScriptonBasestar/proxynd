@@ -42,7 +42,7 @@ logging:
   level: "info"
 `
 	configFile := filepath.Join(tempDir, "config.yaml")
-	err := os.WriteFile(configFile, []byte(configContent), 0644)
+	err := os.WriteFile(configFile, []byte(configContent), 0o644)
 	require.NoError(t, err)
 
 	container := NewContainer(cfg)
@@ -70,7 +70,7 @@ func TestContainer_ReloadConfig(t *testing.T) {
 	// 초기 설정 파일 생성
 	configContent := testConfigContent
 	configFile := filepath.Join(tempDir, "config.yaml")
-	err := os.WriteFile(configFile, []byte(configContent), 0644)
+	err := os.WriteFile(configFile, []byte(configContent), 0o644)
 	require.NoError(t, err)
 
 	container := NewContainer(cfg)
@@ -88,7 +88,7 @@ server:
 logging:
   level: "debug"
 `
-	err = os.WriteFile(configFile, []byte(newConfigContent), 0644)
+	err = os.WriteFile(configFile, []byte(newConfigContent), 0o644)
 	require.NoError(t, err)
 
 	// When
@@ -111,7 +111,7 @@ func TestContainer_ConfigChangeCallback(t *testing.T) {
 	// 테스트용 설정 파일 생성
 	configContent := testConfigContent
 	configFile := filepath.Join(tempDir, "config.yaml")
-	err := os.WriteFile(configFile, []byte(configContent), 0644)
+	err := os.WriteFile(configFile, []byte(configContent), 0o644)
 	require.NoError(t, err)
 
 	container := NewContainer(cfg)
@@ -133,7 +133,7 @@ server:
 logging:
   level: "warn"
 `
-	err = os.WriteFile(configFile, []byte(newConfigContent), 0644)
+	err = os.WriteFile(configFile, []byte(newConfigContent), 0o644)
 	require.NoError(t, err)
 
 	// When
@@ -167,7 +167,7 @@ logging:
   level: "invalid_level"  # 잘못된 로그 레벨
 `
 	configFile := filepath.Join(tempDir, "config.yaml")
-	err := os.WriteFile(configFile, []byte(invalidConfigContent), 0644)
+	err := os.WriteFile(configFile, []byte(invalidConfigContent), 0o644)
 	require.NoError(t, err)
 
 	container := NewContainer(cfg)
@@ -192,7 +192,7 @@ func TestContainer_ConfigFileWatcher(t *testing.T) {
 	// 초기 설정 파일 생성
 	configContent := testConfigContent
 	configFile := filepath.Join(tempDir, "config.yaml")
-	err := os.WriteFile(configFile, []byte(configContent), 0644)
+	err := os.WriteFile(configFile, []byte(configContent), 0o644)
 	require.NoError(t, err)
 
 	container := NewContainer(cfg)
@@ -216,7 +216,7 @@ server:
 logging:
   level: "debug"
 `
-	err = os.WriteFile(configFile, []byte(newConfigContent), 0644)
+	err = os.WriteFile(configFile, []byte(newConfigContent), 0o644)
 	require.NoError(t, err)
 
 	// 파일 감시 이벤트 처리 대기
@@ -243,7 +243,7 @@ server:
   port: 8080
 `
 	configFile := filepath.Join(tempDir, "config.yaml")
-	err := os.WriteFile(configFile, []byte(configContent), 0644)
+	err := os.WriteFile(configFile, []byte(configContent), 0o644)
 	require.NoError(t, err)
 
 	container := NewContainer(cfg)
@@ -274,7 +274,7 @@ server:
   port: 8080
 `
 	configFile := filepath.Join(tempDir, "config.yaml")
-	err := os.WriteFile(configFile, []byte(configContent), 0644)
+	err := os.WriteFile(configFile, []byte(configContent), 0o644)
 	require.NoError(t, err)
 
 	container := NewContainer(cfg)

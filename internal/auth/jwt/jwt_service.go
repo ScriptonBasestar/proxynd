@@ -153,7 +153,6 @@ func (s *JWTService) ValidateToken(tokenString string) (*Claims, error) {
 
 		return nil, errors.New("unsupported signing algorithm")
 	})
-
 	if err != nil {
 		s.logger.Warn("Token validation failed", logging.F("error", err))
 		return nil, fmt.Errorf("invalid token: %w", err)

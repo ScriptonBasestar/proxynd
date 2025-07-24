@@ -71,7 +71,7 @@ name: test
   invalid: yaml structure
     - missing proper indentation
 `
-		err := os.WriteFile(invalidYAMLPath, []byte(invalidYAML), 0644)
+		err := os.WriteFile(invalidYAMLPath, []byte(invalidYAML), 0o644)
 		require.NoError(t, err)
 
 		var data map[string]interface{}
@@ -82,7 +82,7 @@ name: test
 	t.Run("Write to Read-only Directory", func(t *testing.T) {
 		// 읽기 전용 디렉토리 생성
 		readOnlyDir := filepath.Join(tempDir, "readonly")
-		err := os.Mkdir(readOnlyDir, 0444) // 읽기 전용
+		err := os.Mkdir(readOnlyDir, 0o444) // 읽기 전용
 		require.NoError(t, err)
 
 		testData := map[string]string{"test": "data"}

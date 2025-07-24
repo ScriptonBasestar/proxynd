@@ -568,7 +568,7 @@ func validateContentType(c *fiber.Ctx, cfg ValidationConfig, logger logging.Logg
 }
 
 // IPValidation IP 주소 기반 검증
-func IPValidation(blockedCIDRs []string, allowedCIDRs []string) fiber.Handler {
+func IPValidation(blockedCIDRs, allowedCIDRs []string) fiber.Handler {
 	logger := logging.GetLogger()
 
 	return func(c *fiber.Ctx) error {

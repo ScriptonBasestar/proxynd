@@ -184,7 +184,7 @@ func ValidateConfig(config LogConfig) error {
 		dir := filepath.Dir(config.File.Path)
 		if _, err := os.Stat(dir); os.IsNotExist(err) {
 			// 디렉토리 생성 시도
-			if err := os.MkdirAll(dir, 0755); err != nil {
+			if err := os.MkdirAll(dir, 0o755); err != nil {
 				return fmt.Errorf("failed to create log directory: %w", err)
 			}
 		}

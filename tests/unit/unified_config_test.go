@@ -71,7 +71,7 @@ registries:
     enabled: false
 `
 
-	err := os.WriteFile(configPath, []byte(configContent), 0644)
+	err := os.WriteFile(configPath, []byte(configContent), 0o644)
 	assert.Equal(t, nil, err)
 
 	// 설정 로드
@@ -133,7 +133,7 @@ metrics:
   enabled: false
 `
 
-	err := os.WriteFile(configPath, []byte(configContent), 0644)
+	err := os.WriteFile(configPath, []byte(configContent), 0o644)
 	assert.Equal(t, nil, err)
 
 	// 설정 로드
@@ -268,7 +268,7 @@ cache:
     endpoint: ${S3_ENDPOINT}
 `
 
-	err := os.WriteFile(configPath, []byte(configContent), 0644)
+	err := os.WriteFile(configPath, []byte(configContent), 0o644)
 	assert.Equal(t, nil, err)
 
 	// 설정 로드
@@ -295,7 +295,7 @@ logging:
   level: info
 `
 
-	err := os.WriteFile(configPath, []byte(initialConfig), 0644)
+	err := os.WriteFile(configPath, []byte(initialConfig), 0o644)
 	assert.Equal(t, nil, err)
 
 	// 핫리로드 매니저 생성
@@ -332,7 +332,7 @@ logging:
   level: debug
 `
 
-	err = os.WriteFile(configPath, []byte(updatedConfig), 0644)
+	err = os.WriteFile(configPath, []byte(updatedConfig), 0o644)
 	assert.Equal(t, nil, err)
 
 	// 리로드 대기

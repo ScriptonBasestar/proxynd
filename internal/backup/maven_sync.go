@@ -61,12 +61,12 @@ type SyncOptions struct {
 
 // SyncResult 동기화 결과
 type SyncResult struct {
-	FilesCopied    int
-	FilesDeleted   int
-	FilesSkipped   int
-	BytesCopied    int64
-	Duration       time.Duration
-	Errors         []error
+	FilesCopied  int
+	FilesDeleted int
+	FilesSkipped int
+	BytesCopied  int64
+	Duration     time.Duration
+	Errors       []error
 }
 
 // Sync 디렉토리 동기화 수행
@@ -93,7 +93,7 @@ func (s *MavenSync) Sync(source, target string, options *SyncOptions) (*SyncResu
 
 	// 대상 디렉토리 생성
 	if !options.DryRun {
-		if err := os.MkdirAll(target, 0755); err != nil {
+		if err := os.MkdirAll(target, 0o755); err != nil {
 			return nil, fmt.Errorf("failed to create target directory: %w", err)
 		}
 	}
@@ -127,7 +127,6 @@ func (s *MavenSync) Sync(source, target string, options *SyncOptions) (*SyncResu
 
 		return nil
 	})
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to walk source: %w", err)
 	}
@@ -157,9 +156,9 @@ func (s *MavenSync) Sync(source, target string, options *SyncOptions) (*SyncResu
 }
 
 // syncFiles 파일 동기화 수행
-func (s *MavenSync) syncFiles(source, target string, sourceFiles map[string]os.FileInfo, 
-	options *SyncOptions, result *SyncResult) error {
-	
+func (s *MavenSync) syncFiles(source, target string, sourceFiles map[string]os.FileInfo,
+	options *SyncOptions, result *SyncResult,
+) error {
 	// 워커 풀 설정
 	type syncJob struct {
 		relPath string
@@ -205,7 +204,7 @@ func (s *MavenSync) syncFiles(source, target string, sourceFiles map[string]os.F
 				// 파일 복사
 				copied, err := s.copyFileWithLimit(srcPath, dstPath, bandwidthLimiter)
 				if err != nil {
-					result.Errors = append(result.Errors, 
+					result.Errors = append(result.Errors,
 						fmt.Errorf("failed to copy %s: %w", job.relPath, err))
 					continue
 				}
@@ -273,9 +272,9 @@ func (s *MavenSync) needsSync(srcPath, dstPath string, srcInfo os.FileInfo, opti
 }
 
 // cleanupTarget 대상 디렉토리 정리 (미러 모드)
-func (s *MavenSync) cleanupTarget(target string, sourceFiles map[string]os.FileInfo, 
-	options *SyncOptions, result *SyncResult) error {
-	
+func (s *MavenSync) cleanupTarget(target string, sourceFiles map[string]os.FileInfo,
+	options *SyncOptions, result *SyncResult,
+) error {
 	return filepath.Walk(target, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return nil
@@ -326,7 +325,7 @@ func (s *MavenSync) cleanupTarget(target string, sourceFiles map[string]os.FileI
 func (s *MavenSync) copyFileWithLimit(src, dst string, limiter *rateLimiter) (int64, error) {
 	// 대상 디렉토리 생성
 	dstDir := filepath.Dir(dst)
-	if err := os.MkdirAll(dstDir, 0755); err != nil {
+	if err := os.MkdirAll(dstDir, 0o755); err != nil {
 		return 0, err
 	}
 
@@ -386,7 +385,7 @@ func (s *MavenSync) shouldExclude(path string, patterns []string) bool {
 	// 기본 제외 패턴
 	defaultExcludes := []string{
 		"*.tmp",
-		"*.lock", 
+		"*.lock",
 		"*.part",
 		"_remote.repositories",
 		"_maven.repositories",
@@ -461,10 +460,10 @@ func (r *rateLimiter) waitForQuota(bytes int64) {
 
 	now := time.Now()
 	elapsed := now.Sub(r.lastTime)
-	
+
 	// 전송 가능한 바이트 계산
 	allowedBytes := int64(elapsed.Seconds() * float64(r.bytesPerSecond))
-	
+
 	if bytes > allowedBytes {
 		// 대기 시간 계산
 		waitTime := time.Duration(float64(bytes-allowedBytes) / float64(r.bytesPerSecond) * float64(time.Second))

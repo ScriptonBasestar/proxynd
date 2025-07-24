@@ -122,7 +122,8 @@ func (f *Fixtures) ProxyResponse(statusCode int, body string) *proxy.ProxyRespon
 
 // ProxyResponseWithHeaders creates a test proxy response with headers
 func (f *Fixtures) ProxyResponseWithHeaders(statusCode int, body string,
-	headers map[string]string) *proxy.ProxyResponse {
+	headers map[string]string,
+) *proxy.ProxyResponse {
 	resp := f.ProxyResponse(statusCode, body)
 	resp.Headers = headers
 	return resp

@@ -1,8 +1,8 @@
 package dtos
 
 const (
-	//Success as constant
+	// Success as constant
 	Success = "Success."
-	//Error as constant
+	// Error as constant
 	Error = "Error."
 )

@@ -33,7 +33,7 @@ func NewFileSystemBackend(basePath string) (*FileSystemBackend, error) {
 func NewFileSystemBackendWithConfig(config FileSystemConfig) (*FileSystemBackend, error) {
 	basePath := config.Path
 	// 기본 경로 생성
-	if err := os.MkdirAll(basePath, 0755); err != nil {
+	if err := os.MkdirAll(basePath, 0o755); err != nil {
 		return nil, fmt.Errorf("failed to create cache directory: %w", err)
 	}
 
@@ -102,7 +102,7 @@ func (fs *FileSystemBackend) Put(key string, data io.Reader, ttl time.Duration) 
 
 	// 디렉토리 생성
 	dir := filepath.Dir(filePath)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return errors.NewError(errors.ErrCodeCacheWrite, "failed to create cache directory").
 			WithDomain("cache").
 			WithCause(err).
@@ -229,7 +229,7 @@ func (fs *FileSystemBackend) Clear() error {
 		return fmt.Errorf("failed to clear cache: %w", err)
 	}
 
-	return os.MkdirAll(fs.basePath, 0755)
+	return os.MkdirAll(fs.basePath, 0o755)
 }
 
 // Size 캐시 크기 조회
@@ -273,7 +273,7 @@ func (fs *FileSystemBackend) saveMetadata(key string, meta *CacheMetadata) error
 
 	// 디렉토리 생성
 	dir := filepath.Dir(metaPath)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err
 	}
 
@@ -283,7 +283,7 @@ func (fs *FileSystemBackend) saveMetadata(key string, meta *CacheMetadata) error
 		return err
 	}
 
-	return os.WriteFile(metaPath, data, 0644)
+	return os.WriteFile(metaPath, data, 0o644)
 }
 
 // loadMetadata 메타데이터 로드

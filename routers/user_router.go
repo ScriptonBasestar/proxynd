@@ -297,7 +297,7 @@ func saveUserConfig(users []UserInfo) error {
 	configDir := getUserConfigDir()
 
 	// 디렉토리 생성
-	if err := os.MkdirAll(configDir, 0755); err != nil {
+	if err := os.MkdirAll(configDir, 0o755); err != nil {
 		return fmt.Errorf("failed to create config directory: %v", err)
 	}
 
@@ -311,7 +311,7 @@ func saveUserConfig(users []UserInfo) error {
 	}
 
 	configPath := filepath.Join(configDir, "users.yaml")
-	if err := os.WriteFile(configPath, data, 0600); err != nil {
+	if err := os.WriteFile(configPath, data, 0o600); err != nil {
 		return fmt.Errorf("failed to write user config file: %v", err)
 	}
 

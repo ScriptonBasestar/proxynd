@@ -80,7 +80,7 @@ func NewWebhookHistoryManager(storageDir string, maxHistories int, retentionTTL 
 	}
 
 	// 저장 디렉토리 생성
-	if err := os.MkdirAll(storageDir, 0755); err != nil {
+	if err := os.MkdirAll(storageDir, 0o755); err != nil {
 		manager.logger.Error("웹훅 이력 저장 디렉토리 생성 실패",
 			logging.F("dir", storageDir),
 			logging.F("error", err))
@@ -137,7 +137,7 @@ func (whm *WebhookHistoryManager) AddHistory(item *WebhookHistoryItem) error {
 		return fmt.Errorf("웹훅 이력 직렬화 실패: %w", err)
 	}
 
-	if err := os.WriteFile(filepath, data, 0644); err != nil {
+	if err := os.WriteFile(filepath, data, 0o644); err != nil {
 		return fmt.Errorf("웹훅 이력 저장 실패: %w", err)
 	}
 
@@ -151,7 +151,8 @@ func (whm *WebhookHistoryManager) AddHistory(item *WebhookHistoryItem) error {
 
 // GetHistory 이력 조회 (페이징 지원)
 func (whm *WebhookHistoryManager) GetHistory(endpointName string, limit int,
-	offset int) ([]WebhookHistoryItem, int, error) {
+	offset int,
+) ([]WebhookHistoryItem, int, error) {
 	whm.mu.RLock()
 	defer whm.mu.RUnlock()
 
@@ -202,7 +203,8 @@ func (whm *WebhookHistoryManager) GetHistory(endpointName string, limit int,
 
 // GetStatistics 통계 정보 조회
 func (whm *WebhookHistoryManager) GetStatistics(endpointName string,
-	timeRange *TimeRangeStats) (*WebhookStatistics, error) {
+	timeRange *TimeRangeStats,
+) (*WebhookStatistics, error) {
 	whm.mu.RLock()
 	defer whm.mu.RUnlock()
 

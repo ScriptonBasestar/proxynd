@@ -179,7 +179,6 @@ func TestGracefulDegradation(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			url := server.ProxyURL(tc.proxyType, tc.path)
 			resp, err := client.Get(url)
-
 			if err != nil {
 				t.Logf("Request failed (acceptable for degradation): %v", err)
 				return

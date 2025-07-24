@@ -34,8 +34,8 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	s.cacheDir = filepath.Join(os.TempDir(), "proxynd-test-cache")
 	s.logDir = filepath.Join(os.TempDir(), "proxynd-test-logs")
 
-	_ = os.MkdirAll(s.cacheDir, 0755)
-	_ = os.MkdirAll(s.logDir, 0755)
+	_ = os.MkdirAll(s.cacheDir, 0o755)
+	_ = os.MkdirAll(s.logDir, 0o755)
 
 	// 테스트용 환경 변수 설정
 	_ = os.Setenv("CONFIG_DIR", "./")

@@ -307,7 +307,7 @@ cache:
   max_cache_header_ttl: 86400
   min_cache_header_ttl: 300
 `
-	err := os.WriteFile(filepath.Join(configDir, "global.yaml"), []byte(globalYAML), 0644)
+	err := os.WriteFile(filepath.Join(configDir, "global.yaml"), []byte(globalYAML), 0o644)
 	require.NoError(b, err)
 
 	// apt-proxy.yaml
@@ -324,7 +324,7 @@ proxies:
     - name: "main"
       url: "http://deb.debian.org/debian"
 `
-	err = os.WriteFile(filepath.Join(configDir, "apt-proxy.yaml"), []byte(aptYAML), 0644)
+	err = os.WriteFile(filepath.Join(configDir, "apt-proxy.yaml"), []byte(aptYAML), 0o644)
 	require.NoError(b, err)
 
 	// maven-proxy.yaml
@@ -337,7 +337,7 @@ proxies:
   - name: "apache"
     url: "https://repository.apache.org/content/repositories/public"
 `
-	err = os.WriteFile(filepath.Join(configDir, "maven-proxy.yaml"), []byte(mavenYAML), 0644)
+	err = os.WriteFile(filepath.Join(configDir, "maven-proxy.yaml"), []byte(mavenYAML), 0o644)
 	require.NoError(b, err)
 
 	// npm-proxy.yaml
@@ -349,7 +349,7 @@ proxies:
     - name: "registry"
       url: "https://registry.npmjs.org"
 `
-	err = os.WriteFile(filepath.Join(configDir, "npm-proxy.yaml"), []byte(npmYAML), 0644)
+	err = os.WriteFile(filepath.Join(configDir, "npm-proxy.yaml"), []byte(npmYAML), 0o644)
 	require.NoError(b, err)
 
 	// unified.yaml
@@ -384,7 +384,7 @@ registries:
         - name: "main"
           url: "http://archive.ubuntu.com/ubuntu"
 `
-	err = os.WriteFile(filepath.Join(configDir, "unified.yaml"), []byte(unifiedYAML), 0644)
+	err = os.WriteFile(filepath.Join(configDir, "unified.yaml"), []byte(unifiedYAML), 0o644)
 	require.NoError(b, err)
 
 	// 환경 변수 설정

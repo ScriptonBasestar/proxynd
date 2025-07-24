@@ -2,11 +2,11 @@
 package routers
 
 import (
+	"github.com/gofiber/fiber/v2"
+
 	"proxynd/configs"
 	"proxynd/internal/mirror"
 	"proxynd/logging"
-
-	"github.com/gofiber/fiber/v2"
 )
 
 // APKMirrorRouter APK 미러 선택 관련 API 라우터

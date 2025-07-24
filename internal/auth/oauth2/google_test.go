@@ -93,7 +93,6 @@ func TestGoogleProvider_GetUserInfo(t *testing.T) {
 
 	ctx := context.Background()
 	userInfo, err := provider.GetUserInfo(ctx, "test_token")
-
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
@@ -147,7 +146,6 @@ func TestGoogleProvider_GetUserInfo_NameFromParts(t *testing.T) {
 
 	ctx := context.Background()
 	userInfo, err := provider.GetUserInfo(ctx, "test_token")
-
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
@@ -217,7 +215,6 @@ func TestGoogleProvider_ValidateToken(t *testing.T) {
 
 	ctx := context.Background()
 	tokenInfo, err := provider.ValidateToken(ctx, "valid_token")
-
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
@@ -273,7 +270,6 @@ func TestGoogleProvider_ValidateToken_WrongAudience(t *testing.T) {
 
 	ctx := context.Background()
 	tokenInfo, err := provider.ValidateToken(ctx, "invalid_token")
-
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
@@ -317,7 +313,6 @@ func TestGoogleProvider_ValidateToken_Invalid(t *testing.T) {
 
 	ctx := context.Background()
 	tokenInfo, err := provider.ValidateToken(ctx, "invalid_token")
-
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
@@ -376,7 +371,6 @@ func TestGoogleProvider_VerifyIDToken(t *testing.T) {
 
 	ctx := context.Background()
 	tokenInfo, err := provider.VerifyIDToken(ctx, "valid_id_token")
-
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
@@ -483,7 +477,6 @@ func TestGoogleProvider_GetHostedDomain(t *testing.T) {
 
 	ctx := context.Background()
 	domain, err := provider.GetHostedDomain(ctx, "valid_id_token")
-
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
@@ -534,7 +527,6 @@ func TestGoogleProvider_CheckGSuiteUser(t *testing.T) {
 
 	ctx := context.Background()
 	isGSuite, err := provider.CheckGSuiteUser(ctx, "valid_id_token")
-
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
@@ -585,7 +577,6 @@ func TestGoogleProvider_GetUserDomains(t *testing.T) {
 
 	ctx := context.Background()
 	domains, err := provider.GetUserDomains(ctx, "valid_id_token")
-
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}

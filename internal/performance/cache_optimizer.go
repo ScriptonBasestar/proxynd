@@ -224,7 +224,7 @@ func (co *CacheOptimizer) RecordCacheAccess(key string, hit bool, size int64, la
 }
 
 // RecordCacheEviction records cache eviction for analysis
-func (co *CacheOptimizer) RecordCacheEviction(key string, _ string) {
+func (co *CacheOptimizer) RecordCacheEviction(key, _ string) {
 	co.stats.mu.Lock()
 	defer co.stats.mu.Unlock()
 
@@ -369,7 +369,7 @@ func (co *CacheOptimizer) StartPeriodicOptimization(ctx context.Context) {
 
 // Helper functions
 
-func updateAverageLatency(currentAvg time.Duration, newValue time.Duration, count int64) time.Duration {
+func updateAverageLatency(currentAvg, newValue time.Duration, count int64) time.Duration {
 	if count <= 1 {
 		return newValue
 	}

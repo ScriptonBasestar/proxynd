@@ -261,7 +261,7 @@ func NewFilterEngine(rules []FilterRule) *FilterEngine {
 }
 
 // Evaluate 필터 규칙 평가
-func (fe *FilterEngine) Evaluate(event *AlertEvent) (action string, target string) {
+func (fe *FilterEngine) Evaluate(event *AlertEvent) (action, target string) {
 	for _, rule := range fe.rules {
 		if !rule.Enabled {
 			continue

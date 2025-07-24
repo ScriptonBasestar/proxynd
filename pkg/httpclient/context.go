@@ -46,8 +46,9 @@ func (c *ContextClient) GetWithTimeout(url string, timeout time.Duration) (*http
 }
 
 // Post performs a POST request with context
-func (c *ContextClient) Post(ctx context.Context, url string, contentType string,
-	body io.Reader) (*http.Response, error) {
+func (c *ContextClient) Post(ctx context.Context, url, contentType string,
+	body io.Reader,
+) (*http.Response, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)

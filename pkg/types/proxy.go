@@ -91,7 +91,7 @@ type FiberProxyAdapter interface {
 // ProxyMetrics defines metrics collection for proxy operations
 type ProxyMetrics interface {
 	// RecordRequest records a proxy request
-	RecordRequest(proxyType ProxyType, method string, path string)
+	RecordRequest(proxyType ProxyType, method, path string)
 
 	// RecordResponse records a proxy response
 	RecordResponse(proxyType ProxyType, statusCode int, cached bool, duration int64)

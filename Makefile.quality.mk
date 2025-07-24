@@ -6,8 +6,8 @@
 # ==============================================================================
 
 .PHONY: fmt lint format security security-code security-deps analyze analyze-complexity analyze-unused
-.PHONY: quality quality-fix lint-fix lint-new lint-ci format-all format-check format-diff
-.PHONY: format-imports format-simplify format-ci install-golangci-lint install-format-tools
+.PHONY: quality quality-fix lint-fix lint-new lint-ci format-simplify format-strict format-list format-diff
+.PHONY: format-file install-golangci-lint install-format-tools
 .PHONY: lint-count lint-summary lint-status lint-json
 
 
@@ -15,66 +15,87 @@
 # Code Formatting
 # ==============================================================================
 
-fmt: ## format go files with gofmt and goimports
-	@echo "Formatting code..."
-	go fmt ./...
-	@echo "Organizing imports..."
-	@which goimports > /dev/null || (echo "Installing goimports..." && go install golang.org/x/tools/cmd/goimports@latest)
-	goimports -w -local proxynd .
-	@echo "Code formatting complete!"
+format: format-simplify ## quick and simple formatting (default)
+fmt: format-simplify
 
-format: fmt format-check ## format and check code formatting
-	@echo "✅ All formatting complete!"
+format-simplify: ## quick basic formatting with gofumpt and goimports
+	@echo -e "$(CYAN)🚀 Quick formatting...$(RESET)"
+	@echo "1. Running gofumpt (includes go fmt + simplification)..."
+	@gofumpt -w .
+	@echo "2. Organizing imports..."
+	@goimports -w -local proxynd .
+	@echo -e "$(GREEN)✅ Quick formatting complete!$(RESET)"
 
-format-check: ## check code formatting without fixing
-	@echo "Checking code formatting..."
-	@if [ -n "$$(gofmt -l .)" ]; then \
-		echo "❌ The following files need formatting:"; \
-		gofmt -l .; \
-		echo "Run 'make format' to fix."; \
-		exit 1; \
+format-strict: install-format-tools ## comprehensive formatting with all tools
+	@echo -e "$(CYAN)🔧 Strict formatting (all tools)...$(RESET)"
+	@echo "1. Running gofumpt (strict formatting + simplification)..."
+	@gofumpt -w -extra .
+	@echo "2. Running gci (import organization)..."
+	@gci write --skip-generated .
+	@echo "3. Organizing imports..."
+	@goimports -w -local proxynd .
+	@echo "4. Final gci (import grouping)..."
+	@gci write --skip-generated -s standard -s default -s "prefix(proxynd)" .
+	@echo -e "$(GREEN)✅ Strict formatting complete!$(RESET)"
+
+format-list: ## show files that need formatting
+	@echo -e "$(CYAN)📋 Files that need formatting:$(RESET)"
+	@FILES=$$(gofmt -l .); \
+	if [ -n "$$FILES" ]; then \
+		echo "$$FILES" | while read file; do echo "  $(YELLOW)$$file$(RESET)"; done; \
+		echo ""; \
+		echo -e "$(YELLOW)Total: $$(echo "$$FILES" | wc -l) files need formatting$(RESET)"; \
+		echo -e "$(CYAN)Run 'make format-simplify' or 'make format-strict' to fix$(RESET)"; \
 	else \
-		echo "✅ All files are properly formatted"; \
+		echo -e "$(GREEN)✅ All files are properly formatted!$(RESET)"; \
 	fi
 
 format-diff: ## show formatting differences
-	@echo "Showing formatting differences..."
-	@gofmt -d .
+	@echo -e "$(CYAN)📝 Formatting differences:$(RESET)"
+	@DIFF_OUTPUT=$$(gofmt -d .); \
+	if [ -n "$$DIFF_OUTPUT" ]; then \
+		echo "$$DIFF_OUTPUT"; \
+	else \
+		echo -e "$(GREEN)✅ No formatting differences found!$(RESET)"; \
+	fi
 
-format-imports: ## organize imports only
-	@echo "Organizing imports..."
-	@which goimports > /dev/null || go install golang.org/x/tools/cmd/goimports@latest
-	@goimports -w -local proxynd .
-	@echo "✅ Imports organized!"
-
-format-simplify: ## simplify code with gofmt -s
-	@echo "Simplifying code..."
-	@which gofmt > /dev/null && gofmt -s -w .
-	@echo "✅ Code simplified!"
-
-format-all: install-format-tools ## run all formatters including advanced ones
-	@echo "$(CYAN)Running all formatters...$(RESET)"
-	@echo "1. Standard formatting..."
-	@gofmt -w .
-	@echo "2. Simplifying code..."
-	@gofmt -s -w .
-	@echo "3. Organizing imports..."
-	@goimports -w -local proxynd .
-	@echo "4. Running gofumpt (strict formatting)..."
-	@gofumpt -w -extra .
-	@echo "5. Running gci (import grouping)..."
-	@gci write --skip-generated -s standard -s default -s "prefix(proxynd)" .
-	@echo "$(GREEN)✅ All formatting complete!$(RESET)"
-
-install-format-tools: ## install advanced formatting tools
-	@echo "Installing formatting tools..."
+format-install-tools: ## install advanced formatting tools
+	@echo -e "$(CYAN)Installing formatting tools...$(RESET)"
 	@which goimports > /dev/null || (echo "Installing goimports..." && go install golang.org/x/tools/cmd/goimports@latest)
 	@which gofumpt > /dev/null || (echo "Installing gofumpt..." && go install mvdan.cc/gofumpt@latest)
 	@which gci > /dev/null || (echo "Installing gci..." && go install github.com/daixiang0/gci@latest)
-	@echo "✅ All formatting tools installed!"
+	@echo -e "$(GREEN)✅ All formatting tools installed!$(RESET)"
 
-format-ci: format-check ## CI-friendly format check
-	@echo "CI format check passed!"
+format-file: ## format specific files with gofumpt and goimports (usage: make format-file file1.go file2.go ...)
+	@if [ -z "$(MAKECMDGOALS)" ] || [ "$(words $(MAKECMDGOALS))" -eq 1 ]; then \
+		echo "$(RED)❌ Error: At least one file must be specified$(RESET)"; \
+		echo "$(YELLOW)Usage: make format-file file1.go file2.go ...$(RESET)"; \
+		exit 1; \
+	fi
+	@echo "$(CYAN)🔄 Processing files...$(RESET)"
+	@for file in $(filter-out format-file,$(MAKECMDGOALS)); do \
+		if [ -n "$$file" ]; then \
+			if [ ! -f "$$file" ]; then \
+				echo "$(RED)❌ Error: File '$$file' does not exist$(RESET)"; \
+				continue; \
+			fi; \
+			if ! echo "$$file" | grep -q "\.go$$"; then \
+				echo "$(YELLOW)⚠️  Warning: File '$$file' is not a Go file (.go extension), skipping$(RESET)"; \
+				continue; \
+			fi; \
+			echo "$(CYAN)📝 Formatting file: $$file$(RESET)"; \
+			echo "  1. Running gofumpt..."; \
+			gofumpt -w "$$file" || echo "$(RED)❌ gofumpt failed for $$file$(RESET)"; \
+			echo "  2. Running goimports..."; \
+			goimports -w -local proxynd "$$file" || echo "$(RED)❌ goimports failed for $$file$(RESET)"; \
+			echo "$(GREEN)✅ File '$$file' formatted successfully!$(RESET)"; \
+		fi; \
+	done
+	@echo "$(GREEN)🎉 All files processed!$(RESET)"
+
+# Handle additional arguments as targets (to prevent make errors)
+%:
+	@:
 
 # ==============================================================================
 # Linting
@@ -90,41 +111,41 @@ lint: install-golangci-lint ## run golangci-lint
 	golangci-lint run ./...
 
 lint-count: install-golangci-lint ## count total lint issues without fixing
-	@echo "$(CYAN)Counting lint issues...$(RESET)"
+	@echo -e "$(CYAN)Counting lint issues...$(RESET)"
 	@ISSUES=$$(golangci-lint run --max-issues-per-linter=0 --max-same-issues=0 --out-format=line-number 2>/dev/null | grep -E "^[^[:space:]].*\\([^)]+\\)$$" | wc -l); \
-	echo "$(YELLOW)Total lint issues: $$ISSUES$(RESET)"
+	echo -e "$(YELLOW)Total lint issues: $$ISSUES$(RESET)"
 
 lint-summary: install-golangci-lint ## show lint issues summary by linter
-	@echo "$(CYAN)Lint issues summary:$(RESET)"
+	@echo -e "$(CYAN)Lint issues summary:$(RESET)"
 	@golangci-lint run --max-issues-per-linter=0 --max-same-issues=0 --out-format=line-number 2>/dev/null | \
 	grep -E "^[^[:space:]].*\\([^)]+\\)$$" | sed 's/.*(\\([^)]*\\))$$/\\1/' | sort | uniq -c | sort -nr | \
 	awk '{printf "  $(YELLOW)%-15s$(RESET) %d issues\\n", $$2, $$1}'
 
 lint-status: install-golangci-lint ## comprehensive lint status report
-	@echo "$(BLUE)🔍 Comprehensive Lint Status Report$(RESET)"
-	@echo "$(BLUE)==================================$(RESET)"
+	@echo -e "$(BLUE)🔍 Comprehensive Lint Status Report$(RESET)"
+	@echo -e "$(BLUE)==================================$(RESET)"
 	@echo ""
-	@echo "$(GREEN)📊 Quick Stats:$(RESET)"
+	@echo -e "$(GREEN)📊 Quick Stats:$(RESET)"
 	@TOTAL=$$(golangci-lint run --max-issues-per-linter=0 --max-same-issues=0 --out-format=line-number 2>/dev/null | grep -E "^[^[:space:]].*\\([^)]+\\)$$" | wc -l); \
-	echo "  $(YELLOW)Total Issues: $$TOTAL$(RESET)"; \
+	echo -e "  $(YELLOW)Total Issues: $$TOTAL$(RESET)"; \
 	echo ""
-	@echo "$(GREEN)🏷️  Top 10 Linters:$(RESET)"
+	@echo -e "$(GREEN)🏷️  Top 10 Linters:$(RESET)"
 	@golangci-lint run --max-issues-per-linter=0 --max-same-issues=0 --out-format=line-number 2>/dev/null | \
 	grep -E "^[^[:space:]].*\\([^)]+\\)$$" | sed 's/.*(\\([^)]*\\))$$/\\1/' | sort | uniq -c | sort -nr | head -10 | \
 	awk '{printf "  $(CYAN)%-15s$(RESET) %d issues\\n", $$2, $$1}'
 	@echo ""
-	@echo "$(GREEN)📁 Most Problematic Files:$(RESET)"
+	@echo -e "$(GREEN)📁 Most Problematic Files:$(RESET)"
 	@golangci-lint run --max-issues-per-linter=0 --max-same-issues=0 --out-format=line-number 2>/dev/null | \
 	grep -E "^[^[:space:]].*\\([^)]+\\)$$" | sed 's/^\\([^:]*\\):.*/\\1/' | sort | uniq -c | sort -nr | head -5 | \
 	awk '{printf "  $(MAGENTA)%-40s$(RESET) %d issues\\n", $$2, $$1}'
 
 lint-json: install-golangci-lint ## export lint results to JSON for further analysis
-	@echo "$(CYAN)Exporting lint results to lint-report.json...$(RESET)"
+	@echo -e "$(CYAN)Exporting lint results to lint-report.json...$(RESET)"
 	@golangci-lint run --max-issues-per-linter=0 --max-same-issues=0 --out-format=json > lint-report.json 2>/dev/null || true
-	@echo "$(GREEN)✅ Report saved to lint-report.json$(RESET)"
+	@echo -e "$(GREEN)✅ Report saved to lint-report.json$(RESET)"
 	@if command -v jq >/dev/null 2>&1; then \
 		echo ""; \
-		echo "$(YELLOW)📈 JSON Report Summary:$(RESET)"; \
+		echo -e "$(YELLOW)📈 JSON Report Summary:$(RESET)"; \
 		echo "  Total Issues: $$(jq '.Issues | length' lint-report.json 2>/dev/null || echo '0')"; \
 		echo "  Unique Files: $$(jq -r '.Issues[]? | .Pos.Filename' lint-report.json 2>/dev/null | sort | uniq | wc -l || echo '0')"; \
 	fi
@@ -149,15 +170,15 @@ security: security-deps security-code ## run all security checks
 	@echo "✅ Security checks completed!"
 
 security-deps: ## check dependencies for vulnerabilities
-	@echo "$(CYAN)Checking dependencies for vulnerabilities...$(RESET)"
+	@echo -e "$(CYAN)Checking dependencies for vulnerabilities...$(RESET)"
 	@which nancy > /dev/null || go install github.com/sonatype-nexus-community/nancy@latest
 	go list -json -deps ./... | nancy sleuth
 
 security-code: ## run security code analysis
-	@echo "$(CYAN)Running security code analysis...$(RESET)"
+	@echo -e "$(CYAN)Running security code analysis...$(RESET)"
 	@which gosec > /dev/null || go install github.com/securecode/gosec/v2/cmd/gosec@latest
 	gosec -fmt=json -out=gosec-report.json ./... || true
-	@echo "$(GREEN)Security report generated: gosec-report.json$(RESET)"
+	@echo -e "$(GREEN)Security report generated: gosec-report.json$(RESET)"
 
 # ==============================================================================
 # Code Analysis
@@ -167,12 +188,12 @@ analyze: analyze-complexity analyze-unused ## run code analysis
 	@echo "✅ Code analysis complete!"
 
 analyze-complexity: ## analyze code complexity
-	@echo "$(CYAN)Analyzing code complexity...$(RESET)"
+	@echo -e "$(CYAN)Analyzing code complexity...$(RESET)"
 	@which gocyclo > /dev/null || go install github.com/fzipp/gocyclo/cmd/gocyclo@latest
 	gocyclo -over 10 .
 
 analyze-unused: ## find unused code
-	@echo "$(CYAN)Finding unused code...$(RESET)"
+	@echo -e "$(CYAN)Finding unused code...$(RESET)"
 	@which unused > /dev/null || go install honnef.co/go/tools/cmd/unused@latest
 	unused ./...
 

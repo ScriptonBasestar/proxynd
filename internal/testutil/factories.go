@@ -78,7 +78,7 @@ func NewFactory(t *testing.T) *Factory {
 // ConfigService creates a test configuration service
 func (f *Factory) ConfigService() config.Service {
 	configDir := filepath.Join(f.tempDir, "config")
-	require.NoError(f.t, os.MkdirAll(configDir, 0755))
+	require.NoError(f.t, os.MkdirAll(configDir, 0o755))
 
 	// Create test config files
 	f.createTestConfigFiles(configDir)
@@ -92,7 +92,7 @@ func (f *Factory) ConfigService() config.Service {
 // CacheRepository creates a test cache repository
 func (f *Factory) CacheRepository() repocache.Repository {
 	cacheDir := filepath.Join(f.tempDir, "cache")
-	require.NoError(f.t, os.MkdirAll(cacheDir, 0755))
+	require.NoError(f.t, os.MkdirAll(cacheDir, 0o755))
 
 	// Assuming there's a filesystem implementation
 	return &fileSystemCacheRepository{
@@ -148,7 +148,7 @@ max_cache_size: 104857600
 	require.NoError(f.t, os.WriteFile(
 		filepath.Join(configDir, "global.yaml"),
 		[]byte(globalConfig),
-		0644,
+		0o644,
 	))
 
 	// APT config
@@ -164,7 +164,7 @@ servers:
 	require.NoError(f.t, os.WriteFile(
 		filepath.Join(configDir, "apt-proxy.yaml"),
 		[]byte(aptConfig),
-		0644,
+		0o644,
 	))
 
 	// Maven config
@@ -179,7 +179,7 @@ servers:
 	require.NoError(f.t, os.WriteFile(
 		filepath.Join(configDir, "maven-proxy.yaml"),
 		[]byte(mavenConfig),
-		0644,
+		0o644,
 	))
 
 	// NPM config
@@ -194,7 +194,7 @@ servers:
 	require.NoError(f.t, os.WriteFile(
 		filepath.Join(configDir, "npm-proxy.yaml"),
 		[]byte(npmConfig),
-		0644,
+		0o644,
 	))
 }
 
@@ -215,7 +215,7 @@ func (r *fileSystemCacheRepository) Put(_ context.Context, key string, content i
 	path := filepath.Join(r.baseDir, key)
 	dir := filepath.Dir(path)
 
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err
 	}
 

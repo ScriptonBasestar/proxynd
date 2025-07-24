@@ -17,13 +17,13 @@ export GOPROXY=https://proxy.golang.org,direct
 export GOSUMDB=sum.golang.org
 
 # Colors for output (exported to all sub-makefiles)
-export CYAN := \\033[36m
-export GREEN := \\033[32m
-export YELLOW := \\033[33m
-export RED := \\033[31m
-export BLUE := \\033[34m
-export MAGENTA := \\033[35m
-export RESET := \\033[0m
+export CYAN := \033[36m
+export GREEN := \033[32m
+export YELLOW := \033[33m
+export RED := \033[31m
+export BLUE := \033[34m
+export MAGENTA := \033[35m
+export RESET := \033[0m
 
 # ==============================================================================
 # Include Modular Makefiles

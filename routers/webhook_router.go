@@ -512,7 +512,8 @@ func getWebhookStatistics(historyManager *webhook.WebhookHistoryManager, logger 
 
 // getWebhookStatisticsByEndpoint 특정 엔드포인트의 웹훅 통계 조회
 func getWebhookStatisticsByEndpoint(historyManager *webhook.WebhookHistoryManager,
-	logger logging.Logger) fiber.Handler {
+	logger logging.Logger,
+) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		endpointName := c.Params(fieldEndpoint)
 		if endpointName == "" {

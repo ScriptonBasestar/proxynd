@@ -34,7 +34,7 @@ func (a *Assertions) AssertReaderContains(reader io.Reader, substring string) {
 }
 
 // AssertMapContains asserts that a map contains expected key-value pairs
-func (a *Assertions) AssertMapContains(actual map[string]string, expected map[string]string) {
+func (a *Assertions) AssertMapContains(actual, expected map[string]string) {
 	for k, v := range expected {
 		assert.Equal(a.t, v, actual[k], "Key %s", k)
 	}

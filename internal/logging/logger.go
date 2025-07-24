@@ -165,7 +165,7 @@ func createWriter(config OutputConfig) (io.Writer, error) {
 			return nil, fmt.Errorf("file path is required for file output")
 		}
 		// Create file with proper permissions
-		file, err := os.OpenFile(config.Path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+		file, err := os.OpenFile(config.Path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
 		if err != nil {
 			return nil, fmt.Errorf("failed to open log file: %w", err)
 		}

@@ -25,7 +25,7 @@ var DefaultHTTPClient HTTPClient = &http.Client{
 
 // exchangeCodeGeneric Generic 코드 교환 구현
 func exchangeCodeGeneric(
-	ctx context.Context, config ProviderConfig, code string, codeVerifier string,
+	ctx context.Context, config ProviderConfig, code, codeVerifier string,
 ) (*TokenResponse, error) {
 	data := url.Values{}
 	data.Set("grant_type", "authorization_code")

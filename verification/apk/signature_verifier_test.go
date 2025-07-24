@@ -44,7 +44,7 @@ func TestLoadTrustedKeys(t *testing.T) {
 	})
 
 	keyFile := filepath.Join(tempDir, "test_key.pem")
-	err = os.WriteFile(keyFile, publicKeyPEM, 0644)
+	err = os.WriteFile(keyFile, publicKeyPEM, 0o644)
 	assert.Equal(t, err, nil)
 
 	// 서명 검증기로 키 로드
@@ -113,12 +113,12 @@ func TestFindSignatureFile(t *testing.T) {
 
 	// 테스트 APK 파일 생성
 	apkFile := filepath.Join(tempDir, "test.apk")
-	err = os.WriteFile(apkFile, []byte("fake apk content"), 0644)
+	err = os.WriteFile(apkFile, []byte("fake apk content"), 0o644)
 	assert.Equal(t, err, nil)
 
 	// 서명 파일 생성
 	signatureFile := filepath.Join(tempDir, "test.apk.SIGN.RSA.alpine")
-	err = os.WriteFile(signatureFile, []byte("fake signature"), 0644)
+	err = os.WriteFile(signatureFile, []byte("fake signature"), 0o644)
 	assert.Equal(t, err, nil)
 
 	verifier := NewSignatureVerifier()

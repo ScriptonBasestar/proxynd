@@ -77,7 +77,7 @@ func NpmProxy(c *fiber.Ctx) error {
 	// 캐시가 히트하지 않았을 때만 다운로드
 	if !cacheHit {
 		dirpath := filepath.Dir(filefullpath)
-		if err := os.MkdirAll(dirpath, 0766); err != nil {
+		if err := os.MkdirAll(dirpath, 0o766); err != nil {
 			return c.Status(fiber.StatusInternalServerError).SendString("Failed to create directory")
 		}
 
@@ -121,7 +121,7 @@ func NpmProxy(c *fiber.Ctx) error {
 				}
 
 				// 파일 저장
-				err = os.WriteFile(filefullpath, bytes, 0766)
+				err = os.WriteFile(filefullpath, bytes, 0o766)
 				if err != nil {
 					log.Printf("Error writing file: %v", err)
 					return c.Status(fiber.StatusInternalServerError).SendString("Error writing file")

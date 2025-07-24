@@ -97,7 +97,6 @@ func TestGitLabProvider_GetUserInfo(t *testing.T) {
 
 	ctx := context.Background()
 	userInfo, err := provider.GetUserInfo(ctx, "test_token")
-
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
@@ -162,7 +161,6 @@ func TestGitLabProvider_GetUserOrganizations(t *testing.T) {
 
 	ctx := context.Background()
 	organizations, err := provider.GetUserOrganizations(ctx, "test_token")
-
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
@@ -212,7 +210,6 @@ func TestGitLabProvider_ValidateToken(t *testing.T) {
 
 	ctx := context.Background()
 	tokenInfo, err := provider.ValidateToken(ctx, "valid_token")
-
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
@@ -250,7 +247,6 @@ func TestGitLabProvider_ValidateToken_Invalid(t *testing.T) {
 
 	ctx := context.Background()
 	tokenInfo, err := provider.ValidateToken(ctx, "invalid_token")
-
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
@@ -313,7 +309,6 @@ func TestGitLabProvider_GetUserProjects(t *testing.T) {
 
 	ctx := context.Background()
 	projects, err := provider.GetUserProjects(ctx, "test_token")
-
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
@@ -438,7 +433,6 @@ func TestGitLabProvider_GetGroupMembers(t *testing.T) {
 
 	ctx := context.Background()
 	members, err := provider.GetGroupMembers(ctx, "test_token", "testgroup")
-
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
@@ -528,7 +522,6 @@ func TestGitLabProvider_CheckAdminStatus(t *testing.T) {
 
 	ctx := context.Background()
 	isAdmin, err := provider.CheckAdminStatus(ctx, "admin_token")
-
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}

@@ -137,7 +137,7 @@ func (m *MockAuthService) Authenticate(_ context.Context, _ interfaces.Credentia
 	panic("not implemented")
 }
 
-func (m *MockAuthService) AuthorizeRequest(_ context.Context, _ string, _ string, _ string) (bool, error) {
+func (m *MockAuthService) AuthorizeRequest(_ context.Context, _, _, _ string) (bool, error) {
 	panic("not implemented")
 }
 

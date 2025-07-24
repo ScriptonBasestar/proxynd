@@ -653,7 +653,7 @@ func (la *LogAggregator) ExportAnalytics(analytics *LogAnalytics, outputPath str
 		return fmt.Errorf("failed to marshal analytics: %w", err)
 	}
 
-	if err := os.WriteFile(outputPath, data, 0644); err != nil {
+	if err := os.WriteFile(outputPath, data, 0o644); err != nil {
 		return fmt.Errorf("failed to write analytics file: %w", err)
 	}
 
@@ -677,7 +677,6 @@ func (la *LogAggregator) StartPeriodicAnalysis(ctx context.Context) {
 				Start: startTime,
 				End:   endTime,
 			})
-
 			if err != nil {
 				la.logger.Error("Failed to analyze logs", Error(err))
 				continue

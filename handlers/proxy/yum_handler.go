@@ -10,12 +10,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gofiber/fiber/v2"
+
 	"proxynd/configs"
 	"proxynd/helpers"
 	"proxynd/internal/security"
 	"proxynd/pkg/httpclient"
-
-	"github.com/gofiber/fiber/v2"
 )
 
 // YumProxyHandler yum 프록시 요청 처리 핸들러

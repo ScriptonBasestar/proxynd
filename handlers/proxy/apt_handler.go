@@ -197,7 +197,7 @@ func (h *APTHandler) Handle(c *fiber.Ctx) error {
 
 		// 성공적으로 가져온 경우 파일로 저장
 		dir := filepath.Dir(safePath)
-		if err := os.MkdirAll(dir, 0755); err != nil {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
 			h.logger.Error("Failed to create directory",
 				logging.F("dir", dir),
 				logging.F("error", err),
@@ -205,7 +205,7 @@ func (h *APTHandler) Handle(c *fiber.Ctx) error {
 		} else {
 			// 임시 파일에 쓰고 원자적으로 이동
 			tmpFile := safePath + ".tmp"
-			if err := os.WriteFile(tmpFile, body, 0644); err == nil {
+			if err := os.WriteFile(tmpFile, body, 0o644); err == nil {
 				if err := os.Rename(tmpFile, safePath); err != nil {
 					os.Remove(tmpFile)
 					h.logger.Error("Failed to rename temp file",

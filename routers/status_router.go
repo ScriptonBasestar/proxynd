@@ -186,7 +186,7 @@ func getServerStatus(c *fiber.Ctx) error {
 	runtime.ReadMemStats(&m)
 
 	// 헬스 서비스 상태 (있는 경우)
-	var overallStatus = statusHealthy
+	overallStatus := statusHealthy
 	var checks map[string]interface{}
 	uptime := "0s"
 

@@ -47,7 +47,7 @@ proxies:
 
 		// 설정 파일 업데이트
 		configPath := filepath.Join(env.ConfigDir, "npm-proxy.yaml")
-		err := os.WriteFile(configPath, []byte(newConfigContent), 0644)
+		err := os.WriteFile(configPath, []byte(newConfigContent), 0o644)
 		require.NoError(t, err)
 
 		// 설정 리로드 API 호출 (구현되어 있다면)
@@ -79,7 +79,7 @@ proxies:
 `
 
 		configPath := filepath.Join(env.ConfigDir, "npm-proxy.yaml")
-		err := os.WriteFile(configPath, []byte(invalidConfig), 0644)
+		err := os.WriteFile(configPath, []byte(invalidConfig), 0o644)
 		require.NoError(t, err)
 
 		// 설정 리로드 시도
@@ -144,7 +144,7 @@ proxies:
 `
 
 		configPath := filepath.Join(env.ConfigDir, "test-proxy.yaml")
-		err := os.WriteFile(configPath, []byte(invalidConfig), 0644)
+		err := os.WriteFile(configPath, []byte(invalidConfig), 0o644)
 		require.NoError(t, err)
 		defer func() { _ = os.Remove(configPath) }()
 
@@ -173,7 +173,7 @@ proxies:
 `
 
 		configPath := filepath.Join(env.ConfigDir, "cyclic-proxy.yaml")
-		err := os.WriteFile(configPath, []byte(cyclicConfig), 0644)
+		err := os.WriteFile(configPath, []byte(cyclicConfig), 0o644)
 		require.NoError(t, err)
 		defer func() { _ = os.Remove(configPath) }()
 
@@ -194,7 +194,7 @@ proxies:
 `
 
 		configPath := filepath.Join(env.ConfigDir, "invalid-url-proxy.yaml")
-		err := os.WriteFile(configPath, []byte(invalidURLConfig), 0644)
+		err := os.WriteFile(configPath, []byte(invalidURLConfig), 0o644)
 		require.NoError(t, err)
 		defer func() { _ = os.Remove(configPath) }()
 
@@ -440,7 +440,7 @@ proxies:
     url: "%s"
 `, env.MockUpstreams["npm"].URL)
 
-		err = os.WriteFile(configPath, []byte(modifiedConfig), 0644)
+		err = os.WriteFile(configPath, []byte(modifiedConfig), 0o644)
 		require.NoError(t, err)
 
 		// 파일 시스템 변경 감지 대기 (실제 구현에서는 inotify 등 사용)
@@ -475,10 +475,10 @@ proxies:
 		npmPath := filepath.Join(env.ConfigDir, "npm-proxy.yaml")
 		mavenPath := filepath.Join(env.ConfigDir, "maven-proxy.yaml")
 
-		err := os.WriteFile(npmPath, []byte(npmConfig), 0644)
+		err := os.WriteFile(npmPath, []byte(npmConfig), 0o644)
 		require.NoError(t, err)
 
-		err = os.WriteFile(mavenPath, []byte(mavenConfig), 0644)
+		err = os.WriteFile(mavenPath, []byte(mavenConfig), 0o644)
 		require.NoError(t, err)
 
 		// 변경 적용 대기

@@ -47,7 +47,7 @@ func WriteYaml(path string, data interface{}) error {
 		return err
 	}
 
-	return os.WriteFile(path, yamlData, 0644)
+	return os.WriteFile(path, yamlData, 0o644)
 }
 
 // ToStringYaml is exported

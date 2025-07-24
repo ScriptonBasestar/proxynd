@@ -134,7 +134,7 @@ func NewDocsCmd(rootCmd *cobra.Command) *cobra.Command {
 // generateManPages man page 생성
 func generateManPages(rootCmd *cobra.Command, dir string) error {
 	// 디렉토리 생성
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return fmt.Errorf("디렉토리 생성 실패: %v", err)
 	}
 
@@ -174,7 +174,7 @@ func generateManPages(rootCmd *cobra.Command, dir string) error {
 // generateMarkdownDocs Markdown 문서 생성
 func generateMarkdownDocs(rootCmd *cobra.Command, dir string) error {
 	// 디렉토리 생성
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return fmt.Errorf("디렉토리 생성 실패: %v", err)
 	}
 
@@ -295,13 +295,13 @@ proxyndctl completion fish > ~/.config/fish/completions/proxyndctl.fish
 - [CLI 자동완성 가이드](/docs/CLI_COMPLETION.md)
 `, rootCmd.Version, time.Now().Format("2006-01-02"))
 
-	return os.WriteFile(indexPath, []byte(content), 0644)
+	return os.WriteFile(indexPath, []byte(content), 0o644)
 }
 
 // generateRestDocs RestructuredText 문서 생성
 func generateRestDocs(rootCmd *cobra.Command, dir string) error {
 	// 디렉토리 생성
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return fmt.Errorf("디렉토리 생성 실패: %v", err)
 	}
 
@@ -318,7 +318,7 @@ func generateRestDocs(rootCmd *cobra.Command, dir string) error {
 // generateYamlDocs YAML 문서 생성
 func generateYamlDocs(rootCmd *cobra.Command, dir string) error {
 	// 디렉토리 생성
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return fmt.Errorf("디렉토리 생성 실패: %v", err)
 	}
 

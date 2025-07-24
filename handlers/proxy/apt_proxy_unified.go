@@ -93,7 +93,7 @@ func AptProxyUnified(c *fiber.Ctx) error {
 			// Ensure response body is always closed
 			defer func() { _ = resp.Body.Close() }()
 
-			//fmt.Println(resp.Header)
+			// fmt.Println(resp.Header)
 			fmt.Println(resp.StatusCode)
 
 			// Check status code before processing

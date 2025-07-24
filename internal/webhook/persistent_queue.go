@@ -37,11 +37,12 @@ type FailedWebhookItem struct {
 
 // NewPersistentFailureQueue 새로운 영속성 실패 큐 생성
 func NewPersistentFailureQueue(storageDir string, maxRetries int,
-	retryTTL time.Duration) (*PersistentFailureQueue, error) {
+	retryTTL time.Duration,
+) (*PersistentFailureQueue, error) {
 	logger := logging.GetLogger()
 
 	// 저장 디렉토리 생성
-	if err := os.MkdirAll(storageDir, 0755); err != nil {
+	if err := os.MkdirAll(storageDir, 0o755); err != nil {
 		return nil, fmt.Errorf("failed to create storage directory: %w", err)
 	}
 
@@ -291,7 +292,7 @@ func (pq *PersistentFailureQueue) saveToDisk(item *FailedWebhookItem) error {
 	}
 
 	filePath := filepath.Join(pq.storageDir, fmt.Sprintf("%s.json", item.ID))
-	return os.WriteFile(filePath, data, 0644)
+	return os.WriteFile(filePath, data, 0o644)
 }
 
 // removeFromDisk 디스크에서 실패 항목 제거

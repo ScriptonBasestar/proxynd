@@ -194,7 +194,7 @@ func CreateAuthEvent(eventType WebhookEventType, username, clientIP string, succ
 }
 
 // CreatePolicyEvent 정책 위반 이벤트 생성
-func CreatePolicyEvent(eventType WebhookEventType, policyName, violationDetail string, severity string) *AlertEvent {
+func CreatePolicyEvent(eventType WebhookEventType, policyName, violationDetail, severity string) *AlertEvent {
 	level := AlertLevelWarning
 	if severity == "high" || severity == "critical" {
 		level = AlertLevelError

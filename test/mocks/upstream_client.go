@@ -20,7 +20,8 @@ func NewMockUpstreamClient() *MockUpstreamClient {
 
 // Fetch retrieves content from upstream
 func (m *MockUpstreamClient) Fetch(ctx context.Context, url string,
-	headers map[string]string) (*proxy.ProxyResponse, error) {
+	headers map[string]string,
+) (*proxy.ProxyResponse, error) {
 	args := m.Called(ctx, url, headers)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)

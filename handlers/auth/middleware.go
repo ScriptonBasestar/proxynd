@@ -377,7 +377,7 @@ func DeveloperOrAbove() fiber.Handler {
 // 유틸리티 함수들
 
 // autoRefreshToken 자동 JWT 토큰 갱신 (실시간 권한 동기화 포함)
-func autoRefreshToken(_ *fiber.Ctx, sess fiber.Map, userMap fiber.Map) error {
+func autoRefreshToken(_ *fiber.Ctx, sess, userMap fiber.Map) error {
 	jwtRefreshToken, exists := sess["jwt_refresh_token"]
 	if !exists || jwtRefreshToken == nil {
 		return errors.New("no JWT refresh token available")
@@ -414,7 +414,6 @@ func autoRefreshToken(_ *fiber.Ctx, sess fiber.Map, userMap fiber.Map) error {
 		return errors.New("invalid refresh token type")
 	}
 	newTokenPair, err = jwtService.RefreshAccessToken(refreshToken)
-
 	if err != nil {
 		return errors.New("failed to refresh JWT token: " + err.Error())
 	}

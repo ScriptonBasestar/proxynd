@@ -5,12 +5,12 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/gofiber/fiber/v2"
+
 	"proxynd/configs"
 	"proxynd/helpers"
 	"proxynd/logging"
 	"proxynd/verification/apk"
-
-	"github.com/gofiber/fiber/v2"
 )
 
 // APKVerificationRouter APK 서명 검증 관련 API 라우터

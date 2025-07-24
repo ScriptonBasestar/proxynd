@@ -316,7 +316,7 @@ func (m *DefaultGroupManager) fetchPackageList(_ context.Context, mirror MirrorC
 }
 
 // applyFilters 포함/제외 패턴 필터링 적용
-func (m *DefaultGroupManager) applyFilters(packages []string, includePatterns, excludePatterns []string) []string {
+func (m *DefaultGroupManager) applyFilters(packages, includePatterns, excludePatterns []string) []string {
 	if len(includePatterns) == 0 && len(excludePatterns) == 0 {
 		return packages
 	}

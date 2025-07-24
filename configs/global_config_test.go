@@ -17,6 +17,6 @@ func TestRead_GlobalConfig(t *testing.T) {
 	cfg := GlobalConfig{}
 	require.NoError(t, cfg.ReadConfig())
 	assert.Equal(t, cfg.Cache.TTL, 3600)
-	//assert.Equal(t, cfg.ConfigDir, "~/tmp/config")
+	// assert.Equal(t, cfg.ConfigDir, "~/tmp/config")
 	fmt.Println(helpers.ToStringYaml(cfg))
 }

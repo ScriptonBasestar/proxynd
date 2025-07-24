@@ -30,7 +30,7 @@ func New(message string) error {
 }
 
 // NewDomainError creates a new domain error with the existing DomainError type
-func NewDomainError(code string, message string, err error) error {
+func NewDomainError(code, message string, err error) error {
 	return NewError(code, message).
 		WithCause(err).
 		Build()

@@ -217,7 +217,6 @@ func GetRequestLogger(c *fiber.Ctx) Logger {
 func ErrorLogger() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		err := c.Next()
-
 		if err != nil {
 			logger := GetRequestLogger(c)
 

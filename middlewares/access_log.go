@@ -73,7 +73,7 @@ func NewAccessLogger(config AccessLogConfig) *AccessLogger {
 // initLogFile 로그 파일 초기화
 func (l *AccessLogger) initLogFile() {
 	// 로그 디렉토리 생성
-	if err := os.MkdirAll(l.config.LogDir, 0750); err != nil {
+	if err := os.MkdirAll(l.config.LogDir, 0o750); err != nil {
 		// 디렉토리 생성 실패 시 에러 무시 (파일 로깅 비활성화)
 		return
 	}
@@ -90,7 +90,7 @@ func (l *AccessLogger) initLogFile() {
 
 	// 로그 파일 열기
 	logPath := filepath.Join(l.config.LogDir, filename)
-	file, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
+	file, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
 	if err != nil {
 		// 로그 파일 열기 실패 시 stderr에 에러 출력
 		_, _ = fmt.Fprintf(os.Stderr, "Failed to open access log file: %v\n", err)

@@ -21,10 +21,12 @@ func (m *MockAlertManager) Send(_ context.Context, event *alerts.AlertEvent) err
 	m.sentAlerts = append(m.sentAlerts, event)
 	return nil
 }
+
 func (m *MockAlertManager) SendToChannel(_ context.Context, _ string, event *alerts.AlertEvent) error {
 	m.sentAlerts = append(m.sentAlerts, event)
 	return nil
 }
+
 func (m *MockAlertManager) GetAlerters() []string {
 	return []string{"mock"}
 }

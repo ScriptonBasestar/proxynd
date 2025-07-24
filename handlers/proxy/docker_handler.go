@@ -69,7 +69,7 @@ func DockerProxy(c *fiber.Ctx) error {
 	// 캐시가 히트하지 않았을 때만 다운로드
 	if !cacheHit {
 		dirpath := filepath.Dir(filefullpath)
-		if err := os.MkdirAll(dirpath, 0766); err != nil {
+		if err := os.MkdirAll(dirpath, 0o766); err != nil {
 			return c.Status(fiber.StatusInternalServerError).SendString("Failed to create directory")
 		}
 
@@ -114,7 +114,7 @@ func DockerProxy(c *fiber.Ctx) error {
 				headers = resp.Header
 
 				// 파일 저장
-				err = os.WriteFile(filefullpath, bytes, 0766)
+				err = os.WriteFile(filefullpath, bytes, 0o766)
 				if err != nil {
 					log.Printf("Error writing file: %v", err)
 					_ = resp.Body.Close()
@@ -271,7 +271,7 @@ func saveDockerHeaders(filename string, headers http.Header) error {
 		return err
 	}
 
-	return os.WriteFile(filename, data, 0666)
+	return os.WriteFile(filename, data, 0o666)
 }
 
 // loadDockerHeaders 저장된 헤더 정보 로드

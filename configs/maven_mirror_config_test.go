@@ -15,7 +15,7 @@ func TestMavenConfig_MavenMirror(t *testing.T) {
 	require.NoError(t, os.Setenv("CONFIG_DIR", "../sample-conf/"))
 	cfg := MavenMirrorConfig{}
 	cfg.ReadConfig()
-	//fmt.Println(cfg)
+	// fmt.Println(cfg)
 	assert.Equal(t, cfg.Path, "mirror/maven")
 	fmt.Println(helpers.ToStringYaml(cfg))
 }

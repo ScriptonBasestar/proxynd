@@ -246,7 +246,7 @@ cache:
   max_items: 10000
 `, env.CacheDir)
 
-	err := os.WriteFile(filepath.Join(env.ConfigDir, "global.yaml"), []byte(globalYAML), 0644)
+	err := os.WriteFile(filepath.Join(env.ConfigDir, "global.yaml"), []byte(globalYAML), 0o644)
 	require.NoError(t, err)
 
 	// npm-proxy.yaml 생성
@@ -258,7 +258,7 @@ proxies:
     url: "%s"
 `, env.MockUpstreams["npm"].URL)
 
-	err = os.WriteFile(filepath.Join(env.ConfigDir, "npm-proxy.yaml"), []byte(npmYAML), 0644)
+	err = os.WriteFile(filepath.Join(env.ConfigDir, "npm-proxy.yaml"), []byte(npmYAML), 0o644)
 	require.NoError(t, err)
 
 	// maven-proxy.yaml 생성
@@ -270,7 +270,7 @@ proxies:
     url: "%s"
 `, env.MockUpstreams["maven"].URL)
 
-	err = os.WriteFile(filepath.Join(env.ConfigDir, "maven-proxy.yaml"), []byte(mavenYAML), 0644)
+	err = os.WriteFile(filepath.Join(env.ConfigDir, "maven-proxy.yaml"), []byte(mavenYAML), 0o644)
 	require.NoError(t, err)
 
 	// apt-proxy.yaml 생성
@@ -283,7 +283,7 @@ proxies:
       url: "%s/ubuntu"
 `, env.MockUpstreams["apt"].URL)
 
-	err = os.WriteFile(filepath.Join(env.ConfigDir, "apt-proxy.yaml"), []byte(aptYAML), 0644)
+	err = os.WriteFile(filepath.Join(env.ConfigDir, "apt-proxy.yaml"), []byte(aptYAML), 0o644)
 	require.NoError(t, err)
 }
 
@@ -335,7 +335,8 @@ func (env *IntegrationTestEnvironment) setupProxyServer(_ *testing.T) {
 
 // MakeRequest 통합 테스트용 HTTP 요청 실행
 func (env *IntegrationTestEnvironment) MakeRequest(method, path string,
-	headers map[string]string) (*http.Response, error) {
+	headers map[string]string,
+) (*http.Response, error) {
 	req, err := http.NewRequest(method, path, nil)
 	if err != nil {
 		return nil, err

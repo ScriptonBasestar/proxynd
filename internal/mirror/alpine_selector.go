@@ -468,7 +468,8 @@ func (ams *AlpineMirrorSelector) rankMirrors(
 
 // calculateMirrorScore 미러 점수 계산
 func (ams *AlpineMirrorSelector) calculateMirrorScore(
-	proxy configs.ApkProxy, _ AlpineVersion, clientRegion string) float64 {
+	proxy configs.ApkProxy, _ AlpineVersion, clientRegion string,
+) float64 {
 	health, exists := ams.mirrorHealth[proxy.Name]
 	if !exists {
 		return 50.0 // 기본 점수

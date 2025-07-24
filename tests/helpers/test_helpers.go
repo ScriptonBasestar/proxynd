@@ -41,7 +41,7 @@ func SetupTestEnvironment(t *testing.T) *TestEnvironment {
 
 	dirs := []string{configDir, storageDir, cacheDir, logDir}
 	for _, dir := range dirs {
-		if err := os.MkdirAll(dir, 0755); err != nil {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
 			_ = os.RemoveAll(tempDir) // 정리
 			t.Fatalf("Failed to create dir %s: %v", dir, err)
 		}
@@ -103,17 +103,17 @@ func restoreEnv(backup map[string]string) {
 }
 
 // CreateTestConfig 테스트용 설정 파일 생성
-func CreateTestConfig(env *TestEnvironment, configName string, content string) error {
+func CreateTestConfig(env *TestEnvironment, configName, content string) error {
 	configPath := filepath.Join(env.ConfigDir, configName)
-	return os.WriteFile(configPath, []byte(content), 0644)
+	return os.WriteFile(configPath, []byte(content), 0o644)
 }
 
 // CreateTestFile 테스트용 파일 생성
 func CreateTestFile(dir, filename, content string) error {
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err
 	}
-	return os.WriteFile(filepath.Join(dir, filename), []byte(content), 0644)
+	return os.WriteFile(filepath.Join(dir, filename), []byte(content), 0o644)
 }
 
 // MockHTTPServer 테스트용 HTTP 서버 생성

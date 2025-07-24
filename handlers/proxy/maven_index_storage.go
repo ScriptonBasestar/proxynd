@@ -34,7 +34,7 @@ func NewFileIndexStorage(storageDir string) *FileIndexStorage {
 func (s *FileIndexStorage) Save(entries []SearchIndexEntry) error {
 	// 디렉토리 생성
 	dir := filepath.Dir(s.filePath)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err
 	}
 
@@ -45,7 +45,7 @@ func (s *FileIndexStorage) Save(entries []SearchIndexEntry) error {
 	}
 
 	// 파일에 저장
-	if err := os.WriteFile(s.filePath, data, 0644); err != nil {
+	if err := os.WriteFile(s.filePath, data, 0o644); err != nil {
 		return err
 	}
 

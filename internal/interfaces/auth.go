@@ -53,7 +53,7 @@ type AuthService interface {
 	Authenticate(ctx context.Context, credentials Credentials) (*User, error)
 
 	// AuthorizeRequest checks if request is authorized
-	AuthorizeRequest(ctx context.Context, token string, resource string, action string) (bool, error)
+	AuthorizeRequest(ctx context.Context, token, resource, action string) (bool, error)
 
 	// GetUser retrieves user information by ID
 	GetUser(ctx context.Context, userID string) (*User, error)

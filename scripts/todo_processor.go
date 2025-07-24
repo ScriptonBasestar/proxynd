@@ -190,7 +190,7 @@ func (p *TodoProcessor) ExportJSON() error {
 		return err
 	}
 
-	return os.WriteFile("todo_items.json", data, 0644)
+	return os.WriteFile("todo_items.json", data, 0o644)
 }
 
 func main() {

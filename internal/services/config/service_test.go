@@ -458,7 +458,7 @@ func TestService_Concurrency(_ *testing.T) {
 
 func createTestConfig(t *testing.T, dir, filename, content string) {
 	path := filepath.Join(dir, filename)
-	err := os.WriteFile(path, []byte(content), 0644)
+	err := os.WriteFile(path, []byte(content), 0o644)
 	require.NoError(t, err)
 }
 

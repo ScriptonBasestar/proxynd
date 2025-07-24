@@ -71,7 +71,6 @@ func (sv *SignatureVerifier) LoadTrustedKeys(keyDir string) error {
 		}
 		return nil
 	})
-
 	if err != nil {
 		return fmt.Errorf("키 디렉토리 탐색 실패: %v", err)
 	}

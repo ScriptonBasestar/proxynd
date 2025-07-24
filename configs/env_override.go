@@ -166,7 +166,7 @@ func getFieldByPath(v reflect.Value, path string) (reflect.Value, error) {
 }
 
 // setFieldValue 필드 값 설정
-func setFieldValue(field reflect.Value, value string, valueType string) error {
+func setFieldValue(field reflect.Value, value, valueType string) error {
 	if !field.CanSet() {
 		return nil
 	}

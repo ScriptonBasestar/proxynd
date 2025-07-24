@@ -66,7 +66,8 @@ func (gwa *GenericWebhookAdapter) Validate(endpoint string) error {
 
 // SendToEndpoint 웹훅 전송 (기존 구현, 하위 호환성용)
 func (gwa *GenericWebhookAdapter) SendToEndpoint(ctx context.Context, event *alerts.AlertEvent,
-	endpoint configs.WebhookEndpointConfig) error {
+	endpoint configs.WebhookEndpointConfig,
+) error {
 	// 메시지 포맷팅
 	payload, err := gwa.FormatMessage(event, endpoint.Format)
 	if err != nil {
@@ -271,7 +272,8 @@ func (swa *SlackWebhookAdapter) SupportedFormats() []string {
 
 // Send Slack 웹훅 전송
 func (swa *SlackWebhookAdapter) Send(ctx context.Context, event *alerts.AlertEvent,
-	endpoint configs.WebhookEndpointConfig) error {
+	endpoint configs.WebhookEndpointConfig,
+) error {
 	// Slack 메시지 포맷팅
 	payload, err := swa.FormatMessage(event, endpoint.Format)
 	if err != nil {
@@ -472,7 +474,8 @@ func (dwa *DiscordWebhookAdapter) SupportedFormats() []string {
 
 // Send Discord 웹훅 전송
 func (dwa *DiscordWebhookAdapter) Send(ctx context.Context, event *alerts.AlertEvent,
-	endpoint configs.WebhookEndpointConfig) error {
+	endpoint configs.WebhookEndpointConfig,
+) error {
 	// Discord 메시지 포맷팅
 	payload, err := dwa.FormatMessage(event, endpoint.Format)
 	if err != nil {

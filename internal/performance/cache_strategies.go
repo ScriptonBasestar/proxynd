@@ -339,7 +339,8 @@ type EvictionOptimizationStrategy struct {
 
 // NewEvictionOptimizationStrategy creates a new eviction optimization strategy
 func NewEvictionOptimizationStrategy(
-	logger logging.Logger, config *CacheOptimizerConfig) *EvictionOptimizationStrategy {
+	logger logging.Logger, config *CacheOptimizerConfig,
+) *EvictionOptimizationStrategy {
 	return &EvictionOptimizationStrategy{
 		logger: logger.WithField("component", "cache.strategy.eviction"),
 		config: config,

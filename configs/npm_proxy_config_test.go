@@ -17,7 +17,7 @@ func TestNpmConfig_NpmProxy(t *testing.T) {
 	require.NoError(t, os.Setenv("CONFIG_DIR", "../sample-conf/"))
 	cfg := NpmProxyConfig{}
 	require.NoError(t, cfg.ReadConfig())
-	//fmt.Println(cfg)
+	// fmt.Println(cfg)
 	assert.Equal(t, cfg.Path, "proxy/npm")
 	fmt.Println(helpers.ToStringYaml(cfg))
 }
@@ -41,12 +41,12 @@ func TestNpmYamlMake(t *testing.T) {
 	if err != nil {
 		fmt.Println("errrrr write")
 	}
-	err = os.MkdirAll("tmp/", 0766)
+	err = os.MkdirAll("tmp/", 0o766)
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	err = os.WriteFile("tmp/maven-tmp.yaml", yamlFile, 0766)
+	err = os.WriteFile("tmp/maven-tmp.yaml", yamlFile, 0o766)
 	if err != nil {
 		t.Error(err)
 		return

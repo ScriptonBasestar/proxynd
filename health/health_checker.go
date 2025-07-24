@@ -294,7 +294,7 @@ func (wc *WritableChecker) Check(_ context.Context) *CheckResult {
 	if err != nil {
 		if os.IsNotExist(err) {
 			// 디렉토리 생성 시도
-			if err := os.MkdirAll(wc.path, 0755); err != nil {
+			if err := os.MkdirAll(wc.path, 0o755); err != nil {
 				result.Status = StatusUnhealthy
 				result.Message = fmt.Sprintf("Cannot create directory: %v", err)
 				result.Duration = time.Since(start)
@@ -315,7 +315,7 @@ func (wc *WritableChecker) Check(_ context.Context) *CheckResult {
 
 	// 쓰기 테스트
 	testFile := filepath.Join(wc.path, ".health_check")
-	if err := os.WriteFile(testFile, []byte("test"), 0644); err != nil {
+	if err := os.WriteFile(testFile, []byte("test"), 0o644); err != nil {
 		result.Status = StatusUnhealthy
 		result.Message = fmt.Sprintf("Cannot write to directory: %v", err)
 	} else {

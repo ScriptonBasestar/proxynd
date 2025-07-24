@@ -25,9 +25,9 @@ func CreateTempDir(t *testing.T, prefix string) string {
 // CreateTestFile 테스트 파일 생성
 func CreateTestFile(t *testing.T, dir, filename, content string) string {
 	path := filepath.Join(dir, filename)
-	err := os.MkdirAll(filepath.Dir(path), 0755)
+	err := os.MkdirAll(filepath.Dir(path), 0o755)
 	require.NoError(t, err)
-	err = os.WriteFile(path, []byte(content), 0644)
+	err = os.WriteFile(path, []byte(content), 0o644)
 	require.NoError(t, err)
 	return path
 }

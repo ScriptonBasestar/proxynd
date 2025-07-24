@@ -14,7 +14,6 @@ func TestPluginManager_RegisterBuiltinPlugins(t *testing.T) {
 		AutoRegisterBuiltins: false, // 외부에서 등록
 		HealthCheckInterval:  0,     // 헬스체크 비활성화
 	})
-
 	if err != nil {
 		t.Fatalf("Failed to start plugin manager: %v", err)
 	}
@@ -35,7 +34,6 @@ func TestPluginManager_RegisterCustomPlugin(t *testing.T) {
 		AutoRegisterBuiltins: false,
 		HealthCheckInterval:  0,
 	})
-
 	if err != nil {
 		t.Fatalf("Failed to start plugin manager: %v", err)
 	}
@@ -71,7 +69,6 @@ func TestPluginManager_UnregisterPlugin(t *testing.T) {
 		AutoRegisterBuiltins: false,
 		HealthCheckInterval:  0,
 	})
-
 	if err != nil {
 		t.Fatalf("Failed to start plugin manager: %v", err)
 	}
@@ -115,7 +112,6 @@ func TestPluginManager_GetHandlersByMode(t *testing.T) {
 		AutoRegisterBuiltins: false,
 		HealthCheckInterval:  0,
 	})
-
 	if err != nil {
 		t.Fatalf("Failed to start plugin manager: %v", err)
 	}
@@ -157,7 +153,6 @@ func TestPluginManager_HealthCheck(t *testing.T) {
 		AutoRegisterBuiltins: false,
 		HealthCheckInterval:  0,
 	})
-
 	if err != nil {
 		t.Fatalf("Failed to start plugin manager: %v", err)
 	}
@@ -179,7 +174,6 @@ func TestPluginManager_Statistics(t *testing.T) {
 		AutoRegisterBuiltins: false,
 		HealthCheckInterval:  0,
 	})
-
 	if err != nil {
 		t.Fatalf("Failed to start plugin manager: %v", err)
 	}
@@ -221,7 +215,6 @@ func TestPluginManager_Lifecycle(t *testing.T) {
 		AutoRegisterBuiltins: false,
 		HealthCheckInterval:  0,
 	})
-
 	if err != nil {
 		t.Fatalf("Failed to start plugin manager: %v", err)
 	}
@@ -253,7 +246,6 @@ func TestPluginManager_ConcurrentAccess(t *testing.T) {
 		AutoRegisterBuiltins: false,
 		HealthCheckInterval:  0,
 	})
-
 	if err != nil {
 		t.Fatalf("Failed to start plugin manager: %v", err)
 	}

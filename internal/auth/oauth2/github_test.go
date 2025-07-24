@@ -107,7 +107,6 @@ func TestGitHubProvider_GetUserInfo(t *testing.T) {
 
 	ctx := context.Background()
 	userInfo, err := provider.GetUserInfo(ctx, "test_token")
-
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
@@ -169,7 +168,6 @@ func TestGitHubProvider_GetUserOrganizations(t *testing.T) {
 
 	ctx := context.Background()
 	organizations, err := provider.GetUserOrganizations(ctx, "test_token")
-
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
@@ -219,7 +217,6 @@ func TestGitHubProvider_ValidateToken(t *testing.T) {
 
 	ctx := context.Background()
 	tokenInfo, err := provider.ValidateToken(ctx, "valid_token")
-
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
@@ -257,7 +254,6 @@ func TestGitHubProvider_ValidateToken_Invalid(t *testing.T) {
 
 	ctx := context.Background()
 	tokenInfo, err := provider.ValidateToken(ctx, "invalid_token")
-
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
@@ -307,7 +303,6 @@ func TestGitHubProvider_GetUserRepositories(t *testing.T) {
 
 	ctx := context.Background()
 	repositories, err := provider.GetUserRepositories(ctx, "test_token")
-
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
@@ -431,7 +426,6 @@ func TestGitHubProvider_GetRateLimit(t *testing.T) {
 
 	ctx := context.Background()
 	rateLimit, err := provider.GetRateLimit(ctx, "test_token")
-
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}

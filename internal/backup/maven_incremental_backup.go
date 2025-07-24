@@ -84,11 +84,11 @@ func (b *IncrementalBackup) saveMetadata(metadata *BackupMetadata) error {
 	}
 
 	// 백업 디렉토리 생성
-	if err := os.MkdirAll(b.backupDir, 0755); err != nil {
+	if err := os.MkdirAll(b.backupDir, 0o755); err != nil {
 		return err
 	}
 
-	return os.WriteFile(b.metadataFile, data, 0644)
+	return os.WriteFile(b.metadataFile, data, 0o644)
 }
 
 // calculateChecksum 파일 체크섬 계산
@@ -211,7 +211,6 @@ func (b *IncrementalBackup) PerformBackup(options *BackupOptions) (*BackupMetada
 
 		return nil
 	})
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to walk source directory: %w", err)
 	}
@@ -301,7 +300,7 @@ func (b *IncrementalBackup) backupSingleFile(srcPath string) error {
 
 	// 대상 디렉토리 생성
 	dstDir := filepath.Dir(dstPath)
-	if err := os.MkdirAll(dstDir, 0755); err != nil {
+	if err := os.MkdirAll(dstDir, 0o755); err != nil {
 		return err
 	}
 
@@ -410,7 +409,6 @@ func (b *IncrementalBackup) Restore(targetDir string, options *RestoreOptions) e
 
 		return nil
 	})
-
 	if err != nil {
 		return err
 	}
@@ -428,7 +426,7 @@ func (b *IncrementalBackup) GetBackupInfo() (*BackupMetadata, error) {
 
 // CleanOldBackups 오래된 백업 정리
 func (b *IncrementalBackup) CleanOldBackups(keepDays int) error {
-	// 증분백업에서는 전체 백업을 유지하므로 
+	// 증분백업에서는 전체 백업을 유지하므로
 	// 별도의 정리 정책이 필요합니다
 	// 예: 스냅샷 기반 백업으로 전환
 	return nil

@@ -398,8 +398,10 @@ func showConfig(c *fiber.Ctx) error {
 
 	// 설정 소스 정보
 	sources := []ConfigSource{}
-	configFiles := []string{"global.yaml", "apt-proxy.yaml", "npm-proxy.yaml", "maven-proxy.yaml",
-		"pip-proxy.yaml", "docker-proxy.yaml", "yum-proxy.yaml", "gem-proxy.yaml", "apk-proxy.yaml"}
+	configFiles := []string{
+		"global.yaml", "apt-proxy.yaml", "npm-proxy.yaml", "maven-proxy.yaml",
+		"pip-proxy.yaml", "docker-proxy.yaml", "yum-proxy.yaml", "gem-proxy.yaml", "apk-proxy.yaml",
+	}
 
 	for _, file := range configFiles {
 		path := filepath.Join(configDir, file)

@@ -1038,7 +1038,7 @@ func (h *MavenBrowserHandler) performGlobalSearch(c *fiber.Ctx, searchQuery stri
 }
 
 // searchRecursively 재귀적으로 검색 수행
-func (h *MavenBrowserHandler) searchRecursively(nodes []*GAVTreeNode, query string, parentPath string, results *[]*GAVTreeNode) {
+func (h *MavenBrowserHandler) searchRecursively(nodes []*GAVTreeNode, query, parentPath string, results *[]*GAVTreeNode) {
 	query = strings.ToLower(query)
 
 	for _, node := range nodes {
@@ -1336,7 +1336,7 @@ func (h *MavenBrowserHandler) indexNode(node *GAVTreeNode, parentGroupID string,
 }
 
 // indexDirectory 디렉토리를 재귀적으로 인덱싱
-func (h *MavenBrowserHandler) indexDirectory(path string, parentGroupID string, entries *[]SearchIndexEntry) {
+func (h *MavenBrowserHandler) indexDirectory(path, parentGroupID string, entries *[]SearchIndexEntry) {
 	// 캐시 확인
 	if cached, found := h.cache.Load(path); found {
 		if entry, ok := cached.(*cacheEntry); ok {
@@ -1366,7 +1366,7 @@ func (h *MavenBrowserHandler) indexDirectory(path string, parentGroupID string, 
 }
 
 // addToIndex 노드를 인덱스에 추가
-func (h *MavenBrowserHandler) addToIndex(node *GAVTreeNode, parentPath string, parentGroupID string, entries *[]SearchIndexEntry) {
+func (h *MavenBrowserHandler) addToIndex(node *GAVTreeNode, parentPath, parentGroupID string, entries *[]SearchIndexEntry) {
 	if node == nil {
 		return
 	}

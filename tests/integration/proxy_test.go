@@ -86,10 +86,10 @@ func (s *ProxyIntegrationTestSuite) setupTestCommon(tempDir string) {
 	configDir := filepath.Join(s.tempDir, "config")
 	cacheDir := filepath.Join(s.tempDir, "cache")
 
-	if err := os.MkdirAll(configDir, 0755); err != nil {
+	if err := os.MkdirAll(configDir, 0o755); err != nil {
 		panic(err)
 	}
-	if err := os.MkdirAll(cacheDir, 0755); err != nil {
+	if err := os.MkdirAll(cacheDir, 0o755); err != nil {
 		panic(err)
 	}
 
@@ -142,7 +142,7 @@ global:
     level: info
     format: json
 `
-	if err := os.WriteFile(filepath.Join(configDir, "global.yaml"), []byte(globalConfig), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(configDir, "global.yaml"), []byte(globalConfig), 0o644); err != nil {
 		panic(err)
 	}
 
@@ -159,7 +159,7 @@ apt:
     - jammy
     - focal
 `, s.getUpstreamURL("apt"))
-	if err := os.WriteFile(filepath.Join(configDir, "apt-proxy.yaml"), []byte(aptConfig), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(configDir, "apt-proxy.yaml"), []byte(aptConfig), 0o644); err != nil {
 		panic(err)
 	}
 
@@ -173,7 +173,7 @@ maven:
   cache_enabled: true
   checksum_validation: true
 `, s.getUpstreamURL("maven"))
-	if err := os.WriteFile(filepath.Join(configDir, "maven-proxy.yaml"), []byte(mavenConfig), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(configDir, "maven-proxy.yaml"), []byte(mavenConfig), 0o644); err != nil {
 		panic(err)
 	}
 
@@ -185,7 +185,7 @@ npm:
   cache_enabled: true
   scoped_packages_allowed: true
 `, s.getUpstreamURL("npm"))
-	if err := os.WriteFile(filepath.Join(configDir, "npm-proxy.yaml"), []byte(npmConfig), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(configDir, "npm-proxy.yaml"), []byte(npmConfig), 0o644); err != nil {
 		panic(err)
 	}
 }

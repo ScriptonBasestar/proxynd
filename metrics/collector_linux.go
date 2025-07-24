@@ -11,7 +11,7 @@ import (
 )
 
 // getFileDescriptorCounts 파일 디스크립터 수 반환 (Linux)
-func getFileDescriptorCounts() (open int, max int) {
+func getFileDescriptorCounts() (open, max int) {
 	// 현재 프로세스의 열린 파일 디스크립터 수
 	pid := os.Getpid()
 	fdPath := filepath.Join("/proc", strconv.Itoa(pid), "fd")

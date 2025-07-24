@@ -39,12 +39,12 @@ func NewLogAlerter(config LogAlerterConfig) (*LogAlerter, error) {
 	if config.LogFile != "" {
 		// 로그 디렉토리 생성
 		dir := filepath.Dir(config.LogFile)
-		if err := os.MkdirAll(dir, 0755); err != nil {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
 			return nil, fmt.Errorf("failed to create log directory: %w", err)
 		}
 
 		// 로그 파일 열기
-		file, err := os.OpenFile(config.LogFile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+		file, err := os.OpenFile(config.LogFile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644)
 		if err != nil {
 			return nil, fmt.Errorf("failed to open log file: %w", err)
 		}

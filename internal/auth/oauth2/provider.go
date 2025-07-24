@@ -15,12 +15,12 @@ type Provider interface {
 	// GetAuthURL OAuth2 인증 URL 생성
 	// state: CSRF 방지를 위한 상태값
 	// codeChallenge: PKCE Code Challenge (선택사항)
-	GetAuthURL(state string, codeChallenge string) string
+	GetAuthURL(state, codeChallenge string) string
 
 	// ExchangeCode 인증 코드를 액세스 토큰으로 교환
 	// code: OAuth2 인증 코드
 	// codeVerifier: PKCE Code Verifier (선택사항)
-	ExchangeCode(ctx context.Context, code string, codeVerifier string) (*TokenResponse, error)
+	ExchangeCode(ctx context.Context, code, codeVerifier string) (*TokenResponse, error)
 
 	// GetUserInfo 액세스 토큰으로 사용자 정보 조회
 	GetUserInfo(ctx context.Context, accessToken string) (*UserInfo, error)
@@ -147,7 +147,7 @@ func (g *GenericProvider) GetName() string {
 }
 
 // GetAuthURL OAuth2 인증 URL 생성
-func (g *GenericProvider) GetAuthURL(state string, codeChallenge string) string {
+func (g *GenericProvider) GetAuthURL(state, codeChallenge string) string {
 	params := url.Values{}
 	params.Set("client_id", g.config.ClientID)
 	params.Set("redirect_uri", g.config.RedirectURI)
@@ -168,7 +168,7 @@ func (g *GenericProvider) GetAuthURL(state string, codeChallenge string) string 
 }
 
 // ExchangeCode 인증 코드를 액세스 토큰으로 교환
-func (g *GenericProvider) ExchangeCode(ctx context.Context, code string, codeVerifier string) (*TokenResponse, error) {
+func (g *GenericProvider) ExchangeCode(ctx context.Context, code, codeVerifier string) (*TokenResponse, error) {
 	// Generic 구현은 각 제공자별 구체적인 구현에서 오버라이드
 	// 이 메서드는 기본 구현을 제공하며, 제공자별로 커스터마이징 가능
 	return exchangeCodeGeneric(ctx, g.config, code, codeVerifier)
