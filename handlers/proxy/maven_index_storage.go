@@ -6,13 +6,14 @@ import (
 	"path/filepath"
 	"time"
 
+	"proxynd/internal/domain/maven"
 	"proxynd/logging"
 )
 
 // IndexStorage 인덱스 저장소 인터페이스
 type IndexStorage interface {
-	Save(entries []SearchIndexEntry) error
-	Load() ([]SearchIndexEntry, error)
+	Save(entries []maven.SearchIndexEntry) error
+	Load() ([]maven.SearchIndexEntry, error)
 	GetLastModified() (time.Time, error)
 }
 
@@ -31,7 +32,7 @@ func NewFileIndexStorage(storageDir string) *FileIndexStorage {
 }
 
 // Save 인덱스를 파일에 저장
-func (s *FileIndexStorage) Save(entries []SearchIndexEntry) error {
+func (s *FileIndexStorage) Save(entries []maven.SearchIndexEntry) error {
 	// 디렉토리 생성
 	dir := filepath.Dir(s.filePath)
 	if err := os.MkdirAll(dir, 0o755); err != nil {
@@ -58,7 +59,7 @@ func (s *FileIndexStorage) Save(entries []SearchIndexEntry) error {
 }
 
 // Load 파일에서 인덱스 로드
-func (s *FileIndexStorage) Load() ([]SearchIndexEntry, error) {
+func (s *FileIndexStorage) Load() ([]maven.SearchIndexEntry, error) {
 	// 파일 읽기
 	data, err := os.ReadFile(s.filePath)
 	if err != nil {
@@ -69,7 +70,7 @@ func (s *FileIndexStorage) Load() ([]SearchIndexEntry, error) {
 	}
 
 	// JSON 디코딩
-	var entries []SearchIndexEntry
+	var entries []maven.SearchIndexEntry
 	if err := json.Unmarshal(data, &entries); err != nil {
 		return nil, err
 	}

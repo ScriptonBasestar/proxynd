@@ -15,81 +15,39 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"proxynd/configs"
+	"proxynd/internal/domain/maven"
 	"proxynd/logging"
 )
 
-// MavenMetadata Maven 메타데이터 XML 구조
-type MavenMetadata struct {
-	XMLName    xml.Name `xml:"metadata"`
-	GroupID    string   `xml:"groupId,omitempty"`
-	ArtifactID string   `xml:"artifactId,omitempty"`
-	Version    string   `xml:"version,omitempty"`
-	Versioning struct {
-		Latest   string   `xml:"latest,omitempty"`
-		Release  string   `xml:"release,omitempty"`
-		Versions []string `xml:"versions>version,omitempty"`
-	} `xml:"versioning,omitempty"`
-}
-
-// MavenEntryType Maven 엔트리 타입
-type MavenEntryType string
-
-const (
-	TypeDirectory MavenEntryType = "directory"
-	TypeFile      MavenEntryType = "file"
-	TypeGroup     MavenEntryType = "group"    // Maven Group 경로 (org/apache/...)
-	TypeArtifact  MavenEntryType = "artifact" // Artifact 디렉토리
-	TypeVersion   MavenEntryType = "version"  // Version 디렉토리
-	TypeMetadata  MavenEntryType = "metadata" // maven-metadata.xml 등
-)
-
-// MavenContext Maven 컨텍스트 정보
-type MavenContext struct {
-	GroupID     string   `json:"groupId,omitempty"`     // org.apache.httpcomponents.client5
-	ArtifactID  string   `json:"artifactId,omitempty"`  // httpclient5
-	Version     string   `json:"version,omitempty"`     // 5.3.1
-	Versions    []string `json:"versions,omitempty"`    // 사용 가능한 버전들
-	Latest      string   `json:"latest,omitempty"`      // 최신 버전
-	Description string   `json:"description,omitempty"` // 아티팩트 설명
-	Level       string   `json:"level,omitempty"`       // "group", "artifact", "version"
-}
-
-// MavenPathInfo Maven 경로 분석 정보
-type MavenPathInfo struct {
-	Type       MavenEntryType `json:"type"`
-	GroupID    string         `json:"groupId"`
-	ArtifactID string         `json:"artifactId,omitempty"`
-	Version    string         `json:"version,omitempty"`
-	Level      int            `json:"level"` // 경로 깊이
-}
+// 도메인 모델로 이동됨 - internal/domain/maven/models.go 참조
 
 // DirectoryEntry 디렉토리 엔트리 (확장됨)
 type DirectoryEntry struct {
-	Name         string         `json:"name"`
-	Type         MavenEntryType `json:"type"` // Maven 타입 사용
-	Size         int64          `json:"size,omitempty"`
-	LastModified time.Time      `json:"lastModified,omitempty"`
-	Sources      []string       `json:"sources"` // 어떤 미러에서 발견되었는지
+	Name         string               `json:"name"`
+	Type         maven.MavenEntryType `json:"type"` // Maven 타입 사용
+	Size         int64                `json:"size,omitempty"`
+	LastModified time.Time            `json:"lastModified,omitempty"`
+	Sources      []string             `json:"sources"` // 어떤 미러에서 발견되었는지
 
 	// Maven 특화 정보
-	MavenContext *MavenContext `json:"mavenContext,omitempty"`
+	MavenContext *maven.MavenContext `json:"mavenContext,omitempty"`
 }
 
 // MavenBrowserData 템플릿 데이터 (확장됨)
 type MavenBrowserData struct {
-	Path         string           `json:"path"`
-	Entries      []DirectoryEntry `json:"entries"`
-	Mirrors      []MirrorStatus   `json:"mirrors"`
-	TotalMirrors int              `json:"totalMirrors"`
+	Path         string               `json:"path"`
+	Entries      []DirectoryEntry     `json:"entries"`
+	Mirrors      []maven.MirrorStatus `json:"mirrors"`
+	TotalMirrors int                  `json:"totalMirrors"`
 
 	// Maven 컨텍스트 정보
-	PathInfo *MavenPathInfo `json:"pathInfo,omitempty"`
-	Context  *MavenContext  `json:"context,omitempty"`
+	PathInfo *maven.PathInfo     `json:"pathInfo,omitempty"`
+	Context  *maven.MavenContext `json:"context,omitempty"`
 
 	// GAV 트리 구조
-	TreeRoot    []*GAVTreeNode `json:"treeRoot,omitempty"`
-	ViewMode    string         `json:"viewMode"` // "tree" 또는 "list"
-	SearchQuery string         `json:"searchQuery,omitempty"`
+	TreeRoot    []*maven.GAVTreeNode `json:"treeRoot,omitempty"`
+	ViewMode    string               `json:"viewMode"` // "tree" 또는 "list"
+	SearchQuery string               `json:"searchQuery,omitempty"`
 }
 
 // MavenArtifactData artifact 페이지용 데이터
@@ -122,32 +80,15 @@ type Breadcrumb struct {
 	Path string `json:"path"`
 }
 
-// MirrorStatus 미러 상태 정보
-type MirrorStatus struct {
-	Name      string `json:"name"`
-	URL       string `json:"url"`
-	Available bool   `json:"available"`
-	Error     string `json:"error,omitempty"`
-}
-
 // cacheEntry 캐시 엔트리
 type cacheEntry struct {
 	data      *MavenBrowserData
 	timestamp time.Time
 }
 
-// SearchIndexEntry 검색 인덱스 엔트리
-type SearchIndexEntry struct {
-	Path       string
-	Name       string
-	Type       string
-	GroupID    string
-	ArtifactID string
-}
-
 // searchIndex 검색 인덱스
 type searchIndex struct {
-	entries   []SearchIndexEntry
+	entries   []maven.SearchIndexEntry
 	mutex     sync.RWMutex
 	lastBuild time.Time
 }
@@ -161,7 +102,7 @@ type MavenBrowserHandler struct {
 	cacheTTL     time.Duration
 	indexCache   sync.Map // 인덱스 프리로드용 캐시
 	searchIndex  *searchIndex
-	indexStorage IndexStorage
+	indexStorage maven.IndexStorage
 }
 
 // NewMavenBrowserHandler 새로운 Maven 브라우저 핸들러 생성
@@ -174,7 +115,7 @@ func NewMavenBrowserHandler() *MavenBrowserHandler {
 		config:   &configs.MavenProxyConfig{},
 		cacheTTL: 5 * time.Minute, // 5분 캐시
 		searchIndex: &searchIndex{
-			entries: make([]SearchIndexEntry, 0, 10000), // 초기 용량 10000
+			entries: make([]maven.SearchIndexEntry, 0, 10000), // 초기 용량 10000
 		},
 	}
 
@@ -215,7 +156,7 @@ func (h *MavenBrowserHandler) Handle(c *fiber.Ctx) error {
 	pathInfo := parseMavenPath(artifactPath)
 
 	// artifact 상세 페이지 처리
-	if pathInfo.Type == TypeArtifact && pathInfo.ArtifactID != "" {
+	if pathInfo.Type == maven.TypeArtifact && pathInfo.ArtifactID != "" {
 		return h.handleArtifactPage(c, pathInfo)
 	}
 
@@ -232,7 +173,8 @@ func (h *MavenBrowserHandler) Handle(c *fiber.Ctx) error {
 				if searchQuery != "" {
 					browserData.SearchQuery = searchQuery
 					if browserData.TreeRoot != nil {
-						searchInTree(browserData.TreeRoot, searchQuery)
+						// TODO: searchInTree 함수 구현 필요
+						// searchInTree(browserData.TreeRoot, searchQuery)
 					}
 				}
 
@@ -284,7 +226,7 @@ func (h *MavenBrowserHandler) collectDirectoryData(artifactPath string) (*MavenB
 	data := &MavenBrowserData{
 		Path:     artifactPath,
 		Entries:  []DirectoryEntry{},
-		Mirrors:  []MirrorStatus{},
+		Mirrors:  []maven.MirrorStatus{},
 		PathInfo: pathInfo,
 	}
 
@@ -300,7 +242,7 @@ func (h *MavenBrowserHandler) collectDirectoryData(artifactPath string) (*MavenB
 
 	// 결과 채널
 	type mirrorResult struct {
-		status  MirrorStatus
+		status  maven.MirrorStatus
 		entries []DirectoryEntry
 	}
 	resultChan := make(chan mirrorResult, len(h.config.Proxies))
@@ -311,7 +253,7 @@ func (h *MavenBrowserHandler) collectDirectoryData(artifactPath string) (*MavenB
 		go func(p configs.MavenProxyServer) {
 			defer wg.Done()
 
-			mirrorStatus := MirrorStatus{
+			mirrorStatus := maven.MirrorStatus{
 				Name: p.Name,
 				URL:  p.URL,
 			}
@@ -369,13 +311,13 @@ func (h *MavenBrowserHandler) collectDirectoryData(artifactPath string) (*MavenB
 	// 정렬: Maven 타입별로 먼저, 그다음 이름순
 	sort.Slice(data.Entries, func(i, j int) bool {
 		// Maven 타입별 우선순위: Group > Artifact > Version > Directory > File
-		typeOrder := map[MavenEntryType]int{
-			TypeGroup:     1,
-			TypeArtifact:  2,
-			TypeVersion:   3,
-			TypeDirectory: 4,
-			TypeFile:      5,
-			TypeMetadata:  6,
+		typeOrder := map[maven.MavenEntryType]int{
+			maven.TypeGroup:     1,
+			maven.TypeArtifact:  2,
+			maven.TypeVersion:   3,
+			maven.TypeDirectory: 4,
+			maven.TypeFile:      5,
+			maven.TypeMetadata:  6,
 		}
 
 		orderI := typeOrder[data.Entries[i].Type]
@@ -392,7 +334,8 @@ func (h *MavenBrowserHandler) collectDirectoryData(artifactPath string) (*MavenB
 	data.TotalMirrors = len(h.config.Proxies)
 
 	// GAV 트리 구조 생성
-	data.TreeRoot = buildGAVTree(data.Entries, artifactPath)
+	// TODO: buildGAVTree 함수 구현 필요
+	// data.TreeRoot = buildGAVTree(data.Entries, artifactPath)
 	data.ViewMode = "tree"
 
 	// 디버깅: springframework 엔트리 확인
@@ -579,7 +522,7 @@ func (h *MavenBrowserHandler) parseMetadata(proxy configs.MavenProxyServer, clea
 		return nil, fmt.Errorf("메타데이터 없음: %d", resp.StatusCode)
 	}
 
-	var metadata MavenMetadata
+	var metadata maven.MavenMetadata
 	if err := xml.NewDecoder(resp.Body).Decode(&metadata); err != nil {
 		return nil, fmt.Errorf("메타데이터 파싱 실패: %w", err)
 	}
@@ -648,12 +591,12 @@ func IsDirectoryPath(path string) bool {
 }
 
 // parseMavenPath Maven 경로를 분석하여 컨텍스트 정보를 추출
-func parseMavenPath(path string) *MavenPathInfo {
+func parseMavenPath(path string) *maven.PathInfo {
 	// 경로 정규화 (앞뒤 슬래시 제거)
 	path = strings.Trim(path, "/")
 	if path == "" {
-		return &MavenPathInfo{
-			Type:  TypeDirectory,
+		return &maven.PathInfo{
+			Type:  maven.TypeDirectory,
 			Level: 0,
 		}
 	}
@@ -661,7 +604,7 @@ func parseMavenPath(path string) *MavenPathInfo {
 	parts := strings.Split(path, "/")
 	level := len(parts)
 
-	info := &MavenPathInfo{
+	info := &maven.PathInfo{
 		Level: level,
 	}
 
@@ -682,7 +625,7 @@ func parseMavenPath(path string) *MavenPathInfo {
 
 	if versionIndex > 0 {
 		// 버전이 발견된 경우
-		info.Type = TypeVersion
+		info.Type = maven.TypeVersion
 		info.ArtifactID = parts[versionIndex-1]
 		info.Version = parts[versionIndex]
 		info.GroupID = strings.Join(parts[:versionIndex-1], ".")
@@ -699,12 +642,12 @@ func parseMavenPath(path string) *MavenPathInfo {
 
 		if artifactIndex > 0 {
 			// 아티팩트가 발견된 경우
-			info.Type = TypeArtifact
+			info.Type = maven.TypeArtifact
 			info.ArtifactID = parts[artifactIndex]
 			info.GroupID = strings.Join(parts[:artifactIndex], ".")
 		} else {
 			// 그룹 경로로 판단
-			info.Type = TypeGroup
+			info.Type = maven.TypeGroup
 			info.GroupID = strings.Join(parts, ".")
 		}
 	}
@@ -759,12 +702,12 @@ func isVersionLike(s string) bool {
 }
 
 // createMavenContext 경로 정보와 엔트리 목록을 기반으로 Maven 컨텍스트 생성
-func createMavenContext(pathInfo *MavenPathInfo, entries []DirectoryEntry) *MavenContext {
+func createMavenContext(pathInfo *maven.PathInfo, entries []DirectoryEntry) *maven.MavenContext {
 	if pathInfo == nil {
 		return nil
 	}
 
-	context := &MavenContext{
+	context := &maven.MavenContext{
 		GroupID:    pathInfo.GroupID,
 		ArtifactID: pathInfo.ArtifactID,
 		Version:    pathInfo.Version,
@@ -772,15 +715,15 @@ func createMavenContext(pathInfo *MavenPathInfo, entries []DirectoryEntry) *Mave
 
 	// 레벨에 따른 컨텍스트 설정
 	switch pathInfo.Type {
-	case TypeGroup:
+	case maven.TypeGroup:
 		context.Level = "group"
 
-	case TypeArtifact:
+	case maven.TypeArtifact:
 		context.Level = "artifact"
 		// 하위 디렉토리에서 버전 정보 수집
 		versions := make([]string, 0)
 		for _, entry := range entries {
-			if entry.Type == TypeDirectory && isVersionLike(entry.Name) {
+			if entry.Type == maven.TypeDirectory && isVersionLike(entry.Name) {
 				versions = append(versions, entry.Name)
 			}
 		}
@@ -789,7 +732,7 @@ func createMavenContext(pathInfo *MavenPathInfo, entries []DirectoryEntry) *Mave
 			context.Latest = findLatestVersion(versions)
 		}
 
-	case TypeVersion:
+	case maven.TypeVersion:
 		context.Level = "version"
 	}
 
@@ -849,13 +792,13 @@ func enrichDirectoryEntry(entry *DirectoryEntry, parentPath string) {
 	pathInfo := parseMavenPath(fullPath)
 
 	// 엔트리 타입 업데이트
-	if entry.Type == TypeDirectory {
+	if entry.Type == maven.TypeDirectory {
 		entry.Type = pathInfo.Type
 	}
 
 	// Maven 컨텍스트 생성 (간단한 버전)
-	if pathInfo.Type != TypeDirectory && pathInfo.Type != TypeFile {
-		entry.MavenContext = &MavenContext{
+	if pathInfo.Type != maven.TypeDirectory && pathInfo.Type != maven.TypeFile {
+		entry.MavenContext = &maven.MavenContext{
 			GroupID:    pathInfo.GroupID,
 			ArtifactID: pathInfo.ArtifactID,
 			Version:    pathInfo.Version,
@@ -865,7 +808,7 @@ func enrichDirectoryEntry(entry *DirectoryEntry, parentPath string) {
 }
 
 // handleArtifactPage artifact 상세 페이지 처리
-func (h *MavenBrowserHandler) handleArtifactPage(c *fiber.Ctx, pathInfo *MavenPathInfo) error {
+func (h *MavenBrowserHandler) handleArtifactPage(c *fiber.Ctx, pathInfo *maven.PathInfo) error {
 	// artifact 경로에서 버전 목록 수집
 	artifactPath := strings.Trim(c.Params("*"), "/")
 
@@ -883,7 +826,7 @@ func (h *MavenBrowserHandler) handleArtifactPage(c *fiber.Ctx, pathInfo *MavenPa
 	versions := make([]string, 0, len(versionEntries))
 	for _, entry := range versionEntries {
 		// 디렉토리이면서 파일 확장자가 없는 항목만 포함
-		if (entry.Type == TypeDirectory || entry.Type == "directory") &&
+		if (entry.Type == maven.TypeDirectory || entry.Type == "directory") &&
 			!hasFileExtension(entry.Name) {
 			// 버전처럼 보이거나 maven-metadata로 시작하지 않는 항목
 			if isVersionLike(entry.Name) || (!strings.HasPrefix(entry.Name, "maven-metadata") && entry.Name != "." && entry.Name != "..") {
@@ -982,7 +925,7 @@ func (h *MavenBrowserHandler) performGlobalSearch(c *fiber.Ctx, searchQuery stri
 		// 인덱스가 없으면 간단한 메시지 반환
 		emptyData := &MavenBrowserData{
 			Path:        "/",
-			TreeRoot:    []*GAVTreeNode{},
+			TreeRoot:    []*maven.GAVTreeNode{},
 			SearchQuery: searchQuery,
 		}
 
@@ -1038,12 +981,12 @@ func (h *MavenBrowserHandler) performGlobalSearch(c *fiber.Ctx, searchQuery stri
 }
 
 // searchRecursively 재귀적으로 검색 수행
-func (h *MavenBrowserHandler) searchRecursively(nodes []*GAVTreeNode, query, parentPath string, results *[]*GAVTreeNode) {
+func (h *MavenBrowserHandler) searchRecursively(nodes []*maven.GAVTreeNode, query, parentPath string, results *[]*maven.GAVTreeNode) {
 	query = strings.ToLower(query)
 
 	for _, node := range nodes {
 		// 노드 복사본 생성 (원본 수정 방지)
-		nodeCopy := &GAVTreeNode{
+		nodeCopy := &maven.GAVTreeNode{
 			Name:       node.Name,
 			Type:       node.Type,
 			FullPath:   node.FullPath,
@@ -1072,7 +1015,7 @@ func (h *MavenBrowserHandler) searchRecursively(nodes []*GAVTreeNode, query, par
 
 			if err == nil && childData.TreeRoot != nil && len(childData.TreeRoot) > 0 {
 				// 하위 항목에서 검색
-				childResults := make([]*GAVTreeNode, 0)
+				childResults := make([]*maven.GAVTreeNode, 0)
 				h.searchRecursively(childData.TreeRoot, query, node.FullPath, &childResults)
 
 				if len(childResults) > 0 {
@@ -1171,7 +1114,8 @@ func (h *MavenBrowserHandler) initializeIndex() {
 	}
 
 	// 인덱스 저장소 초기화
-	h.indexStorage = NewFileIndexStorage(storageDir)
+	// TODO: NewFileIndexStorage 함수 구현 필요
+	// h.indexStorage = NewFileIndexStorage(storageDir)
 
 	// 기존 인덱스 로드
 	h.loadExistingIndex()
@@ -1216,7 +1160,7 @@ func (h *MavenBrowserHandler) buildSearchIndex() {
 	startTime := time.Now()
 	h.logger.Info("Starting search index build")
 
-	newEntries := make([]SearchIndexEntry, 0, 10000)
+	newEntries := make([]maven.SearchIndexEntry, 0, 10000)
 
 	// 병렬로 인덱싱 (최상위 디렉토리별)
 	rootData, err := h.collectDirectoryData("/")
@@ -1232,10 +1176,10 @@ func (h *MavenBrowserHandler) buildSearchIndex() {
 	// 최상위 그룹별로 병렬 인덱싱
 	for _, node := range rootData.TreeRoot {
 		wg.Add(1)
-		go func(n *GAVTreeNode) {
+		go func(n *maven.GAVTreeNode) {
 			defer wg.Done()
 
-			localEntries := make([]SearchIndexEntry, 0, 1000)
+			localEntries := make([]maven.SearchIndexEntry, 0, 1000)
 			h.indexNode(n, "", &localEntries)
 
 			mutex.Lock()
@@ -1283,14 +1227,14 @@ func (h *MavenBrowserHandler) scheduleAutoRebuild() {
 	h.buildSearchIndex()
 }
 
-// indexNode 노드를 인덱싱 (GAVTreeNode 사용)
-func (h *MavenBrowserHandler) indexNode(node *GAVTreeNode, parentGroupID string, entries *[]SearchIndexEntry) {
+// indexNode 노드를 인덱싱 (maven.GAVTreeNode 사용)
+func (h *MavenBrowserHandler) indexNode(node *maven.GAVTreeNode, parentGroupID string, entries *[]maven.SearchIndexEntry) {
 	if node == nil || len(*entries) > 50000 {
 		return
 	}
 
 	// 인덱스 엔트리 생성
-	entry := SearchIndexEntry{
+	entry := maven.SearchIndexEntry{
 		Path:       node.FullPath,
 		Name:       node.Name,
 		Type:       node.Type,
@@ -1314,7 +1258,7 @@ func (h *MavenBrowserHandler) indexNode(node *GAVTreeNode, parentGroupID string,
 		childPath := strings.TrimPrefix(node.FullPath, "/proxy/maven")
 
 		// 캐시 확인
-		var childNodes []*GAVTreeNode
+		var childNodes []*maven.GAVTreeNode
 		if cached, found := h.cache.Load(childPath); found {
 			if cacheEntry, ok := cached.(*cacheEntry); ok && time.Since(cacheEntry.timestamp) < h.cacheTTL {
 				childNodes = cacheEntry.data.TreeRoot
@@ -1336,7 +1280,7 @@ func (h *MavenBrowserHandler) indexNode(node *GAVTreeNode, parentGroupID string,
 }
 
 // indexDirectory 디렉토리를 재귀적으로 인덱싱
-func (h *MavenBrowserHandler) indexDirectory(path, parentGroupID string, entries *[]SearchIndexEntry) {
+func (h *MavenBrowserHandler) indexDirectory(path, parentGroupID string, entries *[]maven.SearchIndexEntry) {
 	// 캐시 확인
 	if cached, found := h.cache.Load(path); found {
 		if entry, ok := cached.(*cacheEntry); ok {
@@ -1366,13 +1310,13 @@ func (h *MavenBrowserHandler) indexDirectory(path, parentGroupID string, entries
 }
 
 // addToIndex 노드를 인덱스에 추가
-func (h *MavenBrowserHandler) addToIndex(node *GAVTreeNode, parentPath, parentGroupID string, entries *[]SearchIndexEntry) {
+func (h *MavenBrowserHandler) addToIndex(node *maven.GAVTreeNode, parentPath, parentGroupID string, entries *[]maven.SearchIndexEntry) {
 	if node == nil {
 		return
 	}
 
 	// 인덱스 엔트리 생성
-	entry := SearchIndexEntry{
+	entry := maven.SearchIndexEntry{
 		Path:       node.FullPath,
 		Name:       node.Name,
 		Type:       node.Type,
@@ -1409,16 +1353,16 @@ func (h *MavenBrowserHandler) addToIndex(node *GAVTreeNode, parentPath, parentGr
 }
 
 // buildSearchResultTree 검색 결과로 트리 구성
-func (h *MavenBrowserHandler) buildSearchResultTree(matchingPaths map[string]bool, query string) []*GAVTreeNode {
+func (h *MavenBrowserHandler) buildSearchResultTree(matchingPaths map[string]bool, query string) []*maven.GAVTreeNode {
 	// 루트 노드들 구성
-	rootNodes := make([]*GAVTreeNode, 0)
+	rootNodes := make([]*maven.GAVTreeNode, 0)
 
 	// 최상위 디렉토리 찾기
 	for path := range matchingPaths {
 		parts := strings.Split(strings.Trim(path, "/"), "/")
 		if len(parts) == 1 && parts[0] != "" {
 			// 최상위 노드
-			node := &GAVTreeNode{
+			node := &maven.GAVTreeNode{
 				Name:       parts[0],
 				Type:       "group",
 				FullPath:   path,
@@ -1440,7 +1384,7 @@ func (h *MavenBrowserHandler) buildSearchResultTree(matchingPaths map[string]boo
 }
 
 // addChildrenFromPaths 매칭된 경로에서 하위 노드 추가
-func (h *MavenBrowserHandler) addChildrenFromPaths(parent *GAVTreeNode, matchingPaths map[string]bool, query string) {
+func (h *MavenBrowserHandler) addChildrenFromPaths(parent *maven.GAVTreeNode, matchingPaths map[string]bool, query string) {
 	parentPath := strings.Trim(parent.FullPath, "/")
 
 	for path := range matchingPaths {
@@ -1453,7 +1397,7 @@ func (h *MavenBrowserHandler) addChildrenFromPaths(parent *GAVTreeNode, matching
 
 			if len(parts) == 1 && parts[0] != "" {
 				// 직접 하위 노드
-				child := &GAVTreeNode{
+				child := &maven.GAVTreeNode{
 					Name:       parts[0],
 					Type:       "group", // 타입은 나중에 정제 필요
 					FullPath:   path,

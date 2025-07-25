@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+
+	"proxynd/internal/domain/maven"
 )
 
 // GAVTreeNode Group-Artifact-Version 트리 노드
@@ -52,7 +54,7 @@ func buildCompleteGAVTree(entries []DirectoryEntry) []*GAVTreeNode {
 
 	for _, entry := range entries {
 		// 디렉토리 타입만 처리
-		if entry.Type != "directory" && entry.Type != TypeDirectory && entry.Type != TypeGroup {
+		if entry.Type != "directory" && entry.Type != maven.TypeDirectory && entry.Type != maven.TypeGroup {
 			continue
 		}
 
@@ -139,9 +141,9 @@ func buildPartialGAVTree(entries []DirectoryEntry, currentPath string) []*GAVTre
 }
 
 // determineNodeType 현재 경로 컨텍스트에서 노드 타입 결정
-func determineNodeType(pathInfo *MavenPathInfo, entry DirectoryEntry) string {
+func determineNodeType(pathInfo *maven.PathInfo, entry DirectoryEntry) string {
 	// 디렉토리 타입 확인 - 다양한 형태를 모두 처리
-	if entry.Type != "directory" && entry.Type != TypeDirectory && entry.Type != TypeGroup && entry.Type != TypeArtifact {
+	if entry.Type != "directory" && entry.Type != maven.TypeDirectory && entry.Type != maven.TypeGroup && entry.Type != maven.TypeArtifact {
 		// 이름이 /로 끝나면 디렉토리로 처리
 		if !strings.HasSuffix(entry.Name, "/") {
 			return "file"
@@ -151,11 +153,11 @@ func determineNodeType(pathInfo *MavenPathInfo, entry DirectoryEntry) string {
 	// Maven 구조: group (org/apache/...) -> artifact (httpclient5) -> version (5.3.1)
 	// 경로 레벨과 패턴으로 타입 추정
 	switch pathInfo.Type {
-	case TypeDirectory:
+	case maven.TypeDirectory:
 		// 루트 디렉토리에서는 모든 디렉토리가 그룹 시작
 		return "group"
 
-	case TypeGroup:
+	case maven.TypeGroup:
 		// 그룹 경로에서는 다음은 또 다른 그룹이거나 아티팩트
 		// 예: org/apache에서 httpcomponents는 그룹, httpclient5는 아티팩트
 
@@ -166,7 +168,7 @@ func determineNodeType(pathInfo *MavenPathInfo, entry DirectoryEntry) string {
 		// 아니면 계속 그룹
 		return "group"
 
-	case TypeArtifact:
+	case maven.TypeArtifact:
 		// 아티팩트 하위는 대부분 버전
 		if isVersionLike(entry.Name) {
 			return "version"
@@ -174,7 +176,7 @@ func determineNodeType(pathInfo *MavenPathInfo, entry DirectoryEntry) string {
 		// 버전처럼 보이지 않으면 일반 디렉토리
 		return "directory"
 
-	case TypeVersion:
+	case maven.TypeVersion:
 		// 버전 하위는 파일 또는 일반 디렉토리
 		return "directory"
 

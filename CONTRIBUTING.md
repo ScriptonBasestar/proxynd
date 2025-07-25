@@ -173,3 +173,32 @@ make quality
 ## 🎯 좋은 첫 기여
 
 `good first issue` 라벨이 붙은 이슈를 확인하세요!
+
+## Commit Guidelines
+
+### Commit Message Format
+`{prefix}({AI툴}): {요약}`
+- `prefix`: `feat`, `fix`, `refactor`, `test`, or `chore`
+- `AI툴`: `claude`, `gemini`, `cursor`, `roocode`, or `none`
+- `요약`: 50 characters max
+
+### Using Commit Helper
+```bash
+# Interactive mode:
+./scripts/commit_helper.sh
+
+# Manual commit:
+./scripts/commit_helper.sh commit <prefix> <ai_tool> "<summary>"
+./scripts/commit_helper.sh commit feat claude "결제 연동 모듈 추가"
+
+# Partial staging (for multi-category commits):
+./scripts/commit_helper.sh stage
+git reset -p  # Unstage specific hunks
+git add -p    # Stage specific hunks
+./scripts/commit_helper.sh commit <prefix> <ai_tool> "<summary>"
+```
+
+### Workflow
+1. Make code changes (AI-assisted or manual)
+2. Run `./scripts/commit_helper.sh` (interactive) or use staged commands
+3. Repeat for each logical change set
