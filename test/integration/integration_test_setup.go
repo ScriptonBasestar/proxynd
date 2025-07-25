@@ -169,6 +169,158 @@ Description: small, powerful, scalable web/proxy server`)); err != nil {
 	}))
 	env.MockUpstreams["apt"] = aptServer
 	env.cleanup = append(env.cleanup, aptServer.Close)
+
+	// PIP Mock Server
+	pipServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/simple/requests/":
+			w.Header().Set("Content-Type", "text/html")
+			w.WriteHeader(http.StatusOK)
+			if _, err := w.Write([]byte(`<!DOCTYPE html>
+				<html>
+				<head><title>Links for requests</title></head>
+				<body>
+					<h1>Links for requests</h1>
+					<a href="requests-2.28.1-py3-none-any.whl">requests-2.28.1-py3-none-any.whl</a>
+				</body>
+				</html>`)); err != nil {
+				log.Printf("Failed to write PIP simple response: %v", err)
+			}
+		case "/simple/requests/requests-2.28.1-py3-none-any.whl":
+			w.Header().Set("Content-Type", "application/octet-stream")
+			w.WriteHeader(http.StatusOK)
+			if _, err := w.Write([]byte("mock requests wheel content")); err != nil {
+				log.Printf("Failed to write wheel content: %v", err)
+			}
+		case "/pypi/requests/json":
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			if _, err := w.Write([]byte(`{
+				"info": {
+					"name": "requests",
+					"version": "2.28.1",
+					"summary": "Python HTTP for Humans."
+				}
+			}`)); err != nil {
+				log.Printf("Failed to write PIP JSON response: %v", err)
+			}
+		default:
+			w.WriteHeader(http.StatusNotFound)
+			if _, err := w.Write([]byte("Not Found")); err != nil {
+				log.Printf("Failed to write error response: %v", err)
+			}
+		}
+	}))
+	env.MockUpstreams["pip"] = pipServer
+	env.cleanup = append(env.cleanup, pipServer.Close)
+
+	// Docker Mock Server
+	dockerServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/v2/":
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			if _, err := w.Write([]byte(`{}`)); err != nil {
+				log.Printf("Failed to write Docker API response: %v", err)
+			}
+		case "/v2/library/nginx/manifests/latest":
+			w.Header().Set("Content-Type", "application/vnd.docker.distribution.manifest.v2+json")
+			w.WriteHeader(http.StatusOK)
+			if _, err := w.Write([]byte(`{
+				"schemaVersion": 2,
+				"mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+				"config": {
+					"mediaType": "application/vnd.docker.container.image.v1+json",
+					"size": 7023,
+					"digest": "sha256:mock-config-digest"
+				},
+				"layers": [
+					{
+						"mediaType": "application/vnd.docker.image.rootfs.diff.tar.gzip",
+						"size": 32654,
+						"digest": "sha256:mock-layer-digest"
+					}
+				]
+			}`)); err != nil {
+				log.Printf("Failed to write Docker manifest: %v", err)
+			}
+		case "/v2/library/nginx/blobs/sha256:mock-layer-digest":
+			w.Header().Set("Content-Type", "application/octet-stream")
+			w.WriteHeader(http.StatusOK)
+			if _, err := w.Write([]byte("mock docker layer content")); err != nil {
+				log.Printf("Failed to write Docker blob: %v", err)
+			}
+		default:
+			w.WriteHeader(http.StatusNotFound)
+			if _, err := w.Write([]byte(`{"errors":[{"code":"NAME_UNKNOWN","message":"repository name not known"}]}`)); err != nil {
+				log.Printf("Failed to write error response: %v", err)
+			}
+		}
+	}))
+	env.MockUpstreams["docker"] = dockerServer
+	env.cleanup = append(env.cleanup, dockerServer.Close)
+
+	// YUM Mock Server
+	yumServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/centos/8/BaseOS/x86_64/os/repodata/repomd.xml":
+			w.Header().Set("Content-Type", "application/xml")
+			w.WriteHeader(http.StatusOK)
+			if _, err := w.Write([]byte(`<?xml version="1.0" encoding="UTF-8"?>
+				<repomd xmlns="http://linux.duke.edu/metadata/repo">
+					<revision>1640995200</revision>
+					<data type="primary">
+						<location href="repodata/primary.xml.gz"/>
+					</data>
+				</repomd>`)); err != nil {
+				log.Printf("Failed to write YUM repomd: %v", err)
+			}
+		case "/centos/8/BaseOS/x86_64/os/repodata/primary.xml.gz":
+			w.Header().Set("Content-Type", "application/x-gzip")
+			w.WriteHeader(http.StatusOK)
+			if _, err := w.Write([]byte("mock compressed primary.xml content")); err != nil {
+				log.Printf("Failed to write YUM primary: %v", err)
+			}
+		case "/centos/8/BaseOS/x86_64/os/Packages/nginx-1.20.1-1.el8.x86_64.rpm":
+			w.Header().Set("Content-Type", "application/x-rpm")
+			w.WriteHeader(http.StatusOK)
+			if _, err := w.Write([]byte("mock rpm content")); err != nil {
+				log.Printf("Failed to write RPM content: %v", err)
+			}
+		default:
+			w.WriteHeader(http.StatusNotFound)
+			if _, err := w.Write([]byte("Not Found")); err != nil {
+				log.Printf("Failed to write error response: %v", err)
+			}
+		}
+	}))
+	env.MockUpstreams["yum"] = yumServer
+	env.cleanup = append(env.cleanup, yumServer.Close)
+
+	// APK Mock Server
+	apkServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/alpine/v3.16/main/x86_64/APKINDEX.tar.gz":
+			w.Header().Set("Content-Type", "application/x-gzip")
+			w.WriteHeader(http.StatusOK)
+			if _, err := w.Write([]byte("mock APKINDEX content")); err != nil {
+				log.Printf("Failed to write APK index: %v", err)
+			}
+		case "/alpine/v3.16/main/x86_64/nginx-1.22.0-r1.apk":
+			w.Header().Set("Content-Type", "application/vnd.alpine.apk")
+			w.WriteHeader(http.StatusOK)
+			if _, err := w.Write([]byte("mock apk content")); err != nil {
+				log.Printf("Failed to write APK content: %v", err)
+			}
+		default:
+			w.WriteHeader(http.StatusNotFound)
+			if _, err := w.Write([]byte("Not Found")); err != nil {
+				log.Printf("Failed to write error response: %v", err)
+			}
+		}
+	}))
+	env.MockUpstreams["apk"] = apkServer
+	env.cleanup = append(env.cleanup, apkServer.Close)
 }
 
 // setupConfiguration ProxyND 설정 생성
