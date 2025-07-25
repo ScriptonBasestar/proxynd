@@ -1,7 +1,6 @@
 package metrics
 
 import (
-	"math"
 	"sort"
 	"sync"
 	"time"
@@ -228,10 +227,10 @@ func (c *TTLCollector) calculateStats(registryType string) *TTLStats {
 	minVal := ttlValues[0]
 	maxVal := ttlValues[len(ttlValues)-1]
 
-	median := calculatePercentile(ttlValues, 50)
-	p90 := calculatePercentile(ttlValues, 90)
-	p95 := calculatePercentile(ttlValues, 95)
-	p99 := calculatePercentile(ttlValues, 99)
+	median := calculatePercentileInt(ttlValues, 0.50)
+	p90 := calculatePercentileInt(ttlValues, 0.90)
+	p95 := calculatePercentileInt(ttlValues, 0.95)
+	p99 := calculatePercentileInt(ttlValues, 0.99)
 
 	// 비율 계산
 	earlyExpirationRate := float64(earlyExpirations) / float64(total)
@@ -254,8 +253,8 @@ func (c *TTLCollector) calculateStats(registryType string) *TTLStats {
 	}
 }
 
-// calculatePercentile 백분위수 계산
-func calculatePercentile(sortedValues []int, percentile float64) float64 {
+// calculatePercentileInt 정수 배열용 백분위수 계산
+func calculatePercentileInt(sortedValues []int, percentile float64) float64 {
 	if len(sortedValues) == 0 {
 		return 0
 	}
@@ -263,19 +262,18 @@ func calculatePercentile(sortedValues []int, percentile float64) float64 {
 	if percentile <= 0 {
 		return float64(sortedValues[0])
 	}
-	if percentile >= 100 {
+	if percentile >= 1 {
 		return float64(sortedValues[len(sortedValues)-1])
 	}
 
-	index := (percentile / 100.0) * float64(len(sortedValues)-1)
-	lower := int(math.Floor(index))
-	upper := int(math.Ceil(index))
+	index := percentile * float64(len(sortedValues)-1)
+	lower := int(index)
+	upper := lower + 1
 
-	if lower == upper {
-		return float64(sortedValues[lower])
+	if upper >= len(sortedValues) {
+		return float64(sortedValues[len(sortedValues)-1])
 	}
 
-	// 선형 보간
 	weight := index - float64(lower)
 	return float64(sortedValues[lower])*(1-weight) + float64(sortedValues[upper])*weight
 }
