@@ -11,6 +11,7 @@ import (
 
 	// proxyHandlers "proxynd/handlers/proxy" // Commented out until handlers are properly implemented
 	"proxynd/configs"
+	"proxynd/internal/factory"
 	"proxynd/internal/repositories/cache"
 	"proxynd/internal/repositories/config"
 	"proxynd/internal/services/adapters"
@@ -43,8 +44,9 @@ type Container struct {
 	upstreamClient proxy.UpstreamClient
 	serviceFactory *proxy.ServiceFactory
 
-	// Handlers (commented out until properly implemented)
-	handlerFactory types.ProxyHandlerFactory
+	// Handlers
+	handlerFactory         types.ProxyHandlerFactory
+	handlerAdapterFactory  *factory.HandlerAdapterFactory
 	// unifiedRouter  *proxyHandlers.UnifiedProxyRouter
 
 	// Singleton instances
@@ -433,6 +435,22 @@ func (c *Container) GetHandlerFactory() (types.ProxyHandlerFactory, error) {
 	return factory, nil
 }
 
+// GetHandlerAdapterFactory returns the handler adapter factory instance
+func (c *Container) GetHandlerAdapterFactory() (*factory.HandlerAdapterFactory, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if c.handlerAdapterFactory != nil {
+		return c.handlerAdapterFactory, nil
+	}
+
+	// Create handler adapter factory
+	c.handlerAdapterFactory = factory.NewHandlerAdapterFactory()
+
+	c.logger.Info("Handler adapter factory created")
+	return c.handlerAdapterFactory, nil
+}
+
 // GetUnifiedRouter returns the unified proxy router (placeholder)
 func (c *Container) GetUnifiedRouter() (interface{}, error) {
 	c.mu.Lock()
@@ -494,6 +512,13 @@ func (c *Container) Close() error {
 		}
 	}
 
+	// Shutdown handler adapter factory
+	if c.handlerAdapterFactory != nil {
+		if err := c.handlerAdapterFactory.Shutdown(); err != nil {
+			c.logger.Error("Failed to shutdown handler adapter factory", logging.F("error", err))
+		}
+	}
+
 	// Clear all references
 	c.cacheRepo = nil
 	c.configRepo = nil
@@ -502,6 +527,7 @@ func (c *Container) Close() error {
 	c.upstreamClient = nil
 	c.serviceFactory = nil
 	c.handlerFactory = nil
+	c.handlerAdapterFactory = nil
 	c.configWatcher = nil
 	c.configCache = nil
 	c.configLoader = nil

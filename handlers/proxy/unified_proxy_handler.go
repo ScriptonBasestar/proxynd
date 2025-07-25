@@ -8,10 +8,45 @@ import (
 	"proxynd/configs"
 	"proxynd/helpers"
 	"proxynd/internal/adapters/http"
+	"proxynd/internal/factory"
 	"proxynd/logging"
 )
 
-// UnifiedProxyHandler 통합 프록시 핸들러 - 모든 프록시 타입을 처리
+// 전역 팩토리 인스턴스
+var globalAdapterFactory *factory.HandlerAdapterFactory
+
+// InitializeGlobalFactory 전역 팩토리 초기화
+func InitializeGlobalFactory() {
+	if globalAdapterFactory == nil {
+		globalAdapterFactory = factory.NewHandlerAdapterFactory()
+		log.Printf("Global handler adapter factory initialized")
+	}
+}
+
+// UnifiedProxyHandlerWithFactory 팩토리 기반 통합 프록시 핸들러
+func UnifiedProxyHandlerWithFactory(c *fiber.Ctx) error {
+	proxyType := c.Params("type")
+	path := c.Params("*")
+
+	log.Printf("Access unified proxy (factory) - type: %s, path: %s\n", proxyType, path)
+
+	// 전역 팩토리 확인
+	if globalAdapterFactory == nil {
+		InitializeGlobalFactory()
+	}
+
+	// 프록시 타입에 맞는 어댑터 가져오기
+	adapter, err := globalAdapterFactory.GetAdapter(proxyType)
+	if err != nil {
+		log.Printf("Failed to get adapter for type %s: %v", proxyType, err)
+		return c.Status(fiber.StatusBadRequest).SendString("Unknown proxy type: " + proxyType)
+	}
+
+	// 어댑터로 요청 처리
+	return adapter.Handle(c)
+}
+
+// UnifiedProxyHandler 통합 프록시 핸들러 - 모든 프록시 타입을 처리 (레거시 호환용)
 func UnifiedProxyHandler(c *fiber.Ctx) error {
 	proxyType := c.Params("type")
 	path := c.Params("*")
@@ -123,7 +158,17 @@ func UnifiedProxyHandler(c *fiber.Ctx) error {
 		if !yumConfig.ConfigExists() {
 			return renderConfigAlert(c, "yum-proxy.yaml")
 		}
-		return YumProxyHandler(c)
+
+		// 설정 로드
+		if err := yumConfig.ReadConfig(); err != nil {
+			log.Printf("Warning: Failed to read YUM config: %v", err)
+			return c.Status(500).SendString("YUM 설정을 읽을 수 없습니다")
+		}
+
+		// 새로운 아키텍처 사용 - YUM Handler Adapter
+		logger := logging.GetLogger()
+		adapter := http.NewYumHandlerAdapter(yumConfig, logger)
+		return adapter.Handle(c)
 
 	case "apk":
 		// APK 설정 확인
@@ -131,7 +176,17 @@ func UnifiedProxyHandler(c *fiber.Ctx) error {
 		if !apkConfig.ConfigExists() {
 			return renderConfigAlert(c, "apk-proxy.yaml")
 		}
-		return ApkProxyHandler(c)
+
+		// 설정 로드
+		if err := apkConfig.ReadConfig(); err != nil {
+			log.Printf("Warning: Failed to read APK config: %v", err)
+			return c.Status(500).SendString("APK 설정을 읽을 수 없습니다")
+		}
+
+		// 새로운 아키텍처 사용 - APK Handler Adapter
+		logger := logging.GetLogger()
+		adapter := http.NewApkHandlerAdapter(apkConfig, logger)
+		return adapter.Handle(c)
 
 	default:
 		return c.Status(fiber.StatusBadRequest).SendString("Unknown proxy type: " + proxyType)

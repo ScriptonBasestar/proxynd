@@ -2,22 +2,60 @@ package configs
 
 import (
 	"context"
+	"crypto/md5"
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"sync"
 	"syscall"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
+
+	"proxynd/logging"
 )
 
 // ReloadHandler 리로드 핸들러 인터페이스
 type ReloadHandler interface {
 	OnConfigReload(oldConfig, newConfig *UnifiedConfig) error
 	Name() string
+}
+
+// ValidationMode 검증 모드
+type ValidationMode int
+
+const (
+	ValidationModeDisabled ValidationMode = iota // 검증 비활성화
+	ValidationModeWarn                           // 경고만 출력
+	ValidationModeStrict                         // 엄격한 검증 (실패 시 리로드 중단)
+)
+
+// ConfigChangeEvent 설정 변경 이벤트
+type ConfigChangeEvent struct {
+	Type      string            `json:"type"`      // file_changed, manual_reload, signal_reload
+	FilePath  string            `json:"file_path"` // 변경된 파일 경로
+	Timestamp time.Time         `json:"timestamp"` // 변경 시각
+	OldHash   string            `json:"old_hash"`  // 이전 파일 해시
+	NewHash   string            `json:"new_hash"`  // 새 파일 해시
+	Metadata  map[string]string `json:"metadata"`  // 추가 메타데이터
+}
+
+// ConfigChangeRecord 설정 변경 기록
+type ConfigChangeRecord struct {
+	Event            ConfigChangeEvent `json:"event"`
+	OldConfig        *UnifiedConfig    `json:"old_config,omitempty"`
+	NewConfig        *UnifiedConfig    `json:"new_config,omitempty"`
+	Success          bool              `json:"success"`
+	Error            string            `json:"error,omitempty"`
+	ValidationResult *ValidationResult `json:"validation_result,omitempty"`
+	HealthStatus     *HealthStatus     `json:"health_status,omitempty"`
+	HandlerResults   map[string]error  `json:"handler_results,omitempty"`
+	Duration         time.Duration     `json:"duration"`
+	RollbackUsed     bool              `json:"rollback_used"`
 }
 
 // HotReloadManager 핫리로드 관리자 (레거시 호환성을 위한 별칭)
@@ -54,18 +92,54 @@ type UnifiedHotReload struct {
 	cancel    context.CancelFunc
 	running   bool
 	runningMu sync.Mutex
+
+	// 향상된 변경 감지
+	validator       *SchemaValidator
+	healthMonitor   *ConfigHealthMonitor
+	backupManager   *ConfigBackupManager
+	logger          logging.Logger
+	fileHashes      map[string]string
+	fileHashesMu    sync.RWMutex
+	changeQueue     chan ConfigChangeEvent
+	maxRetries      int
+	retryDelay      time.Duration
+	validationMode  ValidationMode
+	rollbackEnabled bool
+	changeHistory   []ConfigChangeRecord
+	changeHistoryMu sync.RWMutex
+	maxHistorySize  int
 }
 
 // NewUnifiedHotReload 새 통합 핫 리로드 생성
 func NewUnifiedHotReload(configPath string, useViper bool) (*UnifiedHotReload, error) {
 	ctx, cancel := context.WithCancel(context.Background())
+	logger := logging.GetLogger()
 
 	uhr := &UnifiedHotReload{
-		useViper:     useViper,
-		handlers:     make([]ReloadHandler, 0),
-		debounceTime: 500 * time.Millisecond,
-		ctx:          ctx,
-		cancel:       cancel,
+		useViper:        useViper,
+		handlers:        make([]ReloadHandler, 0),
+		debounceTime:    500 * time.Millisecond,
+		ctx:             ctx,
+		cancel:          cancel,
+		logger:          logger,
+		fileHashes:      make(map[string]string),
+		changeQueue:     make(chan ConfigChangeEvent, 100),
+		maxRetries:      3,
+		retryDelay:      1 * time.Second,
+		validationMode:  ValidationModeWarn,
+		rollbackEnabled: true,
+		changeHistory:   make([]ConfigChangeRecord, 0),
+		maxHistorySize:  50,
+	}
+
+	// 향상된 컴포넌트 초기화
+	uhr.validator = NewSchemaValidator()
+	uhr.healthMonitor = NewConfigHealthMonitor(logger, uhr.validator)
+	uhr.backupManager = &ConfigBackupManager{
+		backupDir:          filepath.Join(filepath.Dir(configPath), "backups"),
+		maxBackups:         20,
+		compressionEnabled: true,
+		retentionPeriod:    30 * 24 * time.Hour, // 30일
 	}
 
 	// 로더 초기화 및 초기 설정 로드
@@ -87,6 +161,15 @@ func NewUnifiedHotReload(configPath string, useViper bool) (*UnifiedHotReload, e
 	}
 
 	uhr.config = initialConfig
+
+	// 초기 파일 해시 계산
+	if err := uhr.updateFileHash(configPath); err != nil {
+		uhr.logger.Warn("Failed to calculate initial file hash", logging.F("error", err))
+	}
+
+	// 변경 이벤트 처리 고루틴 시작
+	go uhr.processChangeEvents()
+
 	return uhr, nil
 }
 
@@ -524,4 +607,359 @@ func (h *SecurityReloadHandler) OnConfigReload(oldConfig, newConfig *UnifiedConf
 // Name returns the name of the security reload handler
 func (h *SecurityReloadHandler) Name() string {
 	return "SecurityReloadHandler"
+}
+
+// Enhanced Hot Reload Methods
+
+// updateFileHash 파일 해시 업데이트
+func (uhr *UnifiedHotReload) updateFileHash(filePath string) error {
+	hash, err := uhr.calculateFileHash(filePath)
+	if err != nil {
+		return err
+	}
+
+	uhr.fileHashesMu.Lock()
+	uhr.fileHashes[filePath] = hash
+	uhr.fileHashesMu.Unlock()
+
+	return nil
+}
+
+// calculateFileHash 파일 해시 계산
+func (uhr *UnifiedHotReload) calculateFileHash(filePath string) (string, error) {
+	file, err := os.Open(filePath)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	hasher := md5.New()
+	if _, err := io.Copy(hasher, file); err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%x", hasher.Sum(nil)), nil
+}
+
+// processChangeEvents 변경 이벤트 처리
+func (uhr *UnifiedHotReload) processChangeEvents() {
+	for {
+		select {
+		case <-uhr.ctx.Done():
+			return
+		case event := <-uhr.changeQueue:
+			uhr.handleChangeEvent(event)
+		}
+	}
+}
+
+// handleChangeEvent 개별 변경 이벤트 처리
+func (uhr *UnifiedHotReload) handleChangeEvent(event ConfigChangeEvent) {
+	startTime := time.Now()
+	record := ConfigChangeRecord{
+		Event:          event,
+		HandlerResults: make(map[string]error),
+	}
+
+	uhr.logger.Info("Processing config change event",
+		logging.F("type", event.Type),
+		logging.F("file", event.FilePath))
+
+	// 현재 설정 백업
+	uhr.configMu.RLock()
+	oldConfig := uhr.config
+	uhr.configMu.RUnlock()
+	record.OldConfig = oldConfig
+
+	// 백업 생성
+	if uhr.backupManager != nil {
+		if err := uhr.backupManager.CreateBackup(oldConfig); err != nil {
+			uhr.logger.Error("Failed to create config backup", logging.F("error", err))
+		}
+	}
+
+	// 새 설정 로드 시도
+	newConfig, err := uhr.loadConfigWithRetry()
+	if err != nil {
+		record.Success = false
+		record.Error = err.Error()
+		record.Duration = time.Since(startTime)
+		uhr.addToHistory(record)
+		uhr.logger.Error("Failed to load new config", logging.F("error", err))
+		return
+	}
+
+	record.NewConfig = newConfig
+
+	// 설정 검증
+	if uhr.validator != nil {
+		validationResult := uhr.validator.Validate(newConfig)
+		record.ValidationResult = validationResult
+
+		if !validationResult.Valid {
+			switch uhr.validationMode {
+			case ValidationModeStrict:
+				record.Success = false
+				record.Error = "Validation failed in strict mode"
+				record.Duration = time.Since(startTime)
+				uhr.addToHistory(record)
+				uhr.logger.Error("Config validation failed, aborting reload",
+					logging.F("errors", len(validationResult.Errors)))
+				return
+			case ValidationModeWarn:
+				uhr.logger.Warn("Config validation warnings",
+					logging.F("errors", len(validationResult.Errors)),
+					logging.F("warnings", len(validationResult.Warnings)))
+			}
+		}
+	}
+
+	// 헬스 체크
+	if uhr.healthMonitor != nil {
+		healthStatus := uhr.healthMonitor.CheckHealth(newConfig)
+		record.HealthStatus = healthStatus
+
+		if healthStatus.Overall == "unhealthy" && uhr.validationMode == ValidationModeStrict {
+			record.Success = false
+			record.Error = "Health check failed in strict mode"
+			record.Duration = time.Since(startTime)
+			uhr.addToHistory(record)
+			uhr.logger.Error("Config health check failed, aborting reload",
+				logging.F("score", healthStatus.Score))
+			return
+		}
+	}
+
+	// 핸들러 실행
+	success := uhr.executeHandlers(oldConfig, newConfig, record.HandlerResults)
+	if !success && uhr.rollbackEnabled {
+		uhr.logger.Warn("Some handlers failed, attempting rollback")
+		if err := uhr.performRollback(oldConfig); err != nil {
+			uhr.logger.Error("Rollback failed", logging.F("error", err))
+		} else {
+			record.RollbackUsed = true
+			uhr.logger.Info("Rollback completed successfully")
+		}
+	}
+
+	// 설정 업데이트
+	if success || !uhr.rollbackEnabled {
+		uhr.configMu.Lock()
+		uhr.config = newConfig
+		uhr.configMu.Unlock()
+		record.Success = true
+		uhr.logger.Info("Configuration updated successfully")
+	} else {
+		record.Success = false
+		record.Error = "Handler execution failed"
+	}
+
+	record.Duration = time.Since(startTime)
+	uhr.addToHistory(record)
+}
+
+// loadConfigWithRetry 재시도를 포함한 설정 로드
+func (uhr *UnifiedHotReload) loadConfigWithRetry() (*UnifiedConfig, error) {
+	var lastError error
+
+	for attempt := 1; attempt <= uhr.maxRetries; attempt++ {
+		var config *UnifiedConfig
+		var err error
+
+		if uhr.useViper {
+			config, err = uhr.viperLoader.Load()
+		} else {
+			config, err = uhr.legacyLoader.Load()
+		}
+
+		if err == nil {
+			return config, nil
+		}
+
+		lastError = err
+		uhr.logger.Warn("Config load attempt failed",
+			logging.F("attempt", attempt),
+			logging.F("max_attempts", uhr.maxRetries),
+			logging.F("error", err))
+
+		if attempt < uhr.maxRetries {
+			time.Sleep(uhr.retryDelay)
+		}
+	}
+
+	return nil, fmt.Errorf("failed to load config after %d attempts: %w", uhr.maxRetries, lastError)
+}
+
+// executeHandlers 핸들러 실행
+func (uhr *UnifiedHotReload) executeHandlers(oldConfig, newConfig *UnifiedConfig, results map[string]error) bool {
+	uhr.handlersMu.RLock()
+	handlers := make([]ReloadHandler, len(uhr.handlers))
+	copy(handlers, uhr.handlers)
+	uhr.handlersMu.RUnlock()
+
+	allSuccess := true
+	for _, handler := range handlers {
+		if err := handler.OnConfigReload(oldConfig, newConfig); err != nil {
+			results[handler.Name()] = err
+			allSuccess = false
+			uhr.logger.Error("Reload handler failed",
+				logging.F("handler", handler.Name()),
+				logging.F("error", err))
+		} else {
+			results[handler.Name()] = nil
+			uhr.logger.Debug("Reload handler succeeded", logging.F("handler", handler.Name()))
+		}
+	}
+
+	return allSuccess
+}
+
+// performRollback 롤백 수행
+func (uhr *UnifiedHotReload) performRollback(oldConfig *UnifiedConfig) error {
+	uhr.logger.Info("Performing configuration rollback")
+
+	// 설정 복원
+	uhr.configMu.Lock()
+	uhr.config = oldConfig
+	uhr.configMu.Unlock()
+
+	// 핸들러에 롤백 알림
+	uhr.handlersMu.RLock()
+	handlers := make([]ReloadHandler, len(uhr.handlers))
+	copy(handlers, uhr.handlers)
+	uhr.handlersMu.RUnlock()
+
+	for _, handler := range handlers {
+		if err := handler.OnConfigReload(uhr.config, oldConfig); err != nil {
+			uhr.logger.Error("Rollback handler failed",
+				logging.F("handler", handler.Name()),
+				logging.F("error", err))
+		}
+	}
+
+	return nil
+}
+
+// addToHistory 변경 히스토리에 추가
+func (uhr *UnifiedHotReload) addToHistory(record ConfigChangeRecord) {
+	uhr.changeHistoryMu.Lock()
+	defer uhr.changeHistoryMu.Unlock()
+
+	uhr.changeHistory = append(uhr.changeHistory, record)
+
+	// 최대 크기 초과 시 오래된 기록 제거
+	if len(uhr.changeHistory) > uhr.maxHistorySize {
+		uhr.changeHistory = uhr.changeHistory[1:]
+	}
+}
+
+// GetChangeHistory 변경 히스토리 반환
+func (uhr *UnifiedHotReload) GetChangeHistory() []ConfigChangeRecord {
+	uhr.changeHistoryMu.RLock()
+	defer uhr.changeHistoryMu.RUnlock()
+
+	history := make([]ConfigChangeRecord, len(uhr.changeHistory))
+	copy(history, uhr.changeHistory)
+	return history
+}
+
+// SetValidationMode 검증 모드 설정
+func (uhr *UnifiedHotReload) SetValidationMode(mode ValidationMode) {
+	uhr.validationMode = mode
+	uhr.logger.Info("Validation mode changed", logging.F("mode", mode))
+}
+
+// SetRollbackEnabled 롤백 기능 활성화/비활성화
+func (uhr *UnifiedHotReload) SetRollbackEnabled(enabled bool) {
+	uhr.rollbackEnabled = enabled
+	uhr.logger.Info("Rollback feature toggled", logging.F("enabled", enabled))
+}
+
+// TriggerManualReload 수동 리로드 트리거
+func (uhr *UnifiedHotReload) TriggerManualReload() error {
+	event := ConfigChangeEvent{
+		Type:      "manual_reload",
+		Timestamp: time.Now(),
+		Metadata:  map[string]string{"trigger": "manual"},
+	}
+
+	select {
+	case uhr.changeQueue <- event:
+		uhr.logger.Info("Manual reload triggered")
+		return nil
+	default:
+		return fmt.Errorf("change queue is full")
+	}
+}
+
+// GetHealthStatus 현재 헬스 상태 반환
+func (uhr *UnifiedHotReload) GetHealthStatus() *HealthStatus {
+	if uhr.healthMonitor != nil {
+		return uhr.healthMonitor.GetHealthStatus()
+	}
+	return nil
+}
+
+// GetValidationResult 현재 설정의 검증 결과 반환
+func (uhr *UnifiedHotReload) GetValidationResult() *ValidationResult {
+	if uhr.validator != nil {
+		uhr.configMu.RLock()
+		config := uhr.config
+		uhr.configMu.RUnlock()
+		return uhr.validator.Validate(config)
+	}
+	return nil
+}
+
+// Enhanced file watching with hash comparison
+func (uhr *UnifiedHotReload) debounceReloadEnhanced(filePath string) {
+	uhr.debounceMu.Lock()
+	defer uhr.debounceMu.Unlock()
+
+	if uhr.debounce != nil {
+		uhr.debounce.Stop()
+	}
+
+	uhr.debounce = time.AfterFunc(uhr.debounceTime, func() {
+		// 파일 해시 비교
+		newHash, err := uhr.calculateFileHash(filePath)
+		if err != nil {
+			uhr.logger.Error("Failed to calculate file hash", logging.F("file", filePath), logging.F("error", err))
+			return
+		}
+
+		uhr.fileHashesMu.RLock()
+		oldHash, exists := uhr.fileHashes[filePath]
+		uhr.fileHashesMu.RUnlock()
+
+		if exists && oldHash == newHash {
+			uhr.logger.Debug("File hash unchanged, skipping reload", logging.F("file", filePath))
+			return
+		}
+
+		// 해시가 변경되었으므로 리로드 이벤트 생성
+		event := ConfigChangeEvent{
+			Type:      "file_changed",
+			FilePath:  filePath,
+			Timestamp: time.Now(),
+			OldHash:   oldHash,
+			NewHash:   newHash,
+			Metadata:  map[string]string{"extension": filepath.Ext(filePath)},
+		}
+
+		// 파일 해시 업데이트
+		uhr.fileHashesMu.Lock()
+		uhr.fileHashes[filePath] = newHash
+		uhr.fileHashesMu.Unlock()
+
+		select {
+		case uhr.changeQueue <- event:
+			uhr.logger.Info("Config file change detected", 
+				logging.F("file", filePath),
+				logging.F("old_hash", oldHash[:8]),
+				logging.F("new_hash", newHash[:8]))
+		default:
+			uhr.logger.Warn("Change queue is full, dropping event", logging.F("file", filePath))
+		}
+	})
 }

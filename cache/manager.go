@@ -5,8 +5,12 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"runtime"
 	"sync"
 	"time"
+
+	"proxynd/logging"
+	"proxynd/metrics"
 )
 
 // Manager 캐시 매니저

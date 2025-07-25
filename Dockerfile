@@ -1,60 +1,132 @@
-ARG GO_VERSION=1.22
+# 프로덕션용 멀티스테이지 Dockerfile
+# Build arguments
+ARG GO_VERSION=1.23
+ARG ALPINE_VERSION=3.19
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION
 
-FROM golang:${GO_VERSION} AS builder
+# === Builder Stage ===
+FROM golang:${GO_VERSION}-alpine${ALPINE_VERSION} AS builder
 
-ARG APP_BUILD_DIR=/go/src/app
-ARG APP_RUN_DIR=/go/src/app
-#ARG MYGID=1001
-#ARG MYUID=1001
-#ARG APP_USER=user01
-#ARG APP_GROUP=group01
-#ENV MYGID=${MYGID}
-#ENV MYUID=${MYUID}
-#ENV APP_USER=${APP_USER}
-#ENV APP_GROUP=${APP_GROUP}
+# 보안 패키지 및 빌드 도구 설치
+RUN apk add --no-cache \
+    git \
+    ca-certificates \
+    tzdata \
+    gcc \
+    musl-dev \
+    make
 
-# for debian
-#RUN groupadd --gid $GID $APP_GROUP && useradd -m -l --uid $UID --gid $GID $APP_USER
-#RUN mkdir -p $APP_DIR && chown -R $APP_USER:$APP_USER $APP_DIR
-# for alpine
-#RUN echo "1111111111111 ${MYGID} ${APP_GROUP}"
-#RUN groupadd -g ${MYGID} -o ${APP_GROUP}
-#RUN useradd -g $MYGID -o $APP_USER -u $MYUID -d /home/$APP_USER
-#USER $APP_USER
+# 작업 디렉토리 설정
+WORKDIR /build
 
-WORKDIR $APP_BUILD_DIR
+# 의존성 파일들 먼저 복사 (캐시 최적화)
+COPY go.mod go.sum ./
+RUN go mod download && go mod verify
 
-#COPY . .
-COPY . $APP_BUILD_DIR
-RUN go get -d -v ./...
-RUN go mod download
-RUN go build -o main
+# 소스 코드 복사
+COPY . .
 
+# 린팅 및 테스트 실행 (선택적)
+RUN if [ "$SKIP_TESTS" != "true" ]; then \
+        go vet ./... && \
+        go test -short ./...; \
+    fi
 
-# run phase
-FROM golang:${GO_VERSION}
+# 바이너리 빌드 (최적화된 설정)
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+    -ldflags="-s -w -X main.version=${VERSION:-dev} -X main.buildDate=${BUILD_DATE} -X main.gitCommit=${VCS_REF}" \
+    -trimpath \
+    -o proxynd \
+    ./cmd/proxynd
 
-ARG APP_BUILD_DIR=/go/src/app
-ARG APP_RUN_DIR=/go/src/app
+# === Runtime Stage ===
+FROM alpine:${ALPINE_VERSION} AS runtime
 
-ENV STORAGE_DIR=/storage
-#ENV CACHE_DIR=$STORAGE_DIR/cachedir
-#ENV MIRROR_DIR=$STORAGE_DIR/mirrordir
-#ENV CONFIG_DIR=$STORAGE_DIR/configdir
-ENV CONFIG_DIR=/config
+# 메타데이터 라벨
+LABEL maintainer="ProxyND Team" \
+      org.opencontainers.image.title="ProxyND" \
+      org.opencontainers.image.description="Package Manager Proxy Server" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.vendor="ProxyND" \
+      org.opencontainers.image.source="https://github.com/your-org/proxynd"
 
-#VOLUME $CACHE_DIR
-#VOLUME $MIRROR_DIR
+# 런타임 패키지 설치
+RUN apk add --no-cache \
+    ca-certificates \
+    tzdata \
+    curl \
+    dumb-init \
+    && update-ca-certificates
 
-EXPOSE 8080
+# 비-루트 사용자 생성
+RUN addgroup -g 1001 -S proxynd && \
+    adduser -u 1001 -S proxynd -G proxynd -h /app -s /bin/sh
 
-RUN #apk --no-cache add ca-certificates
+# 디렉토리 생성 및 권한 설정
+RUN mkdir -p /app /config /storage /var/log/proxynd && \
+    chown -R proxynd:proxynd /app /config /storage /var/log/proxynd
 
-WORKDIR $APP_RUN_DIR
-COPY --from=builder $APP_BUILD_DIR/main $APP_RUN_DIR/main
-COPY --from=builder $APP_BUILD_DIR/templates $APP_RUN_DIR/templates
+# 바이너리 및 템플릿 복사
+COPY --from=builder --chown=proxynd:proxynd /build/proxynd /app/
+COPY --from=builder --chown=proxynd:proxynd /build/templates /app/templates/
+COPY --from=builder --chown=proxynd:proxynd /build/sample-conf /app/sample-conf/
 
-#ENTRYPOINT "ulimit -v $((1024*1024*1024)) && ./main"
-#CMD ["./main"]
-# 256MB
-CMD "ulimit -v $((256*1024*1024)) && ./main"
+# 헬스체크 스크립트 추가
+COPY --chown=proxynd:proxynd <<EOF /app/healthcheck.sh
+#!/bin/sh
+# ProxyND 헬스체크 스크립트
+set -e
+
+HEALTH_URL="http://localhost:${SERVER_PORT:-8080}/health"
+TIMEOUT=10
+
+# curl을 사용한 헬스체크
+if command -v curl >/dev/null 2>&1; then
+    curl -f --max-time $TIMEOUT "$HEALTH_URL" >/dev/null 2>&1
+    exit $?
+fi
+
+# wget fallback
+if command -v wget >/dev/null 2>&1; then
+    wget --timeout=$TIMEOUT --tries=1 "$HEALTH_URL" -O /dev/null >/dev/null 2>&1
+    exit $?
+fi
+
+echo "No HTTP client available for health check"
+exit 1
+EOF
+
+RUN chmod +x /app/healthcheck.sh
+
+# 환경 변수 설정
+ENV SERVER_PORT=8080 \
+    CONFIG_DIR=/config \
+    STORAGE_DIR=/storage \
+    LOG_LEVEL=info \
+    LOG_FORMAT=json \
+    GOMAXPROCS=0 \
+    GOMEMLIMIT=256MiB
+
+# 포트 노출
+EXPOSE $SERVER_PORT
+
+# 볼륨 마운트 포인트
+VOLUME ["/config", "/storage", "/var/log/proxynd"]
+
+# 작업 디렉토리 설정
+WORKDIR /app
+
+# 사용자 전환
+USER proxynd
+
+# 헬스체크 설정
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD /app/healthcheck.sh
+
+# dumb-init을 사용한 시그널 처리
+ENTRYPOINT ["/usr/bin/dumb-init", "--"]
+CMD ["/app/proxynd"]

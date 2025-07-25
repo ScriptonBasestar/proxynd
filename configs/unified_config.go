@@ -1,6 +1,7 @@
 package configs
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -423,8 +424,56 @@ func (c *UnifiedConfig) applyEnvironmentOverrides() {
 	}
 }
 
-// Validate 설정 검증
+// Validate 설정 검증 (향상된 버전)
 func (c *UnifiedConfig) Validate() error {
+	return c.ValidateWithOptions(ValidationOptions{
+		EnableCrossValidation: true,
+		EnablePerformanceCheck: true,
+		EnableSecurityCheck: true,
+	})
+}
+
+// ValidationOptions 검증 옵션
+type ValidationOptions struct {
+	EnableCrossValidation   bool // 교차 검증 활성화
+	EnablePerformanceCheck  bool // 성능 검증 활성화
+	EnableSecurityCheck     bool // 보안 검증 활성화
+	SkipExternalConnections bool // 외부 연결 검증 건너뛰기
+}
+
+// ValidateWithOptions 옵션을 사용한 설정 검증
+func (c *UnifiedConfig) ValidateWithOptions(opts ValidationOptions) error {
+	// 기본 필드 검증
+	if err := c.validateBasicFields(); err != nil {
+		return err
+	}
+
+	// 교차 검증
+	if opts.EnableCrossValidation {
+		if err := c.validateCrossReferences(); err != nil {
+			return err
+		}
+	}
+
+	// 성능 검증
+	if opts.EnablePerformanceCheck {
+		if err := c.validatePerformanceSettings(); err != nil {
+			return err
+		}
+	}
+
+	// 보안 검증
+	if opts.EnableSecurityCheck {
+		if err := c.validateSecuritySettings(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// validateBasicFields 기본 필드 검증
+func (c *UnifiedConfig) validateBasicFields() error {
 	// 서버 설정 검증
 	if err := c.validateServer(); err != nil {
 		return err
@@ -736,4 +785,431 @@ func parseInt(s string) (int, error) {
 		}
 	}
 	return result, nil
+}
+
+// Enhanced Validation Methods
+
+// validateCrossReferences 교차 참조 검증
+func (c *UnifiedConfig) validateCrossReferences() error {
+	// 메트릭 포트와 서버 포트 중복 확인
+	if c.Metrics.Enabled && c.Metrics.Port != 0 && c.Metrics.Port == c.Server.Port {
+		return &ValidationError{
+			Field:   "metrics.port",
+			Message: "메트릭 포트가 서버 포트와 중복됨",
+			Value:   c.Metrics.Port,
+		}
+	}
+
+	// TLS 설정 일관성 확인
+	if c.Server.TLS.Enabled {
+		if c.Server.TLS.CertFile == "" || c.Server.TLS.KeyFile == "" {
+			return &ValidationError{
+				Field:   "server.tls",
+				Message: "TLS가 활성화되었으나 필수 파일이 누락됨",
+				Value:   c.Server.TLS,
+			}
+		}
+	}
+
+	// 캐시 백엔드별 필수 설정 확인
+	switch c.Cache.Backend {
+	case "s3":
+		if c.Cache.S3.Bucket == "" || c.Cache.S3.Region == "" {
+			return &ValidationError{
+				Field:   "cache.s3",
+				Message: "S3 캐시 백엔드 필수 설정 누락",
+				Value:   c.Cache.S3,
+			}
+		}
+	case "redis":
+		if c.Cache.Redis.Address == "" {
+			return &ValidationError{
+				Field:   "cache.redis.address",
+				Message: "Redis 캐시 백엔드 주소 누락",
+				Value:   c.Cache.Redis.Address,
+			}
+		}
+	}
+
+	// 인증 설정과 보안 설정 일관성
+	if c.Security.Authentication.BasicAuth.Enabled != nil && *c.Security.Authentication.BasicAuth.Enabled && len(c.Security.AccessControl.Permissions) == 0 {
+		return &ValidationError{
+			Field:   "security.access_control.permissions",
+			Message: "인증이 활성화되었으나 권한 설정이 누락됨",
+			Value:   c.Security.AccessControl.Permissions,
+		}
+	}
+
+	return nil
+}
+
+// validatePerformanceSettings 성능 설정 검증
+func (c *UnifiedConfig) validatePerformanceSettings() error {
+	// 연결 설정 일관성 확인
+	if c.Advanced.Performance.MaxConnections < c.Advanced.Performance.MaxIdleConnections {
+		return &ValidationError{
+			Field:   "advanced.performance.max_idle_connections",
+			Message: "최대 유휴 연결 수가 최대 연결 수를 초과함",
+			Value:   c.Advanced.Performance.MaxIdleConnections,
+		}
+	}
+
+	// 타임아웃 설정 검증
+	if c.Server.ReadTimeout > 0 && c.Server.WriteTimeout > 0 {
+		if c.Server.ReadTimeout > c.Server.IdleTimeout {
+			return &ValidationError{
+				Field:   "server.read_timeout",
+				Message: "읽기 타임아웃이 유휴 타임아웃보다 김",
+				Value:   c.Server.ReadTimeout,
+			}
+		}
+	}
+
+	// 캐시 크기와 TTL 균형 확인
+	if c.Cache.TTL > 0 && c.Cache.CleanupInterval > 0 {
+		if c.Cache.CleanupInterval > c.Cache.TTL*2 {
+			return &ValidationError{
+				Field:   "cache.cleanup_interval",
+				Message: "캐시 정리 주기가 TTL에 비해 너무 김",
+				Value:   c.Cache.CleanupInterval,
+			}
+		}
+	}
+
+	// 재시도 설정 검증
+	if c.Advanced.Retry.MaxAttempts > 10 {
+		return &ValidationError{
+			Field:   "advanced.retry.max_attempts",
+			Message: "재시도 횟수가 너무 많음 (최대 10회 권장)",
+			Value:   c.Advanced.Retry.MaxAttempts,
+		}
+	}
+
+	if c.Advanced.Retry.MaxDelay < c.Advanced.Retry.InitialDelay {
+		return &ValidationError{
+			Field:   "advanced.retry.max_delay",
+			Message: "최대 지연시간이 초기 지연시간보다 작음",
+			Value:   c.Advanced.Retry.MaxDelay,
+		}
+	}
+
+	return nil
+}
+
+// validateSecuritySettings 보안 설정 검증
+func (c *UnifiedConfig) validateSecuritySettings() error {
+	// TLS 버전 보안 확인
+	if c.Server.TLS.Enabled && c.Server.TLS.MinVersion != "" {
+		validVersions := map[string]bool{
+			"TLS1.2": true,
+			"TLS1.3": true,
+		}
+		if !validVersions[c.Server.TLS.MinVersion] {
+			return &ValidationError{
+				Field:   "server.tls.min_version",
+				Message: "안전하지 않은 TLS 버전 (TLS 1.2 이상 권장)",
+				Value:   c.Server.TLS.MinVersion,
+			}
+		}
+	}
+
+	// IP 화이트리스트 검증
+	if c.Security.AccessControl.IPWhitelist.Enabled {
+		for _, ip := range c.Security.AccessControl.IPWhitelist.IPs {
+			if ValidateIP(ip) != nil {
+				return &ValidationError{
+					Field:   "security.access_control.ip_whitelist.ips",
+					Message: fmt.Sprintf("유효하지 않은 IP 주소: %s", ip),
+					Value:   ip,
+				}
+			}
+		}
+
+		for _, cidr := range c.Security.AccessControl.IPWhitelist.CIDRs {
+			if ValidateCIDR(cidr) != nil {
+				return &ValidationError{
+					Field:   "security.access_control.ip_whitelist.cidrs",
+					Message: fmt.Sprintf("유효하지 않은 CIDR 블록: %s", cidr),
+					Value:   cidr,
+				}
+			}
+		}
+	}
+
+	// 패키지 필터 규칙 검증
+	if c.Security.PackageFilter.Enabled {
+		validModes := map[string]bool{
+			"allowlist": true,
+			"blocklist": true,
+		}
+		if !validModes[c.Security.PackageFilter.Mode] {
+			return &ValidationError{
+				Field:   "security.package_filter.mode",
+				Message: "유효하지 않은 필터 모드 (allowlist, blocklist만 허용)",
+				Value:   c.Security.PackageFilter.Mode,
+			}
+		}
+
+		for _, rule := range c.Security.PackageFilter.Rules {
+			validActions := map[string]bool{
+				"allow": true,
+				"deny":  true,
+			}
+			if !validActions[rule.Action] {
+				return &ValidationError{
+					Field:   "security.package_filter.rules.action",
+					Message: "유효하지 않은 필터 액션 (allow, deny만 허용)",
+					Value:   rule.Action,
+				}
+			}
+		}
+	}
+
+	// 권한 규칙 검증
+	for i, rule := range c.Security.AccessControl.Permissions {
+		validActions := map[string]bool{
+			"read":   true,
+			"write":  true,
+			"delete": true,
+		}
+		for _, action := range rule.Actions {
+			if !validActions[action] {
+				return &ValidationError{
+					Field:   fmt.Sprintf("security.access_control.permissions[%d].actions", i),
+					Message: fmt.Sprintf("유효하지 않은 권한 액션: %s", action),
+					Value:   action,
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+// ValidateConfigEnhanced 전역 설정 검증 함수 (향상된 버전)
+func ValidateConfigEnhanced(config *UnifiedConfig) []ValidationError {
+	var errors []ValidationError
+
+	// 기본 검증
+	if err := config.Validate(); err != nil {
+		if validationErr, ok := err.(*ValidationError); ok {
+			errors = append(errors, *validationErr)
+		} else {
+			errors = append(errors, ValidationError{
+				Field:   "general",
+				Message: err.Error(),
+				Value:   nil,
+			})
+		}
+	}
+
+	// 스키마 검증기를 사용한 추가 검증
+	validator := NewSchemaValidator()
+	result := validator.Validate(config)
+	
+	for _, validationError := range result.Errors {
+		errors = append(errors, validationError)
+	}
+
+	return errors
+}
+
+// GetValidationWarnings 설정 검증 경고 반환
+func GetValidationWarnings(config *UnifiedConfig) []ValidationWarning {
+	validator := NewSchemaValidator()
+	result := validator.Validate(config)
+	return result.Warnings
+}
+
+// ApplyDefaults 기본값 적용
+func (c *UnifiedConfig) ApplyDefaults() {
+	// 서버 기본값
+	if c.Server.Host == "" {
+		c.Server.Host = "0.0.0.0"
+	}
+	if c.Server.Port == 0 {
+		c.Server.Port = 8080
+	}
+	if c.Server.ReadTimeout == 0 {
+		c.Server.ReadTimeout = 30 * time.Second
+	}
+	if c.Server.WriteTimeout == 0 {
+		c.Server.WriteTimeout = 30 * time.Second
+	}
+	if c.Server.IdleTimeout == 0 {
+		c.Server.IdleTimeout = 120 * time.Second
+	}
+
+	// TLS 기본값
+	if c.Server.TLS.MinVersion == "" {
+		c.Server.TLS.MinVersion = "TLS1.2"
+	}
+
+	// 캐시 기본값
+	if c.Cache.Backend == "" {
+		c.Cache.Backend = "file"
+	}
+	if c.Cache.TTL == 0 {
+		c.Cache.TTL = 3600 * time.Second
+	}
+	if c.Cache.MaxSize == "" {
+		c.Cache.MaxSize = "10GB"
+	}
+	if c.Cache.CleanupInterval == 0 {
+		c.Cache.CleanupInterval = 1 * time.Hour
+	}
+	if c.Cache.EvictionPolicy == "" {
+		c.Cache.EvictionPolicy = "lru"
+	}
+
+	// 로깅 기본값
+	if c.Logging.Level == "" {
+		c.Logging.Level = "info"
+	}
+	if c.Logging.Format == "" {
+		c.Logging.Format = "json"
+	}
+	if c.Logging.Output == "" {
+		c.Logging.Output = "stdout"
+	}
+
+	// 메트릭 기본값
+	if c.Metrics.Path == "" {
+		c.Metrics.Path = "/metrics"
+	}
+
+	// 성능 기본값
+	if c.Advanced.Performance.MaxConnections == 0 {
+		c.Advanced.Performance.MaxConnections = 1000
+	}
+	if c.Advanced.Performance.MaxIdleConnections == 0 {
+		c.Advanced.Performance.MaxIdleConnections = 100
+	}
+	if c.Advanced.Performance.ConnectionTimeout == 0 {
+		c.Advanced.Performance.ConnectionTimeout = 30 * time.Second
+	}
+	if c.Advanced.Performance.KeepAlive == 0 {
+		c.Advanced.Performance.KeepAlive = 30 * time.Second
+	}
+	if c.Advanced.Performance.BufferSize == 0 {
+		c.Advanced.Performance.BufferSize = 4096
+	}
+
+	// 재시도 기본값
+	if c.Advanced.Retry.MaxAttempts == 0 {
+		c.Advanced.Retry.MaxAttempts = 3
+	}
+	if c.Advanced.Retry.InitialDelay == 0 {
+		c.Advanced.Retry.InitialDelay = 1 * time.Second
+	}
+	if c.Advanced.Retry.MaxDelay == 0 {
+		c.Advanced.Retry.MaxDelay = 30 * time.Second
+	}
+	if c.Advanced.Retry.Multiplier == 0 {
+		c.Advanced.Retry.Multiplier = 2.0
+	}
+
+	// 회로 차단기 기본값
+	if c.Advanced.CircuitBreaker.FailureThreshold == 0 {
+		c.Advanced.CircuitBreaker.FailureThreshold = 5
+	}
+	if c.Advanced.CircuitBreaker.SuccessThreshold == 0 {
+		c.Advanced.CircuitBreaker.SuccessThreshold = 2
+	}
+	if c.Advanced.CircuitBreaker.Timeout == 0 {
+		c.Advanced.CircuitBreaker.Timeout = 60 * time.Second
+	}
+}
+
+// Clone 설정 복사본 생성
+func (c *UnifiedConfig) Clone() (*UnifiedConfig, error) {
+	// JSON을 통한 딥 카피
+	data, err := json.Marshal(c)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal config: %w", err)
+	}
+
+	var clone UnifiedConfig
+	if err := json.Unmarshal(data, &clone); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal config: %w", err)
+	}
+
+	return &clone, nil
+}
+
+// Diff 설정 차이점 반환
+func (c *UnifiedConfig) Diff(other *UnifiedConfig) ([]ConfigDiff, error) {
+	// 간단한 필드별 비교 (실제로는 더 정교한 diff 알고리즘 필요)
+	var diffs []ConfigDiff
+
+	if c.Server.Port != other.Server.Port {
+		diffs = append(diffs, ConfigDiff{
+			Field:    "server.port",
+			OldValue: c.Server.Port,
+			NewValue: other.Server.Port,
+		})
+	}
+
+	if c.Server.Host != other.Server.Host {
+		diffs = append(diffs, ConfigDiff{
+			Field:    "server.host",
+			OldValue: c.Server.Host,
+			NewValue: other.Server.Host,
+		})
+	}
+
+	if c.Cache.Backend != other.Cache.Backend {
+		diffs = append(diffs, ConfigDiff{
+			Field:    "cache.backend",
+			OldValue: c.Cache.Backend,
+			NewValue: other.Cache.Backend,
+		})
+	}
+
+	if c.Logging.Level != other.Logging.Level {
+		diffs = append(diffs, ConfigDiff{
+			Field:    "logging.level",
+			OldValue: c.Logging.Level,
+			NewValue: other.Logging.Level,
+		})
+	}
+
+	return diffs, nil
+}
+
+// ConfigDiff 설정 차이점
+type ConfigDiff struct {
+	Field    string      `json:"field"`
+	OldValue interface{} `json:"old_value"`
+	NewValue interface{} `json:"new_value"`
+}
+
+// IsProductionReady 프로덕션 준비 상태 확인
+func (c *UnifiedConfig) IsProductionReady() (bool, []string) {
+	var issues []string
+
+	// TLS 확인
+	if !c.Server.TLS.Enabled {
+		issues = append(issues, "TLS가 비활성화되어 있음")
+	}
+
+	// 인증 확인
+	if c.Security.Authentication.BasicAuth.Enabled == nil || !*c.Security.Authentication.BasicAuth.Enabled {
+		issues = append(issues, "인증이 비활성화되어 있음")
+	}
+
+	// 로그 레벨 확인
+	if c.Logging.Level == "debug" {
+		issues = append(issues, "디버그 로그 레벨이 설정되어 있음")
+	}
+
+	// 메트릭 확인
+	if !c.Metrics.Enabled {
+		issues = append(issues, "메트릭 수집이 비활성화되어 있음")
+	}
+
+	// 기본 비밀번호나 키 확인
+	// 실제 구현에서는 더 정교한 보안 검사 필요
+
+	return len(issues) == 0, issues
 }
