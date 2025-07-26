@@ -7,7 +7,7 @@
 
 .PHONY: fmt lint format security security-code security-deps analyze analyze-complexity analyze-unused
 .PHONY: quality quality-fix lint-fix lint-new lint-ci format-quick format-strict format-list format-diff
-.PHONY: format-file install-golangci-lint install-format-tools
+.PHONY: format-file format-env install-golangci-lint install-format-tools
 .PHONY: lint-summary lint-status lint-json lint-quick lint-dev lint-precommit lint-file
 .PHONY: vet install-vet-tools
 
@@ -51,9 +51,6 @@ format-list: ## show files that need formatting
 		echo -e "$(GREEN)✅ All files are properly formatted!$(RESET)"; \
 	fi
 
-lint-new: install-golangci-lint ## run golangci-lint on new code only
-	@echo "Running golangci-lint on new code only..."
-	golangci-lint run --new-from-rev=HEAD~ ./...
 format-diff: ## show formatting differences
 	@echo -e "$(CYAN)📝 Formatting differences:$(RESET)"
 	@DIFF_OUTPUT=$$(gofmt -d .); \
@@ -100,6 +97,72 @@ format-file: ## format specific files with gofumpt and goimports (usage: make fo
 # Handle additional arguments as targets (to prevent make errors)
 %:
 	@:
+
+# Format files from environment variable
+format-env: ## format files specified in FILES environment variable (usage: FILES="file1.go file2.go" make format-env)
+	@if [ -z "$(FILES)" ]; then \
+		echo "$(RED)❌ Error: FILES environment variable must be set$(RESET)"; \
+		echo "$(YELLOW)Usage: FILES=\"file1.go file2.go\" make format-env$(RESET)"; \
+		exit 1; \
+	fi
+	@echo "$(CYAN)🔄 Processing files from FILES variable...$(RESET)"
+	@for file in $(FILES); do \
+		if [ -n "$$file" ]; then \
+			if [ ! -f "$$file" ]; then \
+				echo "$(RED)❌ Error: File '$$file' does not exist$(RESET)"; \
+				continue; \
+			fi; \
+			if ! echo "$$file" | grep -q "\.go$$"; then \
+				echo "$(YELLOW)⚠️  Warning: File '$$file' is not a Go file (.go extension), skipping$(RESET)"; \
+				continue; \
+			fi; \
+			echo "$(CYAN)📝 Formatting file: $$file$(RESET)"; \
+			echo "  1. Running gofumpt..."; \
+			gofumpt -w "$$file" || echo "$(RED)❌ gofumpt failed for $$file$(RESET)"; \
+			echo "  2. Running goimports..."; \
+			goimports -w -local proxynd "$$file" || echo "$(RED)❌ goimports failed for $$file$(RESET)"; \
+			echo "$(GREEN)✅ File '$$file' formatted successfully!$(RESET)"; \
+		fi; \
+	done
+	@echo "$(GREEN)🎉 All files processed!$(RESET)"
+
+# ==============================================================================
+# Multi-Language Formatter
+# ==============================================================================
+
+.PHONY: format-multi format-multi-env format-multi-install format-multi-list
+
+# Build the multi-language formatter if needed
+bin/format-multi:
+	@echo "$(CYAN)Building format-multi tool...$(RESET)"
+	@cd cmd/format-multi && go build -o ../../bin/format-multi
+	@echo "$(GREEN)✅ format-multi built$(RESET)"
+
+format-multi: bin/format-multi ## format files using multi-language formatter (auto-detects file types)
+	@if [ -z "$(filter-out format-multi,$(MAKECMDGOALS))" ]; then \
+		echo "$(RED)❌ Error: At least one file must be specified$(RESET)"; \
+		echo "$(YELLOW)Usage: make format-multi file1.go file2.py file3.js ...$(RESET)"; \
+		exit 1; \
+	fi
+	@./bin/format-multi $(filter-out format-multi,$(MAKECMDGOALS))
+
+format-multi-env: bin/format-multi ## format files using FILES or CLAUDE_FILES environment variable
+	@if [ -n "$(FILES)" ]; then \
+		./bin/format-multi $(FILES); \
+	elif [ -n "$$CLAUDE_FILES" ]; then \
+		./bin/format-multi $$CLAUDE_FILES; \
+	else \
+		echo "$(RED)❌ Error: FILES or CLAUDE_FILES environment variable must be set$(RESET)"; \
+		echo "$(YELLOW)Usage: FILES='file1.go file2.py' make format-multi-env$(RESET)"; \
+		echo "$(YELLOW)Or: CLAUDE_FILES='file1.go file2.py' make format-multi-env$(RESET)"; \
+		exit 1; \
+	fi
+
+format-multi-install: bin/format-multi ## install all multi-language formatters
+	@./bin/format-multi -install
+
+format-multi-list: bin/format-multi ## list supported file formats
+	@./bin/format-multi -list
 
 # ==============================================================================
 # Enhanced Linting Workflow (vet + golangci-lint + gosec)
