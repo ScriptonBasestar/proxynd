@@ -4,6 +4,8 @@ order: 9
 source_plan: /docs/refactoring/04-test-coverage.md
 priority: medium
 tags: [testing, integration-tests, e2e, performance]
+status: suspended
+reason: 실제 통합 테스트 코드 작성이 필요한 개발 작업
 ---
 
 # 📌 작업: 통합 테스트 및 E2E 테스트 구현

@@ -4,6 +4,8 @@ order: 8
 source_plan: /docs/refactoring/04-test-coverage.md
 priority: high
 tags: [testing, unit-tests, handlers, coverage]
+status: suspended
+reason: 실제 테스트 코드 작성이 필요한 개발 작업
 ---
 
 # 📌 작업: 핸들러 단위 테스트 작성
