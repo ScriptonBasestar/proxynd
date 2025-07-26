@@ -55,11 +55,6 @@ func Background() context.Context {
 	return context.Background()
 }
 
-// TODO 향후 구현 예정인 기능에 대한 컨텍스트
-func TODO() context.Context {
-	return context.TODO()
-}
-
 // IsContextDone 컨텍스트가 취소되었는지 확인
 func IsContextDone(ctx context.Context) bool {
 	select {
