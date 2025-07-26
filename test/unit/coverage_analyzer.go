@@ -71,7 +71,7 @@ func NewCoverageAnalyzer(projectRoot string) *CoverageAnalyzer {
 			"vendor/",
 			".git/",
 			"test/",
-			"tests/",
+			"test/",
 			"_test.go",
 			"mocks/",
 			"cmd/",
