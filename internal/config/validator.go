@@ -1,136 +1,197 @@
 package config
 
 import (
-	"errors"
 	"fmt"
-	"math/rand"
-	"os"
+	"log"
 	"strings"
-	"time"
+
+	"github.com/go-playground/validator/v10"
 )
 
-// RequiredEnvVars 필수 환경 변수 목록
-var RequiredEnvVars = []string{
-	"JWT_SECRET",
+// validator is the shared validator instance
+var validate *validator.Validate
+
+func init() {
+	var err error
+	validate, err = createValidator()
+	if err != nil {
+		log.Fatalf("Failed to initialize validator: %v", err)
+	}
 }
 
-// ConditionalEnvVars 조건부 필수 환경 변수 (OAuth2 활성화 시)
-var ConditionalEnvVars = map[string][]string{
-	"oauth2_enabled": {
-		"OAUTH_GITHUB_CLIENT_ID",
-		"OAUTH_GITHUB_CLIENT_SECRET",
-	},
+// createValidator creates and configures a new validator instance
+func createValidator() (*validator.Validate, error) {
+	v := validator.New()
+
+	// Register custom validators
+	if err := v.RegisterValidation("duration", validateDuration); err != nil {
+		return nil, fmt.Errorf("failed to register duration validator: %w", err)
+	}
+	if err := v.RegisterValidation("url", validateURL); err != nil {
+		return nil, fmt.Errorf("failed to register url validator: %w", err)
+	}
+	if err := v.RegisterValidation("path", validatePath); err != nil {
+		return nil, fmt.Errorf("failed to register path validator: %w", err)
+	}
+	if err := v.RegisterValidation("port", validatePort); err != nil {
+		return nil, fmt.Errorf("failed to register port validator: %w", err)
+	}
+
+	return v, nil
 }
 
-// ValidateRequiredEnvVars 필수 환경 변수 검증
-func ValidateRequiredEnvVars() error {
-	var missing []string
-
-	for _, env := range RequiredEnvVars {
-		if os.Getenv(env) == "" {
-			missing = append(missing, env)
-		}
+// ValidateStruct validates a struct using struct tags
+func ValidateStruct(s interface{}) error {
+	if err := validate.Struct(s); err != nil {
+		return formatValidationError(err)
 	}
-
-	if len(missing) > 0 {
-		return fmt.Errorf("missing required environment variables: %s",
-			strings.Join(missing, ", "))
-	}
-
 	return nil
 }
 
-// ValidateConditionalEnvVars 조건부 환경 변수 검증
-func ValidateConditionalEnvVars() error {
-	// OAuth2 활성화 여부 확인
-	if os.Getenv("OAUTH_ENABLED") == "true" {
-		var missing []string
+// formatValidationError formats validation errors into readable messages
+func formatValidationError(err error) error {
+	if err == nil {
+		return nil
+	}
 
-		for _, env := range ConditionalEnvVars["oauth2_enabled"] {
-			if os.Getenv(env) == "" {
-				missing = append(missing, env)
+	validationErrs, ok := err.(validator.ValidationErrors)
+	if !ok {
+		return err
+	}
+
+	var messages []string
+	for _, e := range validationErrs {
+		field := e.Field()
+		tag := e.Tag()
+		param := e.Param()
+
+		switch tag {
+		case "required":
+			messages = append(messages, fmt.Sprintf("%s is required", field))
+		case "min":
+			messages = append(messages, fmt.Sprintf("%s must be at least %s", field, param))
+		case "max":
+			messages = append(messages, fmt.Sprintf("%s must be at most %s", field, param))
+		case "url":
+			messages = append(messages, fmt.Sprintf("%s must be a valid URL", field))
+		case "duration":
+			messages = append(messages, fmt.Sprintf("%s must be a valid duration", field))
+		case "path":
+			messages = append(messages, fmt.Sprintf("%s must be a valid path", field))
+		case "port":
+			messages = append(messages, fmt.Sprintf("%s must be a valid port (1-65535)", field))
+		case "oneof":
+			messages = append(messages, fmt.Sprintf("%s must be one of: %s", field, param))
+		default:
+			messages = append(messages, fmt.Sprintf("%s failed validation: %s", field, tag))
+		}
+	}
+
+	return fmt.Errorf("validation failed: %s", strings.Join(messages, "; "))
+}
+
+// Custom validators
+
+// validateDuration validates duration strings
+func validateDuration(fl validator.FieldLevel) bool {
+	value := fl.Field().String()
+	if value == "" {
+		return true // Allow empty, use required tag if needed
+	}
+
+	// Simple duration validation - check for common patterns
+	// Format: number + unit (s, m, h, d)
+	if len(value) < 2 {
+		return false
+	}
+
+	// Check if it ends with valid unit
+	validUnits := []string{"ns", "us", "µs", "ms", "s", "m", "h", "d"}
+	for _, unit := range validUnits {
+		if strings.HasSuffix(value, unit) {
+			// Check if the rest is a number
+			numPart := strings.TrimSuffix(value, unit)
+			if numPart == "" {
+				return false
 			}
-		}
-
-		if len(missing) > 0 {
-			return fmt.Errorf("OAuth2 is enabled but missing required variables: %s",
-				strings.Join(missing, ", "))
-		}
-	}
-
-	return nil
-}
-
-// LoadSecureConfig 보안 설정 로드 및 검증
-func LoadSecureConfig() error {
-	// 필수 환경 변수 검증
-	if err := ValidateRequiredEnvVars(); err != nil {
-		return err
-	}
-
-	// 조건부 환경 변수 검증
-	if err := ValidateConditionalEnvVars(); err != nil {
-		return err
-	}
-
-	// JWT 시크릿 길이 검증
-	jwtSecret := os.Getenv("JWT_SECRET")
-	if len(jwtSecret) < 32 {
-		return errors.New("JWT_SECRET must be at least 32 characters")
-	}
-
-	// 개발 환경에서 기본 비밀번호 사용 확인
-	if strings.Contains(jwtSecret, "your-jwt-secret") ||
-		strings.Contains(jwtSecret, "default") ||
-		strings.Contains(jwtSecret, "example") {
-		return errors.New("please change JWT_SECRET from default value")
-	}
-
-	return nil
-}
-
-// GenerateSecureKey 안전한 키 생성 도구
-func GenerateSecureKey() (string, error) {
-	// 시간 기반 시드로 랜덤 생성
-	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
-
-	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*"
-	key := make([]byte, 64) // 64자 길이의 키 생성
-
-	for i := range key {
-		key[i] = charset[rng.Intn(len(charset))]
-	}
-
-	return string(key), nil
-}
-
-// ValidateEnvironment 전체 환경 검증
-func ValidateEnvironment() error {
-	// 환경 설정 로드
-	if err := LoadSecureConfig(); err != nil {
-		return fmt.Errorf("환경 검증 실패: %w", err)
-	}
-
-	// 추가 보안 검사들
-	if err := validateSecuritySettings(); err != nil {
-		return fmt.Errorf("보안 설정 검증 실패: %w", err)
-	}
-
-	return nil
-}
-
-// validateSecuritySettings 보안 설정 검증
-func validateSecuritySettings() error {
-	// 프로덕션 환경에서 디버그 모드 비활성화 확인
-	if os.Getenv("PROXYND_ENV") == "production" {
-		if os.Getenv("LOG_LEVEL") == "debug" {
-			return errors.New("production 환경에서는 LOG_LEVEL을 debug로 설정하면 안됩니다")
-		}
-
-		if os.Getenv("TLS_ENABLED") != "true" {
-			return errors.New("production 환경에서는 TLS를 활성화해야 합니다")
+			// Simple numeric check
+			for _, ch := range numPart {
+				if ch < '0' || ch > '9' {
+					if ch != '.' {
+						return false
+					}
+				}
+			}
+			return true
 		}
 	}
 
-	return nil
+	return false
+}
+
+// validateURL validates URL strings
+func validateURL(fl validator.FieldLevel) bool {
+	value := fl.Field().String()
+	if value == "" {
+		return true // Allow empty, use required tag if needed
+	}
+
+	// Basic URL validation
+	if !strings.HasPrefix(value, "http://") && !strings.HasPrefix(value, "https://") {
+		return false
+	}
+
+	// Check for basic structure
+	parts := strings.Split(value, "://")
+	if len(parts) != 2 {
+		return false
+	}
+
+	// Check if there's something after the protocol
+	if len(parts[1]) < 3 { // at least "a.b"
+		return false
+	}
+
+	return true
+}
+
+// validatePath validates file system paths
+func validatePath(fl validator.FieldLevel) bool {
+	value := fl.Field().String()
+	if value == "" {
+		return true // Allow empty, use required tag if needed
+	}
+
+	// Path should not contain null bytes
+	if strings.Contains(value, "\x00") {
+		return false
+	}
+
+	// Basic path validation - just ensure it's not obviously invalid
+	// More complex validation would require OS-specific checks
+	return true
+}
+
+// validatePort validates port numbers
+func validatePort(fl validator.FieldLevel) bool {
+	value := fl.Field().Int()
+	return value >= 1 && value <= 65535
+}
+
+// ValidationError represents a validation error with detailed information
+type ValidationError struct {
+	Field   string
+	Message string
+	Value   interface{}
+}
+
+// Error performs error operation
+func (e *ValidationError) Error() string {
+	return fmt.Sprintf("validation failed for field '%s': %s (value: %v)",
+		e.Field, e.Message, e.Value)
+}
+
+// Validatable interface for configs that implement their own validation
+type Validatable interface {
+	Validate() error
 }
