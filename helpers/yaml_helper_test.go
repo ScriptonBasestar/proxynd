@@ -10,6 +10,6 @@ func TestReadYaml(_ *testing.T) {
 		Server map[string]interface{} `yaml:"server"`
 	}
 	cfg.Server = map[string]interface{}{}
-	ReadYaml("../sample-conf/maven-proxy.yaml", cfg)
+	ReadYaml("../examples/maven-proxy.yaml", cfg)
 	fmt.Println(cfg)
 }
