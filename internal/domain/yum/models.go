@@ -3,7 +3,7 @@ package yum
 import (
 	"time"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 )
 
 // PackageRequest YUM 패키지 요청
@@ -99,21 +99,21 @@ type RequestMetrics struct {
 type ProxyConfig interface {
 	GetPath() string
 	GetUseCache() bool
-	GetProxies() []configs.YumProxy
+	GetProxies() []config.YumProxy
 	GetCacheTTL() time.Duration
 	GetMaxCacheSize() int64
 	GetRepoMetadataTTL() time.Duration
 	GetRpmFileTTL() time.Duration
 }
 
-// defaultProxyConfig configs.YumProxyConfig를 ProxyConfig 인터페이스로 래핑
+// defaultProxyConfig config.YumProxyConfig를 ProxyConfig 인터페이스로 래핑
 type defaultProxyConfig struct {
-	config  *configs.YumProxyConfig
+	config  *config.YumProxyConfig
 	baseDir string
 }
 
 // NewDefaultProxyConfig 기본 프록시 설정 어댑터 생성
-func NewDefaultProxyConfig(config *configs.YumProxyConfig, baseDir string) ProxyConfig {
+func NewDefaultProxyConfig(config *config.YumProxyConfig, baseDir string) ProxyConfig {
 	return &defaultProxyConfig{
 		config:  config,
 		baseDir: baseDir,
@@ -128,7 +128,7 @@ func (c *defaultProxyConfig) GetUseCache() bool {
 	return c.config.UseCache
 }
 
-func (c *defaultProxyConfig) GetProxies() []configs.YumProxy {
+func (c *defaultProxyConfig) GetProxies() []config.YumProxy {
 	return c.config.Proxies
 }
 

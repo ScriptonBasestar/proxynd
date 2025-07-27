@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 )
 
 // BenchmarkConfigLoading 설정 로딩 성능 벤치마크
@@ -24,7 +24,7 @@ func BenchmarkConfigLoading(b *testing.B) {
 		b.ReportAllocs()
 
 		for i := 0; i < b.N; i++ {
-			config := &configs.GlobalConfig{}
+			config := &config.GlobalConfig{}
 			err := config.ReadConfig()
 			require.NoError(b, err)
 		}
@@ -35,7 +35,7 @@ func BenchmarkConfigLoading(b *testing.B) {
 		b.ReportAllocs()
 
 		for i := 0; i < b.N; i++ {
-			config := &configs.AptProxyConfig{}
+			config := &config.AptProxyConfig{}
 			err := config.ReadConfig()
 			require.NoError(b, err)
 		}
@@ -46,7 +46,7 @@ func BenchmarkConfigLoading(b *testing.B) {
 		b.ReportAllocs()
 
 		for i := 0; i < b.N; i++ {
-			config := &configs.MavenProxyConfig{}
+			config := &config.MavenProxyConfig{}
 			err := config.ReadConfig()
 			require.NoError(b, err)
 		}
@@ -57,7 +57,7 @@ func BenchmarkConfigLoading(b *testing.B) {
 		b.ReportAllocs()
 
 		for i := 0; i < b.N; i++ {
-			config := &configs.NpmProxyConfig{}
+			config := &config.NpmProxyConfig{}
 			err := config.ReadConfig()
 			require.NoError(b, err)
 		}
@@ -70,7 +70,7 @@ func BenchmarkConfigLoading(b *testing.B) {
 		b.ReportAllocs()
 
 		for i := 0; i < b.N; i++ {
-			config, err := configs.LoadConfig(configPath)
+			config, err := config.LoadConfig(configPath)
 			require.NoError(b, err)
 			_ = config
 		}
@@ -116,7 +116,7 @@ func BenchmarkConfigHotReload(b *testing.B) {
 	configDir := b.TempDir()
 	setupConfigFiles(b, configDir)
 
-	loader := configs.NewConfigLoader(filepath.Join(configDir, "unified.yaml"))
+	loader := config.NewConfigLoader(filepath.Join(configDir, "unified.yaml"))
 
 	// 초기 로드
 	_, err := loader.Load()
@@ -151,7 +151,7 @@ func BenchmarkConfigCaching(b *testing.B) {
 	configDir := b.TempDir()
 	setupConfigFiles(b, configDir)
 
-	config := &configs.GlobalConfig{}
+	config := &config.GlobalConfig{}
 	err := config.ReadConfig()
 	require.NoError(b, err)
 
@@ -212,7 +212,7 @@ func BenchmarkConfigSerialization(b *testing.B) {
 		b.ReportAllocs()
 
 		for i := 0; i < b.N; i++ {
-			var config configs.UnifiedConfig
+			var config config.UnifiedConfig
 			// YAML 언마샬링 시뮬레이션
 			_ = yamlData
 			_ = config
@@ -391,43 +391,43 @@ registries:
 	_ = os.Setenv("CONFIG_DIR", configDir)
 }
 
-func generateLargeConfig(_, numMirrors, numRepos int) *configs.UnifiedConfig {
-	config := &configs.UnifiedConfig{
-		Server: configs.ServerConfig{
+func generateLargeConfig(_, numMirrors, numRepos int) *config.UnifiedConfig {
+	config := &config.UnifiedConfig{
+		Server: config.ServerConfig{
 			Host:         "0.0.0.0",
 			Port:         8080,
 			ReadTimeout:  30 * time.Second,
 			WriteTimeout: 30 * time.Second,
 		},
-		Cache: configs.CacheConfig{
+		Cache: config.CacheConfig{
 			Backend:  "file",
 			TTL:      time.Hour,
 			MaxSize:  "10GB",
 			MaxItems: 100000,
-			File: configs.FileCacheConfig{
+			File: config.FileCacheConfig{
 				Directory: "/tmp/cache",
 			},
 		},
-		Registries: configs.RegistryConfig{
-			NPM: configs.NPMRegistryConfig{
+		Registries: config.RegistryConfig{
+			NPM: config.NPMRegistryConfig{
 				Enabled:  true,
 				Upstream: "https://registry.npmjs.org",
 				Timeout:  30 * time.Second,
 			},
-			Maven: configs.MavenRegistryConfig{
+			Maven: config.MavenRegistryConfig{
 				Enabled:      true,
-				Repositories: make([]configs.MavenRepositoryConfig, numRepos),
+				Repositories: make([]config.MavenRepositoryConfig, numRepos),
 			},
-			APT: configs.APTRegistryConfig{
+			APT: config.APTRegistryConfig{
 				Enabled: true,
-				Mirrors: make(map[string][]configs.APTMirror),
+				Mirrors: make(map[string][]config.APTMirror),
 			},
 		},
 	}
 
 	// Maven 리포지토리 생성
 	for i := 0; i < numRepos; i++ {
-		config.Registries.Maven.Repositories[i] = configs.MavenRepositoryConfig{
+		config.Registries.Maven.Repositories[i] = config.MavenRepositoryConfig{
 			ID:        fmt.Sprintf("repo-%d", i),
 			Name:      fmt.Sprintf("Repository %d", i),
 			URL:       fmt.Sprintf("https://repo%d.example.com/maven2", i),
@@ -439,9 +439,9 @@ func generateLargeConfig(_, numMirrors, numRepos int) *configs.UnifiedConfig {
 	// APT 미러 생성
 	distros := []string{"ubuntu", "debian", "centos", "fedora", "opensuse"}
 	for _, distro := range distros {
-		mirrors := make([]configs.APTMirror, numMirrors)
+		mirrors := make([]config.APTMirror, numMirrors)
 		for i := 0; i < numMirrors; i++ {
-			mirrors[i] = configs.APTMirror{
+			mirrors[i] = config.APTMirror{
 				Name:       fmt.Sprintf("%s-mirror-%d", distro, i),
 				URL:        fmt.Sprintf("http://mirror%d.%s.com/%s", i, distro, distro),
 				Suites:     []string{"stable", "testing"},

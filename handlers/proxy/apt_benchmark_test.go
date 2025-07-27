@@ -8,7 +8,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 )
 
 // BenchmarkAPTHandler_CacheKeyGeneration 캐시 키 생성 성능 측정
@@ -113,8 +113,8 @@ func BenchmarkAPTHandler_RequestTransform(b *testing.B) {
 
 // BenchmarkAPTHandler_URLBuildingParallel 병렬 URL 구성 성능 측정
 func BenchmarkAPTHandler_URLBuildingParallel(b *testing.B) {
-	config := &configs.AptProxyConfig{
-		Proxies: map[string][]configs.AptProxy{
+	config := &config.AptProxyConfig{
+		Proxies: map[string][]config.AptProxy{
 			"ubuntu": {
 				{URL: "http://mirror.ubuntu.com/ubuntu"},
 			},

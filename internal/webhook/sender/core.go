@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"proxynd/alerts"
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/internal/webhook/retry"
 	"proxynd/internal/webhook/types"
 	"proxynd/logging"
@@ -15,7 +15,7 @@ import (
 
 // Core 웹훅 전송 핵심 엔진
 type Core struct {
-	config         configs.WebhookConfig
+	config         config.WebhookConfig
 	logger         logging.Logger
 	queue          types.EventQueue
 	rateLimiter    types.RateLimiter
@@ -33,7 +33,7 @@ type Core struct {
 }
 
 // NewCore 새로운 웹훅 전송 코어 생성
-func NewCore(config configs.WebhookConfig) (*Core, error) {
+func NewCore(config config.WebhookConfig) (*Core, error) {
 	logger := logging.GetLogger()
 
 	// 큐 초기화
@@ -327,7 +327,7 @@ func (c *Core) GetHistoryManager() *WebhookHistoryManager {
 
 // sendToEndpoint 특정 엔드포인트로 이벤트 전송 (내부 메서드)
 func (c *Core) sendToEndpoint(
-	ctx context.Context, event *alerts.AlertEvent, endpoint configs.WebhookEndpointConfig,
+	ctx context.Context, event *alerts.AlertEvent, endpoint config.WebhookEndpointConfig,
 ) error {
 	// 이 메서드는 실제 전송 로직을 구현해야 하지만,
 	// 여기서는 간단한 로깅만 수행

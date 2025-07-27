@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"proxynd/alerts"
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/internal/webhook/filtering"
 	"proxynd/internal/webhook/retry"
 	"proxynd/internal/webhook/sender"
@@ -20,7 +20,7 @@ import (
 type WebhookSender struct {
 	core         *sender.Core
 	filter       *filtering.SimpleEventFilter
-	config       configs.WebhookConfig               // 하위 호환성을 위한 config 접근
+	config       config.WebhookConfig               // 하위 호환성을 위한 config 접근
 	wg           sync.WaitGroup                      // 하위 호환성을 위한 WaitGroup
 	adapters     map[string]CompatibleWebhookAdapter // 하위 호환성을 위한 어댑터 맵
 	logger       logging.Logger                      // 하위 호환성을 위한 logger 접근
@@ -32,7 +32,7 @@ type WebhookSender struct {
 }
 
 // NewWebhookSender 새로운 웹훅 전송기 생성
-func NewWebhookSender(config configs.WebhookConfig) (*WebhookSender, error) {
+func NewWebhookSender(config config.WebhookConfig) (*WebhookSender, error) {
 	// 새로운 core 생성
 	core, err := sender.NewCore(config)
 	if err != nil {
@@ -132,13 +132,13 @@ func (ws *WebhookSender) shouldSendEvent(event *alerts.AlertEvent) bool {
 }
 
 // matchesEndpointFilter 엔드포인트별 필터 확인 (하위 호환성을 위한 메서드)
-func (ws *WebhookSender) matchesEndpointFilter(event *alerts.AlertEvent, endpoint configs.WebhookEndpointConfig) bool {
+func (ws *WebhookSender) matchesEndpointFilter(event *alerts.AlertEvent, endpoint config.WebhookEndpointConfig) bool {
 	return ws.filter.MatchesEndpointFilter(event, endpoint)
 }
 
 // sendToEndpoint 특정 엔드포인트로 이벤트 전송 (하위 호환성 메서드)
 func (ws *WebhookSender) sendToEndpoint(
-	ctx context.Context, event *alerts.AlertEvent, endpoint configs.WebhookEndpointConfig,
+	ctx context.Context, event *alerts.AlertEvent, endpoint config.WebhookEndpointConfig,
 ) error {
 	// Core의 내부 메서드를 통해 전송 (실제 구현에서는 더 정교한 위임 필요)
 	return ws.core.SendEventSync(ctx, event)

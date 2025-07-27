@@ -5,30 +5,30 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 )
 
 // TestMavenProxyConfig_Validate tests Maven proxy configuration validation
 func TestMavenProxyConfig_Validate(t *testing.T) {
 	tests := []struct {
 		name        string
-		config      *configs.MavenProxyConfig
+		config      *config.MavenProxyConfig
 		expectError bool
 		errorField  string
 	}{
 		{
 			name: "valid config",
-			config: &configs.MavenProxyConfig{
+			config: &config.MavenProxyConfig{
 				Path:     "proxy/maven",
 				UseCache: true,
-				Proxies: []configs.MavenProxyServer{
+				Proxies: []config.MavenProxyServer{
 					{
 						Name:    "central",
 						URL:     "https://repo1.maven.org/maven2",
 						Enabled: true,
 					},
 				},
-				Cache: configs.MavenProxyCacheConfig{
+				Cache: config.MavenProxyCacheConfig{
 					Enabled: true,
 				},
 			},
@@ -36,9 +36,9 @@ func TestMavenProxyConfig_Validate(t *testing.T) {
 		},
 		{
 			name: "empty path",
-			config: &configs.MavenProxyConfig{
+			config: &config.MavenProxyConfig{
 				Path: "",
-				Proxies: []configs.MavenProxyServer{
+				Proxies: []config.MavenProxyServer{
 					{Name: "central", URL: "https://repo1.maven.org/maven2"},
 				},
 			},
@@ -47,18 +47,18 @@ func TestMavenProxyConfig_Validate(t *testing.T) {
 		},
 		{
 			name: "no proxies",
-			config: &configs.MavenProxyConfig{
+			config: &config.MavenProxyConfig{
 				Path:    "proxy/maven",
-				Proxies: []configs.MavenProxyServer{},
+				Proxies: []config.MavenProxyServer{},
 			},
 			expectError: true,
 			errorField:  "proxies",
 		},
 		{
 			name: "proxy without name",
-			config: &configs.MavenProxyConfig{
+			config: &config.MavenProxyConfig{
 				Path: "proxy/maven",
-				Proxies: []configs.MavenProxyServer{
+				Proxies: []config.MavenProxyServer{
 					{Name: "", URL: "https://repo1.maven.org/maven2"},
 				},
 			},
@@ -67,9 +67,9 @@ func TestMavenProxyConfig_Validate(t *testing.T) {
 		},
 		{
 			name: "proxy without URL",
-			config: &configs.MavenProxyConfig{
+			config: &config.MavenProxyConfig{
 				Path: "proxy/maven",
-				Proxies: []configs.MavenProxyServer{
+				Proxies: []config.MavenProxyServer{
 					{Name: "central", URL: ""},
 				},
 			},
@@ -78,9 +78,9 @@ func TestMavenProxyConfig_Validate(t *testing.T) {
 		},
 		{
 			name: "invalid URL format",
-			config: &configs.MavenProxyConfig{
+			config: &config.MavenProxyConfig{
 				Path: "proxy/maven",
-				Proxies: []configs.MavenProxyServer{
+				Proxies: []config.MavenProxyServer{
 					{Name: "central", URL: "invalid-url"},
 				},
 			},
@@ -89,13 +89,13 @@ func TestMavenProxyConfig_Validate(t *testing.T) {
 		},
 		{
 			name: "username without password",
-			config: &configs.MavenProxyConfig{
+			config: &config.MavenProxyConfig{
 				Path: "proxy/maven",
-				Proxies: []configs.MavenProxyServer{
+				Proxies: []config.MavenProxyServer{
 					{
 						Name: "central",
 						URL:  "https://repo1.maven.org/maven2",
-						BasicAuth: configs.BasicAuth{
+						BasicAuth: config.BasicAuth{
 							Username: "user",
 							Password: "",
 						},
@@ -107,13 +107,13 @@ func TestMavenProxyConfig_Validate(t *testing.T) {
 		},
 		{
 			name: "valid basic auth",
-			config: &configs.MavenProxyConfig{
+			config: &config.MavenProxyConfig{
 				Path: "proxy/maven",
-				Proxies: []configs.MavenProxyServer{
+				Proxies: []config.MavenProxyServer{
 					{
 						Name: "private-repo",
 						URL:  "https://private.maven.org/maven2",
-						BasicAuth: configs.BasicAuth{
+						BasicAuth: config.BasicAuth{
 							Username: "user",
 							Password: "pass",
 						},
@@ -124,9 +124,9 @@ func TestMavenProxyConfig_Validate(t *testing.T) {
 		},
 		{
 			name: "multiple valid proxies",
-			config: &configs.MavenProxyConfig{
+			config: &config.MavenProxyConfig{
 				Path: "proxy/maven",
-				Proxies: []configs.MavenProxyServer{
+				Proxies: []config.MavenProxyServer{
 					{Name: "central", URL: "https://repo1.maven.org/maven2"},
 					{Name: "spring", URL: "https://repo.spring.io/release"},
 					{Name: "jcenter", URL: "https://jcenter.bintray.com"},
@@ -156,12 +156,12 @@ func TestMavenProxyConfig_Validate(t *testing.T) {
 func TestMavenProxyServer_Validation(t *testing.T) {
 	tests := []struct {
 		name   string
-		server configs.MavenProxyServer
+		server config.MavenProxyServer
 		valid  bool
 	}{
 		{
 			name: "valid server",
-			server: configs.MavenProxyServer{
+			server: config.MavenProxyServer{
 				Name:    "central",
 				URL:     "https://repo1.maven.org/maven2",
 				Enabled: true,
@@ -170,7 +170,7 @@ func TestMavenProxyServer_Validation(t *testing.T) {
 		},
 		{
 			name: "server with description",
-			server: configs.MavenProxyServer{
+			server: config.MavenProxyServer{
 				Name:        "central",
 				URL:         "https://repo1.maven.org/maven2",
 				Description: "Maven Central Repository",
@@ -180,7 +180,7 @@ func TestMavenProxyServer_Validation(t *testing.T) {
 		},
 		{
 			name: "server with ID",
-			server: configs.MavenProxyServer{
+			server: config.MavenProxyServer{
 				ID:      "central-repo",
 				Name:    "central",
 				URL:     "https://repo1.maven.org/maven2",
@@ -190,7 +190,7 @@ func TestMavenProxyServer_Validation(t *testing.T) {
 		},
 		{
 			name: "disabled server",
-			server: configs.MavenProxyServer{
+			server: config.MavenProxyServer{
 				Name:    "disabled-repo",
 				URL:     "https://disabled.maven.org/maven2",
 				Enabled: false,
@@ -201,9 +201,9 @@ func TestMavenProxyServer_Validation(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			config := &configs.MavenProxyConfig{
+			config := &config.MavenProxyConfig{
 				Path:    "proxy/maven",
-				Proxies: []configs.MavenProxyServer{tt.server},
+				Proxies: []config.MavenProxyServer{tt.server},
 			}
 
 			err := config.Validate()
@@ -220,17 +220,17 @@ func TestMavenProxyServer_Validation(t *testing.T) {
 func TestBasicAuth_Validation(t *testing.T) {
 	tests := []struct {
 		name        string
-		auth        configs.BasicAuth
+		auth        config.BasicAuth
 		expectError bool
 	}{
 		{
 			name:        "no auth",
-			auth:        configs.BasicAuth{},
+			auth:        config.BasicAuth{},
 			expectError: false,
 		},
 		{
 			name: "complete auth",
-			auth: configs.BasicAuth{
+			auth: config.BasicAuth{
 				Username: "user",
 				Password: "pass",
 			},
@@ -238,7 +238,7 @@ func TestBasicAuth_Validation(t *testing.T) {
 		},
 		{
 			name: "username only",
-			auth: configs.BasicAuth{
+			auth: config.BasicAuth{
 				Username: "user",
 				Password: "",
 			},
@@ -246,7 +246,7 @@ func TestBasicAuth_Validation(t *testing.T) {
 		},
 		{
 			name: "password only (unusual but allowed)",
-			auth: configs.BasicAuth{
+			auth: config.BasicAuth{
 				Username: "",
 				Password: "pass",
 			},
@@ -256,9 +256,9 @@ func TestBasicAuth_Validation(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			config := &configs.MavenProxyConfig{
+			config := &config.MavenProxyConfig{
 				Path: "proxy/maven",
-				Proxies: []configs.MavenProxyServer{
+				Proxies: []config.MavenProxyServer{
 					{
 						Name:      "test",
 						URL:       "https://test.maven.org/maven2",

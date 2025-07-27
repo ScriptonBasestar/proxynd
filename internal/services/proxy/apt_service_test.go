@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 )
 
 func TestNewAptService(t *testing.T) {
@@ -22,10 +22,10 @@ func TestNewAptService(t *testing.T) {
 		{
 			name: "successful creation",
 			setupMocks: func(_ *MockCacheService, config *MockConfigService, _ *MockUpstreamClient) {
-				aptConfig := &configs.AptProxyConfig{
+				aptConfig := &config.AptProxyConfig{
 					Path:     "/apt",
 					UseCache: true,
-					Proxies: map[string][]configs.AptProxy{
+					Proxies: map[string][]config.AptProxy{
 						"default": {
 							{Name: "ubuntu", URL: "http://archive.ubuntu.com/ubuntu"},
 						},
@@ -88,7 +88,7 @@ func TestAptService_HandleRequest(t *testing.T) {
 	config := &MockConfigService{}
 	upstream := &MockUpstreamClient{}
 
-	aptConfig := &configs.AptProxyConfig{
+	aptConfig := &config.AptProxyConfig{
 		Path:     "/apt",
 		UseCache: true,
 	}

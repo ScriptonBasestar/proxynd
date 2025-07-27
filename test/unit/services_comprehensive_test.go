@@ -14,7 +14,7 @@ import (
 
 	"proxynd/cache/mocks"
 	cacheMocks "proxynd/cache/mocks"
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/internal/domain/docker"
 	"proxynd/internal/domain/pip"
 	"proxynd/internal/repositories/cache"
@@ -52,12 +52,12 @@ func TestPIPServices(t *testing.T) {
 
 	t.Run("PackageService", func(t *testing.T) {
 		// 설정 생성
-		config := &configs.PipProxyConfig{
+		config := &config.PipProxyConfig{
 			Enabled: true,
-			Mirrors: []configs.PipMirror{
+			Mirrors: []config.PipMirror{
 				{Name: "pypi", URL: "https://pypi.org", Timeout: "30s"},
 			},
-			Cache: configs.CacheConfig{
+			Cache: config.CacheConfig{
 				Enabled: true,
 				TTL:     "1h",
 			},
@@ -118,9 +118,9 @@ func TestPIPServices(t *testing.T) {
 	})
 
 	t.Run("IndexManager", func(t *testing.T) {
-		config := &configs.PipProxyConfig{
+		config := &config.PipProxyConfig{
 			Enabled: true,
-			Mirrors: []configs.PipMirror{
+			Mirrors: []config.PipMirror{
 				{Name: "pypi", URL: "https://pypi.org"},
 			},
 		}
@@ -157,8 +157,8 @@ func TestPIPServices(t *testing.T) {
 	})
 
 	t.Run("CacheManager", func(t *testing.T) {
-		config := &configs.PipProxyConfig{
-			Cache: configs.CacheConfig{
+		config := &config.PipProxyConfig{
+			Cache: config.CacheConfig{
 				Enabled:   true,
 				TTL:       "1h",
 				MaxSize:   "1GB",
@@ -252,12 +252,12 @@ func TestDockerServices(t *testing.T) {
 	suite := SetupServiceTestSuite(t)
 
 	t.Run("RegistryService", func(t *testing.T) {
-		config := &configs.DockerProxyConfig{
+		config := &config.DockerProxyConfig{
 			Enabled: true,
-			Registries: []configs.DockerRegistry{
+			Registries: []config.DockerRegistry{
 				{Name: "dockerhub", URL: "https://registry-1.docker.io", Timeout: "30s"},
 			},
-			Cache: configs.CacheConfig{
+			Cache: config.CacheConfig{
 				Enabled: true,
 				TTL:     "1h",
 			},
@@ -294,8 +294,8 @@ func TestDockerServices(t *testing.T) {
 	})
 
 	t.Run("BlobManager", func(t *testing.T) {
-		config := &configs.DockerProxyConfig{
-			Cache: configs.CacheConfig{
+		config := &config.DockerProxyConfig{
+			Cache: config.CacheConfig{
 				Enabled:   true,
 				Directory: suite.testTempDir,
 			},
@@ -340,8 +340,8 @@ func TestDockerServices(t *testing.T) {
 	})
 
 	t.Run("AuthManager", func(t *testing.T) {
-		config := &configs.DockerProxyConfig{
-			Auth: configs.DockerAuth{
+		config := &config.DockerProxyConfig{
+			Auth: config.DockerAuth{
 				Enabled:  true,
 				Username: "testuser",
 				Password: "testpass",
@@ -376,8 +376,8 @@ func TestProxyServices(t *testing.T) {
 	suite := SetupServiceTestSuite(t)
 
 	t.Run("BaseService", func(t *testing.T) {
-		config := &configs.GlobalConfig{
-			Cache: configs.CacheConfig{
+		config := &config.GlobalConfig{
+			Cache: config.CacheConfig{
 				Enabled: true,
 				TTL:     "1h",
 			},
@@ -446,13 +446,13 @@ func TestProxyServices(t *testing.T) {
 
 		t.Run("CreateService", func(t *testing.T) {
 			// NPM 서비스 생성
-			npmConfig := &configs.NpmProxyConfig{Enabled: true}
+			npmConfig := &config.NpmProxyConfig{Enabled: true}
 			npmService, err := factory.CreateService("npm", npmConfig, suite.mockCache)
 			assert.NoError(t, err)
 			assert.NotNil(t, npmService)
 
 			// Maven 서비스 생성
-			mavenConfig := &configs.MavenProxyConfig{Enabled: true}
+			mavenConfig := &config.MavenProxyConfig{Enabled: true}
 			mavenService, err := factory.CreateService("maven", mavenConfig, suite.mockCache)
 			assert.NoError(t, err)
 			assert.NotNil(t, mavenService)
@@ -575,9 +575,9 @@ func TestErrorHandling(t *testing.T) {
 	suite := SetupServiceTestSuite(t)
 
 	t.Run("Service Error Scenarios", func(t *testing.T) {
-		config := &configs.PipProxyConfig{
+		config := &config.PipProxyConfig{
 			Enabled: true,
-			Mirrors: []configs.PipMirror{
+			Mirrors: []config.PipMirror{
 				{Name: "pypi", URL: "https://pypi.org"},
 			},
 		}

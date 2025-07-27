@@ -8,34 +8,34 @@ package config
 import (
 	"context"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 )
 
 // Service provides access to configuration without global state
 type Service interface {
 	// GetGlobalConfig returns the global configuration
-	GetGlobalConfig(ctx context.Context) (*configs.GlobalConfig, error)
+	GetGlobalConfig(ctx context.Context) (*config.GlobalConfig, error)
 
 	// GetMavenConfig returns the Maven proxy configuration
-	GetMavenConfig(ctx context.Context) (*configs.MavenProxyConfig, error)
+	GetMavenConfig(ctx context.Context) (*config.MavenProxyConfig, error)
 
 	// GetAptConfig returns the APT proxy configuration
-	GetAptConfig(ctx context.Context) (*configs.AptProxyConfig, error)
+	GetAptConfig(ctx context.Context) (*config.AptProxyConfig, error)
 
 	// GetNpmConfig returns the NPM proxy configuration
-	GetNpmConfig(ctx context.Context) (*configs.NpmProxyConfig, error)
+	GetNpmConfig(ctx context.Context) (*config.NpmProxyConfig, error)
 
 	// GetDockerConfig returns the Docker proxy configuration
-	GetDockerConfig(ctx context.Context) (*configs.DockerProxyConfig, error)
+	GetDockerConfig(ctx context.Context) (*config.DockerProxyConfig, error)
 
 	// GetPipConfig returns the PIP proxy configuration
-	GetPipConfig(ctx context.Context) (*configs.PipProxyConfig, error)
+	GetPipConfig(ctx context.Context) (*config.PipProxyConfig, error)
 
 	// GetYumConfig returns the YUM proxy configuration
-	GetYumConfig(ctx context.Context) (*configs.YumProxyConfig, error)
+	GetYumConfig(ctx context.Context) (*config.YumProxyConfig, error)
 
 	// GetApkConfig returns the APK proxy configuration
-	GetApkConfig(ctx context.Context) (*configs.ApkProxyConfig, error)
+	GetApkConfig(ctx context.Context) (*config.ApkProxyConfig, error)
 
 	// ValidateAll validates all loaded configurations
 	ValidateAll(ctx context.Context) error

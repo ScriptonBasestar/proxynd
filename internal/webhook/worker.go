@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"proxynd/alerts"
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/internal/webhook/retry"
 	"proxynd/logging"
 )
@@ -159,7 +159,7 @@ func (rq *RetryQueue) processRetries(ctx context.Context, sender *WebhookSender)
 		}
 
 		// 엔드포인트 찾기
-		var endpoint *configs.WebhookEndpointConfig
+		var endpoint *config.WebhookEndpointConfig
 		for _, ep := range sender.config.Endpoints {
 			if ep.Name == item.Endpoint {
 				endpoint = &ep

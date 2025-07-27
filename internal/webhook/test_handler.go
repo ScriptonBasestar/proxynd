@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"proxynd/alerts"
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/logging"
 )
 
@@ -42,13 +42,13 @@ type TestAllResult struct {
 
 // WebhookTester 웹훅 테스트 클래스
 type WebhookTester struct {
-	config configs.WebhookConfig
+	config config.WebhookConfig
 	sender *WebhookSender
 	logger logging.Logger
 }
 
 // NewWebhookTester 새로운 웹훅 테스터 생성
-func NewWebhookTester(config configs.WebhookConfig, sender *WebhookSender) *WebhookTester {
+func NewWebhookTester(config config.WebhookConfig, sender *WebhookSender) *WebhookTester {
 	return &WebhookTester{
 		config: config,
 		sender: sender,
@@ -59,7 +59,7 @@ func NewWebhookTester(config configs.WebhookConfig, sender *WebhookSender) *Webh
 // TestSingleEndpoint 단일 엔드포인트 테스트
 func (wt *WebhookTester) TestSingleEndpoint(endpointName string) (*TestResult, error) {
 	// 엔드포인트 찾기
-	var endpoint *configs.WebhookEndpointConfig
+	var endpoint *config.WebhookEndpointConfig
 	for _, ep := range wt.config.Endpoints {
 		if ep.Name == endpointName {
 			endpoint = &ep
@@ -134,7 +134,7 @@ func (wt *WebhookTester) TestAllEndpoints() (*TestAllResult, error) {
 }
 
 // testEndpoint 실제 엔드포인트 테스트 수행
-func (wt *WebhookTester) testEndpoint(endpoint configs.WebhookEndpointConfig) (*TestResult, error) {
+func (wt *WebhookTester) testEndpoint(endpoint config.WebhookEndpointConfig) (*TestResult, error) {
 	startTime := time.Now()
 
 	// 테스트용 이벤트 생성
@@ -221,7 +221,7 @@ func (wt *WebhookTester) testEndpoint(endpoint configs.WebhookEndpointConfig) (*
 // TestEndpointConnectivity 엔드포인트 연결성만 테스트 (실제 이벤트 전송 없이)
 func (wt *WebhookTester) TestEndpointConnectivity(endpointName string) (*TestResult, error) {
 	// 엔드포인트 찾기
-	var endpoint *configs.WebhookEndpointConfig
+	var endpoint *config.WebhookEndpointConfig
 	for _, ep := range wt.config.Endpoints {
 		if ep.Name == endpointName {
 			endpoint = &ep
@@ -264,7 +264,7 @@ func (wt *WebhookTester) GetTestHistory(_ string, _ int) ([]TestResult, error) {
 }
 
 // ValidateEndpointConfig 엔드포인트 설정 검증
-func (wt *WebhookTester) ValidateEndpointConfig(endpoint configs.WebhookEndpointConfig) []string {
+func (wt *WebhookTester) ValidateEndpointConfig(endpoint config.WebhookEndpointConfig) []string {
 	var errors []string
 
 	// URL 검증

@@ -6,7 +6,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 )
 
 const (
@@ -17,9 +17,9 @@ const (
 )
 
 // 테스트용 OAuth2 설정 생성
-func createTestConfig() *configs.OAuth2Config {
-	return &configs.OAuth2Config{
-		JWT: configs.JWTConfig{
+func createTestConfig() *config.OAuth2Config {
+	return &config.OAuth2Config{
+		JWT: config.JWTConfig{
 			Secret:          "test-jwt-secret-key-32-characters-long",
 			AccessTokenTTL:  3600,
 			RefreshTokenTTL: 604800,
@@ -409,8 +409,8 @@ func TestJWTConfiguration(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			config := &configs.OAuth2Config{
-				JWT: configs.JWTConfig{
+			config := &config.OAuth2Config{
+				JWT: config.JWTConfig{
 					Secret:          tt.secret,
 					Algorithm:       tt.algorithm,
 					Issuer:          "proxynd-test",

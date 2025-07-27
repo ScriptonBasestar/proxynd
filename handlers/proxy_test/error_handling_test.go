@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/handlers/proxy"
 	domainErrors "proxynd/internal/errors"
 	"proxynd/logging"
@@ -41,8 +41,8 @@ func TestProxyHandlerErrorScenarios(t *testing.T) {
 			{
 				name: "No repositories configured",
 				setupHandler: func(h *proxy.APTHandler) {
-					h.Config = &configs.AptProxyConfig{
-						Proxies: map[string][]configs.AptProxy{},
+					h.Config = &config.AptProxyConfig{
+						Proxies: map[string][]config.AptProxy{},
 					}
 				},
 				path:          "dists/jammy/Release",
@@ -52,8 +52,8 @@ func TestProxyHandlerErrorScenarios(t *testing.T) {
 			{
 				name: "Invalid package path",
 				setupHandler: func(h *proxy.APTHandler) {
-					h.Config = &configs.AptProxyConfig{
-						Proxies: map[string][]configs.AptProxy{
+					h.Config = &config.AptProxyConfig{
+						Proxies: map[string][]config.AptProxy{
 							"ubuntu": {{Name: "main", URL: "http://archive.ubuntu.com/ubuntu"}},
 						},
 					}
@@ -109,8 +109,8 @@ func TestProxyHandlerErrorScenarios(t *testing.T) {
 			{
 				name: "Empty artifact path",
 				setupHandler: func(h *proxy.MavenHandler) {
-					h.Config = &configs.MavenProxyConfig{
-						Proxies: []configs.MavenProxyServer{
+					h.Config = &config.MavenProxyConfig{
+						Proxies: []config.MavenProxyServer{
 							{Name: "central", URL: "https://repo1.maven.org/maven2"},
 						},
 					}
@@ -122,8 +122,8 @@ func TestProxyHandlerErrorScenarios(t *testing.T) {
 			{
 				name: "No repositories configured",
 				setupHandler: func(h *proxy.MavenHandler) {
-					h.Config = &configs.MavenProxyConfig{
-						Proxies: []configs.MavenProxyServer{},
+					h.Config = &config.MavenProxyConfig{
+						Proxies: []config.MavenProxyServer{},
 					}
 				},
 				path:          "com/example/test.jar",
@@ -133,8 +133,8 @@ func TestProxyHandlerErrorScenarios(t *testing.T) {
 			{
 				name: "Path traversal attempt",
 				setupHandler: func(h *proxy.MavenHandler) {
-					h.Config = &configs.MavenProxyConfig{
-						Proxies: []configs.MavenProxyServer{
+					h.Config = &config.MavenProxyConfig{
+						Proxies: []config.MavenProxyServer{
 							{Name: "central", URL: "https://repo1.maven.org/maven2"},
 						},
 					}
@@ -222,7 +222,7 @@ func TestHandlerErrorPropagation(t *testing.T) {
 
 	// APT handler that returns domain errors
 	aptHandler := proxy.NewAPTHandler()
-	aptHandler.Config = &configs.AptProxyConfig{}
+	aptHandler.Config = &config.AptProxyConfig{}
 
 	app.Get("/apt/package/:pkg", func(c *fiber.Ctx) error {
 		pkg := c.Params("pkg")
@@ -250,7 +250,7 @@ func TestHandlerErrorPropagation(t *testing.T) {
 
 	// Maven handler that returns domain errors
 	mavenHandler := proxy.NewMavenHandler()
-	mavenHandler.Config = &configs.MavenProxyConfig{}
+	mavenHandler.Config = &config.MavenProxyConfig{}
 
 	app.Get("/maven/artifact/:artifact", func(c *fiber.Ctx) error {
 		artifact := c.Params("artifact")
@@ -366,8 +366,8 @@ func TestHandlerErrorPropagation(t *testing.T) {
 // TestConcurrentErrorHandling tests error handling under concurrent load
 func TestConcurrentErrorHandling(t *testing.T) {
 	handler := proxy.NewMavenHandler()
-	handler.Config = &configs.MavenProxyConfig{
-		Proxies: []configs.MavenProxyServer{
+	handler.Config = &config.MavenProxyConfig{
+		Proxies: []config.MavenProxyServer{
 			{Name: "central", URL: "https://repo1.maven.org/maven2"},
 		},
 	}

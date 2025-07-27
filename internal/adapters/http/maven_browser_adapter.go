@@ -5,7 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/internal/domain/maven"
 	mavenServices "proxynd/internal/services/maven"
 	"proxynd/logging"
@@ -18,7 +18,7 @@ type MavenBrowserAdapter struct {
 }
 
 // NewMavenBrowserAdapter 새로운 Maven 브라우저 어댑터 생성
-func NewMavenBrowserAdapter(config configs.MavenProxyConfig, logger logging.Logger) *MavenBrowserAdapter {
+func NewMavenBrowserAdapter(config config.MavenProxyConfig, logger logging.Logger) *MavenBrowserAdapter {
 	// 설정을 도메인 인터페이스로 래핑
 	proxyConfig := maven.NewDefaultProxyConfig(&config)
 

@@ -6,7 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"proxynd/alerts"
-	"proxynd/configs"
+	"proxynd/internal/config"
 	authHandlers "proxynd/handlers/auth"
 	proxynd "proxynd/handlers/proxy"
 	"proxynd/middlewares"
@@ -16,7 +16,7 @@ import (
 // ProxyRouter performs an operation
 func ProxyRouter(app *fiber.App) {
 	// Read global configuration
-	globalConfig := configs.GlobalConfig{}
+	globalConfig := config.GlobalConfig{}
 	if err := globalConfig.ReadConfig(); err != nil {
 		log.Printf("Warning: Failed to read global config: %v", err)
 	}

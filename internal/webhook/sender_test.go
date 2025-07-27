@@ -9,7 +9,7 @@ import (
 	"github.com/go-playground/assert/v2"
 
 	"proxynd/alerts"
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/internal/webhook/retry"
 )
 
@@ -18,7 +18,7 @@ type RetryPolicy = retry.Policy
 
 // TestNewWebhookSender 웹훅 전송기 생성 테스트
 func TestNewWebhookSender(t *testing.T) {
-	config := configs.GetDefaultWebhookConfig()
+	config := config.GetDefaultWebhookConfig()
 	config.Enabled = true
 
 	sender, err := NewWebhookSender(config)
@@ -33,7 +33,7 @@ func TestNewWebhookSender(t *testing.T) {
 
 // TestWebhookSenderStartStop 시작/중지 테스트
 func TestWebhookSenderStartStop(t *testing.T) {
-	config := configs.GetDefaultWebhookConfig()
+	config := config.GetDefaultWebhookConfig()
 	config.Enabled = true
 
 	sender, err := NewWebhookSender(config)
@@ -61,7 +61,7 @@ func TestWebhookSenderStartStop(t *testing.T) {
 
 // TestSendEvent 이벤트 전송 테스트
 func TestSendEvent(t *testing.T) {
-	config := configs.GetDefaultWebhookConfig()
+	config := config.GetDefaultWebhookConfig()
 	config.Enabled = true
 	config.Batching.Enabled = false // 배치 비활성화하여 큐 테스트
 
@@ -91,7 +91,7 @@ func TestSendEvent(t *testing.T) {
 
 // TestEventFiltering 이벤트 필터링 테스트
 func TestEventFiltering(t *testing.T) {
-	config := configs.GetDefaultWebhookConfig()
+	config := config.GetDefaultWebhookConfig()
 	config.Enabled = true
 	config.EventFilter.Enabled = true
 	config.EventFilter.DefaultLevel = "WARNING"
@@ -124,7 +124,7 @@ func TestEventFiltering(t *testing.T) {
 
 // TestLevelOverrides 레벨 오버라이드 테스트
 func TestLevelOverrides(t *testing.T) {
-	config := configs.GetDefaultWebhookConfig()
+	config := config.GetDefaultWebhookConfig()
 	config.Enabled = true
 	config.EventFilter.Enabled = true
 	config.EventFilter.DefaultLevel = "ERROR"
@@ -160,12 +160,12 @@ func TestLevelOverrides(t *testing.T) {
 
 // TestEndpointFiltering 엔드포인트별 필터링 테스트
 func TestEndpointFiltering(t *testing.T) {
-	config := configs.GetDefaultWebhookConfig()
-	endpoint := configs.WebhookEndpointConfig{
+	config := config.GetDefaultWebhookConfig()
+	endpoint := config.WebhookEndpointConfig{
 		Name:       "security-only",
 		Enabled:    true,
 		EventTypes: []string{"security.*"},
-		Filters: configs.WebhookEndpointFilters{
+		Filters: config.WebhookEndpointFilters{
 			MinLevel: "WARNING",
 		},
 	}
@@ -226,7 +226,7 @@ func TestPatternMatching(t *testing.T) {
 
 // TestAdapterRegistration 어댑터 등록 테스트
 func TestAdapterRegistration(t *testing.T) {
-	config := configs.GetDefaultWebhookConfig()
+	config := config.GetDefaultWebhookConfig()
 	sender, err := NewWebhookSender(config)
 	assert.Equal(t, err, nil)
 
@@ -245,7 +245,7 @@ func TestAdapterRegistration(t *testing.T) {
 
 // TestMetrics 메트릭 테스트
 func TestMetrics(t *testing.T) {
-	config := configs.GetDefaultWebhookConfig()
+	config := config.GetDefaultWebhookConfig()
 	sender, err := NewWebhookSender(config)
 	assert.Equal(t, err, nil)
 
@@ -295,7 +295,7 @@ func TestBackoffDelay(t *testing.T) {
 
 // TestWebhookSenderBatching 배치 전송 테스트
 func TestWebhookSenderBatching(t *testing.T) {
-	config := configs.GetDefaultWebhookConfig()
+	config := config.GetDefaultWebhookConfig()
 	config.Enabled = true
 	config.Batching.Enabled = true
 	config.Batching.MaxSize = 3
@@ -332,7 +332,7 @@ func TestWebhookSenderBatching(t *testing.T) {
 
 // TestWebhookSenderGetMetricsWithBatch 배치 통계가 포함된 메트릭 테스트
 func TestWebhookSenderGetMetricsWithBatch(t *testing.T) {
-	config := configs.GetDefaultWebhookConfig()
+	config := config.GetDefaultWebhookConfig()
 	config.Enabled = true
 	config.Batching.Enabled = true
 
@@ -346,7 +346,7 @@ func TestWebhookSenderGetMetricsWithBatch(t *testing.T) {
 
 // TestWebhookSenderBatchingDisabled 배치 비활성화 테스트
 func TestWebhookSenderBatchingDisabled(t *testing.T) {
-	config := configs.GetDefaultWebhookConfig()
+	config := config.GetDefaultWebhookConfig()
 	config.Enabled = true
 	config.Batching.Enabled = false
 

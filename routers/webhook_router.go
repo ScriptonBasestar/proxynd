@@ -8,7 +8,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/dtos"
 	"proxynd/internal/webhook"
 	"proxynd/logging"
@@ -19,14 +19,14 @@ func WebhookRouter(app *fiber.App) {
 	logger := logging.GetLogger()
 
 	// 웹훅 설정 로드
-	var webhookConfig configs.WebhookConfig
+	var webhookConfig config.WebhookConfig
 	if webhookConfig.ConfigExists() {
 		if err := webhookConfig.ReadConfig(); err != nil {
 			logger.Warn("Failed to read webhook config, using defaults", logging.F("error", err))
-			webhookConfig = configs.GetDefaultWebhookConfig()
+			webhookConfig = config.GetDefaultWebhookConfig()
 		}
 	} else {
-		webhookConfig = configs.GetDefaultWebhookConfig()
+		webhookConfig = config.GetDefaultWebhookConfig()
 	}
 
 	// 웹훅 sender 및 테스터 초기화
@@ -207,7 +207,7 @@ func testWebhookConnectivity(tester *webhook.WebhookTester, logger logging.Logge
 // validateWebhookConfig 웹훅 설정 검증
 func validateWebhookConfig(logger logging.Logger) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		var endpoint configs.WebhookEndpointConfig
+		var endpoint config.WebhookEndpointConfig
 		if err := c.BodyParser(&endpoint); err != nil {
 			response := dtos.APIResponse{
 				Success: false,
@@ -243,7 +243,7 @@ func validateWebhookConfig(logger logging.Logger) fiber.Handler {
 }
 
 // getWebhookStatusSimple 웹훅 시스템 기본 상태 조회
-func getWebhookStatusSimple(config configs.WebhookConfig, _ logging.Logger) fiber.Handler {
+func getWebhookStatusSimple(config config.WebhookConfig, _ logging.Logger) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		enabledCount := 0
 		for _, endpoint := range config.Endpoints {
@@ -271,7 +271,7 @@ func getWebhookStatusSimple(config configs.WebhookConfig, _ logging.Logger) fibe
 }
 
 // getWebhookEndpoints 웹훅 엔드포인트 목록 조회
-func getWebhookEndpoints(config configs.WebhookConfig, _ logging.Logger) fiber.Handler {
+func getWebhookEndpoints(config config.WebhookConfig, _ logging.Logger) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		// 민감한 정보 제외하고 반환
 		endpoints := make([]map[string]interface{}, len(config.Endpoints))

@@ -10,7 +10,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/helpers"
 	"proxynd/internal/errors"
 	"proxynd/internal/security"
@@ -20,7 +20,7 @@ import (
 // APTHandler V1과 V2의 기능을 통합한 APT 핸들러
 type APTHandler struct {
 	logger     logging.Logger
-	Config     *configs.AptProxyConfig
+	Config     *config.AptProxyConfig
 	storageDir string
 	mirrorIdx  int32 // 라운드로빈을 위한 atomic counter
 }
@@ -29,7 +29,7 @@ type APTHandler struct {
 func NewAPTHandler() *APTHandler {
 	return &APTHandler{
 		logger:     logging.GetLogger(),
-		Config:     &configs.AptProxyConfig{},
+		Config:     &config.AptProxyConfig{},
 		storageDir: helpers.GetStorageDir(),
 		mirrorIdx:  0,
 	}

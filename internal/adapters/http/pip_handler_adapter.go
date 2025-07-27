@@ -9,7 +9,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/helpers"
 	"proxynd/internal/domain/pip"
 	pipServices "proxynd/internal/services/pip"
@@ -24,7 +24,7 @@ type PIPHandlerAdapter struct {
 }
 
 // NewPIPHandlerAdapter 새로운 PIP 핸들러 어댑터 생성
-func NewPIPHandlerAdapter(config configs.PipProxyConfig, logger logging.Logger) *PIPHandlerAdapter {
+func NewPIPHandlerAdapter(config config.PipProxyConfig, logger logging.Logger) *PIPHandlerAdapter {
 	// 설정을 도메인 인터페이스로 래핑
 	storageDir := helpers.GetStorageDir()
 	proxyConfig := pip.NewDefaultProxyConfig(&config, storageDir)

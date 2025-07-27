@@ -9,7 +9,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/internal/auth/jwt"
 	"proxynd/internal/auth/oauth2"
 	"proxynd/logging"
@@ -34,7 +34,7 @@ func StartOAuth2Login(c *fiber.Ctx) error {
 	redirectURL := c.Query("redirect", "/")
 
 	// OAuth2 설정 로드
-	oauth2Config := &configs.OAuth2Config{}
+	oauth2Config := &config.OAuth2Config{}
 	if err := oauth2Config.ReadConfig(); err != nil {
 		logging.GetLogger().Error("Failed to load OAuth2 config", logging.F("error", err))
 		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
@@ -171,7 +171,7 @@ func HandleOAuth2Callback(c *fiber.Ctx) error {
 	}
 
 	// OAuth2 설정 로드
-	oauth2Config := &configs.OAuth2Config{}
+	oauth2Config := &config.OAuth2Config{}
 	if err := oauth2Config.ReadConfig(); err != nil {
 		delete(stateStore, state)
 		logging.GetLogger().Error("Failed to load OAuth2 config", logging.F("error", err))
@@ -348,7 +348,7 @@ func RefreshToken(c *fiber.Ctx) error {
 	}
 
 	// OAuth2 설정 로드
-	oauth2Config := &configs.OAuth2Config{}
+	oauth2Config := &config.OAuth2Config{}
 	if err := oauth2Config.ReadConfig(); err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
 			"error": "OAuth2 configuration not available",
@@ -472,7 +472,7 @@ func GetAuthStatus(c *fiber.Ctx) error {
 	}
 
 	// OAuth2 설정 로드하여 활성화된 제공자 목록 반환
-	oauth2Config := &configs.OAuth2Config{}
+	oauth2Config := &config.OAuth2Config{}
 	if err := oauth2Config.ReadConfig(); err == nil && oauth2Config.IsEnabled() {
 		result["oauth2_enabled"] = true
 		result["available_providers"] = oauth2Config.GetEnabledProviders()

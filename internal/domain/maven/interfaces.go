@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 )
 
 // DirectoryCollector Maven 디렉토리 수집 인터페이스
@@ -13,10 +13,10 @@ type DirectoryCollector interface {
 	CollectDirectory(ctx context.Context, path string) (*DirectoryData, error)
 
 	// CollectFromMirror 특정 미러에서 디렉토리 데이터 수집
-	CollectFromMirror(ctx context.Context, mirror configs.MavenProxyServer, path string) ([]Entry, error)
+	CollectFromMirror(ctx context.Context, mirror config.MavenProxyServer, path string) ([]Entry, error)
 
 	// GetMirrorStatus 미러 상태 확인
-	GetMirrorStatus(ctx context.Context, mirror configs.MavenProxyServer) (*MirrorStatus, error)
+	GetMirrorStatus(ctx context.Context, mirror config.MavenProxyServer) (*MirrorStatus, error)
 }
 
 // SearchService Maven 검색 서비스 인터페이스

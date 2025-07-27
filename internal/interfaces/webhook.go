@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"proxynd/alerts"
-	"proxynd/configs"
+	"proxynd/internal/config"
 )
 
 // WebhookBatchManager defines the interface for webhook batch management
@@ -16,7 +16,7 @@ type WebhookBatchManager interface {
 	Stop(ctx context.Context) error
 
 	// AddEvent adds an event to the appropriate batch group
-	AddEvent(event *alerts.AlertEvent, endpoint configs.WebhookEndpointConfig)
+	AddEvent(event *alerts.AlertEvent, endpoint config.WebhookEndpointConfig)
 
 	// GetStats returns batch processing statistics
 	GetStats() WebhookBatchStats

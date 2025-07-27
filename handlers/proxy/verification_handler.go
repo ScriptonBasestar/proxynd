@@ -9,7 +9,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"proxynd/alerts"
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/verification"
 )
 
@@ -17,12 +17,12 @@ import (
 type VerificationHandler struct {
 	verifier     *verification.PackageVerifier
 	alertManager alerts.AlertManager
-	config       *configs.GlobalConfig
+	config       *config.GlobalConfig
 }
 
 // NewVerificationHandler 새 검증 핸들러 생성
 func NewVerificationHandler(
-	globalConfig *configs.GlobalConfig,
+	globalConfig *config.GlobalConfig,
 	alertManager alerts.AlertManager,
 ) *VerificationHandler {
 	// 검증 설정 로드
@@ -212,7 +212,7 @@ func (vh *VerificationHandler) shouldBlockOnFailure() bool {
 }
 
 // loadVerifierConfig 검증 설정 로드
-func loadVerifierConfig(_ *configs.GlobalConfig) *verification.VerifierConfig {
+func loadVerifierConfig(_ *config.GlobalConfig) *verification.VerifierConfig {
 	// 기본 설정
 	config := &verification.VerifierConfig{
 		StrictMode:     true,

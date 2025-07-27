@@ -10,7 +10,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/helpers"
 	"proxynd/internal/security"
 	"proxynd/logging"
@@ -87,7 +87,7 @@ type ConfigShowResponse struct {
 type MaskedGlobalConfig struct {
 	StorageDir string             `json:"storage_dir"`
 	ConfigDir  string             `json:"config_dir"`
-	Cache      configs.Cache      `json:"cache"`
+	Cache      config.Cache      `json:"cache"`
 	Server     MaskedServerConfig `json:"server,omitempty"`
 }
 
@@ -151,7 +151,7 @@ func validateConfig(c *fiber.Ctx) error {
 	globalSource := validateConfigFile(globalConfigPath, "글로벌 설정")
 	configSources = append(configSources, globalSource)
 
-	globalConfig := configs.GlobalConfig{}
+	globalConfig := config.GlobalConfig{}
 	globalValid := globalConfig.ConfigExists()
 	if !globalValid {
 		errors = append(errors, ValidationError{
@@ -167,7 +167,7 @@ func validateConfig(c *fiber.Ctx) error {
 	// 각 프록시 타입별 설정 검증
 	proxyTypeConfigs := map[string]func() (bool, interface{}, int){
 		"apt": func() (bool, interface{}, int) {
-			config := configs.AptProxyConfig{}
+			config := config.AptProxyConfig{}
 			exists := config.ConfigExists()
 			if exists {
 				if err := config.ReadConfig(); err != nil {
@@ -178,7 +178,7 @@ func validateConfig(c *fiber.Ctx) error {
 			return exists, nil, 0
 		},
 		"npm": func() (bool, interface{}, int) {
-			config := configs.NpmProxyConfig{}
+			config := config.NpmProxyConfig{}
 			exists := config.ConfigExists()
 			if exists {
 				if err := config.ReadConfig(); err != nil {
@@ -189,7 +189,7 @@ func validateConfig(c *fiber.Ctx) error {
 			return exists, nil, 0
 		},
 		"maven": func() (bool, interface{}, int) {
-			config := configs.MavenProxyConfig{}
+			config := config.MavenProxyConfig{}
 			exists := config.ConfigExists()
 			if exists {
 				if err := config.ReadConfig(); err != nil {
@@ -200,7 +200,7 @@ func validateConfig(c *fiber.Ctx) error {
 			return exists, nil, 0
 		},
 		"pip": func() (bool, interface{}, int) {
-			config := configs.PipProxyConfig{}
+			config := config.PipProxyConfig{}
 			exists := config.ConfigExists()
 			if exists {
 				if err := config.ReadConfig(); err != nil {
@@ -211,7 +211,7 @@ func validateConfig(c *fiber.Ctx) error {
 			return exists, nil, 0
 		},
 		"docker": func() (bool, interface{}, int) {
-			config := configs.DockerProxyConfig{}
+			config := config.DockerProxyConfig{}
 			exists := config.ConfigExists()
 			if exists {
 				if err := config.ReadConfig(); err != nil {
@@ -222,7 +222,7 @@ func validateConfig(c *fiber.Ctx) error {
 			return exists, nil, 0
 		},
 		"yum": func() (bool, interface{}, int) {
-			config := configs.YumProxyConfig{}
+			config := config.YumProxyConfig{}
 			exists := config.ConfigExists()
 			if exists {
 				if err := config.ReadConfig(); err != nil {
@@ -237,7 +237,7 @@ func validateConfig(c *fiber.Ctx) error {
 			return false, nil, 0
 		},
 		"apk": func() (bool, interface{}, int) {
-			config := configs.ApkProxyConfig{}
+			config := config.ApkProxyConfig{}
 			exists := config.ConfigExists()
 			if exists {
 				if err := config.ReadConfig(); err != nil {
@@ -348,7 +348,7 @@ func showConfig(c *fiber.Ctx) error {
 	}
 
 	// 글로벌 설정 로드
-	globalConfig := configs.GlobalConfig{}
+	globalConfig := config.GlobalConfig{}
 	maskedGlobal := MaskedGlobalConfig{}
 
 	if globalConfig.ConfigExists() {
@@ -367,7 +367,7 @@ func showConfig(c *fiber.Ctx) error {
 
 	proxyTypeLoaders := map[string]func() interface{}{
 		"apt": func() interface{} {
-			config := configs.AptProxyConfig{}
+			config := config.AptProxyConfig{}
 			if config.ConfigExists() {
 				if err := config.ReadConfig(); err != nil {
 					log.Printf("Warning: Failed to read config: %v", err)
@@ -378,7 +378,7 @@ func showConfig(c *fiber.Ctx) error {
 			return nil
 		},
 		"npm": func() interface{} {
-			config := configs.NpmProxyConfig{}
+			config := config.NpmProxyConfig{}
 			if config.ConfigExists() {
 				if err := config.ReadConfig(); err != nil {
 					log.Printf("Warning: Failed to read config: %v", err)
@@ -617,7 +617,7 @@ func maskSensitiveInfo(config interface{}) interface{} {
 }
 
 // getConfigStorageDir 설정용 저장소 디렉토리 경로 가져오기
-func getConfigStorageDir(globalConfig configs.GlobalConfig) string {
+func getConfigStorageDir(globalConfig config.GlobalConfig) string {
 	if globalConfig.StorageDir != "" {
 		return globalConfig.StorageDir
 	}

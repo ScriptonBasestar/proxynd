@@ -12,7 +12,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/internal/auth/jwt"
 	"proxynd/logging"
 )
@@ -90,7 +90,7 @@ func requireJWTFromSession(c *fiber.Ctx) error {
 // validateJWTToken JWT 토큰 검증
 func validateJWTToken(c *fiber.Ctx, token string) error {
 	// OAuth2 설정 로드
-	oauth2Config := &configs.OAuth2Config{}
+	oauth2Config := &config.OAuth2Config{}
 	if err := oauth2Config.ReadConfig(); err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Authentication configuration not available",
@@ -297,7 +297,7 @@ func BasicAuthFallback() fiber.Handler {
 		}
 
 		// 인증 설정 확인
-		globalConfig := &configs.GlobalConfig{}
+		globalConfig := &config.GlobalConfig{}
 		if err := globalConfig.ReadConfig(); err != nil {
 			// 설정 로드 실패 시 인증 없이 통과 (개발 모드)
 			logger.Info("Failed to load global config - skipping auth", logging.ErrorField(err))
@@ -384,7 +384,7 @@ func autoRefreshToken(_ *fiber.Ctx, sess, userMap fiber.Map) error {
 	}
 
 	// OAuth2 설정 로드
-	oauth2Config := &configs.OAuth2Config{}
+	oauth2Config := &config.OAuth2Config{}
 	if err := oauth2Config.ReadConfig(); err != nil {
 		return err
 	}
@@ -448,7 +448,7 @@ func autoRefreshToken(_ *fiber.Ctx, sess, userMap fiber.Map) error {
 }
 
 // createOAuth2Provider OAuth2 제공자별 인터페이스 구현체 생성
-func createOAuth2Provider(_ string, _ *configs.OAuth2Config) interface{} {
+func createOAuth2Provider(_ string, _ *config.OAuth2Config) interface{} {
 	// 실제 구현에서는 각 제공자별로 인터페이스를 구현하여 반환
 	// 현재는 nil 반환 (추후 구현)
 	return nil
@@ -548,7 +548,7 @@ func IsAuthenticated(c *fiber.Ctx) bool {
 // validateBasicAuthUser BasicAuth 사용자 검증
 func validateBasicAuthUser(username, password string) error {
 	// 글로벌 설정에서 BasicAuth 사용자 정보 로드
-	globalConfig := &configs.GlobalConfig{}
+	globalConfig := &config.GlobalConfig{}
 	if err := globalConfig.ReadConfig(); err != nil {
 		return errors.New("failed to load configuration")
 	}

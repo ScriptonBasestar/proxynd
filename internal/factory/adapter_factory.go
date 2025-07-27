@@ -6,7 +6,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/internal/adapters/http"
 	"proxynd/logging"
 )
@@ -276,7 +276,7 @@ func (f *HandlerAdapterFactory) GetStats() map[string]interface{} {
 // 어댑터 생성 팩토리 함수들
 
 func (f *HandlerAdapterFactory) createMavenAdapter() (ProxyHandlerAdapter, error) {
-	config := configs.MavenProxyConfig{}
+	config := config.MavenProxyConfig{}
 	if !config.ConfigExists() {
 		return nil, fmt.Errorf("maven config not found")
 	}
@@ -289,7 +289,7 @@ func (f *HandlerAdapterFactory) createMavenAdapter() (ProxyHandlerAdapter, error
 }
 
 func (f *HandlerAdapterFactory) createAptAdapter() (ProxyHandlerAdapter, error) {
-	config := configs.AptProxyConfig{}
+	config := config.AptProxyConfig{}
 	if !config.ConfigExists() {
 		return nil, fmt.Errorf("apt config not found")
 	}
@@ -302,7 +302,7 @@ func (f *HandlerAdapterFactory) createAptAdapter() (ProxyHandlerAdapter, error) 
 }
 
 func (f *HandlerAdapterFactory) createNpmAdapter() (ProxyHandlerAdapter, error) {
-	config := configs.NpmProxyConfig{}
+	config := config.NpmProxyConfig{}
 	if !config.ConfigExists() {
 		return nil, fmt.Errorf("npm config not found")
 	}
@@ -315,7 +315,7 @@ func (f *HandlerAdapterFactory) createNpmAdapter() (ProxyHandlerAdapter, error) 
 }
 
 func (f *HandlerAdapterFactory) createPipAdapter() (ProxyHandlerAdapter, error) {
-	config := configs.PipProxyConfig{}
+	config := config.PipProxyConfig{}
 	if !config.ConfigExists() {
 		return nil, fmt.Errorf("pip config not found")
 	}
@@ -328,7 +328,7 @@ func (f *HandlerAdapterFactory) createPipAdapter() (ProxyHandlerAdapter, error) 
 }
 
 func (f *HandlerAdapterFactory) createDockerAdapter() (ProxyHandlerAdapter, error) {
-	config := configs.DockerProxyConfig{}
+	config := config.DockerProxyConfig{}
 	if !config.ConfigExists() {
 		return nil, fmt.Errorf("docker config not found")
 	}
@@ -341,7 +341,7 @@ func (f *HandlerAdapterFactory) createDockerAdapter() (ProxyHandlerAdapter, erro
 }
 
 func (f *HandlerAdapterFactory) createYumAdapter() (ProxyHandlerAdapter, error) {
-	config := configs.YumProxyConfig{}
+	config := config.YumProxyConfig{}
 	if !config.ConfigExists() {
 		return nil, fmt.Errorf("yum config not found")
 	}
@@ -354,7 +354,7 @@ func (f *HandlerAdapterFactory) createYumAdapter() (ProxyHandlerAdapter, error) 
 }
 
 func (f *HandlerAdapterFactory) createApkAdapter() (ProxyHandlerAdapter, error) {
-	config := configs.ApkProxyConfig{}
+	config := config.ApkProxyConfig{}
 	if !config.ConfigExists() {
 		return nil, fmt.Errorf("apk config not found")
 	}

@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/internal/domain/maven"
 	"proxynd/logging"
 )
@@ -242,7 +242,7 @@ func (s *searchServiceImpl) calculateRelevanceScore(artifact *maven.SearchArtifa
 }
 
 // indexMirror 특정 미러의 아티팩트 인덱싱
-func (s *searchServiceImpl) indexMirror(ctx context.Context, proxy configs.MavenProxyServer, index *searchIndex) error {
+func (s *searchServiceImpl) indexMirror(ctx context.Context, proxy config.MavenProxyServer, index *searchIndex) error {
 	s.logger.Debug("Indexing mirror", logging.F("mirror", proxy.Name))
 
 	// 최상위 그룹들을 순회
@@ -262,7 +262,7 @@ func (s *searchServiceImpl) indexMirror(ctx context.Context, proxy configs.Maven
 }
 
 // indexGroup 그룹 디렉토리 인덱싱 (재귀적)
-func (s *searchServiceImpl) indexGroup(ctx context.Context, proxy configs.MavenProxyServer, groupName, currentPath string, depth, maxDepth int, index *searchIndex) {
+func (s *searchServiceImpl) indexGroup(ctx context.Context, proxy config.MavenProxyServer, groupName, currentPath string, depth, maxDepth int, index *searchIndex) {
 	if depth >= maxDepth {
 		return
 	}
@@ -297,7 +297,7 @@ func (s *searchServiceImpl) indexGroup(ctx context.Context, proxy configs.MavenP
 }
 
 // indexArtifact 아티팩트 인덱싱
-func (s *searchServiceImpl) indexArtifact(ctx context.Context, proxy configs.MavenProxyServer, groupPath, artifactName string, index *searchIndex) {
+func (s *searchServiceImpl) indexArtifact(ctx context.Context, proxy config.MavenProxyServer, groupPath, artifactName string, index *searchIndex) {
 	groupID := strings.ReplaceAll(groupPath, "/", ".")
 	key := fmt.Sprintf("%s:%s", groupID, artifactName)
 

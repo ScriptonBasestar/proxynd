@@ -13,7 +13,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/helpers"
 	"proxynd/internal/security"
 	"proxynd/pkg/httpclient"
@@ -43,11 +43,11 @@ func AptProxyUnified(c *fiber.Ctx) error {
 
 	// 의존성 주입으로 변경 필요 - 향후 Container에서 설정 주입
 	storageDir := helpers.GetStorageDir()
-	globalConfig := configs.GlobalConfig{}
+	globalConfig := config.GlobalConfig{}
 	if err := globalConfig.ReadConfig(); err != nil {
 		return c.Status(fiber.StatusInternalServerError).SendString("Failed to read global config")
 	}
-	config := configs.AptProxyConfig{}
+	config := config.AptProxyConfig{}
 	if err := config.ReadConfig(); err != nil {
 		return c.Status(fiber.StatusInternalServerError).SendString("Failed to read APT config")
 	}

@@ -77,7 +77,7 @@ func TestHealthRouter(t *testing.T) {
 // TestProxyRouter 프록시 라우터 테스트
 func TestProxyRouter(t *testing.T) {
 	// 테스트를 위한 환경 변수 설정
-	_ = os.Setenv("CONFIG_DIR", "../../sample-conf")
+	_ = os.Setenv("CONFIG_DIR", "../../examples")
 	defer func() { _ = os.Unsetenv("CONFIG_DIR") }()
 
 	app := fiber.New()

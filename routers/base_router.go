@@ -7,7 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/template/html/v2"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/handlers"
 	"proxynd/logging"
 )
@@ -40,11 +40,11 @@ func BaseRouter() *fiber.App {
 	app.Use(logging.RecoveryLogger())
 
 	app.Get("/", func(c *fiber.Ctx) error {
-		mvnSite := configs.MavenProxyConfig{}
+		mvnSite := config.MavenProxyConfig{}
 		if err := mvnSite.ReadConfig(); err != nil {
 			log.Printf("Warning: Failed to read Maven config for dashboard: %v", err)
 		}
-		aptSite := configs.AptProxyConfig{}
+		aptSite := config.AptProxyConfig{}
 		if err := aptSite.ReadConfig(); err != nil {
 			log.Printf("Warning: Failed to read APT config for dashboard: %v", err)
 		}

@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 )
 
 // Test constants for proxy types
@@ -46,7 +46,7 @@ func TestProxyServiceFactory_CreateProxyService(t *testing.T) {
 			name:      "create apt service",
 			proxyType: "apt",
 			setupMocks: func(config *MockConfigService) {
-				aptConfig := &configs.AptProxyConfig{
+				aptConfig := &config.AptProxyConfig{
 					Path:     "/apt",
 					UseCache: true,
 				}
@@ -62,7 +62,7 @@ func TestProxyServiceFactory_CreateProxyService(t *testing.T) {
 			name:      "create maven service",
 			proxyType: "maven",
 			setupMocks: func(config *MockConfigService) {
-				mavenConfig := &configs.MavenProxyConfig{
+				mavenConfig := &config.MavenProxyConfig{
 					Path:     "/maven",
 					UseCache: true,
 				}
@@ -78,7 +78,7 @@ func TestProxyServiceFactory_CreateProxyService(t *testing.T) {
 			name:      "create npm service",
 			proxyType: proxyTypeNpm,
 			setupMocks: func(config *MockConfigService) {
-				npmConfig := &configs.NpmProxyConfig{
+				npmConfig := &config.NpmProxyConfig{
 					Path:     "/npm",
 					UseCache: true,
 				}
@@ -93,7 +93,7 @@ func TestProxyServiceFactory_CreateProxyService(t *testing.T) {
 			name:      "create docker service",
 			proxyType: proxyTypeDocker,
 			setupMocks: func(config *MockConfigService) {
-				dockerConfig := &configs.DockerProxyConfig{
+				dockerConfig := &config.DockerProxyConfig{
 					Path:     "/docker",
 					UseCache: true,
 				}
@@ -179,13 +179,13 @@ func TestProxyServiceFactory_AllProxyTypes(t *testing.T) {
 			// Setup config mock based on proxy type
 			switch proxyType {
 			case "apt":
-				config.On("GetProxyConfig", mock.Anything, proxyType).Return(&configs.AptProxyConfig{}, nil)
+				config.On("GetProxyConfig", mock.Anything, proxyType).Return(&config.AptProxyConfig{}, nil)
 			case "maven":
-				config.On("GetProxyConfig", mock.Anything, proxyType).Return(&configs.MavenProxyConfig{}, nil)
+				config.On("GetProxyConfig", mock.Anything, proxyType).Return(&config.MavenProxyConfig{}, nil)
 			case proxyTypeNpm:
-				config.On("GetProxyConfig", mock.Anything, proxyType).Return(&configs.NpmProxyConfig{}, nil)
+				config.On("GetProxyConfig", mock.Anything, proxyType).Return(&config.NpmProxyConfig{}, nil)
 			case proxyTypeDocker:
-				config.On("GetProxyConfig", mock.Anything, proxyType).Return(&configs.DockerProxyConfig{}, nil)
+				config.On("GetProxyConfig", mock.Anything, proxyType).Return(&config.DockerProxyConfig{}, nil)
 			case "pip":
 				config.On("GetProxyConfig", mock.Anything, proxyType).Return(struct{}{}, nil)
 			case "yum":

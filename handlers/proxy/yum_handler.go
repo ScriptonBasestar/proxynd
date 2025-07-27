@@ -12,7 +12,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/helpers"
 	"proxynd/internal/security"
 	"proxynd/pkg/httpclient"
@@ -29,11 +29,11 @@ func YumProxyHandler(c *fiber.Ctx) error {
 
 	// 설정 읽기
 	storageDir := helpers.GetStorageDir()
-	globalConfig := configs.GlobalConfig{}
+	globalConfig := config.GlobalConfig{}
 	if err := globalConfig.ReadConfig(); err != nil {
 		return c.Status(fiber.StatusInternalServerError).SendString("Failed to read global config")
 	}
-	yumConfig := configs.YumProxyConfig{}
+	yumConfig := config.YumProxyConfig{}
 	if err := yumConfig.ReadConfig(); err != nil {
 		return c.Status(fiber.StatusInternalServerError).SendString("Failed to read YUM config")
 	}

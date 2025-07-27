@@ -3,7 +3,7 @@ package npm
 import (
 	"time"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 )
 
 // PackageRequest NPM 패키지 요청
@@ -74,7 +74,7 @@ type RequestMetrics struct {
 // ProxyConfig NPM 프록시 설정 인터페이스 (의존성 추상화)
 type ProxyConfig interface {
 	// GetProxies 기본 프록시 목록 반환
-	GetProxies() []configs.NpmProxyServer
+	GetProxies() []config.NpmProxyServer
 
 	// GetCacheConfig 캐시 설정 반환
 	GetCacheConfig() CacheConfig
@@ -95,14 +95,14 @@ type CacheConfig struct {
 	CleanupHours int           `json:"cleanupHours"`
 }
 
-// DefaultProxyConfig configs.NpmProxyConfig의 어댑터 (기본 구현)
+// DefaultProxyConfig config.NpmProxyConfig의 어댑터 (기본 구현)
 type DefaultProxyConfig struct {
-	config  *configs.NpmProxyConfig
+	config  *config.NpmProxyConfig
 	baseDir string
 }
 
 // NewDefaultProxyConfig DefaultProxyConfig 생성자
-func NewDefaultProxyConfig(config *configs.NpmProxyConfig, baseDir string) ProxyConfig {
+func NewDefaultProxyConfig(config *config.NpmProxyConfig, baseDir string) ProxyConfig {
 	return &DefaultProxyConfig{
 		config:  config,
 		baseDir: baseDir,
@@ -110,16 +110,16 @@ func NewDefaultProxyConfig(config *configs.NpmProxyConfig, baseDir string) Proxy
 }
 
 // GetProxies 기본 프록시 목록 반환
-func (c *DefaultProxyConfig) GetProxies() []configs.NpmProxyServer {
+func (c *DefaultProxyConfig) GetProxies() []config.NpmProxyServer {
 	if c.config == nil || c.config.Proxies == nil {
-		return []configs.NpmProxyServer{}
+		return []config.NpmProxyServer{}
 	}
 
 	if proxies, exists := c.config.Proxies["default"]; exists {
 		return proxies
 	}
 
-	return []configs.NpmProxyServer{}
+	return []config.NpmProxyServer{}
 }
 
 // GetCacheConfig 캐시 설정 반환

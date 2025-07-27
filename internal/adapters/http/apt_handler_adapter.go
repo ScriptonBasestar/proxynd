@@ -8,7 +8,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/helpers"
 	"proxynd/internal/domain/apt"
 	aptServices "proxynd/internal/services/apt"
@@ -22,7 +22,7 @@ type APTHandlerAdapter struct {
 }
 
 // NewAPTHandlerAdapter 새로운 APT 핸들러 어댑터 생성
-func NewAPTHandlerAdapter(config configs.AptProxyConfig, logger logging.Logger) *APTHandlerAdapter {
+func NewAPTHandlerAdapter(config config.AptProxyConfig, logger logging.Logger) *APTHandlerAdapter {
 	// 설정을 도메인 인터페이스로 래핑
 	storageDir := helpers.GetStorageDir()
 	proxyConfig := apt.NewDefaultProxyConfig(&config, storageDir)

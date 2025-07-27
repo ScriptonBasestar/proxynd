@@ -14,7 +14,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/internal/domain/maven"
 	"proxynd/logging"
 )
@@ -97,7 +97,7 @@ type searchIndex struct {
 type MavenBrowserHandler struct {
 	client       *http.Client
 	logger       logging.Logger
-	config       *configs.MavenProxyConfig
+	config       *config.MavenProxyConfig
 	cache        sync.Map // path -> cacheEntry
 	cacheTTL     time.Duration
 	indexCache   sync.Map // 인덱스 프리로드용 캐시
@@ -112,7 +112,7 @@ func NewMavenBrowserHandler() *MavenBrowserHandler {
 			Timeout: 10 * time.Second, // 타임아웃 단축
 		},
 		logger:   logging.GetLogger(),
-		config:   &configs.MavenProxyConfig{},
+		config:   &config.MavenProxyConfig{},
 		cacheTTL: 5 * time.Minute, // 5분 캐시
 		searchIndex: &searchIndex{
 			entries: make([]maven.SearchIndexEntry, 0, 10000), // 초기 용량 10000
@@ -250,7 +250,7 @@ func (h *MavenBrowserHandler) collectDirectoryData(artifactPath string) (*MavenB
 	// 각 미러에 대해 고루틴 실행
 	for _, proxy := range h.config.Proxies {
 		wg.Add(1)
-		go func(p configs.MavenProxyServer) {
+		go func(p config.MavenProxyServer) {
 			defer wg.Done()
 
 			mirrorStatus := maven.MirrorStatus{
@@ -369,7 +369,7 @@ func (h *MavenBrowserHandler) collectDirectoryData(artifactPath string) (*MavenB
 }
 
 // fetchDirectoryFromMirror 특정 미러에서 디렉토리 정보 수집
-func (h *MavenBrowserHandler) fetchDirectoryFromMirror(proxy configs.MavenProxyServer, artifactPath string) ([]DirectoryEntry, error) {
+func (h *MavenBrowserHandler) fetchDirectoryFromMirror(proxy config.MavenProxyServer, artifactPath string) ([]DirectoryEntry, error) {
 	// 미러 URL 구성
 	baseURL := strings.TrimRight(proxy.URL, "/")
 	cleanPath := strings.Trim(artifactPath, "/")
@@ -508,7 +508,7 @@ func hasFileExtension(name string) bool {
 }
 
 // parseMetadata Maven 메타데이터 기반 파싱
-func (h *MavenBrowserHandler) parseMetadata(proxy configs.MavenProxyServer, cleanPath string) ([]DirectoryEntry, error) {
+func (h *MavenBrowserHandler) parseMetadata(proxy config.MavenProxyServer, cleanPath string) ([]DirectoryEntry, error) {
 	// maven-metadata.xml 파일 시도
 	metadataURL := strings.TrimRight(proxy.URL, "/") + "/" + cleanPath + "/maven-metadata.xml"
 
@@ -1426,7 +1426,7 @@ func (h *MavenBrowserHandler) addChildrenFromPaths(parent *maven.GAVTreeNode, ma
 }
 
 // SetConfig 설정 변경 (CLI 도구용)
-func (h *MavenBrowserHandler) SetConfig(config *configs.MavenProxyConfig) {
+func (h *MavenBrowserHandler) SetConfig(config *config.MavenProxyConfig) {
 	h.config = config
 }
 

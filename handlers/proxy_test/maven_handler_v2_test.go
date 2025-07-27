@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/valyala/fasthttp"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/handlers/proxy"
 	"proxynd/internal/errors"
 	"proxynd/logging"
@@ -37,7 +37,7 @@ func TestMavenHandler_Type(t *testing.T) {
 func TestMavenHandler_IsEnabled(t *testing.T) {
 	tests := []struct {
 		name     string
-		Config   *configs.MavenProxyConfig
+		Config   *config.MavenProxyConfig
 		expected bool
 	}{
 		{
@@ -47,13 +47,13 @@ func TestMavenHandler_IsEnabled(t *testing.T) {
 		},
 		{
 			name:     "empty proxies",
-			Config:   &configs.MavenProxyConfig{Proxies: []configs.MavenProxyServer{}},
+			Config:   &config.MavenProxyConfig{Proxies: []config.MavenProxyServer{}},
 			expected: false,
 		},
 		{
 			name: "with proxies",
-			Config: &configs.MavenProxyConfig{
-				Proxies: []configs.MavenProxyServer{
+			Config: &config.MavenProxyConfig{
+				Proxies: []config.MavenProxyServer{
 					{Name: "central", URL: "https://repo1.maven.org/maven2/"},
 				},
 			},
@@ -133,21 +133,21 @@ func TestMavenHandler_GenerateCacheKey(t *testing.T) {
 func TestMavenHandler_BuildUpstreamURL(t *testing.T) {
 	tests := []struct {
 		name        string
-		Config      *configs.MavenProxyConfig
+		Config      *config.MavenProxyConfig
 		path        string
 		expected    string
 		expectError bool
 	}{
 		{
 			name:        "no config",
-			Config:      &configs.MavenProxyConfig{},
+			Config:      &config.MavenProxyConfig{},
 			path:        "com/example/test.jar",
 			expectError: true,
 		},
 		{
 			name: "valid config and path",
-			Config: &configs.MavenProxyConfig{
-				Proxies: []configs.MavenProxyServer{
+			Config: &config.MavenProxyConfig{
+				Proxies: []config.MavenProxyServer{
 					{Name: "central", URL: "https://repo1.maven.org/maven2"},
 				},
 			},
@@ -156,8 +156,8 @@ func TestMavenHandler_BuildUpstreamURL(t *testing.T) {
 		},
 		{
 			name: "path traversal attempt",
-			Config: &configs.MavenProxyConfig{
-				Proxies: []configs.MavenProxyServer{
+			Config: &config.MavenProxyConfig{
+				Proxies: []config.MavenProxyServer{
 					{Name: "central", URL: "https://repo1.maven.org/maven2"},
 				},
 			},
@@ -166,8 +166,8 @@ func TestMavenHandler_BuildUpstreamURL(t *testing.T) {
 		},
 		{
 			name: "absolute path",
-			Config: &configs.MavenProxyConfig{
-				Proxies: []configs.MavenProxyServer{
+			Config: &config.MavenProxyConfig{
+				Proxies: []config.MavenProxyServer{
 					{Name: "central", URL: "https://repo1.maven.org/maven2"},
 				},
 			},
@@ -176,8 +176,8 @@ func TestMavenHandler_BuildUpstreamURL(t *testing.T) {
 		},
 		{
 			name: "empty path",
-			Config: &configs.MavenProxyConfig{
-				Proxies: []configs.MavenProxyServer{
+			Config: &config.MavenProxyConfig{
+				Proxies: []config.MavenProxyServer{
 					{Name: "central", URL: "https://repo1.maven.org/maven2"},
 				},
 			},
@@ -681,7 +681,7 @@ func TestMavenHandler_TransformRequest(t *testing.T) {
 
 	t.Run("basic request transformation", func(t *testing.T) {
 		// Set up handler with empty config to avoid ReadConfig calls
-		handler.Config = &configs.MavenProxyConfig{}
+		handler.Config = &config.MavenProxyConfig{}
 
 		app := fiber.New()
 		var testError error
@@ -709,7 +709,7 @@ func TestMavenHandler_TransformRequest(t *testing.T) {
 
 	t.Run("snapshot artifact no-cache headers", func(t *testing.T) {
 		// Set up handler with empty config to avoid ReadConfig calls
-		handler.Config = &configs.MavenProxyConfig{}
+		handler.Config = &config.MavenProxyConfig{}
 
 		app := fiber.New()
 		var testError error
@@ -741,25 +741,25 @@ func TestMavenHandler_TransformRequest(t *testing.T) {
 func TestMavenHandler_GetUpstreamAuth(t *testing.T) {
 	tests := []struct {
 		name     string
-		Config   *configs.MavenProxyConfig
+		Config   *config.MavenProxyConfig
 		username string
 		password string
 		hasError bool
 	}{
 		{
 			name:     "no auth config",
-			Config:   &configs.MavenProxyConfig{Proxies: []configs.MavenProxyServer{{Name: "test", URL: "http://example.com"}}},
+			Config:   &config.MavenProxyConfig{Proxies: []config.MavenProxyServer{{Name: "test", URL: "http://example.com"}}},
 			username: "",
 			password: "",
 			hasError: false,
 		},
 		{
 			name: "with basic auth",
-			Config: &configs.MavenProxyConfig{
-				Proxies: []configs.MavenProxyServer{{
+			Config: &config.MavenProxyConfig{
+				Proxies: []config.MavenProxyServer{{
 					Name: "test",
 					URL:  "http://example.com",
-					BasicAuth: configs.BasicAuth{
+					BasicAuth: config.BasicAuth{
 						Username: "user",
 						Password: "pass",
 					},
@@ -771,7 +771,7 @@ func TestMavenHandler_GetUpstreamAuth(t *testing.T) {
 		},
 		{
 			name:     "empty config",
-			Config:   &configs.MavenProxyConfig{},
+			Config:   &config.MavenProxyConfig{},
 			username: "",
 			password: "",
 			hasError: false,

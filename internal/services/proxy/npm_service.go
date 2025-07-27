@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 )
 
 // NpmService handles NPM repository proxy requests
 type NpmService struct {
 	*BaseProxyService
-	config *configs.NpmProxyConfig
+	config *config.NpmProxyConfig
 }
 
 // NewNpmService creates a new NPM proxy service
@@ -27,7 +27,7 @@ func NewNpmService(
 		return nil, fmt.Errorf("failed to load npm config: %w", err)
 	}
 
-	npmConfig, ok := configInterface.(*configs.NpmProxyConfig)
+	npmConfig, ok := configInterface.(*config.NpmProxyConfig)
 	if !ok {
 		return nil, fmt.Errorf("invalid npm config type")
 	}

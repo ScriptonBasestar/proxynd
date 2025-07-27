@@ -7,7 +7,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/internal/app"
 	"proxynd/logging"
 )
@@ -63,7 +63,7 @@ func (h *BaseHandler) GetContainer() *app.Container {
 }
 
 // GetConfig 설정 반환
-func (h *BaseHandler) GetConfig() *configs.UnifiedConfig {
+func (h *BaseHandler) GetConfig() *config.UnifiedConfig {
 	return h.container.GetUnifiedConfig()
 }
 

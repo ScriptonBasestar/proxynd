@@ -8,7 +8,7 @@ import (
 
 	"github.com/go-playground/assert/v2"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 )
 
 func TestUnifiedConfig_LoadDefaults(t *testing.T) {
@@ -17,7 +17,7 @@ func TestUnifiedConfig_LoadDefaults(t *testing.T) {
 	configPath := filepath.Join(tempDir, "config.yaml")
 
 	// 설정 로더 생성 (파일 없음 - 기본값 사용)
-	loader := configs.NewConfigLoader(configPath)
+	loader := config.NewConfigLoader(configPath)
 	config, err := loader.Load()
 
 	assert.Equal(t, nil, err)
@@ -75,7 +75,7 @@ registries:
 	assert.Equal(t, nil, err)
 
 	// 설정 로드
-	loader := configs.NewConfigLoader(configPath)
+	loader := config.NewConfigLoader(configPath)
 	config, err := loader.Load()
 
 	assert.Equal(t, nil, err)
@@ -137,7 +137,7 @@ metrics:
 	assert.Equal(t, nil, err)
 
 	// 설정 로드
-	loader := configs.NewConfigLoader(configPath)
+	loader := config.NewConfigLoader(configPath)
 	config, err := loader.Load()
 
 	assert.Equal(t, nil, err)
@@ -153,14 +153,14 @@ metrics:
 func TestUnifiedConfig_Validation(t *testing.T) {
 	tests := []struct {
 		name        string
-		config      *configs.UnifiedConfig
+		config      *config.UnifiedConfig
 		expectError bool
 		errorMsg    string
 	}{
 		{
 			name: "Invalid port",
-			config: &configs.UnifiedConfig{
-				Server: configs.ServerConfig{
+			config: &config.UnifiedConfig{
+				Server: config.ServerConfig{
 					Port: 99999,
 				},
 			},
@@ -169,10 +169,10 @@ func TestUnifiedConfig_Validation(t *testing.T) {
 		},
 		{
 			name: "TLS enabled without cert",
-			config: &configs.UnifiedConfig{
-				Server: configs.ServerConfig{
+			config: &config.UnifiedConfig{
+				Server: config.ServerConfig{
 					Port: 8080,
-					TLS: configs.TLSConfig{
+					TLS: config.TLSConfig{
 						Enabled: true,
 						KeyFile: "key.pem",
 					},
@@ -183,11 +183,11 @@ func TestUnifiedConfig_Validation(t *testing.T) {
 		},
 		{
 			name: "Invalid cache backend",
-			config: &configs.UnifiedConfig{
-				Server: configs.ServerConfig{
+			config: &config.UnifiedConfig{
+				Server: config.ServerConfig{
 					Port: 8080,
 				},
-				Cache: configs.CacheConfig{
+				Cache: config.CacheConfig{
 					Backend: "invalid",
 				},
 			},
@@ -196,14 +196,14 @@ func TestUnifiedConfig_Validation(t *testing.T) {
 		},
 		{
 			name: "Invalid log level",
-			config: &configs.UnifiedConfig{
-				Server: configs.ServerConfig{
+			config: &config.UnifiedConfig{
+				Server: config.ServerConfig{
 					Port: 8080,
 				},
-				Cache: configs.CacheConfig{
+				Cache: config.CacheConfig{
 					Backend: "file",
 				},
-				Logging: configs.UnifiedLoggingConfig{
+				Logging: config.UnifiedLoggingConfig{
 					Level: "invalid",
 				},
 			},
@@ -238,7 +238,7 @@ func TestEnvOverride_GetEnvironmentOverrides(t *testing.T) {
 		_ = os.Unsetenv("CACHE_BACKEND")
 	}()
 
-	overrides := configs.GetEnvironmentOverrides()
+	overrides := config.GetEnvironmentOverrides()
 
 	assert.Equal(t, "8080", overrides["SERVER_PORT"])
 	assert.Equal(t, "debug", overrides["LOG_LEVEL"])
@@ -272,7 +272,7 @@ cache:
 	assert.Equal(t, nil, err)
 
 	// 설정 로드
-	loader := configs.NewConfigLoader(configPath)
+	loader := config.NewConfigLoader(configPath)
 	config, err := loader.Load()
 
 	assert.Equal(t, nil, err)
@@ -299,7 +299,7 @@ logging:
 	assert.Equal(t, nil, err)
 
 	// 핫리로드 매니저 생성
-	manager, err := configs.NewHotReloadManager(configPath)
+	manager, err := config.NewHotReloadManager(configPath)
 	assert.Equal(t, nil, err)
 	assert.NotEqual(t, nil, manager)
 
@@ -312,7 +312,7 @@ logging:
 	reloadCount := 0
 	testHandler := &testReloadHandler{
 		name: "TestHandler",
-		onReload: func(_, _ *configs.UnifiedConfig) error {
+		onReload: func(_, _ *config.UnifiedConfig) error {
 			reloadCount++
 			return nil
 		},
@@ -352,10 +352,10 @@ logging:
 // 테스트용 리로드 핸들러
 type testReloadHandler struct {
 	name     string
-	onReload func(old, newVal *configs.UnifiedConfig) error
+	onReload func(old, newVal *config.UnifiedConfig) error
 }
 
-func (h *testReloadHandler) OnConfigReload(old, newVal *configs.UnifiedConfig) error {
+func (h *testReloadHandler) OnConfigReload(old, newVal *config.UnifiedConfig) error {
 	return h.onReload(old, newVal)
 }
 

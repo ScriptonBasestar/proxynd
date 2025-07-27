@@ -10,7 +10,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/health"
 )
 
@@ -18,7 +18,7 @@ import (
 var healthService *health.HealthService
 
 // InitHealthService 건강 상태 서비스 초기화
-func InitHealthService(config *configs.UnifiedConfig) {
+func InitHealthService(config *config.UnifiedConfig) {
 	// 체크 간격 설정 (기본 30초)
 	checkInterval := 30 * time.Second
 
@@ -79,7 +79,7 @@ func HealthRouter(app *fiber.App) {
 }
 
 // HealthRouterWithConfig 설정을 포함한 건강 상태 라우터
-func HealthRouterWithConfig(app *fiber.App, config *configs.UnifiedConfig) {
+func HealthRouterWithConfig(app *fiber.App, config *config.UnifiedConfig) {
 	// 건강 상태 서비스 초기화
 	InitHealthService(config)
 
@@ -256,7 +256,7 @@ func getAllEnvVars() map[string]string {
 }
 
 // getConfigSummary 설정 요약 반환
-func getConfigSummary(config *configs.UnifiedConfig) map[string]interface{} {
+func getConfigSummary(config *config.UnifiedConfig) map[string]interface{} {
 	if config == nil {
 		return nil
 	}

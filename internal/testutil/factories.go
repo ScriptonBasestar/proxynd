@@ -11,7 +11,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 	repocache "proxynd/internal/repositories/cache"
 	"proxynd/internal/services/adapters"
 	"proxynd/internal/services/config"
@@ -126,8 +126,8 @@ func (f *Factory) ProxyService(proxyType string) proxy.ProxyService {
 }
 
 // GlobalConfig creates a test global configuration
-func (f *Factory) GlobalConfig() *configs.GlobalConfig {
-	return &configs.GlobalConfig{
+func (f *Factory) GlobalConfig() *config.GlobalConfig {
+	return &config.GlobalConfig{
 		StorageDir:   filepath.Join(f.tempDir, "storage"),
 		ConfigDir:    filepath.Join(f.tempDir, "config"),
 		CacheDir:     filepath.Join(f.tempDir, "cache"),

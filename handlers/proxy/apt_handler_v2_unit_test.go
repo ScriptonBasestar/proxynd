@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/logging"
 )
 
@@ -26,13 +26,13 @@ func TestAPTHandler_Type(t *testing.T) {
 func TestAPTHandler_IsEnabled(t *testing.T) {
 	tests := []struct {
 		name     string
-		config   *configs.AptProxyConfig
+		config   *config.AptProxyConfig
 		expected bool
 	}{
 		{
 			name: "활성화된 APT 프록시",
-			config: &configs.AptProxyConfig{
-				Proxies: map[string][]configs.AptProxy{
+			config: &config.AptProxyConfig{
+				Proxies: map[string][]config.AptProxy{
 					"ubuntu": {
 						{URL: "http://mirror.example.com/ubuntu"},
 					},
@@ -42,14 +42,14 @@ func TestAPTHandler_IsEnabled(t *testing.T) {
 		},
 		{
 			name: "프록시 없음",
-			config: &configs.AptProxyConfig{
-				Proxies: map[string][]configs.AptProxy{},
+			config: &config.AptProxyConfig{
+				Proxies: map[string][]config.AptProxy{},
 			},
 			expected: false,
 		},
 		{
 			name:     "빈 설정",
-			config:   &configs.AptProxyConfig{},
+			config:   &config.AptProxyConfig{},
 			expected: false,
 		},
 	}
@@ -122,7 +122,7 @@ func TestAPTHandler_GenerateCacheKey(t *testing.T) {
 func TestAPTHandler_BuildUpstreamURL(t *testing.T) {
 	tests := []struct {
 		name        string
-		config      *configs.AptProxyConfig
+		config      *config.AptProxyConfig
 		osType      string
 		path        string
 		expectedURL string
@@ -130,8 +130,8 @@ func TestAPTHandler_BuildUpstreamURL(t *testing.T) {
 	}{
 		{
 			name: "정상적인 Ubuntu URL 구성",
-			config: &configs.AptProxyConfig{
-				Proxies: map[string][]configs.AptProxy{
+			config: &config.AptProxyConfig{
+				Proxies: map[string][]config.AptProxy{
 					"ubuntu": {
 						{URL: "http://mirror.ubuntu.com/ubuntu"},
 					},
@@ -144,8 +144,8 @@ func TestAPTHandler_BuildUpstreamURL(t *testing.T) {
 		},
 		{
 			name: "Debian URL 구성",
-			config: &configs.AptProxyConfig{
-				Proxies: map[string][]configs.AptProxy{
+			config: &config.AptProxyConfig{
+				Proxies: map[string][]config.AptProxy{
 					"debian": {
 						{URL: "http://deb.debian.org/debian/"},
 					},
@@ -158,8 +158,8 @@ func TestAPTHandler_BuildUpstreamURL(t *testing.T) {
 		},
 		{
 			name: "존재하지 않는 OS 타입",
-			config: &configs.AptProxyConfig{
-				Proxies: map[string][]configs.AptProxy{
+			config: &config.AptProxyConfig{
+				Proxies: map[string][]config.AptProxy{
 					"ubuntu": {
 						{URL: "http://mirror.ubuntu.com/ubuntu"},
 					},
@@ -172,8 +172,8 @@ func TestAPTHandler_BuildUpstreamURL(t *testing.T) {
 		},
 		{
 			name: "빈 프록시 설정",
-			config: &configs.AptProxyConfig{
-				Proxies: map[string][]configs.AptProxy{
+			config: &config.AptProxyConfig{
+				Proxies: map[string][]config.AptProxy{
 					"ubuntu": {},
 				},
 			},
@@ -184,8 +184,8 @@ func TestAPTHandler_BuildUpstreamURL(t *testing.T) {
 		},
 		{
 			name: "빈 URL",
-			config: &configs.AptProxyConfig{
-				Proxies: map[string][]configs.AptProxy{
+			config: &config.AptProxyConfig{
+				Proxies: map[string][]config.AptProxy{
 					"ubuntu": {
 						{URL: ""},
 					},
@@ -605,13 +605,13 @@ func TestAPTHandler_isMetadataFile(t *testing.T) {
 func TestAPTHandler_HealthCheck(t *testing.T) {
 	tests := []struct {
 		name        string
-		config      *configs.AptProxyConfig
+		config      *config.AptProxyConfig
 		expectError bool
 	}{
 		{
 			name: "정상적인 설정",
-			config: &configs.AptProxyConfig{
-				Proxies: map[string][]configs.AptProxy{
+			config: &config.AptProxyConfig{
+				Proxies: map[string][]config.AptProxy{
 					"ubuntu": {
 						{URL: "http://mirror.ubuntu.com/ubuntu"},
 					},
@@ -621,15 +621,15 @@ func TestAPTHandler_HealthCheck(t *testing.T) {
 		},
 		{
 			name: "빈 프록시 설정",
-			config: &configs.AptProxyConfig{
-				Proxies: map[string][]configs.AptProxy{},
+			config: &config.AptProxyConfig{
+				Proxies: map[string][]config.AptProxy{},
 			},
 			expectError: true,
 		},
 		{
 			name: "빈 URL이 있는 설정",
-			config: &configs.AptProxyConfig{
-				Proxies: map[string][]configs.AptProxy{
+			config: &config.AptProxyConfig{
+				Proxies: map[string][]config.AptProxy{
 					"ubuntu": {
 						{URL: ""},
 					},
@@ -776,8 +776,8 @@ func TestAPTHandler_RecordCacheMetrics(t *testing.T) {
 func TestAPTHandler_GetUpstreamAuth(t *testing.T) {
 	handler := &APTHandler{
 		logger: logging.GetLogger(),
-		Config: &configs.AptProxyConfig{
-			Proxies: map[string][]configs.AptProxy{
+		Config: &config.AptProxyConfig{
+			Proxies: map[string][]config.AptProxy{
 				"ubuntu": {
 					{URL: "http://mirror.ubuntu.com/ubuntu"},
 				},
@@ -876,14 +876,14 @@ func TestAPTHandler_ActualMethodCalls(t *testing.T) {
 func TestAPTHandler_ErrorHandling(t *testing.T) {
 	tests := []struct {
 		name           string
-		config         *configs.AptProxyConfig
+		config         *config.AptProxyConfig
 		expectedStatus int
 		expectedError  string
 	}{
 		{
 			name: "존재하지 않는 OS 타입",
-			config: &configs.AptProxyConfig{
-				Proxies: map[string][]configs.AptProxy{
+			config: &config.AptProxyConfig{
+				Proxies: map[string][]config.AptProxy{
 					"ubuntu": {
 						{URL: "http://mirror.ubuntu.com/ubuntu"},
 					},
@@ -894,8 +894,8 @@ func TestAPTHandler_ErrorHandling(t *testing.T) {
 		},
 		{
 			name: "빈 프록시 설정",
-			config: &configs.AptProxyConfig{
-				Proxies: map[string][]configs.AptProxy{},
+			config: &config.AptProxyConfig{
+				Proxies: map[string][]config.AptProxy{},
 			},
 			expectedStatus: 500,
 			expectedError:  "APT 미러가 설정되지 않았습니다",
@@ -957,8 +957,8 @@ func TestAPTHandler_Integration(t *testing.T) {
 	defer upstreamServer.Close()
 
 	// APT 핸들러 설정
-	config := &configs.AptProxyConfig{
-		Proxies: map[string][]configs.AptProxy{
+	config := &config.AptProxyConfig{
+		Proxies: map[string][]config.AptProxy{
 			"ubuntu": {
 				{URL: upstreamServer.URL},
 			},

@@ -1,11 +1,11 @@
 package maven
 
-import "proxynd/configs"
+import "proxynd/internal/config"
 
 // ProxyConfig Maven 프록시 설정 인터페이스 (의존성 추상화)
 type ProxyConfig interface {
 	// GetProxies 설정된 프록시 서버 목록 반환
-	GetProxies() []configs.MavenProxyServer
+	GetProxies() []config.MavenProxyServer
 
 	// GetCacheConfig 캐시 설정 반환
 	GetCacheConfig() CacheConfig
@@ -29,22 +29,22 @@ type SearchConfig struct {
 	MaxResults        int  `json:"maxResults"`
 }
 
-// DefaultProxyConfig configs.MavenProxyConfig의 어댑터 (기본 구현)
+// DefaultProxyConfig config.MavenProxyConfig의 어댑터 (기본 구현)
 type DefaultProxyConfig struct {
-	config *configs.MavenProxyConfig
+	config *config.MavenProxyConfig
 }
 
 // NewDefaultProxyConfig DefaultProxyConfig 생성자
-func NewDefaultProxyConfig(config *configs.MavenProxyConfig) ProxyConfig {
+func NewDefaultProxyConfig(config *config.MavenProxyConfig) ProxyConfig {
 	return &DefaultProxyConfig{
 		config: config,
 	}
 }
 
 // GetProxies 프록시 서버 목록 반환
-func (c *DefaultProxyConfig) GetProxies() []configs.MavenProxyServer {
+func (c *DefaultProxyConfig) GetProxies() []config.MavenProxyServer {
 	if c.config == nil {
-		return []configs.MavenProxyServer{}
+		return []config.MavenProxyServer{}
 	}
 	return c.config.Proxies
 }
@@ -59,7 +59,7 @@ func (c *DefaultProxyConfig) GetCacheConfig() CacheConfig {
 		PreloadPopularPaths: true,
 	}
 
-	// configs.MavenProxyConfig에서 캐시 관련 설정이 있다면 매핑
+	// config.MavenProxyConfig에서 캐시 관련 설정이 있다면 매핑
 	// 현재는 기본값 사용
 	return cacheConfig
 }
@@ -73,7 +73,7 @@ func (c *DefaultProxyConfig) GetSearchConfig() SearchConfig {
 		MaxResults:        100,
 	}
 
-	// configs.MavenProxyConfig에서 검색 관련 설정이 있다면 매핑
+	// config.MavenProxyConfig에서 검색 관련 설정이 있다면 매핑
 	// 현재는 기본값 사용
 	return searchConfig
 }

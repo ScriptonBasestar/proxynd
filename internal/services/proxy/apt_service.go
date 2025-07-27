@@ -5,13 +5,13 @@ import (
 	"context"
 	"fmt"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 )
 
 // AptService handles APT repository proxy requests
 type AptService struct {
 	*BaseProxyService
-	config *configs.AptProxyConfig
+	config *config.AptProxyConfig
 }
 
 // NewAptService creates a new APT proxy service
@@ -28,7 +28,7 @@ func NewAptService(
 		return nil, fmt.Errorf("failed to load apt config: %w", err)
 	}
 
-	aptConfig, ok := configInterface.(*configs.AptProxyConfig)
+	aptConfig, ok := configInterface.(*config.AptProxyConfig)
 	if !ok {
 		return nil, fmt.Errorf("invalid apt config type")
 	}

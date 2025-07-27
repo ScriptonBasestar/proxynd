@@ -5,7 +5,7 @@ package mocks
 import (
 	context "context"
 
-	configs "proxynd/configs"
+	configs "proxynd/internal/config"
 
 	mock "github.com/stretchr/testify/mock"
 )
@@ -24,23 +24,23 @@ func (_m *MockService) EXPECT() *MockService_Expecter {
 }
 
 // GetApkConfig provides a mock function with given fields: ctx
-func (_m *MockService) GetApkConfig(ctx context.Context) (*configs.ApkProxyConfig, error) {
+func (_m *MockService) GetApkConfig(ctx context.Context) (*config.ApkProxyConfig, error) {
 	ret := _m.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetApkConfig")
 	}
 
-	var r0 *configs.ApkProxyConfig
+	var r0 *config.ApkProxyConfig
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) (*configs.ApkProxyConfig, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context) (*config.ApkProxyConfig, error)); ok {
 		return rf(ctx)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context) *configs.ApkProxyConfig); ok {
+	if rf, ok := ret.Get(0).(func(context.Context) *config.ApkProxyConfig); ok {
 		r0 = rf(ctx)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*configs.ApkProxyConfig)
+			r0 = ret.Get(0).(*config.ApkProxyConfig)
 		}
 	}
 
@@ -71,34 +71,34 @@ func (_c *MockService_GetApkConfig_Call) Run(run func(ctx context.Context)) *Moc
 	return _c
 }
 
-func (_c *MockService_GetApkConfig_Call) Return(_a0 *configs.ApkProxyConfig, _a1 error) *MockService_GetApkConfig_Call {
+func (_c *MockService_GetApkConfig_Call) Return(_a0 *config.ApkProxyConfig, _a1 error) *MockService_GetApkConfig_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *MockService_GetApkConfig_Call) RunAndReturn(run func(context.Context) (*configs.ApkProxyConfig, error)) *MockService_GetApkConfig_Call {
+func (_c *MockService_GetApkConfig_Call) RunAndReturn(run func(context.Context) (*config.ApkProxyConfig, error)) *MockService_GetApkConfig_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetAptConfig provides a mock function with given fields: ctx
-func (_m *MockService) GetAptConfig(ctx context.Context) (*configs.AptProxyConfig, error) {
+func (_m *MockService) GetAptConfig(ctx context.Context) (*config.AptProxyConfig, error) {
 	ret := _m.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetAptConfig")
 	}
 
-	var r0 *configs.AptProxyConfig
+	var r0 *config.AptProxyConfig
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) (*configs.AptProxyConfig, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context) (*config.AptProxyConfig, error)); ok {
 		return rf(ctx)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context) *configs.AptProxyConfig); ok {
+	if rf, ok := ret.Get(0).(func(context.Context) *config.AptProxyConfig); ok {
 		r0 = rf(ctx)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*configs.AptProxyConfig)
+			r0 = ret.Get(0).(*config.AptProxyConfig)
 		}
 	}
 
@@ -129,34 +129,34 @@ func (_c *MockService_GetAptConfig_Call) Run(run func(ctx context.Context)) *Moc
 	return _c
 }
 
-func (_c *MockService_GetAptConfig_Call) Return(_a0 *configs.AptProxyConfig, _a1 error) *MockService_GetAptConfig_Call {
+func (_c *MockService_GetAptConfig_Call) Return(_a0 *config.AptProxyConfig, _a1 error) *MockService_GetAptConfig_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *MockService_GetAptConfig_Call) RunAndReturn(run func(context.Context) (*configs.AptProxyConfig, error)) *MockService_GetAptConfig_Call {
+func (_c *MockService_GetAptConfig_Call) RunAndReturn(run func(context.Context) (*config.AptProxyConfig, error)) *MockService_GetAptConfig_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetDockerConfig provides a mock function with given fields: ctx
-func (_m *MockService) GetDockerConfig(ctx context.Context) (*configs.DockerProxyConfig, error) {
+func (_m *MockService) GetDockerConfig(ctx context.Context) (*config.DockerProxyConfig, error) {
 	ret := _m.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetDockerConfig")
 	}
 
-	var r0 *configs.DockerProxyConfig
+	var r0 *config.DockerProxyConfig
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) (*configs.DockerProxyConfig, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context) (*config.DockerProxyConfig, error)); ok {
 		return rf(ctx)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context) *configs.DockerProxyConfig); ok {
+	if rf, ok := ret.Get(0).(func(context.Context) *config.DockerProxyConfig); ok {
 		r0 = rf(ctx)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*configs.DockerProxyConfig)
+			r0 = ret.Get(0).(*config.DockerProxyConfig)
 		}
 	}
 
@@ -187,34 +187,34 @@ func (_c *MockService_GetDockerConfig_Call) Run(run func(ctx context.Context)) *
 	return _c
 }
 
-func (_c *MockService_GetDockerConfig_Call) Return(_a0 *configs.DockerProxyConfig, _a1 error) *MockService_GetDockerConfig_Call {
+func (_c *MockService_GetDockerConfig_Call) Return(_a0 *config.DockerProxyConfig, _a1 error) *MockService_GetDockerConfig_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *MockService_GetDockerConfig_Call) RunAndReturn(run func(context.Context) (*configs.DockerProxyConfig, error)) *MockService_GetDockerConfig_Call {
+func (_c *MockService_GetDockerConfig_Call) RunAndReturn(run func(context.Context) (*config.DockerProxyConfig, error)) *MockService_GetDockerConfig_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetGlobalConfig provides a mock function with given fields: ctx
-func (_m *MockService) GetGlobalConfig(ctx context.Context) (*configs.GlobalConfig, error) {
+func (_m *MockService) GetGlobalConfig(ctx context.Context) (*config.GlobalConfig, error) {
 	ret := _m.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetGlobalConfig")
 	}
 
-	var r0 *configs.GlobalConfig
+	var r0 *config.GlobalConfig
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) (*configs.GlobalConfig, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context) (*config.GlobalConfig, error)); ok {
 		return rf(ctx)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context) *configs.GlobalConfig); ok {
+	if rf, ok := ret.Get(0).(func(context.Context) *config.GlobalConfig); ok {
 		r0 = rf(ctx)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*configs.GlobalConfig)
+			r0 = ret.Get(0).(*config.GlobalConfig)
 		}
 	}
 
@@ -245,34 +245,34 @@ func (_c *MockService_GetGlobalConfig_Call) Run(run func(ctx context.Context)) *
 	return _c
 }
 
-func (_c *MockService_GetGlobalConfig_Call) Return(_a0 *configs.GlobalConfig, _a1 error) *MockService_GetGlobalConfig_Call {
+func (_c *MockService_GetGlobalConfig_Call) Return(_a0 *config.GlobalConfig, _a1 error) *MockService_GetGlobalConfig_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *MockService_GetGlobalConfig_Call) RunAndReturn(run func(context.Context) (*configs.GlobalConfig, error)) *MockService_GetGlobalConfig_Call {
+func (_c *MockService_GetGlobalConfig_Call) RunAndReturn(run func(context.Context) (*config.GlobalConfig, error)) *MockService_GetGlobalConfig_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetMavenConfig provides a mock function with given fields: ctx
-func (_m *MockService) GetMavenConfig(ctx context.Context) (*configs.MavenProxyConfig, error) {
+func (_m *MockService) GetMavenConfig(ctx context.Context) (*config.MavenProxyConfig, error) {
 	ret := _m.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetMavenConfig")
 	}
 
-	var r0 *configs.MavenProxyConfig
+	var r0 *config.MavenProxyConfig
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) (*configs.MavenProxyConfig, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context) (*config.MavenProxyConfig, error)); ok {
 		return rf(ctx)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context) *configs.MavenProxyConfig); ok {
+	if rf, ok := ret.Get(0).(func(context.Context) *config.MavenProxyConfig); ok {
 		r0 = rf(ctx)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*configs.MavenProxyConfig)
+			r0 = ret.Get(0).(*config.MavenProxyConfig)
 		}
 	}
 
@@ -303,34 +303,34 @@ func (_c *MockService_GetMavenConfig_Call) Run(run func(ctx context.Context)) *M
 	return _c
 }
 
-func (_c *MockService_GetMavenConfig_Call) Return(_a0 *configs.MavenProxyConfig, _a1 error) *MockService_GetMavenConfig_Call {
+func (_c *MockService_GetMavenConfig_Call) Return(_a0 *config.MavenProxyConfig, _a1 error) *MockService_GetMavenConfig_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *MockService_GetMavenConfig_Call) RunAndReturn(run func(context.Context) (*configs.MavenProxyConfig, error)) *MockService_GetMavenConfig_Call {
+func (_c *MockService_GetMavenConfig_Call) RunAndReturn(run func(context.Context) (*config.MavenProxyConfig, error)) *MockService_GetMavenConfig_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetNpmConfig provides a mock function with given fields: ctx
-func (_m *MockService) GetNpmConfig(ctx context.Context) (*configs.NpmProxyConfig, error) {
+func (_m *MockService) GetNpmConfig(ctx context.Context) (*config.NpmProxyConfig, error) {
 	ret := _m.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetNpmConfig")
 	}
 
-	var r0 *configs.NpmProxyConfig
+	var r0 *config.NpmProxyConfig
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) (*configs.NpmProxyConfig, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context) (*config.NpmProxyConfig, error)); ok {
 		return rf(ctx)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context) *configs.NpmProxyConfig); ok {
+	if rf, ok := ret.Get(0).(func(context.Context) *config.NpmProxyConfig); ok {
 		r0 = rf(ctx)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*configs.NpmProxyConfig)
+			r0 = ret.Get(0).(*config.NpmProxyConfig)
 		}
 	}
 
@@ -361,34 +361,34 @@ func (_c *MockService_GetNpmConfig_Call) Run(run func(ctx context.Context)) *Moc
 	return _c
 }
 
-func (_c *MockService_GetNpmConfig_Call) Return(_a0 *configs.NpmProxyConfig, _a1 error) *MockService_GetNpmConfig_Call {
+func (_c *MockService_GetNpmConfig_Call) Return(_a0 *config.NpmProxyConfig, _a1 error) *MockService_GetNpmConfig_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *MockService_GetNpmConfig_Call) RunAndReturn(run func(context.Context) (*configs.NpmProxyConfig, error)) *MockService_GetNpmConfig_Call {
+func (_c *MockService_GetNpmConfig_Call) RunAndReturn(run func(context.Context) (*config.NpmProxyConfig, error)) *MockService_GetNpmConfig_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetPipConfig provides a mock function with given fields: ctx
-func (_m *MockService) GetPipConfig(ctx context.Context) (*configs.PipProxyConfig, error) {
+func (_m *MockService) GetPipConfig(ctx context.Context) (*config.PipProxyConfig, error) {
 	ret := _m.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetPipConfig")
 	}
 
-	var r0 *configs.PipProxyConfig
+	var r0 *config.PipProxyConfig
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) (*configs.PipProxyConfig, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context) (*config.PipProxyConfig, error)); ok {
 		return rf(ctx)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context) *configs.PipProxyConfig); ok {
+	if rf, ok := ret.Get(0).(func(context.Context) *config.PipProxyConfig); ok {
 		r0 = rf(ctx)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*configs.PipProxyConfig)
+			r0 = ret.Get(0).(*config.PipProxyConfig)
 		}
 	}
 
@@ -419,34 +419,34 @@ func (_c *MockService_GetPipConfig_Call) Run(run func(ctx context.Context)) *Moc
 	return _c
 }
 
-func (_c *MockService_GetPipConfig_Call) Return(_a0 *configs.PipProxyConfig, _a1 error) *MockService_GetPipConfig_Call {
+func (_c *MockService_GetPipConfig_Call) Return(_a0 *config.PipProxyConfig, _a1 error) *MockService_GetPipConfig_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *MockService_GetPipConfig_Call) RunAndReturn(run func(context.Context) (*configs.PipProxyConfig, error)) *MockService_GetPipConfig_Call {
+func (_c *MockService_GetPipConfig_Call) RunAndReturn(run func(context.Context) (*config.PipProxyConfig, error)) *MockService_GetPipConfig_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetYumConfig provides a mock function with given fields: ctx
-func (_m *MockService) GetYumConfig(ctx context.Context) (*configs.YumProxyConfig, error) {
+func (_m *MockService) GetYumConfig(ctx context.Context) (*config.YumProxyConfig, error) {
 	ret := _m.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetYumConfig")
 	}
 
-	var r0 *configs.YumProxyConfig
+	var r0 *config.YumProxyConfig
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) (*configs.YumProxyConfig, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context) (*config.YumProxyConfig, error)); ok {
 		return rf(ctx)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context) *configs.YumProxyConfig); ok {
+	if rf, ok := ret.Get(0).(func(context.Context) *config.YumProxyConfig); ok {
 		r0 = rf(ctx)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*configs.YumProxyConfig)
+			r0 = ret.Get(0).(*config.YumProxyConfig)
 		}
 	}
 
@@ -477,12 +477,12 @@ func (_c *MockService_GetYumConfig_Call) Run(run func(ctx context.Context)) *Moc
 	return _c
 }
 
-func (_c *MockService_GetYumConfig_Call) Return(_a0 *configs.YumProxyConfig, _a1 error) *MockService_GetYumConfig_Call {
+func (_c *MockService_GetYumConfig_Call) Return(_a0 *config.YumProxyConfig, _a1 error) *MockService_GetYumConfig_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *MockService_GetYumConfig_Call) RunAndReturn(run func(context.Context) (*configs.YumProxyConfig, error)) *MockService_GetYumConfig_Call {
+func (_c *MockService_GetYumConfig_Call) RunAndReturn(run func(context.Context) (*config.YumProxyConfig, error)) *MockService_GetYumConfig_Call {
 	_c.Call.Return(run)
 	return _c
 }

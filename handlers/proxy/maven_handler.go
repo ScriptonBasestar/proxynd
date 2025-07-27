@@ -11,7 +11,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/helpers"
 	"proxynd/internal/errors"
 	"proxynd/internal/security"
@@ -21,7 +21,7 @@ import (
 // MavenHandler V1과 V2의 기능을 통합한 Maven 핸들러
 type MavenHandler struct {
 	logger     logging.Logger
-	Config     *configs.MavenProxyConfig
+	Config     *config.MavenProxyConfig
 	storageDir string
 }
 
@@ -29,7 +29,7 @@ type MavenHandler struct {
 func NewMavenHandler() *MavenHandler {
 	return &MavenHandler{
 		logger:     logging.GetLogger(),
-		Config:     &configs.MavenProxyConfig{},
+		Config:     &config.MavenProxyConfig{},
 		storageDir: helpers.GetStorageDir(),
 	}
 }

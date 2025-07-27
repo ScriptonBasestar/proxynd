@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/helpers"
 )
 
@@ -16,14 +16,14 @@ type service struct {
 	validators map[string]Validator
 
 	// Cached configurations
-	globalConfig *configs.UnifiedConfig
-	mavenConfig  *configs.MavenProxyConfig
-	aptConfig    *configs.AptProxyConfig
-	npmConfig    *configs.NpmProxyConfig
-	dockerConfig *configs.DockerProxyConfig
-	pipConfig    *configs.PipProxyConfig
-	yumConfig    *configs.YumProxyConfig
-	apkConfig    *configs.ApkProxyConfig
+	globalConfig *config.UnifiedConfig
+	mavenConfig  *config.MavenProxyConfig
+	aptConfig    *config.AptProxyConfig
+	npmConfig    *config.NpmProxyConfig
+	dockerConfig *config.DockerProxyConfig
+	pipConfig    *config.PipProxyConfig
+	yumConfig    *config.YumProxyConfig
+	apkConfig    *config.ApkProxyConfig
 }
 
 // NewService creates a new configuration service
@@ -54,7 +54,7 @@ func NewService(ctx context.Context, configDir string) (Service, error) {
 }
 
 // GetGlobalConfig returns the global configuration
-func (s *service) GetGlobalConfig(_ context.Context) (*configs.GlobalConfig, error) {
+func (s *service) GetGlobalConfig(_ context.Context) (*config.GlobalConfig, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -67,11 +67,11 @@ func (s *service) GetGlobalConfig(_ context.Context) (*configs.GlobalConfig, err
 	if cacheDir == "" {
 		cacheDir = "./tmp/storage" // 기본값
 	}
-	globalConfig := &configs.GlobalConfig{
+	globalConfig := &config.GlobalConfig{
 		ConfigDir:  s.configDir,
 		StorageDir: s.globalConfig.Cache.File.Directory,
 		CacheDir:   cacheDir,
-		Cache: configs.Cache{
+		Cache: config.Cache{
 			TTL: 3600, // 기본값
 		},
 	}
@@ -80,7 +80,7 @@ func (s *service) GetGlobalConfig(_ context.Context) (*configs.GlobalConfig, err
 }
 
 // GetMavenConfig returns the Maven proxy configuration
-func (s *service) GetMavenConfig(_ context.Context) (*configs.MavenProxyConfig, error) {
+func (s *service) GetMavenConfig(_ context.Context) (*config.MavenProxyConfig, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -92,7 +92,7 @@ func (s *service) GetMavenConfig(_ context.Context) (*configs.MavenProxyConfig, 
 }
 
 // GetAptConfig returns the APT proxy configuration
-func (s *service) GetAptConfig(_ context.Context) (*configs.AptProxyConfig, error) {
+func (s *service) GetAptConfig(_ context.Context) (*config.AptProxyConfig, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -104,7 +104,7 @@ func (s *service) GetAptConfig(_ context.Context) (*configs.AptProxyConfig, erro
 }
 
 // GetNpmConfig returns the NPM proxy configuration
-func (s *service) GetNpmConfig(_ context.Context) (*configs.NpmProxyConfig, error) {
+func (s *service) GetNpmConfig(_ context.Context) (*config.NpmProxyConfig, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -116,7 +116,7 @@ func (s *service) GetNpmConfig(_ context.Context) (*configs.NpmProxyConfig, erro
 }
 
 // GetDockerConfig returns the Docker proxy configuration
-func (s *service) GetDockerConfig(_ context.Context) (*configs.DockerProxyConfig, error) {
+func (s *service) GetDockerConfig(_ context.Context) (*config.DockerProxyConfig, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -128,7 +128,7 @@ func (s *service) GetDockerConfig(_ context.Context) (*configs.DockerProxyConfig
 }
 
 // GetPipConfig returns the PIP proxy configuration
-func (s *service) GetPipConfig(_ context.Context) (*configs.PipProxyConfig, error) {
+func (s *service) GetPipConfig(_ context.Context) (*config.PipProxyConfig, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -140,7 +140,7 @@ func (s *service) GetPipConfig(_ context.Context) (*configs.PipProxyConfig, erro
 }
 
 // GetYumConfig returns the YUM proxy configuration
-func (s *service) GetYumConfig(_ context.Context) (*configs.YumProxyConfig, error) {
+func (s *service) GetYumConfig(_ context.Context) (*config.YumProxyConfig, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -152,7 +152,7 @@ func (s *service) GetYumConfig(_ context.Context) (*configs.YumProxyConfig, erro
 }
 
 // GetApkConfig returns the APK proxy configuration
-func (s *service) GetApkConfig(_ context.Context) (*configs.ApkProxyConfig, error) {
+func (s *service) GetApkConfig(_ context.Context) (*config.ApkProxyConfig, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -173,7 +173,7 @@ func (s *service) Reload(ctx context.Context) error {
 
 // loadAll loads all configurations
 func (s *service) loadAll(ctx context.Context) error {
-	loader := configs.NewConfigLoader(s.configDir)
+	loader := config.NewConfigLoader(s.configDir)
 
 	// Load global config
 	globalConfig, err := loader.LoadGlobalConfig(ctx)
@@ -246,11 +246,11 @@ func (s *service) ValidateAll(_ context.Context) error {
 		if cacheDir == "" {
 			cacheDir = "./tmp/storage" // 기본값
 		}
-		globalConfig := &configs.GlobalConfig{
+		globalConfig := &config.GlobalConfig{
 			ConfigDir:  s.configDir,
 			StorageDir: s.globalConfig.Cache.File.Directory,
 			CacheDir:   cacheDir,
-			Cache: configs.Cache{
+			Cache: config.Cache{
 				TTL: 3600, // 기본값
 			},
 		}

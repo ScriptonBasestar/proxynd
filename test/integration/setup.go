@@ -12,7 +12,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/internal/app"
 )
 
@@ -21,21 +21,21 @@ type TestServer struct {
 	App       *fiber.App
 	Server    *httptest.Server
 	Container *app.Container
-	Config    *configs.UnifiedConfig
+	Config    *config.UnifiedConfig
 }
 
 // SetupTestServer 테스트 서버 설정
 func SetupTestServer(_ *testing.T) *TestServer {
 	// 테스트용 통합 설정
-	testConfig := &configs.UnifiedConfig{
-		Server: configs.ServerConfig{
+	testConfig := &config.UnifiedConfig{
+		Server: config.ServerConfig{
 			Port: 8080,
 			Host: "localhost",
 		},
-		Registries: configs.RegistryConfig{
-			APT: configs.APTRegistryConfig{
+		Registries: config.RegistryConfig{
+			APT: config.APTRegistryConfig{
 				Enabled: true,
-				Mirrors: map[string][]configs.APTMirror{
+				Mirrors: map[string][]config.APTMirror{
 					"ubuntu": {
 						{
 							Name:       "test-mirror",
@@ -46,9 +46,9 @@ func SetupTestServer(_ *testing.T) *TestServer {
 					},
 				},
 			},
-			Maven: configs.MavenRegistryConfig{
+			Maven: config.MavenRegistryConfig{
 				Enabled: true,
-				Repositories: []configs.MavenRepositoryConfig{
+				Repositories: []config.MavenRepositoryConfig{
 					{
 						ID:        "central",
 						Name:      "Maven Central",
@@ -58,23 +58,23 @@ func SetupTestServer(_ *testing.T) *TestServer {
 					},
 				},
 			},
-			NPM: configs.NPMRegistryConfig{
+			NPM: config.NPMRegistryConfig{
 				Enabled:  true,
 				Upstream: "https://registry.npmjs.org",
 				Timeout:  30 * time.Second,
 			},
 		},
-		Cache: configs.CacheConfig{
+		Cache: config.CacheConfig{
 			Backend:  "file",
 			TTL:      time.Hour,
 			MaxSize:  "100MB",
 			MaxItems: 10000,
-			File: configs.FileCacheConfig{
+			File: config.FileCacheConfig{
 				Directory: "/tmp/proxynd-test-cache",
 			},
 		},
-		Security: configs.UnifiedSecurityConfig{
-			Authentication: configs.AuthenticationConfig{
+		Security: config.UnifiedSecurityConfig{
+			Authentication: config.AuthenticationConfig{
 				BasicAuth: nil,
 				OAuth2:    nil,
 			},

@@ -3,7 +3,7 @@ package pip
 import (
 	"time"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 )
 
 // PackageRequest PIP 패키지 요청
@@ -82,7 +82,7 @@ type RequestMetrics struct {
 // ProxyConfig PIP 프록시 설정 인터페이스 (의존성 추상화)
 type ProxyConfig interface {
 	// GetProxies 프록시 목록 반환
-	GetProxies() []configs.PipProxyServer
+	GetProxies() []config.PipProxyServer
 
 	// GetCacheConfig 캐시 설정 반환
 	GetCacheConfig() CacheConfig
@@ -107,14 +107,14 @@ type CacheConfig struct {
 	ChecksumVerify bool          `json:"checksumVerify"` // 패키지 체크섬 검증 여부
 }
 
-// DefaultProxyConfig configs.PipProxyConfig의 어댑터 (기본 구현)
+// DefaultProxyConfig config.PipProxyConfig의 어댑터 (기본 구현)
 type DefaultProxyConfig struct {
-	config  *configs.PipProxyConfig
+	config  *config.PipProxyConfig
 	baseDir string
 }
 
 // NewDefaultProxyConfig DefaultProxyConfig 생성자
-func NewDefaultProxyConfig(config *configs.PipProxyConfig, baseDir string) ProxyConfig {
+func NewDefaultProxyConfig(config *config.PipProxyConfig, baseDir string) ProxyConfig {
 	return &DefaultProxyConfig{
 		config:  config,
 		baseDir: baseDir,
@@ -122,9 +122,9 @@ func NewDefaultProxyConfig(config *configs.PipProxyConfig, baseDir string) Proxy
 }
 
 // GetProxies 프록시 목록 반환
-func (c *DefaultProxyConfig) GetProxies() []configs.PipProxyServer {
+func (c *DefaultProxyConfig) GetProxies() []config.PipProxyServer {
 	if c.config == nil || c.config.Proxies == nil {
-		return []configs.PipProxyServer{}
+		return []config.PipProxyServer{}
 	}
 
 	return c.config.Proxies

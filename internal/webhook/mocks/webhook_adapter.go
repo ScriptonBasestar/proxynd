@@ -4,7 +4,7 @@ package mocks
 
 import (
 	alerts "proxynd/alerts"
-	configs "proxynd/configs"
+	configs "proxynd/internal/config"
 
 	context "context"
 
@@ -129,7 +129,7 @@ func (_c *MockWebhookAdapter_Name_Call) RunAndReturn(run func() string) *MockWeb
 }
 
 // Send provides a mock function with given fields: ctx, event, endpoint
-func (_m *MockWebhookAdapter) Send(ctx context.Context, event *alerts.AlertEvent, endpoint configs.WebhookEndpointConfig) error {
+func (_m *MockWebhookAdapter) Send(ctx context.Context, event *alerts.AlertEvent, endpoint config.WebhookEndpointConfig) error {
 	ret := _m.Called(ctx, event, endpoint)
 
 	if len(ret) == 0 {
@@ -137,7 +137,7 @@ func (_m *MockWebhookAdapter) Send(ctx context.Context, event *alerts.AlertEvent
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *alerts.AlertEvent, configs.WebhookEndpointConfig) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *alerts.AlertEvent, config.WebhookEndpointConfig) error); ok {
 		r0 = rf(ctx, event, endpoint)
 	} else {
 		r0 = ret.Error(0)
@@ -154,14 +154,14 @@ type MockWebhookAdapter_Send_Call struct {
 // Send is a helper method to define mock.On call
 //   - ctx context.Context
 //   - event *alerts.AlertEvent
-//   - endpoint configs.WebhookEndpointConfig
+//   - endpoint config.WebhookEndpointConfig
 func (_e *MockWebhookAdapter_Expecter) Send(ctx interface{}, event interface{}, endpoint interface{}) *MockWebhookAdapter_Send_Call {
 	return &MockWebhookAdapter_Send_Call{Call: _e.mock.On("Send", ctx, event, endpoint)}
 }
 
-func (_c *MockWebhookAdapter_Send_Call) Run(run func(ctx context.Context, event *alerts.AlertEvent, endpoint configs.WebhookEndpointConfig)) *MockWebhookAdapter_Send_Call {
+func (_c *MockWebhookAdapter_Send_Call) Run(run func(ctx context.Context, event *alerts.AlertEvent, endpoint config.WebhookEndpointConfig)) *MockWebhookAdapter_Send_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*alerts.AlertEvent), args[2].(configs.WebhookEndpointConfig))
+		run(args[0].(context.Context), args[1].(*alerts.AlertEvent), args[2].(config.WebhookEndpointConfig))
 	})
 	return _c
 }
@@ -171,7 +171,7 @@ func (_c *MockWebhookAdapter_Send_Call) Return(_a0 error) *MockWebhookAdapter_Se
 	return _c
 }
 
-func (_c *MockWebhookAdapter_Send_Call) RunAndReturn(run func(context.Context, *alerts.AlertEvent, configs.WebhookEndpointConfig) error) *MockWebhookAdapter_Send_Call {
+func (_c *MockWebhookAdapter_Send_Call) RunAndReturn(run func(context.Context, *alerts.AlertEvent, config.WebhookEndpointConfig) error) *MockWebhookAdapter_Send_Call {
 	_c.Call.Return(run)
 	return _c
 }

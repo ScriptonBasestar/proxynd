@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	cacheMocks "proxynd/cache/mocks"
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/internal/app"
 	"proxynd/internal/handlers"
 	handlerMocks "proxynd/internal/handlers/mocks"
@@ -69,15 +69,15 @@ func TestPIPHandlerComprehensive(t *testing.T) {
 	suite := SetupTestSuite(t)
 
 	// PIP 설정 생성
-	pipConfig := &configs.PipProxyConfig{
+	pipConfig := &config.PipProxyConfig{
 		Enabled: true,
-		Mirrors: []configs.PipMirror{
+		Mirrors: []config.PipMirror{
 			{
 				Name: "pypi",
 				URL:  "https://pypi.org",
 			},
 		},
-		Cache: configs.CacheConfig{
+		Cache: config.CacheConfig{
 			Enabled: true,
 			TTL:     "1h",
 		},
@@ -257,7 +257,7 @@ func TestCacheableBehavior(t *testing.T) {
 				ctx.Request().Header.SetMethod(tc.method)
 
 				// PIP 어댑터 생성 (간단한 설정)
-				pipConfig := &configs.PipProxyConfig{Enabled: true}
+				pipConfig := &config.PipProxyConfig{Enabled: true}
 				pipAdapter := pip.NewPIPAdapter(pipConfig, suite.mockPipService, suite.mockCache)
 
 				// 캐시 키 생성
@@ -294,7 +294,7 @@ func TestCacheableBehavior(t *testing.T) {
 				ctx.Request().Header.SetMethod(tc.method)
 
 				// PIP 어댑터 생성
-				pipConfig := &configs.PipProxyConfig{Enabled: true}
+				pipConfig := &config.PipProxyConfig{Enabled: true}
 				pipAdapter := pip.NewPIPAdapter(pipConfig, suite.mockPipService, suite.mockCache)
 
 				// 캐시 가능 여부 확인
@@ -320,7 +320,7 @@ func TestRequestModification(t *testing.T) {
 		ctx.Request().Header.Set("User-Agent", "test-client")
 
 		// PIP 어댑터 생성
-		pipConfig := &configs.PipProxyConfig{Enabled: true}
+		pipConfig := &config.PipProxyConfig{Enabled: true}
 		pipAdapter := pip.NewPIPAdapter(pipConfig, suite.mockPipService, suite.mockCache)
 
 		// 요청 수정
@@ -339,9 +339,9 @@ func TestRequestModification(t *testing.T) {
 		ctx.Request().SetRequestURI("/pypi/requests/json")
 
 		// PIP 어댑터 생성
-		pipConfig := &configs.PipProxyConfig{
+		pipConfig := &config.PipProxyConfig{
 			Enabled: true,
-			Mirrors: []configs.PipMirror{
+			Mirrors: []config.PipMirror{
 				{Name: "pypi", URL: "https://pypi.org"},
 			},
 		}
@@ -370,7 +370,7 @@ func TestResponseModification(t *testing.T) {
 		ctx.Response().Header.Set("Content-Type", "application/json")
 
 		// PIP 어댑터 생성
-		pipConfig := &configs.PipProxyConfig{Enabled: true}
+		pipConfig := &config.PipProxyConfig{Enabled: true}
 		pipAdapter := pip.NewPIPAdapter(pipConfig, suite.mockPipService, suite.mockCache)
 
 		// 응답 수정
@@ -454,7 +454,7 @@ func TestPropertyBased(t *testing.T) {
 	suite := SetupTestSuite(t)
 
 	t.Run("Cache Key Properties", func(t *testing.T) {
-		pipConfig := &configs.PipProxyConfig{Enabled: true}
+		pipConfig := &config.PipProxyConfig{Enabled: true}
 		pipAdapter := pip.NewPIPAdapter(pipConfig, suite.mockPipService, suite.mockCache)
 
 		// 속성: 같은 요청은 같은 캐시 키를 생성해야 함

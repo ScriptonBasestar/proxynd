@@ -3,13 +3,13 @@ package maven
 import (
 	"testing"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 )
 
 func TestDefaultProxyConfig_GetProxies(t *testing.T) {
 	// 테스트 데이터 설정
-	originalConfig := &configs.MavenProxyConfig{
-		Proxies: []configs.MavenProxyServer{
+	originalConfig := &config.MavenProxyConfig{
+		Proxies: []config.MavenProxyServer{
 			{
 				Name: "Central",
 				URL:  "https://repo1.maven.org/maven2",
@@ -42,7 +42,7 @@ func TestDefaultProxyConfig_GetProxies(t *testing.T) {
 }
 
 func TestDefaultProxyConfig_GetCacheConfig(t *testing.T) {
-	originalConfig := &configs.MavenProxyConfig{}
+	originalConfig := &config.MavenProxyConfig{}
 	proxyConfig := NewDefaultProxyConfig(originalConfig)
 
 	cacheConfig := proxyConfig.GetCacheConfig()
@@ -62,7 +62,7 @@ func TestDefaultProxyConfig_GetCacheConfig(t *testing.T) {
 }
 
 func TestDefaultProxyConfig_GetSearchConfig(t *testing.T) {
-	originalConfig := &configs.MavenProxyConfig{}
+	originalConfig := &config.MavenProxyConfig{}
 	proxyConfig := NewDefaultProxyConfig(originalConfig)
 
 	searchConfig := proxyConfig.GetSearchConfig()

@@ -12,7 +12,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"gopkg.in/yaml.v3"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/logging"
 )
 
@@ -69,7 +69,7 @@ func (r *FileRepository) LoadGlobalConfig(_ context.Context) (interface{}, error
 	}
 
 	// Load from file
-	config := &configs.GlobalConfig{}
+	config := &config.GlobalConfig{}
 	configPath := filepath.Join(r.configDir, "global.yaml")
 
 	if err := r.loadYAMLFile(configPath, config); err != nil {
@@ -113,19 +113,19 @@ func (r *FileRepository) LoadProxyConfig(_ context.Context, proxyType string) (i
 	var config interface{}
 	switch proxyType {
 	case "apt":
-		config = &configs.AptProxyConfig{}
+		config = &config.AptProxyConfig{}
 	case "maven":
-		config = &configs.MavenProxyConfig{}
+		config = &config.MavenProxyConfig{}
 	case "npm":
-		config = &configs.NpmProxyConfig{}
+		config = &config.NpmProxyConfig{}
 	case "docker":
-		config = &configs.DockerProxyConfig{}
+		config = &config.DockerProxyConfig{}
 	case "pip":
-		config = &configs.PipProxyConfig{}
+		config = &config.PipProxyConfig{}
 	case "yum":
-		config = &configs.YumProxyConfig{}
+		config = &config.YumProxyConfig{}
 	case "apk":
-		config = &configs.ApkProxyConfig{}
+		config = &config.ApkProxyConfig{}
 	default:
 		return nil, fmt.Errorf("unsupported proxy type: %s", proxyType)
 	}
@@ -224,7 +224,7 @@ func (r *FileRepository) ValidateConfig(_ context.Context, proxyType string, con
 	// Type-specific validation
 	switch proxyType {
 	case ConfigTypeGlobal:
-		globalConfig, ok := config.(*configs.GlobalConfig)
+		globalConfig, ok := config.(*config.GlobalConfig)
 		if !ok {
 			return fmt.Errorf("invalid config type for global config")
 		}

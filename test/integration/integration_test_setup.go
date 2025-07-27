@@ -14,7 +14,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/stretchr/testify/require"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/internal/app"
 	"proxynd/routers"
 )
@@ -29,7 +29,7 @@ type IntegrationTestEnvironment struct {
 	MockUpstreams map[string]*httptest.Server
 
 	// 테스트 설정
-	Config    *configs.UnifiedConfig
+	Config    *config.UnifiedConfig
 	ConfigDir string
 	CacheDir  string
 
@@ -326,29 +326,29 @@ Description: small, powerful, scalable web/proxy server`)); err != nil {
 // setupConfiguration ProxyND 설정 생성
 func (env *IntegrationTestEnvironment) setupConfiguration(t *testing.T) {
 	// 통합 설정 생성
-	env.Config = &configs.UnifiedConfig{
-		Server: configs.ServerConfig{
+	env.Config = &config.UnifiedConfig{
+		Server: config.ServerConfig{
 			Port: 0, // 동적 포트 할당
 			Host: "127.0.0.1",
 		},
-		Cache: configs.CacheConfig{
+		Cache: config.CacheConfig{
 			Backend: "file",
-			File: configs.FileCacheConfig{
+			File: config.FileCacheConfig{
 				Directory: env.CacheDir,
 			},
 			TTL:      time.Hour,
 			MaxSize:  "100MB",
 			MaxItems: 10000,
 		},
-		Registries: configs.RegistryConfig{
-			NPM: configs.NPMRegistryConfig{
+		Registries: config.RegistryConfig{
+			NPM: config.NPMRegistryConfig{
 				Enabled:  true,
 				Upstream: env.MockUpstreams["npm"].URL,
 				Timeout:  30 * time.Second,
 			},
-			Maven: configs.MavenRegistryConfig{
+			Maven: config.MavenRegistryConfig{
 				Enabled: true,
-				Repositories: []configs.MavenRepositoryConfig{
+				Repositories: []config.MavenRepositoryConfig{
 					{
 						ID:   "central",
 						Name: "Maven Central",
@@ -356,9 +356,9 @@ func (env *IntegrationTestEnvironment) setupConfiguration(t *testing.T) {
 					},
 				},
 			},
-			APT: configs.APTRegistryConfig{
+			APT: config.APTRegistryConfig{
 				Enabled: true,
-				Mirrors: map[string][]configs.APTMirror{
+				Mirrors: map[string][]config.APTMirror{
 					"ubuntu": {
 						{
 							Name: "main",
@@ -368,7 +368,7 @@ func (env *IntegrationTestEnvironment) setupConfiguration(t *testing.T) {
 				},
 			},
 		},
-		Logging: configs.UnifiedLoggingConfig{
+		Logging: config.UnifiedLoggingConfig{
 			Level:  "info",
 			Format: "json",
 			Output: "stdout",

@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"go.uber.org/zap"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/internal/app"
 	"proxynd/internal/handlers"
 	"proxynd/internal/repositories/cache"
@@ -22,7 +22,7 @@ type MockContainer struct {
 	mu               sync.RWMutex
 	logger           *zap.Logger
 	config           *app.Config
-	unifiedConfig    *configs.UnifiedConfig
+	unifiedConfig    *config.UnifiedConfig
 	cacheRepository  cache.Repository
 	configRepository configrepo.Repository
 	cacheService     *proxy.CacheService
@@ -65,14 +65,14 @@ func (m *MockContainer) GetConfig() *app.Config {
 }
 
 // GetUnifiedConfig returns the unified configuration
-func (m *MockContainer) GetUnifiedConfig() (*configs.UnifiedConfig, error) {
+func (m *MockContainer) GetUnifiedConfig() (*config.UnifiedConfig, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	if m.unifiedConfig != nil {
 		return m.unifiedConfig, nil
 	}
 	args := m.Called()
-	return args.Get(0).(*configs.UnifiedConfig), args.Error(1)
+	return args.Get(0).(*config.UnifiedConfig), args.Error(1)
 }
 
 // GetCacheRepository returns the cache repository
@@ -188,7 +188,7 @@ func (m *MockContainer) SetConfig(config *app.Config) {
 }
 
 // SetUnifiedConfig sets the test unified configuration
-func (m *MockContainer) SetUnifiedConfig(config *configs.UnifiedConfig) {
+func (m *MockContainer) SetUnifiedConfig(config *config.UnifiedConfig) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.unifiedConfig = config

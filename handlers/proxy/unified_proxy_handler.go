@@ -5,7 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/helpers"
 	"proxynd/internal/adapters/http"
 	"proxynd/internal/factory"
@@ -57,7 +57,7 @@ func UnifiedProxyHandler(c *fiber.Ctx) error {
 	switch proxyType {
 	case "maven":
 		// Maven 설정 확인
-		mavenConfig := configs.MavenProxyConfig{}
+		mavenConfig := config.MavenProxyConfig{}
 		if !mavenConfig.ConfigExists() {
 			return renderConfigAlert(c, "maven-proxy.yaml")
 		}
@@ -82,7 +82,7 @@ func UnifiedProxyHandler(c *fiber.Ctx) error {
 
 	case "apt":
 		// APT 설정 확인
-		aptConfig := configs.AptProxyConfig{}
+		aptConfig := config.AptProxyConfig{}
 		if !aptConfig.ConfigExists() {
 			return renderConfigAlert(c, "apt-proxy.yaml")
 		}
@@ -100,7 +100,7 @@ func UnifiedProxyHandler(c *fiber.Ctx) error {
 
 	case "npm":
 		// NPM 설정 확인
-		npmConfig := configs.NpmProxyConfig{}
+		npmConfig := config.NpmProxyConfig{}
 		if !npmConfig.ConfigExists() {
 			return renderConfigAlert(c, "npm-proxy.yaml")
 		}
@@ -118,7 +118,7 @@ func UnifiedProxyHandler(c *fiber.Ctx) error {
 
 	case "pip":
 		// PIP 설정 확인
-		pipConfig := configs.PipProxyConfig{}
+		pipConfig := config.PipProxyConfig{}
 		if !pipConfig.ConfigExists() {
 			return renderConfigAlert(c, "pip-proxy.yaml")
 		}
@@ -136,7 +136,7 @@ func UnifiedProxyHandler(c *fiber.Ctx) error {
 
 	case "docker":
 		// Docker 설정 확인
-		dockerConfig := configs.DockerProxyConfig{}
+		dockerConfig := config.DockerProxyConfig{}
 		if !dockerConfig.ConfigExists() {
 			return renderConfigAlert(c, "docker-proxy.yaml")
 		}
@@ -154,7 +154,7 @@ func UnifiedProxyHandler(c *fiber.Ctx) error {
 
 	case "yum":
 		// YUM 설정 확인
-		yumConfig := configs.YumProxyConfig{}
+		yumConfig := config.YumProxyConfig{}
 		if !yumConfig.ConfigExists() {
 			return renderConfigAlert(c, "yum-proxy.yaml")
 		}
@@ -172,7 +172,7 @@ func UnifiedProxyHandler(c *fiber.Ctx) error {
 
 	case "apk":
 		// APK 설정 확인
-		apkConfig := configs.ApkProxyConfig{}
+		apkConfig := config.ApkProxyConfig{}
 		if !apkConfig.ConfigExists() {
 			return renderConfigAlert(c, "apk-proxy.yaml")
 		}

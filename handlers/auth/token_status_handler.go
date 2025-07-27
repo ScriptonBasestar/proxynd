@@ -6,7 +6,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/internal/auth/jwt"
 	"proxynd/logging"
 )
@@ -43,7 +43,7 @@ func GetTokenStatus(c *fiber.Ctx) error {
 	}
 
 	// OAuth2 설정 로드
-	oauth2Config := &configs.OAuth2Config{}
+	oauth2Config := &config.OAuth2Config{}
 	if err := oauth2Config.ReadConfig(); err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
 			"error": "OAuth2 configuration not available",
@@ -136,7 +136,7 @@ func ValidateTokenEndpoint(c *fiber.Ctx) error {
 	}
 
 	// OAuth2 설정 로드
-	oauth2Config := &configs.OAuth2Config{}
+	oauth2Config := &config.OAuth2Config{}
 	if err := oauth2Config.ReadConfig(); err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
 			"error": "OAuth2 configuration not available",
@@ -208,7 +208,7 @@ func BatchTokenValidation(c *fiber.Ctx) error {
 	}
 
 	// OAuth2 설정 로드
-	oauth2Config := &configs.OAuth2Config{}
+	oauth2Config := &config.OAuth2Config{}
 	if err := oauth2Config.ReadConfig(); err != nil {
 		return c.Status(http.StatusInternalServerError).JSON(fiber.Map{
 			"error": "OAuth2 configuration not available",

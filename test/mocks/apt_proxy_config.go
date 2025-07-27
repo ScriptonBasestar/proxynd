@@ -2,12 +2,12 @@
 package mocks
 
 import (
-	"proxynd/configs"
+	"proxynd/internal/config"
 )
 
 // MockAptProxyConfig is a mock implementation of AptProxyConfig
 type MockAptProxyConfig struct {
-	configs.AptProxyConfig
+	config.AptProxyConfig
 	ReadConfigFunc func() error
 }
 

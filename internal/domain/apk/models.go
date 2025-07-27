@@ -3,7 +3,7 @@ package apk
 import (
 	"time"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 )
 
 // PackageRequest APK 패키지 요청
@@ -116,27 +116,27 @@ type RequestMetrics struct {
 type ProxyConfig interface {
 	GetPath() string
 	GetUseCache() bool
-	GetProxies() []configs.ApkProxy
+	GetProxies() []config.ApkProxy
 	GetCacheTTL() time.Duration
 	GetMaxCacheSize() int64
 	GetVerificationEnabled() bool
 	GetVerificationKeyDirectory() string
 	GetVerificationFailOnInvalid() bool
 	GetMirrorSelectionEnabled() bool
-	GetMirrorSelectionConfig() configs.ApkMirrorSelectionConfig
+	GetMirrorSelectionConfig() config.ApkMirrorSelectionConfig
 	GetApkFileTTL() time.Duration
 	GetIndexFileTTL() time.Duration
 	GetSignatureFileTTL() time.Duration
 }
 
-// defaultProxyConfig configs.ApkProxyConfig를 ProxyConfig 인터페이스로 래핑
+// defaultProxyConfig config.ApkProxyConfig를 ProxyConfig 인터페이스로 래핑
 type defaultProxyConfig struct {
-	config  *configs.ApkProxyConfig
+	config  *config.ApkProxyConfig
 	baseDir string
 }
 
 // NewDefaultProxyConfig 기본 프록시 설정 어댑터 생성
-func NewDefaultProxyConfig(config *configs.ApkProxyConfig, baseDir string) ProxyConfig {
+func NewDefaultProxyConfig(config *config.ApkProxyConfig, baseDir string) ProxyConfig {
 	return &defaultProxyConfig{
 		config:  config,
 		baseDir: baseDir,
@@ -151,7 +151,7 @@ func (c *defaultProxyConfig) GetUseCache() bool {
 	return c.config.UseCache
 }
 
-func (c *defaultProxyConfig) GetProxies() []configs.ApkProxy {
+func (c *defaultProxyConfig) GetProxies() []config.ApkProxy {
 	return c.config.Proxies
 }
 
@@ -179,7 +179,7 @@ func (c *defaultProxyConfig) GetMirrorSelectionEnabled() bool {
 	return c.config.MirrorSelection.Enabled
 }
 
-func (c *defaultProxyConfig) GetMirrorSelectionConfig() configs.ApkMirrorSelectionConfig {
+func (c *defaultProxyConfig) GetMirrorSelectionConfig() config.ApkMirrorSelectionConfig {
 	return c.config.MirrorSelection
 }
 

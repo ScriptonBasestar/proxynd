@@ -4,7 +4,7 @@ package routers
 import (
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/internal/mirror"
 	"proxynd/logging"
 )
@@ -34,7 +34,7 @@ func getMirrorStatus(c *fiber.Ctx) error {
 	logger := logging.GetLogger()
 
 	// APK 설정 읽기
-	apkConfig := configs.ApkProxyConfig{}
+	apkConfig := config.ApkProxyConfig{}
 	if err := apkConfig.ReadConfig(); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to read APK config",
@@ -82,7 +82,7 @@ func getMirrorHealth(c *fiber.Ctx) error {
 	logger := logging.GetLogger()
 
 	// APK 설정 읽기
-	apkConfig := configs.ApkProxyConfig{}
+	apkConfig := config.ApkProxyConfig{}
 	if err := apkConfig.ReadConfig(); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to read APK config",
@@ -156,7 +156,7 @@ func testMirrorSelection(c *fiber.Ctx) error {
 	}
 
 	// APK 설정 읽기
-	apkConfig := configs.ApkProxyConfig{}
+	apkConfig := config.ApkProxyConfig{}
 	if err := apkConfig.ReadConfig(); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to read APK config",
@@ -212,7 +212,7 @@ func testMirrorSelection(c *fiber.Ctx) error {
 // getMirrorConfig 미러 선택 설정 조회
 func getMirrorConfig(c *fiber.Ctx) error {
 	// APK 설정 읽기
-	apkConfig := configs.ApkProxyConfig{}
+	apkConfig := config.ApkProxyConfig{}
 	if err := apkConfig.ReadConfig(); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to read APK config",
@@ -230,7 +230,7 @@ func refreshMirrorHealth(c *fiber.Ctx) error {
 	logger := logging.GetLogger()
 
 	// APK 설정 읽기
-	apkConfig := configs.ApkProxyConfig{}
+	apkConfig := config.ApkProxyConfig{}
 	if err := apkConfig.ReadConfig(); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to read APK config",

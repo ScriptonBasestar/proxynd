@@ -3,7 +3,7 @@ package apt
 import (
 	"time"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 )
 
 // PackageRequest APT 패키지 요청
@@ -71,7 +71,7 @@ type RequestMetrics struct {
 // ProxyConfig APT 프록시 설정 인터페이스 (의존성 추상화)
 type ProxyConfig interface {
 	// GetMirrors 특정 OS 타입의 미러 목록 반환
-	GetMirrors(osType string) []configs.AptProxy
+	GetMirrors(osType string) []config.AptProxy
 
 	// GetCacheConfig 캐시 설정 반환
 	GetCacheConfig() CacheConfig
@@ -92,14 +92,14 @@ type CacheConfig struct {
 	CleanupHours int           `json:"cleanupHours"`
 }
 
-// DefaultProxyConfig configs.AptProxyConfig의 어댑터 (기본 구현)
+// DefaultProxyConfig config.AptProxyConfig의 어댑터 (기본 구현)
 type DefaultProxyConfig struct {
-	config  *configs.AptProxyConfig
+	config  *config.AptProxyConfig
 	baseDir string
 }
 
 // NewDefaultProxyConfig DefaultProxyConfig 생성자
-func NewDefaultProxyConfig(config *configs.AptProxyConfig, baseDir string) ProxyConfig {
+func NewDefaultProxyConfig(config *config.AptProxyConfig, baseDir string) ProxyConfig {
 	return &DefaultProxyConfig{
 		config:  config,
 		baseDir: baseDir,
@@ -107,16 +107,16 @@ func NewDefaultProxyConfig(config *configs.AptProxyConfig, baseDir string) Proxy
 }
 
 // GetMirrors 특정 OS 타입의 미러 목록 반환
-func (c *DefaultProxyConfig) GetMirrors(osType string) []configs.AptProxy {
+func (c *DefaultProxyConfig) GetMirrors(osType string) []config.AptProxy {
 	if c.config == nil || c.config.Proxies == nil {
-		return []configs.AptProxy{}
+		return []config.AptProxy{}
 	}
 
 	if mirrors, exists := c.config.Proxies[osType]; exists {
 		return mirrors
 	}
 
-	return []configs.AptProxy{}
+	return []config.AptProxy{}
 }
 
 // GetCacheConfig 캐시 설정 반환

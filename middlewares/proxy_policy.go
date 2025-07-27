@@ -8,7 +8,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/helpers"
 	"proxynd/internal/security"
 )
@@ -83,7 +83,7 @@ func checkCache(proxyType, requestPath string) CacheInfo {
 	var cachePath string
 	switch proxyType {
 	case "maven":
-		config := configs.MavenProxyConfig{}
+		config := config.MavenProxyConfig{}
 		if err := config.ReadConfig(); err != nil {
 			log.Printf("Warning: Failed to read Maven config, using defaults: %v", err)
 		}
@@ -96,7 +96,7 @@ func checkCache(proxyType, requestPath string) CacheInfo {
 		}
 
 	case "apt":
-		config := configs.AptProxyConfig{}
+		config := config.AptProxyConfig{}
 		if err := config.ReadConfig(); err != nil {
 			log.Printf("Warning: Failed to read APT config, using defaults: %v", err)
 		}
@@ -117,7 +117,7 @@ func checkCache(proxyType, requestPath string) CacheInfo {
 		}
 
 	case "npm":
-		config := configs.NpmProxyConfig{}
+		config := config.NpmProxyConfig{}
 		if err := config.ReadConfig(); err != nil {
 			log.Printf("Warning: Failed to read NPM config, using defaults: %v", err)
 		}
@@ -130,7 +130,7 @@ func checkCache(proxyType, requestPath string) CacheInfo {
 		}
 
 	case "pip":
-		config := configs.PipProxyConfig{}
+		config := config.PipProxyConfig{}
 		if err := config.ReadConfig(); err != nil {
 			log.Printf("Warning: Failed to read PIP config, using defaults: %v", err)
 		}
@@ -143,7 +143,7 @@ func checkCache(proxyType, requestPath string) CacheInfo {
 		}
 
 	case "docker":
-		config := configs.DockerProxyConfig{}
+		config := config.DockerProxyConfig{}
 		if err := config.ReadConfig(); err != nil {
 			log.Printf("Warning: Failed to read Docker config, using defaults: %v", err)
 		}

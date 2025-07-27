@@ -6,7 +6,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/helpers"
 	apkDomain "proxynd/internal/domain/apk"
 	apkServices "proxynd/internal/services/apk"
@@ -21,7 +21,7 @@ type ApkHandlerAdapter struct {
 }
 
 // NewApkHandlerAdapter APK HTTP 어댑터 생성
-func NewApkHandlerAdapter(config configs.ApkProxyConfig, logger logging.Logger) *ApkHandlerAdapter {
+func NewApkHandlerAdapter(config config.ApkProxyConfig, logger logging.Logger) *ApkHandlerAdapter {
 	storageDir := helpers.GetStorageDir()
 	proxyConfig := apkDomain.NewDefaultProxyConfig(&config, storageDir)
 	

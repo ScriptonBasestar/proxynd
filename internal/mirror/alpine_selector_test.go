@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-playground/assert/v2"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/logging"
 )
 
@@ -156,7 +156,7 @@ func TestCalculateMirrorScore(t *testing.T) {
 		Priority:     1,
 	}
 
-	proxy := configs.ApkProxy{
+	proxy := config.ApkProxy{
 		Name: "test-mirror",
 		URL:  "https://test.mirror.com/alpine",
 	}
@@ -180,7 +180,7 @@ func TestSelectBestMirror(t *testing.T) {
 	selector := NewAlpineMirrorSelector()
 
 	// 테스트 프록시 목록
-	proxies := []configs.ApkProxy{
+	proxies := []config.ApkProxy{
 		{Name: "korea-mirror", URL: "https://mirror.kakao.com/alpine"},
 		{Name: "japan-mirror", URL: "https://ftp.riken.jp/alpine"},
 		{Name: "official-mirror", URL: "https://dl-cdn.alpinelinux.org/alpine"},

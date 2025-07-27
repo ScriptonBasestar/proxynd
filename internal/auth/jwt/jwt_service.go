@@ -11,7 +11,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/logging"
 )
 
@@ -39,12 +39,12 @@ type TokenPair struct {
 
 // JWTService JWT 토큰 서비스
 type JWTService struct {
-	config *configs.OAuth2Config
+	config *config.OAuth2Config
 	logger logging.Logger
 }
 
 // NewJWTService JWT 서비스 생성
-func NewJWTService(config *configs.OAuth2Config) *JWTService {
+func NewJWTService(config *config.OAuth2Config) *JWTService {
 	return &JWTService{
 		config: config,
 		logger: logging.GetLogger(),

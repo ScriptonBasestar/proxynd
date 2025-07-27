@@ -13,7 +13,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/helpers"
 	"proxynd/internal/mirror"
 	"proxynd/internal/security"
@@ -48,7 +48,7 @@ func getMirrorSelector() *mirror.AlpineMirrorSelector {
 }
 
 // initializeMirrorSelector 미러 선택기 초기화 (필요시)
-func initializeMirrorSelector(apkConfig configs.ApkProxyConfig) {
+func initializeMirrorSelector(apkConfig config.ApkProxyConfig) {
 	if !apkConfig.MirrorSelection.Enabled {
 		return
 	}
@@ -67,7 +67,7 @@ func initializeMirrorSelector(apkConfig configs.ApkProxyConfig) {
 }
 
 // convertToMirrorConfig 설정 변환
-func convertToMirrorConfig(config configs.ApkMirrorSelectionConfig) mirror.AlpineMirrorConfig {
+func convertToMirrorConfig(config config.ApkMirrorSelectionConfig) mirror.AlpineMirrorConfig {
 	// 문자열을 time.Duration으로 변환
 	healthCheckInterval, err := time.ParseDuration(config.HealthCheckInterval)
 	if err != nil || healthCheckInterval == 0 {
@@ -105,11 +105,11 @@ func ApkProxyHandler(c *fiber.Ctx) error {
 
 	// 설정 읽기
 	storageDir := helpers.GetStorageDir()
-	globalConfig := configs.GlobalConfig{}
+	globalConfig := config.GlobalConfig{}
 	if err := globalConfig.ReadConfig(); err != nil {
 		return c.Status(fiber.StatusInternalServerError).SendString("Failed to read global config")
 	}
-	apkConfig := configs.ApkProxyConfig{}
+	apkConfig := config.ApkProxyConfig{}
 	if err := apkConfig.ReadConfig(); err != nil {
 		return c.Status(fiber.StatusInternalServerError).SendString("Failed to read APK config")
 	}
@@ -268,7 +268,7 @@ func isApkFile(filename string) bool {
 }
 
 // verifyApkFileSignature APK 파일의 서명 검증 수행
-func verifyApkFileSignature(filePath string, config configs.ApkProxyConfig, c *fiber.Ctx) bool {
+func verifyApkFileSignature(filePath string, config config.ApkProxyConfig, c *fiber.Ctx) bool {
 	logger := logging.GetLogger()
 	verifier := getApkVerifier()
 

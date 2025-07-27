@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/internal/services/proxy"
 )
 
@@ -20,14 +20,14 @@ func NewFixtures() *Fixtures {
 }
 
 // ValidGlobalConfig returns a valid global configuration for testing
-func (f *Fixtures) ValidGlobalConfig() *configs.GlobalConfig {
-	return &configs.GlobalConfig{
+func (f *Fixtures) ValidGlobalConfig() *config.GlobalConfig {
+	return &config.GlobalConfig{
 		StorageDir:   "/tmp/test-storage",
 		ConfigDir:    "/tmp/test-config",
 		CacheDir:     "/tmp/test-cache",
 		CacheTTL:     3600,
 		MaxCacheSize: 1024 * 1024 * 1024, // 1GB
-		Cache: configs.Cache{
+		Cache: config.Cache{
 			TTL:                  3600,
 			UseCacheHeaders:      false,
 			MaxCacheHeaderTTL:    86400,
@@ -39,11 +39,11 @@ func (f *Fixtures) ValidGlobalConfig() *configs.GlobalConfig {
 }
 
 // ValidAPTConfig returns a valid APT proxy configuration
-func (f *Fixtures) ValidAPTConfig() *configs.AptProxyConfig {
-	return &configs.AptProxyConfig{
+func (f *Fixtures) ValidAPTConfig() *config.AptProxyConfig {
+	return &config.AptProxyConfig{
 		Path:     "/proxy/apt",
 		UseCache: true,
-		Proxies: map[string][]configs.AptProxy{
+		Proxies: map[string][]config.AptProxy{
 			"default": {
 				{
 					Name: "Ubuntu Archive",
@@ -55,11 +55,11 @@ func (f *Fixtures) ValidAPTConfig() *configs.AptProxyConfig {
 }
 
 // ValidMavenConfig returns a valid Maven proxy configuration
-func (f *Fixtures) ValidMavenConfig() *configs.MavenProxyConfig {
-	return &configs.MavenProxyConfig{
+func (f *Fixtures) ValidMavenConfig() *config.MavenProxyConfig {
+	return &config.MavenProxyConfig{
 		Path:     "/proxy/maven",
 		UseCache: true,
-		Proxies: []configs.MavenProxyServer{
+		Proxies: []config.MavenProxyServer{
 			{
 				ID:          "central",
 				Name:        "Central Repository",
@@ -68,19 +68,19 @@ func (f *Fixtures) ValidMavenConfig() *configs.MavenProxyConfig {
 				Enabled:     true,
 			},
 		},
-		Cache: configs.MavenProxyCacheConfig{
+		Cache: config.MavenProxyCacheConfig{
 			Enabled: true,
 		},
 	}
 }
 
 // ValidNPMConfig returns a valid NPM proxy configuration
-func (f *Fixtures) ValidNPMConfig() *configs.NpmProxyConfig {
-	return &configs.NpmProxyConfig{
+func (f *Fixtures) ValidNPMConfig() *config.NpmProxyConfig {
+	return &config.NpmProxyConfig{
 		Path:      "/proxy/npm",
 		UseCache:  true,
 		UserCache: false,
-		Proxies: map[string][]configs.NpmProxyServer{
+		Proxies: map[string][]config.NpmProxyServer{
 			"default": {
 				{
 					Name: "NPM Registry",

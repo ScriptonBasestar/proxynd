@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"proxynd/alerts"
-	"proxynd/configs"
+	"proxynd/internal/config"
 )
 
 // GenericWebhookAdapter 범용 웹훅 어댑터
@@ -47,7 +47,7 @@ func (gwa *GenericWebhookAdapter) SupportedFormats() []string {
 // Send 웹훅 전송 (새로운 인터페이스 호환)
 func (gwa *GenericWebhookAdapter) Send(ctx context.Context, endpoint string, event *alerts.AlertEvent) error {
 	// 기본 엔드포인트 설정 생성
-	endpointConfig := configs.WebhookEndpointConfig{
+	endpointConfig := config.WebhookEndpointConfig{
 		URL:    endpoint,
 		Method: "POST",
 		Format: "json",
@@ -66,7 +66,7 @@ func (gwa *GenericWebhookAdapter) Validate(endpoint string) error {
 
 // SendToEndpoint 웹훅 전송 (기존 구현, 하위 호환성용)
 func (gwa *GenericWebhookAdapter) SendToEndpoint(ctx context.Context, event *alerts.AlertEvent,
-	endpoint configs.WebhookEndpointConfig,
+	endpoint config.WebhookEndpointConfig,
 ) error {
 	// 메시지 포맷팅
 	payload, err := gwa.FormatMessage(event, endpoint.Format)
@@ -172,7 +172,7 @@ func (gwa *GenericWebhookAdapter) formatText(event *alerts.AlertEvent) map[strin
 }
 
 // setAuthentication 인증 설정
-func (gwa *GenericWebhookAdapter) setAuthentication(req *http.Request, creds configs.WebhookCredentials) error {
+func (gwa *GenericWebhookAdapter) setAuthentication(req *http.Request, creds config.WebhookCredentials) error {
 	switch creds.Type {
 	case "none":
 		// 인증 없음
@@ -211,7 +211,7 @@ func (gwa *GenericWebhookAdapter) setAuthentication(req *http.Request, creds con
 }
 
 // setHMACSignature HMAC 서명 설정
-func (gwa *GenericWebhookAdapter) setHMACSignature(req *http.Request, creds configs.WebhookCredentials) error {
+func (gwa *GenericWebhookAdapter) setHMACSignature(req *http.Request, creds config.WebhookCredentials) error {
 	if creds.Secret == "" {
 		return fmt.Errorf("HMAC auth requires secret")
 	}
@@ -225,7 +225,7 @@ func (gwa *GenericWebhookAdapter) setHMACSignature(req *http.Request, creds conf
 }
 
 // setOAuth2Token OAuth2 토큰 설정
-func (gwa *GenericWebhookAdapter) setOAuth2Token(req *http.Request, creds configs.WebhookCredentials) error {
+func (gwa *GenericWebhookAdapter) setOAuth2Token(req *http.Request, creds config.WebhookCredentials) error {
 	// OAuth2 토큰 획득 및 설정 (실제로는 OAuth2 라이브러리 사용)
 	if creds.ClientID == "" || creds.ClientSecret == "" || creds.TokenURL == "" {
 		return fmt.Errorf("OAuth2 auth requires client_id, client_secret, and token_url")
@@ -242,7 +242,7 @@ func (gwa *GenericWebhookAdapter) setOAuth2Token(req *http.Request, creds config
 type WebhookAdapter interface {
 	Name() string
 	SupportedFormats() []string
-	Send(ctx context.Context, event *alerts.AlertEvent, endpoint configs.WebhookEndpointConfig) error
+	Send(ctx context.Context, event *alerts.AlertEvent, endpoint config.WebhookEndpointConfig) error
 	FormatMessage(event *alerts.AlertEvent, format string) (interface{}, error)
 }
 
@@ -272,7 +272,7 @@ func (swa *SlackWebhookAdapter) SupportedFormats() []string {
 
 // Send Slack 웹훅 전송
 func (swa *SlackWebhookAdapter) Send(ctx context.Context, event *alerts.AlertEvent,
-	endpoint configs.WebhookEndpointConfig,
+	endpoint config.WebhookEndpointConfig,
 ) error {
 	// Slack 메시지 포맷팅
 	payload, err := swa.FormatMessage(event, endpoint.Format)
@@ -474,7 +474,7 @@ func (dwa *DiscordWebhookAdapter) SupportedFormats() []string {
 
 // Send Discord 웹훅 전송
 func (dwa *DiscordWebhookAdapter) Send(ctx context.Context, event *alerts.AlertEvent,
-	endpoint configs.WebhookEndpointConfig,
+	endpoint config.WebhookEndpointConfig,
 ) error {
 	// Discord 메시지 포맷팅
 	payload, err := dwa.FormatMessage(event, endpoint.Format)

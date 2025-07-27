@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 )
 
 func TestConfigChangeNotifier_Basic(t *testing.T) {
@@ -19,7 +19,7 @@ func TestConfigChangeNotifier_Basic(t *testing.T) {
 
 	// When
 	callCount := 0
-	listener := func(*configs.UnifiedConfig) {
+	listener := func(*config.UnifiedConfig) {
 		callCount++
 	}
 	notifier.AddListener(listener)
@@ -28,8 +28,8 @@ func TestConfigChangeNotifier_Basic(t *testing.T) {
 	assert.Equal(t, 1, notifier.GetListenerCount())
 
 	// When
-	config := &configs.UnifiedConfig{
-		Server: configs.ServerConfig{
+	config := &config.UnifiedConfig{
+		Server: config.ServerConfig{
 			Port: 8080,
 		},
 	}
@@ -65,7 +65,7 @@ func TestConfigChangeNotifier_MultipleListeners(t *testing.T) {
 	for i := 0; i < 3; i++ {
 		index := i
 		wg.Add(1)
-		listener := func(*configs.UnifiedConfig) {
+		listener := func(*config.UnifiedConfig) {
 			callCounts[index]++
 			wg.Done()
 		}
@@ -75,8 +75,8 @@ func TestConfigChangeNotifier_MultipleListeners(t *testing.T) {
 	assert.Equal(t, 3, notifier.GetListenerCount())
 
 	// When
-	config := &configs.UnifiedConfig{
-		Server: configs.ServerConfig{
+	config := &config.UnifiedConfig{
+		Server: config.ServerConfig{
 			Port: 8080,
 		},
 	}
@@ -104,8 +104,8 @@ func TestConfigChangeNotifier_ClearListeners(t *testing.T) {
 	notifier := NewConfigChangeNotifier()
 
 	// Add some listeners
-	listener1 := func(*configs.UnifiedConfig) {}
-	listener2 := func(*configs.UnifiedConfig) {}
+	listener1 := func(*config.UnifiedConfig) {}
+	listener2 := func(*config.UnifiedConfig) {}
 	notifier.AddListener(listener1)
 	notifier.AddListener(listener2)
 
@@ -128,7 +128,7 @@ func TestConfigChangeNotifier_PanicHandling(t *testing.T) {
 
 	// Add panic listener
 	wg.Add(1)
-	panicListener := func(*configs.UnifiedConfig) {
+	panicListener := func(*config.UnifiedConfig) {
 		panicListenerCalled = true
 		wg.Done()
 		panic("test panic")
@@ -137,15 +137,15 @@ func TestConfigChangeNotifier_PanicHandling(t *testing.T) {
 
 	// Add normal listener
 	wg.Add(1)
-	normalListener := func(*configs.UnifiedConfig) {
+	normalListener := func(*config.UnifiedConfig) {
 		normalListenerCalled = true
 		wg.Done()
 	}
 	notifier.AddListener(normalListener)
 
 	// When
-	config := &configs.UnifiedConfig{
-		Server: configs.ServerConfig{
+	config := &config.UnifiedConfig{
+		Server: config.ServerConfig{
 			Port: 8080,
 		},
 	}
@@ -181,7 +181,7 @@ func TestConfigChangeNotifier_ConcurrentAccess(t *testing.T) {
 		go func(_ int) {
 			defer wg.Done()
 			for j := 0; j < numListenersPerGoroutine; j++ {
-				listener := func(*configs.UnifiedConfig) {}
+				listener := func(*config.UnifiedConfig) {}
 				notifier.AddListener(listener)
 			}
 		}(i)
@@ -194,8 +194,8 @@ func TestConfigChangeNotifier_ConcurrentAccess(t *testing.T) {
 	assert.Equal(t, expectedCount, notifier.GetListenerCount())
 
 	// Test concurrent notification
-	config := &configs.UnifiedConfig{
-		Server: configs.ServerConfig{
+	config := &config.UnifiedConfig{
+		Server: config.ServerConfig{
 			Port: 8080,
 		},
 	}
@@ -214,8 +214,8 @@ func TestConfigChangeNotifier_EmptyNotification(t *testing.T) {
 	notifier := NewConfigChangeNotifier()
 
 	// When (no listeners)
-	config := &configs.UnifiedConfig{
-		Server: configs.ServerConfig{
+	config := &config.UnifiedConfig{
+		Server: config.ServerConfig{
 			Port: 8080,
 		},
 	}

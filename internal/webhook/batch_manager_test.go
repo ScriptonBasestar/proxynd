@@ -8,12 +8,12 @@ import (
 	"github.com/go-playground/assert/v2"
 
 	"proxynd/alerts"
-	"proxynd/configs"
+	"proxynd/internal/config"
 )
 
 // TestNewBatchManager 배치 관리자 생성 테스트
 func TestNewBatchManager(t *testing.T) {
-	config := configs.WebhookBatchingConfig{
+	config := config.WebhookBatchingConfig{
 		Enabled:           true,
 		MaxSize:           5,
 		MaxWaitTime:       "2s",
@@ -35,7 +35,7 @@ func TestNewBatchManager(t *testing.T) {
 
 // TestBatchManagerAddEvent 이벤트 추가 테스트
 func TestBatchManagerAddEvent(t *testing.T) {
-	config := configs.WebhookBatchingConfig{
+	config := config.WebhookBatchingConfig{
 		Enabled:           true,
 		MaxSize:           3,
 		MaxWaitTime:       "5s",
@@ -52,7 +52,7 @@ func TestBatchManagerAddEvent(t *testing.T) {
 
 	bm := NewBatchManager(config, sender)
 
-	endpoint := configs.WebhookEndpointConfig{
+	endpoint := config.WebhookEndpointConfig{
 		Name:    "test-endpoint",
 		URL:     "https://example.com/webhook",
 		Enabled: true,
@@ -108,30 +108,30 @@ func TestBatchManagerGroupKeyGeneration(t *testing.T) {
 		"보안 테스트 메시지",
 	)
 
-	endpoint := configs.WebhookEndpointConfig{
+	endpoint := config.WebhookEndpointConfig{
 		Name: "security-endpoint",
 	}
 
 	// endpoint 그룹화 테스트
-	config1 := configs.WebhookBatchingConfig{GroupBy: "endpoint"}
+	config1 := config.WebhookBatchingConfig{GroupBy: "endpoint"}
 	bm1 := NewBatchManager(config1, sender)
 	key1 := bm1.generateGroupKey(event, endpoint)
 	assert.Equal(t, key1, "endpoint:security-endpoint")
 
 	// type 그룹화 테스트
-	config2 := configs.WebhookBatchingConfig{GroupBy: "type"}
+	config2 := config.WebhookBatchingConfig{GroupBy: "type"}
 	bm2 := NewBatchManager(config2, sender)
 	key2 := bm2.generateGroupKey(event, endpoint)
 	assert.Equal(t, key2, "type:security.threat")
 
 	// level 그룹화 테스트
-	config3 := configs.WebhookBatchingConfig{GroupBy: "level"}
+	config3 := config.WebhookBatchingConfig{GroupBy: "level"}
 	bm3 := NewBatchManager(config3, sender)
 	key3 := bm3.generateGroupKey(event, endpoint)
 	assert.Equal(t, key3, "level:ERROR")
 
 	// source 그룹화 테스트
-	config4 := configs.WebhookBatchingConfig{GroupBy: "source"}
+	config4 := config.WebhookBatchingConfig{GroupBy: "source"}
 	bm4 := NewBatchManager(config4, sender)
 	key4 := bm4.generateGroupKey(event, endpoint)
 	assert.Equal(t, key4, "source:"+event.Source)
@@ -139,7 +139,7 @@ func TestBatchManagerGroupKeyGeneration(t *testing.T) {
 
 // TestBatchManagerMaxSizeFlush 최대 크기 플러시 테스트
 func TestBatchManagerMaxSizeFlush(t *testing.T) {
-	config := configs.WebhookBatchingConfig{
+	config := config.WebhookBatchingConfig{
 		Enabled:           true,
 		MaxSize:           2, // 작은 크기로 설정
 		MaxWaitTime:       "10s",
@@ -156,7 +156,7 @@ func TestBatchManagerMaxSizeFlush(t *testing.T) {
 
 	bm := NewBatchManager(config, sender)
 
-	endpoint := configs.WebhookEndpointConfig{
+	endpoint := config.WebhookEndpointConfig{
 		Name:    "test-endpoint",
 		URL:     "https://example.com/webhook",
 		Enabled: true,
@@ -192,14 +192,14 @@ func TestBatchManagerMaxSizeFlush(t *testing.T) {
 
 // TestBatchManagerCreateBatchPayload 배치 페이로드 생성 테스트
 func TestBatchManagerCreateBatchPayload(t *testing.T) {
-	config := configs.WebhookBatchingConfig{
+	config := config.WebhookBatchingConfig{
 		GroupBy: "endpoint",
 	}
 
 	sender := &WebhookSender{}
 	bm := NewBatchManager(config, sender)
 
-	endpoint := configs.WebhookEndpointConfig{
+	endpoint := config.WebhookEndpointConfig{
 		Name: "test-endpoint",
 	}
 
@@ -239,7 +239,7 @@ func TestBatchManagerCreateBatchPayload(t *testing.T) {
 
 // TestBatchManagerGetStats 통계 반환 테스트
 func TestBatchManagerGetStats(t *testing.T) {
-	config := configs.WebhookBatchingConfig{
+	config := config.WebhookBatchingConfig{
 		Enabled: true,
 		GroupBy: "endpoint",
 	}
@@ -254,7 +254,7 @@ func TestBatchManagerGetStats(t *testing.T) {
 	assert.Equal(t, stats["total_events"], 0)
 
 	// 이벤트 추가
-	endpoint := configs.WebhookEndpointConfig{
+	endpoint := config.WebhookEndpointConfig{
 		Name: "test-endpoint",
 	}
 
@@ -286,7 +286,7 @@ func TestBatchManagerGetStats(t *testing.T) {
 
 // TestBatchManagerDisabled 배치 비활성화 테스트
 func TestBatchManagerDisabled(t *testing.T) {
-	config := configs.WebhookBatchingConfig{
+	config := config.WebhookBatchingConfig{
 		Enabled: false,
 	}
 
@@ -297,7 +297,7 @@ func TestBatchManagerDisabled(t *testing.T) {
 
 	bm := NewBatchManager(config, sender)
 
-	endpoint := configs.WebhookEndpointConfig{
+	endpoint := config.WebhookEndpointConfig{
 		Name:    "test-endpoint",
 		URL:     "https://example.com/webhook",
 		Enabled: true,
@@ -321,7 +321,7 @@ func TestBatchManagerDisabled(t *testing.T) {
 
 // TestBatchManagerStartStop 시작/중지 테스트
 func TestBatchManagerStartStop(t *testing.T) {
-	config := configs.WebhookBatchingConfig{
+	config := config.WebhookBatchingConfig{
 		Enabled:       true,
 		FlushInterval: "100ms", // 빠른 테스트를 위해 짧게 설정
 	}

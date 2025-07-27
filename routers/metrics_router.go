@@ -10,12 +10,12 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/valyala/fasthttp/fasthttpadaptor"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/metrics"
 )
 
 // MetricsRouter 메트릭 라우터 설정
-func MetricsRouter(app *fiber.App, config *configs.UnifiedConfig) {
+func MetricsRouter(app *fiber.App, config *config.UnifiedConfig) {
 	// 메트릭 초기화
 	metrics.InitMetrics()
 
@@ -62,7 +62,7 @@ func adaptor(h http.Handler) fiber.Handler {
 }
 
 // getMetricsUsers 메트릭 엔드포인트용 사용자 정보 반환
-func getMetricsUsers(_ *configs.UnifiedConfig) map[string]string {
+func getMetricsUsers(_ *config.UnifiedConfig) map[string]string {
 	// 기본 사용자
 	users := map[string]string{
 		"metrics": "prometheus", // 기본 사용자
@@ -75,7 +75,7 @@ func getMetricsUsers(_ *configs.UnifiedConfig) map[string]string {
 }
 
 // setupAdditionalMetrics 추가 메트릭 엔드포인트 설정
-func setupAdditionalMetrics(app *fiber.App, _ *configs.UnifiedConfig) {
+func setupAdditionalMetrics(app *fiber.App, _ *config.UnifiedConfig) {
 	// TTL 통계 엔드포인트
 	app.Get("/api/metrics/ttl", func(c *fiber.Ctx) error {
 		collector := metrics.GetTTLCollector()

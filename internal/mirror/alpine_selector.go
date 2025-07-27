@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/logging"
 )
 
@@ -96,7 +96,7 @@ func GetAlpineMirrorSelector() *AlpineMirrorSelector {
 }
 
 // Start 미러 헬스체크 시작
-func (ams *AlpineMirrorSelector) Start(config AlpineMirrorConfig, proxies []configs.ApkProxy) {
+func (ams *AlpineMirrorSelector) Start(config AlpineMirrorConfig, proxies []config.ApkProxy) {
 	// 기본값 설정
 	if config.HealthCheckInterval == 0 {
 		config.HealthCheckInterval = 5 * time.Minute
@@ -163,7 +163,7 @@ func (ams *AlpineMirrorSelector) Stop() {
 }
 
 // SelectBestMirror 요청 경로에 따른 최적 미러 선택
-func (ams *AlpineMirrorSelector) SelectBestMirror(requestPath string, proxies []configs.ApkProxy) []configs.ApkProxy {
+func (ams *AlpineMirrorSelector) SelectBestMirror(requestPath string, proxies []config.ApkProxy) []config.ApkProxy {
 	version := ams.extractAlpineVersion(requestPath)
 	clientRegion := ams.detectClientRegion() // 클라이언트 지역 감지
 
@@ -415,11 +415,11 @@ func (ams *AlpineMirrorSelector) recordMirrorError(mirror *MirrorHealth) {
 }
 
 // getHealthyMirrors 건강한 미러들만 필터링
-func (ams *AlpineMirrorSelector) getHealthyMirrors(proxies []configs.ApkProxy) []configs.ApkProxy {
+func (ams *AlpineMirrorSelector) getHealthyMirrors(proxies []config.ApkProxy) []config.ApkProxy {
 	ams.healthMutex.RLock()
 	defer ams.healthMutex.RUnlock()
 
-	var healthy []configs.ApkProxy
+	var healthy []config.ApkProxy
 	for _, proxy := range proxies {
 		if health, exists := ams.mirrorHealth[proxy.Name]; exists && health.IsHealthy {
 			healthy = append(healthy, proxy)
@@ -433,16 +433,16 @@ func (ams *AlpineMirrorSelector) getHealthyMirrors(proxies []configs.ApkProxy) [
 
 // rankMirrors 미러들을 우선순위에 따라 정렬
 func (ams *AlpineMirrorSelector) rankMirrors(
-	proxies []configs.ApkProxy,
+	proxies []config.ApkProxy,
 	version AlpineVersion,
 	clientRegion string,
-) []configs.ApkProxy {
+) []config.ApkProxy {
 	ams.healthMutex.RLock()
 	defer ams.healthMutex.RUnlock()
 
 	// 미러 점수 계산을 위한 구조체
 	type mirrorScore struct {
-		proxy configs.ApkProxy
+		proxy config.ApkProxy
 		score float64
 	}
 
@@ -458,7 +458,7 @@ func (ams *AlpineMirrorSelector) rankMirrors(
 	})
 
 	// 정렬된 프록시 목록 반환
-	result := make([]configs.ApkProxy, len(scored))
+	result := make([]config.ApkProxy, len(scored))
 	for i, item := range scored {
 		result[i] = item.proxy
 	}
@@ -468,7 +468,7 @@ func (ams *AlpineMirrorSelector) rankMirrors(
 
 // calculateMirrorScore 미러 점수 계산
 func (ams *AlpineMirrorSelector) calculateMirrorScore(
-	proxy configs.ApkProxy, _ AlpineVersion, clientRegion string,
+	proxy config.ApkProxy, _ AlpineVersion, clientRegion string,
 ) float64 {
 	health, exists := ams.mirrorHealth[proxy.Name]
 	if !exists {

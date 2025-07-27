@@ -1,7 +1,7 @@
 package testutil
 
 import (
-	"proxynd/configs"
+	"proxynd/internal/config"
 )
 
 // ConfigBuilder 설정 빌더
@@ -12,13 +12,13 @@ type ConfigBuilder struct {
 // NewGlobalConfigBuilder 글로벌 설정 빌더 생성
 func NewGlobalConfigBuilder() *ConfigBuilder {
 	return &ConfigBuilder{
-		config: &configs.GlobalConfig{
+		config: &config.GlobalConfig{
 			StorageDir:   "./storage",
 			ConfigDir:    "./config",
 			CacheDir:     "./cache",
 			CacheTTL:     3600,
 			MaxCacheSize: 1024 * 1024 * 1024, // 1GB
-			Cache: configs.Cache{
+			Cache: config.Cache{
 				TTL:                  3600,
 				UseCacheHeaders:      false,
 				MaxCacheHeaderTTL:    86400,
@@ -32,7 +32,7 @@ func NewGlobalConfigBuilder() *ConfigBuilder {
 
 // WithStorageDir 스토리지 디렉토리 설정
 func (b *ConfigBuilder) WithStorageDir(dir string) *ConfigBuilder {
-	if gc, ok := b.config.(*configs.GlobalConfig); ok {
+	if gc, ok := b.config.(*config.GlobalConfig); ok {
 		gc.StorageDir = dir
 	}
 	return b
@@ -40,7 +40,7 @@ func (b *ConfigBuilder) WithStorageDir(dir string) *ConfigBuilder {
 
 // WithCacheDir 캐시 디렉토리 설정
 func (b *ConfigBuilder) WithCacheDir(dir string) *ConfigBuilder {
-	if gc, ok := b.config.(*configs.GlobalConfig); ok {
+	if gc, ok := b.config.(*config.GlobalConfig); ok {
 		gc.CacheDir = dir
 	}
 	return b
@@ -48,7 +48,7 @@ func (b *ConfigBuilder) WithCacheDir(dir string) *ConfigBuilder {
 
 // WithCacheTTL 캐시 TTL 설정
 func (b *ConfigBuilder) WithCacheTTL(ttl int) *ConfigBuilder {
-	if gc, ok := b.config.(*configs.GlobalConfig); ok {
+	if gc, ok := b.config.(*config.GlobalConfig); ok {
 		gc.CacheTTL = ttl
 		gc.Cache.TTL = ttl
 	}
@@ -57,7 +57,7 @@ func (b *ConfigBuilder) WithCacheTTL(ttl int) *ConfigBuilder {
 
 // WithMaxCacheSize 최대 캐시 크기 설정
 func (b *ConfigBuilder) WithMaxCacheSize(size int64) *ConfigBuilder {
-	if gc, ok := b.config.(*configs.GlobalConfig); ok {
+	if gc, ok := b.config.(*config.GlobalConfig); ok {
 		gc.MaxCacheSize = size
 	}
 	return b
@@ -70,16 +70,16 @@ func (b *ConfigBuilder) Build() interface{} {
 
 // APTConfigBuilder APT 설정 빌더
 type APTConfigBuilder struct {
-	config *configs.AptProxyConfig
+	config *config.AptProxyConfig
 }
 
 // NewAPTConfigBuilder APT 설정 빌더 생성
 func NewAPTConfigBuilder() *APTConfigBuilder {
 	return &APTConfigBuilder{
-		config: &configs.AptProxyConfig{
+		config: &config.AptProxyConfig{
 			Path:     "/proxy/apt",
 			UseCache: true,
-			Proxies: map[string][]configs.AptProxy{
+			Proxies: map[string][]config.AptProxy{
 				"default": {
 					{
 						Name: "Ubuntu Archive",
@@ -106,9 +106,9 @@ func (b *APTConfigBuilder) WithCacheEnabled(enabled bool) *APTConfigBuilder {
 // WithProxy 프록시 설정 추가
 func (b *APTConfigBuilder) WithProxy(name, proxiesKey, url string) *APTConfigBuilder {
 	if b.config.Proxies == nil {
-		b.config.Proxies = make(map[string][]configs.AptProxy)
+		b.config.Proxies = make(map[string][]config.AptProxy)
 	}
-	b.config.Proxies[proxiesKey] = append(b.config.Proxies[proxiesKey], configs.AptProxy{
+	b.config.Proxies[proxiesKey] = append(b.config.Proxies[proxiesKey], config.AptProxy{
 		Name: name,
 		URL:  url,
 	})
@@ -116,22 +116,22 @@ func (b *APTConfigBuilder) WithProxy(name, proxiesKey, url string) *APTConfigBui
 }
 
 // Build 설정 빌드
-func (b *APTConfigBuilder) Build() *configs.AptProxyConfig {
+func (b *APTConfigBuilder) Build() *config.AptProxyConfig {
 	return b.config
 }
 
 // MavenConfigBuilder Maven 설정 빌더
 type MavenConfigBuilder struct {
-	config *configs.MavenProxyConfig
+	config *config.MavenProxyConfig
 }
 
 // NewMavenConfigBuilder Maven 설정 빌드 생성
 func NewMavenConfigBuilder() *MavenConfigBuilder {
 	return &MavenConfigBuilder{
-		config: &configs.MavenProxyConfig{
+		config: &config.MavenProxyConfig{
 			Path:     "/proxy/maven",
 			UseCache: true,
-			Proxies: []configs.MavenProxyServer{
+			Proxies: []config.MavenProxyServer{
 				{
 					ID:          "central",
 					Name:        "Central Repository",
@@ -140,7 +140,7 @@ func NewMavenConfigBuilder() *MavenConfigBuilder {
 					Enabled:     true,
 				},
 			},
-			Cache: configs.MavenProxyCacheConfig{
+			Cache: config.MavenProxyCacheConfig{
 				Enabled: true,
 			},
 		},
@@ -155,7 +155,7 @@ func (b *MavenConfigBuilder) WithPath(path string) *MavenConfigBuilder {
 
 // WithProxy 프록시 서버 추가
 func (b *MavenConfigBuilder) WithProxy(id, name, url, description string, enabled bool) *MavenConfigBuilder {
-	b.config.Proxies = append(b.config.Proxies, configs.MavenProxyServer{
+	b.config.Proxies = append(b.config.Proxies, config.MavenProxyServer{
 		ID:          id,
 		Name:        name,
 		URL:         url,
@@ -173,23 +173,23 @@ func (b *MavenConfigBuilder) WithCacheEnabled(enabled bool) *MavenConfigBuilder 
 }
 
 // Build 설정 빌드
-func (b *MavenConfigBuilder) Build() *configs.MavenProxyConfig {
+func (b *MavenConfigBuilder) Build() *config.MavenProxyConfig {
 	return b.config
 }
 
 // NPMConfigBuilder NPM 설정 빌더
 type NPMConfigBuilder struct {
-	config *configs.NpmProxyConfig
+	config *config.NpmProxyConfig
 }
 
 // NewNPMConfigBuilder NPM 설정 빌더 생성
 func NewNPMConfigBuilder() *NPMConfigBuilder {
 	return &NPMConfigBuilder{
-		config: &configs.NpmProxyConfig{
+		config: &config.NpmProxyConfig{
 			Path:      "/proxy/npm",
 			UseCache:  true,
 			UserCache: false,
-			Proxies: map[string][]configs.NpmProxyServer{
+			Proxies: map[string][]config.NpmProxyServer{
 				"default": {
 					{
 						Name: "NPM Registry",
@@ -222,9 +222,9 @@ func (b *NPMConfigBuilder) WithUserCache(enabled bool) *NPMConfigBuilder {
 // WithProxy 프록시 서버 추가
 func (b *NPMConfigBuilder) WithProxy(registryName, serverName, url string) *NPMConfigBuilder {
 	if b.config.Proxies == nil {
-		b.config.Proxies = make(map[string][]configs.NpmProxyServer)
+		b.config.Proxies = make(map[string][]config.NpmProxyServer)
 	}
-	b.config.Proxies[registryName] = append(b.config.Proxies[registryName], configs.NpmProxyServer{
+	b.config.Proxies[registryName] = append(b.config.Proxies[registryName], config.NpmProxyServer{
 		Name: serverName,
 		URL:  url,
 	})
@@ -232,7 +232,7 @@ func (b *NPMConfigBuilder) WithProxy(registryName, serverName, url string) *NPMC
 }
 
 // Build 설정 빌드
-func (b *NPMConfigBuilder) Build() *configs.NpmProxyConfig {
+func (b *NPMConfigBuilder) Build() *config.NpmProxyConfig {
 	return b.config
 }
 

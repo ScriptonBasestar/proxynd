@@ -7,7 +7,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 )
 
 // BenchmarkMavenHandler_CacheKeyGeneration Maven 캐시 키 생성 성능 측정
@@ -109,12 +109,12 @@ func BenchmarkMavenHandler_ArtifactPathValidation(b *testing.B) {
 // BenchmarkMavenHandler_RequestTransform Maven 요청 변환 성능 측정
 func BenchmarkMavenHandler_RequestTransform(b *testing.B) {
 	_ = &MavenHandler{
-		Config: &configs.MavenProxyConfig{
-			Proxies: []configs.MavenProxyServer{
+		Config: &config.MavenProxyConfig{
+			Proxies: []config.MavenProxyServer{
 				{
 					Name: "test",
 					URL:  "https://repo1.maven.org/maven2",
-					BasicAuth: configs.BasicAuth{
+					BasicAuth: config.BasicAuth{
 						Username: "testuser",
 						Password: "testpass",
 					},
@@ -251,8 +251,8 @@ func BenchmarkMavenHandler_CacheTTLCalculation(b *testing.B) {
 
 // BenchmarkMavenHandler_URLBuildingParallel 병렬 URL 구성 성능 측정
 func BenchmarkMavenHandler_URLBuildingParallel(b *testing.B) {
-	config := &configs.MavenProxyConfig{
-		Proxies: []configs.MavenProxyServer{
+	config := &config.MavenProxyConfig{
+		Proxies: []config.MavenProxyServer{
 			{
 				Name: "central",
 				URL:  "https://repo1.maven.org/maven2",

@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/logging"
 )
 
@@ -27,13 +27,13 @@ func TestMavenHandler_Type(t *testing.T) {
 func TestMavenHandler_IsEnabled(t *testing.T) {
 	tests := []struct {
 		name     string
-		config   *configs.MavenProxyConfig
+		config   *config.MavenProxyConfig
 		expected bool
 	}{
 		{
 			name: "활성화된 Maven 프록시",
-			config: &configs.MavenProxyConfig{
-				Proxies: []configs.MavenProxyServer{
+			config: &config.MavenProxyConfig{
+				Proxies: []config.MavenProxyServer{
 					{
 						Name: "central",
 						URL:  "https://repo1.maven.org/maven2",
@@ -44,14 +44,14 @@ func TestMavenHandler_IsEnabled(t *testing.T) {
 		},
 		{
 			name: "프록시 없음",
-			config: &configs.MavenProxyConfig{
-				Proxies: []configs.MavenProxyServer{},
+			config: &config.MavenProxyConfig{
+				Proxies: []config.MavenProxyServer{},
 			},
 			expected: false,
 		},
 		{
 			name:     "빈 설정",
-			config:   &configs.MavenProxyConfig{},
+			config:   &config.MavenProxyConfig{},
 			expected: false,
 		},
 	}
@@ -122,7 +122,7 @@ func TestMavenHandler_GenerateCacheKey(t *testing.T) {
 func TestMavenHandler_BuildUpstreamURL(t *testing.T) {
 	tests := []struct {
 		name        string
-		config      *configs.MavenProxyConfig
+		config      *config.MavenProxyConfig
 		path        string
 		expectedURL string
 		expectError bool
@@ -130,8 +130,8 @@ func TestMavenHandler_BuildUpstreamURL(t *testing.T) {
 	}{
 		{
 			name: "정상적인 URL 구성",
-			config: &configs.MavenProxyConfig{
-				Proxies: []configs.MavenProxyServer{
+			config: &config.MavenProxyConfig{
+				Proxies: []config.MavenProxyServer{
 					{
 						Name: "central",
 						URL:  "https://repo1.maven.org/maven2",
@@ -144,8 +144,8 @@ func TestMavenHandler_BuildUpstreamURL(t *testing.T) {
 		},
 		{
 			name: "trailing slash 처리",
-			config: &configs.MavenProxyConfig{
-				Proxies: []configs.MavenProxyServer{
+			config: &config.MavenProxyConfig{
+				Proxies: []config.MavenProxyServer{
 					{
 						Name: "central",
 						URL:  "https://repo1.maven.org/maven2/",
@@ -158,8 +158,8 @@ func TestMavenHandler_BuildUpstreamURL(t *testing.T) {
 		},
 		{
 			name: "빈 프록시 설정",
-			config: &configs.MavenProxyConfig{
-				Proxies: []configs.MavenProxyServer{},
+			config: &config.MavenProxyConfig{
+				Proxies: []config.MavenProxyServer{},
 			},
 			path:        "any/path",
 			expectedURL: "",
@@ -168,8 +168,8 @@ func TestMavenHandler_BuildUpstreamURL(t *testing.T) {
 		},
 		{
 			name: "빈 URL",
-			config: &configs.MavenProxyConfig{
-				Proxies: []configs.MavenProxyServer{
+			config: &config.MavenProxyConfig{
+				Proxies: []config.MavenProxyServer{
 					{Name: "central", URL: ""},
 				},
 			},
@@ -180,8 +180,8 @@ func TestMavenHandler_BuildUpstreamURL(t *testing.T) {
 		},
 		{
 			name: "잘못된 경로 - 상위 디렉토리",
-			config: &configs.MavenProxyConfig{
-				Proxies: []configs.MavenProxyServer{
+			config: &config.MavenProxyConfig{
+				Proxies: []config.MavenProxyServer{
 					{
 						Name: "central",
 						URL:  "https://repo1.maven.org/maven2",
@@ -195,8 +195,8 @@ func TestMavenHandler_BuildUpstreamURL(t *testing.T) {
 		},
 		{
 			name: "빈 경로",
-			config: &configs.MavenProxyConfig{
-				Proxies: []configs.MavenProxyServer{
+			config: &config.MavenProxyConfig{
+				Proxies: []config.MavenProxyServer{
 					{
 						Name: "central",
 						URL:  "https://repo1.maven.org/maven2",
@@ -414,15 +414,15 @@ func TestMavenHandler_TransformRequest(t *testing.T) {
 	tests := []struct {
 		name            string
 		path            string
-		config          *configs.MavenProxyConfig
+		config          *config.MavenProxyConfig
 		inputHeaders    map[string]string
 		expectedHeaders map[string]string
 	}{
 		{
 			name: "일반 JAR 요청",
 			path: "/proxy/maven/org/springframework/spring-core/5.3.10/spring-core-5.3.10.jar",
-			config: &configs.MavenProxyConfig{
-				Proxies: []configs.MavenProxyServer{
+			config: &config.MavenProxyConfig{
+				Proxies: []config.MavenProxyServer{
 					{Name: "central", URL: "https://repo1.maven.org/maven2"},
 				},
 			},
@@ -439,8 +439,8 @@ func TestMavenHandler_TransformRequest(t *testing.T) {
 		{
 			name: "SNAPSHOT 아티팩트 요청",
 			path: "/proxy/maven/org/example/lib/1.0-SNAPSHOT/lib-1.0-SNAPSHOT.jar",
-			config: &configs.MavenProxyConfig{
-				Proxies: []configs.MavenProxyServer{
+			config: &config.MavenProxyConfig{
+				Proxies: []config.MavenProxyServer{
 					{Name: "central", URL: "https://repo1.maven.org/maven2"},
 				},
 			},
@@ -457,12 +457,12 @@ func TestMavenHandler_TransformRequest(t *testing.T) {
 		{
 			name: "Basic Auth 포함 요청",
 			path: "/proxy/maven/org/springframework/spring-core/5.3.10/spring-core-5.3.10.jar",
-			config: &configs.MavenProxyConfig{
-				Proxies: []configs.MavenProxyServer{
+			config: &config.MavenProxyConfig{
+				Proxies: []config.MavenProxyServer{
 					{
 						Name: "private",
 						URL:  "https://private.repo.com/maven2",
-						BasicAuth: configs.BasicAuth{
+						BasicAuth: config.BasicAuth{
 							Username: "testuser",
 							Password: "testpass",
 						},
@@ -882,19 +882,19 @@ func TestMavenHandler_RecordCacheMetrics(t *testing.T) {
 func TestMavenHandler_GetUpstreamAuth(t *testing.T) {
 	tests := []struct {
 		name         string
-		config       *configs.MavenProxyConfig
+		config       *config.MavenProxyConfig
 		expectedUser string
 		expectedPass string
 		expectError  bool
 	}{
 		{
 			name: "Basic Auth 설정됨",
-			config: &configs.MavenProxyConfig{
-				Proxies: []configs.MavenProxyServer{
+			config: &config.MavenProxyConfig{
+				Proxies: []config.MavenProxyServer{
 					{
 						Name: "private",
 						URL:  "https://private.repo.com/maven2",
-						BasicAuth: configs.BasicAuth{
+						BasicAuth: config.BasicAuth{
 							Username: "testuser",
 							Password: "testpass",
 						},
@@ -907,8 +907,8 @@ func TestMavenHandler_GetUpstreamAuth(t *testing.T) {
 		},
 		{
 			name: "Basic Auth 없음",
-			config: &configs.MavenProxyConfig{
-				Proxies: []configs.MavenProxyServer{
+			config: &config.MavenProxyConfig{
+				Proxies: []config.MavenProxyServer{
 					{
 						Name: "central",
 						URL:  "https://repo1.maven.org/maven2",
@@ -921,8 +921,8 @@ func TestMavenHandler_GetUpstreamAuth(t *testing.T) {
 		},
 		{
 			name: "빈 프록시 설정",
-			config: &configs.MavenProxyConfig{
-				Proxies: []configs.MavenProxyServer{},
+			config: &config.MavenProxyConfig{
+				Proxies: []config.MavenProxyServer{},
 			},
 			expectedUser: "",
 			expectedPass: "",
@@ -985,13 +985,13 @@ func TestMavenHandler_ValidateClientAuth(t *testing.T) {
 func TestMavenHandler_HealthCheck(t *testing.T) {
 	tests := []struct {
 		name        string
-		config      *configs.MavenProxyConfig
+		config      *config.MavenProxyConfig
 		expectError bool
 	}{
 		{
 			name: "정상적인 설정",
-			config: &configs.MavenProxyConfig{
-				Proxies: []configs.MavenProxyServer{
+			config: &config.MavenProxyConfig{
+				Proxies: []config.MavenProxyServer{
 					{
 						Name: "central",
 						URL:  "https://repo1.maven.org/maven2",
@@ -1002,15 +1002,15 @@ func TestMavenHandler_HealthCheck(t *testing.T) {
 		},
 		{
 			name: "빈 프록시 설정",
-			config: &configs.MavenProxyConfig{
-				Proxies: []configs.MavenProxyServer{},
+			config: &config.MavenProxyConfig{
+				Proxies: []config.MavenProxyServer{},
 			},
 			expectError: true,
 		},
 		{
 			name: "빈 URL이 있는 설정",
-			config: &configs.MavenProxyConfig{
-				Proxies: []configs.MavenProxyServer{
+			config: &config.MavenProxyConfig{
+				Proxies: []config.MavenProxyServer{
 					{
 						Name: "empty",
 						URL:  "",
@@ -1021,8 +1021,8 @@ func TestMavenHandler_HealthCheck(t *testing.T) {
 		},
 		{
 			name: "여러 리포지토리 중 하나만 유효",
-			config: &configs.MavenProxyConfig{
-				Proxies: []configs.MavenProxyServer{
+			config: &config.MavenProxyConfig{
+				Proxies: []config.MavenProxyServer{
 					{Name: "empty1", URL: ""},
 					{Name: "central", URL: "https://repo1.maven.org/maven2"},
 					{Name: "empty2", URL: ""},
@@ -1154,8 +1154,8 @@ func TestMavenHandler_Integration(t *testing.T) {
 	defer upstreamServer.Close()
 
 	// Maven 핸들러 설정
-	config := &configs.MavenProxyConfig{
-		Proxies: []configs.MavenProxyServer{
+	config := &config.MavenProxyConfig{
+		Proxies: []config.MavenProxyServer{
 			{
 				Name: "test",
 				URL:  upstreamServer.URL,

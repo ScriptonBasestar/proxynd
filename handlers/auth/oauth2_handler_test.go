@@ -13,15 +13,15 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 )
 
 // 테스트용 OAuth2 설정 생성
-func createTestOAuth2Config() *configs.OAuth2Config {
-	return &configs.OAuth2Config{
+func createTestOAuth2Config() *config.OAuth2Config {
+	return &config.OAuth2Config{
 		Enabled:         true,
 		DefaultProvider: "github",
-		Providers: map[string]configs.OAuth2Provider{
+		Providers: map[string]config.OAuth2Provider{
 			"github": {
 				ClientID:     "test_client_id",
 				ClientSecret: "test_client_secret",
@@ -33,7 +33,7 @@ func createTestOAuth2Config() *configs.OAuth2Config {
 				EnablePKCE:   true,
 			},
 		},
-		JWT: configs.JWTConfig{
+		JWT: config.JWTConfig{
 			Secret:          "test-jwt-secret-key-32-characters",
 			AccessTokenTTL:  3600,
 			RefreshTokenTTL: 604800,
@@ -41,7 +41,7 @@ func createTestOAuth2Config() *configs.OAuth2Config {
 			Issuer:          "proxynd",
 			Audience:        "proxynd-api",
 		},
-		UserMapping: configs.UserMappingConfig{
+		UserMapping: config.UserMappingConfig{
 			AutoCreate:  true,
 			DefaultRole: "viewer",
 			AdminUsers:  []string{"admin@example.com"},

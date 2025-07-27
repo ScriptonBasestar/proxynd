@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/internal/domain/maven"
 	"proxynd/logging"
 )
@@ -63,7 +63,7 @@ func (c *directoryCollectorImpl) CollectDirectory(ctx context.Context, path stri
 	// 각 미러에 대해 고루틴 실행
 	for _, proxy := range proxies {
 		wg.Add(1)
-		go func(p configs.MavenProxyServer) {
+		go func(p config.MavenProxyServer) {
 			defer wg.Done()
 
 			mirrorStatus := maven.MirrorStatus{
@@ -134,7 +134,7 @@ func (c *directoryCollectorImpl) CollectDirectory(ctx context.Context, path stri
 }
 
 // CollectFromMirror 특정 미러에서 디렉토리 데이터 수집
-func (c *directoryCollectorImpl) CollectFromMirror(ctx context.Context, mirror configs.MavenProxyServer, path string) ([]maven.Entry, error) {
+func (c *directoryCollectorImpl) CollectFromMirror(ctx context.Context, mirror config.MavenProxyServer, path string) ([]maven.Entry, error) {
 	// 미러 URL 구성
 	baseURL := strings.TrimRight(mirror.URL, "/")
 	cleanPath := strings.Trim(path, "/")
@@ -176,7 +176,7 @@ func (c *directoryCollectorImpl) CollectFromMirror(ctx context.Context, mirror c
 }
 
 // GetMirrorStatus 미러 상태 확인
-func (c *directoryCollectorImpl) GetMirrorStatus(ctx context.Context, mirror configs.MavenProxyServer) (*maven.MirrorStatus, error) {
+func (c *directoryCollectorImpl) GetMirrorStatus(ctx context.Context, mirror config.MavenProxyServer) (*maven.MirrorStatus, error) {
 	status := &maven.MirrorStatus{
 		Name: mirror.Name,
 		URL:  mirror.URL,
@@ -300,7 +300,7 @@ func (c *directoryCollectorImpl) extractEntryFromLine(line, parentPath string) *
 }
 
 // parseMetadata Maven 메타데이터 기반 파싱
-func (c *directoryCollectorImpl) parseMetadata(mirror configs.MavenProxyServer, cleanPath string) ([]maven.Entry, error) {
+func (c *directoryCollectorImpl) parseMetadata(mirror config.MavenProxyServer, cleanPath string) ([]maven.Entry, error) {
 	// maven-metadata.xml 파일 시도
 	metadataURL := strings.TrimRight(mirror.URL, "/") + "/" + cleanPath + "/maven-metadata.xml"
 

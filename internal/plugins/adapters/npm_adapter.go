@@ -9,7 +9,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/internal/plugins"
 	"proxynd/logging"
 )
@@ -17,7 +17,7 @@ import (
 // NPMHandlerAdapter NPM 핸들러를 플러그인 인터페이스로 어댑팅
 type NPMHandlerAdapter struct {
 	*plugins.BasePackageHandler
-	config       *configs.NpmProxyConfig
+	config       *config.NpmProxyConfig
 	groupManager plugins.GroupManager
 }
 
@@ -102,7 +102,7 @@ func (h *NPMHandlerAdapter) Initialize(config interface{}) error {
 	}
 
 	// NPM 설정 타입 변환
-	npmConfig, ok := config.(*configs.NpmProxyConfig)
+	npmConfig, ok := config.(*config.NpmProxyConfig)
 	if !ok {
 		return fmt.Errorf("invalid NPM config type")
 	}
@@ -147,9 +147,9 @@ func (h *NPMHandlerAdapter) HandleRequest(ctx *fiber.Ctx, mode plugins.Operation
 
 // ValidateConfig NPM 설정 검증
 func (h *NPMHandlerAdapter) ValidateConfig(config interface{}) error {
-	npmConfig, ok := config.(*configs.NpmProxyConfig)
+	npmConfig, ok := config.(*config.NpmProxyConfig)
 	if !ok {
-		return fmt.Errorf("config must be *configs.NpmProxyConfig")
+		return fmt.Errorf("config must be *config.NpmProxyConfig")
 	}
 
 	if len(npmConfig.Proxies) == 0 {
@@ -161,11 +161,11 @@ func (h *NPMHandlerAdapter) ValidateConfig(config interface{}) error {
 
 // GetDefaultConfig NPM 기본 설정 반환
 func (h *NPMHandlerAdapter) GetDefaultConfig() interface{} {
-	return &configs.NpmProxyConfig{
+	return &config.NpmProxyConfig{
 		Path:      "/proxy/npm",
 		UseCache:  true,
 		UserCache: false,
-		Proxies: map[string][]configs.NpmProxyServer{
+		Proxies: map[string][]config.NpmProxyServer{
 			"public": {
 				{
 					Name: "npmjs",

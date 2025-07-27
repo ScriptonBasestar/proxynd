@@ -15,8 +15,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
-	cacheMocks "proxynd/cache/mocks"
-	"proxynd/configs"
+	// cacheMocks "proxynd/cache/mocks"
+	"proxynd/internal/config"
 	"proxynd/internal/app"
 	apkMocks "proxynd/internal/services/apk/mocks"
 	dockerMocks "proxynd/internal/services/docker/mocks"
@@ -45,9 +45,9 @@ func NewMockFactory(t *testing.T) *MockFactory {
 }
 
 // CreateMockCache 캐시 Mock 생성
-func (mf *MockFactory) CreateMockCache() *cacheMocks.MockCache {
-	return cacheMocks.NewMockCache(mf.t)
-}
+// func (mf *MockFactory) CreateMockCache() *cacheMocks.MockCache {
+// 	return cacheMocks.NewMockCache(mf.t)
+// }
 
 // CreateMockPIPService PIP 서비스 Mock 생성
 func (mf *MockFactory) CreateMockPIPService() *pipMocks.MockPackageService {
@@ -137,11 +137,11 @@ func (h *HTTPTestHelper) AssertHTTPResponse(ctx *fiber.Ctx, expectedStatus int, 
 // CacheTestHelper 캐시 테스트 헬퍼
 type CacheTestHelper struct {
 	t         *testing.T
-	mockCache *cacheMocks.MockCache
+	// mockCache *cacheMocks.MockCache
 }
 
 // NewCacheTestHelper 캐시 테스트 헬퍼 생성
-func NewCacheTestHelper(t *testing.T, mockCache *cacheMocks.MockCache) *CacheTestHelper {
+// func NewCacheTestHelper(t *testing.T, mockCache *cacheMocks.MockCache) *CacheTestHelper {
 	return &CacheTestHelper{
 		t:         t,
 		mockCache: mockCache,
@@ -204,17 +204,17 @@ func NewConfigTestHelper(t *testing.T) *ConfigTestHelper {
 }
 
 // CreatePIPConfig PIP 설정 생성
-func (ch *ConfigTestHelper) CreatePIPConfig() *configs.PipProxyConfig {
-	return &configs.PipProxyConfig{
+func (ch *ConfigTestHelper) CreatePIPConfig() *config.PipProxyConfig {
+	return &config.PipProxyConfig{
 		Enabled: true,
-		Mirrors: []configs.PipMirror{
+		Mirrors: []config.PipMirror{
 			{
 				Name:    "pypi",
 				URL:     "https://pypi.org",
 				Timeout: "30s",
 			},
 		},
-		Cache: configs.CacheConfig{
+		Cache: config.CacheConfig{
 			Enabled: true,
 			TTL:     "1h",
 		},
@@ -222,17 +222,17 @@ func (ch *ConfigTestHelper) CreatePIPConfig() *configs.PipProxyConfig {
 }
 
 // CreateDockerConfig Docker 설정 생성
-func (ch *ConfigTestHelper) CreateDockerConfig() *configs.DockerProxyConfig {
-	return &configs.DockerProxyConfig{
+func (ch *ConfigTestHelper) CreateDockerConfig() *config.DockerProxyConfig {
+	return &config.DockerProxyConfig{
 		Enabled: true,
-		Registries: []configs.DockerRegistry{
+		Registries: []config.DockerRegistry{
 			{
 				Name:    "dockerhub",
 				URL:     "https://registry-1.docker.io",
 				Timeout: "30s",
 			},
 		},
-		Cache: configs.CacheConfig{
+		Cache: config.CacheConfig{
 			Enabled: true,
 			TTL:     "1h",
 		},
@@ -240,17 +240,17 @@ func (ch *ConfigTestHelper) CreateDockerConfig() *configs.DockerProxyConfig {
 }
 
 // CreateYUMConfig YUM 설정 생성
-func (ch *ConfigTestHelper) CreateYUMConfig() *configs.YumProxyConfig {
-	return &configs.YumProxyConfig{
+func (ch *ConfigTestHelper) CreateYUMConfig() *config.YumProxyConfig {
+	return &config.YumProxyConfig{
 		Enabled: true,
-		Repositories: []configs.YumRepository{
+		Repositories: []config.YumRepository{
 			{
 				Name:    "centos",
 				BaseURL: "http://mirror.centos.org/centos",
 				Timeout: "30s",
 			},
 		},
-		Cache: configs.CacheConfig{
+		Cache: config.CacheConfig{
 			Enabled: true,
 			TTL:     "1h",
 		},
@@ -258,17 +258,17 @@ func (ch *ConfigTestHelper) CreateYUMConfig() *configs.YumProxyConfig {
 }
 
 // CreateAPKConfig APK 설정 생성
-func (ch *ConfigTestHelper) CreateAPKConfig() *configs.ApkProxyConfig {
-	return &configs.ApkProxyConfig{
+func (ch *ConfigTestHelper) CreateAPKConfig() *config.ApkProxyConfig {
+	return &config.ApkProxyConfig{
 		Enabled: true,
-		Repositories: []configs.ApkRepository{
+		Repositories: []config.ApkRepository{
 			{
 				Name:    "alpine",
 				BaseURL: "http://dl-cdn.alpinelinux.org/alpine",
 				Timeout: "30s",
 			},
 		},
-		Cache: configs.CacheConfig{
+		Cache: config.CacheConfig{
 			Enabled: true,
 			TTL:     "1h",
 		},

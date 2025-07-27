@@ -6,7 +6,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/logging"
 )
 
@@ -109,7 +109,7 @@ func SearchHandler(c *fiber.Ctx) error {
 // searchAptContent searches APT repositories using local package index
 func searchAptContent(query string, limit int) ([]SearchResult, error) {
 	// APT 설정 로드
-	aptConfig := configs.AptProxyConfig{}
+	aptConfig := config.AptProxyConfig{}
 	if err := aptConfig.ReadConfig(); err != nil {
 		return nil, fmt.Errorf("APT 설정 로드 실패: %w", err)
 	}
@@ -147,7 +147,7 @@ func searchAptContent(query string, limit int) ([]SearchResult, error) {
 
 // searchAptIndex searches APT repository using mock package data
 func searchAptIndex(
-	distro string, proxy configs.AptProxy, query string, limit int, baseURL, proxyPath string,
+	distro string, proxy config.AptProxy, query string, limit int, baseURL, proxyPath string,
 ) ([]SearchResult, error) {
 	var results []SearchResult
 
@@ -195,7 +195,7 @@ func searchAptIndex(
 // searchMavenContentGrouped searches Maven repositories and returns grouped results
 func searchMavenContentGrouped(query string, limit int) ([]GroupedSearchResult, error) {
 	// Maven 설정 로드
-	mavenConfig := configs.MavenProxyConfig{}
+	mavenConfig := config.MavenProxyConfig{}
 	if err := mavenConfig.ReadConfig(); err != nil {
 		return nil, fmt.Errorf("maven 설정 로드 실패: %w", err)
 	}

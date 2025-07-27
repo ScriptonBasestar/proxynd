@@ -10,7 +10,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 
 	// proxyHandlers "proxynd/handlers/proxy" // Commented out until handlers are properly implemented
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/internal/factory"
 	"proxynd/internal/repositories/cache"
 	"proxynd/internal/repositories/config"
@@ -27,11 +27,11 @@ type Container struct {
 	logger logging.Logger
 
 	// 설정 캐싱 및 핫 리로드 관련 필드
-	configLoader    *configs.ConfigLoader
-	configCache     *configs.UnifiedConfig
+	configLoader    *config.ConfigLoader
+	configCache     *config.UnifiedConfig
 	configCacheMu   sync.RWMutex
 	configWatcher   *fsnotify.Watcher
-	configChangeCbs []func(*configs.UnifiedConfig)
+	configChangeCbs []func(*config.UnifiedConfig)
 	configNotifier  *ConfigChangeNotifier
 
 	// Repositories
@@ -59,13 +59,13 @@ func NewContainer(cfg *Config) *Container {
 		config:          cfg,
 		logger:          logging.GetLogger(),
 		singletons:      make(map[string]interface{}),
-		configChangeCbs: make([]func(*configs.UnifiedConfig), 0),
+		configChangeCbs: make([]func(*config.UnifiedConfig), 0),
 		configNotifier:  NewConfigChangeNotifier(),
 	}
 
 	// ConfigLoader 초기화 (기본 설정 파일 경로 사용)
 	configPath := filepath.Join(cfg.ConfigDir, "config.yaml")
-	container.configLoader = configs.NewConfigLoader(configPath)
+	container.configLoader = config.NewConfigLoader(configPath)
 
 	// 초기 설정 로드
 	if unifiedConfig, err := container.configLoader.Load(); err == nil {
@@ -91,7 +91,7 @@ func (c *Container) GetConfig() *Config {
 }
 
 // GetUnifiedConfig returns the cached unified configuration
-func (c *Container) GetUnifiedConfig() *configs.UnifiedConfig {
+func (c *Container) GetUnifiedConfig() *config.UnifiedConfig {
 	c.configCacheMu.RLock()
 	defer c.configCacheMu.RUnlock()
 	return c.configCache
@@ -116,7 +116,7 @@ func (c *Container) ReloadConfig() error {
 	}
 
 	// 설정 검증
-	if validationErrors := configs.ValidateConfig(newConfig); len(validationErrors) > 0 {
+	if validationErrors := config.ValidateConfig(newConfig); len(validationErrors) > 0 {
 		c.logger.Error("Config validation failed", logging.F("errors", validationErrors))
 		return fmt.Errorf("config validation failed: %v", validationErrors)
 	}
@@ -152,7 +152,7 @@ func (c *Container) ReloadConfig() error {
 }
 
 // AddConfigChangeCallback adds a callback to be called when config changes
-func (c *Container) AddConfigChangeCallback(callback func(*configs.UnifiedConfig)) {
+func (c *Container) AddConfigChangeCallback(callback func(*config.UnifiedConfig)) {
 	c.configCacheMu.Lock()
 	defer c.configCacheMu.Unlock()
 	c.configChangeCbs = append(c.configChangeCbs, callback)
@@ -234,9 +234,9 @@ func (c *Container) startConfigWatcher() {
 }
 
 // notifyConfigChange notifies all registered callbacks about config changes
-func (c *Container) notifyConfigChange(config *configs.UnifiedConfig) {
+func (c *Container) notifyConfigChange(config *config.UnifiedConfig) {
 	for _, callback := range c.configChangeCbs {
-		go func(cb func(*configs.UnifiedConfig)) {
+		go func(cb func(*config.UnifiedConfig)) {
 			defer func() {
 				if r := recover(); r != nil {
 					c.logger.Error("Config change callback panicked", logging.F("panic", r))
@@ -248,7 +248,7 @@ func (c *Container) notifyConfigChange(config *configs.UnifiedConfig) {
 }
 
 // isConfigEqual compares two configurations for equality (simplified check)
-func (c *Container) isConfigEqual(old, newVal *configs.UnifiedConfig) bool {
+func (c *Container) isConfigEqual(old, newVal *config.UnifiedConfig) bool {
 	// 간단한 구조체 비교 (실제로는 더 정교한 비교가 필요할 수 있음)
 	return old.Server.Port == newVal.Server.Port &&
 		old.Server.Host == newVal.Server.Host &&

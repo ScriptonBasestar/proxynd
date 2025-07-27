@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 )
 
 // TestNewService tests the creation of a new config service
@@ -95,15 +95,15 @@ func TestService_GetGlobalConfig(t *testing.T) {
 		name    string
 		setup   func() Service
 		wantErr bool
-		check   func(t *testing.T, cfg *configs.GlobalConfig)
+		check   func(t *testing.T, cfg *config.GlobalConfig)
 	}{
 		{
 			name: "valid global config",
 			setup: func() Service {
 				return &service{
-					globalConfig: &configs.UnifiedConfig{
-						Cache: configs.CacheConfig{
-							File: configs.FileCacheConfig{
+					globalConfig: &config.UnifiedConfig{
+						Cache: config.CacheConfig{
+							File: config.FileCacheConfig{
 								Directory: "/tmp/storage",
 							},
 						},
@@ -112,7 +112,7 @@ func TestService_GetGlobalConfig(t *testing.T) {
 				}
 			},
 			wantErr: false,
-			check: func(t *testing.T, cfg *configs.GlobalConfig) {
+			check: func(t *testing.T, cfg *config.GlobalConfig) {
 				assert.Equal(t, "/tmp/storage", cfg.StorageDir)
 				assert.Equal(t, "/tmp/config", cfg.ConfigDir)
 				assert.Equal(t, 3600, cfg.Cache.TTL)
@@ -152,31 +152,31 @@ func TestService_GetProxyConfigs(t *testing.T) {
 
 	// Create a service with all configs loaded
 	svc := &service{
-		mavenConfig: &configs.MavenProxyConfig{
+		mavenConfig: &config.MavenProxyConfig{
 			Path:     "/maven",
 			UseCache: true,
 		},
-		aptConfig: &configs.AptProxyConfig{
+		aptConfig: &config.AptProxyConfig{
 			Path:     "/apt",
 			UseCache: true,
 		},
-		npmConfig: &configs.NpmProxyConfig{
+		npmConfig: &config.NpmProxyConfig{
 			Path:     "/npm",
 			UseCache: true,
 		},
-		dockerConfig: &configs.DockerProxyConfig{
+		dockerConfig: &config.DockerProxyConfig{
 			Path:     "/docker",
 			UseCache: true,
 		},
-		pipConfig: &configs.PipProxyConfig{
+		pipConfig: &config.PipProxyConfig{
 			Path:     "/pip",
 			UseCache: true,
 		},
-		yumConfig: &configs.YumProxyConfig{
+		yumConfig: &config.YumProxyConfig{
 			Path:     "/yum",
 			UseCache: true,
 		},
-		apkConfig: &configs.ApkProxyConfig{
+		apkConfig: &config.ApkProxyConfig{
 			Path:     "/apk",
 			UseCache: true,
 		},
@@ -233,19 +233,19 @@ func TestService_GetProxyConfigs(t *testing.T) {
 
 			// Use reflection to check the Path field
 			switch v := cfg.(type) {
-			case *configs.MavenProxyConfig:
+			case *config.MavenProxyConfig:
 				assert.Equal(t, tt.path, v.Path)
-			case *configs.AptProxyConfig:
+			case *config.AptProxyConfig:
 				assert.Equal(t, tt.path, v.Path)
-			case *configs.NpmProxyConfig:
+			case *config.NpmProxyConfig:
 				assert.Equal(t, tt.path, v.Path)
-			case *configs.DockerProxyConfig:
+			case *config.DockerProxyConfig:
 				assert.Equal(t, tt.path, v.Path)
-			case *configs.PipProxyConfig:
+			case *config.PipProxyConfig:
 				assert.Equal(t, tt.path, v.Path)
-			case *configs.YumProxyConfig:
+			case *config.YumProxyConfig:
 				assert.Equal(t, tt.path, v.Path)
-			case *configs.ApkProxyConfig:
+			case *config.ApkProxyConfig:
 				assert.Equal(t, tt.path, v.Path)
 			}
 		})
@@ -324,16 +324,16 @@ func TestService_ValidateAll(t *testing.T) {
 			setup: func() *service {
 				svc := &service{
 					validators: make(map[string]Validator),
-					globalConfig: &configs.UnifiedConfig{
-						Cache: configs.CacheConfig{
-							File: configs.FileCacheConfig{
+					globalConfig: &config.UnifiedConfig{
+						Cache: config.CacheConfig{
+							File: config.FileCacheConfig{
 								Directory: "/tmp/storage",
 							},
 						},
 					},
-					aptConfig: &configs.AptProxyConfig{
+					aptConfig: &config.AptProxyConfig{
 						Path: "/apt",
-						Proxies: map[string][]configs.AptProxy{
+						Proxies: map[string][]config.AptProxy{
 							"default": {
 								{Name: "ubuntu", URL: "http://archive.ubuntu.com"},
 							},
@@ -350,9 +350,9 @@ func TestService_ValidateAll(t *testing.T) {
 			setup: func() *service {
 				svc := &service{
 					validators: make(map[string]Validator),
-					globalConfig: &configs.UnifiedConfig{
-						Cache: configs.CacheConfig{
-							File: configs.FileCacheConfig{
+					globalConfig: &config.UnifiedConfig{
+						Cache: config.CacheConfig{
+							File: config.FileCacheConfig{
 								Directory: "", // This should fail validation
 							},
 						},
@@ -424,14 +424,14 @@ cache:
 func TestService_Concurrency(_ *testing.T) {
 	ctx := context.Background()
 	svc := &service{
-		globalConfig: &configs.UnifiedConfig{
-			Cache: configs.CacheConfig{
-				File: configs.FileCacheConfig{
+		globalConfig: &config.UnifiedConfig{
+			Cache: config.CacheConfig{
+				File: config.FileCacheConfig{
 					Directory: "/tmp/storage",
 				},
 			},
 		},
-		mavenConfig: &configs.MavenProxyConfig{
+		mavenConfig: &config.MavenProxyConfig{
 			Path: "/maven",
 		},
 	}

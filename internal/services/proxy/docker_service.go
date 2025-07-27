@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 )
 
 // DockerService handles Docker registry proxy requests
 type DockerService struct {
 	*BaseProxyService
-	config *configs.DockerProxyConfig
+	config *config.DockerProxyConfig
 }
 
 // NewDockerService creates a new Docker proxy service
@@ -27,7 +27,7 @@ func NewDockerService(
 		return nil, fmt.Errorf("failed to load docker config: %w", err)
 	}
 
-	dockerConfig, ok := configInterface.(*configs.DockerProxyConfig)
+	dockerConfig, ok := configInterface.(*config.DockerProxyConfig)
 	if !ok {
 		return nil, fmt.Errorf("invalid docker config type")
 	}

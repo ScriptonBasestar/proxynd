@@ -2,16 +2,16 @@ package filtering
 
 import (
 	"proxynd/alerts"
-	"proxynd/configs"
+	"proxynd/internal/config"
 )
 
 // SimpleEventFilter 간단한 이벤트 필터링 구현체
 type SimpleEventFilter struct {
-	config configs.WebhookConfig
+	config config.WebhookConfig
 }
 
 // NewSimpleEventFilter 새로운 간단 이벤트 필터 생성
-func NewSimpleEventFilter(config configs.WebhookConfig) *SimpleEventFilter {
+func NewSimpleEventFilter(config config.WebhookConfig) *SimpleEventFilter {
 	return &SimpleEventFilter{
 		config: config,
 	}
@@ -66,7 +66,7 @@ func (sef *SimpleEventFilter) MatchesLevelFilter(event *alerts.AlertEvent) bool 
 
 // MatchesEndpointFilter 엔드포인트별 필터 확인 (기본 구현)
 func (sef *SimpleEventFilter) MatchesEndpointFilter(event *alerts.AlertEvent, endpointInterface interface{}) bool {
-	endpoint, ok := endpointInterface.(configs.WebhookEndpointConfig)
+	endpoint, ok := endpointInterface.(config.WebhookEndpointConfig)
 	if !ok {
 		return false
 	}

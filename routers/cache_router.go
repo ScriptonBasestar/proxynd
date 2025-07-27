@@ -10,7 +10,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/internal/security"
 	"proxynd/logging"
 )
@@ -137,7 +137,7 @@ func getCacheList(c *fiber.Ctx) error {
 	}
 
 	// 캐시 매니저 가져오기 (실제 구현에서는 글로벌 인스턴스 사용)
-	globalConfig := configs.GlobalConfig{}
+	globalConfig := config.GlobalConfig{}
 	if !globalConfig.ConfigExists() {
 		logger.Error("Global configuration not found")
 		return c.Status(500).JSON(fiber.Map{
@@ -174,7 +174,7 @@ func getCacheSize(c *fiber.Ctx) error {
 	logger := logging.GetLogger()
 
 	// 글로벌 설정 로드
-	globalConfig := configs.GlobalConfig{}
+	globalConfig := config.GlobalConfig{}
 	if !globalConfig.ConfigExists() {
 		logger.Error("Global configuration not found")
 		return c.Status(500).JSON(fiber.Map{
@@ -213,7 +213,7 @@ func getCacheSize(c *fiber.Ctx) error {
 
 		switch proxyType {
 		case "apt":
-			aptConfig := configs.AptProxyConfig{}
+			aptConfig := config.AptProxyConfig{}
 			enabled = aptConfig.ConfigExists()
 			if enabled {
 				if err := aptConfig.ReadConfig(); err != nil {
@@ -223,7 +223,7 @@ func getCacheSize(c *fiber.Ctx) error {
 				proxyCount = len(aptConfig.Proxies)
 			}
 		case "npm":
-			npmConfig := configs.NpmProxyConfig{}
+			npmConfig := config.NpmProxyConfig{}
 			enabled = npmConfig.ConfigExists()
 			if enabled {
 				if err := npmConfig.ReadConfig(); err != nil {
@@ -233,7 +233,7 @@ func getCacheSize(c *fiber.Ctx) error {
 				proxyCount = len(npmConfig.Proxies)
 			}
 		case "maven":
-			mavenConfig := configs.MavenProxyConfig{}
+			mavenConfig := config.MavenProxyConfig{}
 			enabled = mavenConfig.ConfigExists()
 			if enabled {
 				if err := mavenConfig.ReadConfig(); err != nil {
@@ -291,7 +291,7 @@ func clearAllCache(c *fiber.Ctx) error {
 	}
 
 	// 글로벌 설정 로드
-	globalConfig := configs.GlobalConfig{}
+	globalConfig := config.GlobalConfig{}
 	if !globalConfig.ConfigExists() {
 		logger.Error("Global configuration not found")
 		return c.Status(500).JSON(fiber.Map{
@@ -374,7 +374,7 @@ func deleteCacheItem(c *fiber.Ctx) error {
 	}
 
 	// 글로벌 설정에서 저장소 디렉토리 가져오기
-	globalConfig := configs.GlobalConfig{}
+	globalConfig := config.GlobalConfig{}
 	if !globalConfig.ConfigExists() {
 		logger.Error("Global configuration not found")
 		return c.Status(500).JSON(fiber.Map{
@@ -440,7 +440,7 @@ func calculateDirectorySize(_ string) (int64, int64) {
 }
 
 // getStorageDir 저장소 디렉토리 경로 가져오기
-func getStorageDir(globalConfig configs.GlobalConfig) string {
+func getStorageDir(globalConfig config.GlobalConfig) string {
 	if globalConfig.StorageDir != "" {
 		return globalConfig.StorageDir
 	}
@@ -455,7 +455,7 @@ func getTTLPolicy(c *fiber.Ctx) error {
 	logger := logging.GetLogger()
 
 	// 글로벌 설정 로드
-	globalConfig := configs.GlobalConfig{}
+	globalConfig := config.GlobalConfig{}
 	if !globalConfig.ConfigExists() {
 		logger.Error("Global configuration not found")
 		return c.Status(500).JSON(fiber.Map{
@@ -523,7 +523,7 @@ func getTTLPolicy(c *fiber.Ctx) error {
 		MinCacheHeaderTTL:    cache.MinCacheHeaderTTL,
 		StaleWhileRevalidate: cache.StaleWhileRevalidate,
 		StaleMaxAge:          cache.StaleMaxAge,
-		DefaultPackageTTLs:   configs.GetDefaultPackageTTLs(),
+		DefaultPackageTTLs:   config.GetDefaultPackageTTLs(),
 		LastUpdated:          time.Now(),
 		ConfigurationSource:  "global.yaml",
 	}

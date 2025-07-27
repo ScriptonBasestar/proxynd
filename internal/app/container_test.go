@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 )
 
 // Test constants
@@ -119,8 +119,8 @@ func TestContainer_ConfigChangeCallback(t *testing.T) {
 
 	// 콜백 등록
 	callbackCalled := false
-	var callbackConfig *configs.UnifiedConfig
-	container.AddConfigChangeCallback(func(config *configs.UnifiedConfig) {
+	var callbackConfig *config.UnifiedConfig
+	container.AddConfigChangeCallback(func(config *config.UnifiedConfig) {
 		callbackCalled = true
 		callbackConfig = config
 	})
@@ -200,7 +200,7 @@ func TestContainer_ConfigFileWatcher(t *testing.T) {
 
 	// 콜백 등록
 	callbackCalled := false
-	container.AddConfigChangeCallback(func(_ *configs.UnifiedConfig) {
+	container.AddConfigChangeCallback(func(_ *config.UnifiedConfig) {
 		callbackCalled = true
 	})
 

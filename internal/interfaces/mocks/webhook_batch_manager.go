@@ -4,7 +4,7 @@ package mocks
 
 import (
 	alerts "proxynd/alerts"
-	configs "proxynd/configs"
+	configs "proxynd/internal/config"
 
 	context "context"
 
@@ -27,7 +27,7 @@ func (_m *MockWebhookBatchManager) EXPECT() *MockWebhookBatchManager_Expecter {
 }
 
 // AddEvent provides a mock function with given fields: event, endpoint
-func (_m *MockWebhookBatchManager) AddEvent(event *alerts.AlertEvent, endpoint configs.WebhookEndpointConfig) {
+func (_m *MockWebhookBatchManager) AddEvent(event *alerts.AlertEvent, endpoint config.WebhookEndpointConfig) {
 	_m.Called(event, endpoint)
 }
 
@@ -38,14 +38,14 @@ type MockWebhookBatchManager_AddEvent_Call struct {
 
 // AddEvent is a helper method to define mock.On call
 //   - event *alerts.AlertEvent
-//   - endpoint configs.WebhookEndpointConfig
+//   - endpoint config.WebhookEndpointConfig
 func (_e *MockWebhookBatchManager_Expecter) AddEvent(event interface{}, endpoint interface{}) *MockWebhookBatchManager_AddEvent_Call {
 	return &MockWebhookBatchManager_AddEvent_Call{Call: _e.mock.On("AddEvent", event, endpoint)}
 }
 
-func (_c *MockWebhookBatchManager_AddEvent_Call) Run(run func(event *alerts.AlertEvent, endpoint configs.WebhookEndpointConfig)) *MockWebhookBatchManager_AddEvent_Call {
+func (_c *MockWebhookBatchManager_AddEvent_Call) Run(run func(event *alerts.AlertEvent, endpoint config.WebhookEndpointConfig)) *MockWebhookBatchManager_AddEvent_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(*alerts.AlertEvent), args[1].(configs.WebhookEndpointConfig))
+		run(args[0].(*alerts.AlertEvent), args[1].(config.WebhookEndpointConfig))
 	})
 	return _c
 }
@@ -55,7 +55,7 @@ func (_c *MockWebhookBatchManager_AddEvent_Call) Return() *MockWebhookBatchManag
 	return _c
 }
 
-func (_c *MockWebhookBatchManager_AddEvent_Call) RunAndReturn(run func(*alerts.AlertEvent, configs.WebhookEndpointConfig)) *MockWebhookBatchManager_AddEvent_Call {
+func (_c *MockWebhookBatchManager_AddEvent_Call) RunAndReturn(run func(*alerts.AlertEvent, config.WebhookEndpointConfig)) *MockWebhookBatchManager_AddEvent_Call {
 	_c.Run(run)
 	return _c
 }

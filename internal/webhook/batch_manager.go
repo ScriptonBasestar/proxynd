@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"proxynd/alerts"
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/logging"
 )
 
@@ -27,14 +27,14 @@ const (
 type BatchGroup struct {
 	Key       string                        // 그룹 키 (endpoint, type, level 등)
 	Events    []*alerts.AlertEvent          // 배치된 이벤트들
-	Endpoint  configs.WebhookEndpointConfig // 대상 엔드포인트
+	Endpoint  config.WebhookEndpointConfig // 대상 엔드포인트
 	CreatedAt time.Time                     // 생성 시간
 	UpdatedAt time.Time                     // 마지막 업데이트 시간
 }
 
 // BatchManager 배치 관리자
 type BatchManager struct {
-	config  configs.WebhookBatchingConfig
+	config  config.WebhookBatchingConfig
 	logger  logging.Logger
 	groups  map[string]*BatchGroup
 	mu      sync.RWMutex
@@ -45,7 +45,7 @@ type BatchManager struct {
 }
 
 // NewBatchManager 새로운 배치 관리자 생성
-func NewBatchManager(config configs.WebhookBatchingConfig, sender *WebhookSender) *BatchManager {
+func NewBatchManager(config config.WebhookBatchingConfig, sender *WebhookSender) *BatchManager {
 	logger := logging.GetLogger()
 
 	flushInterval, err := time.ParseDuration(config.FlushInterval)
@@ -93,7 +93,7 @@ func (bm *BatchManager) Stop(_ context.Context) error {
 }
 
 // AddEvent 이벤트를 배치에 추가
-func (bm *BatchManager) AddEvent(event *alerts.AlertEvent, endpoint configs.WebhookEndpointConfig) {
+func (bm *BatchManager) AddEvent(event *alerts.AlertEvent, endpoint config.WebhookEndpointConfig) {
 	if !bm.config.Enabled {
 		// 배치가 비활성화된 경우 바로 전송
 		go bm.sendSingleEvent(event, endpoint)
@@ -160,7 +160,7 @@ func (bm *BatchManager) AddEvent(event *alerts.AlertEvent, endpoint configs.Webh
 }
 
 // generateGroupKey 그룹 키 생성
-func (bm *BatchManager) generateGroupKey(event *alerts.AlertEvent, endpoint configs.WebhookEndpointConfig) string {
+func (bm *BatchManager) generateGroupKey(event *alerts.AlertEvent, endpoint config.WebhookEndpointConfig) string {
 	switch bm.config.GroupBy {
 	case "endpoint":
 		return fmt.Sprintf("endpoint:%s", endpoint.Name)
@@ -418,7 +418,7 @@ func (bm *BatchManager) retryBatch(group *BatchGroup) {
 }
 
 // sendSingleEvent 단일 이벤트 전송 (배치 비활성화 시)
-func (bm *BatchManager) sendSingleEvent(event *alerts.AlertEvent, endpoint configs.WebhookEndpointConfig) {
+func (bm *BatchManager) sendSingleEvent(event *alerts.AlertEvent, endpoint config.WebhookEndpointConfig) {
 	adapter, exists := bm.sender.adapters[bm.getAdapterType(endpoint.Format)]
 	if !exists {
 		adapter = bm.sender.adapters[webhookTypeGeneric]

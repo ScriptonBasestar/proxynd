@@ -6,7 +6,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/internal/auth/jwt"
 	"proxynd/logging"
 )
@@ -148,7 +148,7 @@ func performTokenRefresh(_ *fiber.Ctx, sess, userMap fiber.Map) error {
 	}
 
 	// OAuth2 설정 로드
-	oauth2Config := &configs.OAuth2Config{}
+	oauth2Config := &config.OAuth2Config{}
 	if err := oauth2Config.ReadConfig(); err != nil {
 		return err
 	}
@@ -226,7 +226,7 @@ func performTokenRefresh(_ *fiber.Ctx, sess, userMap fiber.Map) error {
 
 // extractTokenExpiration JWT 토큰에서 만료 시간 추출
 func extractTokenExpiration(tokenString string) (time.Time, error) {
-	oauth2Config := &configs.OAuth2Config{}
+	oauth2Config := &config.OAuth2Config{}
 	if err := oauth2Config.ReadConfig(); err != nil {
 		return time.Time{}, err
 	}

@@ -3,7 +3,7 @@ package docker
 import (
 	"time"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 )
 
 // RegistryRequest Docker 레지스트리 요청
@@ -131,10 +131,10 @@ type RequestMetrics struct {
 // ProxyConfig Docker 프록시 설정 인터페이스 (의존성 추상화)
 type ProxyConfig interface {
 	// GetRegistries 레지스트리 목록 반환
-	GetRegistries() []configs.DockerProxyServer
+	GetRegistries() []config.DockerProxyServer
 
 	// GetRegistryConfig 특정 레지스트리 설정 반환
-	GetRegistryConfig(registryName string) *configs.DockerProxyRegistryConfig
+	GetRegistryConfig(registryName string) *config.DockerProxyRegistryConfig
 
 	// GetCacheConfig 캐시 설정 반환
 	GetCacheConfig() CacheConfig
@@ -149,7 +149,7 @@ type ProxyConfig interface {
 	IsCacheEnabled() bool
 
 	// GetDefaultRegistry 기본 레지스트리 반환
-	GetDefaultRegistry() *configs.DockerProxyServer
+	GetDefaultRegistry() *config.DockerProxyServer
 }
 
 // CacheConfig Docker 캐시 설정
@@ -164,14 +164,14 @@ type CacheConfig struct {
 	CompressionType string        `json:"compressionType"` // 캐시 압축 타입
 }
 
-// DefaultProxyConfig configs.DockerProxyConfig의 어댑터 (기본 구현)
+// DefaultProxyConfig config.DockerProxyConfig의 어댑터 (기본 구현)
 type DefaultProxyConfig struct {
-	config  *configs.DockerProxyConfig
+	config  *config.DockerProxyConfig
 	baseDir string
 }
 
 // NewDefaultProxyConfig DefaultProxyConfig 생성자
-func NewDefaultProxyConfig(config *configs.DockerProxyConfig, baseDir string) ProxyConfig {
+func NewDefaultProxyConfig(config *config.DockerProxyConfig, baseDir string) ProxyConfig {
 	return &DefaultProxyConfig{
 		config:  config,
 		baseDir: baseDir,
@@ -179,16 +179,16 @@ func NewDefaultProxyConfig(config *configs.DockerProxyConfig, baseDir string) Pr
 }
 
 // GetRegistries 레지스트리 목록 반환
-func (c *DefaultProxyConfig) GetRegistries() []configs.DockerProxyServer {
+func (c *DefaultProxyConfig) GetRegistries() []config.DockerProxyServer {
 	if c.config == nil || c.config.Proxies == nil {
-		return []configs.DockerProxyServer{}
+		return []config.DockerProxyServer{}
 	}
 
 	return c.config.Proxies
 }
 
 // GetRegistryConfig 특정 레지스트리 설정 반환
-func (c *DefaultProxyConfig) GetRegistryConfig(registryName string) *configs.DockerProxyRegistryConfig {
+func (c *DefaultProxyConfig) GetRegistryConfig(registryName string) *config.DockerProxyRegistryConfig {
 	if c.config == nil || c.config.Registries == nil {
 		return nil
 	}
@@ -241,7 +241,7 @@ func (c *DefaultProxyConfig) IsCacheEnabled() bool {
 }
 
 // GetDefaultRegistry 기본 레지스트리 반환
-func (c *DefaultProxyConfig) GetDefaultRegistry() *configs.DockerProxyServer {
+func (c *DefaultProxyConfig) GetDefaultRegistry() *config.DockerProxyServer {
 	registries := c.GetRegistries()
 	if len(registries) > 0 {
 		return &registries[0] // 첫 번째 레지스트리를 기본으로 사용

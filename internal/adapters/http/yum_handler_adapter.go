@@ -6,7 +6,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/helpers"
 	yumDomain "proxynd/internal/domain/yum"
 	yumServices "proxynd/internal/services/yum"
@@ -21,7 +21,7 @@ type YumHandlerAdapter struct {
 }
 
 // NewYumHandlerAdapter YUM HTTP 어댑터 생성
-func NewYumHandlerAdapter(config configs.YumProxyConfig, logger logging.Logger) *YumHandlerAdapter {
+func NewYumHandlerAdapter(config config.YumProxyConfig, logger logging.Logger) *YumHandlerAdapter {
 	storageDir := helpers.GetStorageDir()
 	proxyConfig := yumDomain.NewDefaultProxyConfig(&config, storageDir)
 	
