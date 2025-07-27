@@ -18,7 +18,7 @@ ProxyND를 systemd 서비스로 실행하기 위한 템플릿과 설치 스크�
 go build -o proxynd main.go
 
 # 서비스 설치
-sudo ./systemd/install.sh -b ./proxynd -c ./sample-conf
+sudo ./systemd/install.sh -b ./proxynd -c ./examples
 
 # 서비스 확인
 sudo systemctl status proxynd
@@ -77,7 +77,7 @@ sudo chmod 755 /opt/proxynd/proxynd
 
 ```bash
 # 설정 파일
-sudo cp -r sample-conf/* /etc/proxynd/
+sudo cp -r examples/* /etc/proxynd/
 
 # 환경 변수 파일
 sudo cp systemd/proxynd.env /etc/default/proxynd

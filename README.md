@@ -32,6 +32,54 @@ make docker-run
 - [⚙️ 설정 가이드](docs/03-configuration/README.md)
 - [🔧 개발 가이드](docs/05-development/README.md)
 
+## ⚙️ Configuration
+
+1. Copy example configuration:
+```bash
+cp examples/config.minimal.yaml config.yaml
+```
+
+2. Edit `config.yaml` for your needs
+
+3. Run ProxyND:
+```bash
+./proxynd --config config.yaml
+```
+
+### Configuration Files Location Priority:
+1. `--config` flag
+2. `./config.yaml` (current directory)
+3. `~/.config/proxynd/config.yaml` (user config)
+4. `/etc/proxynd/config.yaml` (system config)
+
+### Environment Variables
+
+ProxyND requires the following environment variables:
+
+| Variable | Description | Required | Default |
+|----------|-------------|----------|---------|
+| `CONFIG_DIR` | Configuration directory path | **Yes** | - |
+| `STORAGE_DIR` | Cache storage directory path | **Yes** | - |
+| `SERVER_PORT` | Server port | No | 8080 |
+| `LOG_LEVEL` | Logging level (debug, info, warn, error) | No | info |
+| `LOG_FORMAT` | Log format (json, text) | No | json |
+
+**Important**: The application will exit with a fatal error if `CONFIG_DIR` or `STORAGE_DIR` are not set.
+
+Example:
+```bash
+export CONFIG_DIR=/etc/proxynd
+export STORAGE_DIR=/var/lib/proxynd
+./proxynd
+```
+
+Or use a `.env` file:
+```bash
+CONFIG_DIR=./config
+STORAGE_DIR=./storage
+SERVER_PORT=8080
+```
+
 ## 🏗️ 주요 기능
 - 멀티 프록시 타입 지원 (Maven, NPM, APT, Docker, PyPI, YUM, APK)
 - 고성능 Fiber v2 웹 프레임워크 기반

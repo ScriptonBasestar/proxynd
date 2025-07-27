@@ -73,7 +73,7 @@ sudo cp bin/proxynd /usr/local/bin/
 sudo mkdir -p /etc/proxynd
 
 # Copy sample configuration
-sudo cp sample-conf/* /etc/proxynd/
+sudo cp examples/* /etc/proxynd/
 
 # Edit configuration
 sudo nano /etc/proxynd/global.yaml
@@ -176,7 +176,7 @@ volumes:
 mkdir -p config storage logs monitoring
 
 # Copy configuration
-cp sample-conf/* config/
+cp examples/* config/
 
 # Start services
 docker-compose up -d

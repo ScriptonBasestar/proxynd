@@ -64,7 +64,7 @@ make full-test
 - 벤치마크 테스트 서버: `8083`
 
 ### 설정 파일
-- `global.yaml`: 전역 설정 (sample-conf에서 복사)
+- `global.yaml`: 전역 설정 (examples에서 복사)
 - `test_config.yaml`: 테스트 전용 설정
 
 ## 테스트 구조
@@ -114,9 +114,9 @@ tests/integration/
 테스트 실행 시 포트 충돌이 발생하면 다른 포트로 변경하세요.
 
 ### 설정 파일 오류
-`global.yaml` 파일이 없으면 sample-conf에서 복사하세요:
+`global.yaml` 파일이 없으면 examples에서 복사하세요:
 ```bash
-cp ../../sample-conf/global.yaml ./global.yaml
+cp ../../examples/global.yaml ./global.yaml
 ```
 
 ### 환경 변수

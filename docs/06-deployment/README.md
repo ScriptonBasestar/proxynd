@@ -148,7 +148,7 @@ spec:
 go build -o proxynd main.go
 
 # 서비스 설치
-sudo ./systemd/install.sh -b ./proxynd -c ./sample-conf
+sudo ./systemd/install.sh -b ./proxynd -c ./examples
 
 # 서비스 시작
 sudo systemctl start proxynd

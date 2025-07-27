@@ -100,6 +100,8 @@ benchmark-*.txt
 !systemd/*.env
 
 # Local configuration overrides
+config.yaml
+config.yml
 config.local.yaml
 config.local.yml
 config.development.yaml

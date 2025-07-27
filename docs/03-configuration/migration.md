@@ -191,4 +191,4 @@ registries:
 
 - [설정 참조 문서](./CONFIGURATION_REFERENCE.md)
 - [환경 변수 목록](./ENVIRONMENT_VARIABLES.md)
-- [예제 설정 파일](../sample-conf/)
+- [예제 설정 파일](../../examples/)
