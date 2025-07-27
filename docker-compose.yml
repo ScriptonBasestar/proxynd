@@ -22,7 +22,7 @@ services:
       - logs_volume:/var/log/proxynd
       # 설정 파일 바인드 마운트 (개발용)
       - type: bind
-        source: ${CONFIG_PATH:-./sample-conf}
+        source: ${CONFIG_PATH:-./examples}
         target: /config
         read_only: true
         bind:

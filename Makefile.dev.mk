@@ -15,7 +15,7 @@ PROD_CONFIG_DIR=~/tmp/config/
 setup: ## create production directories and copy sample configs
 	mkdir -p $(PROD_CONFIG_DIR)
 	mkdir -p $(PROD_STORAGE_DIR)
-	cp -r sample-conf/* $(PROD_CONFIG_DIR)
+	cp -r examples/* $(PROD_CONFIG_DIR)
 
 dev-prepare: ## prepare development dependencies (go mod + air)
 	@echo "Preparing development dependencies..."
@@ -29,7 +29,7 @@ dev-setup: ## setup development environment with tmp dirs and .env
 	@echo "Setting up development environment..."
 	@mkdir -p ./tmp/storage
 	@mkdir -p ./tmp/config
-	@cp -r sample-conf/* ./tmp/config/
+	@cp -r examples/* ./tmp/config/
 	@echo "Creating .env file..."
 	@echo "CONFIG_DIR=./tmp/config" > .env
 	@echo "STORAGE_DIR=./tmp/storage" >> .env

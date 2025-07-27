@@ -73,7 +73,7 @@ RUN mkdir -p /app /config /storage /var/log/proxynd && \
 # 바이너리 및 템플릿 복사
 COPY --from=builder --chown=proxynd:proxynd /build/proxynd /app/
 COPY --from=builder --chown=proxynd:proxynd /build/templates /app/templates/
-COPY --from=builder --chown=proxynd:proxynd /build/sample-conf /app/sample-conf/
+COPY --from=builder --chown=proxynd:proxynd /build/examples /app/examples/
 
 # 헬스체크 스크립트 추가
 COPY --chown=proxynd:proxynd <<EOF /app/healthcheck.sh
