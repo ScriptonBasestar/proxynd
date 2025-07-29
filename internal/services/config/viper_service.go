@@ -6,29 +6,29 @@ import (
 	"log"
 	"sync"
 
-	"proxynd/internal/config"
+	internalconfig "proxynd/internal/config"
 )
 
 // ViperConfigService Viper 기반 설정 서비스 구현
 type ViperConfigService struct {
 	mu            sync.RWMutex
-	loader        *config.ViperConfigLoader
-	unifiedConfig *config.UnifiedConfig
-	globalConfig  *config.GlobalConfig
+	loader        *internalconfig.ViperConfigLoader
+	unifiedConfig *internalconfig.UnifiedConfig
+	globalConfig  *internalconfig.GlobalConfig
 
 	// 개별 프록시 설정 캐시
-	aptConfig    *config.AptProxyConfig
-	mavenConfig  *config.MavenProxyConfig
-	npmConfig    *config.NpmProxyConfig
-	pipConfig    *config.PipProxyConfig
-	yumConfig    *config.YumProxyConfig
-	apkConfig    *config.ApkProxyConfig
-	dockerConfig *config.DockerProxyConfig
+	aptConfig    *internalconfig.AptProxyConfig
+	mavenConfig  *internalconfig.MavenProxyConfig
+	npmConfig    *internalconfig.NpmProxyConfig
+	pipConfig    *internalconfig.PipProxyConfig
+	yumConfig    *internalconfig.YumProxyConfig
+	apkConfig    *internalconfig.ApkProxyConfig
+	dockerConfig *internalconfig.DockerProxyConfig
 }
 
 // NewViperConfigService 새 Viper 기반 설정 서비스 생성
 func NewViperConfigService(configPath string) (*ViperConfigService, error) {
-	loader := config.NewViperConfigLoader()
+	loader := internalconfig.NewViperConfigLoader()
 	loader.SetConfigPath(configPath)
 
 	// 통합 설정 로드
@@ -53,7 +53,7 @@ func NewViperConfigService(configPath string) (*ViperConfigService, error) {
 }
 
 // GetGlobalConfig 전역 설정 반환
-func (s *ViperConfigService) GetGlobalConfig(_ context.Context) (*config.GlobalConfig, error) {
+func (s *ViperConfigService) GetGlobalConfig(_ context.Context) (*internalconfig.GlobalConfig, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -66,7 +66,7 @@ func (s *ViperConfigService) GetGlobalConfig(_ context.Context) (*config.GlobalC
 }
 
 // GetMavenConfig Maven 프록시 설정 반환
-func (s *ViperConfigService) GetMavenConfig(_ context.Context) (*config.MavenProxyConfig, error) {
+func (s *ViperConfigService) GetMavenConfig(_ context.Context) (*internalconfig.MavenProxyConfig, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -79,7 +79,7 @@ func (s *ViperConfigService) GetMavenConfig(_ context.Context) (*config.MavenPro
 }
 
 // GetAptConfig APT 프록시 설정 반환
-func (s *ViperConfigService) GetAptConfig(_ context.Context) (*config.AptProxyConfig, error) {
+func (s *ViperConfigService) GetAptConfig(_ context.Context) (*internalconfig.AptProxyConfig, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -92,7 +92,7 @@ func (s *ViperConfigService) GetAptConfig(_ context.Context) (*config.AptProxyCo
 }
 
 // GetNpmConfig NPM 프록시 설정 반환
-func (s *ViperConfigService) GetNpmConfig(_ context.Context) (*config.NpmProxyConfig, error) {
+func (s *ViperConfigService) GetNpmConfig(_ context.Context) (*internalconfig.NpmProxyConfig, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -105,7 +105,7 @@ func (s *ViperConfigService) GetNpmConfig(_ context.Context) (*config.NpmProxyCo
 }
 
 // GetDockerConfig Docker 프록시 설정 반환
-func (s *ViperConfigService) GetDockerConfig(_ context.Context) (*config.DockerProxyConfig, error) {
+func (s *ViperConfigService) GetDockerConfig(_ context.Context) (*internalconfig.DockerProxyConfig, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -118,7 +118,7 @@ func (s *ViperConfigService) GetDockerConfig(_ context.Context) (*config.DockerP
 }
 
 // GetPipConfig PIP 프록시 설정 반환
-func (s *ViperConfigService) GetPipConfig(_ context.Context) (*config.PipProxyConfig, error) {
+func (s *ViperConfigService) GetPipConfig(_ context.Context) (*internalconfig.PipProxyConfig, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -131,7 +131,7 @@ func (s *ViperConfigService) GetPipConfig(_ context.Context) (*config.PipProxyCo
 }
 
 // GetYumConfig YUM 프록시 설정 반환
-func (s *ViperConfigService) GetYumConfig(_ context.Context) (*config.YumProxyConfig, error) {
+func (s *ViperConfigService) GetYumConfig(_ context.Context) (*internalconfig.YumProxyConfig, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -144,7 +144,7 @@ func (s *ViperConfigService) GetYumConfig(_ context.Context) (*config.YumProxyCo
 }
 
 // GetApkConfig APK 프록시 설정 반환
-func (s *ViperConfigService) GetApkConfig(_ context.Context) (*config.ApkProxyConfig, error) {
+func (s *ViperConfigService) GetApkConfig(_ context.Context) (*internalconfig.ApkProxyConfig, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -216,7 +216,7 @@ func (s *ViperConfigService) Reload(_ context.Context) error {
 }
 
 // GetUnifiedConfig 통합 설정 반환
-func (s *ViperConfigService) GetUnifiedConfig() *config.UnifiedConfig {
+func (s *ViperConfigService) GetUnifiedConfig() *internalconfig.UnifiedConfig {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -240,7 +240,7 @@ func (s *ViperConfigService) GetBool(key string) bool {
 
 // WatchConfig 설정 변경 감시
 func (s *ViperConfigService) WatchConfig(callback func()) {
-	s.loader.WatchConfig(func(config *config.UnifiedConfig) {
+	s.loader.WatchConfig(func(config *internalconfig.UnifiedConfig) {
 		s.mu.Lock()
 		s.unifiedConfig = config
 		s.mu.Unlock()
@@ -252,7 +252,7 @@ func (s *ViperConfigService) WatchConfig(callback func()) {
 // loadLegacyConfigs 레거시 개별 설정 파일 로드
 func (s *ViperConfigService) loadLegacyConfigs() error {
 	// 전역 설정
-	globalConfig := &config.GlobalConfig{}
+	globalConfig := &internalconfig.GlobalConfig{}
 	if globalConfig.ConfigExists() {
 		if err := globalConfig.ReadConfig(); err == nil {
 			s.globalConfig = globalConfig
@@ -260,7 +260,7 @@ func (s *ViperConfigService) loadLegacyConfigs() error {
 	}
 
 	// APT 설정
-	aptConfig := &config.AptProxyConfig{}
+	aptConfig := &internalconfig.AptProxyConfig{}
 	if aptConfig.ConfigExists() {
 		if err := aptConfig.ReadConfig(); err == nil {
 			s.aptConfig = aptConfig
@@ -268,7 +268,7 @@ func (s *ViperConfigService) loadLegacyConfigs() error {
 	}
 
 	// Maven 설정
-	mavenConfig := &config.MavenProxyConfig{}
+	mavenConfig := &internalconfig.MavenProxyConfig{}
 	if mavenConfig.ConfigExists() {
 		if err := mavenConfig.ReadConfig(); err == nil {
 			s.mavenConfig = mavenConfig
@@ -276,7 +276,7 @@ func (s *ViperConfigService) loadLegacyConfigs() error {
 	}
 
 	// NPM 설정
-	npmConfig := &config.NpmProxyConfig{}
+	npmConfig := &internalconfig.NpmProxyConfig{}
 	if npmConfig.ConfigExists() {
 		if err := npmConfig.ReadConfig(); err == nil {
 			s.npmConfig = npmConfig
@@ -284,7 +284,7 @@ func (s *ViperConfigService) loadLegacyConfigs() error {
 	}
 
 	// PIP 설정
-	pipConfig := &config.PipProxyConfig{}
+	pipConfig := &internalconfig.PipProxyConfig{}
 	if pipConfig.ConfigExists() {
 		if err := pipConfig.ReadConfig(); err == nil {
 			s.pipConfig = pipConfig
@@ -292,7 +292,7 @@ func (s *ViperConfigService) loadLegacyConfigs() error {
 	}
 
 	// YUM 설정
-	yumConfig := &config.YumProxyConfig{}
+	yumConfig := &internalconfig.YumProxyConfig{}
 	if yumConfig.ConfigExists() {
 		if err := yumConfig.ReadConfig(); err == nil {
 			s.yumConfig = yumConfig
@@ -300,7 +300,7 @@ func (s *ViperConfigService) loadLegacyConfigs() error {
 	}
 
 	// APK 설정
-	apkConfig := &config.ApkProxyConfig{}
+	apkConfig := &internalconfig.ApkProxyConfig{}
 	if apkConfig.ConfigExists() {
 		if err := apkConfig.ReadConfig(); err == nil {
 			s.apkConfig = apkConfig
@@ -308,7 +308,7 @@ func (s *ViperConfigService) loadLegacyConfigs() error {
 	}
 
 	// Docker 설정
-	dockerConfig := &config.DockerProxyConfig{}
+	dockerConfig := &internalconfig.DockerProxyConfig{}
 	if dockerConfig.ConfigExists() {
 		if err := dockerConfig.ReadConfig(); err == nil {
 			s.dockerConfig = dockerConfig
@@ -319,37 +319,37 @@ func (s *ViperConfigService) loadLegacyConfigs() error {
 }
 
 // extractGlobalConfig 통합 설정에서 전역 설정 추출
-func (s *ViperConfigService) extractGlobalConfig() *config.GlobalConfig {
+func (s *ViperConfigService) extractGlobalConfig() *internalconfig.GlobalConfig {
 	if s.unifiedConfig == nil {
 		return nil
 	}
 
-	return &config.GlobalConfig{
+	return &internalconfig.GlobalConfig{
 		StorageDir: s.unifiedConfig.Cache.File.Directory,
 		ConfigDir:  s.loader.GetString("config_dir"),
-		Cache: config.Cache{
+		Cache: internalconfig.Cache{
 			TTL: int(s.unifiedConfig.Cache.TTL.Seconds()),
 		},
 	}
 }
 
 // extractAptConfig 통합 설정에서 APT 설정 추출
-func (s *ViperConfigService) extractAptConfig() *config.AptProxyConfig {
+func (s *ViperConfigService) extractAptConfig() *internalconfig.AptProxyConfig {
 	if s.unifiedConfig == nil || !s.unifiedConfig.Registries.APT.Enabled {
 		return nil
 	}
 
-	config := &config.AptProxyConfig{
+	config := &internalconfig.AptProxyConfig{
 		Path:     "/apt",
 		UseCache: s.unifiedConfig.Registries.APT.UserCache,
-		Proxies:  make(map[string][]config.AptProxy),
+		Proxies:  make(map[string][]internalconfig.AptProxy),
 	}
 
 	// 미러 설정을 프록시로 변환
 	for distribution, mirrors := range s.unifiedConfig.Registries.APT.Mirrors {
-		proxyList := make([]config.AptProxy, 0, len(mirrors))
+		proxyList := make([]internalconfig.AptProxy, 0, len(mirrors))
 		for _, mirror := range mirrors {
-			proxyList = append(proxyList, config.AptProxy{
+			proxyList = append(proxyList, internalconfig.AptProxy{
 				Name: mirror.Name,
 				URL:  mirror.URL,
 			})
@@ -361,20 +361,20 @@ func (s *ViperConfigService) extractAptConfig() *config.AptProxyConfig {
 }
 
 // extractMavenConfig 통합 설정에서 Maven 설정 추출
-func (s *ViperConfigService) extractMavenConfig() *config.MavenProxyConfig {
+func (s *ViperConfigService) extractMavenConfig() *internalconfig.MavenProxyConfig {
 	if s.unifiedConfig == nil || !s.unifiedConfig.Registries.Maven.Enabled {
 		return nil
 	}
 
-	config := &config.MavenProxyConfig{
+	config := &internalconfig.MavenProxyConfig{
 		Path:     "/maven",
 		UseCache: true,
-		Proxies:  []config.MavenProxyServer{},
+		Proxies:  []internalconfig.MavenProxyServer{},
 	}
 
 	// Maven 레지스트리 설정을 프록시 서버로 변환
 	for _, repo := range s.unifiedConfig.Registries.Maven.Repositories {
-		config.Proxies = append(config.Proxies, config.MavenProxyServer{
+		config.Proxies = append(config.Proxies, internalconfig.MavenProxyServer{
 			Name: repo.Name,
 			URL:  repo.URL,
 		})
@@ -384,15 +384,15 @@ func (s *ViperConfigService) extractMavenConfig() *config.MavenProxyConfig {
 }
 
 // extractNpmConfig 통합 설정에서 NPM 설정 추출
-func (s *ViperConfigService) extractNpmConfig() *config.NpmProxyConfig {
+func (s *ViperConfigService) extractNpmConfig() *internalconfig.NpmProxyConfig {
 	if s.unifiedConfig == nil || !s.unifiedConfig.Registries.NPM.Enabled {
 		return nil
 	}
 
-	return &config.NpmProxyConfig{
+	return &internalconfig.NpmProxyConfig{
 		Path:     "/npm",
 		UseCache: s.unifiedConfig.Registries.NPM.UserCache,
-		Proxies: map[string][]config.NpmProxyServer{
+		Proxies: map[string][]internalconfig.NpmProxyServer{
 			"default": {
 				{
 					Name: "official",
@@ -404,15 +404,15 @@ func (s *ViperConfigService) extractNpmConfig() *config.NpmProxyConfig {
 }
 
 // extractPipConfig 통합 설정에서 PIP 설정 추출
-func (s *ViperConfigService) extractPipConfig() *config.PipProxyConfig {
+func (s *ViperConfigService) extractPipConfig() *internalconfig.PipProxyConfig {
 	if s.unifiedConfig == nil || !s.unifiedConfig.Registries.PyPI.Enabled {
 		return nil
 	}
 
-	return &config.PipProxyConfig{
+	return &internalconfig.PipProxyConfig{
 		Path:     "/pypi",
 		UseCache: s.unifiedConfig.Registries.PyPI.UserCache,
-		Proxies: []config.PipProxyServer{
+		Proxies: []internalconfig.PipProxyServer{
 			{
 				Name: "pypi",
 				URL:  s.unifiedConfig.Registries.PyPI.Upstream,
@@ -422,42 +422,42 @@ func (s *ViperConfigService) extractPipConfig() *config.PipProxyConfig {
 }
 
 // extractYumConfig 통합 설정에서 YUM 설정 추출
-func (s *ViperConfigService) extractYumConfig() *config.YumProxyConfig {
+func (s *ViperConfigService) extractYumConfig() *internalconfig.YumProxyConfig {
 	// 기본 YUM 설정 반환
-	return &config.YumProxyConfig{
+	return &internalconfig.YumProxyConfig{
 		Path:     "/yum",
 		UseCache: true,
-		Proxies:  []config.YumProxy{},
+		Proxies:  []internalconfig.YumProxy{},
 	}
 }
 
 // extractApkConfig 통합 설정에서 APK 설정 추출
-func (s *ViperConfigService) extractApkConfig() *config.ApkProxyConfig {
+func (s *ViperConfigService) extractApkConfig() *internalconfig.ApkProxyConfig {
 	// 기본 APK 설정 반환
-	return &config.ApkProxyConfig{
+	return &internalconfig.ApkProxyConfig{
 		Path:     "/apk",
 		UseCache: true,
-		Proxies:  []config.ApkProxy{},
+		Proxies:  []internalconfig.ApkProxy{},
 	}
 }
 
 // extractDockerConfig 통합 설정에서 Docker 설정 추출
-func (s *ViperConfigService) extractDockerConfig() *config.DockerProxyConfig {
+func (s *ViperConfigService) extractDockerConfig() *internalconfig.DockerProxyConfig {
 	if s.unifiedConfig == nil || !s.unifiedConfig.Registries.Docker.Enabled {
 		return nil
 	}
 
-	config := &config.DockerProxyConfig{
+	config := &internalconfig.DockerProxyConfig{
 		Path:     "/docker",
 		UseCache: s.unifiedConfig.Registries.Docker.UseCache,
-		Proxies:  []config.DockerProxyServer{},
+		Proxies:  []internalconfig.DockerProxyServer{},
 	}
 
 	for _, reg := range s.unifiedConfig.Registries.Docker.Registries {
-		config.Proxies = append(config.Proxies, config.DockerProxyServer{
+		config.Proxies = append(config.Proxies, internalconfig.DockerProxyServer{
 			Name: reg.Name,
 			URL:  reg.URL,
-			Auth: config.DockerAuth{
+			Auth: internalconfig.DockerAuth{
 				Username: reg.Username,
 				Password: reg.Password,
 			},

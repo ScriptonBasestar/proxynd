@@ -3,7 +3,7 @@ package config
 import (
 	"fmt"
 
-	"proxynd/internal/config"
+	internalconfig "proxynd/internal/config"
 )
 
 // globalConfigValidator validates global configuration
@@ -11,7 +11,7 @@ type globalConfigValidator struct{}
 
 // Validate validates the global configuration
 func (v *globalConfigValidator) Validate(config interface{}) error {
-	cfg, ok := config.(*config.GlobalConfig)
+	cfg, ok := config.(*internalconfig.GlobalConfig)
 	if !ok {
 		return fmt.Errorf("invalid config type, expected *config.GlobalConfig")
 	}
@@ -65,7 +65,7 @@ func (v *proxyConfigValidator) Validate(config interface{}) error {
 
 // validateAptConfig validates APT proxy configuration
 func (v *proxyConfigValidator) validateAptConfig(config interface{}) error {
-	cfg, ok := config.(*config.AptProxyConfig)
+	cfg, ok := config.(*internalconfig.AptProxyConfig)
 	if !ok {
 		return fmt.Errorf("invalid config type, expected *config.AptProxyConfig")
 	}
@@ -76,7 +76,7 @@ func (v *proxyConfigValidator) validateAptConfig(config interface{}) error {
 
 // validateMavenConfig validates Maven proxy configuration
 func (v *proxyConfigValidator) validateMavenConfig(config interface{}) error {
-	cfg, ok := config.(*config.MavenProxyConfig)
+	cfg, ok := config.(*internalconfig.MavenProxyConfig)
 	if !ok {
 		return fmt.Errorf("invalid config type, expected *config.MavenProxyConfig")
 	}
@@ -87,7 +87,7 @@ func (v *proxyConfigValidator) validateMavenConfig(config interface{}) error {
 
 // validateNpmConfig validates NPM proxy configuration
 func (v *proxyConfigValidator) validateNpmConfig(config interface{}) error {
-	cfg, ok := config.(*config.NpmProxyConfig)
+	cfg, ok := config.(*internalconfig.NpmProxyConfig)
 	if !ok {
 		return fmt.Errorf("invalid config type, expected *config.NpmProxyConfig")
 	}
@@ -98,7 +98,7 @@ func (v *proxyConfigValidator) validateNpmConfig(config interface{}) error {
 
 // validatePipConfig validates PIP proxy configuration
 func (v *proxyConfigValidator) validatePipConfig(config interface{}) error {
-	cfg, ok := config.(*config.PipProxyConfig)
+	cfg, ok := config.(*internalconfig.PipProxyConfig)
 	if !ok {
 		return fmt.Errorf("invalid config type, expected *config.PipProxyConfig")
 	}
@@ -109,7 +109,7 @@ func (v *proxyConfigValidator) validatePipConfig(config interface{}) error {
 
 // validateYumConfig validates YUM proxy configuration
 func (v *proxyConfigValidator) validateYumConfig(config interface{}) error {
-	cfg, ok := config.(*config.YumProxyConfig)
+	cfg, ok := config.(*internalconfig.YumProxyConfig)
 	if !ok {
 		return fmt.Errorf("invalid config type, expected *config.YumProxyConfig")
 	}
@@ -120,7 +120,7 @@ func (v *proxyConfigValidator) validateYumConfig(config interface{}) error {
 
 // validateApkConfig validates APK proxy configuration
 func (v *proxyConfigValidator) validateApkConfig(config interface{}) error {
-	cfg, ok := config.(*config.ApkProxyConfig)
+	cfg, ok := config.(*internalconfig.ApkProxyConfig)
 	if !ok {
 		return fmt.Errorf("invalid config type, expected *config.ApkProxyConfig")
 	}
@@ -137,7 +137,7 @@ func (v *proxyConfigValidator) validateHelmConfig(_ interface{}) error {
 
 // validateDockerConfig validates Docker proxy configuration
 func (v *proxyConfigValidator) validateDockerConfig(config interface{}) error {
-	cfg, ok := config.(*config.DockerProxyConfig)
+	cfg, ok := config.(*internalconfig.DockerProxyConfig)
 	if !ok {
 		return fmt.Errorf("invalid config type, expected *config.DockerProxyConfig")
 	}

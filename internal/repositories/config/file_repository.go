@@ -12,7 +12,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"gopkg.in/yaml.v3"
 
-	"proxynd/internal/config"
+	internalconfig "proxynd/internal/config"
 	"proxynd/logging"
 )
 
@@ -69,7 +69,7 @@ func (r *FileRepository) LoadGlobalConfig(_ context.Context) (interface{}, error
 	}
 
 	// Load from file
-	config := &config.GlobalConfig{}
+	config := &internalconfig.GlobalConfig{}
 	configPath := filepath.Join(r.configDir, "global.yaml")
 
 	if err := r.loadYAMLFile(configPath, config); err != nil {
@@ -110,22 +110,22 @@ func (r *FileRepository) LoadProxyConfig(_ context.Context, proxyType string) (i
 	}
 
 	// Create appropriate config struct based on type
-	var config interface{}
+	var cfg interface{}
 	switch proxyType {
 	case "apt":
-		config = &config.AptProxyConfig{}
+		cfg = &internalconfig.AptProxyConfig{}
 	case "maven":
-		config = &config.MavenProxyConfig{}
+		cfg = &internalconfig.MavenProxyConfig{}
 	case "npm":
-		config = &config.NpmProxyConfig{}
+		cfg = &internalconfig.NpmProxyConfig{}
 	case "docker":
-		config = &config.DockerProxyConfig{}
+		cfg = &internalconfig.DockerProxyConfig{}
 	case "pip":
-		config = &config.PipProxyConfig{}
+		cfg = &internalconfig.PipProxyConfig{}
 	case "yum":
-		config = &config.YumProxyConfig{}
+		cfg = &internalconfig.YumProxyConfig{}
 	case "apk":
-		config = &config.ApkProxyConfig{}
+		cfg = &internalconfig.ApkProxyConfig{}
 	default:
 		return nil, fmt.Errorf("unsupported proxy type: %s", proxyType)
 	}
@@ -133,21 +133,21 @@ func (r *FileRepository) LoadProxyConfig(_ context.Context, proxyType string) (i
 	// Try to load config file
 	configPath := filepath.Join(r.configDir, fmt.Sprintf("%s-proxy.yaml", proxyType))
 
-	if err := r.loadYAMLFile(configPath, config); err != nil {
+	if err := r.loadYAMLFile(configPath, cfg); err != nil {
 		// Try alternative names
 		altPath := filepath.Join(r.configDir, fmt.Sprintf("%s-proxy.yml", proxyType))
-		if err := r.loadYAMLFile(altPath, config); err != nil {
+		if err := r.loadYAMLFile(altPath, cfg); err != nil {
 			r.logger.Warn("Failed to load proxy config",
 				logging.F("proxy_type", proxyType),
 				logging.F("error", err))
-			return config, nil // Return empty config
+			return cfg, nil // Return empty config
 		}
 	}
 
 	// Cache the config
-	r.configs[proxyType] = config
+	r.configs[proxyType] = cfg
 
-	return config, nil
+	return cfg, nil
 }
 
 // SaveGlobalConfig saves the global configuration
@@ -224,7 +224,7 @@ func (r *FileRepository) ValidateConfig(_ context.Context, proxyType string, con
 	// Type-specific validation
 	switch proxyType {
 	case ConfigTypeGlobal:
-		globalConfig, ok := config.(*config.GlobalConfig)
+		globalConfig, ok := config.(*internalconfig.GlobalConfig)
 		if !ok {
 			return fmt.Errorf("invalid config type for global config")
 		}
