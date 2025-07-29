@@ -954,7 +954,7 @@ func (uhr *UnifiedHotReload) debounceReloadEnhanced(filePath string) {
 
 		select {
 		case uhr.changeQueue <- event:
-			uhr.logger.Info("Config file change detected", 
+			uhr.logger.Info("Config file change detected",
 				logging.F("file", filePath),
 				logging.F("old_hash", oldHash[:8]),
 				logging.F("new_hash", newHash[:8]))

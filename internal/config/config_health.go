@@ -210,7 +210,7 @@ func (chm *ConfigHealthMonitor) Start() error {
 	}
 
 	// 백업 디렉토리 생성
-	if err := os.MkdirAll(chm.backupManager.backupDir, 0755); err != nil {
+	if err := os.MkdirAll(chm.backupManager.backupDir, 0o755); err != nil {
 		return fmt.Errorf("failed to create backup directory: %w", err)
 	}
 
@@ -521,7 +521,7 @@ func (cbm *ConfigBackupManager) CreateBackup(config *UnifiedConfig) error {
 	}
 
 	// 백업 파일 작성
-	if err := os.WriteFile(backupPath, data, 0600); err != nil {
+	if err := os.WriteFile(backupPath, data, 0o600); err != nil {
 		return fmt.Errorf("failed to write backup file: %w", err)
 	}
 
@@ -809,7 +809,7 @@ func (p *PermissionHealthChecker) checkFilePermissions(filePath string) error {
 	}
 
 	// 키 파일은 소유자만 읽을 수 있어야 함
-	if info.Mode().Perm() > 0600 {
+	if info.Mode().Perm() > 0o600 {
 		return fmt.Errorf("파일이 너무 개방적인 권한을 가짐: %o", info.Mode().Perm())
 	}
 
@@ -928,7 +928,7 @@ func (d *DirectoryCreationHandler) CanHeal(issue HealthIssue) bool {
 
 func (d *DirectoryCreationHandler) Heal(config *UnifiedConfig, issue HealthIssue) (*UnifiedConfig, error) {
 	if issue.Field == "cache.file.directory" {
-		if err := os.MkdirAll(config.Cache.File.Directory, 0755); err != nil {
+		if err := os.MkdirAll(config.Cache.File.Directory, 0o755); err != nil {
 			return nil, fmt.Errorf("디렉토리 생성 실패: %w", err)
 		}
 	}
@@ -947,7 +947,7 @@ func (p *PermissionFixHandler) CanHeal(issue HealthIssue) bool {
 
 func (p *PermissionFixHandler) Heal(config *UnifiedConfig, issue HealthIssue) (*UnifiedConfig, error) {
 	if issue.Field == "server.tls.key_file" {
-		if err := os.Chmod(config.Server.TLS.KeyFile, 0600); err != nil {
+		if err := os.Chmod(config.Server.TLS.KeyFile, 0o600); err != nil {
 			return nil, fmt.Errorf("파일 권한 수정 실패: %w", err)
 		}
 	}

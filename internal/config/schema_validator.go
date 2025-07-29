@@ -439,14 +439,14 @@ func (sv *SchemaValidator) registerCustomValidators() {
 
 		// 디렉토리가 존재하지 않으면 생성 시도
 		if _, err := os.Stat(directory); os.IsNotExist(err) {
-			if err := os.MkdirAll(directory, 0755); err != nil {
+			if err := os.MkdirAll(directory, 0o755); err != nil {
 				return fmt.Errorf("캐시 디렉토리를 생성할 수 없음: %s (%v)", directory, err)
 			}
 		}
 
 		// 쓰기 권한 확인
 		testFile := filepath.Join(directory, ".write_test")
-		if err := os.WriteFile(testFile, []byte("test"), 0644); err != nil {
+		if err := os.WriteFile(testFile, []byte("test"), 0o644); err != nil {
 			return fmt.Errorf("캐시 디렉토리에 쓰기 권한이 없음: %s", directory)
 		}
 		os.Remove(testFile)
@@ -937,30 +937,30 @@ func parseSize(sizeStr string) (int64, error) {
 	if sizeStr == "" {
 		return 0, fmt.Errorf("empty size string")
 	}
-	
+
 	// 숫자와 단위 분리
 	var number float64
 	var unit string
-	
+
 	// 정규식을 사용하여 숫자와 단위 분리
 	re := regexp.MustCompile(`^(\d+(?:\.\d+)?)\s*([KMGT]?B?)$`)
 	matches := re.FindStringSubmatch(strings.ToUpper(sizeStr))
-	
+
 	if len(matches) != 3 {
 		return 0, fmt.Errorf("invalid size format: %s", sizeStr)
 	}
-	
+
 	var err error
 	number, err = strconv.ParseFloat(matches[1], 64)
 	if err != nil {
 		return 0, fmt.Errorf("invalid number in size: %s", matches[1])
 	}
-	
+
 	unit = matches[2]
 	if unit == "" || unit == "B" {
 		return int64(number), nil
 	}
-	
+
 	// 단위별 배수
 	multiplier := map[string]int64{
 		"KB": 1024,
@@ -968,11 +968,11 @@ func parseSize(sizeStr string) (int64, error) {
 		"GB": 1024 * 1024 * 1024,
 		"TB": 1024 * 1024 * 1024 * 1024,
 	}
-	
+
 	if mult, exists := multiplier[unit]; exists {
 		return int64(number * float64(mult)), nil
 	}
-	
+
 	return 0, fmt.Errorf("unknown unit: %s", unit)
 }
 
