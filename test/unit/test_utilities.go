@@ -1,7 +1,6 @@
 package unit
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -13,11 +12,10 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 
 	// cacheMocks "proxynd/cache/mocks"
-	"proxynd/internal/config"
 	"proxynd/internal/app"
+	"proxynd/internal/config"
 	apkMocks "proxynd/internal/services/apk/mocks"
 	dockerMocks "proxynd/internal/services/docker/mocks"
 	pipMocks "proxynd/internal/services/pip/mocks"
@@ -136,62 +134,62 @@ func (h *HTTPTestHelper) AssertHTTPResponse(ctx *fiber.Ctx, expectedStatus int, 
 
 // CacheTestHelper 캐시 테스트 헬퍼
 type CacheTestHelper struct {
-	t         *testing.T
+	t *testing.T
 	// mockCache *cacheMocks.MockCache
 }
 
 // NewCacheTestHelper 캐시 테스트 헬퍼 생성
 // func NewCacheTestHelper(t *testing.T, mockCache *cacheMocks.MockCache) *CacheTestHelper {
-	return &CacheTestHelper{
-		t:         t,
-		mockCache: mockCache,
-	}
-}
+// 	return &CacheTestHelper{
+// 		t:         t,
+// 		mockCache: mockCache,
+// 	}
+// }
 
 // ExpectCacheHit 캐시 히트 설정
-func (ch *CacheTestHelper) ExpectCacheHit(key string, data string) {
-	ch.mockCache.EXPECT().
-		Get(mock.Anything, key).
-		Return(io.NopCloser(strings.NewReader(data)), nil).
-		Once()
-}
+// func (ch *CacheTestHelper) ExpectCacheHit(key string, data string) {
+// 	ch.mockCache.EXPECT().
+// 		Get(mock.Anything, key).
+// 		Return(io.NopCloser(strings.NewReader(data)), nil).
+// 		Once()
+// }
 
 // ExpectCacheMiss 캐시 미스 설정
-func (ch *CacheTestHelper) ExpectCacheMiss(key string) {
-	ch.mockCache.EXPECT().
-		Get(mock.Anything, key).
-		Return(nil, fmt.Errorf("cache miss")).
-		Once()
-}
+// func (ch *CacheTestHelper) ExpectCacheMiss(key string) {
+// 	ch.mockCache.EXPECT().
+// 		Get(mock.Anything, key).
+// 		Return(nil, fmt.Errorf("cache miss")).
+// 		Once()
+// }
 
 // ExpectCachePut 캐시 저장 설정
-func (ch *CacheTestHelper) ExpectCachePut(key string) {
-	ch.mockCache.EXPECT().
-		Put(mock.Anything, key, mock.Anything, mock.AnythingOfType("time.Duration")).
-		Return(nil).
-		Once()
-}
+// func (ch *CacheTestHelper) ExpectCachePut(key string) {
+// 	ch.mockCache.EXPECT().
+// 		Put(mock.Anything, key, mock.Anything, mock.AnythingOfType("time.Duration")).
+// 		Return(nil).
+// 		Once()
+// }
 
 // ExpectCacheMultipleOps 여러 캐시 작업 설정
-func (ch *CacheTestHelper) ExpectCacheMultipleOps(ops []CacheOperation) {
-	for _, op := range ops {
-		switch op.Type {
-		case "get_hit":
-			ch.ExpectCacheHit(op.Key, op.Data)
-		case "get_miss":
-			ch.ExpectCacheMiss(op.Key)
-		case "put":
-			ch.ExpectCachePut(op.Key)
-		}
-	}
-}
+// func (ch *CacheTestHelper) ExpectCacheMultipleOps(ops []CacheOperation) {
+// 	for _, op := range ops {
+// 		switch op.Type {
+// 		case "get_hit":
+// 			ch.ExpectCacheHit(op.Key, op.Data)
+// 		case "get_miss":
+// 			ch.ExpectCacheMiss(op.Key)
+// 		case "put":
+// 			ch.ExpectCachePut(op.Key)
+// 		}
+// 	}
+// }
 
 // CacheOperation 캐시 작업 정의
-type CacheOperation struct {
-	Type string // "get_hit", "get_miss", "put"
-	Key  string
-	Data string
-}
+// type CacheOperation struct {
+// 	Type string // "get_hit", "get_miss", "put"
+// 	Key  string
+// 	Data string
+// }
 
 // ConfigTestHelper 설정 테스트 헬퍼
 type ConfigTestHelper struct {
