@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -13,7 +14,7 @@ import (
 	"proxynd/internal/config"
 	"proxynd/internal/factory"
 	"proxynd/internal/repositories/cache"
-	"proxynd/internal/repositories/config"
+	configRepo "proxynd/internal/repositories/config"
 	"proxynd/internal/services/adapters"
 	"proxynd/internal/services/proxy"
 	"proxynd/logging"
@@ -36,7 +37,7 @@ type Container struct {
 
 	// Repositories
 	cacheRepo  cache.Repository
-	configRepo config.Repository
+	configRepo configRepo.Repository
 
 	// Services
 	cacheService   proxy.CacheService
@@ -45,8 +46,8 @@ type Container struct {
 	serviceFactory *proxy.ServiceFactory
 
 	// Handlers
-	handlerFactory         types.ProxyHandlerFactory
-	handlerAdapterFactory  *factory.HandlerAdapterFactory
+	handlerFactory        types.ProxyHandlerFactory
+	handlerAdapterFactory *factory.HandlerAdapterFactory
 	// unifiedRouter  *proxyHandlers.UnifiedProxyRouter
 
 	// Singleton instances
@@ -95,6 +96,251 @@ func (c *Container) GetUnifiedConfig() *config.UnifiedConfig {
 	c.configCacheMu.RLock()
 	defer c.configCacheMu.RUnlock()
 	return c.configCache
+}
+
+// GetAptProxyConfig returns the APT proxy configuration
+func (c *Container) GetAptProxyConfig() (*config.AptProxySettings, error) {
+	c.mu.RLock()
+
+	// Check singleton cache first
+	if cached, exists := c.singletons["apt-proxy-config"]; exists {
+		c.mu.RUnlock()
+		if cfg, ok := cached.(*config.AptProxySettings); ok {
+			return cfg, nil
+		}
+	}
+	c.mu.RUnlock()
+
+	// Load configuration
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// Double-check after acquiring write lock
+	if cached, exists := c.singletons["apt-proxy-config"]; exists {
+		if cfg, ok := cached.(*config.AptProxySettings); ok {
+			return cfg, nil
+		}
+	}
+
+	cfg, err := c.configLoader.LoadAptProxyConfig(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("failed to load APT proxy config: %w", err)
+	}
+
+	// Cache for future use
+	c.singletons["apt-proxy-config"] = cfg
+
+	return cfg, nil
+}
+
+// GetMavenProxyConfig returns the Maven proxy configuration
+func (c *Container) GetMavenProxyConfig() (*config.MavenProxySettings, error) {
+	c.mu.RLock()
+
+	// Check singleton cache first
+	if cached, exists := c.singletons["maven-proxy-config"]; exists {
+		c.mu.RUnlock()
+		if cfg, ok := cached.(*config.MavenProxySettings); ok {
+			return cfg, nil
+		}
+	}
+	c.mu.RUnlock()
+
+	// Load configuration
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// Double-check after acquiring write lock
+	if cached, exists := c.singletons["maven-proxy-config"]; exists {
+		if cfg, ok := cached.(*config.MavenProxySettings); ok {
+			return cfg, nil
+		}
+	}
+
+	cfg, err := c.configLoader.LoadMavenProxyConfig(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("failed to load Maven proxy config: %w", err)
+	}
+
+	// Cache for future use
+	c.singletons["maven-proxy-config"] = cfg
+
+	return cfg, nil
+}
+
+// GetNpmProxyConfig returns the NPM proxy configuration
+func (c *Container) GetNpmProxyConfig() (*config.NpmProxySettings, error) {
+	c.mu.RLock()
+
+	// Check singleton cache first
+	if cached, exists := c.singletons["npm-proxy-config"]; exists {
+		c.mu.RUnlock()
+		if cfg, ok := cached.(*config.NpmProxySettings); ok {
+			return cfg, nil
+		}
+	}
+	c.mu.RUnlock()
+
+	// Load configuration
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// Double-check after acquiring write lock
+	if cached, exists := c.singletons["npm-proxy-config"]; exists {
+		if cfg, ok := cached.(*config.NpmProxySettings); ok {
+			return cfg, nil
+		}
+	}
+
+	cfg, err := c.configLoader.LoadNpmProxyConfig(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("failed to load NPM proxy config: %w", err)
+	}
+
+	// Cache for future use
+	c.singletons["npm-proxy-config"] = cfg
+
+	return cfg, nil
+}
+
+// GetDockerProxyConfig returns the Docker proxy configuration
+func (c *Container) GetDockerProxyConfig() (*config.DockerProxySettings, error) {
+	c.mu.RLock()
+
+	// Check singleton cache first
+	if cached, exists := c.singletons["docker-proxy-config"]; exists {
+		c.mu.RUnlock()
+		if cfg, ok := cached.(*config.DockerProxySettings); ok {
+			return cfg, nil
+		}
+	}
+	c.mu.RUnlock()
+
+	// Load configuration
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// Double-check after acquiring write lock
+	if cached, exists := c.singletons["docker-proxy-config"]; exists {
+		if cfg, ok := cached.(*config.DockerProxySettings); ok {
+			return cfg, nil
+		}
+	}
+
+	cfg, err := c.configLoader.LoadDockerProxyConfig(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("failed to load Docker proxy config: %w", err)
+	}
+
+	// Cache for future use
+	c.singletons["docker-proxy-config"] = cfg
+
+	return cfg, nil
+}
+
+// GetPipProxyConfig returns the PIP proxy configuration
+func (c *Container) GetPipProxyConfig() (*config.PipProxySettings, error) {
+	c.mu.RLock()
+
+	// Check singleton cache first
+	if cached, exists := c.singletons["pip-proxy-config"]; exists {
+		c.mu.RUnlock()
+		if cfg, ok := cached.(*config.PipProxySettings); ok {
+			return cfg, nil
+		}
+	}
+	c.mu.RUnlock()
+
+	// Load configuration
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// Double-check after acquiring write lock
+	if cached, exists := c.singletons["pip-proxy-config"]; exists {
+		if cfg, ok := cached.(*config.PipProxySettings); ok {
+			return cfg, nil
+		}
+	}
+
+	cfg, err := c.configLoader.LoadPipProxyConfig(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("failed to load PIP proxy config: %w", err)
+	}
+
+	// Cache for future use
+	c.singletons["pip-proxy-config"] = cfg
+
+	return cfg, nil
+}
+
+// GetYumProxyConfig returns the YUM proxy configuration
+func (c *Container) GetYumProxyConfig() (*config.YumProxySettings, error) {
+	c.mu.RLock()
+
+	// Check singleton cache first
+	if cached, exists := c.singletons["yum-proxy-config"]; exists {
+		c.mu.RUnlock()
+		if cfg, ok := cached.(*config.YumProxySettings); ok {
+			return cfg, nil
+		}
+	}
+	c.mu.RUnlock()
+
+	// Load configuration
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// Double-check after acquiring write lock
+	if cached, exists := c.singletons["yum-proxy-config"]; exists {
+		if cfg, ok := cached.(*config.YumProxySettings); ok {
+			return cfg, nil
+		}
+	}
+
+	cfg, err := c.configLoader.LoadYumProxyConfig(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("failed to load YUM proxy config: %w", err)
+	}
+
+	// Cache for future use
+	c.singletons["yum-proxy-config"] = cfg
+
+	return cfg, nil
+}
+
+// GetApkProxyConfig returns the APK proxy configuration
+func (c *Container) GetApkProxyConfig() (*config.ApkProxySettings, error) {
+	c.mu.RLock()
+
+	// Check singleton cache first
+	if cached, exists := c.singletons["apk-proxy-config"]; exists {
+		c.mu.RUnlock()
+		if cfg, ok := cached.(*config.ApkProxySettings); ok {
+			return cfg, nil
+		}
+	}
+	c.mu.RUnlock()
+
+	// Load configuration
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// Double-check after acquiring write lock
+	if cached, exists := c.singletons["apk-proxy-config"]; exists {
+		if cfg, ok := cached.(*config.ApkProxySettings); ok {
+			return cfg, nil
+		}
+	}
+
+	cfg, err := c.configLoader.LoadApkProxyConfig(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("failed to load APK proxy config: %w", err)
+	}
+
+	// Cache for future use
+	c.singletons["apk-proxy-config"] = cfg
+
+	return cfg, nil
 }
 
 // ReloadConfig reloads the configuration from files
@@ -280,7 +526,7 @@ func (c *Container) GetCacheRepository() (cache.Repository, error) {
 }
 
 // GetConfigRepository returns the config repository instance
-func (c *Container) GetConfigRepository() (config.Repository, error) {
+func (c *Container) GetConfigRepository() (configRepo.Repository, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -289,7 +535,7 @@ func (c *Container) GetConfigRepository() (config.Repository, error) {
 	}
 
 	// Create config repository
-	repo, err := config.NewFileRepository(c.config.ConfigDir)
+	repo, err := configRepo.NewFileRepository(c.config.ConfigDir)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create config repository: %w", err)
 	}
