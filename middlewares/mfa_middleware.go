@@ -1,7 +1,6 @@
 package middlewares
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"

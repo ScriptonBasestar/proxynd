@@ -107,7 +107,6 @@ func (cb *CircuitBreaker) Execute(ctx context.Context, fn func(context.Context) 
 
 	// 함수 실행
 	err := fn(ctx)
-
 	// 결과 기록
 	if err != nil {
 		cb.recordFailure()
@@ -128,7 +127,6 @@ func (cb *CircuitBreaker) Call(ctx context.Context, fn func(context.Context) (in
 
 	// 함수 실행
 	result, err := fn(ctx)
-
 	// 결과 기록
 	if err != nil {
 		cb.recordFailure()

@@ -12,9 +12,9 @@ import (
 )
 
 type signatureVerifierImpl struct {
-	config     apk.ProxyConfig
-	logger     logging.Logger
-	verifier   *apkVerification.SignatureVerifier
+	config   apk.ProxyConfig
+	logger   logging.Logger
+	verifier *apkVerification.SignatureVerifier
 }
 
 func NewSignatureVerifier(config apk.ProxyConfig, logger logging.Logger) apk.SignatureVerifier {
@@ -31,7 +31,7 @@ func (s *signatureVerifierImpl) VerifyPackage(ctx context.Context, packagePath s
 	}
 
 	result := s.verifier.VerifyApkSignature(packagePath)
-	
+
 	signatureInfo := &apk.SignatureInfo{
 		IsValid:        result.IsValid,
 		SignatureFile:  result.SignatureFile,
@@ -83,7 +83,7 @@ func (s *signatureVerifierImpl) ValidateSignature(ctx context.Context, signature
 
 func (s *signatureVerifierImpl) GetTrustedKeys(ctx context.Context) ([]string, error) {
 	keyDir := s.config.GetVerificationKeyDirectory()
-	
+
 	entries, err := os.ReadDir(keyDir)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read key directory: %w", err)

@@ -8,8 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-
-	"proxynd/internal/config"
 )
 
 // Test constants for proxy types

@@ -4,7 +4,7 @@ package mocks
 
 import (
 	alerts "proxynd/alerts"
-	configs "proxynd/internal/config"
+	"proxynd/internal/config"
 
 	context "context"
 

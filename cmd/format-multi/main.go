@@ -221,7 +221,7 @@ func printUsage() {
 
 func listSupportedFormats() {
 	fmt.Printf("%sSupported file formats:%s\n\n", colorCyan, colorReset)
-	
+
 	// 언어별로 그룹화
 	langMap := make(map[string][]string)
 	for ext, formatter := range formattersMap {
@@ -236,7 +236,7 @@ func listSupportedFormats() {
 
 func installFormatters() {
 	fmt.Printf("%sInstalling all formatters...%s\n\n", colorCyan, colorReset)
-	
+
 	installed := make(map[string]bool)
 	for _, formatter := range formattersMap {
 		name := formatter.Name()

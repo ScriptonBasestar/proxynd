@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"proxynd/internal/config"
 	"proxynd/handlers/proxy"
+	"proxynd/internal/config"
 	domainErrors "proxynd/internal/errors"
 	"proxynd/logging"
 )

@@ -38,12 +38,12 @@ type RepomdXML struct {
 type PrimaryXML struct {
 	XMLName  xml.Name `xml:"metadata"`
 	Packages []struct {
-		Name         string `xml:"name"`
-		Arch         string `xml:"arch"`
-		Version      struct {
-			Epoch   string `xml:"epoch,attr"`
-			Ver     string `xml:"ver,attr"`
-			Rel     string `xml:"rel,attr"`
+		Name    string `xml:"name"`
+		Arch    string `xml:"arch"`
+		Version struct {
+			Epoch string `xml:"epoch,attr"`
+			Ver   string `xml:"ver,attr"`
+			Rel   string `xml:"rel,attr"`
 		} `xml:"version"`
 		Summary     string `xml:"summary"`
 		Description string `xml:"description"`
@@ -183,11 +183,11 @@ func (m *metadataProcessorImpl) ProcessPrimaryXML(ctx context.Context, data []by
 func (m *metadataProcessorImpl) ProcessFilelistsXML(ctx context.Context, data []byte) (map[string][]string, error) {
 	// 간단한 구현 - 실제로는 복잡한 XML 파싱이 필요
 	result := make(map[string][]string)
-	
+
 	// 파일 목록 추출 로직 (실제 구현에서는 더 정교한 XML 파싱 필요)
 	content := string(data)
 	lines := strings.Split(content, "\n")
-	
+
 	var currentPackage string
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
@@ -218,10 +218,10 @@ func (m *metadataProcessorImpl) ProcessFilelistsXML(ctx context.Context, data []
 // ProcessOtherXML other.xml 처리
 func (m *metadataProcessorImpl) ProcessOtherXML(ctx context.Context, data []byte) (map[string]interface{}, error) {
 	result := make(map[string]interface{})
-	
+
 	// other.xml은 주로 changelog 정보를 포함
 	content := string(data)
-	
+
 	// 간단한 통계 정보 추출
 	result["size"] = len(data)
 	result["changelog_entries"] = strings.Count(content, "<changelog>")
@@ -247,7 +247,7 @@ func (m *metadataProcessorImpl) ValidateMetadata(ctx context.Context, metadataTy
 		if err := xml.Unmarshal(data, &repomd); err != nil {
 			return fmt.Errorf("invalid repomd.xml format: %w", err)
 		}
-		
+
 		if len(repomd.Data) == 0 {
 			return fmt.Errorf("repomd.xml contains no data entries")
 		}
@@ -280,20 +280,20 @@ func (m *metadataProcessorImpl) parseTimestamp(timestamp string) time.Time {
 	if timestamp == "" {
 		return time.Now()
 	}
-	
+
 	// 다양한 타임스탬프 형식 지원
 	formats := []string{
 		"1136239445", // Unix timestamp
 		"2006-01-02 15:04:05",
 		"2006-01-02T15:04:05Z",
 	}
-	
+
 	for _, format := range formats {
 		if t, err := time.Parse(format, timestamp); err == nil {
 			return t
 		}
 	}
-	
+
 	// 파싱 실패 시 현재 시간 반환
 	return time.Now()
 }

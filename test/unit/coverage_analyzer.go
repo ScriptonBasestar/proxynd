@@ -1,7 +1,6 @@
 package unit
 
 import (
-	"bufio"
 	"fmt"
 	"go/ast"
 	"go/parser"
@@ -496,7 +495,7 @@ func (ca *CoverageAnalyzer) GenerateHTMLReport(report *CoverageReport, outputPat
 		ca.generateRecommendationsList(report.Recommendations),
 	)
 
-	return os.WriteFile(outputPath, []byte(html), 0644)
+	return os.WriteFile(outputPath, []byte(html), 0o644)
 }
 
 // getCoverageClass 커버리지 클래스 반환

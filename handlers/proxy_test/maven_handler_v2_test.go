@@ -12,8 +12,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/valyala/fasthttp"
 
-	"proxynd/internal/config"
 	"proxynd/handlers/proxy"
+	"proxynd/internal/config"
 	"proxynd/internal/errors"
 	"proxynd/logging"
 )

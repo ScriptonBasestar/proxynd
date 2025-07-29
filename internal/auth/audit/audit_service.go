@@ -433,13 +433,13 @@ func (s *AuditService) flush() {
 func (s *AuditService) initLogFile() error {
 	// 디렉토리 생성
 	dir := filepath.Dir(s.config.FilePath)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return fmt.Errorf("failed to create log directory: %w", err)
 	}
 
 	// 파일 열기
 	file, err := os.OpenFile(s.config.FilePath,
-		os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+		os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
 	if err != nil {
 		return fmt.Errorf("failed to open audit log file: %w", err)
 	}

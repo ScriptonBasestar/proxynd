@@ -10,12 +10,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
 
 	"proxynd/cache/mocks"
 	cacheMocks "proxynd/cache/mocks"
 	"proxynd/internal/config"
-	"proxynd/internal/domain/docker"
 	"proxynd/internal/domain/pip"
 	"proxynd/internal/repositories/cache"
 	dockerServices "proxynd/internal/services/docker"

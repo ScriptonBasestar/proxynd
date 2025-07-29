@@ -10,8 +10,8 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/internal/config"
 	"proxynd/health"
+	"proxynd/internal/config"
 )
 
 // healthService 전역 건강 상태 서비스

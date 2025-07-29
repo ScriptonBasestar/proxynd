@@ -6,8 +6,8 @@ import (
 	"github.com/stretchr/testify/mock"
 	"go.uber.org/zap"
 
-	"proxynd/internal/config"
 	"proxynd/internal/app"
+	"proxynd/internal/config"
 	"proxynd/internal/handlers"
 	"proxynd/internal/repositories/cache"
 	configrepo "proxynd/internal/repositories/config"

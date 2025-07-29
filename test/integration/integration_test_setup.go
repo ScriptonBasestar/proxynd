@@ -14,8 +14,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/stretchr/testify/require"
 
-	"proxynd/internal/config"
 	"proxynd/internal/app"
+	"proxynd/internal/config"
 	"proxynd/routers"
 )
 

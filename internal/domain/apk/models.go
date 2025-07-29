@@ -45,39 +45,39 @@ type CacheEntry struct {
 	CreatedAt    time.Time     `json:"createdAt"`
 	LastAccessed time.Time     `json:"lastAccessed"`
 	TTL          time.Duration `json:"ttl"`
-	IsApkFile    bool          `json:"isApkFile"`    // APK 파일 여부
-	IsIndex      bool          `json:"isIndex"`      // APKINDEX 파일 여부
-	IsSignature  bool          `json:"isSignature"`  // 서명 파일 여부
+	IsApkFile    bool          `json:"isApkFile"`   // APK 파일 여부
+	IsIndex      bool          `json:"isIndex"`     // APKINDEX 파일 여부
+	IsSignature  bool          `json:"isSignature"` // 서명 파일 여부
 }
 
 // RepositoryInfo APK 리포지토리 정보
 type RepositoryInfo struct {
 	Architecture string    `json:"architecture"`
-	Branch       string    `json:"branch"`      // v3.18, edge 등
-	Component    string    `json:"component"`   // main, community, testing
-	IndexFile    string    `json:"indexFile"`   // APKINDEX.tar.gz
+	Branch       string    `json:"branch"`    // v3.18, edge 등
+	Component    string    `json:"component"` // main, community, testing
+	IndexFile    string    `json:"indexFile"` // APKINDEX.tar.gz
 	LastModified time.Time `json:"lastModified"`
 	Size         int64     `json:"size"`
 }
 
 // PackageInfo APK 패키지 정보
 type PackageInfo struct {
-	Name         string   `json:"name"`
-	Version      string   `json:"version"`
-	Architecture string   `json:"architecture"`
-	Description  string   `json:"description"`
-	Homepage     string   `json:"homepage"`
-	Size         int64    `json:"size"`
-	InstalledSize int64   `json:"installedSize"`
-	License      string   `json:"license"`
-	Origin       string   `json:"origin"`
-	Maintainer   string   `json:"maintainer"`
-	BuildTime    string   `json:"buildTime"`
-	CommitID     string   `json:"commitId"`
-	PackagerID   string   `json:"packageId"`
-	Dependencies []string `json:"dependencies,omitempty"`
-	Provides     []string `json:"provides,omitempty"`
-	InstallIf    []string `json:"installIf,omitempty"`
+	Name          string   `json:"name"`
+	Version       string   `json:"version"`
+	Architecture  string   `json:"architecture"`
+	Description   string   `json:"description"`
+	Homepage      string   `json:"homepage"`
+	Size          int64    `json:"size"`
+	InstalledSize int64    `json:"installedSize"`
+	License       string   `json:"license"`
+	Origin        string   `json:"origin"`
+	Maintainer    string   `json:"maintainer"`
+	BuildTime     string   `json:"buildTime"`
+	CommitID      string   `json:"commitId"`
+	PackagerID    string   `json:"packageId"`
+	Dependencies  []string `json:"dependencies,omitempty"`
+	Provides      []string `json:"provides,omitempty"`
+	InstallIf     []string `json:"installIf,omitempty"`
 }
 
 // SignatureInfo APK 서명 정보

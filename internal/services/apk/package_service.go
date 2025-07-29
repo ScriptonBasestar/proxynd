@@ -19,13 +19,13 @@ import (
 
 // packageServiceImpl APK 패키지 서비스 구현
 type packageServiceImpl struct {
-	config              apk.ProxyConfig
-	repositoryManager   apk.RepositoryManager
-	cacheManager        apk.CacheManager
-	signatureVerifier   apk.SignatureVerifier
-	metricsCollector    apk.MetricsCollector
-	logger              logging.Logger
-	storageDir          string
+	config            apk.ProxyConfig
+	repositoryManager apk.RepositoryManager
+	cacheManager      apk.CacheManager
+	signatureVerifier apk.SignatureVerifier
+	metricsCollector  apk.MetricsCollector
+	logger            logging.Logger
+	storageDir        string
 }
 
 // NewPackageService APK 패키지 서비스 생성
@@ -52,7 +52,7 @@ func NewPackageService(
 // HandleRequest 패키지 요청 처리
 func (s *packageServiceImpl) HandleRequest(ctx context.Context, request *apk.PackageRequest) (*apk.PackageResponse, error) {
 	startTime := time.Now()
-	
+
 	// 요청 경로 유효성 검증
 	if err := s.ValidatePackagePath(request.PackagePath); err != nil {
 		s.logger.Warn("APK 패키지 경로 유효성 검증 실패",
@@ -92,7 +92,7 @@ func (s *packageServiceImpl) HandleRequest(ctx context.Context, request *apk.Pac
 			if err == nil {
 				// 메트릭 기록
 				s.recordRequestMetrics(ctx, request, http.StatusOK, time.Since(startTime), true, "", int64(len(data)))
-				
+
 				return &apk.PackageResponse{
 					Data:        data,
 					ContentType: s.getContentType(request.PackagePath),
@@ -113,7 +113,7 @@ func (s *packageServiceImpl) HandleRequest(ctx context.Context, request *apk.Pac
 		s.logger.Error("APK 업스트림 다운로드 실패",
 			logging.F("path", request.PackagePath),
 			logging.F("error", err.Error()))
-		
+
 		// 메트릭 기록
 		s.recordRequestMetrics(ctx, request, http.StatusInternalServerError, time.Since(startTime), false, proxyUsed, 0)
 		return nil, fmt.Errorf("download failed: %w", err)
@@ -309,13 +309,13 @@ func (s *packageServiceImpl) getContentType(packagePath string) string {
 func (s *packageServiceImpl) generateHeaders(packagePath string) map[string]string {
 	headers := make(map[string]string)
 	filename := filepath.Base(packagePath)
-	
+
 	if s.isInlineFile(filename) {
 		headers["Content-Disposition"] = fmt.Sprintf("inline; filename=%s", filename)
 	} else {
 		headers["Content-Disposition"] = fmt.Sprintf("attachment; filename=%s", filename)
 	}
-	
+
 	return headers
 }
 
@@ -349,13 +349,13 @@ func (s *packageServiceImpl) calculateTTL(packagePath string) time.Duration {
 func (s *packageServiceImpl) parseApkFilename(filename string) (name, version string) {
 	// APK 파일명 파싱 (예: package-1.0.0-r0.apk)
 	filename = strings.TrimSuffix(filename, ".apk")
-	
+
 	// 마지막 - 이후가 릴리스 번호 (r0, r1 등)
 	lastDash := strings.LastIndex(filename, "-r")
 	if lastDash > 0 {
 		filename = filename[:lastDash]
 	}
-	
+
 	// 다음 - 이후가 버전
 	lastDash = strings.LastIndex(filename, "-")
 	if lastDash > 0 {
@@ -364,13 +364,13 @@ func (s *packageServiceImpl) parseApkFilename(filename string) (name, version st
 	} else {
 		name = filename
 	}
-	
+
 	return
 }
 
 func (s *packageServiceImpl) recordRequestMetrics(ctx context.Context, request *apk.PackageRequest, statusCode int, responseTime time.Duration, cacheHit bool, proxyUsed string, fileSize int64) {
 	arch, branch, component := s.parsePackagePath(request.PackagePath)
-	
+
 	metrics := &apk.RequestMetrics{
 		Path:         request.PackagePath,
 		Architecture: arch,

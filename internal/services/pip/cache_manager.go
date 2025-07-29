@@ -98,12 +98,12 @@ func (c *cacheManagerImpl) Set(ctx context.Context, key string, data []byte, con
 
 	// 디렉토리 생성
 	dir := filepath.Dir(filePath)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return fmt.Errorf("failed to create cache directory: %w", err)
 	}
 
 	// 파일 쓰기
-	if err := os.WriteFile(filePath, data, 0644); err != nil {
+	if err := os.WriteFile(filePath, data, 0o644); err != nil {
 		return fmt.Errorf("failed to write cache file: %w", err)
 	}
 
@@ -181,7 +181,6 @@ func (c *cacheManagerImpl) Cleanup(ctx context.Context) error {
 
 		return nil
 	})
-
 	if err != nil {
 		return fmt.Errorf("cache cleanup failed: %w", err)
 	}
@@ -230,7 +229,6 @@ func (c *cacheManagerImpl) GetStats(ctx context.Context) (*pip.CacheStats, error
 
 		return nil
 	})
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to collect cache stats: %w", err)
 	}

@@ -19,13 +19,13 @@ import (
 
 // packageServiceImpl YUM 패키지 서비스 구현
 type packageServiceImpl struct {
-	config           yum.ProxyConfig
-	repoManager      yum.RepoManager
-	cacheManager     yum.CacheManager
+	config            yum.ProxyConfig
+	repoManager       yum.RepoManager
+	cacheManager      yum.CacheManager
 	metadataProcessor yum.MetadataProcessor
-	metricsCollector yum.MetricsCollector
-	logger           logging.Logger
-	storageDir       string
+	metricsCollector  yum.MetricsCollector
+	logger            logging.Logger
+	storageDir        string
 }
 
 // NewPackageService YUM 패키지 서비스 생성
@@ -52,11 +52,11 @@ func NewPackageService(
 // HandleRequest 패키지 요청 처리
 func (s *packageServiceImpl) HandleRequest(ctx context.Context, request *yum.PackageRequest) (*yum.PackageResponse, error) {
 	startTime := time.Now()
-	
+
 	// 요청 경로 유효성 검증
 	if err := s.ValidatePackagePath(request.PackagePath); err != nil {
-		s.logger.Warn("YUM 패키지 경로 유효성 검증 실패", 
-			logging.F("path", request.PackagePath), 
+		s.logger.Warn("YUM 패키지 경로 유효성 검증 실패",
+			logging.F("path", request.PackagePath),
 			logging.F("error", err.Error()))
 		return nil, fmt.Errorf("invalid package path: %w", err)
 	}
@@ -72,7 +72,7 @@ func (s *packageServiceImpl) HandleRequest(ctx context.Context, request *yum.Pac
 	cacheKey := s.generateCacheKey(request.PackagePath)
 	if s.config.GetUseCache() {
 		if cachedEntry, err := s.cacheManager.Get(ctx, cacheKey); err == nil {
-			s.logger.Debug("YUM 캐시에서 파일 제공", 
+			s.logger.Debug("YUM 캐시에서 파일 제공",
 				logging.F("path", request.PackagePath),
 				logging.F("cache_key", cacheKey))
 
@@ -80,7 +80,7 @@ func (s *packageServiceImpl) HandleRequest(ctx context.Context, request *yum.Pac
 			if err == nil {
 				// 메트릭 기록
 				s.recordRequestMetrics(ctx, request, http.StatusOK, time.Since(startTime), true, "", int64(len(data)))
-				
+
 				return &yum.PackageResponse{
 					Data:        data,
 					ContentType: s.getContentType(request.PackagePath),
@@ -97,10 +97,10 @@ func (s *packageServiceImpl) HandleRequest(ctx context.Context, request *yum.Pac
 	// 업스트림에서 파일 다운로드
 	data, proxyUsed, err := s.downloadFromUpstream(ctx, request.PackagePath, filePath)
 	if err != nil {
-		s.logger.Error("YUM 업스트림 다운로드 실패", 
-			logging.F("path", request.PackagePath), 
+		s.logger.Error("YUM 업스트림 다운로드 실패",
+			logging.F("path", request.PackagePath),
 			logging.F("error", err.Error()))
-		
+
 		// 메트릭 기록
 		s.recordRequestMetrics(ctx, request, http.StatusInternalServerError, time.Since(startTime), false, proxyUsed, 0)
 		return nil, fmt.Errorf("download failed: %w", err)
@@ -110,8 +110,8 @@ func (s *packageServiceImpl) HandleRequest(ctx context.Context, request *yum.Pac
 	if s.config.GetUseCache() {
 		ttl := s.calculateTTL(request.PackagePath)
 		if err := s.cacheManager.Set(ctx, cacheKey, data, ttl.Nanoseconds()); err != nil {
-			s.logger.Warn("YUM 캐시 저장 실패", 
-				logging.F("cache_key", cacheKey), 
+			s.logger.Warn("YUM 캐시 저장 실패",
+				logging.F("cache_key", cacheKey),
 				logging.F("error", err.Error()))
 		}
 	}
@@ -201,14 +201,14 @@ func (s *packageServiceImpl) downloadFromUpstream(ctx context.Context, packagePa
 
 	for _, proxy := range proxies {
 		fullURL := helpers.JoinURL(proxy.URL, packagePath)
-		s.logger.Debug("YUM 업스트림에서 다운로드 시도", 
-			logging.F("proxy", proxy.Name), 
+		s.logger.Debug("YUM 업스트림에서 다운로드 시도",
+			logging.F("proxy", proxy.Name),
 			logging.F("url", fullURL))
 
 		resp, err := client.GetWithRetry(ctx, fullURL, 2)
 		if err != nil {
-			s.logger.Warn("YUM 프록시 연결 실패", 
-				logging.F("proxy", proxy.Name), 
+			s.logger.Warn("YUM 프록시 연결 실패",
+				logging.F("proxy", proxy.Name),
 				logging.F("error", err.Error()))
 			continue
 		}
@@ -231,16 +231,16 @@ func (s *packageServiceImpl) downloadFromUpstream(ctx context.Context, packagePa
 				return nil, proxy.Name, fmt.Errorf("failed to write file: %w", err)
 			}
 
-			s.logger.Info("YUM 파일 다운로드 성공", 
-				logging.F("proxy", proxy.Name), 
-				logging.F("path", packagePath), 
+			s.logger.Info("YUM 파일 다운로드 성공",
+				logging.F("proxy", proxy.Name),
+				logging.F("path", packagePath),
 				logging.F("size", len(data)))
 
 			return data, proxy.Name, nil
 		}
 
-		s.logger.Warn("YUM 업스트림 오류 응답", 
-			logging.F("proxy", proxy.Name), 
+		s.logger.Warn("YUM 업스트림 오류 응답",
+			logging.F("proxy", proxy.Name),
 			logging.F("status", resp.StatusCode))
 	}
 
@@ -271,13 +271,13 @@ func (s *packageServiceImpl) getContentType(packagePath string) string {
 func (s *packageServiceImpl) generateHeaders(packagePath string) map[string]string {
 	headers := make(map[string]string)
 	filename := filepath.Base(packagePath)
-	
+
 	if s.isInlineFile(filename) {
 		headers["Content-Disposition"] = fmt.Sprintf("inline; filename=%s", filename)
 	} else {
 		headers["Content-Disposition"] = fmt.Sprintf("attachment; filename=%s", filename)
 	}
-	
+
 	return headers
 }
 
@@ -316,21 +316,21 @@ func (s *packageServiceImpl) calculateTTL(packagePath string) time.Duration {
 func (s *packageServiceImpl) parseRpmFilename(filename string) (name, version, release, arch string) {
 	// RPM 파일명 파싱 (예: package-1.0.0-1.el7.x86_64.rpm)
 	filename = strings.TrimSuffix(filename, ".rpm")
-	
+
 	// 아키텍처 추출
 	lastDot := strings.LastIndex(filename, ".")
 	if lastDot > 0 {
 		arch = filename[lastDot+1:]
 		filename = filename[:lastDot]
 	}
-	
+
 	// 릴리스 추출
 	lastDash := strings.LastIndex(filename, "-")
 	if lastDash > 0 {
 		release = filename[lastDash+1:]
 		filename = filename[:lastDash]
 	}
-	
+
 	// 버전 추출
 	lastDash = strings.LastIndex(filename, "-")
 	if lastDash > 0 {
@@ -339,7 +339,7 @@ func (s *packageServiceImpl) parseRpmFilename(filename string) (name, version, r
 	} else {
 		name = filename
 	}
-	
+
 	return
 }
 
@@ -359,7 +359,7 @@ func (s *packageServiceImpl) recordRequestMetrics(ctx context.Context, request *
 	}
 
 	if err := s.metricsCollector.RecordRequest(ctx, metrics); err != nil {
-		s.logger.Warn("YUM 메트릭 기록 실패", 
+		s.logger.Warn("YUM 메트릭 기록 실패",
 			logging.F("error", err.Error()))
 	}
 }

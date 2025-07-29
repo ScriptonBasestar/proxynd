@@ -46,7 +46,7 @@ func NewProfilingSession(config ProfilingConfig) *ProfilingSession {
 		config.OutputDir = "profiles"
 	}
 
-	_ = os.MkdirAll(config.OutputDir, 0755)
+	_ = os.MkdirAll(config.OutputDir, 0o755)
 
 	return &ProfilingSession{
 		config: config,

@@ -101,13 +101,13 @@ func (c *cacheManagerImpl) Set(ctx context.Context, key string, data []byte, con
 
 	// 디렉토리 생성
 	dir := filepath.Dir(cachePath)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return fmt.Errorf("failed to create cache directory: %w", err)
 	}
 
 	// 임시 파일에 쓰고 원자적으로 이동
 	tmpPath := cachePath + ".tmp"
-	if err := os.WriteFile(tmpPath, data, 0644); err != nil {
+	if err := os.WriteFile(tmpPath, data, 0o644); err != nil {
 		return fmt.Errorf("failed to write cache file: %w", err)
 	}
 
@@ -202,7 +202,6 @@ func (c *cacheManagerImpl) Cleanup(ctx context.Context) error {
 
 		return nil
 	})
-
 	if err != nil {
 		c.logger.Error("Cache cleanup walk failed", logging.F("error", err))
 		return err

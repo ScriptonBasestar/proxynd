@@ -116,7 +116,7 @@ func (c *cacheManagerImpl) Set(ctx context.Context, entry *docker.CacheEntry) er
 	}
 
 	// 디렉토리 생성
-	if err := os.MkdirAll(filepath.Dir(filePath), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(filePath), 0o755); err != nil {
 		return fmt.Errorf("failed to create cache directory: %w", err)
 	}
 
@@ -129,7 +129,7 @@ func (c *cacheManagerImpl) Set(ctx context.Context, entry *docker.CacheEntry) er
 	}
 
 	// 데이터 파일 저장
-	if err := os.WriteFile(filePath, entry.Headers, 0644); err != nil {
+	if err := os.WriteFile(filePath, entry.Headers, 0o644); err != nil {
 		return fmt.Errorf("failed to write cache data: %w", err)
 	}
 
@@ -277,7 +277,6 @@ func (c *cacheManagerImpl) CleanupExpired(ctx context.Context) error {
 
 		return nil
 	})
-
 	if err != nil {
 		c.logger.Warn("Cache cleanup completed with errors", logging.F("error", err))
 	}
@@ -333,7 +332,7 @@ func (c *cacheManagerImpl) SaveHeaders(ctx context.Context, key string, headers 
 		return fmt.Errorf("failed to marshal headers: %w", err)
 	}
 
-	return os.WriteFile(headerPath, data, 0644)
+	return os.WriteFile(headerPath, data, 0o644)
 }
 
 // LoadHeaders 저장된 헤더 정보 로드
@@ -396,7 +395,7 @@ func (c *cacheManagerImpl) saveCacheEntry(metaPath string, entry *docker.CacheEn
 		return err
 	}
 
-	return os.WriteFile(metaPath, data, 0644)
+	return os.WriteFile(metaPath, data, 0o644)
 }
 
 // shouldEvict 캐시 제거 필요 여부 확인

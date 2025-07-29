@@ -29,17 +29,17 @@ func NewRepositoryManager(config apk.ProxyConfig, logger logging.Logger, storage
 
 func (r *repositoryManagerImpl) GetRepositoryInfo(ctx context.Context, architecture, branch, component string) (*apk.RepositoryInfo, error) {
 	key := fmt.Sprintf("%s:%s:%s", branch, component, architecture)
-	
+
 	if info, exists := r.repos[key]; exists {
 		return info, nil
 	}
-	
+
 	indexPath := filepath.Join(r.storageDir, r.config.GetPath(), branch, component, architecture, "APKINDEX.tar.gz")
 	stat, err := os.Stat(indexPath)
 	if err != nil {
 		return nil, fmt.Errorf("repository not found: %s", key)
 	}
-	
+
 	info := &apk.RepositoryInfo{
 		Architecture: architecture,
 		Branch:       branch,
@@ -48,7 +48,7 @@ func (r *repositoryManagerImpl) GetRepositoryInfo(ctx context.Context, architect
 		LastModified: stat.ModTime(),
 		Size:         stat.Size(),
 	}
-	
+
 	r.repos[key] = info
 	return info, nil
 }
@@ -64,11 +64,11 @@ func (r *repositoryManagerImpl) ValidateRepository(architecture, branch, compone
 	if architecture == "" || branch == "" || component == "" {
 		return fmt.Errorf("architecture, branch, and component are required")
 	}
-	
+
 	validArches := []string{"x86_64", "x86", "aarch64", "armhf", "armv7", "ppc64le", "s390x"}
 	validBranches := []string{"edge", "v3.18", "v3.17", "v3.16", "v3.15"}
 	validComponents := []string{"main", "community", "testing"}
-	
+
 	if !r.contains(validArches, architecture) {
 		return fmt.Errorf("invalid architecture: %s", architecture)
 	}
@@ -78,7 +78,7 @@ func (r *repositoryManagerImpl) ValidateRepository(architecture, branch, compone
 	if !r.contains(validComponents, component) {
 		return fmt.Errorf("invalid component: %s", component)
 	}
-	
+
 	return nil
 }
 

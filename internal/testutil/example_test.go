@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
-	"proxynd/internal/config"
 	"proxynd/internal/services/proxy"
 	"proxynd/internal/services/proxy/mocks"
 	"proxynd/internal/testutil"

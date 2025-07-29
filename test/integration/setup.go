@@ -12,8 +12,8 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 
-	"proxynd/internal/config"
 	"proxynd/internal/app"
+	"proxynd/internal/config"
 )
 
 // TestServer 통합 테스트용 서버 구조체

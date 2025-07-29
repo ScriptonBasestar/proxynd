@@ -6,9 +6,9 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"proxynd/alerts"
-	"proxynd/internal/config"
 	authHandlers "proxynd/handlers/auth"
 	proxynd "proxynd/handlers/proxy"
+	"proxynd/internal/config"
 	"proxynd/middlewares"
 )
 

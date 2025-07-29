@@ -10,8 +10,8 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/internal/config"
 	"proxynd/helpers"
+	"proxynd/internal/config"
 	"proxynd/internal/security"
 	"proxynd/logging"
 )
@@ -87,7 +87,7 @@ type ConfigShowResponse struct {
 type MaskedGlobalConfig struct {
 	StorageDir string             `json:"storage_dir"`
 	ConfigDir  string             `json:"config_dir"`
-	Cache      config.Cache      `json:"cache"`
+	Cache      config.Cache       `json:"cache"`
 	Server     MaskedServerConfig `json:"server,omitempty"`
 }
 

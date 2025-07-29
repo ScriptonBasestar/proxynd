@@ -2,6 +2,7 @@ package factory
 
 import (
 	"github.com/gofiber/fiber/v2"
+
 	"proxynd/internal/adapters/http"
 )
 

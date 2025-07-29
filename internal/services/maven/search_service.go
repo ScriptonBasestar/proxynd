@@ -393,7 +393,7 @@ func (s *searchServiceImpl) loadIndex() error {
 // saveIndex 인덱스를 디스크에 저장
 func (s *searchServiceImpl) saveIndex() error {
 	// 디렉토리 생성
-	if err := os.MkdirAll(filepath.Dir(s.indexPath), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(s.indexPath), 0o755); err != nil {
 		return err
 	}
 
@@ -402,5 +402,5 @@ func (s *searchServiceImpl) saveIndex() error {
 		return err
 	}
 
-	return os.WriteFile(s.indexPath, data, 0644)
+	return os.WriteFile(s.indexPath, data, 0o644)
 }

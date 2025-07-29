@@ -3,10 +3,7 @@ package health
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"html/template"
-	"net/http"
 	"sort"
 	"sync"
 	"time"

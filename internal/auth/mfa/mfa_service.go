@@ -7,8 +7,6 @@ import (
 	"encoding/base32"
 	"encoding/json"
 	"fmt"
-	"image/png"
-	"io"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -17,7 +15,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pquerna/otp"
 	"github.com/pquerna/otp/totp"
 	"github.com/skip2/go-qrcode"
 
@@ -688,7 +685,7 @@ func (s *MFAService) cleanupExpiredChallenges() {
 // loadUsers 저장된 사용자 설정 로드
 func (s *MFAService) loadUsers() error {
 	// 디렉토리 생성
-	if err := os.MkdirAll(filepath.Dir(s.config.StoragePath), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(s.config.StoragePath), 0o755); err != nil {
 		return fmt.Errorf("failed to create storage directory: %w", err)
 	}
 
@@ -722,7 +719,7 @@ func (s *MFAService) saveUsers() error {
 
 	// 임시 파일에 쓰고 원자적으로 이동
 	tempPath := s.config.StoragePath + ".tmp"
-	if err := os.WriteFile(tempPath, data, 0600); err != nil {
+	if err := os.WriteFile(tempPath, data, 0o600); err != nil {
 		return fmt.Errorf("failed to write MFA users file: %w", err)
 	}
 

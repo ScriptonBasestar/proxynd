@@ -6,8 +6,8 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/internal/config"
 	"proxynd/internal/adapters/http"
+	"proxynd/internal/config"
 	"proxynd/logging"
 )
 
@@ -40,11 +40,11 @@ type HealthStatus struct {
 
 // HandlerLifecycleManager 핸들러 생명주기 관리자
 type HandlerLifecycleManager struct {
-	initOrder    []string
+	initOrder     []string
 	shutdownHooks map[string]func() error
-	initialized  map[string]bool
-	mu           sync.RWMutex
-	logger       logging.Logger
+	initialized   map[string]bool
+	mu            sync.RWMutex
+	logger        logging.Logger
 }
 
 // NewHandlerAdapterFactory 새로운 핸들러 어댑터 팩토리 생성
@@ -60,10 +60,10 @@ func NewHandlerAdapterFactory() *HandlerAdapterFactory {
 			logger:        logging.GetLogger(),
 		},
 	}
-	
+
 	// 모든 프록시 타입에 대한 어댑터 등록
 	factory.registerAllAdapters()
-	
+
 	return factory
 }
 
@@ -71,12 +71,12 @@ func NewHandlerAdapterFactory() *HandlerAdapterFactory {
 func (f *HandlerAdapterFactory) registerAllAdapters() {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	
+
 	// 초기화 순서 정의 (의존성 순서)
 	f.lifecycleManager.initOrder = []string{
 		"maven", "apt", "npm", "pip", "docker", "yum", "apk",
 	}
-	
+
 	// 각 프록시 타입별 어댑터 팩토리 함수 등록
 	adapterFactories := map[string]func() (ProxyHandlerAdapter, error){
 		"maven":  f.createMavenAdapter,
@@ -87,7 +87,7 @@ func (f *HandlerAdapterFactory) registerAllAdapters() {
 		"yum":    f.createYumAdapter,
 		"apk":    f.createApkAdapter,
 	}
-	
+
 	// 어댑터 생성 및 등록
 	for proxyType, factory := range adapterFactories {
 		adapter, err := factory()
@@ -95,7 +95,7 @@ func (f *HandlerAdapterFactory) registerAllAdapters() {
 			f.logger.Warn("Failed to create adapter",
 				logging.F("proxy_type", proxyType),
 				logging.F("error", err.Error()))
-			
+
 			// 헬스 상태를 unhealthy로 설정
 			f.healthCheckMap[proxyType] = HealthStatus{
 				IsHealthy:   false,
@@ -104,13 +104,13 @@ func (f *HandlerAdapterFactory) registerAllAdapters() {
 			}
 			continue
 		}
-		
+
 		f.adapters[proxyType] = adapter
 		f.healthCheckMap[proxyType] = HealthStatus{
 			IsHealthy:   true,
 			Initialized: false, // 아직 초기화되지 않음
 		}
-		
+
 		f.logger.Info("Handler adapter registered",
 			logging.F("proxy_type", proxyType))
 	}
@@ -120,12 +120,12 @@ func (f *HandlerAdapterFactory) registerAllAdapters() {
 func (f *HandlerAdapterFactory) GetAdapter(proxyType string) (ProxyHandlerAdapter, error) {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
-	
+
 	adapter, exists := f.adapters[proxyType]
 	if !exists {
 		return nil, fmt.Errorf("unknown proxy type: %s", proxyType)
 	}
-	
+
 	// 초기화 확인
 	if !f.lifecycleManager.initialized[proxyType] {
 		f.mu.RUnlock()
@@ -135,7 +135,7 @@ func (f *HandlerAdapterFactory) GetAdapter(proxyType string) (ProxyHandlerAdapte
 		}
 		f.mu.RLock()
 	}
-	
+
 	return adapter, nil
 }
 
@@ -143,7 +143,7 @@ func (f *HandlerAdapterFactory) GetAdapter(proxyType string) (ProxyHandlerAdapte
 func (f *HandlerAdapterFactory) InitializeAll() error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	
+
 	// 정의된 순서대로 초기화
 	for _, proxyType := range f.lifecycleManager.initOrder {
 		if err := f.initializeAdapterUnsafe(proxyType); err != nil {
@@ -153,10 +153,10 @@ func (f *HandlerAdapterFactory) InitializeAll() error {
 			return err
 		}
 	}
-	
+
 	f.logger.Info("All adapters initialized successfully",
 		logging.F("count", len(f.lifecycleManager.initOrder)))
-	
+
 	return nil
 }
 
@@ -172,12 +172,12 @@ func (f *HandlerAdapterFactory) initializeAdapterUnsafe(proxyType string) error 
 	if f.lifecycleManager.initialized[proxyType] {
 		return nil // 이미 초기화됨
 	}
-	
+
 	adapter, exists := f.adapters[proxyType]
 	if !exists {
 		return fmt.Errorf("adapter not found: %s", proxyType)
 	}
-	
+
 	if err := adapter.Initialize(); err != nil {
 		f.healthCheckMap[proxyType] = HealthStatus{
 			IsHealthy:   false,
@@ -186,16 +186,16 @@ func (f *HandlerAdapterFactory) initializeAdapterUnsafe(proxyType string) error 
 		}
 		return err
 	}
-	
+
 	f.lifecycleManager.initialized[proxyType] = true
 	f.healthCheckMap[proxyType] = HealthStatus{
 		IsHealthy:   true,
 		Initialized: true,
 	}
-	
+
 	f.logger.Debug("Adapter initialized",
 		logging.F("proxy_type", proxyType))
-	
+
 	return nil
 }
 
@@ -203,15 +203,15 @@ func (f *HandlerAdapterFactory) initializeAdapterUnsafe(proxyType string) error 
 func (f *HandlerAdapterFactory) HealthCheck() map[string]HealthStatus {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	
+
 	for proxyType, adapter := range f.adapters {
 		if !f.lifecycleManager.initialized[proxyType] {
 			continue // 초기화되지 않은 어댑터는 스킵
 		}
-		
+
 		err := adapter.HealthCheck()
 		status := f.healthCheckMap[proxyType]
-		
+
 		if err != nil {
 			status.IsHealthy = false
 			status.LastError = err.Error()
@@ -220,16 +220,16 @@ func (f *HandlerAdapterFactory) HealthCheck() map[string]HealthStatus {
 			status.IsHealthy = true
 			status.LastError = ""
 		}
-		
+
 		f.healthCheckMap[proxyType] = status
 	}
-	
+
 	// 헬스 상태 복사본 반환
 	result := make(map[string]HealthStatus)
 	for k, v := range f.healthCheckMap {
 		result[k] = v
 	}
-	
+
 	return result
 }
 
@@ -237,11 +237,11 @@ func (f *HandlerAdapterFactory) HealthCheck() map[string]HealthStatus {
 func (f *HandlerAdapterFactory) Shutdown() error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	
+
 	// 역순으로 정리
 	for i := len(f.lifecycleManager.initOrder) - 1; i >= 0; i-- {
 		proxyType := f.lifecycleManager.initOrder[i]
-		
+
 		if adapter, exists := f.adapters[proxyType]; exists {
 			if err := adapter.Shutdown(); err != nil {
 				f.logger.Error("Failed to shutdown adapter",
@@ -249,10 +249,10 @@ func (f *HandlerAdapterFactory) Shutdown() error {
 					logging.F("error", err.Error()))
 			}
 		}
-		
+
 		f.lifecycleManager.initialized[proxyType] = false
 	}
-	
+
 	f.logger.Info("All adapters shutdown completed")
 	return nil
 }
@@ -261,7 +261,7 @@ func (f *HandlerAdapterFactory) Shutdown() error {
 func (f *HandlerAdapterFactory) GetStats() map[string]interface{} {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
-	
+
 	stats := map[string]interface{}{
 		"total_adapters":    len(f.adapters),
 		"initialized_count": f.getInitializedCount(),
@@ -269,7 +269,7 @@ func (f *HandlerAdapterFactory) GetStats() map[string]interface{} {
 		"supported_types":   f.getSupportedTypes(),
 		"health_status":     f.healthCheckMap,
 	}
-	
+
 	return stats
 }
 
@@ -283,7 +283,7 @@ func (f *HandlerAdapterFactory) createMavenAdapter() (ProxyHandlerAdapter, error
 	if err := config.ReadConfig(); err != nil {
 		return nil, fmt.Errorf("failed to read maven config: %w", err)
 	}
-	
+
 	adapter := http.NewMavenBrowserAdapter(config, f.logger)
 	return &mavenAdapterWrapper{adapter: adapter}, nil
 }
@@ -296,7 +296,7 @@ func (f *HandlerAdapterFactory) createAptAdapter() (ProxyHandlerAdapter, error) 
 	if err := config.ReadConfig(); err != nil {
 		return nil, fmt.Errorf("failed to read apt config: %w", err)
 	}
-	
+
 	adapter := http.NewAPTHandlerAdapter(config, f.logger)
 	return &aptAdapterWrapper{adapter: adapter}, nil
 }
@@ -309,7 +309,7 @@ func (f *HandlerAdapterFactory) createNpmAdapter() (ProxyHandlerAdapter, error) 
 	if err := config.ReadConfig(); err != nil {
 		return nil, fmt.Errorf("failed to read npm config: %w", err)
 	}
-	
+
 	adapter := http.NewNPMHandlerAdapter(config, f.logger)
 	return &npmAdapterWrapper{adapter: adapter}, nil
 }
@@ -322,7 +322,7 @@ func (f *HandlerAdapterFactory) createPipAdapter() (ProxyHandlerAdapter, error) 
 	if err := config.ReadConfig(); err != nil {
 		return nil, fmt.Errorf("failed to read pip config: %w", err)
 	}
-	
+
 	adapter := http.NewPIPHandlerAdapter(config, f.logger)
 	return &pipAdapterWrapper{adapter: adapter}, nil
 }
@@ -335,7 +335,7 @@ func (f *HandlerAdapterFactory) createDockerAdapter() (ProxyHandlerAdapter, erro
 	if err := config.ReadConfig(); err != nil {
 		return nil, fmt.Errorf("failed to read docker config: %w", err)
 	}
-	
+
 	adapter := http.NewDockerHandlerAdapter(config, f.logger)
 	return &dockerAdapterWrapper{adapter: adapter}, nil
 }
@@ -348,7 +348,7 @@ func (f *HandlerAdapterFactory) createYumAdapter() (ProxyHandlerAdapter, error) 
 	if err := config.ReadConfig(); err != nil {
 		return nil, fmt.Errorf("failed to read yum config: %w", err)
 	}
-	
+
 	adapter := http.NewYumHandlerAdapter(config, f.logger)
 	return &yumAdapterWrapper{adapter: adapter}, nil
 }
@@ -361,7 +361,7 @@ func (f *HandlerAdapterFactory) createApkAdapter() (ProxyHandlerAdapter, error) 
 	if err := config.ReadConfig(); err != nil {
 		return nil, fmt.Errorf("failed to read apk config: %w", err)
 	}
-	
+
 	adapter := http.NewApkHandlerAdapter(config, f.logger)
 	return &apkAdapterWrapper{adapter: adapter}, nil
 }

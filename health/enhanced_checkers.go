@@ -8,8 +8,6 @@ import (
 	"runtime"
 	"sync"
 	"time"
-
-	"proxynd/logging"
 )
 
 // MemoryChecker 메모리 사용률 체커

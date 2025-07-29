@@ -502,7 +502,7 @@ func (m *APIKeyManager) cleanupExpiredKeys() {
 // loadKeys 저장된 키 로드
 func (m *APIKeyManager) loadKeys() error {
 	// 디렉토리 생성
-	if err := os.MkdirAll(filepath.Dir(m.storagePath), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(m.storagePath), 0o755); err != nil {
 		return fmt.Errorf("failed to create storage directory: %w", err)
 	}
 
@@ -536,7 +536,7 @@ func (m *APIKeyManager) saveKeys() error {
 
 	// 임시 파일에 쓰고 원자적으로 이동
 	tempPath := m.storagePath + ".tmp"
-	if err := os.WriteFile(tempPath, data, 0600); err != nil {
+	if err := os.WriteFile(tempPath, data, 0o600); err != nil {
 		return fmt.Errorf("failed to write API keys file: %w", err)
 	}
 

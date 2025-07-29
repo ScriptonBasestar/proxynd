@@ -20,7 +20,7 @@ import (
 type WebhookSender struct {
 	core         *sender.Core
 	filter       *filtering.SimpleEventFilter
-	config       config.WebhookConfig               // 하위 호환성을 위한 config 접근
+	config       config.WebhookConfig                // 하위 호환성을 위한 config 접근
 	wg           sync.WaitGroup                      // 하위 호환성을 위한 WaitGroup
 	adapters     map[string]CompatibleWebhookAdapter // 하위 호환성을 위한 어댑터 맵
 	logger       logging.Logger                      // 하위 호환성을 위한 logger 접근

@@ -9,9 +9,9 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/internal/config"
 	"proxynd/internal/auth/jwt"
 	"proxynd/internal/auth/oauth2"
+	"proxynd/internal/config"
 	"proxynd/logging"
 )
 

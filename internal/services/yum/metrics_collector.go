@@ -25,11 +25,11 @@ type metricsCollectorImpl struct {
 }
 
 type metricsData struct {
-	Requests         []*yum.RequestMetrics     `json:"requests"`
-	PackageStats     map[string]*packageStats `json:"package_stats"`
-	RepositoryStats  map[string]*repoStats    `json:"repository_stats"`
-	CacheMetrics     *cacheMetrics            `json:"cache_metrics"`
-	LastUpdated      time.Time                `json:"last_updated"`
+	Requests        []*yum.RequestMetrics    `json:"requests"`
+	PackageStats    map[string]*packageStats `json:"package_stats"`
+	RepositoryStats map[string]*repoStats    `json:"repository_stats"`
+	CacheMetrics    *cacheMetrics            `json:"cache_metrics"`
+	LastUpdated     time.Time                `json:"last_updated"`
 }
 
 type packageStats struct {
@@ -75,10 +75,10 @@ func NewMetricsCollector(
 			LastUpdated:     time.Now(),
 		},
 	}
-	
+
 	// 기존 메트릭 데이터 로드
 	collector.loadMetrics()
-	
+
 	return collector
 }
 
@@ -86,32 +86,32 @@ func NewMetricsCollector(
 func (m *metricsCollectorImpl) RecordRequest(ctx context.Context, metrics *yum.RequestMetrics) error {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
-	
+
 	// 요청 메트릭 추가
 	m.metrics.Requests = append(m.metrics.Requests, metrics)
-	
+
 	// 최근 1000개 요청만 유지
 	if len(m.metrics.Requests) > 1000 {
 		m.metrics.Requests = m.metrics.Requests[len(m.metrics.Requests)-1000:]
 	}
-	
+
 	// 패키지 통계 업데이트
 	m.updatePackageStats(metrics)
-	
+
 	// 리포지토리 통계 업데이트
 	m.updateRepositoryStats(metrics)
-	
+
 	m.metrics.LastUpdated = time.Now()
-	
+
 	// 메트릭 데이터 저장
 	m.saveMetrics()
-	
+
 	m.logger.Debug("YUM 요청 메트릭 기록",
 		logging.F("path", metrics.Path),
 		logging.F("repository", metrics.Repository),
 		logging.F("status", metrics.StatusCode),
 		logging.F("cache_hit", metrics.CacheHit))
-	
+
 	return nil
 }
 
@@ -119,17 +119,17 @@ func (m *metricsCollectorImpl) RecordRequest(ctx context.Context, metrics *yum.R
 func (m *metricsCollectorImpl) GetRequestStats(ctx context.Context, period string) (map[string]interface{}, error) {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
-	
+
 	duration := m.parsePeriod(period)
 	cutoff := time.Now().Add(-duration)
-	
+
 	var recentRequests []*yum.RequestMetrics
 	for _, req := range m.metrics.Requests {
 		if req.RequestTime.After(cutoff) {
 			recentRequests = append(recentRequests, req)
 		}
 	}
-	
+
 	stats := map[string]interface{}{
 		"period":           period,
 		"total_requests":   len(recentRequests),
@@ -141,7 +141,7 @@ func (m *metricsCollectorImpl) GetRequestStats(ctx context.Context, period strin
 		"repositories":     m.countRepositories(recentRequests),
 		"total_size":       m.calculateTotalSize(recentRequests),
 	}
-	
+
 	return stats, nil
 }
 
@@ -149,29 +149,29 @@ func (m *metricsCollectorImpl) GetRequestStats(ctx context.Context, period strin
 func (m *metricsCollectorImpl) GetPopularPackages(ctx context.Context, limit int) ([]*yum.PackageInfo, error) {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
-	
+
 	// 패키지 통계를 요청 수로 정렬
 	type packageRank struct {
 		name  string
 		stats *packageStats
 	}
-	
+
 	var packages []packageRank
 	for name, stats := range m.metrics.PackageStats {
 		packages = append(packages, packageRank{name: name, stats: stats})
 	}
-	
+
 	sort.Slice(packages, func(i, j int) bool {
 		return packages[i].stats.RequestCount > packages[j].stats.RequestCount
 	})
-	
+
 	// 상위 패키지들을 PackageInfo로 변환
 	var result []*yum.PackageInfo
 	maxResults := limit
 	if len(packages) < maxResults {
 		maxResults = len(packages)
 	}
-	
+
 	for i := 0; i < maxResults; i++ {
 		pkg := packages[i]
 		result = append(result, &yum.PackageInfo{
@@ -179,7 +179,7 @@ func (m *metricsCollectorImpl) GetPopularPackages(ctx context.Context, limit int
 			// 실제 구현에서는 패키지 정보를 더 자세히 채워야 함
 		})
 	}
-	
+
 	return result, nil
 }
 
@@ -187,20 +187,20 @@ func (m *metricsCollectorImpl) GetPopularPackages(ctx context.Context, limit int
 func (m *metricsCollectorImpl) GetRepositoryStats(ctx context.Context) (map[string]interface{}, error) {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
-	
+
 	stats := make(map[string]interface{})
-	
+
 	for repo, repoStats := range m.metrics.RepositoryStats {
 		stats[repo] = map[string]interface{}{
-			"request_count":  repoStats.RequestCount,
-			"cache_hits":     repoStats.CacheHits,
-			"cache_misses":   repoStats.CacheMisses,
-			"total_size":     repoStats.TotalSize,
-			"last_accessed":  repoStats.LastAccessed,
+			"request_count":   repoStats.RequestCount,
+			"cache_hits":      repoStats.CacheHits,
+			"cache_misses":    repoStats.CacheMisses,
+			"total_size":      repoStats.TotalSize,
+			"last_accessed":   repoStats.LastAccessed,
 			"cache_hit_ratio": m.calculateCacheHitRatio(repoStats.CacheHits, repoStats.CacheMisses),
 		}
 	}
-	
+
 	return stats, nil
 }
 
@@ -208,20 +208,20 @@ func (m *metricsCollectorImpl) GetRepositoryStats(ctx context.Context) (map[stri
 func (m *metricsCollectorImpl) RecordCacheHit(ctx context.Context, key string, hit bool) error {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
-	
+
 	if hit {
 		m.metrics.CacheMetrics.Hits++
 	} else {
 		m.metrics.CacheMetrics.Misses++
 	}
-	
+
 	total := m.metrics.CacheMetrics.Hits + m.metrics.CacheMetrics.Misses
 	if total > 0 {
 		m.metrics.CacheMetrics.HitRatio = float64(m.metrics.CacheMetrics.Hits) / float64(total)
 	}
-	
+
 	m.metrics.CacheMetrics.Updated = time.Now()
-	
+
 	return nil
 }
 
@@ -229,7 +229,7 @@ func (m *metricsCollectorImpl) RecordCacheHit(ctx context.Context, key string, h
 func (m *metricsCollectorImpl) GetCacheMetrics(ctx context.Context) (map[string]interface{}, error) {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
-	
+
 	metrics := map[string]interface{}{
 		"hits":      m.metrics.CacheMetrics.Hits,
 		"misses":    m.metrics.CacheMetrics.Misses,
@@ -237,7 +237,7 @@ func (m *metricsCollectorImpl) GetCacheMetrics(ctx context.Context) (map[string]
 		"size":      m.metrics.CacheMetrics.Size,
 		"updated":   m.metrics.CacheMetrics.Updated,
 	}
-	
+
 	return metrics, nil
 }
 
@@ -247,12 +247,12 @@ func (m *metricsCollectorImpl) updatePackageStats(metrics *yum.RequestMetrics) {
 	if !metrics.IsRpmFile {
 		return
 	}
-	
+
 	packageName := m.extractPackageName(metrics.Path)
 	if packageName == "" {
 		return
 	}
-	
+
 	stats, exists := m.metrics.PackageStats[packageName]
 	if !exists {
 		stats = &packageStats{
@@ -261,7 +261,7 @@ func (m *metricsCollectorImpl) updatePackageStats(metrics *yum.RequestMetrics) {
 		}
 		m.metrics.PackageStats[packageName] = stats
 	}
-	
+
 	stats.RequestCount++
 	stats.TotalSize += metrics.FileSize
 	stats.LastAccessed = metrics.RequestTime
@@ -275,11 +275,11 @@ func (m *metricsCollectorImpl) updateRepositoryStats(metrics *yum.RequestMetrics
 		}
 		m.metrics.RepositoryStats[metrics.Repository] = stats
 	}
-	
+
 	stats.RequestCount++
 	stats.TotalSize += metrics.FileSize
 	stats.LastAccessed = metrics.RequestTime
-	
+
 	if metrics.CacheHit {
 		stats.CacheHits++
 	} else {
@@ -293,16 +293,16 @@ func (m *metricsCollectorImpl) extractPackageName(path string) string {
 	if !strings.HasSuffix(filename, ".rpm") {
 		return ""
 	}
-	
+
 	// RPM 파일명에서 패키지 이름 추출
 	filename = filename[:len(filename)-4] // .rpm 제거
-	
+
 	// 버전 정보 제거 (첫 번째 하이픈 이전이 패키지 이름)
 	parts := strings.Split(filename, "-")
 	if len(parts) > 0 {
 		return parts[0]
 	}
-	
+
 	return filename
 }
 
@@ -345,12 +345,12 @@ func (m *metricsCollectorImpl) calculateAverageResponse(requests []*yum.RequestM
 	if len(requests) == 0 {
 		return 0
 	}
-	
+
 	total := int64(0)
 	for _, req := range requests {
 		total += req.ResponseTime
 	}
-	
+
 	return float64(total) / float64(len(requests))
 }
 
@@ -403,7 +403,7 @@ func (m *metricsCollectorImpl) calculateCacheHitRatio(hits, misses int64) float6
 
 func (m *metricsCollectorImpl) loadMetrics() {
 	metricsPath := filepath.Join(m.storageDir, "metrics", "yum", "metrics.json")
-	
+
 	data, err := os.ReadFile(metricsPath)
 	if err != nil {
 		if !os.IsNotExist(err) {
@@ -412,13 +412,13 @@ func (m *metricsCollectorImpl) loadMetrics() {
 		}
 		return
 	}
-	
+
 	if err := json.Unmarshal(data, m.metrics); err != nil {
 		m.logger.Warn("YUM 메트릭 데이터 파싱 실패",
 			logging.F("error", err.Error()))
 		return
 	}
-	
+
 	m.logger.Info("YUM 메트릭 데이터 로드 완료",
 		logging.F("requests", len(m.metrics.Requests)),
 		logging.F("packages", len(m.metrics.PackageStats)),
@@ -428,21 +428,21 @@ func (m *metricsCollectorImpl) loadMetrics() {
 func (m *metricsCollectorImpl) saveMetrics() {
 	metricsPath := filepath.Join(m.storageDir, "metrics", "yum", "metrics.json")
 	metricsDir := filepath.Dir(metricsPath)
-	
+
 	if err := os.MkdirAll(metricsDir, os.ModePerm); err != nil {
 		m.logger.Warn("YUM 메트릭 디렉토리 생성 실패",
 			logging.F("error", err.Error()))
 		return
 	}
-	
+
 	data, err := json.Marshal(m.metrics)
 	if err != nil {
 		m.logger.Warn("YUM 메트릭 데이터 직렬화 실패",
 			logging.F("error", err.Error()))
 		return
 	}
-	
-	if err := os.WriteFile(metricsPath, data, 0644); err != nil {
+
+	if err := os.WriteFile(metricsPath, data, 0o644); err != nil {
 		m.logger.Warn("YUM 메트릭 데이터 저장 실패",
 			logging.F("error", err.Error()))
 	}

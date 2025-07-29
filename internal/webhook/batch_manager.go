@@ -25,11 +25,11 @@ const (
 
 // BatchGroup 배치 그룹
 type BatchGroup struct {
-	Key       string                        // 그룹 키 (endpoint, type, level 등)
-	Events    []*alerts.AlertEvent          // 배치된 이벤트들
+	Key       string                       // 그룹 키 (endpoint, type, level 등)
+	Events    []*alerts.AlertEvent         // 배치된 이벤트들
 	Endpoint  config.WebhookEndpointConfig // 대상 엔드포인트
-	CreatedAt time.Time                     // 생성 시간
-	UpdatedAt time.Time                     // 마지막 업데이트 시간
+	CreatedAt time.Time                    // 생성 시간
+	UpdatedAt time.Time                    // 마지막 업데이트 시간
 }
 
 // BatchManager 배치 관리자

@@ -1,7 +1,6 @@
 package unit
 
 import (
-	"fmt"
 	"log"
 	"path/filepath"
 	"testing"

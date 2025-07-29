@@ -7,8 +7,8 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/internal/config"
 	"proxynd/internal/app"
+	"proxynd/internal/config"
 	"proxynd/logging"
 )
 

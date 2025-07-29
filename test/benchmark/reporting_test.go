@@ -86,7 +86,7 @@ func NewBenchmarkReporter(outputDir string) *BenchmarkReporter {
 		outputDir = "reports/benchmarks"
 	}
 
-	_ = os.MkdirAll(outputDir, 0755)
+	_ = os.MkdirAll(outputDir, 0o755)
 
 	return &BenchmarkReporter{
 		OutputDir:  outputDir,
@@ -226,7 +226,6 @@ func (br *BenchmarkReporter) LoadReports(testNamePattern string, days int) ([]*B
 		reports = append(reports, &report)
 		return nil
 	})
-
 	if err != nil {
 		return nil, err
 	}
@@ -613,7 +612,7 @@ func BenchmarkReportingDemo(b *testing.B) {
 
 	// HTML 파일 저장
 	htmlPath := filepath.Join(reporter.OutputDir, "report.html")
-	err = os.WriteFile(htmlPath, []byte(htmlReport), 0644)
+	err = os.WriteFile(htmlPath, []byte(htmlReport), 0o644)
 	require.NoError(b, err)
 
 	b.Logf("Benchmark Reporting Demo Results:")

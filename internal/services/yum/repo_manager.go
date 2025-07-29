@@ -14,9 +14,9 @@ import (
 
 // repoManagerImpl YUM 리포지토리 관리 서비스 구현
 type repoManagerImpl struct {
-	config      yum.ProxyConfig
-	logger      logging.Logger
-	storageDir  string
+	config       yum.ProxyConfig
+	logger       logging.Logger
+	storageDir   string
 	repositories map[string]*yum.RepoMetadata
 }
 
@@ -37,7 +37,7 @@ func NewRepoManager(
 // GetRepoMetadata 리포지토리 메타데이터 조회
 func (r *repoManagerImpl) GetRepoMetadata(ctx context.Context, repository, metadataType string) (*yum.RepoMetadata, error) {
 	key := fmt.Sprintf("%s:%s", repository, metadataType)
-	
+
 	// 메모리 캐시에서 조회
 	if metadata, exists := r.repositories[key]; exists {
 		r.logger.Debug("YUM 리포지토리 메타데이터 메모리 캐시 히트",
@@ -91,10 +91,10 @@ func (r *repoManagerImpl) UpdateRepoMetadata(ctx context.Context, metadata *yum.
 	}
 
 	key := fmt.Sprintf("%s:%s", metadata.Repository, metadata.MetadataType)
-	
+
 	// 메타데이터 정보 업데이트
 	metadata.LastModified = time.Now()
-	
+
 	// 메모리 캐시 업데이트
 	r.repositories[key] = metadata
 
@@ -131,7 +131,7 @@ func (r *repoManagerImpl) ValidateRepository(repository string) error {
 // GetRepositoryList 사용 가능한 리포지토리 목록 조회
 func (r *repoManagerImpl) GetRepositoryList(ctx context.Context) ([]string, error) {
 	baseDir := filepath.Join(r.storageDir, r.config.GetPath())
-	
+
 	entries, err := os.ReadDir(baseDir)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -158,7 +158,7 @@ func (r *repoManagerImpl) GetRepositoryList(ctx context.Context) ([]string, erro
 
 func (r *repoManagerImpl) getMetadataPath(repository, metadataType string) string {
 	baseDir := filepath.Join(r.storageDir, r.config.GetPath())
-	
+
 	switch metadataType {
 	case "repomd":
 		return filepath.Join(baseDir, repository, "repodata", "repomd.xml")
@@ -192,7 +192,7 @@ func (r *repoManagerImpl) isValidRepositoryDir(name string) bool {
 	// repodata 디렉토리가 있는지 확인
 	baseDir := filepath.Join(r.storageDir, r.config.GetPath())
 	repodataPath := filepath.Join(baseDir, name, "repodata")
-	
+
 	if _, err := os.Stat(repodataPath); os.IsNotExist(err) {
 		return false
 	}
@@ -207,6 +207,6 @@ func (r *repoManagerImpl) calculateChecksum(filePath string) string {
 	if err != nil {
 		return ""
 	}
-	
+
 	return fmt.Sprintf("sha256:%x", stat.Size()+stat.ModTime().Unix())
 }

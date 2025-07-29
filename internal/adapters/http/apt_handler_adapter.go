@@ -8,8 +8,8 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/internal/config"
 	"proxynd/helpers"
+	"proxynd/internal/config"
 	"proxynd/internal/domain/apt"
 	aptServices "proxynd/internal/services/apt"
 	"proxynd/logging"
