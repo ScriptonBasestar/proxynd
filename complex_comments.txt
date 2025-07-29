@@ -1,1 +1,0 @@
-./internal/interfaces/doc.go:1-24 (24 lines)

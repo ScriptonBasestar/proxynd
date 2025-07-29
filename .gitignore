@@ -350,3 +350,53 @@ debug.log
 CLAUDE.local.md
 CLAUDE.md
 data/
+
+# ================
+# 임시 개발 파일들 (ProxyND 프로젝트 정리용)
+# ================
+# 임시 스크립트 (프로젝트 루트)
+automated_*.sh
+fix_*.sh  
+run_*.sh
+temp_*.sh
+test_*.sh
+delete_*.sh
+
+# 분석 보고서 (일회성)
+*_analysis.md
+*_fixes_summary.md
+*_ANALYSIS_*.md
+*_FIX_*.md
+lint_*.md
+complex_comments.txt
+gosec-report.json
+todo_items.json
+
+# 리팩터링 임시 파일
+REFACTORING*.md
+MAKEFILE_STRUCTURE.md
+
+# ================
+# 향후 오염 방지 패턴 (Ultra-clean 프로젝트 관리)
+# ================
+# 일회성 분석/정리 스크립트 방지
+analyze_*.sh
+extract_*.sh
+find_*.sh  
+remove_*.sh
+cleanup_*.sh
+*_quality_check.sh
+
+# 임시 테스트 스크립트 방지  
+test_*.sh
+run_test_*.sh
+quick_*.sh
+final_*.sh
+
+# 임시 빌드 스크립트 방지
+build_temp_*.sh
+temp_build_*.sh
+
+# Legacy 문서 방지
+*-legacy.md
+*_legacy.md
