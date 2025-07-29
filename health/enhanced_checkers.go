@@ -4,6 +4,7 @@ package health
 import (
 	"context"
 	"fmt"
+	"math"
 	"net/http"
 	"runtime"
 	"sync"
@@ -468,10 +469,10 @@ func (phc *PredictiveHealthChecker) predictTrend() map[string]interface{} {
 
 	if changePercent > phc.degradationRate {
 		trend = "degrading"
-		confidence = min(changePercent/phc.degradationRate, 1.0)
+		confidence = math.Min(changePercent/phc.degradationRate, 1.0)
 	} else if changePercent < -phc.degradationRate {
 		trend = "improving"
-		confidence = min((-changePercent)/phc.degradationRate, 1.0)
+		confidence = math.Min((-changePercent)/phc.degradationRate, 1.0)
 	} else {
 		trend = "stable"
 		confidence = 1.0 - (abs(changePercent) / phc.degradationRate)

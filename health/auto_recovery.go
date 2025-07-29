@@ -462,7 +462,7 @@ func (ars *AutoRecoveryService) GetRecoveryStatus() map[string]interface{} {
 func (ars *AutoRecoveryService) TriggerManualRecovery(componentName string, strategy RecoveryStrategy) error {
 	ars.mutex.RLock()
 	config, configExists := ars.configs[componentName]
-	action, actionExists := ars.actions[strategy]
+	_, actionExists := ars.actions[strategy]
 	ars.mutex.RUnlock()
 
 	if !configExists {

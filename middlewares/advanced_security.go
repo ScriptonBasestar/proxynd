@@ -218,7 +218,7 @@ func (m *AdvancedSecurityMiddleware) Handler() fiber.Handler {
 		}
 
 		// 4. 요청 크기 검증
-		if c.Request().Header.ContentLength() > m.config.MaxRequestSize {
+		if int64(c.Request().Header.ContentLength()) > m.config.MaxRequestSize {
 			m.incrementMetric("blocked_requests")
 			m.logSecurityEvent("REQUEST_TOO_LARGE", clientIP, c.Path(), "Request body too large")
 			return c.Status(fiber.StatusRequestEntityTooLarge).JSON(fiber.Map{

@@ -103,7 +103,7 @@ func MFAMiddleware(config *MFAMiddlewareConfig) fiber.Handler {
 		userMFA, err := config.MFAService.GetUserMFAStatus(claims.UserID)
 		if err != nil {
 			// MFA가 설정되지 않은 사용자
-			if config.EnableForAllUsers || s.isMFARequiredPath(path, config.RequiredPaths) {
+			if config.EnableForAllUsers || config.isMFARequiredPath(path, config.RequiredPaths) {
 				return c.Status(fiber.StatusUnauthorized).JSON(MFARequiredResponse{
 					Error:             "MFA setup required",
 					MFARequired:       true,
@@ -120,7 +120,7 @@ func MFAMiddleware(config *MFAMiddlewareConfig) fiber.Handler {
 			// 유예 기간 확인
 			if time.Since(userMFA.CreatedAt) > config.GracePeriod ||
 				config.EnableForAllUsers ||
-				s.isMFARequiredPath(path, config.RequiredPaths) {
+				config.isMFARequiredPath(path, config.RequiredPaths) {
 				return c.Status(fiber.StatusUnauthorized).JSON(MFARequiredResponse{
 					Error:             "MFA setup incomplete",
 					MFARequired:       true,
@@ -139,24 +139,12 @@ func MFAMiddleware(config *MFAMiddlewareConfig) fiber.Handler {
 		}
 
 		// JWT에 MFA 인증 정보가 있는지 확인 (토큰 발급 시 MFA가 완료된 경우)
-		if mfaInfo, exists := claims.RegisteredClaims.ExtraFields["mfa_verified"]; exists {
-			if verified, ok := mfaInfo.(bool); ok && verified {
-				// MFA 검증된 토큰의 경우 시간 제한 확인
-				if mfaTime, exists := claims.RegisteredClaims.ExtraFields["mfa_time"]; exists {
-					if mfaTimeFloat, ok := mfaTime.(float64); ok {
-						mfaTimestamp := time.Unix(int64(mfaTimeFloat), 0)
-						// MFA 인증이 1시간 이내인 경우만 유효
-						if time.Since(mfaTimestamp) < time.Hour {
-							c.Locals("mfa_verified", true)
-							return c.Next()
-						}
-					}
-				}
-			}
-		}
+		// Note: MFA verification would need to be added to Claims struct
+		// For now, we'll skip this check and proceed with standard MFA flow
+		// TODO: Add MFA fields to Claims struct and implement verification
 
 		// MFA 챌린지가 필요한 경우
-		availableMethods := s.getAvailableMethods(userMFA)
+		availableMethods := config.getAvailableMethods(userMFA)
 		if len(availableMethods) == 0 {
 			return c.Status(fiber.StatusUnauthorized).JSON(MFARequiredResponse{
 				Error:             "No verified MFA methods available",

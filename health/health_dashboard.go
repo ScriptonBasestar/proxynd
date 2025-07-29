@@ -168,7 +168,7 @@ func (hd *HealthDashboard) updateMetrics() {
 		return
 	}
 
-	overallStatus, results := hd.healthService.GetStatus()
+	_, results := hd.healthService.GetStatus()
 
 	hd.metrics.mutex.Lock()
 	defer hd.metrics.mutex.Unlock()
