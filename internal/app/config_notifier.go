@@ -3,13 +3,12 @@ package app
 import (
 	"sync"
 
-	"proxynd/internal/config"
 	"proxynd/logging"
 )
 
 // ConfigChangeNotifier 설정 변경 알림 시스템
 type ConfigChangeNotifier struct {
-	listeners []func(*config.UnifiedConfig)
+	listeners []func(interface{})
 	mu        sync.RWMutex
 	logger    logging.Logger
 }
@@ -17,13 +16,13 @@ type ConfigChangeNotifier struct {
 // NewConfigChangeNotifier 새로운 설정 변경 알림자 생성
 func NewConfigChangeNotifier() *ConfigChangeNotifier {
 	return &ConfigChangeNotifier{
-		listeners: make([]func(*config.UnifiedConfig), 0),
+		listeners: make([]func(interface{}), 0),
 		logger:    logging.GetLogger(),
 	}
 }
 
 // AddListener 설정 변경 시 호출될 리스너 추가
-func (n *ConfigChangeNotifier) AddListener(listener func(*config.UnifiedConfig)) {
+func (n *ConfigChangeNotifier) AddListener(listener func(interface{})) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 	n.listeners = append(n.listeners, listener)
@@ -31,7 +30,7 @@ func (n *ConfigChangeNotifier) AddListener(listener func(*config.UnifiedConfig))
 }
 
 // RemoveListener 특정 리스너 제거 (실제로는 구현이 복잡하므로 Clear 사용 권장)
-func (n *ConfigChangeNotifier) RemoveListener(_ func(*config.UnifiedConfig)) {
+func (n *ConfigChangeNotifier) RemoveListener(_ func(interface{})) {
 	n.mu.Lock()
 	defer n.mu.Unlock()
 
@@ -44,14 +43,14 @@ func (n *ConfigChangeNotifier) RemoveListener(_ func(*config.UnifiedConfig)) {
 func (n *ConfigChangeNotifier) ClearListeners() {
 	n.mu.Lock()
 	defer n.mu.Unlock()
-	n.listeners = make([]func(*config.UnifiedConfig), 0)
+	n.listeners = make([]func(interface{}), 0)
 	n.logger.Info("All config change listeners cleared")
 }
 
 // NotifyChange 설정 변경을 모든 리스너에 알림
-func (n *ConfigChangeNotifier) NotifyChange(config *config.UnifiedConfig) {
+func (n *ConfigChangeNotifier) NotifyChange(config interface{}) {
 	n.mu.RLock()
-	listeners := make([]func(*config.UnifiedConfig), len(n.listeners))
+	listeners := make([]func(interface{}), len(n.listeners))
 	copy(listeners, n.listeners)
 	n.mu.RUnlock()
 
@@ -59,7 +58,7 @@ func (n *ConfigChangeNotifier) NotifyChange(config *config.UnifiedConfig) {
 
 	// 각 리스너를 고루틴에서 실행하여 블로킹 방지
 	for i, listener := range listeners {
-		go func(idx int, l func(*config.UnifiedConfig)) {
+		go func(idx int, l func(interface{})) {
 			defer func() {
 				if r := recover(); r != nil {
 					n.logger.Error("Config change listener panicked",

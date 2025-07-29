@@ -440,7 +440,7 @@ func (m *AdvancedSecurityMiddleware) cleanupBlockedIPs() {
 }
 
 // BlockIP IP 임시 차단
-func (m *AdvancedSecurityMiddleware) BlockIP(ip string, reason string) {
+func (m *AdvancedSecurityMiddleware) BlockIP(ip, reason string) {
 	m.ipMutex.Lock()
 	m.blockedIPs[ip] = time.Now()
 	m.ipMutex.Unlock()

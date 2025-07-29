@@ -464,7 +464,7 @@ func TestProxyServices(t *testing.T) {
 		t.Run("RegisterService", func(t *testing.T) {
 			// 커스텀 서비스 등록
 			customService := &proxyServices.BaseService{}
-			err := factory.RegisterService("custom", func(config interface{}, cache interface{}) (interface{}, error) {
+			err := factory.RegisterService("custom", func(config, cache interface{}) (interface{}, error) {
 				return customService, nil
 			})
 			assert.NoError(t, err)

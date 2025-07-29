@@ -29,10 +29,10 @@ type Container struct {
 
 	// 설정 캐싱 및 핫 리로드 관련 필드
 	configLoader    *config.ConfigLoader
-	configCache     *config.UnifiedConfig
+	configCache     interface{}
 	configCacheMu   sync.RWMutex
 	configWatcher   *fsnotify.Watcher
-	configChangeCbs []func(*config.UnifiedConfig)
+	configChangeCbs []func(interface{})
 	configNotifier  *ConfigChangeNotifier
 
 	// Repositories
@@ -60,12 +60,12 @@ func NewContainer(cfg *Config) *Container {
 		config:          cfg,
 		logger:          logging.GetLogger(),
 		singletons:      make(map[string]interface{}),
-		configChangeCbs: make([]func(*config.UnifiedConfig), 0),
+		configChangeCbs: make([]func(interface{}), 0),
 		configNotifier:  NewConfigChangeNotifier(),
 	}
 
 	// ConfigLoader 초기화 (기본 설정 파일 경로 사용)
-	configPath := filepath.Join(cfg.ConfigDir, "config.yaml")
+	configPath := filepath.Join(cfg.StorageDir, "config.yaml")
 	container.configLoader = config.NewConfigLoader(configPath)
 
 	// 초기 설정 로드
@@ -92,7 +92,7 @@ func (c *Container) GetConfig() *Config {
 }
 
 // GetUnifiedConfig returns the cached unified configuration
-func (c *Container) GetUnifiedConfig() *config.UnifiedConfig {
+func (c *Container) GetUnifiedConfig() interface{} {
 	c.configCacheMu.RLock()
 	defer c.configCacheMu.RUnlock()
 	return c.configCache
@@ -398,7 +398,7 @@ func (c *Container) ReloadConfig() error {
 }
 
 // AddConfigChangeCallback adds a callback to be called when config changes
-func (c *Container) AddConfigChangeCallback(callback func(*config.UnifiedConfig)) {
+func (c *Container) AddConfigChangeCallback(callback func(interface{})) {
 	c.configCacheMu.Lock()
 	defer c.configCacheMu.Unlock()
 	c.configChangeCbs = append(c.configChangeCbs, callback)
@@ -480,9 +480,9 @@ func (c *Container) startConfigWatcher() {
 }
 
 // notifyConfigChange notifies all registered callbacks about config changes
-func (c *Container) notifyConfigChange(config *config.UnifiedConfig) {
+func (c *Container) notifyConfigChange(config interface{}) {
 	for _, callback := range c.configChangeCbs {
-		go func(cb func(*config.UnifiedConfig)) {
+		go func(cb func(interface{})) {
 			defer func() {
 				if r := recover(); r != nil {
 					c.logger.Error("Config change callback panicked", logging.F("panic", r))
@@ -494,12 +494,9 @@ func (c *Container) notifyConfigChange(config *config.UnifiedConfig) {
 }
 
 // isConfigEqual compares two configurations for equality (simplified check)
-func (c *Container) isConfigEqual(old, newVal *config.UnifiedConfig) bool {
-	// 간단한 구조체 비교 (실제로는 더 정교한 비교가 필요할 수 있음)
-	return old.Server.Port == newVal.Server.Port &&
-		old.Server.Host == newVal.Server.Host &&
-		old.Cache.Backend == newVal.Cache.Backend &&
-		old.Logging.Level == newVal.Logging.Level
+func (c *Container) isConfigEqual(old, newVal interface{}) bool {
+	// 간단한 인터페이스 비교 (실제로는 더 정교한 비교가 필요할 수 있음)
+	return old != newVal
 }
 
 // GetCacheRepository returns the cache repository instance

@@ -312,7 +312,7 @@ func (ph *PerformanceTestHelper) BenchmarkFunction(name string, iterations int, 
 }
 
 // AssertPerformance 성능 검증
-func (ph *PerformanceTestHelper) AssertPerformance(name string, actual time.Duration, maxExpected time.Duration) {
+func (ph *PerformanceTestHelper) AssertPerformance(name string, actual, maxExpected time.Duration) {
 	assert.LessOrEqual(ph.t, actual, maxExpected,
 		"Performance test %s failed: actual %v > expected %v", name, actual, maxExpected)
 }

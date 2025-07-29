@@ -443,7 +443,7 @@ func (ca *CoverageAnalyzer) GenerateHTMLReport(report *CoverageReport, outputPat
         <h1>ProxyND Test Coverage Report</h1>
         <p>Generated: %s</p>
     </div>
-    
+
     <div class="summary">
         <div class="metric %s">
             <h3>Overall Coverage</h3>
@@ -465,19 +465,19 @@ func (ca *CoverageAnalyzer) GenerateHTMLReport(report *CoverageReport, outputPat
             <p>Functions</p>
         </div>
     </div>
-    
+
     <h2>Package Coverage</h2>
     <table>
         <tr><th>Package</th><th>Coverage</th><th>Functions</th><th>Tested</th><th>Test Files</th></tr>
         %s
     </table>
-    
+
     <h2>Missing Tests (High Priority)</h2>
     <table>
         <tr><th>Package</th><th>Function</th><th>File</th><th>Line</th><th>Priority</th><th>Complexity</th></tr>
         %s
     </table>
-    
+
     <div class="recommendations">
         <h2>Recommendations</h2>
         <ul>%s</ul>

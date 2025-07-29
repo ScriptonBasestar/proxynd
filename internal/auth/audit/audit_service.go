@@ -246,7 +246,7 @@ func (s *AuditService) LogAuthEvent(eventType AuditEventType, userID, userEmail 
 }
 
 // LogAPIKeyEvent API 키 이벤트 로깅
-func (s *AuditService) LogAPIKeyEvent(eventType AuditEventType, keyID, userID string, action string) *AuditEventBuilder {
+func (s *AuditService) LogAPIKeyEvent(eventType AuditEventType, keyID, userID, action string) *AuditEventBuilder {
 	return s.LogEvent(eventType, LevelInfo, fmt.Sprintf("API key %s: %s", action, keyID)).
 		WithUser(userID, "").
 		WithDetail("key_id", keyID).

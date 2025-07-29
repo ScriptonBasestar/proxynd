@@ -496,23 +496,23 @@ func (br *BenchmarkReporter) GenerateHTMLReport(analysis *TrendAnalysis) (string
         <p>Period: %s (%d reports)</p>
         <p>Overall Trend: <strong class="%s">%s</strong></p>
     </div>
-    
+
     <h2>Performance Metrics</h2>
     <div class="metric">
         <h3>Latency Change</h3>
         <p>%.2f%% change in response time</p>
     </div>
-    
+
     <div class="metric">
         <h3>Throughput Change</h3>
         <p>%.2f%% change in throughput</p>
     </div>
-    
+
     <div class="metric">
         <h3>Memory Change</h3>
         <p>%.2f%% change in memory usage</p>
     </div>
-    
+
     <h2>Latest Results</h2>
     <table>
         <tr><th>Metric</th><th>Value</th></tr>
@@ -522,7 +522,7 @@ func (br *BenchmarkReporter) GenerateHTMLReport(analysis *TrendAnalysis) (string
         <tr><td>Bytes/OP</td><td>%d</td></tr>
         <tr><td>Allocs/OP</td><td>%d</td></tr>
     </table>
-    
+
     <h2>Recommendations</h2>
     %s
 </body>

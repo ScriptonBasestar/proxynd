@@ -19,7 +19,7 @@ func TestConfigChangeNotifier_Basic(t *testing.T) {
 
 	// When
 	callCount := 0
-	listener := func(*config.UnifiedConfig) {
+	listener := func(interface{}) {
 		callCount++
 	}
 	notifier.AddListener(listener)
@@ -65,7 +65,7 @@ func TestConfigChangeNotifier_MultipleListeners(t *testing.T) {
 	for i := 0; i < 3; i++ {
 		index := i
 		wg.Add(1)
-		listener := func(*config.UnifiedConfig) {
+		listener := func(interface{}) {
 			callCounts[index]++
 			wg.Done()
 		}
@@ -104,8 +104,8 @@ func TestConfigChangeNotifier_ClearListeners(t *testing.T) {
 	notifier := NewConfigChangeNotifier()
 
 	// Add some listeners
-	listener1 := func(*config.UnifiedConfig) {}
-	listener2 := func(*config.UnifiedConfig) {}
+	listener1 := func(interface{}) {}
+	listener2 := func(interface{}) {}
 	notifier.AddListener(listener1)
 	notifier.AddListener(listener2)
 
@@ -128,7 +128,7 @@ func TestConfigChangeNotifier_PanicHandling(t *testing.T) {
 
 	// Add panic listener
 	wg.Add(1)
-	panicListener := func(*config.UnifiedConfig) {
+	panicListener := func(interface{}) {
 		panicListenerCalled = true
 		wg.Done()
 		panic("test panic")
@@ -137,7 +137,7 @@ func TestConfigChangeNotifier_PanicHandling(t *testing.T) {
 
 	// Add normal listener
 	wg.Add(1)
-	normalListener := func(*config.UnifiedConfig) {
+	normalListener := func(interface{}) {
 		normalListenerCalled = true
 		wg.Done()
 	}
@@ -181,7 +181,7 @@ func TestConfigChangeNotifier_ConcurrentAccess(t *testing.T) {
 		go func(_ int) {
 			defer wg.Done()
 			for j := 0; j < numListenersPerGoroutine; j++ {
-				listener := func(*config.UnifiedConfig) {}
+				listener := func(interface{}) {}
 				notifier.AddListener(listener)
 			}
 		}(i)

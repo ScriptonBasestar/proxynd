@@ -399,7 +399,7 @@ func (c *cacheManagerImpl) saveCacheEntry(metaPath string, entry *docker.CacheEn
 }
 
 // shouldEvict 캐시 제거 필요 여부 확인
-func (c *cacheManagerImpl) shouldEvict(newEntrySize int64, maxSizeMB int64) bool {
+func (c *cacheManagerImpl) shouldEvict(newEntrySize, maxSizeMB int64) bool {
 	c.statsMutex.RLock()
 	defer c.statsMutex.RUnlock()
 
