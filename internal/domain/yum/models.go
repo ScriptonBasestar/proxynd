@@ -48,6 +48,29 @@ type CacheEntry struct {
 	IsRpmFile    bool          `json:"isRpmFile"`  // RPM 파일 여부
 }
 
+// Package YUM 패키지 기본 구조체
+type Package struct {
+	Name         string `json:"name"`
+	Version      string `json:"version"`
+	Release      string `json:"release"`
+	Architecture string `json:"architecture"`
+	Repository   string `json:"repository"`
+	Summary      string `json:"summary"`
+	Size         int64  `json:"size"`
+}
+
+// SearchFilters YUM 패키지 검색 필터
+type SearchFilters struct {
+	Name         string   `json:"name,omitempty"`
+	Architecture []string `json:"architecture,omitempty"`
+	Repository   []string `json:"repository,omitempty"`
+	Group        string   `json:"group,omitempty"`
+	Summary      string   `json:"summary,omitempty"`
+}
+
+// RepositoryMetadata YUM 리포지토리 메타데이터 (별칭)
+type RepositoryMetadata = RepoMetadata
+
 // RepoMetadata YUM 리포지토리 메타데이터
 type RepoMetadata struct {
 	Repository   string    `json:"repository"`

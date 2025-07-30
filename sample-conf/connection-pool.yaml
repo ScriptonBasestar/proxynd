@@ -1,0 +1,84 @@
+# ProxyND Connection Pool Configuration
+# HTTP 연결 풀 설정 - 성능 최적화를 위한 설정
+
+# 전체 최대 연결 수 (모든 프록시 타입 합계)
+max_total_connections: 200
+
+# 호스트별 최대 연결 수 (단일 업스트림 서버당)
+max_connections_per_host: 20
+
+# 유휴 연결 타임아웃 (분)
+# 사용되지 않는 연결이 풀에서 제거되기까지의 시간
+idle_connection_timeout_minutes: 90
+
+# 연결 유지 시간 (초)
+# TCP Keep-Alive 간격
+keep_alive_timeout_seconds: 30
+
+# 연결 대기 타임아웃 (초)
+# 새 연결 설정 시 최대 대기 시간
+connection_timeout_seconds: 30
+
+# TLS 핸드셰이크 타임아웃 (초)
+# HTTPS 연결 시 SSL/TLS 협상 타임아웃
+tls_handshake_timeout_seconds: 10
+
+# Response Header 타임아웃 (초)
+# 서버로부터 응답 헤더를 받기까지의 최대 대기 시간
+response_header_timeout_seconds: 30
+
+# Expect Continue 타임아웃 (초)
+# HTTP 100-continue 응답 대기 시간
+expect_continue_timeout_seconds: 1
+
+# 최대 리디렉션 수
+# HTTP 리디렉션 추적 최대 횟수
+max_redirects: 10
+
+# TLS 검증 건너뛰기 (개발환경용)
+# 프로덕션에서는 false로 설정 권장
+insecure_skip_verify: false
+
+# DNS 캐시 TTL (분)
+# DNS 조회 결과 캐시 시간
+dns_cache_ttl_minutes: 5
+
+# 프록시 타입별 요청 타임아웃 설정 (초)
+proxy_timeouts:
+  # Maven Central과 같은 큰 JAR 파일 다운로드
+  maven: 60
+
+  # NPM 패키지 (일반적으로 작은 크기)
+  npm: 30
+
+  # Docker 이미지 레이어 (대용량 가능)
+  docker: 120
+
+  # APT 패키지 및 메타데이터
+  apt: 45
+
+  # YUM/DNF RPM 패키지
+  yum: 45
+
+  # Python PIP 패키지
+  pip: 30
+
+  # Alpine APK 패키지 (작은 크기)
+  apk: 20
+
+# 성능 튜닝 가이드:
+#
+# 고성능 환경:
+# - max_total_connections: 400-500
+# - max_connections_per_host: 50-100
+# - connection_timeout_seconds: 15
+#
+# 메모리 제약 환경:
+# - max_total_connections: 50-100
+# - max_connections_per_host: 5-10
+# - idle_connection_timeout_minutes: 30
+#
+# 네트워크 불안정 환경:
+# - connection_timeout_seconds: 60
+# - response_header_timeout_seconds: 60
+# - max_redirects: 5

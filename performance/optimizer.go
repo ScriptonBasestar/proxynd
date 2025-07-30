@@ -11,6 +11,41 @@ import (
 	"proxynd/metrics"
 )
 
+// Manager 성능 관리자 (임시 정의)
+type Manager struct {
+	mu     sync.RWMutex
+	config *ManagerConfig
+}
+
+// ManagerConfig 성능 관리자 설정
+type ManagerConfig struct {
+	CacheEnabled   bool `json:"cacheEnabled"`
+	PoolSize       int  `json:"poolSize"`
+	RequestLimit   int  `json:"requestLimit"`
+	MaxConnections int  `json:"maxConnections"`
+}
+
+// CacheOptimizerConfig 캐시 최적화 설정
+type CacheOptimizerConfig struct {
+	MaxSize         int64         `json:"maxSize"`
+	TTL             time.Duration `json:"ttl"`
+	CleanupInterval time.Duration `json:"cleanupInterval"`
+}
+
+// PoolConfig 연결 풀 설정
+type PoolConfig struct {
+	MaxIdle     int           `json:"maxIdle"`
+	MaxActive   int           `json:"maxActive"`
+	IdleTimeout time.Duration `json:"idleTimeout"`
+}
+
+// RequestOptimizerConfig 요청 최적화 설정
+type RequestOptimizerConfig struct {
+	BatchSize     int           `json:"batchSize"`
+	Timeout       time.Duration `json:"timeout"`
+	RetryAttempts int           `json:"retryAttempts"`
+}
+
 // Optimizer provides comprehensive performance optimization capabilities
 type Optimizer struct {
 	logger            logging.Logger

@@ -51,6 +51,28 @@ type CacheEntry struct {
 	ChecksumSHA256 string        `json:"checksumSHA256,omitempty"` // 패키지 체크섬
 }
 
+// PackageFile PIP 패키지 파일 정보
+type PackageFile struct {
+	Name     string            `json:"name"`
+	Version  string            `json:"version"`
+	URL      string            `json:"url"`
+	Filename string            `json:"filename"`
+	Size     int64             `json:"size"`
+	Digests  map[string]string `json:"digests"`
+	Requires []string          `json:"requires,omitempty"`
+}
+
+// SearchFilters PIP 패키지 검색 필터
+type SearchFilters struct {
+	Query       string   `json:"query"`
+	Classifiers []string `json:"classifiers,omitempty"`
+	Keywords    []string `json:"keywords,omitempty"`
+	Author      string   `json:"author,omitempty"`
+	Maintainer  string   `json:"maintainer,omitempty"`
+	License     string   `json:"license,omitempty"`
+	Platform    []string `json:"platform,omitempty"`
+}
+
 // PackageMetadata PIP 패키지 메타데이터
 type PackageMetadata struct {
 	Name           string    `json:"name"`

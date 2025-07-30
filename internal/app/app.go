@@ -211,15 +211,37 @@ func (app *Application) initializeFiberApp() {
 	// Create base router
 	app.fiberApp = routers.BaseRouter()
 
-	// Register all routers
+	// Connection Pool 초기화 (v1 API에서 사용)
+	if err := InitializeConnectionPool(); err != nil {
+		app.logger.Warn("Connection Pool 초기화 실패, 기본값 사용",
+			logging.F("error", err))
+	}
+
+	// === 새로운 v1 통합 API 등록 (우선순위 높음) ===
+	routers.UnifiedRouterV1(app.fiberApp)
+
+	// === 기존 라우터들 (v1으로 마이그레이션 예정) ===
 	routers.HealthRouter(app.fiberApp)
-	routers.ProxyRouter(app.fiberApp)
+	routers.ProxyRouter(app.fiberApp)      // 레거시 호환용
+	routers.ProxyRouterV3(app.fiberApp)    // V3 라우터 (deprecated)
+	routers.RegisterProxyAPI(app.fiberApp) // V3 API (이미 v1)
+	routers.PoolRouter(app.fiberApp)       // Connection Pool API (이미 v1)
 	routers.CacheRouter(app.fiberApp)
 	routers.ConfigRouter(app.fiberApp)
 	routers.StatusRouter(app.fiberApp)
 	routers.UserRouter(app.fiberApp)
 	routers.TestRouter(app.fiberApp)
-	routers.WebhookRouter(app.fiberApp)
+	routers.WebhookRouter(app.fiberApp) // 이미 v1
+	routers.AuthRouter(app.fiberApp)    // 인증 라우터 추가
+	// TODO: MetricsRouter 시그니처 수정 필요
+	// routers.MetricsRouter(app.fiberApp)     // 메트릭 라우터 추가
+	// TODO: APK 라우터들 구현 필요
+	// routers.ApkMirrorRouter(app.fiberApp)   // APK 라우터들 추가
+	// routers.ApkVerificationRouter(app.fiberApp)
+
+	// === 레거시 호환성 라우터 (가장 낮은 우선순위) ===
+	routers.LegacyCompatibilityRouter(app.fiberApp)
+	routers.LegacyAPIInfo(app.fiberApp)
 
 	// Store service factory in app locals for handlers to use
 	app.fiberApp.Use(func(c *fiber.Ctx) error {

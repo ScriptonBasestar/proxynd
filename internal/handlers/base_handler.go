@@ -64,7 +64,11 @@ func (h *BaseHandler) GetContainer() *app.Container {
 
 // GetConfig 설정 반환
 func (h *BaseHandler) GetConfig() *config.UnifiedConfig {
-	return h.container.GetUnifiedConfig()
+	cfg := h.container.GetUnifiedConfig()
+	if unifiedConfig, ok := cfg.(*config.UnifiedConfig); ok {
+		return unifiedConfig
+	}
+	return nil
 }
 
 // GetLogger 로거 반환

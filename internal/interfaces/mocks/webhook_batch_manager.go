@@ -4,10 +4,10 @@ package mocks
 
 import (
 	alerts "proxynd/alerts"
+	config "proxynd/internal/config"
 
 	context "context"
 
-	"proxynd/internal/config"
 	interfaces "proxynd/internal/interfaces"
 
 	mock "github.com/stretchr/testify/mock"

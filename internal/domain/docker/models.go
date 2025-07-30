@@ -18,6 +18,29 @@ type RegistryRequest struct {
 	ClientIP   string            `json:"clientIP"`   // 클라이언트 IP
 }
 
+// Manifest Docker 매니페스트 기본 구조체
+type Manifest struct {
+	SchemaVersion int               `json:"schemaVersion"`
+	MediaType     string            `json:"mediaType"`
+	Config        BlobReference     `json:"config"`
+	Layers        []BlobReference   `json:"layers"`
+	Annotations   map[string]string `json:"annotations,omitempty"`
+	Platform      *Platform         `json:"platform,omitempty"`
+}
+
+// Platform 플랫폼 정보
+type Platform struct {
+	Architecture string `json:"architecture"`
+	OS           string `json:"os"`
+	Variant      string `json:"variant,omitempty"`
+}
+
+// TagList Docker 태그 목록
+type TagList struct {
+	Name string   `json:"name"`
+	Tags []string `json:"tags"`
+}
+
 // ManifestResponse Docker 매니페스트 응답
 type ManifestResponse struct {
 	Data            []byte            `json:"data"`

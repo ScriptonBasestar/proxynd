@@ -50,6 +50,27 @@ type CacheEntry struct {
 	IsSignature  bool          `json:"isSignature"` // 서명 파일 여부
 }
 
+// SearchFilters APK 패키지 검색 필터
+type SearchFilters struct {
+	Name         string   `json:"name,omitempty"`
+	Architecture []string `json:"architecture,omitempty"`
+	Branch       []string `json:"branch,omitempty"`
+	Component    []string `json:"component,omitempty"`
+	Description  string   `json:"description,omitempty"`
+	Maintainer   string   `json:"maintainer,omitempty"`
+}
+
+// RepositoryIndex APK 리포지토리 인덱스
+type RepositoryIndex struct {
+	Architecture string        `json:"architecture"`
+	Branch       string        `json:"branch"`
+	Component    string        `json:"component"`
+	Packages     []PackageInfo `json:"packages"`
+	LastModified time.Time     `json:"lastModified"`
+	IndexFile    string        `json:"indexFile"`
+	Size         int64         `json:"size"`
+}
+
 // RepositoryInfo APK 리포지토리 정보
 type RepositoryInfo struct {
 	Architecture string    `json:"architecture"`
@@ -58,6 +79,16 @@ type RepositoryInfo struct {
 	IndexFile    string    `json:"indexFile"` // APKINDEX.tar.gz
 	LastModified time.Time `json:"lastModified"`
 	Size         int64     `json:"size"`
+}
+
+// Package APK 패키지 기본 구조체
+type Package struct {
+	Name         string `json:"name"`
+	Version      string `json:"version"`
+	Architecture string `json:"architecture"`
+	Repository   string `json:"repository"`
+	Branch       string `json:"branch"`
+	Component    string `json:"component"`
 }
 
 // PackageInfo APK 패키지 정보

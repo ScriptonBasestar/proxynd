@@ -11,8 +11,8 @@ import (
 	"proxynd/logging"
 )
 
-// RefreshRequest 토큰 갱신 요청 추적
-type RefreshRequest struct {
+// TokenRefreshRequest 토큰 갱신 요청 추적
+type TokenRefreshRequest struct {
 	UserID     string
 	Timestamp  time.Time
 	InProgress bool
@@ -20,13 +20,13 @@ type RefreshRequest struct {
 
 // TokenRefreshManager 토큰 갱신 관리자 (동시성 제어)
 type TokenRefreshManager struct {
-	requests map[string]*RefreshRequest
+	requests map[string]*TokenRefreshRequest
 	mutex    sync.RWMutex
 }
 
 // 전역 토큰 갱신 관리자
 var refreshManager = &TokenRefreshManager{
-	requests: make(map[string]*RefreshRequest),
+	requests: make(map[string]*TokenRefreshRequest),
 }
 
 // EnhancedSessionTimeout 개선된 세션 타임아웃 미들웨어
@@ -122,7 +122,7 @@ func attemptTokenRefresh(c *fiber.Ctx, sess, userMap fiber.Map) error {
 	}
 
 	// 갱신 요청 등록
-	refreshManager.requests[userID] = &RefreshRequest{
+	refreshManager.requests[userID] = &TokenRefreshRequest{
 		UserID:     userID,
 		Timestamp:  time.Now(),
 		InProgress: true,

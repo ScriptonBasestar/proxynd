@@ -31,7 +31,7 @@ func ProxyPolicyMiddleware() fiber.Handler {
 		}
 
 		// 2. 인증/허가 체크 (현재는 기본 구현)
-		if !isAuthenticated(c) {
+		if !isBasicAuthenticated(c) {
 			return c.Status(fiber.StatusUnauthorized).SendString("Authentication required")
 		}
 
@@ -68,8 +68,8 @@ func isProxyTypeAllowed(proxyType string) bool {
 	return false
 }
 
-// isAuthenticated 인증 여부 확인 (기본 구현)
-func isAuthenticated(_ *fiber.Ctx) bool {
+// isBasicAuthenticated 인증 여부 확인 (기본 구현)
+func isBasicAuthenticated(_ *fiber.Ctx) bool {
 	// TODO: 실제 인증 로직 구현
 	// 현재는 모든 요청을 허용
 	return true
