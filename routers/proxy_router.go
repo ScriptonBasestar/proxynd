@@ -41,8 +41,9 @@ func ProxyRouter(app *fiber.App) {
 	// Handle all proxy requests with /proxy/:type/*path format
 	// Note: Using direct app registration instead of Group to ensure correct routing
 
-	// Handle all proxy types with unified proxy handler
+	// Handle all proxy types with unified proxy handler (with deprecation warning)
 	app.Get("/proxy/:type/*",
+		createDeprecationMiddleware("GET", "/proxy/:type/*", "/api/v1/proxy/:type/*"),
 		middlewares.ProxyPolicyMiddleware(),
 		middlewares.DefaultAccessLogMiddleware(),
 		authHandlers.OptionalAuth(),      // Optional OAuth2/JWT authentication
@@ -51,6 +52,7 @@ func ProxyRouter(app *fiber.App) {
 		proxynd.UnifiedProxyHandler,
 	)
 	app.Post("/proxy/:type/*",
+		createDeprecationMiddleware("POST", "/proxy/:type/*", "/api/v1/proxy/:type/*"),
 		middlewares.ProxyPolicyMiddleware(),
 		middlewares.DefaultAccessLogMiddleware(),
 		authHandlers.OptionalAuth(),      // Optional OAuth2/JWT authentication
@@ -59,6 +61,7 @@ func ProxyRouter(app *fiber.App) {
 		proxynd.UnifiedProxyHandler,
 	)
 	app.Put("/proxy/:type/*",
+		createDeprecationMiddleware("PUT", "/proxy/:type/*", "/api/v1/proxy/:type/*"),
 		middlewares.ProxyPolicyMiddleware(),
 		middlewares.DefaultAccessLogMiddleware(),
 		authHandlers.OptionalAuth(),      // Optional OAuth2/JWT authentication
@@ -69,6 +72,22 @@ func ProxyRouter(app *fiber.App) {
 
 	// Keep existing individual routes for backward compatibility (optional)
 	// Can be removed in the future
+}
+
+// createDeprecationMiddleware creates a middleware that adds deprecation headers
+func createDeprecationMiddleware(method, oldPath, newPath string) fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		// Add deprecation headers
+		c.Set("X-API-Deprecated", "true")
+		c.Set("X-API-Deprecated-Info", "Use "+newPath+" instead")
+		c.Set("X-API-Migration-Guide", "https://docs.proxynd.io/api/migration")
+
+		// Log deprecation warning
+		log.Printf("DEPRECATION WARNING: %s %s used by %s - Use %s instead",
+			method, oldPath, c.IP(), newPath)
+
+		return c.Next()
+	}
 }
 
 // loadAlertConfig loads alert configuration

@@ -25,6 +25,7 @@ func ProxyRouterV3(app *fiber.App) {
 	// 4. 인증 미들웨어 (선택적)
 	// 5. V3 통합 프록시 핸들러
 	proxyGroup.All("/:type/*",
+		createV3DeprecationMiddleware(),          // V3 Deprecation warning
 		proxyHandlers.ValidateProxyType,          // 프록시 타입 검증
 		middlewares.ProxyPolicyMiddleware(),      // 프록시 정책 적용
 		middlewares.DefaultAccessLogMiddleware(), // 액세스 로깅
@@ -153,4 +154,16 @@ func RegisterProxyAPI(app *fiber.App) {
 			"timestamp":    c.Context().Time().Format("2006-01-02T15:04:05Z07:00"),
 		})
 	})
+}
+
+// createV3DeprecationMiddleware creates a middleware that adds V3 deprecation headers
+func createV3DeprecationMiddleware() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		// Add deprecation headers
+		c.Set("X-API-Deprecated", "true")
+		c.Set("X-API-Deprecated-Info", "Use /api/v1/proxy/:type/* instead")
+		c.Set("X-API-Migration-Guide", "https://docs.proxynd.io/api/migration")
+
+		return c.Next()
+	}
 }
