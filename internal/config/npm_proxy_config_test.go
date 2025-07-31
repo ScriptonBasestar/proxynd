@@ -15,7 +15,7 @@ import (
 
 func TestNpmConfig_NpmProxy(t *testing.T) {
 	require.NoError(t, os.Setenv("CONFIG_DIR", "../../examples/"))
-	cfg := NpmProxyConfig{}
+	cfg := NpmProxySettings{}
 	require.NoError(t, cfg.ReadConfig())
 	// fmt.Println(cfg)
 	assert.Equal(t, cfg.Path, "proxy/npm")
@@ -23,7 +23,7 @@ func TestNpmConfig_NpmProxy(t *testing.T) {
 }
 
 func TestNpmYamlMake(t *testing.T) {
-	npmConfig := NpmProxyConfig{}
+	npmConfig := NpmProxySettings{}
 	npmConfig.Path = "tmp"
 	npmConfig.Proxies = map[string][]NpmProxyServer{
 		"default": {
@@ -60,7 +60,7 @@ func TestNpmYaml(_ *testing.T) {
 		log.Printf("yamlFile.Get err   #%v ", err)
 	}
 	fmt.Println(string(yamlFile))
-	mavenConfig := MavenProxyConfig{
+	mavenConfig := MavenProxySettings{
 		Proxies: []MavenProxyServer{},
 	}
 	err = yaml.Unmarshal(yamlFile, mavenConfig)

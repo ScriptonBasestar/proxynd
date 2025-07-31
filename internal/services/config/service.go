@@ -17,13 +17,13 @@ type service struct {
 
 	// Cached configurations
 	globalConfig *config.UnifiedConfig
-	mavenConfig  *config.MavenProxyConfig
+	mavenConfig  *config.MavenProxySettings
 	aptConfig    *config.AptProxyConfig
-	npmConfig    *config.NpmProxyConfig
-	dockerConfig *config.DockerProxyConfig
-	pipConfig    *config.PipProxyConfig
-	yumConfig    *config.YumProxyConfig
-	apkConfig    *config.ApkProxyConfig
+	npmConfig    *config.NpmProxySettings
+	dockerConfig *config.DockerProxySettings
+	pipConfig    *config.PipProxySettings
+	yumConfig    *config.YumProxySettings
+	apkConfig    *config.ApkProxySettings
 }
 
 // NewService creates a new configuration service
@@ -80,7 +80,7 @@ func (s *service) GetGlobalConfig(_ context.Context) (*config.GlobalConfig, erro
 }
 
 // GetMavenConfig returns the Maven proxy configuration
-func (s *service) GetMavenConfig(_ context.Context) (*config.MavenProxyConfig, error) {
+func (s *service) GetMavenConfig(_ context.Context) (*config.MavenProxySettings, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -104,7 +104,7 @@ func (s *service) GetAptConfig(_ context.Context) (*config.AptProxyConfig, error
 }
 
 // GetNpmConfig returns the NPM proxy configuration
-func (s *service) GetNpmConfig(_ context.Context) (*config.NpmProxyConfig, error) {
+func (s *service) GetNpmConfig(_ context.Context) (*config.NpmProxySettings, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -116,7 +116,7 @@ func (s *service) GetNpmConfig(_ context.Context) (*config.NpmProxyConfig, error
 }
 
 // GetDockerConfig returns the Docker proxy configuration
-func (s *service) GetDockerConfig(_ context.Context) (*config.DockerProxyConfig, error) {
+func (s *service) GetDockerConfig(_ context.Context) (*config.DockerProxySettings, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -128,7 +128,7 @@ func (s *service) GetDockerConfig(_ context.Context) (*config.DockerProxyConfig,
 }
 
 // GetPipConfig returns the PIP proxy configuration
-func (s *service) GetPipConfig(_ context.Context) (*config.PipProxyConfig, error) {
+func (s *service) GetPipConfig(_ context.Context) (*config.PipProxySettings, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -140,7 +140,7 @@ func (s *service) GetPipConfig(_ context.Context) (*config.PipProxyConfig, error
 }
 
 // GetYumConfig returns the YUM proxy configuration
-func (s *service) GetYumConfig(_ context.Context) (*config.YumProxyConfig, error) {
+func (s *service) GetYumConfig(_ context.Context) (*config.YumProxySettings, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -152,7 +152,7 @@ func (s *service) GetYumConfig(_ context.Context) (*config.YumProxyConfig, error
 }
 
 // GetApkConfig returns the APK proxy configuration
-func (s *service) GetApkConfig(_ context.Context) (*config.ApkProxyConfig, error) {
+func (s *service) GetApkConfig(_ context.Context) (*config.ApkProxySettings, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 

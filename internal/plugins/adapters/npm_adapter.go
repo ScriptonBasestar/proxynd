@@ -17,7 +17,7 @@ import (
 // NPMHandlerAdapter NPM 핸들러를 플러그인 인터페이스로 어댑팅
 type NPMHandlerAdapter struct {
 	*plugins.BasePackageHandler
-	config       *config.NpmProxyConfig
+	config       *config.NpmProxySettings
 	groupManager plugins.GroupManager
 }
 
@@ -102,7 +102,7 @@ func (h *NPMHandlerAdapter) Initialize(config interface{}) error {
 	}
 
 	// NPM 설정 타입 변환
-	npmConfig, ok := config.(*config.NpmProxyConfig)
+	npmConfig, ok := config.(*config.NpmProxySettings)
 	if !ok {
 		return fmt.Errorf("invalid NPM config type")
 	}
@@ -147,9 +147,9 @@ func (h *NPMHandlerAdapter) HandleRequest(ctx *fiber.Ctx, mode plugins.Operation
 
 // ValidateConfig NPM 설정 검증
 func (h *NPMHandlerAdapter) ValidateConfig(config interface{}) error {
-	npmConfig, ok := config.(*config.NpmProxyConfig)
+	npmConfig, ok := config.(*config.NpmProxySettings)
 	if !ok {
-		return fmt.Errorf("config must be *config.NpmProxyConfig")
+		return fmt.Errorf("config must be *config.NpmProxySettings")
 	}
 
 	if len(npmConfig.Proxies) == 0 {
@@ -161,7 +161,7 @@ func (h *NPMHandlerAdapter) ValidateConfig(config interface{}) error {
 
 // GetDefaultConfig NPM 기본 설정 반환
 func (h *NPMHandlerAdapter) GetDefaultConfig() interface{} {
-	return &config.NpmProxyConfig{
+	return &config.NpmProxySettings{
 		Path:      "/proxy/npm",
 		UseCache:  true,
 		UserCache: false,

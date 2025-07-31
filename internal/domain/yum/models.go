@@ -131,12 +131,12 @@ type ProxyConfig interface {
 
 // defaultProxyConfig config.YumProxyConfig를 ProxyConfig 인터페이스로 래핑
 type defaultProxyConfig struct {
-	config  *config.YumProxyConfig
+	config  *config.YumProxySettings
 	baseDir string
 }
 
 // NewDefaultProxyConfig 기본 프록시 설정 어댑터 생성
-func NewDefaultProxyConfig(config *config.YumProxyConfig, baseDir string) ProxyConfig {
+func NewDefaultProxyConfig(config *config.YumProxySettings, baseDir string) ProxyConfig {
 	return &defaultProxyConfig{
 		config:  config,
 		baseDir: baseDir,

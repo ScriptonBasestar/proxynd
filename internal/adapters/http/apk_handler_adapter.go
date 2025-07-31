@@ -21,7 +21,7 @@ type ApkHandlerAdapter struct {
 }
 
 // NewApkHandlerAdapter APK HTTP 어댑터 생성
-func NewApkHandlerAdapter(config config.ApkProxyConfig, logger logging.Logger) *ApkHandlerAdapter {
+func NewApkHandlerAdapter(config config.ApkProxySettings, logger logging.Logger) *ApkHandlerAdapter {
 	storageDir := helpers.GetStorageDir()
 	proxyConfig := apkDomain.NewDefaultProxyConfig(&config, storageDir)
 

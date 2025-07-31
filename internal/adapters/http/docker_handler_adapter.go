@@ -25,7 +25,7 @@ type DockerHandlerAdapter struct {
 }
 
 // NewDockerHandlerAdapter 새로운 Docker 핸들러 어댑터 생성
-func NewDockerHandlerAdapter(config config.DockerProxyConfig, logger logging.Logger) *DockerHandlerAdapter {
+func NewDockerHandlerAdapter(config config.DockerProxySettings, logger logging.Logger) *DockerHandlerAdapter {
 	// 설정을 도메인 인터페이스로 래핑
 	storageDir := helpers.GetStorageDir()
 	proxyConfig := docker.NewDefaultProxyConfig(&config, storageDir)

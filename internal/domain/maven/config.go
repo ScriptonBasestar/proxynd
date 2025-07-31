@@ -31,11 +31,11 @@ type SearchConfig struct {
 
 // DefaultProxyConfig config.MavenProxyConfig의 어댑터 (기본 구현)
 type DefaultProxyConfig struct {
-	config *config.MavenProxyConfig
+	config *config.MavenProxySettings
 }
 
 // NewDefaultProxyConfig DefaultProxyConfig 생성자
-func NewDefaultProxyConfig(config *config.MavenProxyConfig) ProxyConfig {
+func NewDefaultProxyConfig(config *config.MavenProxySettings) ProxyConfig {
 	return &DefaultProxyConfig{
 		config: config,
 	}

@@ -30,7 +30,7 @@ func DockerProxy(c *fiber.Ctx) error {
 
 	// 설정 읽기
 	storageDir := helpers.GetStorageDir()
-	config := config.DockerProxyConfig{}
+	config := config.DockerProxySettings{}
 	if err := config.ReadConfig(); err != nil {
 		return c.Status(fiber.StatusInternalServerError).SendString("Failed to read Docker config")
 	}

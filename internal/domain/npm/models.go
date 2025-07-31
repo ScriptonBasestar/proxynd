@@ -97,12 +97,12 @@ type CacheConfig struct {
 
 // DefaultProxyConfig config.NpmProxyConfig의 어댑터 (기본 구현)
 type DefaultProxyConfig struct {
-	config  *config.NpmProxyConfig
+	config  *config.NpmProxySettings
 	baseDir string
 }
 
 // NewDefaultProxyConfig DefaultProxyConfig 생성자
-func NewDefaultProxyConfig(config *config.NpmProxyConfig, baseDir string) ProxyConfig {
+func NewDefaultProxyConfig(config *config.NpmProxySettings, baseDir string) ProxyConfig {
 	return &DefaultProxyConfig{
 		config:  config,
 		baseDir: baseDir,

@@ -40,7 +40,7 @@ func BaseRouter() *fiber.App {
 	app.Use(logging.RecoveryLogger())
 
 	app.Get("/", func(c *fiber.Ctx) error {
-		mvnSite := config.MavenProxyConfig{}
+		mvnSite := config.MavenProxySettings{}
 		if err := mvnSite.ReadConfig(); err != nil {
 			log.Printf("Warning: Failed to read Maven config for dashboard: %v", err)
 		}

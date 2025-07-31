@@ -152,7 +152,7 @@ func TestService_GetProxyConfigs(t *testing.T) {
 
 	// Create a service with all configs loaded
 	svc := &service{
-		mavenConfig: &config.MavenProxyConfig{
+		mavenConfig: &config.MavenProxySettings{
 			Path:     "/maven",
 			UseCache: true,
 		},
@@ -160,23 +160,23 @@ func TestService_GetProxyConfigs(t *testing.T) {
 			Path:     "/apt",
 			UseCache: true,
 		},
-		npmConfig: &config.NpmProxyConfig{
+		npmConfig: &config.NpmProxySettings{
 			Path:     "/npm",
 			UseCache: true,
 		},
-		dockerConfig: &config.DockerProxyConfig{
+		dockerConfig: &config.DockerProxySettings{
 			Path:     "/docker",
 			UseCache: true,
 		},
-		pipConfig: &config.PipProxyConfig{
+		pipConfig: &config.PipProxySettings{
 			Path:     "/pip",
 			UseCache: true,
 		},
-		yumConfig: &config.YumProxyConfig{
+		yumConfig: &config.YumProxySettings{
 			Path:     "/yum",
 			UseCache: true,
 		},
-		apkConfig: &config.ApkProxyConfig{
+		apkConfig: &config.ApkProxySettings{
 			Path:     "/apk",
 			UseCache: true,
 		},
@@ -233,19 +233,19 @@ func TestService_GetProxyConfigs(t *testing.T) {
 
 			// Use reflection to check the Path field
 			switch v := cfg.(type) {
-			case *config.MavenProxyConfig:
+			case *config.MavenProxySettings:
 				assert.Equal(t, tt.path, v.Path)
 			case *config.AptProxyConfig:
 				assert.Equal(t, tt.path, v.Path)
-			case *config.NpmProxyConfig:
+			case *config.NpmProxySettings:
 				assert.Equal(t, tt.path, v.Path)
-			case *config.DockerProxyConfig:
+			case *config.DockerProxySettings:
 				assert.Equal(t, tt.path, v.Path)
-			case *config.PipProxyConfig:
+			case *config.PipProxySettings:
 				assert.Equal(t, tt.path, v.Path)
-			case *config.YumProxyConfig:
+			case *config.YumProxySettings:
 				assert.Equal(t, tt.path, v.Path)
-			case *config.ApkProxyConfig:
+			case *config.ApkProxySettings:
 				assert.Equal(t, tt.path, v.Path)
 			}
 		})
@@ -431,7 +431,7 @@ func TestService_Concurrency(_ *testing.T) {
 				},
 			},
 		},
-		mavenConfig: &config.MavenProxyConfig{
+		mavenConfig: &config.MavenProxySettings{
 			Path: "/maven",
 		},
 	}

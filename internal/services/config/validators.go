@@ -76,9 +76,9 @@ func (v *proxyConfigValidator) validateAptConfig(config interface{}) error {
 
 // validateMavenConfig validates Maven proxy configuration
 func (v *proxyConfigValidator) validateMavenConfig(config interface{}) error {
-	cfg, ok := config.(*internalconfig.MavenProxyConfig)
+	cfg, ok := config.(*internalconfig.MavenProxySettings)
 	if !ok {
-		return fmt.Errorf("invalid config type, expected *config.MavenProxyConfig")
+		return fmt.Errorf("invalid config type, expected *config.MavenProxySettings")
 	}
 
 	// Use the config's own validation method which includes struct tag validation
@@ -87,9 +87,9 @@ func (v *proxyConfigValidator) validateMavenConfig(config interface{}) error {
 
 // validateNpmConfig validates NPM proxy configuration
 func (v *proxyConfigValidator) validateNpmConfig(config interface{}) error {
-	cfg, ok := config.(*internalconfig.NpmProxyConfig)
+	cfg, ok := config.(*internalconfig.NpmProxySettings)
 	if !ok {
-		return fmt.Errorf("invalid config type, expected *config.NpmProxyConfig")
+		return fmt.Errorf("invalid config type, expected *config.NpmProxySettings")
 	}
 
 	// Use the config's own validation method which includes struct tag validation
@@ -98,9 +98,9 @@ func (v *proxyConfigValidator) validateNpmConfig(config interface{}) error {
 
 // validatePipConfig validates PIP proxy configuration
 func (v *proxyConfigValidator) validatePipConfig(config interface{}) error {
-	cfg, ok := config.(*internalconfig.PipProxyConfig)
+	cfg, ok := config.(*internalconfig.PipProxySettings)
 	if !ok {
-		return fmt.Errorf("invalid config type, expected *config.PipProxyConfig")
+		return fmt.Errorf("invalid config type, expected *config.PipProxySettings")
 	}
 
 	// Use the config's own validation method which includes struct tag validation
@@ -109,9 +109,9 @@ func (v *proxyConfigValidator) validatePipConfig(config interface{}) error {
 
 // validateYumConfig validates YUM proxy configuration
 func (v *proxyConfigValidator) validateYumConfig(config interface{}) error {
-	cfg, ok := config.(*internalconfig.YumProxyConfig)
+	cfg, ok := config.(*internalconfig.YumProxySettings)
 	if !ok {
-		return fmt.Errorf("invalid config type, expected *config.YumProxyConfig")
+		return fmt.Errorf("invalid config type, expected *config.YumProxySettings")
 	}
 
 	// Use the config's own validation method which includes struct tag validation
@@ -120,9 +120,9 @@ func (v *proxyConfigValidator) validateYumConfig(config interface{}) error {
 
 // validateApkConfig validates APK proxy configuration
 func (v *proxyConfigValidator) validateApkConfig(config interface{}) error {
-	cfg, ok := config.(*internalconfig.ApkProxyConfig)
+	cfg, ok := config.(*internalconfig.ApkProxySettings)
 	if !ok {
-		return fmt.Errorf("invalid config type, expected *config.ApkProxyConfig")
+		return fmt.Errorf("invalid config type, expected *config.ApkProxySettings")
 	}
 
 	// Use the config's own validation method which includes struct tag validation
@@ -137,9 +137,9 @@ func (v *proxyConfigValidator) validateHelmConfig(_ interface{}) error {
 
 // validateDockerConfig validates Docker proxy configuration
 func (v *proxyConfigValidator) validateDockerConfig(config interface{}) error {
-	cfg, ok := config.(*internalconfig.DockerProxyConfig)
+	cfg, ok := config.(*internalconfig.DockerProxySettings)
 	if !ok {
-		return fmt.Errorf("invalid config type, expected *config.DockerProxyConfig")
+		return fmt.Errorf("invalid config type, expected *config.DockerProxySettings")
 	}
 
 	// Use the config's own validation method which includes struct tag validation

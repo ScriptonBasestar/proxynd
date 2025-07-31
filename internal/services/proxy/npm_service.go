@@ -10,7 +10,7 @@ import (
 // NpmService handles NPM repository proxy requests
 type NpmService struct {
 	*BaseProxyService
-	config *config.NpmProxyConfig
+	config *config.NpmProxySettings
 }
 
 // NewNpmService creates a new NPM proxy service
@@ -27,7 +27,7 @@ func NewNpmService(
 		return nil, fmt.Errorf("failed to load npm config: %w", err)
 	}
 
-	npmConfig, ok := configInterface.(*config.NpmProxyConfig)
+	npmConfig, ok := configInterface.(*config.NpmProxySettings)
 	if !ok {
 		return nil, fmt.Errorf("invalid npm config type")
 	}

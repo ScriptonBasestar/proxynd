@@ -82,23 +82,23 @@ func (_c *MockService_GetApkConfig_Call) RunAndReturn(run func(context.Context) 
 }
 
 // GetAptConfig provides a mock function with given fields: ctx
-func (_m *MockService) GetAptConfig(ctx context.Context) (*config.AptProxySettings, error) {
+func (_m *MockService) GetAptConfig(ctx context.Context) (*config.AptProxyConfig, error) {
 	ret := _m.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetAptConfig")
 	}
 
-	var r0 *config.AptProxySettings
+	var r0 *config.AptProxyConfig
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) (*config.AptProxySettings, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context) (*config.AptProxyConfig, error)); ok {
 		return rf(ctx)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context) *config.AptProxySettings); ok {
+	if rf, ok := ret.Get(0).(func(context.Context) *config.AptProxyConfig); ok {
 		r0 = rf(ctx)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*config.AptProxySettings)
+			r0 = ret.Get(0).(*config.AptProxyConfig)
 		}
 	}
 
@@ -129,12 +129,12 @@ func (_c *MockService_GetAptConfig_Call) Run(run func(ctx context.Context)) *Moc
 	return _c
 }
 
-func (_c *MockService_GetAptConfig_Call) Return(_a0 *config.AptProxySettings, _a1 error) *MockService_GetAptConfig_Call {
+func (_c *MockService_GetAptConfig_Call) Return(_a0 *config.AptProxyConfig, _a1 error) *MockService_GetAptConfig_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *MockService_GetAptConfig_Call) RunAndReturn(run func(context.Context) (*config.AptProxySettings, error)) *MockService_GetAptConfig_Call {
+func (_c *MockService_GetAptConfig_Call) RunAndReturn(run func(context.Context) (*config.AptProxyConfig, error)) *MockService_GetAptConfig_Call {
 	_c.Call.Return(run)
 	return _c
 }

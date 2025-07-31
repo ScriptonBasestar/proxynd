@@ -122,13 +122,13 @@ func (b *APTConfigBuilder) Build() *config.AptProxyConfig {
 
 // MavenConfigBuilder Maven 설정 빌더
 type MavenConfigBuilder struct {
-	config *config.MavenProxyConfig
+	config *config.MavenProxySettings
 }
 
 // NewMavenConfigBuilder Maven 설정 빌드 생성
 func NewMavenConfigBuilder() *MavenConfigBuilder {
 	return &MavenConfigBuilder{
-		config: &config.MavenProxyConfig{
+		config: &config.MavenProxySettings{
 			Path:     "/proxy/maven",
 			UseCache: true,
 			Proxies: []config.MavenProxyServer{
@@ -173,19 +173,19 @@ func (b *MavenConfigBuilder) WithCacheEnabled(enabled bool) *MavenConfigBuilder 
 }
 
 // Build 설정 빌드
-func (b *MavenConfigBuilder) Build() *config.MavenProxyConfig {
+func (b *MavenConfigBuilder) Build() *config.MavenProxySettings {
 	return b.config
 }
 
 // NPMConfigBuilder NPM 설정 빌더
 type NPMConfigBuilder struct {
-	config *config.NpmProxyConfig
+	config *config.NpmProxySettings
 }
 
 // NewNPMConfigBuilder NPM 설정 빌더 생성
 func NewNPMConfigBuilder() *NPMConfigBuilder {
 	return &NPMConfigBuilder{
-		config: &config.NpmProxyConfig{
+		config: &config.NpmProxySettings{
 			Path:      "/proxy/npm",
 			UseCache:  true,
 			UserCache: false,
@@ -232,7 +232,7 @@ func (b *NPMConfigBuilder) WithProxy(registryName, serverName, url string) *NPMC
 }
 
 // Build 설정 빌드
-func (b *NPMConfigBuilder) Build() *config.NpmProxyConfig {
+func (b *NPMConfigBuilder) Build() *config.NpmProxySettings {
 	return b.config
 }
 

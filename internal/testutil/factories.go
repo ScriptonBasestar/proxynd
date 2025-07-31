@@ -14,17 +14,17 @@ import (
 	"proxynd/internal/config"
 	repocache "proxynd/internal/repositories/cache"
 	"proxynd/internal/services/adapters"
-	"proxynd/internal/services/config"
+	configservice "proxynd/internal/services/config"
 	"proxynd/internal/services/proxy"
 )
 
-// ConfigServiceAdapter adapts config.Service to proxy.ConfigService
+// ConfigServiceAdapter adapts configservice.Service to proxy.ConfigService
 type ConfigServiceAdapter struct {
-	service config.Service
+	service configservice.Service
 }
 
 // NewConfigServiceAdapter creates a new config service adapter
-func NewConfigServiceAdapter(service config.Service) proxy.ConfigService {
+func NewConfigServiceAdapter(service configservice.Service) proxy.ConfigService {
 	return &ConfigServiceAdapter{service: service}
 }
 
@@ -76,14 +76,14 @@ func NewFactory(t *testing.T) *Factory {
 }
 
 // ConfigService creates a test configuration service
-func (f *Factory) ConfigService() config.Service {
+func (f *Factory) ConfigService() configservice.Service {
 	configDir := filepath.Join(f.tempDir, "config")
 	require.NoError(f.t, os.MkdirAll(configDir, 0o755))
 
 	// Create test config files
 	f.createTestConfigFiles(configDir)
 
-	service, err := config.NewService(context.Background(), configDir)
+	service, err := configservice.NewService(context.Background(), configDir)
 	require.NoError(f.t, err)
 
 	return service

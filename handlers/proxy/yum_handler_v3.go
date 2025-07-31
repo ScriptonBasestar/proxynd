@@ -18,14 +18,14 @@ import (
 // YumHandlerV3 Base Handler 패턴을 사용하는 새로운 YUM 핸들러
 type YumHandlerV3 struct {
 	*BaseProxyHandler
-	Config *config.YumProxyConfig
+	Config *config.YumProxySettings
 }
 
 // NewYumHandlerV3 새로운 YUM 핸들러 생성
 func NewYumHandlerV3() *YumHandlerV3 {
 	return &YumHandlerV3{
 		BaseProxyHandler: NewBaseProxyHandler(),
-		Config:           &config.YumProxyConfig{},
+		Config:           &config.YumProxySettings{},
 	}
 }
 

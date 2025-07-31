@@ -17,25 +17,25 @@ type Service interface {
 	GetGlobalConfig(ctx context.Context) (*config.GlobalConfig, error)
 
 	// GetMavenConfig returns the Maven proxy configuration
-	GetMavenConfig(ctx context.Context) (*config.MavenProxyConfig, error)
+	GetMavenConfig(ctx context.Context) (*config.MavenProxySettings, error)
 
 	// GetAptConfig returns the APT proxy configuration
 	GetAptConfig(ctx context.Context) (*config.AptProxyConfig, error)
 
 	// GetNpmConfig returns the NPM proxy configuration
-	GetNpmConfig(ctx context.Context) (*config.NpmProxyConfig, error)
+	GetNpmConfig(ctx context.Context) (*config.NpmProxySettings, error)
 
 	// GetDockerConfig returns the Docker proxy configuration
-	GetDockerConfig(ctx context.Context) (*config.DockerProxyConfig, error)
+	GetDockerConfig(ctx context.Context) (*config.DockerProxySettings, error)
 
 	// GetPipConfig returns the PIP proxy configuration
-	GetPipConfig(ctx context.Context) (*config.PipProxyConfig, error)
+	GetPipConfig(ctx context.Context) (*config.PipProxySettings, error)
 
 	// GetYumConfig returns the YUM proxy configuration
-	GetYumConfig(ctx context.Context) (*config.YumProxyConfig, error)
+	GetYumConfig(ctx context.Context) (*config.YumProxySettings, error)
 
 	// GetApkConfig returns the APK proxy configuration
-	GetApkConfig(ctx context.Context) (*config.ApkProxyConfig, error)
+	GetApkConfig(ctx context.Context) (*config.ApkProxySettings, error)
 
 	// ValidateAll validates all loaded configurations
 	ValidateAll(ctx context.Context) error

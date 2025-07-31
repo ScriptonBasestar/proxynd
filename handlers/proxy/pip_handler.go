@@ -35,7 +35,7 @@ func PipProxy(c *fiber.Ctx) error {
 	if err := globalConfig.ReadConfig(); err != nil {
 		return c.Status(fiber.StatusInternalServerError).SendString("Failed to read global config")
 	}
-	config := config.PipProxyConfig{}
+	config := config.PipProxySettings{}
 	if err := config.ReadConfig(); err != nil {
 		return c.Status(fiber.StatusInternalServerError).SendString("Failed to read PIP config")
 	}

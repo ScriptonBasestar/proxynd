@@ -33,7 +33,7 @@ func YumProxyHandler(c *fiber.Ctx) error {
 	if err := globalConfig.ReadConfig(); err != nil {
 		return c.Status(fiber.StatusInternalServerError).SendString("Failed to read global config")
 	}
-	yumConfig := config.YumProxyConfig{}
+	yumConfig := config.YumProxySettings{}
 	if err := yumConfig.ReadConfig(); err != nil {
 		return c.Status(fiber.StatusInternalServerError).SendString("Failed to read YUM config")
 	}

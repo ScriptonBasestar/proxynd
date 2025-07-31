@@ -16,7 +16,7 @@ import (
 // APTHandlerV3 Base Handler 패턴을 사용하는 새로운 APT 핸들러
 type APTHandlerV3 struct {
 	*BaseProxyHandler
-	Config    *config.AptProxySettings
+	Config    *config.AptProxyConfig
 	mirrorIdx int32 // 라운드로빈을 위한 atomic counter
 }
 
@@ -24,7 +24,7 @@ type APTHandlerV3 struct {
 func NewAPTHandlerV3() *APTHandlerV3 {
 	return &APTHandlerV3{
 		BaseProxyHandler: NewBaseProxyHandler(),
-		Config:           &config.AptProxySettings{},
+		Config:           &config.AptProxyConfig{},
 		mirrorIdx:        0,
 	}
 }

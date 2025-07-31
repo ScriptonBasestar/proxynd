@@ -162,12 +162,12 @@ type ProxyConfig interface {
 
 // defaultProxyConfig config.ApkProxyConfig를 ProxyConfig 인터페이스로 래핑
 type defaultProxyConfig struct {
-	config  *config.ApkProxyConfig
+	config  *config.ApkProxySettings
 	baseDir string
 }
 
 // NewDefaultProxyConfig 기본 프록시 설정 어댑터 생성
-func NewDefaultProxyConfig(config *config.ApkProxyConfig, baseDir string) ProxyConfig {
+func NewDefaultProxyConfig(config *config.ApkProxySettings, baseDir string) ProxyConfig {
 	return &defaultProxyConfig{
 		config:  config,
 		baseDir: baseDir,

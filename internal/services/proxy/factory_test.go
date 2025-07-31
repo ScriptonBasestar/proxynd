@@ -60,7 +60,7 @@ func TestProxyServiceFactory_CreateProxyService(t *testing.T) {
 			name:      "create maven service",
 			proxyType: "maven",
 			setupMocks: func(config *MockConfigService) {
-				mavenConfig := &config.MavenProxyConfig{
+				mavenConfig := &config.MavenProxySettings{
 					Path:     "/maven",
 					UseCache: true,
 				}
@@ -76,7 +76,7 @@ func TestProxyServiceFactory_CreateProxyService(t *testing.T) {
 			name:      "create npm service",
 			proxyType: proxyTypeNpm,
 			setupMocks: func(config *MockConfigService) {
-				npmConfig := &config.NpmProxyConfig{
+				npmConfig := &config.NpmProxySettings{
 					Path:     "/npm",
 					UseCache: true,
 				}
@@ -91,7 +91,7 @@ func TestProxyServiceFactory_CreateProxyService(t *testing.T) {
 			name:      "create docker service",
 			proxyType: proxyTypeDocker,
 			setupMocks: func(config *MockConfigService) {
-				dockerConfig := &config.DockerProxyConfig{
+				dockerConfig := &config.DockerProxySettings{
 					Path:     "/docker",
 					UseCache: true,
 				}
@@ -179,11 +179,11 @@ func TestProxyServiceFactory_AllProxyTypes(t *testing.T) {
 			case "apt":
 				config.On("GetProxyConfig", mock.Anything, proxyType).Return(&config.AptProxyConfig{}, nil)
 			case "maven":
-				config.On("GetProxyConfig", mock.Anything, proxyType).Return(&config.MavenProxyConfig{}, nil)
+				config.On("GetProxyConfig", mock.Anything, proxyType).Return(&config.MavenProxySettings{}, nil)
 			case proxyTypeNpm:
-				config.On("GetProxyConfig", mock.Anything, proxyType).Return(&config.NpmProxyConfig{}, nil)
+				config.On("GetProxyConfig", mock.Anything, proxyType).Return(&config.NpmProxySettings{}, nil)
 			case proxyTypeDocker:
-				config.On("GetProxyConfig", mock.Anything, proxyType).Return(&config.DockerProxyConfig{}, nil)
+				config.On("GetProxyConfig", mock.Anything, proxyType).Return(&config.DockerProxySettings{}, nil)
 			case "pip":
 				config.On("GetProxyConfig", mock.Anything, proxyType).Return(struct{}{}, nil)
 			case "yum":

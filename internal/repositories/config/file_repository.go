@@ -115,17 +115,17 @@ func (r *FileRepository) LoadProxyConfig(_ context.Context, proxyType string) (i
 	case "apt":
 		cfg = &internalconfig.AptProxyConfig{}
 	case "maven":
-		cfg = &internalconfig.MavenProxyConfig{}
+		cfg = &internalconfig.MavenProxySettings{}
 	case "npm":
-		cfg = &internalconfig.NpmProxyConfig{}
+		cfg = &internalconfig.NpmProxySettings{}
 	case "docker":
-		cfg = &internalconfig.DockerProxyConfig{}
+		cfg = &internalconfig.DockerProxySettings{}
 	case "pip":
-		cfg = &internalconfig.PipProxyConfig{}
+		cfg = &internalconfig.PipProxySettings{}
 	case "yum":
-		cfg = &internalconfig.YumProxyConfig{}
+		cfg = &internalconfig.YumProxySettings{}
 	case "apk":
-		cfg = &internalconfig.ApkProxyConfig{}
+		cfg = &internalconfig.ApkProxySettings{}
 	default:
 		return nil, fmt.Errorf("unsupported proxy type: %s", proxyType)
 	}

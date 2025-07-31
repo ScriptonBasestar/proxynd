@@ -18,14 +18,14 @@ import (
 // DockerHandlerV3 Base Handler 패턴을 사용하는 새로운 Docker 핸들러
 type DockerHandlerV3 struct {
 	*BaseProxyHandler
-	Config *config.DockerProxyConfig
+	Config *config.DockerProxySettings
 }
 
 // NewDockerHandlerV3 새로운 Docker 핸들러 생성
 func NewDockerHandlerV3() *DockerHandlerV3 {
 	return &DockerHandlerV3{
 		BaseProxyHandler: NewBaseProxyHandler(),
-		Config:           &config.DockerProxyConfig{},
+		Config:           &config.DockerProxySettings{},
 	}
 }
 

@@ -131,12 +131,12 @@ type CacheConfig struct {
 
 // DefaultProxyConfig config.PipProxyConfig의 어댑터 (기본 구현)
 type DefaultProxyConfig struct {
-	config  *config.PipProxyConfig
+	config  *config.PipProxySettings
 	baseDir string
 }
 
 // NewDefaultProxyConfig DefaultProxyConfig 생성자
-func NewDefaultProxyConfig(config *config.PipProxyConfig, baseDir string) ProxyConfig {
+func NewDefaultProxyConfig(config *config.PipProxySettings, baseDir string) ProxyConfig {
 	return &DefaultProxyConfig{
 		config:  config,
 		baseDir: baseDir,

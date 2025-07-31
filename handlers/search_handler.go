@@ -195,7 +195,7 @@ func searchAptIndex(
 // searchMavenContentGrouped searches Maven repositories and returns grouped results
 func searchMavenContentGrouped(query string, limit int) ([]GroupedSearchResult, error) {
 	// Maven 설정 로드
-	mavenConfig := config.MavenProxyConfig{}
+	mavenConfig := config.MavenProxySettings{}
 	if err := mavenConfig.ReadConfig(); err != nil {
 		return nil, fmt.Errorf("maven 설정 로드 실패: %w", err)
 	}

@@ -17,7 +17,7 @@ import (
 
 // BrowserHandler 새로운 Maven 브라우저 핸들러 (200라인 목표)
 type BrowserHandler struct {
-	config             config.MavenProxyConfig
+	config             config.MavenProxySettings
 	logger             logging.Logger
 	directoryCollector maven.DirectoryCollector
 	searchService      maven.SearchService
@@ -26,7 +26,7 @@ type BrowserHandler struct {
 }
 
 // NewBrowserHandler BrowserHandler 생성자
-func NewBrowserHandler(config config.MavenProxyConfig, logger logging.Logger) *BrowserHandler {
+func NewBrowserHandler(config config.MavenProxySettings, logger logging.Logger) *BrowserHandler {
 	// 설정을 도메인 인터페이스로 래핑
 	proxyConfig := maven.NewDefaultProxyConfig(&config)
 

@@ -36,7 +36,7 @@ func NpmProxy(c *fiber.Ctx) error {
 	if err := globalConfig.ReadConfig(); err != nil {
 		return c.Status(fiber.StatusInternalServerError).SendString("Failed to read global config")
 	}
-	config := config.NpmProxyConfig{}
+	config := config.NpmProxySettings{}
 	if err := config.ReadConfig(); err != nil {
 		return c.Status(fiber.StatusInternalServerError).SendString("Failed to read NPM config")
 	}

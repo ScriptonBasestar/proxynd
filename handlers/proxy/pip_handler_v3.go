@@ -18,14 +18,14 @@ import (
 // PipHandlerV3 Base Handler 패턴을 사용하는 새로운 PIP 핸들러
 type PipHandlerV3 struct {
 	*BaseProxyHandler
-	Config *config.PipProxyConfig
+	Config *config.PipProxySettings
 }
 
 // NewPipHandlerV3 새로운 PIP 핸들러 생성
 func NewPipHandlerV3() *PipHandlerV3 {
 	return &PipHandlerV3{
 		BaseProxyHandler: NewBaseProxyHandler(),
-		Config:           &config.PipProxyConfig{},
+		Config:           &config.PipProxySettings{},
 	}
 }
 

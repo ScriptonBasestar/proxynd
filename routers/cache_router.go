@@ -223,7 +223,7 @@ func getCacheSize(c *fiber.Ctx) error {
 				proxyCount = len(aptConfig.Proxies)
 			}
 		case "npm":
-			npmConfig := config.NpmProxyConfig{}
+			npmConfig := config.NpmProxySettings{}
 			enabled = npmConfig.ConfigExists()
 			if enabled {
 				if err := npmConfig.ReadConfig(); err != nil {
@@ -233,7 +233,7 @@ func getCacheSize(c *fiber.Ctx) error {
 				proxyCount = len(npmConfig.Proxies)
 			}
 		case "maven":
-			mavenConfig := config.MavenProxyConfig{}
+			mavenConfig := config.MavenProxySettings{}
 			enabled = mavenConfig.ConfigExists()
 			if enabled {
 				if err := mavenConfig.ReadConfig(); err != nil {

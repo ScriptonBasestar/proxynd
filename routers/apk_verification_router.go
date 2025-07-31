@@ -35,7 +35,7 @@ func getApkVerificationStatus(c *fiber.Ctx) error {
 	logger := logging.GetLogger()
 
 	// APK 설정 읽기
-	apkConfig := config.ApkProxyConfig{}
+	apkConfig := config.ApkProxySettings{}
 	if err := apkConfig.ReadConfig(); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to read APK config",
@@ -130,7 +130,7 @@ func verifySpecificApkFile(c *fiber.Ctx) error {
 	}
 
 	// APK 설정 읽기
-	apkConfig := config.ApkProxyConfig{}
+	apkConfig := config.ApkProxySettings{}
 	if err := apkConfig.ReadConfig(); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to read APK config",
@@ -168,7 +168,7 @@ func getTrustedKeys(c *fiber.Ctx) error {
 	logger := logging.GetLogger()
 
 	// APK 설정 읽기
-	apkConfig := config.ApkProxyConfig{}
+	apkConfig := config.ApkProxySettings{}
 	if err := apkConfig.ReadConfig(); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to read APK config",
@@ -204,7 +204,7 @@ func getTrustedKeys(c *fiber.Ctx) error {
 // getApkVerificationConfig APK 서명 검증 설정 조회
 func getApkVerificationConfig(c *fiber.Ctx) error {
 	// APK 설정 읽기
-	apkConfig := config.ApkProxyConfig{}
+	apkConfig := config.ApkProxySettings{}
 	if err := apkConfig.ReadConfig(); err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to read APK config",

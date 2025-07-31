@@ -55,8 +55,8 @@ func (f *Fixtures) ValidAPTConfig() *config.AptProxyConfig {
 }
 
 // ValidMavenConfig returns a valid Maven proxy configuration
-func (f *Fixtures) ValidMavenConfig() *config.MavenProxyConfig {
-	return &config.MavenProxyConfig{
+func (f *Fixtures) ValidMavenConfig() *config.MavenProxySettings {
+	return &config.MavenProxySettings{
 		Path:     "/proxy/maven",
 		UseCache: true,
 		Proxies: []config.MavenProxyServer{
@@ -75,8 +75,8 @@ func (f *Fixtures) ValidMavenConfig() *config.MavenProxyConfig {
 }
 
 // ValidNPMConfig returns a valid NPM proxy configuration
-func (f *Fixtures) ValidNPMConfig() *config.NpmProxyConfig {
-	return &config.NpmProxyConfig{
+func (f *Fixtures) ValidNPMConfig() *config.NpmProxySettings {
+	return &config.NpmProxySettings{
 		Path:      "/proxy/npm",
 		UseCache:  true,
 		UserCache: false,

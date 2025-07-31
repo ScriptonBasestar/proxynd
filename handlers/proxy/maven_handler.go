@@ -21,7 +21,7 @@ import (
 // MavenHandler V1과 V2의 기능을 통합한 Maven 핸들러
 type MavenHandler struct {
 	logger     logging.Logger
-	Config     *config.MavenProxyConfig
+	Config     *config.MavenProxySettings
 	storageDir string
 }
 
@@ -29,7 +29,7 @@ type MavenHandler struct {
 func NewMavenHandler() *MavenHandler {
 	return &MavenHandler{
 		logger:     logging.GetLogger(),
-		Config:     &config.MavenProxyConfig{},
+		Config:     &config.MavenProxySettings{},
 		storageDir: helpers.GetStorageDir(),
 	}
 }

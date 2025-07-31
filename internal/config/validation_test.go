@@ -107,13 +107,13 @@ func TestAptProxyConfig_Validate(t *testing.T) {
 func TestMavenProxyConfig_Validate(t *testing.T) {
 	tests := []struct {
 		name        string
-		config      *MavenProxyConfig
+		config      *MavenProxySettings
 		expectError bool
 		errorField  string
 	}{
 		{
 			name: "Valid config",
-			config: &MavenProxyConfig{
+			config: &MavenProxySettings{
 				Path: "/proxy/maven",
 				Proxies: []MavenProxyServer{
 					{
@@ -126,7 +126,7 @@ func TestMavenProxyConfig_Validate(t *testing.T) {
 		},
 		{
 			name: "Empty proxies",
-			config: &MavenProxyConfig{
+			config: &MavenProxySettings{
 				Path:    "/proxy/maven",
 				Proxies: []MavenProxyServer{},
 			},
@@ -135,7 +135,7 @@ func TestMavenProxyConfig_Validate(t *testing.T) {
 		},
 		{
 			name: "Empty proxy name",
-			config: &MavenProxyConfig{
+			config: &MavenProxySettings{
 				Path: "/proxy/maven",
 				Proxies: []MavenProxyServer{
 					{
@@ -149,7 +149,7 @@ func TestMavenProxyConfig_Validate(t *testing.T) {
 		},
 		{
 			name: "Invalid proxy URL",
-			config: &MavenProxyConfig{
+			config: &MavenProxySettings{
 				Path: "/proxy/maven",
 				Proxies: []MavenProxyServer{
 					{
@@ -163,7 +163,7 @@ func TestMavenProxyConfig_Validate(t *testing.T) {
 		},
 		{
 			name: "Basic auth without password",
-			config: &MavenProxyConfig{
+			config: &MavenProxySettings{
 				Path: "/proxy/maven",
 				Proxies: []MavenProxyServer{
 					{
@@ -204,13 +204,13 @@ func TestMavenProxyConfig_Validate(t *testing.T) {
 func TestNpmProxyConfig_Validate(t *testing.T) {
 	tests := []struct {
 		name        string
-		config      *NpmProxyConfig
+		config      *NpmProxySettings
 		expectError bool
 		errorField  string
 	}{
 		{
 			name: "Valid config",
-			config: &NpmProxyConfig{
+			config: &NpmProxySettings{
 				Path: "/proxy/npm",
 				Proxies: map[string][]NpmProxyServer{
 					"default": {
@@ -225,7 +225,7 @@ func TestNpmProxyConfig_Validate(t *testing.T) {
 		},
 		{
 			name: "Empty proxies",
-			config: &NpmProxyConfig{
+			config: &NpmProxySettings{
 				Path:    "/proxy/npm",
 				Proxies: map[string][]NpmProxyServer{},
 			},
@@ -234,7 +234,7 @@ func TestNpmProxyConfig_Validate(t *testing.T) {
 		},
 		{
 			name: "Missing default registry",
-			config: &NpmProxyConfig{
+			config: &NpmProxySettings{
 				Path: "/proxy/npm",
 				Proxies: map[string][]NpmProxyServer{
 					"scoped": {
@@ -250,7 +250,7 @@ func TestNpmProxyConfig_Validate(t *testing.T) {
 		},
 		{
 			name: "Empty server name",
-			config: &NpmProxyConfig{
+			config: &NpmProxySettings{
 				Path: "/proxy/npm",
 				Proxies: map[string][]NpmProxyServer{
 					"default": {
@@ -266,7 +266,7 @@ func TestNpmProxyConfig_Validate(t *testing.T) {
 		},
 		{
 			name: "Invalid server URL",
-			config: &NpmProxyConfig{
+			config: &NpmProxySettings{
 				Path: "/proxy/npm",
 				Proxies: map[string][]NpmProxyServer{
 					"default": {

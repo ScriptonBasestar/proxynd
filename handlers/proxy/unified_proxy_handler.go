@@ -57,7 +57,7 @@ func UnifiedProxyHandler(c *fiber.Ctx) error {
 	switch proxyType {
 	case "maven":
 		// Maven 설정 확인
-		mavenConfig := config.MavenProxyConfig{}
+		mavenConfig := config.MavenProxySettings{}
 		if !mavenConfig.ConfigExists() {
 			return renderConfigAlert(c, "maven-proxy.yaml")
 		}
@@ -100,7 +100,7 @@ func UnifiedProxyHandler(c *fiber.Ctx) error {
 
 	case "npm":
 		// NPM 설정 확인
-		npmConfig := config.NpmProxyConfig{}
+		npmConfig := config.NpmProxySettings{}
 		if !npmConfig.ConfigExists() {
 			return renderConfigAlert(c, "npm-proxy.yaml")
 		}
@@ -118,7 +118,7 @@ func UnifiedProxyHandler(c *fiber.Ctx) error {
 
 	case "pip":
 		// PIP 설정 확인
-		pipConfig := config.PipProxyConfig{}
+		pipConfig := config.PipProxySettings{}
 		if !pipConfig.ConfigExists() {
 			return renderConfigAlert(c, "pip-proxy.yaml")
 		}
@@ -136,7 +136,7 @@ func UnifiedProxyHandler(c *fiber.Ctx) error {
 
 	case "docker":
 		// Docker 설정 확인
-		dockerConfig := config.DockerProxyConfig{}
+		dockerConfig := config.DockerProxySettings{}
 		if !dockerConfig.ConfigExists() {
 			return renderConfigAlert(c, "docker-proxy.yaml")
 		}
@@ -154,7 +154,7 @@ func UnifiedProxyHandler(c *fiber.Ctx) error {
 
 	case "yum":
 		// YUM 설정 확인
-		yumConfig := config.YumProxyConfig{}
+		yumConfig := config.YumProxySettings{}
 		if !yumConfig.ConfigExists() {
 			return renderConfigAlert(c, "yum-proxy.yaml")
 		}
@@ -172,7 +172,7 @@ func UnifiedProxyHandler(c *fiber.Ctx) error {
 
 	case "apk":
 		// APK 설정 확인
-		apkConfig := config.ApkProxyConfig{}
+		apkConfig := config.ApkProxySettings{}
 		if !apkConfig.ConfigExists() {
 			return renderConfigAlert(c, "apk-proxy.yaml")
 		}

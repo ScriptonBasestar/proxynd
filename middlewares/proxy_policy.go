@@ -83,7 +83,7 @@ func checkCache(proxyType, requestPath string) CacheInfo {
 	var cachePath string
 	switch proxyType {
 	case "maven":
-		config := config.MavenProxyConfig{}
+		config := config.MavenProxySettings{}
 		if err := config.ReadConfig(); err != nil {
 			log.Printf("Warning: Failed to read Maven config, using defaults: %v", err)
 		}
@@ -117,7 +117,7 @@ func checkCache(proxyType, requestPath string) CacheInfo {
 		}
 
 	case "npm":
-		config := config.NpmProxyConfig{}
+		config := config.NpmProxySettings{}
 		if err := config.ReadConfig(); err != nil {
 			log.Printf("Warning: Failed to read NPM config, using defaults: %v", err)
 		}
@@ -130,7 +130,7 @@ func checkCache(proxyType, requestPath string) CacheInfo {
 		}
 
 	case "pip":
-		config := config.PipProxyConfig{}
+		config := config.PipProxySettings{}
 		if err := config.ReadConfig(); err != nil {
 			log.Printf("Warning: Failed to read PIP config, using defaults: %v", err)
 		}
@@ -143,7 +143,7 @@ func checkCache(proxyType, requestPath string) CacheInfo {
 		}
 
 	case "docker":
-		config := config.DockerProxyConfig{}
+		config := config.DockerProxySettings{}
 		if err := config.ReadConfig(); err != nil {
 			log.Printf("Warning: Failed to read Docker config, using defaults: %v", err)
 		}

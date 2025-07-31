@@ -401,8 +401,8 @@ func ValidateConfig(config *UnifiedConfig) []string {
 }
 
 // LoadMavenProxyConfig 메이븐 프록시 설정 로드
-func (cl *ConfigLoader) LoadMavenProxyConfig(_ context.Context) (*MavenProxyConfig, error) {
-	config := &MavenProxyConfig{}
+func (cl *ConfigLoader) LoadMavenProxyConfig(_ context.Context) (*MavenProxySettings, error) {
+	config := &MavenProxySettings{}
 
 	// 기본값 설정
 	config.UseCache = true
@@ -472,8 +472,8 @@ func (cl *ConfigLoader) LoadAptProxyConfig(_ context.Context) (*AptProxyConfig, 
 }
 
 // LoadNpmProxyConfig NPM 프록시 설정 로드
-func (cl *ConfigLoader) LoadNpmProxyConfig(_ context.Context) (*NpmProxyConfig, error) {
-	config := &NpmProxyConfig{}
+func (cl *ConfigLoader) LoadNpmProxyConfig(_ context.Context) (*NpmProxySettings, error) {
+	config := &NpmProxySettings{}
 
 	// 기본값 설정
 	config.UseCache = true
@@ -507,8 +507,8 @@ func (cl *ConfigLoader) LoadNpmProxyConfig(_ context.Context) (*NpmProxyConfig, 
 }
 
 // LoadDockerProxyConfig Docker 프록시 설정 로드
-func (cl *ConfigLoader) LoadDockerProxyConfig(_ context.Context) (*DockerProxyConfig, error) {
-	config := &DockerProxyConfig{}
+func (cl *ConfigLoader) LoadDockerProxyConfig(_ context.Context) (*DockerProxySettings, error) {
+	config := &DockerProxySettings{}
 
 	// 기본값 설정
 	config.UseCache = true
@@ -574,8 +574,8 @@ func (cl *ConfigLoader) LoadGlobalConfig(_ context.Context) (*UnifiedConfig, err
 }
 
 // LoadPipProxyConfig PIP 프록시 설정 로드
-func (cl *ConfigLoader) LoadPipProxyConfig(_ context.Context) (*PipProxyConfig, error) {
-	config := &PipProxyConfig{}
+func (cl *ConfigLoader) LoadPipProxyConfig(_ context.Context) (*PipProxySettings, error) {
+	config := &PipProxySettings{}
 
 	// 기본값 설정
 	config.UseCache = true
@@ -608,8 +608,8 @@ func (cl *ConfigLoader) LoadPipProxyConfig(_ context.Context) (*PipProxyConfig, 
 }
 
 // LoadYumProxyConfig YUM 프록시 설정 로드
-func (cl *ConfigLoader) LoadYumProxyConfig(_ context.Context) (*YumProxyConfig, error) {
-	config := &YumProxyConfig{}
+func (cl *ConfigLoader) LoadYumProxyConfig(_ context.Context) (*YumProxySettings, error) {
+	config := &YumProxySettings{}
 
 	// 기본값 설정
 	config.UseCache = true
@@ -642,8 +642,8 @@ func (cl *ConfigLoader) LoadYumProxyConfig(_ context.Context) (*YumProxyConfig, 
 }
 
 // LoadApkProxyConfig APK 프록시 설정 로드
-func (cl *ConfigLoader) LoadApkProxyConfig(_ context.Context) (*ApkProxyConfig, error) {
-	config := &ApkProxyConfig{}
+func (cl *ConfigLoader) LoadApkProxyConfig(_ context.Context) (*ApkProxySettings, error) {
+	config := &ApkProxySettings{}
 
 	// 기본값 설정
 	config.UseCache = true

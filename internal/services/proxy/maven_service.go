@@ -15,7 +15,7 @@ import (
 // MavenService handles Maven repository proxy requests
 type MavenService struct {
 	*BaseProxyService
-	config *config.MavenProxyConfig
+	config *config.MavenProxySettings
 }
 
 // NewMavenService creates a new Maven proxy service
@@ -32,7 +32,7 @@ func NewMavenService(
 		return nil, fmt.Errorf("failed to load maven config: %w", err)
 	}
 
-	mavenConfig, ok := configInterface.(*config.MavenProxyConfig)
+	mavenConfig, ok := configInterface.(*config.MavenProxySettings)
 	if !ok {
 		return nil, fmt.Errorf("invalid maven config type")
 	}

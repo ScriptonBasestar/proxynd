@@ -22,7 +22,7 @@ type NPMHandlerAdapter struct {
 }
 
 // NewNPMHandlerAdapter 새로운 NPM 핸들러 어댑터 생성
-func NewNPMHandlerAdapter(config config.NpmProxyConfig, logger logging.Logger) *NPMHandlerAdapter {
+func NewNPMHandlerAdapter(config config.NpmProxySettings, logger logging.Logger) *NPMHandlerAdapter {
 	// 설정을 도메인 인터페이스로 래핑
 	storageDir := helpers.GetStorageDir()
 	proxyConfig := npm.NewDefaultProxyConfig(&config, storageDir)

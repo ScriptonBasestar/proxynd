@@ -125,7 +125,7 @@ func (m *MockPathAnalyzer) CompareVersions(v1, v2 string) int {
 // 테스트 헬퍼 함수들
 
 func createTestHandler() (*BrowserHandler, *MockDirectoryCollector, *MockSearchService, *MockCacheManager, *MockPathAnalyzer) {
-	config := config.MavenProxyConfig{}
+	config := config.MavenProxySettings{}
 	logger := logging.NewLogger("test")
 
 	mockCollector := &MockDirectoryCollector{}

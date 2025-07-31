@@ -8,9 +8,15 @@ import (
 	"proxynd/helpers"
 )
 
-// AptProxySettings represents the configuration for APT proxy settings
+// AptProxy는 APT 미러 정보를 나타냅니다
+type AptProxy struct {
+	Name string `yaml:"name,omitempty" validate:"required,min=1,max=100"`
+	URL  string `yaml:"url,omitempty" validate:"required,url"`
+}
+
+// AptProxyConfig represents the configuration for APT proxy settings
 // This replaces the old AptProxyConfig for clearer naming
-type AptProxySettings struct {
+type AptProxyConfig struct {
 	Path      string                `yaml:"path,omitempty" validate:"required,min=1"`
 	UseCache  bool                  `yaml:"use_cache,omitempty" default:"true"`
 	UserCache bool                  `yaml:"user_cache,omitempty" default:"false"`
@@ -18,13 +24,13 @@ type AptProxySettings struct {
 }
 
 // ConfigExists checks if the APT proxy configuration file exists
-func (cfg *AptProxySettings) ConfigExists() bool {
+func (cfg *AptProxyConfig) ConfigExists() bool {
 	confDir := helpers.GetConfigDir()
 	return helpers.FileExists(path.Join(confDir, "apt-proxy.yaml"))
 }
 
 // ReadConfig reads and validates the APT proxy configuration
-func (cfg *AptProxySettings) ReadConfig() error {
+func (cfg *AptProxyConfig) ReadConfig() error {
 	confDir := helpers.GetConfigDir()
 	if err := helpers.ReadYamlSafe(path.Join(confDir, "apt-proxy.yaml"), cfg); err != nil {
 		return err
@@ -33,7 +39,7 @@ func (cfg *AptProxySettings) ReadConfig() error {
 }
 
 // Validate validates the APT proxy configuration
-func (cfg *AptProxySettings) Validate() error {
+func (cfg *AptProxyConfig) Validate() error {
 	// 기본 필드 검증
 	if cfg.Path == "" {
 		return &ValidationError{

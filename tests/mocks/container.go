@@ -11,7 +11,7 @@ import (
 	"proxynd/internal/handlers"
 	"proxynd/internal/repositories/cache"
 	configrepo "proxynd/internal/repositories/config"
-	"proxynd/internal/services/config"
+	configservice "proxynd/internal/services/config"
 	"proxynd/internal/services/proxy"
 	"proxynd/pkg/types"
 )
@@ -26,7 +26,7 @@ type MockContainer struct {
 	cacheRepository  cache.Repository
 	configRepository configrepo.Repository
 	cacheService     *proxy.CacheService
-	configService    config.Service
+	configService    configservice.Service
 	upstreamClient   proxy.UpstreamClient
 	serviceFactory   types.ProxyHandlerFactory
 	handlerFactory   handlers.HandlerFactory
@@ -109,14 +109,14 @@ func (m *MockContainer) GetCacheService() *proxy.CacheService {
 }
 
 // GetConfigService returns the config service
-func (m *MockContainer) GetConfigService() config.Service {
+func (m *MockContainer) GetConfigService() configservice.Service {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	if m.configService != nil {
 		return m.configService
 	}
 	args := m.Called()
-	return args.Get(0).(config.Service)
+	return args.Get(0).(configservice.Service)
 }
 
 // GetUpstreamClient returns the upstream client
@@ -216,7 +216,7 @@ func (m *MockContainer) SetCacheService(service *proxy.CacheService) {
 }
 
 // SetConfigService sets the test config service
-func (m *MockContainer) SetConfigService(service config.Service) {
+func (m *MockContainer) SetConfigService(service configservice.Service) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.configService = service

@@ -178,7 +178,7 @@ func validateConfig(c *fiber.Ctx) error {
 			return exists, nil, 0
 		},
 		"npm": func() (bool, interface{}, int) {
-			config := config.NpmProxyConfig{}
+			config := config.NpmProxySettings{}
 			exists := config.ConfigExists()
 			if exists {
 				if err := config.ReadConfig(); err != nil {
@@ -189,7 +189,7 @@ func validateConfig(c *fiber.Ctx) error {
 			return exists, nil, 0
 		},
 		"maven": func() (bool, interface{}, int) {
-			config := config.MavenProxyConfig{}
+			config := config.MavenProxySettings{}
 			exists := config.ConfigExists()
 			if exists {
 				if err := config.ReadConfig(); err != nil {
@@ -200,7 +200,7 @@ func validateConfig(c *fiber.Ctx) error {
 			return exists, nil, 0
 		},
 		"pip": func() (bool, interface{}, int) {
-			config := config.PipProxyConfig{}
+			config := config.PipProxySettings{}
 			exists := config.ConfigExists()
 			if exists {
 				if err := config.ReadConfig(); err != nil {
@@ -211,7 +211,7 @@ func validateConfig(c *fiber.Ctx) error {
 			return exists, nil, 0
 		},
 		"docker": func() (bool, interface{}, int) {
-			config := config.DockerProxyConfig{}
+			config := config.DockerProxySettings{}
 			exists := config.ConfigExists()
 			if exists {
 				if err := config.ReadConfig(); err != nil {
@@ -222,7 +222,7 @@ func validateConfig(c *fiber.Ctx) error {
 			return exists, nil, 0
 		},
 		"yum": func() (bool, interface{}, int) {
-			config := config.YumProxyConfig{}
+			config := config.YumProxySettings{}
 			exists := config.ConfigExists()
 			if exists {
 				if err := config.ReadConfig(); err != nil {
@@ -237,7 +237,7 @@ func validateConfig(c *fiber.Ctx) error {
 			return false, nil, 0
 		},
 		"apk": func() (bool, interface{}, int) {
-			config := config.ApkProxyConfig{}
+			config := config.ApkProxySettings{}
 			exists := config.ConfigExists()
 			if exists {
 				if err := config.ReadConfig(); err != nil {
@@ -378,7 +378,7 @@ func showConfig(c *fiber.Ctx) error {
 			return nil
 		},
 		"npm": func() interface{} {
-			config := config.NpmProxyConfig{}
+			config := config.NpmProxySettings{}
 			if config.ConfigExists() {
 				if err := config.ReadConfig(); err != nil {
 					log.Printf("Warning: Failed to read config: %v", err)

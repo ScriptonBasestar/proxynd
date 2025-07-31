@@ -97,7 +97,7 @@ type searchIndex struct {
 type MavenBrowserHandler struct {
 	client       *http.Client
 	logger       logging.Logger
-	config       *config.MavenProxyConfig
+	config       *config.MavenProxySettings
 	cache        sync.Map // path -> cacheEntry
 	cacheTTL     time.Duration
 	indexCache   sync.Map // 인덱스 프리로드용 캐시
@@ -112,7 +112,7 @@ func NewMavenBrowserHandler() *MavenBrowserHandler {
 			Timeout: 10 * time.Second, // 타임아웃 단축
 		},
 		logger:   logging.GetLogger(),
-		config:   &config.MavenProxyConfig{},
+		config:   &config.MavenProxySettings{},
 		cacheTTL: 5 * time.Minute, // 5분 캐시
 		searchIndex: &searchIndex{
 			entries: make([]maven.SearchIndexEntry, 0, 10000), // 초기 용량 10000
@@ -1426,7 +1426,7 @@ func (h *MavenBrowserHandler) addChildrenFromPaths(parent *maven.GAVTreeNode, ma
 }
 
 // SetConfig 설정 변경 (CLI 도구용)
-func (h *MavenBrowserHandler) SetConfig(config *config.MavenProxyConfig) {
+func (h *MavenBrowserHandler) SetConfig(config *config.MavenProxySettings) {
 	h.config = config
 }
 

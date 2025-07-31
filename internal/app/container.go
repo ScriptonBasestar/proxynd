@@ -99,13 +99,13 @@ func (c *Container) GetUnifiedConfig() interface{} {
 }
 
 // GetAptProxyConfig returns the APT proxy configuration
-func (c *Container) GetAptProxyConfig() (*config.AptProxySettings, error) {
+func (c *Container) GetAptProxyConfig() (*config.AptProxyConfig, error) {
 	c.mu.RLock()
 
 	// Check singleton cache first
 	if cached, exists := c.singletons["apt-proxy-config"]; exists {
 		c.mu.RUnlock()
-		if cfg, ok := cached.(*config.AptProxySettings); ok {
+		if cfg, ok := cached.(*config.AptProxyConfig); ok {
 			return cfg, nil
 		}
 	}
@@ -117,7 +117,7 @@ func (c *Container) GetAptProxyConfig() (*config.AptProxySettings, error) {
 
 	// Double-check after acquiring write lock
 	if cached, exists := c.singletons["apt-proxy-config"]; exists {
-		if cfg, ok := cached.(*config.AptProxySettings); ok {
+		if cfg, ok := cached.(*config.AptProxyConfig); ok {
 			return cfg, nil
 		}
 	}

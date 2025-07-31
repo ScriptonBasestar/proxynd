@@ -30,14 +30,14 @@ var (
 // ApkHandlerV3 Base Handler 패턴을 사용하는 새로운 APK 핸들러
 type ApkHandlerV3 struct {
 	*BaseProxyHandler
-	Config *config.ApkProxyConfig
+	Config *config.ApkProxySettings
 }
 
 // NewApkHandlerV3 새로운 APK 핸들러 생성
 func NewApkHandlerV3() *ApkHandlerV3 {
 	return &ApkHandlerV3{
 		BaseProxyHandler: NewBaseProxyHandler(),
-		Config:           &config.ApkProxyConfig{},
+		Config:           &config.ApkProxySettings{},
 	}
 }
 

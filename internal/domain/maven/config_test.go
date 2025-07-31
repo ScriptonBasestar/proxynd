@@ -8,7 +8,7 @@ import (
 
 func TestDefaultProxyConfig_GetProxies(t *testing.T) {
 	// 테스트 데이터 설정
-	originalConfig := &config.MavenProxyConfig{
+	originalConfig := &config.MavenProxySettings{
 		Proxies: []config.MavenProxyServer{
 			{
 				Name: "Central",
@@ -42,7 +42,7 @@ func TestDefaultProxyConfig_GetProxies(t *testing.T) {
 }
 
 func TestDefaultProxyConfig_GetCacheConfig(t *testing.T) {
-	originalConfig := &config.MavenProxyConfig{}
+	originalConfig := &config.MavenProxySettings{}
 	proxyConfig := NewDefaultProxyConfig(originalConfig)
 
 	cacheConfig := proxyConfig.GetCacheConfig()
@@ -62,7 +62,7 @@ func TestDefaultProxyConfig_GetCacheConfig(t *testing.T) {
 }
 
 func TestDefaultProxyConfig_GetSearchConfig(t *testing.T) {
-	originalConfig := &config.MavenProxyConfig{}
+	originalConfig := &config.MavenProxySettings{}
 	proxyConfig := NewDefaultProxyConfig(originalConfig)
 
 	searchConfig := proxyConfig.GetSearchConfig()

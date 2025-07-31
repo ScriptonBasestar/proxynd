@@ -48,7 +48,7 @@ func getMirrorSelector() *mirror.AlpineMirrorSelector {
 }
 
 // initializeMirrorSelector 미러 선택기 초기화 (필요시)
-func initializeMirrorSelector(apkConfig config.ApkProxyConfig) {
+func initializeMirrorSelector(apkConfig config.ApkProxySettings) {
 	if !apkConfig.MirrorSelection.Enabled {
 		return
 	}
@@ -109,7 +109,7 @@ func ApkProxyHandler(c *fiber.Ctx) error {
 	if err := globalConfig.ReadConfig(); err != nil {
 		return c.Status(fiber.StatusInternalServerError).SendString("Failed to read global config")
 	}
-	apkConfig := config.ApkProxyConfig{}
+	apkConfig := config.ApkProxySettings{}
 	if err := apkConfig.ReadConfig(); err != nil {
 		return c.Status(fiber.StatusInternalServerError).SendString("Failed to read APK config")
 	}
@@ -268,7 +268,7 @@ func isApkFile(filename string) bool {
 }
 
 // verifyApkFileSignature APK 파일의 서명 검증 수행
-func verifyApkFileSignature(filePath string, config config.ApkProxyConfig, c *fiber.Ctx) bool {
+func verifyApkFileSignature(filePath string, config config.ApkProxySettings, c *fiber.Ctx) bool {
 	logger := logging.GetLogger()
 	verifier := getApkVerifier()
 
