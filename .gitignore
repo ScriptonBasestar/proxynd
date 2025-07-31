@@ -356,7 +356,7 @@ data/
 # ================
 # 임시 스크립트 (프로젝트 루트)
 automated_*.sh
-fix_*.sh  
+fix_*.sh
 run_*.sh
 temp_*.sh
 test_*.sh
@@ -382,12 +382,12 @@ MAKEFILE_STRUCTURE.md
 # 일회성 분석/정리 스크립트 방지
 analyze_*.sh
 extract_*.sh
-find_*.sh  
+find_*.sh
 remove_*.sh
 cleanup_*.sh
 *_quality_check.sh
 
-# 임시 테스트 스크립트 방지  
+# 임시 테스트 스크립트 방지
 test_*.sh
 run_test_*.sh
 quick_*.sh
@@ -400,3 +400,90 @@ temp_build_*.sh
 # Legacy 문서 방지
 *-legacy.md
 *_legacy.md
+
+# ================
+# 추가 Ignore 항목 (2025-07-31 분석 결과)
+# ================
+# 리포트 및 분석 결과 디렉토리
+reports/
+analysis/
+benchmark-results/
+profiling-results/
+
+# 임시 실행 바이너리 (프로젝트 루트)
+/proxynd
+/main
+
+# Air 빌드 로그
+build-errors.log
+
+# Makefile 임시 파일들
+.make.*
+make-*.log
+
+# 개발 중 생성되는 임시 설정
+config.*.yaml
+config.*.yml
+*.local.yaml
+*.local.yml
+
+# Go 모듈 캐시 백업
+go.sum.backup
+go.mod.backup
+
+# 테스트 출력 파일들
+test-output/
+test-artifacts/
+*.test.log
+
+# 메트릭 및 모니터링 임시 파일
+metrics-*.json
+monitoring-*.log
+prometheus-*.data
+
+# CLI 도구 임시 파일
+proxyndctl-*.log
+cli-output/
+
+# 백업 파일들 (에디터/도구 생성)
+*.backup
+*.bk
+*~
+
+# 런타임 생성 파일들
+*.sock
+*.socket
+*.fifo
+
+# 패키지 매니저별 캐시 디렉토리 (개발 중 생성 가능)
+.apt-cache/
+.maven-cache/
+.npm-cache/
+.pip-cache/
+.docker-cache/
+.yum-cache/
+.apk-cache/
+
+# 성능 분석 도구 출력
+*.pprof
+cpu.prof
+mem.prof
+block.prof
+mutex.prof
+trace.out
+
+# 코드 분석 도구 출력들
+*.checkstyle
+*.spotbugs
+golangci-lint.xml
+staticcheck.out
+
+# 문서 생성 도구 임시 파일
+.hugo/
+.jekyll-cache/
+_site/
+.sass-cache/
+
+# IDE/에디터 임시 파일들
+.fleet/
+.cursor/
