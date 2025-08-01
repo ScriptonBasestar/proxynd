@@ -4,23 +4,23 @@ import (
 	"fmt"
 	"sync"
 
-	"proxynd/internal/app"
+	"proxynd/internal/container"
 	"proxynd/logging"
 )
 
 // HandlerCreator 핸들러 생성자 함수 타입
-type HandlerCreator func(*app.Container) Handler
+type HandlerCreator func(container.ContainerProvider) Handler
 
 // HandlerFactoryImpl 핸들러 팩토리 구현체
 type HandlerFactoryImpl struct {
-	container *app.Container
+	container container.ContainerProvider
 	creators  map[string]HandlerCreator
 	mu        sync.RWMutex
 	logger    logging.Logger
 }
 
 // NewHandlerFactory 새로운 핸들러 팩토리 생성
-func NewHandlerFactory(container *app.Container) *HandlerFactoryImpl {
+func NewHandlerFactory(container container.ContainerProvider) *HandlerFactoryImpl {
 	return &HandlerFactoryImpl{
 		container: container,
 		creators:  make(map[string]HandlerCreator),
@@ -136,7 +136,7 @@ var (
 )
 
 // GetDefaultFactory 기본 핸들러 팩토리 반환
-func GetDefaultFactory(container *app.Container) *HandlerFactoryImpl {
+func GetDefaultFactory(container container.ContainerProvider) *HandlerFactoryImpl {
 	defaultFactoryOnce.Do(func() {
 		defaultFactory = NewHandlerFactory(container)
 	})
@@ -147,37 +147,37 @@ func GetDefaultFactory(container *app.Container) *HandlerFactoryImpl {
 func RegisterDefaultHandlers(factory *HandlerFactoryImpl) {
 	// APT 핸들러 등록 - proxy 패키지에서 import 필요
 	// 실제 구현은 proxy 패키지에서 등록
-	factory.Register("apt", func(container *app.Container) Handler {
+	factory.Register("apt", func(container container.ContainerProvider) Handler {
 		return NewBaseHandler(container, "apt-handler", "apt")
 	})
 
 	// Maven 핸들러 등록
-	factory.Register("maven", func(container *app.Container) Handler {
+	factory.Register("maven", func(container container.ContainerProvider) Handler {
 		return NewBaseHandler(container, "maven-handler", "maven")
 	})
 
 	// NPM 핸들러 등록
-	factory.Register("npm", func(container *app.Container) Handler {
+	factory.Register("npm", func(container container.ContainerProvider) Handler {
 		return NewBaseHandler(container, "npm-handler", "npm")
 	})
 
 	// Docker 핸들러 등록
-	factory.Register("docker", func(container *app.Container) Handler {
+	factory.Register("docker", func(container container.ContainerProvider) Handler {
 		return NewBaseHandler(container, "docker-handler", "docker")
 	})
 
 	// PIP 핸들러 등록
-	factory.Register("pip", func(container *app.Container) Handler {
+	factory.Register("pip", func(container container.ContainerProvider) Handler {
 		return NewBaseHandler(container, "pip-handler", "pip")
 	})
 
 	// YUM 핸들러 등록
-	factory.Register("yum", func(container *app.Container) Handler {
+	factory.Register("yum", func(container container.ContainerProvider) Handler {
 		return NewBaseHandler(container, "yum-handler", "yum")
 	})
 
 	// APK 핸들러 등록
-	factory.Register("apk", func(container *app.Container) Handler {
+	factory.Register("apk", func(container container.ContainerProvider) Handler {
 		return NewBaseHandler(container, "apk-handler", "apk")
 	})
 }

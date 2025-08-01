@@ -78,7 +78,6 @@ func JWTMiddleware(config JWTConfig) fiber.Handler {
 			}
 			return []byte(config.SecretKey), nil
 		})
-
 		if err != nil {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"error": "Invalid token",
@@ -144,7 +143,6 @@ func ValidateJWTToken(tokenString string, config JWTConfig) (*JWTClaims, error) 
 		}
 		return []byte(config.SecretKey), nil
 	})
-
 	if err != nil {
 		return nil, err
 	}

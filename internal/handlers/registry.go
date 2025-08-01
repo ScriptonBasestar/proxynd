@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"proxynd/internal/app"
+	"proxynd/internal/container"
 	"proxynd/logging"
 )
 
@@ -28,7 +28,7 @@ type RegistryStats struct {
 }
 
 // NewHandlerRegistry 새로운 핸들러 레지스트리 생성
-func NewHandlerRegistry(container *app.Container) *HandlerRegistry {
+func NewHandlerRegistry(container container.ContainerProvider) *HandlerRegistry {
 	registry := &HandlerRegistry{
 		handlers: make(map[string]Handler),
 		factory:  NewHandlerFactory(container),
@@ -282,7 +282,7 @@ var (
 )
 
 // GetDefaultRegistry 기본 핸들러 레지스트리 반환
-func GetDefaultRegistry(container *app.Container) *HandlerRegistry {
+func GetDefaultRegistry(container container.ContainerProvider) *HandlerRegistry {
 	defaultRegistryOnce.Do(func() {
 		defaultRegistry = NewHandlerRegistry(container)
 	})

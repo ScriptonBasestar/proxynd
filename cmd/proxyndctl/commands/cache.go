@@ -111,11 +111,11 @@ func newCacheListCmd() *cobra.Command {
 // newCacheClearCmd 캐시 정리 명령어
 func newCacheClearCmd() *cobra.Command {
 	var (
-		proxyType  string
-		force      bool
-		confirm    bool
-		olderThan  string
-		sizeLimit  string
+		proxyType string
+		force     bool
+		confirm   bool
+		olderThan string
+		sizeLimit string
 	)
 
 	cmd := &cobra.Command{
@@ -235,21 +235,21 @@ func runCacheClear(proxyType string, force, confirm bool, olderThan, sizeLimit s
 
 	serverURL := getServerURL()
 	var apiURL string
-	
+
 	// URL 파라미터 구성
 	params := url.Values{}
 	params.Set("confirm", "true")
-	
+
 	// 시간 기반 정리 파라미터 추가
 	if olderThan != "" {
 		params.Set("older_than", olderThan)
 	}
-	
+
 	// 크기 기반 정리 파라미터 추가
 	if sizeLimit != "" {
 		params.Set("size_limit", sizeLimit)
 	}
-	
+
 	// API URL 구성
 	if proxyType != "" {
 		apiURL = fmt.Sprintf("%s/api/cache/clear/%s?%s", serverURL, proxyType, params.Encode())

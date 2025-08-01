@@ -121,7 +121,7 @@ func TestTTLCollector_ExpirationTracking(t *testing.T) {
 }
 
 func TestCalculatePercentile(t *testing.T) {
-	values := []int{100, 200, 300, 400, 500, 600, 700, 800, 900, 1000}
+	values := []float64{100, 200, 300, 400, 500, 600, 700, 800, 900, 1000}
 
 	// 50th percentile (median) should be 550
 	p50 := calculatePercentile(values, 50)

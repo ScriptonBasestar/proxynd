@@ -311,7 +311,7 @@ func clearAllCache(c *fiber.Ctx) error {
 	// 캐시 디렉토리 정리
 	cachePath := filepath.Join(storageDir, "proxy")
 
-	logger.Warn("Clearing all cache", 
+	logger.Warn("Clearing all cache",
 		logging.F("path", cachePath),
 		logging.F("older_than", olderThan),
 		logging.F("size_limit", sizeLimit))
@@ -369,7 +369,7 @@ func clearCacheByType(c *fiber.Ctx) error {
 	olderThan := c.Query("older_than", "")
 	sizeLimit := c.Query("size_limit", "")
 
-	logger.Warn("Clearing cache by type", 
+	logger.Warn("Clearing cache by type",
 		logging.F("type", proxyType),
 		logging.F("older_than", olderThan),
 		logging.F("size_limit", sizeLimit))

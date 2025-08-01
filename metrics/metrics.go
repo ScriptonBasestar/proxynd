@@ -301,6 +301,8 @@ var globalMetrics *Metrics
 // InitMetrics 메트릭 초기화
 func InitMetrics() {
 	globalMetrics = NewMetrics()
+	// Container 메트릭도 함께 초기화
+	InitContainerMetrics()
 }
 
 // GetMetrics 전역 메트릭 인스턴스 반환

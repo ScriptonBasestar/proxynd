@@ -5,7 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/internal/app"
+	"proxynd/internal/container"
 )
 
 // Handler 기본 핸들러 인터페이스
@@ -17,7 +17,7 @@ type Handler interface {
 
 // HandlerFactory 핸들러 팩토리 인터페이스
 type HandlerFactory interface {
-	Create(container *app.Container) Handler
+	Create(provider container.ContainerProvider) Handler
 }
 
 // Configurable 설정 가능한 핸들러 인터페이스
@@ -139,4 +139,35 @@ type MetricsAwareProxyHandler interface {
 
 	// 캐시 메트릭 기록
 	RecordCacheMetrics(cacheKey string, hit bool, size int)
+}
+
+// ContainerAwareHandler Container 의존성 주입을 지원하는 핸들러 인터페이스
+type ContainerAwareHandler interface {
+	Handler
+
+	// Container 설정
+	SetContainer(provider container.ContainerProvider)
+	GetContainer() container.ContainerProvider
+
+	// Container를 통한 설정 접근
+	LoadConfig() error
+	ReloadConfig() error
+}
+
+// ContainerProxyHandler Container를 사용하는 프록시 핸들러 인터페이스 (표준 패턴)
+type ContainerProxyHandler interface {
+	ContainerAwareHandler
+	BaseProxyHandler
+}
+
+// ProxyHandlerFactory Container 기반 프록시 핸들러 생성 팩토리
+type ProxyHandlerFactory interface {
+	// 특정 프록시 타입 핸들러 생성
+	CreateHandler(proxyType string, provider container.ContainerProvider) (ContainerProxyHandler, error)
+
+	// 지원하는 프록시 타입 목록 반환
+	SupportedTypes() []string
+
+	// 프록시 타입별 핸들러 등록
+	RegisterHandler(proxyType string, createFn func(container.ContainerProvider) (ContainerProxyHandler, error)) error
 }

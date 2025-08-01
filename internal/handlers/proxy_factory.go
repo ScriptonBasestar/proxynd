@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"sync"
 
-	"proxynd/internal/app"
+	"proxynd/internal/container"
 	"proxynd/logging"
 )
 
-// ProxyHandlerFactory 프록시 핸들러 팩토리
-type ProxyHandlerFactory struct {
-	container *app.Container
+// ProxyHandlerFactoryImpl 프록시 핸들러 팩토리 구현체
+type ProxyHandlerFactoryImpl struct {
+	container container.ContainerProvider
 	handlers  map[string]func() BaseProxyHandler
 	instances map[string]*BaseProxyHandlerImpl
 	mutex     sync.RWMutex
@@ -18,8 +18,8 @@ type ProxyHandlerFactory struct {
 }
 
 // NewProxyHandlerFactory 새로운 프록시 핸들러 팩토리 생성
-func NewProxyHandlerFactory(container *app.Container) *ProxyHandlerFactory {
-	factory := &ProxyHandlerFactory{
+func NewProxyHandlerFactory(container container.ContainerProvider) *ProxyHandlerFactoryImpl {
+	factory := &ProxyHandlerFactoryImpl{
 		container: container,
 		handlers:  make(map[string]func() BaseProxyHandler),
 		instances: make(map[string]*BaseProxyHandlerImpl),
@@ -33,13 +33,13 @@ func NewProxyHandlerFactory(container *app.Container) *ProxyHandlerFactory {
 }
 
 // registerDefaultHandlers 기본 프록시 핸들러들 등록
-func (f *ProxyHandlerFactory) registerDefaultHandlers() {
+func (f *ProxyHandlerFactoryImpl) registerDefaultHandlers() {
 	// 기본 핸들러는 외부에서 등록하도록 변경 (import cycle 방지)
 	f.logger.Info("Proxy handler factory initialized")
 }
 
 // Register 프록시 핸들러 등록
-func (f *ProxyHandlerFactory) Register(proxyType string, creator func() BaseProxyHandler) {
+func (f *ProxyHandlerFactoryImpl) Register(proxyType string, creator func() BaseProxyHandler) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -51,7 +51,7 @@ func (f *ProxyHandlerFactory) Register(proxyType string, creator func() BaseProx
 }
 
 // Unregister 프록시 핸들러 등록 해제
-func (f *ProxyHandlerFactory) Unregister(proxyType string) {
+func (f *ProxyHandlerFactoryImpl) Unregister(proxyType string) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -64,7 +64,7 @@ func (f *ProxyHandlerFactory) Unregister(proxyType string) {
 }
 
 // Create 프록시 핸들러 생성
-func (f *ProxyHandlerFactory) Create(proxyType string) (*BaseProxyHandlerImpl, error) {
+func (f *ProxyHandlerFactoryImpl) Create(proxyType string) (*BaseProxyHandlerImpl, error) {
 	f.mutex.RLock()
 	creator, exists := f.handlers[proxyType]
 	f.mutex.RUnlock()
@@ -86,7 +86,7 @@ func (f *ProxyHandlerFactory) Create(proxyType string) (*BaseProxyHandlerImpl, e
 }
 
 // CreateSingleton 싱글톤 프록시 핸들러 생성/반환
-func (f *ProxyHandlerFactory) CreateSingleton(proxyType string) (*BaseProxyHandlerImpl, error) {
+func (f *ProxyHandlerFactoryImpl) CreateSingleton(proxyType string) (*BaseProxyHandlerImpl, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -119,7 +119,7 @@ func (f *ProxyHandlerFactory) CreateSingleton(proxyType string) (*BaseProxyHandl
 }
 
 // GetSupportedTypes 지원하는 프록시 타입 목록 반환
-func (f *ProxyHandlerFactory) GetSupportedTypes() []string {
+func (f *ProxyHandlerFactoryImpl) GetSupportedTypes() []string {
 	f.mutex.RLock()
 	defer f.mutex.RUnlock()
 
@@ -132,7 +132,7 @@ func (f *ProxyHandlerFactory) GetSupportedTypes() []string {
 }
 
 // IsSupported 프록시 타입 지원 여부 확인
-func (f *ProxyHandlerFactory) IsSupported(proxyType string) bool {
+func (f *ProxyHandlerFactoryImpl) IsSupported(proxyType string) bool {
 	f.mutex.RLock()
 	defer f.mutex.RUnlock()
 
@@ -141,7 +141,7 @@ func (f *ProxyHandlerFactory) IsSupported(proxyType string) bool {
 }
 
 // GetHandlerInfo 핸들러 정보 반환
-func (f *ProxyHandlerFactory) GetHandlerInfo(proxyType string) (map[string]interface{}, error) {
+func (f *ProxyHandlerFactoryImpl) GetHandlerInfo(proxyType string) (map[string]interface{}, error) {
 	f.mutex.RLock()
 	defer f.mutex.RUnlock()
 
@@ -190,7 +190,7 @@ func (f *ProxyHandlerFactory) GetHandlerInfo(proxyType string) (map[string]inter
 }
 
 // HealthCheck 모든 활성화된 핸들러의 헬스체크 수행
-func (f *ProxyHandlerFactory) HealthCheck() map[string]error {
+func (f *ProxyHandlerFactoryImpl) HealthCheck() map[string]error {
 	f.mutex.RLock()
 	defer f.mutex.RUnlock()
 
@@ -225,7 +225,7 @@ func (f *ProxyHandlerFactory) HealthCheck() map[string]error {
 }
 
 // Shutdown 팩토리 및 모든 인스턴스 정리
-func (f *ProxyHandlerFactory) Shutdown() {
+func (f *ProxyHandlerFactoryImpl) Shutdown() {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -243,7 +243,7 @@ func (f *ProxyHandlerFactory) Shutdown() {
 }
 
 // GetStatistics 팩토리 통계 정보 반환
-func (f *ProxyHandlerFactory) GetStatistics() map[string]interface{} {
+func (f *ProxyHandlerFactoryImpl) GetStatistics() map[string]interface{} {
 	f.mutex.RLock()
 	defer f.mutex.RUnlock()
 

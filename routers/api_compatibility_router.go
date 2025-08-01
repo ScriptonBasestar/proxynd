@@ -2,6 +2,7 @@ package routers
 
 import (
 	"github.com/gofiber/fiber/v2"
+
 	"proxynd/logging"
 )
 
@@ -42,7 +43,7 @@ func CLICompatibilityMiddleware() fiber.Handler {
 		// CLI에서 기대하는 응답 헤더 추가
 		c.Set("X-ProxyND-API-Version", "v1")
 		c.Set("X-ProxyND-CLI-Compatible", "true")
-		
+
 		// CORS 헤더 추가 (CLI 도구가 브라우저에서 실행될 경우 대비)
 		c.Set("Access-Control-Allow-Origin", "*")
 		c.Set("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")

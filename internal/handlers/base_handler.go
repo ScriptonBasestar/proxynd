@@ -7,8 +7,8 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/internal/app"
 	"proxynd/internal/config"
+	"proxynd/internal/container"
 	"proxynd/logging"
 )
 
@@ -22,19 +22,19 @@ const (
 
 // BaseHandler 기본 핸들러 구현체
 type BaseHandler struct {
-	container *app.Container
-	name      string
-	proxyType string
-	logger    logging.Logger
+	containerProvider container.ContainerProvider
+	name              string
+	proxyType         string
+	logger            logging.Logger
 }
 
 // NewBaseHandler 기본 핸들러 생성
-func NewBaseHandler(container *app.Container, name, proxyType string) *BaseHandler {
+func NewBaseHandler(provider container.ContainerProvider, name, proxyType string) *BaseHandler {
 	return &BaseHandler{
-		container: container,
-		name:      name,
-		proxyType: proxyType,
-		logger:    logging.GetLogger(),
+		containerProvider: provider,
+		name:              name,
+		proxyType:         proxyType,
+		logger:            logging.GetLogger(),
 	}
 }
 
@@ -58,16 +58,13 @@ func (h *BaseHandler) Type() string {
 }
 
 // GetContainer 컨테이너 반환
-func (h *BaseHandler) GetContainer() *app.Container {
-	return h.container
+func (h *BaseHandler) GetContainer() container.ContainerProvider {
+	return h.containerProvider
 }
 
 // GetConfig 설정 반환
 func (h *BaseHandler) GetConfig() *config.UnifiedConfig {
-	cfg := h.container.GetUnifiedConfig()
-	if unifiedConfig, ok := cfg.(*config.UnifiedConfig); ok {
-		return unifiedConfig
-	}
+	// 기본 구현: nil 반환 (자식 클래스에서 오버라이드)
 	return nil
 }
 
@@ -79,7 +76,7 @@ func (h *BaseHandler) GetLogger() logging.Logger {
 // HealthCheck 기본 헬스체크 구현
 func (h *BaseHandler) HealthCheck() error {
 	// 기본적으로 컨테이너와 설정이 정상인지 확인
-	if h.container == nil {
+	if h.containerProvider == nil {
 		return fmt.Errorf("container is nil")
 	}
 

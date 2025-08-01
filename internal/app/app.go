@@ -25,6 +25,7 @@ type Application struct {
 	config         *Config
 	logger         logging.Logger
 	fiberApp       *fiber.App
+	container      *Container
 	serviceFactory *proxy.ServiceFactory
 	configService  configService.Service
 	configRepo     *config.FileRepository
@@ -100,6 +101,11 @@ func New(cfg *Config) (*Application, error) {
 		return nil, fmt.Errorf("failed to initialize config service: %w", err)
 	}
 	app.configService = configService
+
+	// Initialize Container (의존성 주입 컨테이너)
+	if err := app.initializeContainer(); err != nil {
+		return nil, fmt.Errorf("failed to initialize container: %w", err)
+	}
 
 	// Initialize services
 	if err := app.initializeServices(); err != nil {
@@ -207,6 +213,15 @@ func (app *Application) initializeServices() error {
 	return nil
 }
 
+// initializeContainer Container 의존성 주입 컨테이너 초기화
+func (app *Application) initializeContainer() error {
+	// Container 생성
+	app.container = NewContainer(app.config)
+
+	app.logger.Info("Container initialized successfully")
+	return nil
+}
+
 func (app *Application) initializeFiberApp() {
 	// Create base router
 	app.fiberApp = routers.BaseRouter()
@@ -216,6 +231,9 @@ func (app *Application) initializeFiberApp() {
 		app.logger.Warn("Connection Pool 초기화 실패, 기본값 사용",
 			logging.F("error", err))
 	}
+
+	// === Container 기반 프록시 라우터 (우선순위 최고) ===
+	routers.ContainerProxyRouterSetup(app.fiberApp, app.container)
 
 	// === 새로운 v1 통합 API 등록 (우선순위 높음) ===
 	routers.UnifiedRouterV1(app.fiberApp)
@@ -233,7 +251,7 @@ func (app *Application) initializeFiberApp() {
 	routers.TestRouter(app.fiberApp)
 	routers.WebhookRouter(app.fiberApp) // 이미 v1
 	routers.AuthRouter(app.fiberApp)    // 인증 라우터 추가
-	
+
 	// === CLI 호환성 라우터 ===
 	routers.APICompatibilityRouter(app.fiberApp) // CLI API 호환성
 	// TODO: MetricsRouter 시그니처 수정 필요
@@ -246,9 +264,14 @@ func (app *Application) initializeFiberApp() {
 	routers.LegacyCompatibilityRouter(app.fiberApp)
 	routers.LegacyAPIInfo(app.fiberApp)
 
-	// Store service factory in app locals for handlers to use
+	// Store service factory and container in app locals for handlers to use
 	app.fiberApp.Use(func(c *fiber.Ctx) error {
 		c.Locals("serviceFactory", app.serviceFactory)
+		c.Locals("container", app.container)
 		return c.Next()
 	})
+
+	app.logger.Info("Container-based proxy router initialized",
+		logging.F("supported_handlers", []string{"apt", "maven", "npm"}),
+	)
 }
