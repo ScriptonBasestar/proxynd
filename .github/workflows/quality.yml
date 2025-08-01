@@ -1,0 +1,376 @@
+# 📊 ProxyND Code Quality
+name: Quality
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  GO_VERSION: '1.24'
+
+jobs:
+  # 📝 Commit Lint
+  commitlint:
+    name: Commit Lint
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install commitlint
+        run: |
+          npm install -g @commitlint/cli @commitlint/config-conventional
+
+      - name: Create commitlint config
+        run: |
+          cat > commitlint.config.js << 'EOF'
+          module.exports = {
+            extends: ['@commitlint/config-conventional'],
+            rules: {
+              'type-enum': [
+                2,
+                'always',
+                [
+                  'feat',     // 새로운 기능
+                  'fix',      // 버그 수정
+                  'docs',     // 문서 변경
+                  'style',    // 코드 포맷팅
+                  'refactor', // 리팩토링
+                  'perf',     // 성능 개선
+                  'test',     // 테스트 추가/수정
+                  'chore',    // 빌드 프로세스 또는 보조 도구 변경
+                  'ci',       // CI 설정 변경
+                  'build',    // 빌드 시스템 변경
+                  'revert'    // 이전 커밋 되돌리기
+                ]
+              ],
+              'subject-max-length': [2, 'always', 100],
+              'body-max-line-length': [2, 'always', 200]
+            }
+          };
+          EOF
+
+      - name: Lint commits
+        run: |
+          echo "🔍 Checking commit messages..."
+          npx commitlint --from HEAD~${{ github.event.pull_request.commits }} --to HEAD --verbose
+
+  # 🔍 Make Quality Checks
+  make-quality:
+    name: Make Quality Checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Install linting tools
+        run: |
+          echo "🔧 Installing linting tools via Make..."
+          make lint-install-tools
+
+      - name: Install format tools
+        run: |
+          echo "🔧 Installing format tools via Make..."
+          make format-install-tools
+
+      - name: Run Make lint-strict
+        run: |
+          echo "🔍 Running make lint-strict..."
+          make lint-strict
+
+      - name: Run Make format-strict
+        run: |
+          echo "📝 Running make format-strict..."
+          make format-strict
+
+      - name: Check for formatting changes
+        run: |
+          echo "🔍 Checking if formatting made changes..."
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "❌ Formatting made changes - code is not properly formatted"
+            git diff
+            exit 1
+          else
+            echo "✅ Code is properly formatted"
+          fi
+
+  # 🔍 Additional Code Analysis
+  code-analysis:
+    name: Additional Code Analysis
+    runs-on: ubuntu-latest
+    needs: make-quality
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Install analysis tools
+        run: |
+          go install github.com/fzipp/gocyclo/cmd/gocyclo@latest
+          go install github.com/client9/misspell/cmd/misspell@latest
+          go install github.com/gordonklaus/ineffassign@latest
+          go install honnef.co/go/tools/cmd/staticcheck@latest
+
+      - name: Cyclomatic complexity
+        run: |
+          echo "🔄 Checking cyclomatic complexity..."
+          gocyclo -over 15 . | tee complexity_report.txt
+          if [ -s complexity_report.txt ]; then
+            echo "⚠️ High complexity functions found:"
+            cat complexity_report.txt
+            echo "HIGH_COMPLEXITY=true" >> $GITHUB_ENV
+          else
+            echo "✅ No high complexity functions found"
+            echo "HIGH_COMPLEXITY=false" >> $GITHUB_ENV
+          fi
+
+      - name: Spell check
+        run: |
+          echo "📝 Checking spelling..."
+          misspell -error . || echo "SPELLING_ERRORS=true" >> $GITHUB_ENV
+
+      - name: Inefficient assignments
+        run: |
+          echo "🔍 Checking inefficient assignments..."
+          ineffassign ./... || echo "INEFFICIENT_ASSIGNMENTS=true" >> $GITHUB_ENV
+
+      - name: Static analysis
+        run: |
+          echo "🔬 Running static analysis..."
+          staticcheck ./... || echo "STATIC_ANALYSIS_ISSUES=true" >> $GITHUB_ENV
+
+      - name: Upload analysis results
+        if: env.HIGH_COMPLEXITY == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: complexity-report
+          path: complexity_report.txt
+
+  # 📦 Dependency Check
+  dependency-check:
+    name: Dependency Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Check mod tidy
+        run: |
+          echo "📦 Checking go mod tidy..."
+          go mod tidy
+          if [ -n "$(git status --porcelain go.mod go.sum)" ]; then
+            echo "❌ go.mod or go.sum is not tidy"
+            git diff go.mod go.sum
+            exit 1
+          else
+            echo "✅ go.mod and go.sum are tidy"
+          fi
+
+      - name: Check for direct dependencies
+        run: |
+          echo "🔍 Checking for unnecessary direct dependencies..."
+          go mod why -m all | grep -E "(no longer needed|not used)" && {
+            echo "⚠️ Found unused dependencies"
+            echo "UNUSED_DEPS=true" >> $GITHUB_ENV
+          } || {
+            echo "✅ No unused dependencies found"
+            echo "UNUSED_DEPS=false" >> $GITHUB_ENV
+          }
+
+      - name: License compliance
+        run: |
+          echo "⚖️ Checking license compliance..."
+          go install github.com/google/go-licenses@latest
+          go-licenses check ./... || echo "LICENSE_ISSUES=true" >> $GITHUB_ENV
+
+  # 📄 Documentation Check
+  docs-check:
+    name: Documentation Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check README
+        run: |
+          echo "📚 Checking README..."
+          if [ ! -f README.md ]; then
+            echo "❌ README.md is missing"
+            exit 1
+          fi
+
+          # Check for required sections
+          required_sections=("Installation" "Usage" "Contributing")
+          for section in "${required_sections[@]}"; do
+            if ! grep -qi "$section" README.md; then
+              echo "⚠️ README.md is missing '$section' section"
+              echo "MISSING_README_SECTIONS=true" >> $GITHUB_ENV
+            fi
+          done
+
+      - name: Check Go documentation
+        run: |
+          echo "📖 Checking Go documentation..."
+          go install golang.org/x/tools/cmd/godoc@latest
+
+          # Find packages without documentation
+          undocumented=$(go list ./... | xargs -I {} sh -c 'go doc {} > /dev/null 2>&1 || echo {}')
+          if [ -n "$undocumented" ]; then
+            echo "⚠️ Packages without documentation:"
+            echo "$undocumented"
+            echo "UNDOCUMENTED_PACKAGES=true" >> $GITHUB_ENV
+          else
+            echo "✅ All packages have documentation"
+            echo "UNDOCUMENTED_PACKAGES=false" >> $GITHUB_ENV
+          fi
+
+  # 🧪 Make Test Suite
+  make-test:
+    name: Make Test Suite
+    runs-on: ubuntu-latest
+    needs: make-quality
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Run Make Tests
+        run: |
+          echo "🧪 Running make test (full test suite)..."
+          make test || exit 1
+
+  # 🏗️ Build Matrix
+  build-matrix:
+    name: Build Matrix
+    runs-on: ubuntu-latest
+    needs: make-test
+    strategy:
+      matrix:
+        go-version: ['1.22', '1.23', '1.24']
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go ${{ matrix.go-version }}
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
+          cache: true
+
+      - name: Build
+        run: |
+          echo "🏗️ Building with Go ${{ matrix.go-version }} on ${{ matrix.os }}..."
+          go build -v ./...
+
+      - name: Test
+        run: |
+          echo "🧪 Testing with Go ${{ matrix.go-version }} on ${{ matrix.os }}..."
+          go test -v ./...
+
+  # 📊 Quality Summary
+  quality-summary:
+    name: Quality Summary
+    runs-on: ubuntu-latest
+    needs: [commitlint, make-quality, code-analysis, dependency-check, docs-check, make-test, build-matrix]
+    if: always()
+    steps:
+      - name: Generate quality report
+        run: |
+          echo "## 📊 Code Quality Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Check | Status | Details |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|---------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Commit Lint | ${{ needs.commitlint.result }} | Conventional commit format |" >> $GITHUB_STEP_SUMMARY
+          echo "| Make Quality | ${{ needs.make-quality.result }} | lint-strict + format-strict |" >> $GITHUB_STEP_SUMMARY
+          echo "| Additional Analysis | ${{ needs.code-analysis.result }} | Complexity, spelling, static analysis |" >> $GITHUB_STEP_SUMMARY
+          echo "| Dependencies | ${{ needs.dependency-check.result }} | Mod tidy, unused deps, licenses |" >> $GITHUB_STEP_SUMMARY
+          echo "| Documentation | ${{ needs.docs-check.result }} | README, Go docs |" >> $GITHUB_STEP_SUMMARY
+          echo "| Make Tests | ${{ needs.make-test.result }} | Full make test suite |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build Matrix | ${{ needs.build-matrix.result }} | Cross-platform builds |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Overall status
+          overall_status="✅ Excellent"
+          failed_checks=""
+
+          if [[ "${{ needs.commitlint.result }}" == "failure" ]]; then
+            failed_checks="$failed_checks- Commit messages don't follow conventional format\n"
+            overall_status="⚠️ Needs Improvement"
+          fi
+
+          if [[ "${{ needs.make-quality.result }}" == "failure" ]]; then
+            failed_checks="$failed_checks- Make quality checks failed (lint-strict or format-strict)\n"
+            overall_status="❌ Critical Issues"
+          fi
+
+          if [[ "${{ needs.code-analysis.result }}" == "failure" ]]; then
+            failed_checks="$failed_checks- Additional code analysis found issues\n"
+            overall_status="⚠️ Needs Improvement"
+          fi
+
+          if [[ "${{ needs.dependency-check.result }}" == "failure" ]]; then
+            failed_checks="$failed_checks- Dependency issues found\n"
+            overall_status="⚠️ Needs Improvement"
+          fi
+
+          if [[ "${{ needs.docs-check.result }}" == "failure" ]]; then
+            failed_checks="$failed_checks- Documentation issues found\n"
+            overall_status="⚠️ Needs Improvement"
+          fi
+
+          if [[ "${{ needs.make-test.result }}" == "failure" ]]; then
+            failed_checks="$failed_checks- Make test suite failed\n"
+            overall_status="❌ Critical Issues"
+          fi
+
+          if [[ "${{ needs.build-matrix.result }}" == "failure" ]]; then
+            failed_checks="$failed_checks- Build matrix failed\n"
+            overall_status="❌ Critical Issues"
+          fi
+
+          echo "### Overall Quality: $overall_status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [[ -n "$failed_checks" ]]; then
+            echo "#### Issues to address:" >> $GITHUB_STEP_SUMMARY
+            echo -e "$failed_checks" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "🎉 All quality checks passed!" >> $GITHUB_STEP_SUMMARY
+          fi

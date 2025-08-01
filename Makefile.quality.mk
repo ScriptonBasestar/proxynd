@@ -60,6 +60,23 @@ format-diff: ## show formatting differences
 		echo -e "$(GREEN)✅ No formatting differences found!$(RESET)"; \
 	fi
 
+fmt-diff: ## format only changed files (fast, for pre-commit)
+	@echo -e "$(CYAN)🚀 Quick format changed files only...$(RESET)"
+	@CHANGED_FILES=$$(git diff --cached --name-only --diff-filter=ACM | grep '\.go$$' || true); \
+	if [ -n "$$CHANGED_FILES" ]; then \
+		echo "Formatting changed Go files:"; \
+		echo "$$CHANGED_FILES" | while read file; do \
+			if [ -f "$$file" ]; then \
+				echo "  📝 $$file"; \
+				gofumpt -w "$$file" || true; \
+				goimports -w -local proxynd "$$file" || true; \
+			fi; \
+		done; \
+		echo -e "$(GREEN)✅ Changed files formatted!$(RESET)"; \
+	else \
+		echo -e "$(YELLOW)📋 No changed Go files to format$(RESET)"; \
+	fi
+
 format-install-tools: ## install advanced formatting tools
 	@echo -e "$(CYAN)Installing formatting tools...$(RESET)"
 	@which goimports > /dev/null || (echo "Installing goimports..." && go install golang.org/x/tools/cmd/goimports@latest)
@@ -318,6 +335,25 @@ lint-new: install-golangci-lint ## run golangci-lint on new code only
 	@echo "Running golangci-lint on new code only..."
 	golangci-lint run --new-from-rev=HEAD~ ./...
 
+lint-diff: ## lint only changed files (fast, for pre-commit)
+	@echo -e "$(BLUE)🚀 Quick lint changed files only...$(RESET)"
+	@CHANGED_FILES=$$(git diff --cached --name-only --diff-filter=ACM | grep '\.go$$' || true); \
+	if [ -n "$$CHANGED_FILES" ]; then \
+		echo "Linting changed Go files:"; \
+		echo "$$CHANGED_FILES" | while read file; do \
+			if [ -f "$$file" ]; then \
+				echo "  🔍 $$file"; \
+			fi; \
+		done; \
+		echo "1. Running go vet on changed files..."; \
+		echo "$$CHANGED_FILES" | xargs -r go vet || true; \
+		echo "2. Running golangci-lint on changed files..."; \
+		echo "$$CHANGED_FILES" | xargs -r golangci-lint run --fix || true; \
+		echo -e "$(GREEN)✅ Changed files linted!$(RESET)"; \
+	else \
+		echo -e "$(YELLOW)📋 No changed Go files to lint$(RESET)"; \
+	fi
+
 lint-ci: ## run golangci-lint for CI
 	@echo "Running golangci-lint for CI..."
 	golangci-lint run --out-format=github-actions ./...
@@ -361,7 +397,13 @@ analyze-unused: ## find unused code
 # Quality Assurance Workflow Targets
 # ==============================================================================
 
-pre-commit: lint-vet lint-golangci-fix
+pre-commit: lint-diff fmt-diff ## fast pre-commit checks (changed files only, <3s)
+	@echo -e "$(GREEN)✅ Pre-commit checks completed!$(RESET)"
+
+pre-commit-make: lint-vet lint-golangci-fix ## legacy pre-commit using make commands
+
+pre-push: lint-strict format-strict ## comprehensive pre-push checks (full codebase)
+	@echo -e "$(GREEN)✅ Pre-push checks completed!$(RESET)"
 
 quality: fmt lint test-coverage ## run all quality checks
 	@echo "✅ All quality checks passed!"

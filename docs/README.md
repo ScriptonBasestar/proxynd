@@ -91,12 +91,12 @@
 ### 핵심 성능 지표
 ```promql
 # 설정 캐시 히트율 (목표: 95%+)
-(rate(proxynd_config_cache_hits_total[5m]) / 
- (rate(proxynd_config_cache_hits_total[5m]) + 
+(rate(proxynd_config_cache_hits_total[5m]) /
+ (rate(proxynd_config_cache_hits_total[5m]) +
   rate(proxynd_config_cache_misses_total[5m]))) * 100
 
 # Container 핸들러 응답시간 (P95)
-histogram_quantile(0.95, 
+histogram_quantile(0.95,
   rate(proxynd_container_handler_duration_seconds_bucket[5m]))
 
 # 핸들러 에러율 (목표: <0.5%)  
@@ -136,12 +136,12 @@ func NewCustomContainerHandler(provider container.ContainerProvider) *CustomCont
     handler := &CustomContainerHandler{
         BaseContainerHandler: NewBaseContainerHandler(provider, "custom", "custom-handler"),
     }
-    
+
     if err := handler.LoadConfig(); err != nil {
         handler.enabled = false
         return handler
     }
-    
+
     handler.enabled = true
     return handler
 }
@@ -152,7 +152,7 @@ func NewCustomContainerHandler(provider container.ContainerProvider) *CustomCont
 // internal/app/container.go
 factory.RegisterHandler("custom", func(provider container.ContainerProvider) (handlers.ContainerProxyHandler, error) {
     return &containerHandlerAdapter{
-        name:      "custom-container-handler", 
+        name:      "custom-container-handler",
         proxyType: "custom",
         provider:  provider,
     }, nil
@@ -164,7 +164,7 @@ factory.RegisterHandler("custom", func(provider container.ContainerProvider) (ha
 func TestCustomHandler(t *testing.T) {
     mockContainer := testutil.NewMockContainerProvider(t)
     handler := NewCustomContainerHandler(mockContainer)
-    
+
     assert.True(t, handler.IsEnabled())
     assert.Equal(t, "custom", handler.Type())
     assert.NoError(t, handler.HealthCheck())

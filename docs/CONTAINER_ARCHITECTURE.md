@@ -1,5 +1,7 @@
 # Container 기반 의존성 주입 아키텍처 문서
 
+> **📋 참고**: 이 시스템은 [BaseProxyHandler 계획](archive/planning/03-code-deduplication.md)을 대체하여 구현되었으며, 원래 계획의 목표를 초과 달성했습니다.
+
 ## Architecture Overview
 
 ProxyND의 Container 기반 의존성 주입 시스템은 고성능, 확장 가능하며 테스트하기 쉬운 프록시 핸들러 아키텍처를 제공합니다.
@@ -12,20 +14,20 @@ graph TB
         C --> D[Handler Factory]
         D --> E[Container Handler]
     end
-    
+
     subgraph "Container System"
         F[Container Provider] --> G[Configuration Cache]
         F --> H[Service Singletons]
         F --> I[Hot Reload Watcher]
     end
-    
+
     subgraph "Handler Layer"
         E --> J[Base Container Handler]
         J --> K[Metrics Collection]
         J --> L[Config Access]
         J --> M[Upstream Proxy]
     end
-    
+
     E --> F
     G --> L
     K --> N[Prometheus Metrics]
@@ -50,7 +52,7 @@ type ContainerProvider interface {
     // Storage & Configuration
     GetStorageDir() string
     GetConfigDir() string
-    
+
     // Proxy Configurations (Cached)
     GetAptProxyConfig() (*config.AptProxyConfig, error)
     GetMavenProxyConfig() (*config.MavenProxySettings, error)
@@ -133,17 +135,17 @@ type BaseContainerHandler struct {
 func (h *BaseContainerHandler) WithMetrics(c *fiber.Ctx, handler func() error) error {
     start := time.Now()
     err := handler()
-    
+
     duration := time.Since(start)
     statusCode := c.Response().StatusCode()
-    
+
     h.RecordHandlerRequest(c.Method(), statusCode)
     h.RecordHandlerDuration(c.Method(), duration)
-    
+
     if statusCode >= 400 {
         h.RecordHandlerError(getErrorTypeFromStatusCode(statusCode))
     }
-    
+
     return err
 }
 ```
@@ -159,12 +161,12 @@ func (c *Container) startConfigWatcher() {
     if err != nil {
         return
     }
-    
+
     err = watcher.Add(c.config.ConfigDir)
     if err != nil {
         return
     }
-    
+
     go func() {
         for {
             select {
@@ -206,22 +208,22 @@ func (c *Container) GetMavenProxyConfig() (*config.MavenProxySettings, error) {
         return cached.(*config.MavenProxySettings), nil
     }
     c.mu.RUnlock()
-    
+
     // Slow path: 쓰기 락으로 설정 로딩
     c.mu.Lock()
     defer c.mu.Unlock()
-    
+
     // Double-check: 락 획득 중 다른 고루틴이 로딩했을 수 있음
     if cached, exists := c.singletons["maven-proxy-config"]; exists {
         return cached.(*config.MavenProxySettings), nil
     }
-    
+
     // 실제 설정 로딩 및 캐싱
     cfg, err := c.configLoader.LoadMavenProxyConfig(context.Background())
     if err != nil {
         return nil, err
     }
-    
+
     c.singletons["maven-proxy-config"] = cfg
     return cfg, nil
 }
@@ -259,17 +261,17 @@ func (f *StandardProxyHandlerFactory) CreateHandler(proxyType string, provider C
     if handler, exists := handlerInstances[proxyType]; exists {
         return handler, nil
     }
-    
+
     createFn, exists := f.creators[proxyType]
     if !exists {
         return nil, fmt.Errorf("unsupported proxy type: %s", proxyType)
     }
-    
+
     handler, err := createFn(provider)
     if err != nil {
         return nil, err
     }
-    
+
     handlerInstances[proxyType] = handler
     return handler, nil
 }
@@ -288,7 +290,7 @@ func (h *PIPContainerHandler) selectUpstreamServer() config.PipProxyServer {
     if len(h.proxies) == 1 {
         return h.proxies[0]
     }
-    
+
     idx := atomic.AddUint32(&h.serverIdx, 1) % uint32(len(h.proxies))
     return h.proxies[idx]
 }
@@ -338,15 +340,15 @@ func ContainerMetricsMiddleware() fiber.Handler {
     return func(c *fiber.Ctx) error {
         start := time.Now()
         err := c.Next()
-        
+
         duration := time.Since(start).Seconds()
         handlerType := extractHandlerTypeFromPath(c.Path())
-        
+
         if handlerType != "" {
             containerMetrics.RecordHandlerRequest(handlerType, c.Method(), c.Response().StatusCode())
             containerMetrics.RecordHandlerDuration(handlerType, c.Method(), duration)
         }
-        
+
         return err
     }
 }
@@ -362,7 +364,7 @@ type MockContainerProvider struct {
     mock.Mock
     storageDir string
     configDir  string
-    
+
     // 캐시된 설정들
     aptConfig    *config.AptProxyConfig
     mavenConfig  *config.MavenProxySettings
@@ -397,10 +399,10 @@ type ContainerHandlerTestSuite struct {
 
 func (s *ContainerHandlerTestSuite) TestAllHandlersBasicFunctionality() {
     handlerTypes := []string{"apt", "maven", "npm", "docker", "pip"}
-    
+
     for _, handlerType := range handlerTypes {
         handler := s.createHandler(handlerType)
-        
+
         assert.True(s.t, handler.IsEnabled())
         assert.NoError(s.t, handler.HealthCheck())
         assert.NotEmpty(s.t, handler.Name())
@@ -423,12 +425,12 @@ func (s *ContainerHandlerTestSuite) TestAllHandlersBasicFunctionality() {
 ```go
 func (r *ContainerProxyRouter) setupRoutes() {
     handlerTypes := []string{"apt", "maven", "npm", "docker", "pip"}
-    
+
     for _, handlerType := range handlerTypes {
         // 새로운 API 경로
-        r.app.All(fmt.Sprintf("/api/v1/proxy/%s/*", handlerType), 
+        r.app.All(fmt.Sprintf("/api/v1/proxy/%s/*", handlerType),
             r.createHandlerFunc(handlerType))
-        
+
         // 레거시 API 경로  
         r.app.All(fmt.Sprintf("/proxy/%s/*", handlerType),
             r.createHandlerFunc(handlerType))
@@ -441,7 +443,7 @@ func (r *ContainerProxyRouter) createHandlerFunc(handlerType string) fiber.Handl
         if err != nil {
             return fiber.NewError(fiber.StatusInternalServerError, err.Error())
         }
-        
+
         return handler.Handle(c)
     }
 }
@@ -458,14 +460,14 @@ func (c *Container) loadConfigSafely(configPath string, target interface{}) erro
     if !strings.HasPrefix(configPath, c.config.ConfigDir) {
         return errors.New("config path outside allowed directory")
     }
-    
+
     // 파일 크기 제한 (메모리 보호)
     if stat, err := os.Stat(configPath); err == nil {
         if stat.Size() > maxConfigFileSize {
             return errors.New("config file too large")
         }
     }
-    
+
     return helpers.ReadYamlSafe(configPath, target)
 }
 ```
@@ -500,12 +502,12 @@ func (c *Container) HealthCheck() error {
         if err != nil {
             return fmt.Errorf("handler %s unavailable: %w", handlerType, err)
         }
-        
+
         if err := handler.HealthCheck(); err != nil {
             return fmt.Errorf("handler %s unhealthy: %w", handlerType, err)
         }
     }
-    
+
     return nil
 }
 ```
