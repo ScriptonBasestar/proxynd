@@ -271,8 +271,8 @@ Add to `.pre-commit-config.yaml`:
 
 ```yaml
 default_language_version:
-  golang: 1.22.0
-  python: python3.11
+  golang: 1.24
+  python: python3.12
 ```
 
 ## Summary

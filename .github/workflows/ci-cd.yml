@@ -12,7 +12,7 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
   GO_VERSION: '1.23'
-  
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -65,7 +65,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go-version: ['1.22', '1.23']
+        go-version: ['1.22', '1.23', '1.24']
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -127,7 +127,7 @@ jobs:
         run: |
           mkdir -p tmp/config tmp/storage
           cp -r sample-conf/* tmp/config/
-          
+
       - name: Run integration tests
         run: |
           export CONFIG_DIR=./tmp/config
@@ -327,7 +327,7 @@ jobs:
         run: |
           # 현재 프로덕션 버전 백업
           kubectl get deployment proxynd-production -n production -o yaml > backup-deployment.yaml
-          
+
           # Green 슬롯에 새 버전 배포
           helm upgrade --install proxynd-green ./helm \
             --namespace production \
@@ -340,10 +340,10 @@ jobs:
 
           # Green 슬롯 헬스체크
           kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=proxynd-green -n production --timeout=300s
-          
+
           # 트래픽 전환
           kubectl patch service proxynd-production -n production -p '{"spec":{"selector":{"app.kubernetes.io/name":"proxynd-green"}}}'
-          
+
           # 헬스체크 후 Blue 슬롯 정리
           sleep 60
           kubectl delete deployment proxynd-production -n production || true

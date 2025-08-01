@@ -6,7 +6,7 @@ stages:
   - deploy
 
 variables:
-  GO_VERSION: "1.22"
+  GO_VERSION: "1.24"
   DOCKER_DRIVER: overlay2
   DOCKER_TLS_CERTDIR: "/certs"
   FF_USE_FASTZIP: "true"

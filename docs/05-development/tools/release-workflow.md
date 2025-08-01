@@ -219,7 +219,7 @@ proxyndctl --version
 
 ### 빌드 실패
 
-1. **Go 버전 확인**: Go 1.22 이상 필요
+1. **Go 버전 확인**: Go 1.24 이상 필요
 2. **의존성 문제**: `go mod download && go mod tidy` 실행
 3. **크로스 컴파일 오류**: CGO_ENABLED=0 설정 확인
 

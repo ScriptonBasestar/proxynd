@@ -110,6 +110,7 @@ ProxyND는 강력한 CLI 관리 도구 `proxyndctl`을 제공합니다. 모든 �
 - **사용자 관리**: 사용자 추가/삭제/목록 조회
 - **프록시 테스트**: 연결성 테스트 및 기능 검증
 - **서버 상태**: 실시간 상태 모니터링
+- **Maven 확장**: 인덱스 관리 및 증분 백업
 
 ### 사용 예시
 
@@ -133,6 +134,10 @@ proxyndctl test --proxy maven
 
 # 서버 상태
 proxyndctl status
+
+# Maven 확장 기능
+proxyndctl maven-index build    # 검색 인덱스 생성
+proxyndctl maven-backup create  # 증분 백업
 ```
 
 ### API 엔드포인트

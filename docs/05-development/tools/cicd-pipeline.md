@@ -94,8 +94,9 @@ Triggers:
 go test -v -race -coverprofile=coverage.out ./...
 
 # Matrix testing across Go versions
-- Go 1.21
 - Go 1.22
+- Go 1.23
+- Go 1.24
 ```
 
 ### 3. Integration Testing
@@ -354,7 +355,7 @@ SLACK_WEBHOOK: # Optional - Slack notifications
 ALERT_WEBHOOK: # Optional - Custom alerting
 
 # Environment Variables
-GO_VERSION: '1.22'
+GO_VERSION: '1.24'
 DOCKER_REGISTRY: 'ghcr.io'
 COVERAGE_THRESHOLD: 80
 ```
