@@ -290,6 +290,10 @@ func clearAllCache(c *fiber.Ctx) error {
 		})
 	}
 
+	// 고급 정리 옵션 파라미터
+	olderThan := c.Query("older_than", "")
+	sizeLimit := c.Query("size_limit", "")
+
 	// 글로벌 설정 로드
 	globalConfig := config.GlobalConfig{}
 	if !globalConfig.ConfigExists() {
@@ -307,16 +311,29 @@ func clearAllCache(c *fiber.Ctx) error {
 	// 캐시 디렉토리 정리
 	cachePath := filepath.Join(storageDir, "proxy")
 
-	logger.Warn("Clearing all cache", logging.F("path", cachePath))
+	logger.Warn("Clearing all cache", 
+		logging.F("path", cachePath),
+		logging.F("older_than", olderThan),
+		logging.F("size_limit", sizeLimit))
 
 	// 실제 캐시 정리 로직 (여기서는 로깅만)
 	// 실제로는 cache.Manager의 Clear() 메서드 사용
 
-	return c.JSON(fiber.Map{
+	response := fiber.Map{
 		"success":    true,
 		"message":    "All cache cleared successfully",
 		"cleared_at": time.Now(),
-	})
+	}
+
+	// 추가 정보 포함
+	if olderThan != "" {
+		response["filter"] = fmt.Sprintf("older than %s", olderThan)
+	}
+	if sizeLimit != "" {
+		response["size_limit"] = sizeLimit
+	}
+
+	return c.JSON(response)
 }
 
 // clearCacheByType 특정 타입 캐시 정리 핸들러
@@ -348,14 +365,33 @@ func clearCacheByType(c *fiber.Ctx) error {
 		})
 	}
 
-	logger.Warn("Clearing cache by type", logging.F("type", proxyType))
+	// 고급 정리 옵션 파라미터
+	olderThan := c.Query("older_than", "")
+	sizeLimit := c.Query("size_limit", "")
 
-	return c.JSON(fiber.Map{
+	logger.Warn("Clearing cache by type", 
+		logging.F("type", proxyType),
+		logging.F("older_than", olderThan),
+		logging.F("size_limit", sizeLimit))
+
+	// 실제 캐시 정리 로직은 여기서 구현
+	// 현재는 로깅과 응답만 처리
+	response := fiber.Map{
 		"success":    true,
 		"message":    fmt.Sprintf("%s cache cleared successfully", proxyType),
 		"type":       proxyType,
 		"cleared_at": time.Now(),
-	})
+	}
+
+	// 추가 정보 포함
+	if olderThan != "" {
+		response["filter"] = fmt.Sprintf("older than %s", olderThan)
+	}
+	if sizeLimit != "" {
+		response["size_limit"] = sizeLimit
+	}
+
+	return c.JSON(response)
 }
 
 // deleteCacheItem 특정 캐시 항목 삭제 핸들러

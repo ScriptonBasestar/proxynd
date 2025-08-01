@@ -6,7 +6,7 @@
 # ==============================================================================
 
 .PHONY: test-unit test-race test-services test-coverage test-integration test-integration-bench
-.PHONY: test-all test-runner test-runner-unit test-runner-coverage
+.PHONY: test-all test-runner test-runner-unit test-runner-coverage test-api verify-api
 
 test-unit: ## run unit tests only
 	@echo "Running unit tests..."
@@ -34,6 +34,24 @@ test-integration-bench: ## run integration tests with benchmarks
 
 test-all: test-unit test-race test-services ## run all tests
 	@echo "All tests completed!"
+
+# ==============================================================================
+# API Testing Targets
+# ==============================================================================
+
+test-api: verify-api ## alias for verify-api
+
+verify-api: ## verify all CLI API endpoints are working
+	@echo "$(YELLOW)Verifying API endpoints...$(RESET)"
+	@./scripts/verify-api-endpoints.sh http://localhost:8080
+
+verify-api-json: ## verify API endpoints with JSON output
+	@echo "$(YELLOW)Verifying API endpoints (JSON format)...$(RESET)"
+	@./scripts/verify-api-endpoints.sh http://localhost:8080 --json
+
+verify-api-verbose: ## verify API endpoints with verbose output
+	@echo "$(YELLOW)Verifying API endpoints (verbose)...$(RESET)"
+	@./scripts/verify-api-endpoints.sh http://localhost:8080 --verbose
 
 # ==============================================================================
 # Test Runner Targets

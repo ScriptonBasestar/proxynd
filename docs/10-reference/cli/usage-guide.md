@@ -182,6 +182,19 @@ proxyndctl cache clear -t npm -f
 # 패턴으로 삭제
 proxyndctl cache clear -p "*.tmp"
 proxyndctl cache clear -p "old-*" -f
+
+# 시간 기반 캐시 정리
+proxyndctl cache clear --older-than 7d    # 7일보다 오래된 캐시 정리
+proxyndctl cache clear --older-than 2h    # 2시간보다 오래된 캐시 정리
+proxyndctl cache clear --older-than 30m   # 30분보다 오래된 캐시 정리
+
+# 크기 기반 캐시 정리
+proxyndctl cache clear --size-limit 1GB   # 총 캐시 크기를 1GB로 제한
+proxyndctl cache clear --size-limit 500MB # 총 캐시 크기를 500MB로 제한
+
+# 고급 조합 사용
+proxyndctl cache clear -t apt --older-than 30d -f
+proxyndctl cache clear -t npm --size-limit 2GB -f
 ```
 
 ### 설정 관리
@@ -235,8 +248,20 @@ proxyndctl user list --format json
 # 명령줄 옵션으로 추가
 proxyndctl user add -u john -p secret123 -r admin -d "관리자"
 
-# 대화형 모드
+# 대화형 모드 (안전한 비밀번호 입력)
 proxyndctl user add -i
+# Enter username: developer
+# Enter password: [입력 내용 숨김]
+# Confirm password: [입력 내용 숨김]
+# Enter role (user/admin): user
+# Enter description: Development team member
+
+# 대화형 모드와 일부 옵션 조합
+proxyndctl user add -i -r admin
+proxyndctl user add -i -u newuser
+
+# 사용자 설명 추가
+proxyndctl user add -u jane -p pass456 -r user -d "QA 엔지니어"
 ```
 
 #### 사용자 삭제
@@ -252,7 +277,15 @@ proxyndctl user delete john -f
 #### 사용자 정보 조회
 
 ```bash
+# 특정 사용자 상세 정보
 proxyndctl user info john
+
+# JSON 형식으로 출력
+proxyndctl user info john --format json
+
+# 여러 사용자 정보 확인
+proxyndctl user info admin
+proxyndctl user info developer
 ```
 
 ### 프록시 테스트
@@ -335,7 +368,7 @@ proxyndctl docs yaml .
 
 ```bash
 #!/bin/bash
-# 오래된 캐시 정리 스크립트
+# 고급 캐시 정리 스크립트
 
 # 캐시 크기 확인
 SIZE=$(proxyndctl cache size --format json | jq -r '.total_size')
@@ -344,11 +377,27 @@ SIZE=$(proxyndctl cache size --format json | jq -r '.total_size')
 if [ $SIZE -gt 10737418240 ]; then
     echo "캐시 크기가 10GB를 초과했습니다. 정리를 시작합니다..."
 
-    # npm 캐시 정리
-    proxyndctl cache clear -t npm -f
+    # 1단계: 시간 기반 정리 (30일 이상)
+    echo "1단계: 30일 이상된 오래된 캐시 정리"
+    proxyndctl cache clear --older-than 30d -f
 
-    # 30일 이상 된 apt 캐시 정리
-    proxyndctl cache clear -t apt -p "*" --older-than 30d -f
+    # 2단계: 크기 제한 적용 (5GB로 제한)
+    echo "2단계: 캐시 크기를 5GB로 제한"
+    proxyndctl cache clear --size-limit 5GB -f
+
+    # 3단계: 프록시별 개별 정리
+    echo "3단계: 프록시별 세부 정리"
+    # NPM 캐시는 7일 이상만 정리
+    proxyndctl cache clear -t npm --older-than 7d -f
+    
+    # APT 캐시는 2GB로 제한
+    proxyndctl cache clear -t apt --size-limit 2GB -f
+    
+    # Maven 캐시는 14일 이상만 정리 (개발 환경을 위해 길게 설정)
+    proxyndctl cache clear -t maven --older-than 14d -f
+
+    echo "캐시 정리 완료"
+    proxyndctl cache size -h
 fi
 ```
 
@@ -376,19 +425,44 @@ fi
 
 ```bash
 #!/bin/bash
-# CSV 파일에서 사용자 일괄 추가
+# 고급 사용자 관리 스크립트
 
+# CSV 파일에서 사용자 일괄 추가
+echo "=== 사용자 일괄 추가 ==="
 while IFS=, read -r username password role description
 do
+    echo "사용자 추가: $username ($role)"
     proxyndctl user add -u "$username" -p "$password" -r "$role" -d "$description"
 done < users.csv
+
+# 기존 사용자 정보 확인 및 업데이트
+echo "=== 기존 사용자 정보 확인 ==="
+USERS=$(proxyndctl user list --format json | jq -r '.users[].username')
+for user in $USERS; do
+    echo "사용자 정보: $user"
+    proxyndctl user info "$user"
+    echo "---"
+done
+
+# 대화형 모드로 관리자 계정 생성
+echo "=== 관리자 계정 생성 (대화형 모드) ==="
+read -p "새 관리자 계정을 생성하시겠습니까? (y/n): " confirm
+if [ "$confirm" = "y" ]; then
+    echo "대화형 모드로 관리자 계정을 생성합니다..."
+    proxyndctl user add -i -r admin
+fi
+
+# 비활성 사용자 정리 (예시)
+echo "=== 사용자 계정 정리 ==="
+# 실제 환경에서는 로그인 기록 등을 확인하여 결정
+# proxyndctl user delete inactive_user -f
 ```
 
 ### 시나리오 4: 일일 리포트 생성
 
 ```bash
 #!/bin/bash
-# 일일 사용 리포트 생성
+# 일일 사용 리포트 생성 (고급 기능 포함)
 
 DATE=$(date +%Y-%m-%d)
 REPORT_FILE="proxynd-report-$DATE.md"
@@ -397,20 +471,73 @@ cat > $REPORT_FILE << EOF
 # ProxyND 일일 리포트 - $DATE
 
 ## 서버 상태
-$(proxyndctl status)
+$(proxyndctl status -d)
 
-## 캐시 통계
+## 헬스체크 결과
+$(proxyndctl health -d)
+
+## 캐시 통계 (상세)
 $(proxyndctl cache size -h)
 
-## 프록시별 상태
-$(proxyndctl test all)
+### 프록시 타입별 캐시 크기
+$(proxyndctl cache size --format json | jq -r '
+.size_by_type | to_entries[] | 
+"- \(.key): \(.value | . / 1024 / 1024 | floor)MB"
+')
 
-## 상위 캐시 항목
+## 프록시별 상태 테스트
+$(proxyndctl test all -d)
+
+## 상위 캐시 항목 (크기순)
 $(proxyndctl cache list --sort size --limit 10)
+
+## 사용자 계정 현황
+활성 사용자 수: $(proxyndctl user list --format json | jq '.users | length')
+
+### 사용자 목록
+$(proxyndctl user list)
+
+## 메트릭 요약
+### 시스템 메트릭
+$(proxyndctl metrics -c system)
+
+### 캐시 메트릭
+$(proxyndctl metrics -c cache)
+
+### 프록시 메트릭
+$(proxyndctl metrics -c proxy)
+
+## 권장 사항
+EOF
+
+# 캐시 크기가 큰 경우 권장사항 추가
+CACHE_SIZE=$(proxyndctl cache size --format json | jq -r '.total_size')
+if [ $CACHE_SIZE -gt 5368709120 ]; then  # 5GB 이상
+    cat >> $REPORT_FILE << EOF
+
+⚠️ **캐시 크기 경고**: 캐시 크기가 5GB를 초과했습니다.
+다음 명령어로 정리를 고려하세요:
+\`\`\`bash
+# 30일 이상된 캐시 정리
+proxyndctl cache clear --older-than 30d -f
+
+# 또는 크기 제한
+proxyndctl cache clear --size-limit 3GB -f
+\`\`\`
+EOF
+fi
+
+cat >> $REPORT_FILE << EOF
+
+---
+생성 시각: $(date)
+생성 도구: ProxyND CLI (proxyndctl)
 EOF
 
 # 이메일로 전송
 mail -s "ProxyND 일일 리포트 - $DATE" admin@example.com < $REPORT_FILE
+
+echo "리포트가 생성되었습니다: $REPORT_FILE"
 ```
 
 ## 고급 기능

@@ -111,24 +111,37 @@ func newCacheListCmd() *cobra.Command {
 // newCacheClearCmd 캐시 정리 명령어
 func newCacheClearCmd() *cobra.Command {
 	var (
-		proxyType string
-		force     bool
-		confirm   bool
+		proxyType  string
+		force      bool
+		confirm    bool
+		olderThan  string
+		sizeLimit  string
 	)
 
 	cmd := &cobra.Command{
 		Use:   "clear",
 		Short: "캐시 정리",
 		Long: `캐시를 정리합니다.
-전체 또는 특정 패키지 타입별 정리가 가능하며, 확인 프롬프트를 제공합니다.`,
+전체 또는 특정 패키지 타입별 정리가 가능하며, 시간 기반 및 크기 기반 정리를 지원합니다.
+
+시간 기반 정리:
+  --older-than 7d     # 7일보다 오래된 캐시 정리
+  --older-than 2h     # 2시간보다 오래된 캐시 정리
+  --older-than 30m    # 30분보다 오래된 캐시 정리
+
+크기 기반 정리:
+  --size-limit 1GB    # 총 캐시 크기를 1GB로 제한
+  --size-limit 500MB  # 총 캐시 크기를 500MB로 제한`,
 		RunE: func(_ *cobra.Command, _ []string) error {
-			return runCacheClear(proxyType, force, confirm)
+			return runCacheClear(proxyType, force, confirm, olderThan, sizeLimit)
 		},
 	}
 
 	cmd.Flags().StringVarP(&proxyType, "type", "t", "", "정리할 프록시 타입 (지정하지 않으면 전체)")
 	cmd.Flags().BoolVarP(&force, "force", "f", false, "확인 없이 강제 실행")
 	cmd.Flags().BoolVarP(&confirm, "yes", "y", false, "확인 프롬프트 건너뛰기")
+	cmd.Flags().StringVar(&olderThan, "older-than", "", "지정된 시간보다 오래된 캐시만 정리 (예: 7d, 2h, 30m)")
+	cmd.Flags().StringVar(&sizeLimit, "size-limit", "", "캐시 크기 제한 (예: 1GB, 500MB)")
 
 	return cmd
 }
@@ -199,7 +212,7 @@ func runCacheList(proxyType string, limit, offset int) error {
 }
 
 // runCacheClear 캐시 정리 실행
-func runCacheClear(proxyType string, force, confirm bool) error {
+func runCacheClear(proxyType string, force, confirm bool, olderThan, sizeLimit string) error {
 	// 확인 프롬프트
 	if !force && !confirm {
 		message := "전체 캐시를 정리하시겠습니까?"
@@ -221,11 +234,26 @@ func runCacheClear(proxyType string, force, confirm bool) error {
 
 	serverURL := getServerURL()
 	var apiURL string
-
+	
+	// URL 파라미터 구성
+	params := url.Values{}
+	params.Set("confirm", "true")
+	
+	// 시간 기반 정리 파라미터 추가
+	if olderThan != "" {
+		params.Set("older_than", olderThan)
+	}
+	
+	// 크기 기반 정리 파라미터 추가
+	if sizeLimit != "" {
+		params.Set("size_limit", sizeLimit)
+	}
+	
+	// API URL 구성
 	if proxyType != "" {
-		apiURL = fmt.Sprintf("%s/api/cache/clear/%s?confirm=true", serverURL, proxyType)
+		apiURL = fmt.Sprintf("%s/api/cache/clear/%s?%s", serverURL, proxyType, params.Encode())
 	} else {
-		apiURL = fmt.Sprintf("%s/api/cache/clear?confirm=true", serverURL)
+		apiURL = fmt.Sprintf("%s/api/cache/clear?%s", serverURL, params.Encode())
 	}
 
 	// DELETE 요청 생성

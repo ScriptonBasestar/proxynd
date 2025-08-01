@@ -233,6 +233,9 @@ func (app *Application) initializeFiberApp() {
 	routers.TestRouter(app.fiberApp)
 	routers.WebhookRouter(app.fiberApp) // 이미 v1
 	routers.AuthRouter(app.fiberApp)    // 인증 라우터 추가
+	
+	// === CLI 호환성 라우터 ===
+	routers.APICompatibilityRouter(app.fiberApp) // CLI API 호환성
 	// TODO: MetricsRouter 시그니처 수정 필요
 	// routers.MetricsRouter(app.fiberApp)     // 메트릭 라우터 추가
 	// TODO: APK 라우터들 구현 필요

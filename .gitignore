@@ -487,3 +487,7 @@ _site/
 # IDE/에디터 임시 파일들
 .fleet/
 .cursor/
+
+# 사용자 관리 파일
+/results/
+/refactoring/
