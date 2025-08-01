@@ -182,8 +182,9 @@ func runCacheList(proxyType string, limit, offset int) error {
 		apiURL += "?" + params.Encode()
 	}
 
-	// API 호출
-	resp, err := http.Get(apiURL)
+	// 최적화된 HTTP 클라이언트 사용
+	client := GetHTTPClient()
+	resp, err := client.Get(apiURL)
 	if err != nil {
 		return fmt.Errorf(errServerConnection, err)
 	}
@@ -262,8 +263,8 @@ func runCacheClear(proxyType string, force, confirm bool, olderThan, sizeLimit s
 		return fmt.Errorf("요청 생성 실패: %v", err)
 	}
 
-	// API 호출
-	client := &http.Client{}
+	// 최적화된 HTTP 클라이언트 사용
+	client := GetHTTPClient()
 	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf(errServerConnection, err)
@@ -289,8 +290,9 @@ func runCacheSize(detailed bool) error {
 	serverURL := getServerURL()
 	apiURL := fmt.Sprintf("%s/api/cache/size", serverURL)
 
-	// API 호출
-	resp, err := http.Get(apiURL)
+	// 최적화된 HTTP 클라이언트 사용
+	client := GetHTTPClient()
+	resp, err := client.Get(apiURL)
 	if err != nil {
 		return fmt.Errorf(errServerConnection, err)
 	}

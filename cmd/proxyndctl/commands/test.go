@@ -63,6 +63,7 @@ func NewTestCmd() *cobra.Command {
 	}
 
 	cmd.AddCommand(newTestAllCmd())
+	cmd.AddCommand(newTestParallelCmd())
 	cmd.AddCommand(newTestConnectivityCmd())
 	cmd.AddCommand(newTestTypesCmd())
 
@@ -196,8 +197,15 @@ func runTestAll(timeout int, showDetails bool) error {
 		return fmt.Errorf("요청 데이터 인코딩 실패: %v", err)
 	}
 
-	// API 호출
-	resp, err := http.Post(apiURL, "application/json", bytes.NewBuffer(data))
+	// 최적화된 HTTP 클라이언트 사용
+	client := GetHTTPClient()
+	req, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(data))
+	if err != nil {
+		return fmt.Errorf("요청 생성 실패: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf(errServerConnection, err)
 	}
@@ -230,8 +238,9 @@ func runTestConnectivity(proxyType string) error {
 	serverURL := getServerURL()
 	apiURL := fmt.Sprintf("%s/api/test/connectivity/%s", serverURL, proxyType)
 
-	// API 호출
-	resp, err := http.Get(apiURL)
+	// 최적화된 HTTP 클라이언트 사용
+	client := GetHTTPClient()
+	resp, err := client.Get(apiURL)
 	if err != nil {
 		return fmt.Errorf(errServerConnection, err)
 	}
@@ -264,8 +273,9 @@ func runTestTypes() error {
 	serverURL := getServerURL()
 	apiURL := fmt.Sprintf("%s/api/test/types", serverURL)
 
-	// API 호출
-	resp, err := http.Get(apiURL)
+	// 최적화된 HTTP 클라이언트 사용
+	client := GetHTTPClient()
+	resp, err := client.Get(apiURL)
 	if err != nil {
 		return fmt.Errorf(errServerConnection, err)
 	}
@@ -310,8 +320,15 @@ func runProxyTest(proxyType, target string, timeout int) error {
 		return fmt.Errorf("요청 데이터 인코딩 실패: %v", err)
 	}
 
-	// API 호출
-	resp, err := http.Post(apiURL, "application/json", bytes.NewBuffer(data))
+	// 최적화된 HTTP 클라이언트 사용
+	client := GetHTTPClient()
+	req, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(data))
+	if err != nil {
+		return fmt.Errorf("요청 생성 실패: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf(errServerConnection, err)
 	}

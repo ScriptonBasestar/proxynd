@@ -25,7 +25,7 @@ sudo mv proxyndctl /usr/local/bin/
 ### 소스에서 빌드
 
 ```bash
-# Go 1.22 이상 필요
+# Go 1.24 이상 필요
 go build -o proxyndctl ./cmd/proxyndctl
 sudo mv proxyndctl /usr/local/bin/
 ```
