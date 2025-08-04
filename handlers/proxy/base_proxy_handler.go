@@ -246,7 +246,7 @@ func (h *BaseProxyHandler) saveToCache(handler ProxyHandlerInterface, c *fiber.C
 	}
 
 	if err := os.Rename(tmpFile, safePath); err != nil {
-		os.Remove(tmpFile)
+		_ = os.Remove(tmpFile)
 		h.logger.Error("Failed to rename temp file",
 			logging.F("temp_path", tmpFile),
 			logging.F("final_path", safePath),

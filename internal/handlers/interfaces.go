@@ -170,4 +170,15 @@ type ProxyHandlerFactory interface {
 
 	// 프록시 타입별 핸들러 등록
 	RegisterHandler(proxyType string, createFn func(container.ContainerProvider) (ContainerProxyHandler, error)) error
+
+	// unified_handler.go에서 사용하는 추가 메서드들
+	IsSupported(proxyType string) bool
+	GetSupportedTypes() []string
+	CreateSingleton(proxyType string) (ContainerProxyHandler, error)
+	GetHandlerInfo(proxyType string) map[string]interface{}
+	HealthCheck() error
+	GetStatistics() map[string]interface{}
+	Register(proxyType string, creator func() ContainerProxyHandler)
+	Unregister(proxyType string)
+	Shutdown() error
 }

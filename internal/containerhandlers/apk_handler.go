@@ -80,11 +80,11 @@ func NewAPKContainerHandler(provider container.ContainerProvider) *APKContainerH
 	}
 
 	handler.enabled = true
-	handler.logger.Info("APK Container handler initialized successfully", 
+	handler.logger.Info("APK Container handler initialized successfully",
 		logging.F("proxies_count", len(handler.apkConfig.Proxies)),
 		logging.F("verification_enabled", handler.apkConfig.Verification.Enabled),
 		logging.F("mirror_selection_enabled", handler.apkConfig.MirrorSelection.Enabled))
-	
+
 	return handler
 }
 
@@ -96,13 +96,13 @@ func (h *APKContainerHandler) LoadConfig() error {
 	}
 
 	h.apkConfig = config
-	
-	h.logger.Debug("APK configuration loaded", 
+
+	h.logger.Debug("APK configuration loaded",
 		logging.F("path", config.Path),
 		logging.F("use_cache", config.UseCache),
 		logging.F("proxies_count", len(config.Proxies)),
 		logging.F("verification_enabled", config.Verification.Enabled))
-	
+
 	return nil
 }
 
@@ -113,10 +113,10 @@ func (h *APKContainerHandler) ReloadConfig() error {
 		return err
 	}
 	h.enabled = true
-	
+
 	// 설정이 변경되면 미러 선택기 재초기화 필요
 	h.selectorStarted = false
-	
+
 	return nil
 }
 
@@ -148,7 +148,7 @@ func (h *APKContainerHandler) BuildUpstreamURL(c *fiber.Ctx) (string, error) {
 		proxies := selector.SelectBestMirror(requestPath, h.apkConfig.Proxies)
 		if len(proxies) > 0 {
 			upstreamURL := helpers.JoinURL(proxies[0].URL, requestPath)
-			h.logger.Debug("Built upstream URL using mirror selection", 
+			h.logger.Debug("Built upstream URL using mirror selection",
 				logging.F("server", proxies[0].Name),
 				logging.F("upstream_url", upstreamURL))
 			return upstreamURL, nil
@@ -158,11 +158,11 @@ func (h *APKContainerHandler) BuildUpstreamURL(c *fiber.Ctx) (string, error) {
 	// Round-robin 서버 선택 (미러 선택이 비활성화되거나 실패한 경우)
 	server := h.selectUpstreamServer()
 	upstreamURL := helpers.JoinURL(server.URL, requestPath)
-	
-	h.logger.Debug("Built upstream URL using round-robin", 
+
+	h.logger.Debug("Built upstream URL using round-robin",
 		logging.F("server", server.Name),
 		logging.F("upstream_url", upstreamURL))
-	
+
 	return upstreamURL, nil
 }
 
@@ -180,11 +180,11 @@ func (h *APKContainerHandler) selectUpstreamServer() config.ApkProxy {
 func (h *APKContainerHandler) getApkVerifier() *apk.SignatureVerifier {
 	h.verifierOnce.Do(func() {
 		h.verifier = apk.NewSignatureVerifier()
-		
+
 		// 신뢰할 수 있는 키 로딩
 		if h.apkConfig.Verification.Enabled && h.apkConfig.Verification.KeyDirectory != "" {
 			if err := h.verifier.LoadTrustedKeys(h.apkConfig.Verification.KeyDirectory); err != nil {
-				h.logger.Error("Failed to load APK trusted keys", 
+				h.logger.Error("Failed to load APK trusted keys",
 					logging.F("key_directory", h.apkConfig.Verification.KeyDirectory),
 					logging.F("error", err))
 			}
@@ -218,8 +218,8 @@ func (h *APKContainerHandler) initializeMirrorSelector() {
 	mirrorConfig := h.convertToMirrorConfig(h.apkConfig.MirrorSelection)
 	h.mirrorSelector.Start(mirrorConfig, h.apkConfig.Proxies)
 	h.selectorStarted = true
-	
-	h.logger.Info("Mirror selector initialized", 
+
+	h.logger.Info("Mirror selector initialized",
 		logging.F("health_check_interval", mirrorConfig.HealthCheckInterval),
 		logging.F("preferred_regions", mirrorConfig.PreferredRegions))
 }
@@ -257,7 +257,7 @@ func (h *APKContainerHandler) TransformRequest(c *fiber.Ctx, upstreamReq *fiber.
 	// APK 관련 헤더 설정
 	upstreamReq.Set("User-Agent", "ProxyND-APK/1.0")
 	upstreamReq.Set("Accept", "*/*")
-	
+
 	// 원본 요청의 Accept-Encoding 유지 (압축 지원)
 	if acceptEncoding := c.Get("Accept-Encoding"); acceptEncoding != "" {
 		upstreamReq.Set("Accept-Encoding", acceptEncoding)
@@ -284,10 +284,10 @@ func (h *APKContainerHandler) ShouldCache(c *fiber.Ctx, statusCode int) bool {
 	}
 
 	requestPath := c.Params("*")
-	
+
 	// APK 파일과 인덱스 파일 캐시
 	cacheable := []string{".apk", "APKINDEX", ".asc", ".rsa", ".tar.gz", ".gz"}
-	
+
 	for _, ext := range cacheable {
 		if strings.HasSuffix(requestPath, ext) || strings.Contains(requestPath, ext) {
 			// 서명 검증이 활성화된 경우, 검증된 파일만 캐시
@@ -337,7 +337,7 @@ func (h *APKContainerHandler) GetCacheTTL(c *fiber.Ctx) time.Duration {
 
 // HandleError 에러 처리
 func (h *APKContainerHandler) HandleError(err error, c *fiber.Ctx) error {
-	h.logger.Error("APK proxy error", 
+	h.logger.Error("APK proxy error",
 		logging.F("error", err),
 		logging.F("path", c.Path()),
 		logging.F("method", c.Method()))
@@ -371,7 +371,7 @@ func (h *APKContainerHandler) Handle(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).SendString("Invalid request path")
 	}
 
-	h.logger.Debug("Processing APK request", 
+	h.logger.Debug("Processing APK request",
 		logging.F("path", requestPath),
 		logging.F("method", c.Method()))
 
@@ -423,7 +423,7 @@ func (h *APKContainerHandler) serveCachedFile(c *fiber.Ctx, cachedFile, requestP
 		c.Set("Content-Disposition", "attachment; filename="+filename)
 	}
 
-	h.logger.Debug("Serving cached file", 
+	h.logger.Debug("Serving cached file",
 		logging.F("file", cachedFile),
 		logging.F("content_type", contentType))
 
@@ -445,34 +445,34 @@ func (h *APKContainerHandler) fetchFromUpstream(c *fiber.Ctx, requestPath string
 	// 디렉토리 생성
 	dirPath := filepath.Dir(cachedFile)
 	if err := os.MkdirAll(dirPath, os.ModePerm); err != nil {
-		h.logger.Error("Failed to create directory", 
-			logging.F("dir", dirPath), 
+		h.logger.Error("Failed to create directory",
+			logging.F("dir", dirPath),
 			logging.F("error", err))
 		return c.Status(fiber.StatusInternalServerError).SendString("Failed to create directory")
 	}
 
 	// 업스트림에서 파일 다운로드
 	proxyClient := httpclient.NewProxyClient()
-	
+
 	// 미러 선택을 사용하여 프록시 목록 가져오기
 	proxies := h.apkConfig.Proxies
 	if h.apkConfig.MirrorSelection.Enabled {
 		selector := h.getMirrorSelector()
 		proxies = selector.SelectBestMirror(requestPath, h.apkConfig.Proxies)
-		h.logger.Debug("Mirror selection result", 
+		h.logger.Debug("Mirror selection result",
 			logging.F("selected_mirrors", len(proxies)))
 	}
-	
+
 	for _, proxy := range proxies {
 		fullURL := helpers.JoinURL(proxy.URL, requestPath)
-		h.logger.Debug("Fetching from upstream", 
-			logging.F("server", proxy.Name), 
+		h.logger.Debug("Fetching from upstream",
+			logging.F("server", proxy.Name),
 			logging.F("url", fullURL))
 
 		resp, err := proxyClient.GetWithRetry(ctx, fullURL, 2)
 		if err != nil {
-			h.logger.Warn("Failed to fetch from upstream", 
-				logging.F("server", proxy.Name), 
+			h.logger.Warn("Failed to fetch from upstream",
+				logging.F("server", proxy.Name),
 				logging.F("error", err))
 			continue
 		}
@@ -481,8 +481,8 @@ func (h *APKContainerHandler) fetchFromUpstream(c *fiber.Ctx, requestPath string
 			// 파일 저장
 			if err := h.saveFile(cachedFile, resp.Body); err != nil {
 				resp.Body.Close()
-				h.logger.Error("Failed to save file", 
-					logging.F("file", cachedFile), 
+				h.logger.Error("Failed to save file",
+					logging.F("file", cachedFile),
 					logging.F("error", err))
 				return c.Status(fiber.StatusInternalServerError).SendString("Failed to save file")
 			}
@@ -500,8 +500,8 @@ func (h *APKContainerHandler) fetchFromUpstream(c *fiber.Ctx, requestPath string
 		}
 
 		resp.Body.Close()
-		h.logger.Warn("Upstream returned non-OK status", 
-			logging.F("server", proxy.Name), 
+		h.logger.Warn("Upstream returned non-OK status",
+			logging.F("server", proxy.Name),
 			logging.F("status", resp.StatusCode))
 	}
 

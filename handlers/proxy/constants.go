@@ -9,8 +9,3 @@ const (
 	mimeApplicationOctetStream  = "application/octet-stream"
 	mimeApplicationZip          = "application/zip"
 )
-
-// Log levels
-const (
-	logLevelError = "error"
-)

@@ -59,12 +59,12 @@ func (h *DockerHandlerV3) BuildUpstreamURL(c *fiber.Ctx) (string, error) {
 	imagePath := c.Params("*")
 
 	if len(h.Config.Proxies) == 0 {
-		return "", fmt.Errorf("Docker 레지스트리가 설정되지 않았습니다")
+		return "", fmt.Errorf("docker 레지스트리가 설정되지 않았습니다")
 	}
 
 	registry := h.Config.Proxies[0] // 첫 번째 레지스트리 사용
 	if registry.URL == "" {
-		return "", fmt.Errorf("Docker 레지스트리 URL이 설정되지 않았습니다")
+		return "", fmt.Errorf("docker 레지스트리 URL이 설정되지 않았습니다")
 	}
 
 	// Docker Registry v2 API 경로 처리
@@ -125,7 +125,7 @@ func (h *DockerHandlerV3) FetchFromUpstream(c *fiber.Ctx, _ string) ([]byte, int
 			)
 			continue
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		if resp.StatusCode == http.StatusOK {
 			// 응답 읽기

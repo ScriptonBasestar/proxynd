@@ -541,7 +541,7 @@ func (m *APIKeyManager) saveKeys() error {
 	}
 
 	if err := os.Rename(tempPath, m.storagePath); err != nil {
-		os.Remove(tempPath)
+		_ = os.Remove(tempPath)
 		return fmt.Errorf("failed to move API keys file: %w", err)
 	}
 

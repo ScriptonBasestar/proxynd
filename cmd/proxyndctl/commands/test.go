@@ -199,13 +199,13 @@ func runTestAll(timeout int, showDetails bool) error {
 
 	// 최적화된 HTTP 클라이언트 사용
 	client := GetHTTPClient()
-	req, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(data))
+	httpReq, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(data))
 	if err != nil {
 		return fmt.Errorf("요청 생성 실패: %v", err)
 	}
-	req.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("Content-Type", "application/json")
 
-	resp, err := client.Do(req)
+	resp, err := client.Do(httpReq)
 	if err != nil {
 		return fmt.Errorf(errServerConnection, err)
 	}
@@ -322,13 +322,13 @@ func runProxyTest(proxyType, target string, timeout int) error {
 
 	// 최적화된 HTTP 클라이언트 사용
 	client := GetHTTPClient()
-	req, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(data))
+	httpReq, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(data))
 	if err != nil {
 		return fmt.Errorf("요청 생성 실패: %v", err)
 	}
-	req.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("Content-Type", "application/json")
 
-	resp, err := client.Do(req)
+	resp, err := client.Do(httpReq)
 	if err != nil {
 		return fmt.Errorf(errServerConnection, err)
 	}

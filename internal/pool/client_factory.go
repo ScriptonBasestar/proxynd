@@ -136,8 +136,13 @@ func (c *PooledUpstreamClient) Fetch(ctx context.Context, url string, headers ma
 	// 요청 실행 (통계 수집 포함)
 	resp, err := c.factory.pool.ExecuteRequest(c.client, req)
 	if err != nil {
+		// 에러가 발생해도 응답이 있을 수 있으므로 body를 닫아야 함
+		if resp != nil && resp.Body != nil {
+			resp.Body.Close()
+		}
 		return nil, fmt.Errorf("업스트림 요청 실패: %w", err)
 	}
+	// Note: resp.Body는 ProxyResponse로 전달되므로 여기서 닫지 않음
 
 	// ProxyResponse로 변환
 	proxyResp := &proxy.ProxyResponse{

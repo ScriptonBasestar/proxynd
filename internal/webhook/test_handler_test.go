@@ -3,21 +3,21 @@ package webhook
 import (
 	"testing"
 
-	"proxynd/internal/config"
+	configpkg "proxynd/internal/config"
 )
 
 func TestWebhookTester_ValidateEndpointConfig(t *testing.T) {
 	tester := &WebhookTester{}
 
 	// 유효한 설정 테스트
-	validEndpoint := config.WebhookEndpointConfig{
+	validEndpoint := configpkg.WebhookEndpointConfig{
 		Name:    "test-endpoint",
 		URL:     "https://example.com/webhook",
 		Enabled: true,
 		Method:  methodPOST,
 		Format:  "json",
 		Timeout: "30s",
-		Credentials: config.WebhookCredentials{
+		Credentials: configpkg.WebhookCredentials{
 			Type: "none",
 		},
 	}
@@ -28,7 +28,7 @@ func TestWebhookTester_ValidateEndpointConfig(t *testing.T) {
 	}
 
 	// 잘못된 설정 테스트 - URL 누락
-	invalidEndpoint := config.WebhookEndpointConfig{
+	invalidEndpoint := configpkg.WebhookEndpointConfig{
 		Name:   "invalid-endpoint",
 		Method: methodPOST,
 	}
@@ -55,7 +55,7 @@ func TestWebhookTester_ValidateEndpointConfig_HTTPMethod(t *testing.T) {
 	tester := &WebhookTester{}
 
 	// 잘못된 HTTP 메서드
-	endpoint := config.WebhookEndpointConfig{
+	endpoint := configpkg.WebhookEndpointConfig{
 		Name:   "test-endpoint",
 		URL:    "https://example.com/webhook",
 		Method: "INVALID",
@@ -82,7 +82,7 @@ func TestWebhookTester_ValidateEndpointConfig_Format(t *testing.T) {
 	tester := &WebhookTester{}
 
 	// 잘못된 포맷
-	endpoint := config.WebhookEndpointConfig{
+	endpoint := configpkg.WebhookEndpointConfig{
 		Name:   "test-endpoint",
 		URL:    "https://example.com/webhook",
 		Method: methodPOST,
@@ -110,7 +110,7 @@ func TestWebhookTester_ValidateEndpointConfig_Timeout(t *testing.T) {
 	tester := &WebhookTester{}
 
 	// 잘못된 타임아웃 형식
-	endpoint := config.WebhookEndpointConfig{
+	endpoint := configpkg.WebhookEndpointConfig{
 		Name:    "test-endpoint",
 		URL:     "https://example.com/webhook",
 		Method:  methodPOST,
@@ -138,11 +138,11 @@ func TestWebhookTester_ValidateEndpointConfig_BasicAuth(t *testing.T) {
 	tester := &WebhookTester{}
 
 	// Basic 인증 - 사용자명 누락
-	endpoint := config.WebhookEndpointConfig{
+	endpoint := configpkg.WebhookEndpointConfig{
 		Name:   "test-endpoint",
 		URL:    "https://example.com/webhook",
 		Method: methodPOST,
-		Credentials: config.WebhookCredentials{
+		Credentials: configpkg.WebhookCredentials{
 			Type:     "basic",
 			Password: "password",
 		},
@@ -169,11 +169,11 @@ func TestWebhookTester_ValidateEndpointConfig_BearerAuth(t *testing.T) {
 	tester := &WebhookTester{}
 
 	// Bearer 인증 - 토큰 누락
-	endpoint := config.WebhookEndpointConfig{
+	endpoint := configpkg.WebhookEndpointConfig{
 		Name:   "test-endpoint",
 		URL:    "https://example.com/webhook",
 		Method: methodPOST,
-		Credentials: config.WebhookCredentials{
+		Credentials: configpkg.WebhookCredentials{
 			Type: "bearer",
 		},
 	}
@@ -199,11 +199,11 @@ func TestWebhookTester_ValidateEndpointConfig_AuthType(t *testing.T) {
 	tester := &WebhookTester{}
 
 	// 잘못된 인증 타입
-	endpoint := config.WebhookEndpointConfig{
+	endpoint := configpkg.WebhookEndpointConfig{
 		Name:   "test-endpoint",
 		URL:    "https://example.com/webhook",
 		Method: methodPOST,
-		Credentials: config.WebhookCredentials{
+		Credentials: configpkg.WebhookCredentials{
 			Type: "invalid-auth",
 		},
 	}
@@ -226,10 +226,10 @@ func TestWebhookTester_ValidateEndpointConfig_AuthType(t *testing.T) {
 }
 
 func TestWebhookTester_TestSingleEndpoint_EndpointNotFound(t *testing.T) {
-	config := config.GetDefaultWebhookConfig()
-	config.Endpoints = []config.WebhookEndpointConfig{} // 빈 엔드포인트 목록
+	webhookConfig := configpkg.GetDefaultWebhookConfig()
+	webhookConfig.Endpoints = []configpkg.WebhookEndpointConfig{} // 빈 엔드포인트 목록
 
-	tester := NewWebhookTester(config, nil)
+	tester := NewWebhookTester(webhookConfig, nil)
 
 	result, err := tester.TestSingleEndpoint("nonexistent")
 	if err == nil {
@@ -244,8 +244,8 @@ func TestWebhookTester_TestSingleEndpoint_EndpointNotFound(t *testing.T) {
 }
 
 func TestWebhookTester_TestSingleEndpoint_DisabledEndpoint(t *testing.T) {
-	config := config.GetDefaultWebhookConfig()
-	config.Endpoints = []config.WebhookEndpointConfig{
+	webhookConfig := configpkg.GetDefaultWebhookConfig()
+	webhookConfig.Endpoints = []configpkg.WebhookEndpointConfig{
 		{
 			Name:    "disabled-endpoint",
 			URL:     "https://example.com/webhook",
@@ -253,7 +253,7 @@ func TestWebhookTester_TestSingleEndpoint_DisabledEndpoint(t *testing.T) {
 		},
 	}
 
-	tester := NewWebhookTester(config, nil)
+	tester := NewWebhookTester(webhookConfig, nil)
 
 	result, err := tester.TestSingleEndpoint("disabled-endpoint")
 	if err != nil {
@@ -272,8 +272,8 @@ func TestWebhookTester_TestSingleEndpoint_DisabledEndpoint(t *testing.T) {
 }
 
 func TestWebhookTester_GetTestHistory(t *testing.T) {
-	config := config.GetDefaultWebhookConfig()
-	tester := NewWebhookTester(config, nil)
+	webhookConfig := configpkg.GetDefaultWebhookConfig()
+	tester := NewWebhookTester(webhookConfig, nil)
 
 	// 현재는 빈 슬라이스 반환
 	history, err := tester.GetTestHistory("test-endpoint", 10)
@@ -286,15 +286,15 @@ func TestWebhookTester_GetTestHistory(t *testing.T) {
 }
 
 func TestNewWebhookTester(t *testing.T) {
-	config := config.GetDefaultWebhookConfig()
+	webhookConfig := configpkg.GetDefaultWebhookConfig()
 	sender := &WebhookSender{} // 더미 sender
 
-	tester := NewWebhookTester(config, sender)
+	tester := NewWebhookTester(webhookConfig, sender)
 	if tester == nil {
 		t.Error("Expected non-nil tester")
 		return
 	}
-	if tester.config.Enabled != config.Enabled {
+	if tester.config.Enabled != webhookConfig.Enabled {
 		t.Error("Expected config to be set correctly")
 	}
 	if tester.sender != sender {

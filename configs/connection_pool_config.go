@@ -198,7 +198,7 @@ func (c *ConnectionPoolConfig) ReadConfig() error {
 
 	// 설정 유효성 검사
 	if err := c.settings.Validate(); err != nil {
-		return fmt.Errorf("Connection Pool 설정 검증 실패: %w", err)
+		return fmt.Errorf("connection Pool 설정 검증 실패: %w", err)
 	}
 
 	return nil
@@ -207,7 +207,7 @@ func (c *ConnectionPoolConfig) ReadConfig() error {
 // WriteConfig 설정 파일 쓰기
 func (c *ConnectionPoolConfig) WriteConfig() error {
 	if err := c.settings.Validate(); err != nil {
-		return fmt.Errorf("Connection Pool 설정 검증 실패: %w", err)
+		return fmt.Errorf("connection Pool 설정 검증 실패: %w", err)
 	}
 
 	// TODO: 실제 설정 파일 저장 구현

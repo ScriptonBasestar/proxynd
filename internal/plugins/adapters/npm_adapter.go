@@ -96,13 +96,13 @@ func (p *NPMPlugin) CheckDependencies() error {
 }
 
 // Initialize NPM 핸들러 초기화
-func (h *NPMHandlerAdapter) Initialize(config interface{}) error {
-	if err := h.BasePackageHandler.Initialize(config); err != nil {
+func (h *NPMHandlerAdapter) Initialize(cfg interface{}) error {
+	if err := h.BasePackageHandler.Initialize(cfg); err != nil {
 		return err
 	}
 
 	// NPM 설정 타입 변환
-	npmConfig, ok := config.(*config.NpmProxySettings)
+	npmConfig, ok := cfg.(*config.NpmProxySettings)
 	if !ok {
 		return fmt.Errorf("invalid NPM config type")
 	}
@@ -146,8 +146,8 @@ func (h *NPMHandlerAdapter) HandleRequest(ctx *fiber.Ctx, mode plugins.Operation
 }
 
 // ValidateConfig NPM 설정 검증
-func (h *NPMHandlerAdapter) ValidateConfig(config interface{}) error {
-	npmConfig, ok := config.(*config.NpmProxySettings)
+func (h *NPMHandlerAdapter) ValidateConfig(cfg interface{}) error {
+	npmConfig, ok := cfg.(*config.NpmProxySettings)
 	if !ok {
 		return fmt.Errorf("config must be *config.NpmProxySettings")
 	}

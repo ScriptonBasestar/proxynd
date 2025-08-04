@@ -100,7 +100,6 @@ type MavenBrowserHandler struct {
 	config       *config.MavenProxySettings
 	cache        sync.Map // path -> cacheEntry
 	cacheTTL     time.Duration
-	indexCache   sync.Map // 인덱스 프리로드용 캐시
 	searchIndex  *searchIndex
 	indexStorage maven.IndexStorage
 }
@@ -386,7 +385,7 @@ func (h *MavenBrowserHandler) fetchDirectoryFromMirror(proxy config.MavenProxySe
 	if err != nil {
 		return nil, fmt.Errorf("HTTP 요청 실패: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("HTTP 상태 코드: %d", resp.StatusCode)
@@ -516,7 +515,7 @@ func (h *MavenBrowserHandler) parseMetadata(proxy config.MavenProxyServer, clean
 	if err != nil {
 		return nil, fmt.Errorf("메타데이터 요청 실패: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("메타데이터 없음: %d", resp.StatusCode)

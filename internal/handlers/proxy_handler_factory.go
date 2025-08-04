@@ -141,3 +141,71 @@ func (f *StandardProxyHandlerFactory) Count() int {
 
 	return len(f.handlers)
 }
+
+// unified_handler.go에서 필요한 추가 메서드들
+
+// IsSupported 프록시 타입 지원 여부 확인
+func (f *StandardProxyHandlerFactory) IsSupported(proxyType string) bool {
+	return f.IsRegistered(proxyType)
+}
+
+// GetSupportedTypes SupportedTypes의 별칭
+func (f *StandardProxyHandlerFactory) GetSupportedTypes() []string {
+	return f.SupportedTypes()
+}
+
+// CreateSingleton 싱글톤 핸들러 생성 (현재는 일반 생성과 동일)
+func (f *StandardProxyHandlerFactory) CreateSingleton(proxyType string) (ContainerProxyHandler, error) {
+	// TODO: Container에서 provider 가져오기
+	// 임시로 nil을 전달하지만 실제로는 container provider가 필요
+	return f.CreateHandler(proxyType, nil)
+}
+
+// GetHandlerInfo 핸들러 정보 반환
+func (f *StandardProxyHandlerFactory) GetHandlerInfo(proxyType string) map[string]interface{} {
+	info := make(map[string]interface{})
+	info["type"] = proxyType
+	info["supported"] = f.IsSupported(proxyType)
+	return info
+}
+
+// HealthCheck 팩토리 건강 상태 확인
+func (f *StandardProxyHandlerFactory) HealthCheck() error {
+	f.mu.RLock()
+	count := len(f.handlers)
+	f.mu.RUnlock()
+
+	if count == 0 {
+		return fmt.Errorf("no handlers registered")
+	}
+	return nil
+}
+
+// GetStatistics 팩토리 통계 정보 반환
+func (f *StandardProxyHandlerFactory) GetStatistics() map[string]interface{} {
+	stats := make(map[string]interface{})
+	stats["registered_count"] = f.Count()
+	stats["supported_types"] = f.SupportedTypes()
+	return stats
+}
+
+// Register 단순한 핸들러 등록 (unified_handler.go용)
+func (f *StandardProxyHandlerFactory) Register(proxyType string, creator func() ContainerProxyHandler) {
+	// creator를 ContainerProvider를 받는 함수로 래핑
+	_ = f.RegisterHandler(proxyType, func(provider container.ContainerProvider) (ContainerProxyHandler, error) {
+		handler := creator()
+		return handler, nil
+	})
+}
+
+// Unregister 핸들러 등록 해제 (unified_handler.go용)
+func (f *StandardProxyHandlerFactory) Unregister(proxyType string) {
+	f.UnregisterHandler(proxyType)
+}
+
+// Shutdown 팩토리 종료
+func (f *StandardProxyHandlerFactory) Shutdown() error {
+	f.Clear()
+	f.logger.Info("ProxyHandlerFactory shutdown completed")
+	return nil
+}

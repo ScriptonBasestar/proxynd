@@ -9,7 +9,7 @@ import (
 	"github.com/go-playground/assert/v2"
 
 	"proxynd/alerts"
-	"proxynd/internal/config"
+	configpkg "proxynd/internal/config"
 	"proxynd/internal/webhook/retry"
 )
 
@@ -18,10 +18,10 @@ type RetryPolicy = retry.Policy
 
 // TestNewWebhookSender 웹훅 전송기 생성 테스트
 func TestNewWebhookSender(t *testing.T) {
-	config := config.GetDefaultWebhookConfig()
-	config.Enabled = true
+	webhookConfig := configpkg.GetDefaultWebhookConfig()
+	webhookConfig.Enabled = true
 
-	sender, err := NewWebhookSender(config)
+	sender, err := NewWebhookSender(webhookConfig)
 	assert.Equal(t, err, nil)
 	assert.NotEqual(t, sender, nil)
 	assert.Equal(t, sender.config.Enabled, true)
@@ -33,10 +33,10 @@ func TestNewWebhookSender(t *testing.T) {
 
 // TestWebhookSenderStartStop 시작/중지 테스트
 func TestWebhookSenderStartStop(t *testing.T) {
-	config := config.GetDefaultWebhookConfig()
-	config.Enabled = true
+	webhookConfig := configpkg.GetDefaultWebhookConfig()
+	webhookConfig.Enabled = true
 
-	sender, err := NewWebhookSender(config)
+	sender, err := NewWebhookSender(webhookConfig)
 	assert.Equal(t, err, nil)
 
 	ctx := context.Background()
@@ -61,11 +61,11 @@ func TestWebhookSenderStartStop(t *testing.T) {
 
 // TestSendEvent 이벤트 전송 테스트
 func TestSendEvent(t *testing.T) {
-	config := config.GetDefaultWebhookConfig()
-	config.Enabled = true
-	config.Batching.Enabled = false // 배치 비활성화하여 큐 테스트
+	webhookConfig := configpkg.GetDefaultWebhookConfig()
+	webhookConfig.Enabled = true
+	webhookConfig.Batching.Enabled = false // 배치 비활성화하여 큐 테스트
 
-	sender, err := NewWebhookSender(config)
+	sender, err := NewWebhookSender(webhookConfig)
 	assert.Equal(t, err, nil)
 
 	ctx := context.Background()
@@ -91,12 +91,12 @@ func TestSendEvent(t *testing.T) {
 
 // TestEventFiltering 이벤트 필터링 테스트
 func TestEventFiltering(t *testing.T) {
-	config := config.GetDefaultWebhookConfig()
-	config.Enabled = true
-	config.EventFilter.Enabled = true
-	config.EventFilter.DefaultLevel = "WARNING"
+	webhookConfig := configpkg.GetDefaultWebhookConfig()
+	webhookConfig.Enabled = true
+	webhookConfig.EventFilter.Enabled = true
+	webhookConfig.EventFilter.DefaultLevel = "WARNING"
 
-	sender, err := NewWebhookSender(config)
+	sender, err := NewWebhookSender(webhookConfig)
 	assert.Equal(t, err, nil)
 
 	// INFO 레벨 이벤트 (필터링되어야 함)
@@ -124,15 +124,15 @@ func TestEventFiltering(t *testing.T) {
 
 // TestLevelOverrides 레벨 오버라이드 테스트
 func TestLevelOverrides(t *testing.T) {
-	config := config.GetDefaultWebhookConfig()
-	config.Enabled = true
-	config.EventFilter.Enabled = true
-	config.EventFilter.DefaultLevel = "ERROR"
-	config.EventFilter.LevelOverrides = map[string]string{
+	webhookConfig := configpkg.GetDefaultWebhookConfig()
+	webhookConfig.Enabled = true
+	webhookConfig.EventFilter.Enabled = true
+	webhookConfig.EventFilter.DefaultLevel = "ERROR"
+	webhookConfig.EventFilter.LevelOverrides = map[string]string{
 		"security.*": "INFO", // 보안 이벤트는 INFO부터 허용
 	}
 
-	sender, err := NewWebhookSender(config)
+	sender, err := NewWebhookSender(webhookConfig)
 	assert.Equal(t, err, nil)
 
 	// 일반 INFO 이벤트 (필터링되어야 함)
@@ -160,17 +160,17 @@ func TestLevelOverrides(t *testing.T) {
 
 // TestEndpointFiltering 엔드포인트별 필터링 테스트
 func TestEndpointFiltering(t *testing.T) {
-	config := config.GetDefaultWebhookConfig()
-	endpoint := config.WebhookEndpointConfig{
+	webhookConfig := configpkg.GetDefaultWebhookConfig()
+	endpoint := configpkg.WebhookEndpointConfig{
 		Name:       "security-only",
 		Enabled:    true,
 		EventTypes: []string{"security.*"},
-		Filters: config.WebhookEndpointFilters{
+		Filters: configpkg.WebhookEndpointFilters{
 			MinLevel: "WARNING",
 		},
 	}
 
-	sender, err := NewWebhookSender(config)
+	sender, err := NewWebhookSender(webhookConfig)
 	assert.Equal(t, err, nil)
 
 	// 보안 WARNING 이벤트 (매칭되어야 함)
@@ -226,8 +226,8 @@ func TestPatternMatching(t *testing.T) {
 
 // TestAdapterRegistration 어댑터 등록 테스트
 func TestAdapterRegistration(t *testing.T) {
-	config := config.GetDefaultWebhookConfig()
-	sender, err := NewWebhookSender(config)
+	webhookConfig := configpkg.GetDefaultWebhookConfig()
+	sender, err := NewWebhookSender(webhookConfig)
 	assert.Equal(t, err, nil)
 
 	// 초기 어댑터 확인 (generic, slack, discord)
@@ -245,8 +245,8 @@ func TestAdapterRegistration(t *testing.T) {
 
 // TestMetrics 메트릭 테스트
 func TestMetrics(t *testing.T) {
-	config := config.GetDefaultWebhookConfig()
-	sender, err := NewWebhookSender(config)
+	webhookConfig := configpkg.GetDefaultWebhookConfig()
+	sender, err := NewWebhookSender(webhookConfig)
 	assert.Equal(t, err, nil)
 
 	// 초기 메트릭
@@ -295,13 +295,13 @@ func TestBackoffDelay(t *testing.T) {
 
 // TestWebhookSenderBatching 배치 전송 테스트
 func TestWebhookSenderBatching(t *testing.T) {
-	config := config.GetDefaultWebhookConfig()
-	config.Enabled = true
-	config.Batching.Enabled = true
-	config.Batching.MaxSize = 3
-	config.Batching.MaxWaitTime = "1s"
+	webhookConfig := configpkg.GetDefaultWebhookConfig()
+	webhookConfig.Enabled = true
+	webhookConfig.Batching.Enabled = true
+	webhookConfig.Batching.MaxSize = 3
+	webhookConfig.Batching.MaxWaitTime = "1s"
 
-	sender, err := NewWebhookSender(config)
+	sender, err := NewWebhookSender(webhookConfig)
 	assert.Equal(t, err, nil)
 
 	ctx := context.Background()
@@ -332,11 +332,11 @@ func TestWebhookSenderBatching(t *testing.T) {
 
 // TestWebhookSenderGetMetricsWithBatch 배치 통계가 포함된 메트릭 테스트
 func TestWebhookSenderGetMetricsWithBatch(t *testing.T) {
-	config := config.GetDefaultWebhookConfig()
-	config.Enabled = true
-	config.Batching.Enabled = true
+	webhookConfig := configpkg.GetDefaultWebhookConfig()
+	webhookConfig.Enabled = true
+	webhookConfig.Batching.Enabled = true
 
-	sender, err := NewWebhookSender(config)
+	sender, err := NewWebhookSender(webhookConfig)
 	assert.Equal(t, err, nil)
 
 	metrics := sender.GetMetrics()
@@ -346,11 +346,11 @@ func TestWebhookSenderGetMetricsWithBatch(t *testing.T) {
 
 // TestWebhookSenderBatchingDisabled 배치 비활성화 테스트
 func TestWebhookSenderBatchingDisabled(t *testing.T) {
-	config := config.GetDefaultWebhookConfig()
-	config.Enabled = true
-	config.Batching.Enabled = false
+	webhookConfig := configpkg.GetDefaultWebhookConfig()
+	webhookConfig.Enabled = true
+	webhookConfig.Batching.Enabled = false
 
-	sender, err := NewWebhookSender(config)
+	sender, err := NewWebhookSender(webhookConfig)
 	assert.Equal(t, err, nil)
 
 	metrics := sender.GetMetrics()

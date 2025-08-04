@@ -43,7 +43,7 @@ func TestAPKContainerHandlerHealthCheckDisabled(t *testing.T) {
 		WithError("GetApkProxyConfig", assert.AnError)
 
 	handler := containerhandlers.NewAPKContainerHandler(mockContainer)
-	
+
 	err := handler.HealthCheck()
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "disabled")
@@ -66,7 +66,7 @@ func TestAPKContainerHandlerHealthCheckWithVerification(t *testing.T) {
 		WithConfig("apk", customConfig)
 
 	handler := containerhandlers.NewAPKContainerHandler(mockContainer)
-	
+
 	err := handler.HealthCheck()
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "key directory not specified")
@@ -108,7 +108,7 @@ func TestAPKContainerHandlerLoadConfig(t *testing.T) {
 func TestAPKContainerHandlerReloadConfig(t *testing.T) {
 	mockContainer := testutil.NewMockContainerProvider(t)
 	handler := containerhandlers.NewAPKContainerHandler(mockContainer)
-	
+
 	assert.True(t, handler.IsEnabled())
 
 	// 설정 재로딩
@@ -120,11 +120,11 @@ func TestAPKContainerHandlerReloadConfig(t *testing.T) {
 func TestAPKContainerHandlerSetGetContainer(t *testing.T) {
 	mockContainer1 := testutil.NewMockContainerProvider(t)
 	mockContainer2 := testutil.NewMockContainerProvider(t)
-	
+
 	handler := containerhandlers.NewAPKContainerHandler(mockContainer1)
-	
+
 	assert.Equal(t, mockContainer1, handler.GetContainer())
-	
+
 	handler.SetContainer(mockContainer2)
 	assert.Equal(t, mockContainer2, handler.GetContainer())
 }
@@ -133,15 +133,15 @@ func TestAPKContainerHandlerConfigErrorReload(t *testing.T) {
 	// 처음에는 정상적인 설정
 	mockContainer := testutil.NewMockContainerProvider(t)
 	handler := containerhandlers.NewAPKContainerHandler(mockContainer)
-	
+
 	assert.True(t, handler.IsEnabled())
-	
+
 	// 설정 오류가 있는 새로운 Container로 교체
 	errorContainer := testutil.NewMockContainerProvider(t).
 		WithError("GetApkProxyConfig", assert.AnError)
-	
+
 	handler.SetContainer(errorContainer)
-	
+
 	// 재로딩 시 에러 발생하고 비활성화
 	err := handler.ReloadConfig()
 	assert.Error(t, err)
@@ -181,11 +181,11 @@ func TestAPKContainerHandlerWithComplexConfiguration(t *testing.T) {
 
 	assert.True(t, handler.IsEnabled())
 	assert.NoError(t, handler.HealthCheck())
-	
+
 	// 다양한 기본 기능 테스트
 	assert.Equal(t, "apk-container-handler", handler.Name())
 	assert.Equal(t, "apk", handler.Type())
-	
+
 	// Container Provider 확인
 	assert.Equal(t, mockContainer, handler.GetContainer())
 }
@@ -203,7 +203,7 @@ func TestAPKContainerHandlerEmptyProxies(t *testing.T) {
 	handler := containerhandlers.NewAPKContainerHandler(mockContainer)
 
 	assert.False(t, handler.IsEnabled()) // 프록시가 없으면 비활성화
-	
+
 	err := handler.HealthCheck()
 	assert.Error(t, err)
 	// 핸들러가 비활성화된 경우 "disabled" 에러가 먼저 반환됨

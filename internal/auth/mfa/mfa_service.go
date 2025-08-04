@@ -724,7 +724,7 @@ func (s *MFAService) saveUsers() error {
 	}
 
 	if err := os.Rename(tempPath, s.config.StoragePath); err != nil {
-		os.Remove(tempPath)
+		_ = os.Remove(tempPath)
 		return fmt.Errorf("failed to move MFA users file: %w", err)
 	}
 

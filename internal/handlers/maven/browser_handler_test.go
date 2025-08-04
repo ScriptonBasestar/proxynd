@@ -200,6 +200,7 @@ func TestBrowserHandler_HandleDirectoryBrowsing(t *testing.T) {
 	// 요청 실행
 	resp, err := app.Test(req)
 	assert.NoError(t, err)
+	defer resp.Body.Close()
 	assert.Equal(t, 200, resp.StatusCode)
 
 	// 응답 검증
@@ -249,6 +250,7 @@ func TestBrowserHandler_HandleSearch(t *testing.T) {
 	// 요청 실행
 	resp, err := app.Test(req)
 	assert.NoError(t, err)
+	defer resp.Body.Close()
 	assert.Equal(t, 200, resp.StatusCode)
 
 	// 응답 검증
@@ -300,6 +302,7 @@ func TestBrowserHandler_CacheHit(t *testing.T) {
 	// 요청 실행
 	resp, err := app.Test(req)
 	assert.NoError(t, err)
+	defer resp.Body.Close()
 	assert.Equal(t, 200, resp.StatusCode)
 
 	// Mock 검증 (CollectDirectory가 호출되지 않아야 함)
@@ -319,6 +322,7 @@ func TestBrowserHandler_NonBrowserRequest(t *testing.T) {
 	// 요청 실행
 	resp, err := app.Test(req)
 	assert.NoError(t, err)
+	defer resp.Body.Close()
 	assert.Equal(t, 406, resp.StatusCode) // Not Acceptable
 
 	// 응답 내용 확인
@@ -343,6 +347,7 @@ func TestBrowserHandler_InvalidPath(t *testing.T) {
 	// 요청 실행
 	resp, err := app.Test(req)
 	assert.NoError(t, err)
+	defer resp.Body.Close()
 	assert.Equal(t, 400, resp.StatusCode) // Bad Request
 
 	// Mock 검증

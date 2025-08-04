@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestConcurrentRequests(t *testing.T) {
+func TestConcurrentRequestsLoad(t *testing.T) {
 	if testing.Short() {
 		t.Skip("부하 테스트는 -short 플래그에서 스킵")
 	}

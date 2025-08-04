@@ -625,8 +625,8 @@ func (s *AuditService) Close() error {
 	defer s.mutex.Unlock()
 
 	if s.file != nil {
-		s.file.Sync()
-		s.file.Close()
+		_ = s.file.Sync()
+		_ = s.file.Close()
 		s.file = nil
 	}
 

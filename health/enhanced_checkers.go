@@ -246,7 +246,7 @@ func (esc *ExternalServiceChecker) Check(ctx context.Context) *CheckResult {
 		if err != nil {
 			return err
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		result.Details["actual_status"] = resp.StatusCode
 		result.Details["response_time_ms"] = time.Since(start).Milliseconds()

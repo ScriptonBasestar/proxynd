@@ -68,9 +68,9 @@ func NewYUMContainerHandler(provider container.ContainerProvider) *YUMContainerH
 	}
 
 	handler.enabled = true
-	handler.logger.Info("YUM Container handler initialized successfully", 
+	handler.logger.Info("YUM Container handler initialized successfully",
 		logging.F("proxies_count", len(handler.yumConfig.Proxies)))
-	
+
 	return handler
 }
 
@@ -82,12 +82,12 @@ func (h *YUMContainerHandler) LoadConfig() error {
 	}
 
 	h.yumConfig = config
-	
-	h.logger.Debug("YUM configuration loaded", 
+
+	h.logger.Debug("YUM configuration loaded",
 		logging.F("path", config.Path),
 		logging.F("use_cache", config.UseCache),
 		logging.F("proxies_count", len(config.Proxies)))
-	
+
 	return nil
 }
 
@@ -126,11 +126,11 @@ func (h *YUMContainerHandler) BuildUpstreamURL(c *fiber.Ctx) (string, error) {
 	// Round-robin 서버 선택
 	server := h.selectUpstreamServer()
 	upstreamURL := helpers.JoinURL(server.URL, requestPath)
-	
-	h.logger.Debug("Built upstream URL", 
+
+	h.logger.Debug("Built upstream URL",
 		logging.F("server", server.Name),
 		logging.F("upstream_url", upstreamURL))
-	
+
 	return upstreamURL, nil
 }
 
@@ -149,7 +149,7 @@ func (h *YUMContainerHandler) TransformRequest(c *fiber.Ctx, upstreamReq *fiber.
 	// YUM 관련 헤더 설정
 	upstreamReq.Set("User-Agent", "ProxyND-YUM/1.0")
 	upstreamReq.Set("Accept", "*/*")
-	
+
 	// 원본 요청의 Accept-Encoding 유지 (압축 지원)
 	if acceptEncoding := c.Get("Accept-Encoding"); acceptEncoding != "" {
 		upstreamReq.Set("Accept-Encoding", acceptEncoding)
@@ -176,11 +176,13 @@ func (h *YUMContainerHandler) ShouldCache(c *fiber.Ctx, statusCode int) bool {
 	}
 
 	requestPath := c.Params("*")
-	
+
 	// RPM 패키지 파일과 메타데이터 캐시
-	cacheable := []string{".rpm", ".xml", ".xml.gz", ".xml.bz2", ".xml.xz", 
-		".sqlite", ".sqlite.gz", ".sqlite.bz2", ".sqlite.xz", ".asc", ".gpg"}
-	
+	cacheable := []string{
+		".rpm", ".xml", ".xml.gz", ".xml.bz2", ".xml.xz",
+		".sqlite", ".sqlite.gz", ".sqlite.bz2", ".sqlite.xz", ".asc", ".gpg",
+	}
+
 	for _, ext := range cacheable {
 		if strings.HasSuffix(requestPath, ext) {
 			return true
@@ -217,7 +219,7 @@ func (h *YUMContainerHandler) GetCacheTTL(c *fiber.Ctx) time.Duration {
 
 // HandleError 에러 처리
 func (h *YUMContainerHandler) HandleError(err error, c *fiber.Ctx) error {
-	h.logger.Error("YUM proxy error", 
+	h.logger.Error("YUM proxy error",
 		logging.F("error", err),
 		logging.F("path", c.Path()),
 		logging.F("method", c.Method()))
@@ -244,7 +246,7 @@ func (h *YUMContainerHandler) Handle(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).SendString("Invalid request path")
 	}
 
-	h.logger.Debug("Processing YUM request", 
+	h.logger.Debug("Processing YUM request",
 		logging.F("path", requestPath),
 		logging.F("method", c.Method()))
 
@@ -289,7 +291,7 @@ func (h *YUMContainerHandler) serveCachedFile(c *fiber.Ctx, cachedFile, requestP
 		c.Set("Content-Disposition", "attachment; filename="+filename)
 	}
 
-	h.logger.Debug("Serving cached file", 
+	h.logger.Debug("Serving cached file",
 		logging.F("file", cachedFile),
 		logging.F("content_type", contentType))
 
@@ -311,25 +313,25 @@ func (h *YUMContainerHandler) fetchFromUpstream(c *fiber.Ctx, requestPath string
 	// 디렉토리 생성
 	dirPath := filepath.Dir(cachedFile)
 	if err := os.MkdirAll(dirPath, os.ModePerm); err != nil {
-		h.logger.Error("Failed to create directory", 
-			logging.F("dir", dirPath), 
+		h.logger.Error("Failed to create directory",
+			logging.F("dir", dirPath),
 			logging.F("error", err))
 		return c.Status(fiber.StatusInternalServerError).SendString("Failed to create directory")
 	}
 
 	// 업스트림에서 파일 다운로드
 	proxyClient := httpclient.NewProxyClient()
-	
+
 	for _, proxy := range h.yumConfig.Proxies {
 		fullURL := helpers.JoinURL(proxy.URL, requestPath)
-		h.logger.Debug("Fetching from upstream", 
-			logging.F("server", proxy.Name), 
+		h.logger.Debug("Fetching from upstream",
+			logging.F("server", proxy.Name),
 			logging.F("url", fullURL))
 
 		resp, err := proxyClient.GetWithRetry(ctx, fullURL, 2)
 		if err != nil {
-			h.logger.Warn("Failed to fetch from upstream", 
-				logging.F("server", proxy.Name), 
+			h.logger.Warn("Failed to fetch from upstream",
+				logging.F("server", proxy.Name),
 				logging.F("error", err))
 			continue
 		}
@@ -338,8 +340,8 @@ func (h *YUMContainerHandler) fetchFromUpstream(c *fiber.Ctx, requestPath string
 			// 파일 저장
 			if err := h.saveFile(cachedFile, resp.Body); err != nil {
 				resp.Body.Close()
-				h.logger.Error("Failed to save file", 
-					logging.F("file", cachedFile), 
+				h.logger.Error("Failed to save file",
+					logging.F("file", cachedFile),
 					logging.F("error", err))
 				return c.Status(fiber.StatusInternalServerError).SendString("Failed to save file")
 			}
@@ -350,8 +352,8 @@ func (h *YUMContainerHandler) fetchFromUpstream(c *fiber.Ctx, requestPath string
 		}
 
 		resp.Body.Close()
-		h.logger.Warn("Upstream returned non-OK status", 
-			logging.F("server", proxy.Name), 
+		h.logger.Warn("Upstream returned non-OK status",
+			logging.F("server", proxy.Name),
 			logging.F("status", resp.StatusCode))
 	}
 

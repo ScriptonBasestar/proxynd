@@ -106,7 +106,7 @@ func (h *PipHandlerV3) FetchFromUpstream(c *fiber.Ctx, _ string) ([]byte, int, e
 			)
 			continue
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		if resp.StatusCode == 200 {
 			// 응답 읽기

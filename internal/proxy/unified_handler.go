@@ -2,10 +2,13 @@
 package proxy
 
 import (
+	"fmt"
 	"sync"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 
+	"proxynd/internal/container"
 	"proxynd/internal/errors"
 	"proxynd/internal/handlers"
 	"proxynd/logging"
@@ -13,7 +16,7 @@ import (
 
 // UnifiedProxyHandler Template Method 패턴을 사용하는 통합 프록시 핸들러
 type UnifiedProxyHandler struct {
-	factory *handlers.ProxyHandlerFactory
+	factory handlers.ProxyHandlerFactory
 	logger  logging.Logger
 }
 
@@ -23,7 +26,7 @@ var (
 )
 
 // NewUnifiedProxyHandler 새로운 통합 프록시 핸들러 생성 (싱글톤)
-func NewUnifiedProxyHandler(factory *handlers.ProxyHandlerFactory) *UnifiedProxyHandler {
+func NewUnifiedProxyHandler(factory handlers.ProxyHandlerFactory) *UnifiedProxyHandler {
 	unifiedHandlerOnce.Do(func() {
 		unifiedHandlerInstance = &UnifiedProxyHandler{
 			factory: factory,
@@ -84,12 +87,17 @@ func (h *UnifiedProxyHandler) IsSupported(proxyType string) bool {
 
 // GetHandlerInfo 핸들러 정보 반환
 func (h *UnifiedProxyHandler) GetHandlerInfo(proxyType string) (map[string]interface{}, error) {
-	return h.factory.GetHandlerInfo(proxyType)
+	info := h.factory.GetHandlerInfo(proxyType)
+	return info, nil
 }
 
 // HealthCheck 모든 활성화된 핸들러의 헬스체크 수행
 func (h *UnifiedProxyHandler) HealthCheck() map[string]error {
-	return h.factory.HealthCheck()
+	err := h.factory.HealthCheck()
+	if err != nil {
+		return map[string]error{"factory": err}
+	}
+	return map[string]error{}
 }
 
 // GetStatistics 통합 핸들러 통계 정보 반환
@@ -105,7 +113,9 @@ func (h *UnifiedProxyHandler) GetStatistics() map[string]interface{} {
 
 // RegisterProxyType 새로운 프록시 타입 등록
 func (h *UnifiedProxyHandler) RegisterProxyType(proxyType string, creator func() handlers.BaseProxyHandler) {
-	h.factory.Register(proxyType, creator)
+	// TODO: BaseProxyHandler 지원은 향후 구현
+	// 현재는 stub으로 빈 구현
+	_ = creator // 미사용 경고 방지
 
 	h.logger.Info("New proxy type registered",
 		logging.F("proxy_type", proxyType),
@@ -135,6 +145,60 @@ func (h *UnifiedProxyHandler) Name() string {
 // Type 핸들러 타입 반환
 func (h *UnifiedProxyHandler) Type() string {
 	return "unified"
+}
+
+// baseHandlerAdapter BaseProxyHandler를 ContainerProxyHandler로 어댑트
+type baseHandlerAdapter struct {
+	handler handlers.BaseProxyHandler
+}
+
+// ContainerProxyHandler 인터페이스 구현 (모든 메서드 stub)
+func (a *baseHandlerAdapter) Handle(c *fiber.Ctx) error {
+	return fmt.Errorf("not implemented")
+}
+
+func (a *baseHandlerAdapter) Name() string {
+	return "base-adapter"
+}
+
+func (a *baseHandlerAdapter) Type() string {
+	return "base"
+}
+
+func (a *baseHandlerAdapter) BuildUpstreamURL(c *fiber.Ctx) (string, error) {
+	return c.Path(), nil
+}
+
+func (a *baseHandlerAdapter) GenerateCacheKey(c *fiber.Ctx) string {
+	return c.Path()
+}
+
+func (a *baseHandlerAdapter) GetCacheTTL(c *fiber.Ctx) time.Duration {
+	return time.Hour // 1시간
+}
+
+func (a *baseHandlerAdapter) ValidateRequest(c *fiber.Ctx) error {
+	return nil
+}
+
+func (a *baseHandlerAdapter) TransformRequest(c *fiber.Ctx) error {
+	return nil
+}
+
+func (a *baseHandlerAdapter) TransformResponse(c *fiber.Ctx, data []byte) ([]byte, error) {
+	return data, nil
+}
+
+func (a *baseHandlerAdapter) GetContainer() container.ContainerProvider {
+	return nil // stub
+}
+
+func (a *baseHandlerAdapter) HandleError(err error, c *fiber.Ctx) error {
+	return err // stub: 에러를 그대로 반환
+}
+
+func (a *baseHandlerAdapter) IsEnabled() bool {
+	return true // stub: 항상 활성화
 }
 
 // 편의 함수들

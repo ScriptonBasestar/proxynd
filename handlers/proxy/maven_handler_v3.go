@@ -128,7 +128,7 @@ func (h *MavenHandlerV3) FetchFromUpstream(c *fiber.Ctx, _ string) ([]byte, int,
 			continue
 		}
 
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		if resp.StatusCode != http.StatusOK {
 			lastErr = fmt.Errorf("upstream returned status %d", resp.StatusCode)
@@ -363,11 +363,11 @@ func (h *MavenHandlerV3) validateChecksumWithPool(repo config.MavenProxyServer, 
 			}()),
 			logging.F("error", err))
 		if resp != nil {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 		}
 		return nil
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// 체크섬 파일 내용 읽기
 	checksumBody := make([]byte, 0, 64) // SHA1은 40자 + 여유

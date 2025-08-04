@@ -218,7 +218,7 @@ func (h *MavenHandler) Handle(c *fiber.Ctx) error {
 					tmpFile := safePath + ".tmp"
 					if err := os.WriteFile(tmpFile, body, 0o644); err == nil {
 						if err := os.Rename(tmpFile, safePath); err != nil {
-							os.Remove(tmpFile)
+							_ = os.Remove(tmpFile)
 							h.logger.Error("Failed to rename temp file",
 								logging.F("error", err),
 							)
