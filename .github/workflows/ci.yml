@@ -143,12 +143,16 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # 🚀 통합 테스트 (develop only)
+  # 🚀 통합 테스트 매트릭스
   integration:
-    name: Integration Test
+    name: Integration Test (${{ matrix.proxy-type }})
     runs-on: ubuntu-latest
     needs: build
     if: github.ref == 'refs/heads/develop'
+    strategy:
+      matrix:
+        proxy-type: [maven, npm, apt, docker, pip, yum, apk]
+      fail-fast: false
     services:
       redis:
         image: redis:7.2-alpine
@@ -172,20 +176,118 @@ jobs:
       - name: Setup test environment
         run: |
           mkdir -p tmp/config tmp/storage
-          cp -r sample-conf/* tmp/config/ || echo "No sample config found"
+          cp -r examples/proxy-types/*.yaml tmp/config/ 2>/dev/null || echo "No example configs found"
+          cp -r sample-conf/* tmp/config/ 2>/dev/null || echo "No sample config found"
 
-      - name: Run integration tests
+      - name: Cache upstream fixtures
+        uses: actions/cache@v4
+        with:
+          path: tests/e2e/upstream-data
+          key: upstream-fixtures-${{ matrix.proxy-type }}-${{ hashFiles('tests/e2e/upstream-data/**') }}
+          restore-keys: |
+            upstream-fixtures-${{ matrix.proxy-type }}-
+
+      - name: Run integration tests for ${{ matrix.proxy-type }}
         run: |
           export CONFIG_DIR=./tmp/config
           export STORAGE_DIR=./tmp/storage
           export REDIS_URL=redis://localhost:6379
-          go test -tags=integration -v ./tests/integration/... || echo "No integration tests found"
+          export PROXY_TYPE=${{ matrix.proxy-type }}
+
+          # Run specific integration tests for the proxy type
+          go test -tags=integration -v ./tests/integration/${{ matrix.proxy-type }}_integration_test.go || \
+          go test -tags=integration -v ./tests/integration/integration_test.go -run "Test.*${{ matrix.proxy-type | title }}" || \
+          echo "No integration tests found for ${{ matrix.proxy-type }}"
+
+      - name: Collect integration test logs
+        if: always()
+        run: |
+          mkdir -p test-results/${{ matrix.proxy-type }}
+          cp -r logs/* test-results/${{ matrix.proxy-type }}/ 2>/dev/null || echo "No logs to collect"
+          ls -la test-results/${{ matrix.proxy-type }}/ || echo "No test results"
+
+      - name: Upload integration test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-results-${{ matrix.proxy-type }}
+          path: test-results/${{ matrix.proxy-type }}/
+          retention-days: 7
+
+  # 🧪 E2E 테스트 매트릭스
+  e2e:
+    name: E2E Test (${{ matrix.proxy-type }})
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/develop'
+    strategy:
+      matrix:
+        proxy-type: [maven, npm, apt, docker, pip, yum, apk]
+      fail-fast: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup test environment
+        run: |
+          mkdir -p tmp/config tmp/storage
+          cp -r examples/proxy-types/*.yaml tmp/config/ 2>/dev/null || echo "No example configs found"
+
+      - name: Cache upstream fixtures
+        uses: actions/cache@v4
+        with:
+          path: tests/e2e/upstream-data
+          key: e2e-fixtures-${{ matrix.proxy-type }}-${{ hashFiles('tests/e2e/upstream-data/**') }}
+          restore-keys: |
+            e2e-fixtures-${{ matrix.proxy-type }}-
+
+      - name: Start ProxyND container
+        run: |
+          export CONFIG_DIR=./tmp/config
+          export STORAGE_DIR=./tmp/storage
+          export SERVER_PORT=8080
+          docker-compose -f docker-compose.e2e.yml up -d proxynd
+
+      - name: Wait for ProxyND to be ready
+        run: |
+          timeout 60 bash -c 'until curl -f http://localhost:8080/healthz; do sleep 2; done'
+
+      - name: Run E2E tests for ${{ matrix.proxy-type }}
+        run: |
+          export PROXY_TYPE=${{ matrix.proxy-type }}
+          if [ -f "tests/e2e/scripts/test-${{ matrix.proxy-type }}.sh" ]; then
+            chmod +x tests/e2e/scripts/test-${{ matrix.proxy-type }}.sh
+            tests/e2e/scripts/test-${{ matrix.proxy-type }}.sh
+          else
+            echo "No E2E script found for ${{ matrix.proxy-type }}"
+            exit 0
+          fi
+
+      - name: Collect E2E logs
+        if: always()
+        run: |
+          mkdir -p e2e-results/${{ matrix.proxy-type }}
+          docker-compose -f docker-compose.e2e.yml logs proxynd > e2e-results/${{ matrix.proxy-type }}/proxynd.log
+          cp -r tmp/storage/* e2e-results/${{ matrix.proxy-type }}/ 2>/dev/null || echo "No storage to collect"
+
+      - name: Upload E2E test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-results-${{ matrix.proxy-type }}
+          path: e2e-results/${{ matrix.proxy-type }}/
+          retention-days: 7
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker-compose -f docker-compose.e2e.yml down -v
 
   # 🎯 배포 (develop → staging)
   deploy-staging:
     name: Deploy Staging
     runs-on: ubuntu-latest
-    needs: [build, integration]
+    needs: [build, integration, e2e]
     if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
     environment:
       name: staging
@@ -215,7 +317,7 @@ jobs:
   summary:
     name: Summary
     runs-on: ubuntu-latest
-    needs: [test, security, build, integration, deploy-staging]
+    needs: [test, security, build, integration, e2e, deploy-staging]
     if: always()
     steps:
       - name: Generate summary
@@ -227,11 +329,12 @@ jobs:
           echo "| Test & Lint | ${{ needs.test.result }} | - |" >> $GITHUB_STEP_SUMMARY
           echo "| Security | ${{ needs.security.result }} | - |" >> $GITHUB_STEP_SUMMARY
           echo "| Build | ${{ needs.build.result }} | - |" >> $GITHUB_STEP_SUMMARY
-          echo "| Integration | ${{ needs.integration.result }} | - |" >> $GITHUB_STEP_SUMMARY
+          echo "| Integration Matrix | ${{ needs.integration.result }} | - |" >> $GITHUB_STEP_SUMMARY
+          echo "| E2E Matrix | ${{ needs.e2e.result }} | - |" >> $GITHUB_STEP_SUMMARY
           echo "| Deploy Staging | ${{ needs.deploy-staging.result }} | - |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          if [[ "${{ needs.test.result }}" == "success" && "${{ needs.security.result }}" == "success" && "${{ needs.build.result }}" == "success" ]]; then
+          if [[ "${{ needs.test.result }}" == "success" && "${{ needs.security.result }}" == "success" && "${{ needs.build.result }}" == "success" && "${{ needs.integration.result }}" == "success" && "${{ needs.e2e.result }}" == "success" ]]; then
             echo "✅ **All checks passed!**" >> $GITHUB_STEP_SUMMARY
           else
             echo "❌ **Some checks failed**" >> $GITHUB_STEP_SUMMARY
