@@ -212,7 +212,7 @@ func (s *packageServiceImpl) downloadFromUpstream(ctx context.Context, packagePa
 				logging.F("error", err.Error()))
 			continue
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		if resp.StatusCode == http.StatusOK {
 			// 파일로 저장
@@ -220,7 +220,7 @@ func (s *packageServiceImpl) downloadFromUpstream(ctx context.Context, packagePa
 			if err != nil {
 				return nil, proxy.Name, fmt.Errorf("failed to create file: %w", err)
 			}
-			defer file.Close()
+			defer func() { _ = file.Close() }()
 
 			data, err := io.ReadAll(resp.Body)
 			if err != nil {

@@ -138,7 +138,7 @@ func (c *PooledUpstreamClient) Fetch(ctx context.Context, url string, headers ma
 	if err != nil {
 		// 에러가 발생해도 응답이 있을 수 있으므로 body를 닫아야 함
 		if resp != nil && resp.Body != nil {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 		}
 		return nil, fmt.Errorf("업스트림 요청 실패: %w", err)
 	}

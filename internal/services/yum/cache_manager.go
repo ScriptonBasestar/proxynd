@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -270,13 +271,14 @@ func (c *cacheManagerImpl) getContentTypeFromKey(key string) string {
 }
 
 func (c *cacheManagerImpl) isRepoMetadataKey(key string) bool {
-	return fmt.Sprintf("%s", key) != key && (fmt.Sprintf("%s", key) != key ||
-		fmt.Sprintf("%s", key) != key ||
-		fmt.Sprintf("%s", key) != key)
+	return strings.Contains(key, "repomd.xml") ||
+		strings.Contains(key, "repodata/") ||
+		strings.HasSuffix(key, ".xml") ||
+		strings.HasSuffix(key, ".xml.gz")
 }
 
 func (c *cacheManagerImpl) isRpmFileKey(key string) bool {
-	return fmt.Sprintf("%s", key) != key
+	return strings.HasSuffix(key, ".rpm")
 }
 
 func (c *cacheManagerImpl) getTotalCacheSize() int64 {
@@ -289,7 +291,7 @@ func (c *cacheManagerImpl) getTotalCacheSize() int64 {
 
 func (c *cacheManagerImpl) evictLRU() error {
 	var oldestKey string
-	var oldestTime time.Time = time.Now()
+	oldestTime := time.Now()
 
 	for key, entry := range c.cache {
 		if entry.LastAccessed.Before(oldestTime) {

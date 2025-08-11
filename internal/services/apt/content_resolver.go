@@ -8,6 +8,19 @@ import (
 	"proxynd/internal/domain/apt"
 )
 
+const (
+	extBz2                   = ".bz2"
+	extXz                    = ".xz"
+	extLzma                  = ".lzma"
+	aptPackageRelease        = "release"
+	aptPackageInrelease      = "inrelease"
+	aptPackagePackages       = "packages"
+	aptPackageSources        = "sources"
+	mimeTextPlainCharsetUTF8 = "text/plain; charset=utf-8"
+	aptContentMetadata       = "metadata"
+	aptContentArchive        = "archive"
+)
+
 // contentResolverImpl 콘텐츠 타입 결정 서비스 구현
 type contentResolverImpl struct{}
 
@@ -39,30 +52,30 @@ func (r *contentResolverImpl) GetContentType(packagePath string) string {
 			return "application/gzip" // Sources.gz
 		}
 		return "application/gzip"
-	case ".bz2":
+	case extBz2:
 		return "application/x-bzip2"
-	case ".xz":
+	case extXz:
 		return "application/x-xz"
-	case ".lzma":
+	case extLzma:
 		return "application/x-lzma"
 	default:
 		// 확장자가 없는 메타데이터 파일들
 		switch basename {
-		case "release", "inrelease":
-			return "text/plain; charset=utf-8"
-		case "packages":
-			return "text/plain; charset=utf-8"
-		case "sources":
-			return "text/plain; charset=utf-8"
+		case aptPackageRelease, aptPackageInrelease:
+			return mimeTextPlainCharsetUTF8
+		case aptPackagePackages:
+			return mimeTextPlainCharsetUTF8
+		case aptPackageSources:
+			return mimeTextPlainCharsetUTF8
 		case "contents":
-			return "text/plain; charset=utf-8"
+			return mimeTextPlainCharsetUTF8
 		default:
 			// 경로 패턴으로 추가 판단
 			if r.isDebianInstaller(packagePath) {
 				return "application/vnd.debian.binary-package"
 			}
 			if r.isTranslationFile(packagePath) {
-				return "text/plain; charset=utf-8"
+				return mimeTextPlainCharsetUTF8
 			}
 			return "application/octet-stream"
 		}
@@ -152,12 +165,12 @@ func (r *contentResolverImpl) GetFileCategory(packagePath string) string {
 		basename == "packages" || basename == "sources" ||
 		strings.Contains(basename, "packages") ||
 		strings.Contains(basename, "release") {
-		return "metadata"
+		return aptContentMetadata
 	}
 
 	// 압축 파일
 	if ext == ".gz" || ext == ".bz2" || ext == ".xz" || ext == ".lzma" {
-		return "archive"
+		return aptContentArchive
 	}
 
 	// 번역 파일

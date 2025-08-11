@@ -159,7 +159,7 @@ func (c *directoryCollectorImpl) CollectFromMirror(ctx context.Context, mirror c
 	if err != nil {
 		return nil, fmt.Errorf("HTTP 요청 실패: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("HTTP 상태 코드: %d", resp.StatusCode)
@@ -197,7 +197,7 @@ func (c *directoryCollectorImpl) GetMirrorStatus(ctx context.Context, mirror con
 		status.Error = err.Error()
 		return status, nil
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	status.Available = resp.StatusCode == http.StatusOK
 	if !status.Available {
@@ -308,7 +308,7 @@ func (c *directoryCollectorImpl) parseMetadata(mirror config.MavenProxyServer, c
 	if err != nil {
 		return nil, fmt.Errorf("메타데이터 요청 실패: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("메타데이터 없음: %d", resp.StatusCode)

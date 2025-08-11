@@ -17,6 +17,11 @@ import (
 	"proxynd/logging"
 )
 
+const (
+	dockerResourceManifest = "manifest"
+	dockerResourceBlob     = "blob"
+)
+
 // cacheManagerImpl Docker 캐시 관리 구현
 type cacheManagerImpl struct {
 	config     docker.ProxyConfig
@@ -71,14 +76,14 @@ func (c *cacheManagerImpl) Get(ctx context.Context, key string) (*docker.CacheEn
 
 	// 유효성 검증
 	if !c.ValidateCacheEntry(ctx, entry) {
-		c.Delete(ctx, key)
+		_ = c.Delete(ctx, key)
 		c.updateMissRate()
 		return nil, fmt.Errorf("cache entry expired or invalid: %s", key)
 	}
 
 	// 실제 데이터 로드
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		c.Delete(ctx, key)
+		_ = c.Delete(ctx, key)
 		return nil, fmt.Errorf("cache data file not found: %s", key)
 	}
 
@@ -92,7 +97,7 @@ func (c *cacheManagerImpl) Get(ctx context.Context, key string) (*docker.CacheEn
 	entry.LastAccessed = time.Now()
 
 	// 메타데이터 업데이트 (접근 시간)
-	c.saveCacheEntry(metaPath, entry)
+	_ = c.saveCacheEntry(metaPath, entry)
 
 	c.updateHitRate()
 	c.logger.Debug("Cache hit", logging.F("key", key), logging.F("size", len(data)))
@@ -141,7 +146,7 @@ func (c *cacheManagerImpl) Set(ctx context.Context, entry *docker.CacheEntry) er
 
 	if err := c.saveCacheEntry(metaPath, entry); err != nil {
 		// 메타데이터 저장 실패 시 데이터 파일도 삭제
-		os.Remove(filePath)
+		_ = os.Remove(filePath)
 		return fmt.Errorf("failed to save cache metadata: %w", err)
 	}
 
@@ -169,9 +174,9 @@ func (c *cacheManagerImpl) Delete(ctx context.Context, key string) error {
 	}
 
 	// 파일 삭제
-	os.Remove(filePath)
-	os.Remove(metaPath)
-	os.Remove(filePath + ".headers") // 헤더 파일도 삭제
+	_ = os.Remove(filePath)
+	_ = os.Remove(metaPath)
+	_ = os.Remove(filePath + ".headers") // 헤더 파일도 삭제
 
 	return nil
 }
@@ -186,9 +191,9 @@ func (c *cacheManagerImpl) GenerateCacheKey(repository, reference, operation str
 	// 타입별 접두사 추가
 	var prefix string
 	switch operation {
-	case "manifest":
+	case dockerResourceManifest:
 		prefix = "m"
-	case "blob":
+	case dockerResourceBlob:
 		prefix = "b"
 	case "tags":
 		prefix = "t"
@@ -264,13 +269,13 @@ func (c *cacheManagerImpl) CleanupExpired(ctx context.Context) error {
 		entry, err := c.loadCacheEntry(path)
 		if err != nil {
 			// 손상된 메타데이터 파일 삭제
-			os.Remove(path)
+			_ = os.Remove(path)
 			return nil
 		}
 
 		// 만료 확인
 		if !c.ValidateCacheEntry(ctx, entry) {
-			c.Delete(ctx, entry.Key)
+			_ = c.Delete(ctx, entry.Key)
 			removedCount++
 			reclaimedBytes += entry.Size
 		}

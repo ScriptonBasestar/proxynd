@@ -97,11 +97,11 @@ func (s *registryServiceImpl) Handle(ctx context.Context, request *docker.Regist
 
 	if err != nil {
 		metrics.StatusCode = http.StatusInternalServerError
-		s.metricsCollector.RecordError(ctx, "registry_operation", request.Operation)
+		_ = s.metricsCollector.RecordError(ctx, "registry_operation", request.Operation)
 	}
 
-	s.metricsCollector.RecordRequest(ctx, metrics)
-	s.metricsCollector.RecordDuration(ctx, request.Operation, metrics.Duration.Milliseconds())
+	_ = s.metricsCollector.RecordRequest(ctx, metrics)
+	_ = s.metricsCollector.RecordDuration(ctx, request.Operation, metrics.Duration.Milliseconds())
 
 	return response, err
 }
@@ -180,7 +180,7 @@ func (s *registryServiceImpl) handleTagsRequest(ctx context.Context, request *do
 	cacheKey := s.cacheManager.GenerateCacheKey(request.Repository, "", "tags")
 	if entry, err := s.cacheManager.Get(ctx, cacheKey); err == nil {
 		if s.cacheManager.ValidateCacheEntry(ctx, entry) {
-			s.metricsCollector.RecordCacheHit(ctx, true, "tags")
+			_ = s.metricsCollector.RecordCacheHit(ctx, true, "tags")
 
 			return &docker.ManifestResponse{
 				Data:        entry.Headers, // tags 데이터는 headers에 저장
@@ -208,19 +208,19 @@ func (s *registryServiceImpl) handleTagsRequest(ctx context.Context, request *do
 	// 인증 설정
 	if auth, err := s.authManager.GetAuthToken(ctx, registry.URL, request.Repository); err == nil {
 		if auth.Type == "bearer" && auth.Token != "" {
-			s.authManager.SetBearerAuth(req, auth.Token)
+			_ = s.authManager.SetBearerAuth(req, auth.Token)
 		} else if auth.Type == "basic" && auth.Username != "" {
-			s.authManager.SetBasicAuth(req, auth.Username, auth.Password)
+			_ = s.authManager.SetBasicAuth(req, auth.Username, auth.Password)
 		}
 	}
 
 	client := &http.Client{Timeout: 30 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
-		s.registryManager.MarkRegistryFailed(ctx, registry.URL, err)
+		_ = s.registryManager.MarkRegistryFailed(ctx, registry.URL, err)
 		return nil, fmt.Errorf("failed to fetch tags: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return &docker.ManifestResponse{
@@ -246,8 +246,8 @@ func (s *registryServiceImpl) handleTagsRequest(ctx context.Context, request *do
 		Headers:     data, // 태그 데이터
 	}
 
-	s.cacheManager.Set(ctx, entry)
-	s.metricsCollector.RecordCacheHit(ctx, false, "tags")
+	_ = s.cacheManager.Set(ctx, entry)
+	_ = s.metricsCollector.RecordCacheHit(ctx, false, "tags")
 
 	return &docker.ManifestResponse{
 		Data:         data,
@@ -279,7 +279,7 @@ func (s *registryServiceImpl) handleCatalogRequest(ctx context.Context, request 
 	// 인증이 필요한 경우 설정
 	if auth, err := s.authManager.GetAuthToken(ctx, registry.URL, ""); err == nil {
 		if auth.Type == "bearer" && auth.Token != "" {
-			s.authManager.SetBearerAuth(req, auth.Token)
+			_ = s.authManager.SetBearerAuth(req, auth.Token)
 		}
 	}
 
@@ -288,7 +288,7 @@ func (s *registryServiceImpl) handleCatalogRequest(ctx context.Context, request 
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch catalog: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	data := make([]byte, resp.ContentLength)
 	if _, err := resp.Body.Read(data); err != nil {

@@ -251,25 +251,25 @@ func (h *MavenHandlerV3) GetCacheTTL(c *fiber.Ctx) time.Duration {
 func (h *MavenHandlerV3) GetContentType(path string) string {
 	switch {
 	case strings.HasSuffix(path, ".jar"):
-		return "application/java-archive"
+		return mimeApplicationJavaArchive
 	case strings.HasSuffix(path, ".war"):
-		return "application/java-archive"
+		return mimeApplicationJavaArchive
 	case strings.HasSuffix(path, ".ear"):
-		return "application/java-archive"
+		return mimeApplicationJavaArchive
 	case strings.HasSuffix(path, ".pom"):
-		return "application/xml"
+		return mimeApplicationXML
 	case strings.HasSuffix(path, ".xml"):
-		return "application/xml"
+		return mimeApplicationXML
 	case strings.HasSuffix(path, ".sha1"):
-		return "text/plain"
+		return mimeTextPlain
 	case strings.HasSuffix(path, ".sha256"):
-		return "text/plain"
+		return mimeTextPlain
 	case strings.HasSuffix(path, ".md5"):
-		return "text/plain"
+		return mimeTextPlain
 	case strings.HasSuffix(path, ".asc"):
 		return "application/pgp-signature"
 	case strings.HasSuffix(path, ".zip"):
-		return "application/zip"
+		return mimeApplicationZip
 	case strings.HasSuffix(path, ".tar.gz"):
 		return "application/gzip"
 	default:

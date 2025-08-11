@@ -250,7 +250,7 @@ func (s *MFAMiddlewareConfig) isMFARequiredPath(path string, requiredPaths []str
 	for _, requiredPath := range requiredPaths {
 		if strings.Contains(requiredPath, "*") {
 			// 와일드카드 패턴 매칭
-			pattern := strings.Replace(requiredPath, "*", "", -1)
+			pattern := strings.ReplaceAll(requiredPath, "*", "")
 			if strings.Contains(path, pattern) {
 				return true
 			}

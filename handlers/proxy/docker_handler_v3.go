@@ -68,7 +68,7 @@ func (h *DockerHandlerV3) BuildUpstreamURL(c *fiber.Ctx) (string, error) {
 	}
 
 	// Docker Registry v2 API 경로 처리
-	if imagePath == "v2" || imagePath == "v2/" {
+	if imagePath == "v2" || imagePath == dockerAPIV2Path {
 		return helpers.JoinURL(registry.URL, "v2/"), nil
 	}
 
@@ -166,7 +166,7 @@ func (h *DockerHandlerV3) ProcessResponse(c *fiber.Ctx, body []byte, statusCode 
 	imagePath := c.Params("*")
 
 	// v2 base endpoint 처리
-	if imagePath == "v2" || imagePath == "v2/" {
+	if imagePath == "v2" || imagePath == dockerAPIV2Path {
 		response := map[string]interface{}{
 			"errors": []interface{}{},
 		}
@@ -206,7 +206,7 @@ func (h *DockerHandlerV3) ShouldCache(c *fiber.Ctx, statusCode int) bool {
 	path := c.Path()
 
 	// v2 base endpoint는 캐시하지 않음
-	if path == "v2" || path == "v2/" {
+	if path == "v2" || path == dockerAPIV2Path {
 		return false
 	}
 
@@ -253,23 +253,23 @@ func (h *DockerHandlerV3) GetCacheTTL(c *fiber.Ctx) time.Duration {
 
 // GetContentType Content-Type 결정
 func (h *DockerHandlerV3) GetContentType(path string) string {
-	if path == "v2" || path == "v2/" {
-		return "application/json"
+	if path == "v2" || path == dockerAPIV2Path {
+		return mimeApplicationJSON
 	}
 
 	if h.isManifestRequest(path) {
-		return "application/vnd.docker.distribution.manifest.v2+json"
+		return mimeApplicationDockerManifestV2JSON
 	}
 
 	if h.isBlobRequest(path) {
-		return "application/octet-stream"
+		return mimeApplicationOctetStream
 	}
 
 	if strings.Contains(path, "/tags/list") {
-		return "application/json"
+		return mimeApplicationJSON
 	}
 
-	return "application/json"
+	return mimeApplicationJSON
 }
 
 // ShouldInline 인라인 표시 여부 결정
@@ -398,7 +398,7 @@ func (h *DockerHandlerV3) isBlobRequest(path string) bool {
 func (h *DockerHandlerV3) detectManifestType(data []byte) string {
 	var manifest map[string]interface{}
 	if err := json.Unmarshal(data, &manifest); err != nil {
-		return "application/vnd.docker.distribution.manifest.v2+json"
+		return mimeApplicationDockerManifestV2JSON
 	}
 
 	if schemaVersion, ok := manifest["schemaVersion"].(float64); ok {

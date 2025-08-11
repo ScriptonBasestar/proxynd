@@ -226,9 +226,10 @@ func (ars *AutoRecoveryService) checkAndRecover() {
 		}
 
 		// 실패 상태 확인
-		if checkResult.Status == StatusUnhealthy {
+		switch checkResult.Status {
+		case StatusUnhealthy:
 			ars.handleFailure(componentName, checkResult, config)
-		} else if checkResult.Status == StatusHealthy {
+		case StatusHealthy:
 			ars.handleRecovery(componentName)
 		}
 	}
@@ -565,7 +566,7 @@ func (cba *CircuitBreakerAction) Execute(ctx context.Context, trigger *RecoveryT
 
 	// 실패 시뮬레이션으로 서킷 브레이커 열기
 	for i := 0; i < 10; i++ {
-		cb.Execute(ctx, func(context.Context) error {
+		_ = cb.Execute(ctx, func(context.Context) error {
 			return fmt.Errorf("simulated failure to open circuit breaker")
 		})
 	}

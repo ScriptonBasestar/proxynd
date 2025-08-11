@@ -97,7 +97,7 @@ func (b *IncrementalBackup) calculateChecksum(filePath string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	hash := md5.New()
 	if _, err := io.Copy(hash, file); err != nil {
@@ -309,22 +309,22 @@ func (b *IncrementalBackup) backupSingleFile(srcPath string) error {
 	if err != nil {
 		return err
 	}
-	defer srcFile.Close()
+	defer func() { _ = srcFile.Close() }()
 
 	dstFile, err := os.Create(dstPath)
 	if err != nil {
 		return err
 	}
-	defer dstFile.Close()
+	defer func() { _ = dstFile.Close() }()
 
 	if _, err := io.Copy(dstFile, srcFile); err != nil {
-		os.Remove(dstPath)
+		_ = os.Remove(dstPath)
 		return err
 	}
 
 	// 파일 권한 복사
 	if info, err := os.Stat(srcPath); err == nil {
-		os.Chmod(dstPath, info.Mode())
+		_ = os.Chmod(dstPath, info.Mode())
 	}
 
 	return nil

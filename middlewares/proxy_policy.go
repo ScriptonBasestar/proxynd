@@ -75,7 +75,7 @@ func isBasicAuthenticated(c *fiber.Ctx) bool {
 	if apiKey := c.Get("X-API-Key"); apiKey != "" {
 		return validateAPIKey(apiKey)
 	}
-	
+
 	// 2. Bearer 토큰 인증 확인 (Authorization 헤더)
 	if authHeader := c.Get("Authorization"); authHeader != "" {
 		if strings.HasPrefix(authHeader, "Bearer ") {
@@ -83,22 +83,22 @@ func isBasicAuthenticated(c *fiber.Ctx) bool {
 			return validateBearerToken(token)
 		}
 	}
-	
+
 	// 3. Basic 인증 확인
 	if authHeader := c.Get("Authorization"); authHeader != "" {
 		if strings.HasPrefix(authHeader, "Basic ") {
 			return validateBasicAuth(authHeader)
 		}
 	}
-	
+
 	// 4. 공개 접근 허용 정책 (설정에 따라)
 	// 개발 환경이나 특정 엔드포인트에서는 인증 없이 허용 가능
 	if isPublicAccessAllowed(c) {
 		return true
 	}
-	
+
 	// 기본적으로 인증되지 않은 요청은 차단
-	log.Printf("Authentication failed for request: %s %s from %s", 
+	log.Printf("Authentication failed for request: %s %s from %s",
 		c.Method(), c.Path(), c.IP())
 	return false
 }
@@ -110,14 +110,14 @@ func validateAPIKey(apiKey string) bool {
 		log.Printf("Invalid API key length: %d", len(apiKey))
 		return false
 	}
-	
+
 	// TODO: API 키 매니저를 통한 실제 검증 로직 구현
 	// 현재는 기본 검증만 수행
 	if strings.HasPrefix(apiKey, "px_") || strings.HasPrefix(apiKey, "proxynd_") {
 		log.Printf("API key validation passed for key: %s...", apiKey[:8])
 		return true
 	}
-	
+
 	log.Printf("Invalid API key format")
 	return false
 }
@@ -129,14 +129,14 @@ func validateBearerToken(token string) bool {
 		log.Printf("Token too short")
 		return false
 	}
-	
+
 	// JWT 형식 확인 (3개 파트가 점으로 구분)
 	parts := strings.Split(token, ".")
 	if len(parts) != 3 {
 		log.Printf("Invalid JWT format")
 		return false
 	}
-	
+
 	// TODO: JWT 서비스를 통한 실제 토큰 검증 구현
 	// 현재는 기본 형식 검증만 수행
 	log.Printf("Bearer token validation passed")
@@ -147,30 +147,30 @@ func validateBearerToken(token string) bool {
 func validateBasicAuth(authHeader string) bool {
 	// Basic 인증 헤더에서 사용자 정보 추출
 	encodedCredentials := strings.TrimPrefix(authHeader, "Basic ")
-	
+
 	// Base64 디코딩
 	credentials, err := base64.StdEncoding.DecodeString(encodedCredentials)
 	if err != nil {
 		log.Printf("Failed to decode basic auth: %v", err)
 		return false
 	}
-	
+
 	// username:password 형식으로 분리
 	parts := strings.SplitN(string(credentials), ":", 2)
 	if len(parts) != 2 {
 		log.Printf("Invalid basic auth format")
 		return false
 	}
-	
+
 	username, password := parts[0], parts[1]
-	
+
 	// TODO: 사용자 저장소를 통한 실제 인증 로직 구현
 	// 현재는 기본 검증만 수행
 	if len(username) > 0 && len(password) >= 8 {
 		log.Printf("Basic auth validation passed for user: %s", username)
 		return true
 	}
-	
+
 	log.Printf("Basic auth validation failed")
 	return false
 }
@@ -181,18 +181,18 @@ func isPublicAccessAllowed(c *fiber.Ctx) bool {
 	if strings.HasPrefix(c.Path(), "/healthz") || strings.HasPrefix(c.Path(), "/health") {
 		return true
 	}
-	
+
 	// 메트릭 엔드포인트는 공개 (Prometheus 등)
 	if strings.HasPrefix(c.Path(), "/metrics") {
 		return true
 	}
-	
+
 	// 개발 환경에서는 더 관대한 정책 적용
 	if isDevelopmentMode() {
 		log.Printf("Development mode: allowing public access to %s", c.Path())
 		return true
 	}
-	
+
 	return false
 }
 

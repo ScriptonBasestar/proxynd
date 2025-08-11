@@ -56,7 +56,7 @@ func buildCompleteGAVTree(entries []DirectoryEntry) []*GAVTreeNode {
 
 	for _, entry := range entries {
 		// 디렉토리 타입만 처리
-		if entry.Type != "directory" && entry.Type != maven.TypeDirectory && entry.Type != maven.TypeGroup {
+		if entry.Type != typeDirectory && entry.Type != maven.TypeDirectory && entry.Type != maven.TypeGroup {
 			continue
 		}
 
@@ -121,7 +121,7 @@ func buildPartialGAVTree(entries []DirectoryEntry, currentPath string) []*GAVTre
 		case "artifact":
 			node.GroupID = pathInfo.GroupID
 			node.ArtifactID = entry.Name
-		case "version":
+		case levelVersion:
 			node.GroupID = pathInfo.GroupID
 			node.ArtifactID = pathInfo.ArtifactID
 			node.Version = entry.Name
@@ -132,7 +132,7 @@ func buildPartialGAVTree(entries []DirectoryEntry, currentPath string) []*GAVTre
 
 	// 각 노드의 하위 항목 수 계산 (실제로는 API 호출이 필요하지만 여기서는 추정)
 	for _, node := range nodes {
-		if node.Type != "file" {
+		if node.Type != typeFile {
 			// 디렉토리인 경우 하위 항목이 있을 수 있음으로 표시
 			node.ChildCount = 1 // 최소 1개로 설정하여 확장 가능하도록
 		}

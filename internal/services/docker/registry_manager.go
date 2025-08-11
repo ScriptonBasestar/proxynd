@@ -99,7 +99,7 @@ func (r *registryManagerImpl) CheckRegistryHealth(ctx context.Context, registryU
 	if err != nil {
 		return r.createFailedStatus(registryURL, err), nil
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// 상태 정보 생성
 	status := &docker.RegistryStatus{

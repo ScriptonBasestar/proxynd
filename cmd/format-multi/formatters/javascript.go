@@ -9,7 +9,7 @@ import (
 const (
 	toolPrettier = "prettier"
 	toolNPM      = "npm"
-	toolYarn     = "yarn" 
+	toolYarn     = "yarn"
 	toolPNPM     = "pnpm"
 )
 

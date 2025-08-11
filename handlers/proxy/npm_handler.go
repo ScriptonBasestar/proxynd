@@ -231,7 +231,7 @@ func getNpmContentType(filename, path string) string {
 	case strings.HasSuffix(filename, ".tar.gz"):
 		return mimeApplicationXGzip
 	case strings.HasSuffix(filename, ".json"):
-		return "application/json"
+		return mimeApplicationJSON
 	default:
 		return mimeApplicationOctetStream
 	}

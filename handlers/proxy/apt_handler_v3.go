@@ -172,25 +172,25 @@ func (h *APTHandlerV3) GetCacheTTL(c *fiber.Ctx) time.Duration {
 func (h *APTHandlerV3) GetContentType(path string) string {
 	switch {
 	case strings.HasSuffix(path, ".deb"):
-		return "application/vnd.debian.binary-package"
+		return mimeApplicationDebianBinaryPackage
 	case strings.HasSuffix(path, ".udeb"):
-		return "application/vnd.debian.binary-package"
+		return mimeApplicationDebianBinaryPackage
 	case strings.HasSuffix(path, ".gz"):
-		return "application/gzip"
+		return mimeApplicationGzip
 	case strings.HasSuffix(path, ".xz"):
 		return "application/x-xz"
 	case strings.HasSuffix(path, ".bz2"):
-		return "application/x-bzip2"
+		return mimeApplicationXBzip2
 	case strings.Contains(path, "Release"):
-		return "text/plain"
+		return mimeTextPlain
 	case strings.Contains(path, "Packages"):
-		return "text/plain"
+		return mimeTextPlain
 	case strings.Contains(path, "Sources"):
-		return "text/plain"
+		return mimeTextPlain
 	case strings.HasSuffix(path, ".gpg"):
-		return "application/pgp-signature"
+		return mimeApplicationPGPSignature
 	default:
-		return "application/octet-stream"
+		return mimeApplicationOctetStream
 	}
 }
 
@@ -290,10 +290,10 @@ func (h *APTHandlerV3) HandleMultipleUpstreams(c *fiber.Ctx) error {
 			// 캐시 저장
 			if h.ShouldCache(c, statusCode) {
 				requestPath := h.extractRequestPath(c)
-				h.BaseProxyHandler.saveToCache(h, c, requestPath, processedBody)
+				h.saveToCache(h, c, requestPath, processedBody)
 			}
 
-			return h.BaseProxyHandler.sendResponse(h, c, processedBody, h.Type(), false)
+			return h.sendResponse(h, c, processedBody, h.Type(), false)
 		}
 
 		lastErr = fmt.Errorf("upstream returned status %d", statusCode)

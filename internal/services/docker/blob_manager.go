@@ -58,7 +58,7 @@ func (b *blobManagerImpl) GetBlob(ctx context.Context, repository, digest string
 				if err := b.ValidateBlobDigest(ctx, entry.Headers, digest); err != nil {
 					b.logger.Warn("Cached blob digest validation failed", logging.F("error", err))
 					// 캐시 무효화
-					b.cacheManager.Delete(ctx, cacheKey)
+					_ = b.cacheManager.Delete(ctx, cacheKey)
 				} else {
 					return &docker.ManifestResponse{
 						Data:        entry.Headers, // blob 데이터는 headers에 저장
@@ -98,19 +98,19 @@ func (b *blobManagerImpl) fetchBlobFromRegistry(ctx context.Context, repository,
 	// 인증 설정
 	if auth, err := b.authManager.GetAuthToken(ctx, registry.URL, repository); err == nil {
 		if auth.Type == "bearer" && auth.Token != "" {
-			b.authManager.SetBearerAuth(req, auth.Token)
+			_ = b.authManager.SetBearerAuth(req, auth.Token)
 		} else if auth.Type == "basic" && auth.Username != "" {
-			b.authManager.SetBasicAuth(req, auth.Username, auth.Password)
+			_ = b.authManager.SetBasicAuth(req, auth.Username, auth.Password)
 		}
 	}
 
 	client := &http.Client{Timeout: 60 * time.Second} // blob은 큰 파일일 수 있으므로 타임아웃 연장
 	resp, err := client.Do(req)
 	if err != nil {
-		b.registryManager.MarkRegistryFailed(ctx, registry.URL, err)
+		_ = b.registryManager.MarkRegistryFailed(ctx, registry.URL, err)
 		return nil, fmt.Errorf("failed to fetch blob: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return &docker.ManifestResponse{
@@ -225,7 +225,7 @@ func (b *blobManagerImpl) GetBlobInfo(ctx context.Context, repository, digest st
 	// 인증 설정
 	if auth, err := b.authManager.GetAuthToken(ctx, registry.URL, repository); err == nil {
 		if auth.Type == "bearer" && auth.Token != "" {
-			b.authManager.SetBearerAuth(req, auth.Token)
+			_ = b.authManager.SetBearerAuth(req, auth.Token)
 		}
 	}
 
@@ -234,7 +234,7 @@ func (b *blobManagerImpl) GetBlobInfo(ctx context.Context, repository, digest st
 	if err != nil {
 		return nil, fmt.Errorf("failed to get blob info: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("blob not found: %s", digest)

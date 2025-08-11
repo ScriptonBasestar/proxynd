@@ -16,6 +16,12 @@ import (
 	"proxynd/logging"
 )
 
+const (
+	dockerTagsEndpoint  = "tags"
+	dockerListEndpoint  = "list"
+	mimeApplicationJSON = "application/json"
+)
+
 // DockerHandlerAdapter Fiber HTTP 요청을 Docker 도메인 서비스로 연결하는 어댑터
 type DockerHandlerAdapter struct {
 	registryHandler docker.RegistryHandler
@@ -171,10 +177,10 @@ func (a *DockerHandlerAdapter) extractPathComponents(requestPath string) (reposi
 	}
 
 	// 태그 목록 요청: /v2/<name>/tags/list
-	if len(parts) >= 3 && parts[len(parts)-2] == "tags" && parts[len(parts)-1] == "list" {
+	if len(parts) >= 3 && parts[len(parts)-2] == dockerTagsEndpoint && parts[len(parts)-1] == dockerListEndpoint {
 		repository = strings.Join(parts[:len(parts)-2], "/")
 		reference = ""
-		operation = "tags"
+		operation = dockerTagsEndpoint
 		return
 	}
 
@@ -250,12 +256,12 @@ func (a *DockerHandlerAdapter) GetDockerContentType(operation, reference string)
 		return "application/vnd.docker.distribution.manifest.v2+json"
 	case "blob":
 		return "application/octet-stream"
-	case "tags":
-		return "application/json"
+	case dockerTagsEndpoint:
+		return mimeApplicationJSON
 	case "catalog":
-		return "application/json"
+		return mimeApplicationJSON
 	default:
-		return "application/json"
+		return mimeApplicationJSON
 	}
 }
 
@@ -302,7 +308,7 @@ func (a *DockerHandlerAdapter) extractRepositoryFromPath(requestPath string) str
 
 	// manifests, blobs, tags 앞까지가 레포지토리명
 	for i, part := range parts {
-		if part == "manifests" || part == "blobs" || part == "tags" {
+		if part == "manifests" || part == "blobs" || part == dockerTagsEndpoint {
 			return strings.Join(parts[:i], "/")
 		}
 	}

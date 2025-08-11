@@ -19,6 +19,10 @@ const (
 	ErrorLevelCritical
 )
 
+const (
+	fieldTypeError = "error"
+)
+
 // DomainError represents a structured error with domain context
 type DomainError struct {
 	Code      string      `json:"code"`
@@ -93,7 +97,7 @@ func (e ErrorLevel) String() string {
 	case ErrorLevelWarning:
 		return "warning"
 	case ErrorLevelError:
-		return "error"
+		return fieldTypeError
 	case ErrorLevelCritical:
 		return "critical"
 	default:

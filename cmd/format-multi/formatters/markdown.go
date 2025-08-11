@@ -10,7 +10,7 @@ import (
 type MarkdownFormatter struct{}
 
 func (f *MarkdownFormatter) Name() string {
-	return "prettier"
+	return toolPrettier
 }
 
 func (f *MarkdownFormatter) Language() string {
@@ -18,7 +18,7 @@ func (f *MarkdownFormatter) Language() string {
 }
 
 func (f *MarkdownFormatter) IsAvailable() bool {
-	_, err := exec.LookPath("prettier")
+	_, err := exec.LookPath(toolPrettier)
 	return err == nil
 }
 
@@ -30,9 +30,9 @@ func (f *MarkdownFormatter) Install() error {
 
 func (f *MarkdownFormatter) Format(filename string, config interface{}) error {
 	// prettier with prose wrap
-	cmd := exec.Command("prettier", "--write", "--prose-wrap", "always", filename)
+	cmd := exec.Command(toolPrettier, "--write", "--prose-wrap", "always", filename)
 	if output, err := cmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("prettier failed: %v\n%s", err, strings.TrimSpace(string(output)))
+		return fmt.Errorf("%s failed: %v\n%s", toolPrettier, err, strings.TrimSpace(string(output)))
 	}
 	return nil
 }
@@ -41,7 +41,7 @@ func (f *MarkdownFormatter) Format(filename string, config interface{}) error {
 type HTMLFormatter struct{}
 
 func (f *HTMLFormatter) Name() string {
-	return "prettier"
+	return toolPrettier
 }
 
 func (f *HTMLFormatter) Language() string {
@@ -49,7 +49,7 @@ func (f *HTMLFormatter) Language() string {
 }
 
 func (f *HTMLFormatter) IsAvailable() bool {
-	_, err := exec.LookPath("prettier")
+	_, err := exec.LookPath(toolPrettier)
 	return err == nil
 }
 
@@ -60,9 +60,9 @@ func (f *HTMLFormatter) Install() error {
 }
 
 func (f *HTMLFormatter) Format(filename string, config interface{}) error {
-	cmd := exec.Command("prettier", "--write", filename)
+	cmd := exec.Command(toolPrettier, "--write", filename)
 	if output, err := cmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("prettier failed: %v\n%s", err, strings.TrimSpace(string(output)))
+		return fmt.Errorf("%s failed: %v\n%s", toolPrettier, err, strings.TrimSpace(string(output)))
 	}
 	return nil
 }
@@ -71,7 +71,7 @@ func (f *HTMLFormatter) Format(filename string, config interface{}) error {
 type CSSFormatter struct{}
 
 func (f *CSSFormatter) Name() string {
-	return "prettier"
+	return toolPrettier
 }
 
 func (f *CSSFormatter) Language() string {
@@ -79,7 +79,7 @@ func (f *CSSFormatter) Language() string {
 }
 
 func (f *CSSFormatter) IsAvailable() bool {
-	_, err := exec.LookPath("prettier")
+	_, err := exec.LookPath(toolPrettier)
 	return err == nil
 }
 
@@ -90,9 +90,9 @@ func (f *CSSFormatter) Install() error {
 }
 
 func (f *CSSFormatter) Format(filename string, config interface{}) error {
-	cmd := exec.Command("prettier", "--write", filename)
+	cmd := exec.Command(toolPrettier, "--write", filename)
 	if output, err := cmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("prettier failed: %v\n%s", err, strings.TrimSpace(string(output)))
+		return fmt.Errorf("%s failed: %v\n%s", toolPrettier, err, strings.TrimSpace(string(output)))
 	}
 	return nil
 }

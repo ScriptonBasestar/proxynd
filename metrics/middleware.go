@@ -517,7 +517,7 @@ func (tc *TraceCollector) shouldTrace() bool {
 
 	// Simple random sampling
 	buf := make([]byte, 1)
-	rand.Read(buf)
+	_, _ = rand.Read(buf)
 	return float64(buf[0])/255.0 < tc.samplingRate
 }
 
@@ -718,14 +718,14 @@ func capturePerformanceMetricsAfter(perfMetrics *PerformanceMetrics) {
 // generateTraceID generates a unique trace ID
 func generateTraceID() string {
 	bytes := make([]byte, 16)
-	rand.Read(bytes)
+	_, _ = rand.Read(bytes)
 	return hex.EncodeToString(bytes)
 }
 
 // generateSpanID generates a unique span ID
 func generateSpanID() string {
 	bytes := make([]byte, 8)
-	rand.Read(bytes)
+	_, _ = rand.Read(bytes)
 	return hex.EncodeToString(bytes)
 }
 

@@ -213,9 +213,9 @@ func (h *NPMHandlerV3) GetContentType(path string) string {
 	// 패키지 파일
 	switch {
 	case strings.HasSuffix(path, ".tgz"):
-		return "application/x-gzip"
+		return mimeApplicationXGzip
 	case strings.HasSuffix(path, ".tar.gz"):
-		return "application/x-gzip"
+		return mimeApplicationXGzip
 	case strings.HasSuffix(path, ".json"):
 		return "application/json"
 	default:

@@ -333,13 +333,13 @@ func (s *MavenSync) copyFileWithLimit(src, dst string, limiter *rateLimiter) (in
 	if err != nil {
 		return 0, err
 	}
-	defer srcFile.Close()
+	defer func() { _ = srcFile.Close() }()
 
 	dstFile, err := os.Create(dst)
 	if err != nil {
 		return 0, err
 	}
-	defer dstFile.Close()
+	defer func() { _ = dstFile.Close() }()
 
 	var copied int64
 	if limiter != nil {
@@ -350,15 +350,15 @@ func (s *MavenSync) copyFileWithLimit(src, dst string, limiter *rateLimiter) (in
 	}
 
 	if err != nil {
-		os.Remove(dst)
+		_ = os.Remove(dst)
 		return 0, err
 	}
 
 	// 파일 권한 복사
 	if info, err := os.Stat(src); err == nil {
-		os.Chmod(dst, info.Mode())
+		_ = os.Chmod(dst, info.Mode())
 		// Maven 아티팩트는 수정 시간 유지가 중요
-		os.Chtimes(dst, info.ModTime(), info.ModTime())
+		_ = os.Chtimes(dst, info.ModTime(), info.ModTime())
 	}
 
 	return copied, nil
@@ -370,7 +370,7 @@ func (s *MavenSync) calculateFileChecksum(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	hash := sha256.New()
 	if _, err := io.Copy(hash, file); err != nil {

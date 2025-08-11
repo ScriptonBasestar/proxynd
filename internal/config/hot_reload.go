@@ -631,7 +631,7 @@ func (uhr *UnifiedHotReload) calculateFileHash(filePath string) (string, error) 
 	if err != nil {
 		return "", err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	hasher := md5.New()
 	if _, err := io.Copy(hasher, file); err != nil {

@@ -449,7 +449,7 @@ func (sv *SchemaValidator) registerCustomValidators() {
 		if err := os.WriteFile(testFile, []byte("test"), 0o644); err != nil {
 			return fmt.Errorf("캐시 디렉토리에 쓰기 권한이 없음: %s", directory)
 		}
-		os.Remove(testFile)
+		_ = os.Remove(testFile)
 
 		return nil
 	}

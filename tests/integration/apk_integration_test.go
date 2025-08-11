@@ -10,16 +10,16 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	
+
 	"proxynd/metrics"
 )
 
 // TestAPKProxyBasicFlow 기본 APK 프록시 동작 테스트
 func TestAPKProxyBasicFlow(t *testing.T) {
 	// 개발 환경 설정 (인증 우회)
-	os.Setenv("PROXYND_ENV", "development")
-	defer os.Unsetenv("PROXYND_ENV")
-	
+	_ = os.Setenv("PROXYND_ENV", "development")
+	defer func() { _ = os.Unsetenv("PROXYND_ENV") }()
+
 	env := SetupIntegrationTest(t)
 	defer env.Cleanup()
 
@@ -36,9 +36,9 @@ func TestAPKProxyBasicFlow(t *testing.T) {
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		// Content-Type should be gzip format
 		contentType := resp.Header.Get("Content-Type")
-		assert.True(t, 
-			strings.Contains(contentType, "application/gzip") || 
-			strings.Contains(contentType, "application/x-gzip"),
+		assert.True(t,
+			strings.Contains(contentType, "application/gzip") ||
+				strings.Contains(contentType, "application/x-gzip"),
 			"Content-Type should be gzip format, got: %s", contentType)
 
 		// APKINDEX.tar.gz 응답 검증
@@ -68,10 +68,10 @@ func TestAPKProxyBasicFlow(t *testing.T) {
 // TestAPKProxyErrorHandling APK 프록시 에러 처리 테스트
 func TestAPKProxyErrorHandling(t *testing.T) {
 	// 개발 환경 설정 및 메트릭 리셋
-	os.Setenv("PROXYND_ENV", "development")
-	defer os.Unsetenv("PROXYND_ENV")
+	_ = os.Setenv("PROXYND_ENV", "development")
+	defer func() { _ = os.Unsetenv("PROXYND_ENV") }()
 	metrics.ResetMetrics()
-	
+
 	env := SetupIntegrationTest(t)
 	defer env.Cleanup()
 
@@ -125,10 +125,10 @@ func TestAPKProxyErrorHandling(t *testing.T) {
 // TestAPKProxyCaching APK 프록시 캐싱 동작 테스트
 func TestAPKProxyCaching(t *testing.T) {
 	// 개발 환경 설정 및 메트릭 리셋
-	os.Setenv("PROXYND_ENV", "development")
-	defer os.Unsetenv("PROXYND_ENV")
+	_ = os.Setenv("PROXYND_ENV", "development")
+	defer func() { _ = os.Unsetenv("PROXYND_ENV") }()
 	metrics.ResetMetrics()
-	
+
 	env := SetupIntegrationTest(t)
 	defer env.Cleanup()
 
@@ -189,18 +189,18 @@ func TestAPKProxyContentTypes(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-	t.Run(tc.name, func(t *testing.T) {
-	resp, err := env.MakeRequest("GET", tc.path, nil)
-	require.NoError(t, err)
-	defer func() { _ = resp.Body.Close() }()
+		t.Run(tc.name, func(t *testing.T) {
+			resp, err := env.MakeRequest("GET", tc.path, nil)
+			require.NoError(t, err)
+			defer func() { _ = resp.Body.Close() }()
 
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
-	// Handle both gzip variants for APKINDEX files
-	 contentType := resp.Header.Get("Content-Type")
-	  if tc.expectedType == "application/gzip" {
+			assert.Equal(t, http.StatusOK, resp.StatusCode)
+			// Handle both gzip variants for APKINDEX files
+			contentType := resp.Header.Get("Content-Type")
+			if tc.expectedType == "application/gzip" {
 				assert.True(t,
 					strings.Contains(contentType, "application/gzip") ||
-					strings.Contains(contentType, "application/x-gzip"),
+						strings.Contains(contentType, "application/x-gzip"),
 					"Expected gzip content type, got: %s", contentType)
 			} else {
 				assert.Contains(t, contentType, tc.expectedType)
@@ -402,9 +402,9 @@ func TestAPKProxyRepositoryStructure(t *testing.T) {
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		// Content-Type should be gzip format
 		contentType := resp.Header.Get("Content-Type")
-		assert.True(t, 
-			strings.Contains(contentType, "application/gzip") || 
-			strings.Contains(contentType, "application/x-gzip"),
+		assert.True(t,
+			strings.Contains(contentType, "application/gzip") ||
+				strings.Contains(contentType, "application/x-gzip"),
 			"Content-Type should be gzip format, got: %s", contentType)
 
 		// 파일 크기가 0보다 큰지 확인
@@ -628,11 +628,11 @@ func TestAPKProxyPackageValidation(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 		// Content-Type should be gzip format
-			contentType := resp.Header.Get("Content-Type")
-			assert.True(t, 
-				strings.Contains(contentType, "application/gzip") || 
+		contentType := resp.Header.Get("Content-Type")
+		assert.True(t,
+			strings.Contains(contentType, "application/gzip") ||
 				strings.Contains(contentType, "application/x-gzip"),
-				"Content-Type should be gzip format, got: %s", contentType)
+			"Content-Type should be gzip format, got: %s", contentType)
 
 		// APKINDEX 파일 크기 확인
 		body := make([]byte, 1024)
@@ -664,24 +664,24 @@ func TestAPKProxyAdvancedCases(t *testing.T) {
 		defer func() { _ = resp.Body.Close() }()
 
 		// 시그니처 검증 실패 시 404, 500, 또는 502 응답 예상
-		assert.True(t, resp.StatusCode == http.StatusNotFound || 
+		assert.True(t, resp.StatusCode == http.StatusNotFound ||
 			resp.StatusCode == http.StatusBadGateway ||
 			resp.StatusCode == http.StatusInternalServerError,
 			"Should fail with 404, 500, or 502 for signature verification failure")
-		
+
 		// 에러 응답에 시그니처 관련 정보가 포함되어야 함
 		body := make([]byte, 1024)
 		n, _ := resp.Body.Read(body)
 		responseBody := string(body[:n])
-		
+
 		// 시그니처 검증 실패나 관련 오류 메시지 확인
-		assert.True(t, 
+		assert.True(t,
 			strings.Contains(strings.ToLower(responseBody), "signature") ||
-			strings.Contains(strings.ToLower(responseBody), "verification") ||
-			strings.Contains(strings.ToLower(responseBody), "not found") ||
-			strings.Contains(strings.ToLower(responseBody), "failed") ||
-			strings.Contains(strings.ToLower(responseBody), "error") ||
-			len(responseBody) == 0, // 빈 응답도 허용 (일부 프록시는 빈 404 응답)
+				strings.Contains(strings.ToLower(responseBody), "verification") ||
+				strings.Contains(strings.ToLower(responseBody), "not found") ||
+				strings.Contains(strings.ToLower(responseBody), "failed") ||
+				strings.Contains(strings.ToLower(responseBody), "error") ||
+				len(responseBody) == 0, // 빈 응답도 허용 (일부 프록시는 빈 404 응답)
 			"Error response should indicate signature verification or general failure issue")
 	})
 
@@ -755,7 +755,7 @@ func TestAPKProxyAdvancedCases(t *testing.T) {
 		// 404 또는 500 응답이 정상적으로 반환되어야 함 (미러 전환이 올바르게 작동)
 		assert.True(t, resp.StatusCode == http.StatusNotFound || resp.StatusCode == http.StatusInternalServerError,
 			"Should return 404 or 500 for missing packages")
-		
+
 		// 응답 시간이 과도하게 길지 않아야 함 (타임아웃으로 인한 장애가 아님)
 		start := time.Now()
 		resp2, err := env.MakeRequest("GET", "/proxy/apk/alpine/v3.16/main/x86_64/nonexistent-package2.apk", headers)
@@ -772,10 +772,10 @@ func TestAPKProxyAdvancedCases(t *testing.T) {
 	t.Run("Complex Mirror Configuration", func(t *testing.T) {
 		// 여러 헤더를 조합한 복잡한 미러 설정 테스트
 		headers := map[string]string{
-			"X-APK-Mirror":           "auto",     // 자동 미러 선택
-			"X-APK-Mirror-Failover":  "enabled",  // 장애 전환 활성화
-			"X-APK-Mirror-Timeout":   "5s",       // 타임아웃 설정
-			"X-APK-Signature-Check": "enabled",  // 시그니처 검증 활성화
+			"X-APK-Mirror":          "auto",    // 자동 미러 선택
+			"X-APK-Mirror-Failover": "enabled", // 장애 전환 활성화
+			"X-APK-Mirror-Timeout":  "5s",      // 타임아웃 설정
+			"X-APK-Signature-Check": "enabled", // 시그니처 검증 활성화
 		}
 
 		resp, err := env.MakeRequest("GET", "/proxy/apk/alpine/v3.16/main/x86_64/APKINDEX.tar.gz", headers)
@@ -786,9 +786,9 @@ func TestAPKProxyAdvancedCases(t *testing.T) {
 
 		// 응답이 올바른 형식인지 확인 (application/gzip 또는 application/x-gzip)
 		contentType := resp.Header.Get("Content-Type")
-		assert.True(t, 
-			strings.Contains(contentType, "application/gzip") || 
-			strings.Contains(contentType, "application/x-gzip"),
+		assert.True(t,
+			strings.Contains(contentType, "application/gzip") ||
+				strings.Contains(contentType, "application/x-gzip"),
 			"Content-Type should be gzip format")
 
 		// 컨텐츠가 존재하는지 확인
@@ -824,8 +824,8 @@ func TestAPKProxyAdvancedCases(t *testing.T) {
 	t.Run("Regional Mirror Selection", func(t *testing.T) {
 		// 지역 정보를 포함한 미러 선택 테스트
 		headers := map[string]string{
-			"X-APK-Region":    "asia",   // 아시아 지역 미러 선택
-			"Accept-Language": "ko-KR",  // 한국어 지역 설정
+			"X-APK-Region":    "asia",  // 아시아 지역 미러 선택
+			"Accept-Language": "ko-KR", // 한국어 지역 설정
 		}
 
 		resp, err := env.MakeRequest("GET", "/proxy/apk/alpine/v3.16/main/x86_64/APKINDEX.tar.gz", headers)

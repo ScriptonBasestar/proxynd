@@ -12,6 +12,10 @@ import (
 	"golang.org/x/text/language"
 )
 
+const (
+	fieldTypeDuration = "duration"
+)
+
 // EnvOverride 환경 변수 오버라이드 매핑
 type EnvOverride struct {
 	EnvVar   string
@@ -182,7 +186,7 @@ func setFieldValue(field reflect.Value, value, valueType string) error {
 		if b, err := strconv.ParseBool(value); err == nil {
 			field.SetBool(b)
 		}
-	case "duration":
+	case fieldTypeDuration:
 		if d, err := time.ParseDuration(value); err == nil {
 			field.Set(reflect.ValueOf(d))
 		}

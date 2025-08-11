@@ -178,7 +178,7 @@ func (h *MavenBrowserHandler) Handle(c *fiber.Ctx) error {
 				}
 
 				// JSON API 요청인 경우
-				if strings.Contains(c.Get("Accept"), "application/json") || c.Query("format") == "json" {
+				if strings.Contains(c.Get("Accept"), mimeApplicationJSON) || c.Query("format") == formatJSON {
 					return c.JSON(browserData)
 				}
 				return c.Render("maven-browser", browserData)
@@ -209,7 +209,7 @@ func (h *MavenBrowserHandler) Handle(c *fiber.Ctx) error {
 	}
 
 	// JSON API 요청인 경우 (AJAX 요청 또는 format=json 파라미터)
-	if strings.Contains(c.Get("Accept"), "application/json") || c.Query("format") == "json" {
+	if strings.Contains(c.Get("Accept"), mimeApplicationJSON) || c.Query("format") == formatJSON {
 		return c.JSON(browserData)
 	}
 
@@ -477,11 +477,11 @@ func (h *MavenBrowserHandler) extractEntryFromLine(line string) *DirectoryEntry 
 	if strings.HasSuffix(decodedHref, "/") {
 		// 이름이 /로 끝나는 경우
 		entry.Name = strings.TrimSuffix(decodedHref, "/")
-		entry.Type = "directory"
+		entry.Type = typeDirectory
 	} else if !hasFileExtension(decodedHref) {
 		// 파일 확장자가 없으면 디렉토리로 간주
 		// Maven 리포지토리에서 디렉토리는 보통 확장자가 없음
-		entry.Type = "directory"
+		entry.Type = typeDirectory
 	}
 
 	return entry
@@ -715,10 +715,10 @@ func createMavenContext(pathInfo *maven.PathInfo, entries []DirectoryEntry) *mav
 	// 레벨에 따른 컨텍스트 설정
 	switch pathInfo.Type {
 	case maven.TypeGroup:
-		context.Level = "group"
+		context.Level = levelGroup
 
 	case maven.TypeArtifact:
-		context.Level = "artifact"
+		context.Level = levelArtifact
 		// 하위 디렉토리에서 버전 정보 수집
 		versions := make([]string, 0)
 		for _, entry := range entries {
@@ -732,7 +732,7 @@ func createMavenContext(pathInfo *maven.PathInfo, entries []DirectoryEntry) *mav
 		}
 
 	case maven.TypeVersion:
-		context.Level = "version"
+		context.Level = levelVersion
 	}
 
 	return context
@@ -825,7 +825,7 @@ func (h *MavenBrowserHandler) handleArtifactPage(c *fiber.Ctx, pathInfo *maven.P
 	versions := make([]string, 0, len(versionEntries))
 	for _, entry := range versionEntries {
 		// 디렉토리이면서 파일 확장자가 없는 항목만 포함
-		if (entry.Type == maven.TypeDirectory || entry.Type == "directory") &&
+		if (entry.Type == maven.TypeDirectory || entry.Type == typeDirectory) &&
 			!hasFileExtension(entry.Name) {
 			// 버전처럼 보이거나 maven-metadata로 시작하지 않는 항목
 			if isVersionLike(entry.Name) || (!strings.HasPrefix(entry.Name, "maven-metadata") && entry.Name != "." && entry.Name != "..") {
@@ -871,7 +871,7 @@ func (h *MavenBrowserHandler) handleArtifactPage(c *fiber.Ctx, pathInfo *maven.P
 	}
 
 	// JSON API 요청인 경우
-	if strings.Contains(c.Get("Accept"), "application/json") || c.Query("format") == "json" {
+	if strings.Contains(c.Get("Accept"), mimeApplicationJSON) || c.Query("format") == formatJSON {
 		return c.JSON(artifactData)
 	}
 
@@ -928,7 +928,7 @@ func (h *MavenBrowserHandler) performGlobalSearch(c *fiber.Ctx, searchQuery stri
 			SearchQuery: searchQuery,
 		}
 
-		if strings.Contains(c.Get("Accept"), "application/json") || c.Query("format") == "json" {
+		if strings.Contains(c.Get("Accept"), mimeApplicationJSON) || c.Query("format") == formatJSON {
 			return c.JSON(emptyData)
 		}
 
@@ -972,7 +972,7 @@ func (h *MavenBrowserHandler) performGlobalSearch(c *fiber.Ctx, searchQuery stri
 	}
 
 	// JSON API 요청인 경우
-	if strings.Contains(c.Get("Accept"), "application/json") || c.Query("format") == "json" {
+	if strings.Contains(c.Get("Accept"), mimeApplicationJSON) || c.Query("format") == formatJSON {
 		return c.JSON(resultData)
 	}
 
@@ -1007,7 +1007,7 @@ func (h *MavenBrowserHandler) searchRecursively(nodes []*maven.GAVTreeNode, quer
 
 		// 하위 항목 검색
 		hasMatchingChildren := false
-		if node.Type == "group" || node.Type == "artifact" {
+		if node.Type == levelGroup || node.Type == levelArtifact {
 			// 하위 디렉토리 로드
 			childPath := strings.TrimPrefix(node.FullPath, "/proxy/maven")
 			childData, err := h.collectDirectoryData(childPath)
@@ -1253,7 +1253,7 @@ func (h *MavenBrowserHandler) indexNode(node *maven.GAVTreeNode, parentGroupID s
 	*entries = append(*entries, entry)
 
 	// 그룹이나 아티팩트면 하위 탐색
-	if node.Type == "group" || node.Type == "artifact" {
+	if node.Type == levelGroup || node.Type == levelArtifact {
 		childPath := strings.TrimPrefix(node.FullPath, "/proxy/maven")
 
 		// 캐시 확인
@@ -1340,7 +1340,7 @@ func (h *MavenBrowserHandler) addToIndex(node *maven.GAVTreeNode, parentPath, pa
 	}
 
 	// 그룹이나 아티팩트면 하위 탐색
-	if node.Type == "group" || node.Type == "artifact" {
+	if node.Type == levelGroup || node.Type == levelArtifact {
 		childPath := strings.TrimPrefix(node.FullPath, "/proxy/maven")
 		h.indexDirectory(childPath, entry.GroupID, entries)
 

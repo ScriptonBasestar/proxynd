@@ -37,7 +37,7 @@ func NewAPTHandler() *APTHandler {
 
 // Type 프록시 타입 반환
 func (h *APTHandler) Type() string {
-	return "apt"
+	return proxyTypeAPT
 }
 
 // IsEnabled 활성화 상태 확인

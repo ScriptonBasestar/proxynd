@@ -133,7 +133,7 @@ func (h *UnifiedProxyHandler) UnregisterProxyType(proxyType string) {
 
 // Shutdown 통합 핸들러 종료
 func (h *UnifiedProxyHandler) Shutdown() {
-	h.factory.Shutdown()
+	_ = h.factory.Shutdown()
 	h.logger.Info("Unified proxy handler shutdown completed")
 }
 

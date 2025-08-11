@@ -341,7 +341,7 @@ func (h *NPMContainerHandler) fetchFromUpstream(c *fiber.Ctx, requestPath string
 		h.logger.Error("Failed to fetch from upstream", logging.F("error", err))
 		return c.Status(fiber.StatusBadGateway).SendString("Failed to fetch from upstream")
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// 응답 읽기
 	body, err := io.ReadAll(resp.Body)

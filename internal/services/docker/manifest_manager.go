@@ -108,19 +108,19 @@ func (m *manifestManagerImpl) fetchManifestFromRegistry(ctx context.Context, rep
 	// 인증 설정
 	if auth, err := m.authManager.GetAuthToken(ctx, registry.URL, repository); err == nil {
 		if auth.Type == "bearer" && auth.Token != "" {
-			m.authManager.SetBearerAuth(req, auth.Token)
+			_ = m.authManager.SetBearerAuth(req, auth.Token)
 		} else if auth.Type == "basic" && auth.Username != "" {
-			m.authManager.SetBasicAuth(req, auth.Username, auth.Password)
+			_ = m.authManager.SetBasicAuth(req, auth.Username, auth.Password)
 		}
 	}
 
 	client := &http.Client{Timeout: 30 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
-		m.registryManager.MarkRegistryFailed(ctx, registry.URL, err)
+		_ = m.registryManager.MarkRegistryFailed(ctx, registry.URL, err)
 		return nil, fmt.Errorf("failed to fetch manifest: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// 인증 실패 시 챌린지 처리
 	if resp.StatusCode == http.StatusUnauthorized {

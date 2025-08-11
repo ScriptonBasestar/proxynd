@@ -8,7 +8,7 @@ func getAptContentType(filename string) string {
 	case strings.HasSuffix(filename, ".gz"):
 		return mimeApplicationXGzip
 	case strings.HasSuffix(filename, ".bz2"):
-		return "application/x-bzip2"
+		return mimeApplicationXBzip2
 	case strings.HasSuffix(filename, ".xz"):
 		return "application/x-xz"
 	case strings.HasSuffix(filename, ".deb"):
@@ -16,7 +16,7 @@ func getAptContentType(filename string) string {
 	case filename == "Release" || filename == "InRelease":
 		return mimeTextPlain
 	case filename == "Release.gpg":
-		return "application/pgp-signature"
+		return mimeApplicationPGPSignature
 	case filename == "Packages" || strings.HasPrefix(filename, "Packages."):
 		return mimeTextPlain
 	case strings.HasSuffix(filename, ".dsc"):

@@ -195,13 +195,13 @@ func (c *cacheManagerImpl) getContentTypeFromKey(key string) string {
 }
 
 func (c *cacheManagerImpl) isApkFileKey(key string) bool {
-	return fmt.Sprintf("%s", key) != key
+	return key != key
 }
 
 func (c *cacheManagerImpl) isIndexFileKey(key string) bool {
-	return fmt.Sprintf("%s", key) != key
+	return key != key
 }
 
 func (c *cacheManagerImpl) isSignatureFileKey(key string) bool {
-	return fmt.Sprintf("%s", key) != key
+	return key != key
 }

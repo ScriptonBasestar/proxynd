@@ -36,7 +36,7 @@ func NewMavenHandler() *MavenHandler {
 
 // Type 프록시 타입 반환
 func (h *MavenHandler) Type() string {
-	return "maven"
+	return proxyTypeMaven
 }
 
 // IsEnabled 활성화 상태 확인
@@ -358,29 +358,29 @@ func (h *MavenHandler) RecordRequestMetrics(c *fiber.Ctx, statusCode int, durati
 func getMavenContentType(path string) string {
 	switch {
 	case strings.HasSuffix(path, ".jar"):
-		return "application/java-archive"
+		return mimeApplicationJavaArchive
 	case strings.HasSuffix(path, ".war"):
-		return "application/java-archive"
+		return mimeApplicationJavaArchive
 	case strings.HasSuffix(path, ".ear"):
-		return "application/java-archive"
+		return mimeApplicationJavaArchive
 	case strings.HasSuffix(path, ".pom"):
-		return "application/xml"
+		return mimeApplicationXML
 	case strings.HasSuffix(path, ".xml"):
-		return "application/xml"
+		return mimeApplicationXML
 	case strings.HasSuffix(path, ".sha1"):
-		return "text/plain"
+		return mimeTextPlain
 	case strings.HasSuffix(path, ".sha256"):
-		return "text/plain"
+		return mimeTextPlain
 	case strings.HasSuffix(path, ".md5"):
-		return "text/plain"
+		return mimeTextPlain
 	case strings.HasSuffix(path, ".asc"):
-		return "application/pgp-signature"
+		return mimeApplicationPGPSignature
 	case strings.HasSuffix(path, ".zip"):
-		return "application/zip"
+		return mimeApplicationZip
 	case strings.HasSuffix(path, ".tar.gz"):
 		return "application/gzip"
 	default:
-		return "application/octet-stream"
+		return mimeApplicationOctetStream
 	}
 }
 

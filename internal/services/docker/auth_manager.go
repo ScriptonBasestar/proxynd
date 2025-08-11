@@ -14,6 +14,11 @@ import (
 	"proxynd/logging"
 )
 
+const (
+	authTypeBasic  = "basic"
+	authTypeBearer = "bearer"
+)
+
 // authManagerImpl Docker 레지스트리 인증 관리 구현
 type authManagerImpl struct {
 	config     docker.ProxyConfig
@@ -119,7 +124,7 @@ func (a *authManagerImpl) acquireToken(ctx context.Context, registryURL, reposit
 	if err != nil {
 		return nil, fmt.Errorf("failed to get token: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("token request failed with status: %d", resp.StatusCode)
@@ -183,7 +188,7 @@ func (a *authManagerImpl) getAuthChallenge(ctx context.Context, registryURL stri
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode == http.StatusUnauthorized {
 		return a.ProcessAuthChallenge(ctx, resp.Header)
@@ -225,7 +230,7 @@ func (a *authManagerImpl) refreshWithRefreshToken(ctx context.Context, auth *doc
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("token refresh failed with status: %d", resp.StatusCode)
@@ -269,12 +274,12 @@ func (a *authManagerImpl) ValidateToken(ctx context.Context, auth *docker.Regist
 	}
 
 	// Basic Auth는 항상 유효
-	if auth.Type == "basic" {
+	if auth.Type == authTypeBasic {
 		return auth.Username != "" && auth.Password != ""
 	}
 
 	// Bearer 토큰 만료 확인
-	if auth.Type == "bearer" {
+	if auth.Type == authTypeBearer {
 		if auth.Token == "" {
 			return false
 		}

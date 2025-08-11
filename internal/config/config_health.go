@@ -14,6 +14,12 @@ import (
 	"proxynd/logging"
 )
 
+const (
+	statusUnhealthy = "unhealthy"
+	backendRedis    = "redis"
+	backendFile     = "file"
+)
+
 // ConfigHealthMonitor 설정 상태 모니터링 및 자가 치유 시스템
 type ConfigHealthMonitor struct {
 	mu                sync.RWMutex
@@ -405,7 +411,7 @@ func (chm *ConfigHealthMonitor) calculateOverallStatus(status *HealthStatus) {
 	// 전체 상태 결정
 	overall := "healthy"
 	if averageScore < 50 {
-		overall = "unhealthy"
+		overall = statusUnhealthy
 	} else if averageScore < 80 {
 		overall = "degraded"
 	}
@@ -649,9 +655,10 @@ func (v *ValidationHealthChecker) Check(config *UnifiedConfig) HealthCheckResult
 		// 검증 경고를 헬스 이슈로 변환
 		for _, warning := range validationResult.Warnings {
 			severity := 2
-			if warning.Severity == "high" {
+			switch warning.Severity {
+			case "high":
 				severity = 3
-			} else if warning.Severity == "low" {
+			case "low":
 				severity = 1
 			}
 
@@ -699,7 +706,7 @@ func (c *ConnectivityHealthChecker) Check(config *UnifiedConfig) HealthCheckResu
 	}
 
 	// Redis 연결 확인 (캐시 백엔드가 Redis인 경우)
-	if config.Cache.Backend == "redis" && config.Cache.Redis.Address != "" {
+	if config.Cache.Backend == backendRedis && config.Cache.Redis.Address != "" {
 		// 실제 구현에서는 Redis 연결 테스트
 		// 여기서는 간단한 예시만
 	}
@@ -713,7 +720,7 @@ func (c *ConnectivityHealthChecker) checkURL(url string) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode >= 400 {
 		return fmt.Errorf("HTTP %d", resp.StatusCode)
@@ -736,7 +743,7 @@ func (d *DiskSpaceHealthChecker) Check(config *UnifiedConfig) HealthCheckResult 
 	}
 
 	// 캐시 디렉토리 공간 확인
-	if config.Cache.Backend == "file" && config.Cache.File.Directory != "" {
+	if config.Cache.Backend == backendFile && config.Cache.File.Directory != "" {
 		// 실제 구현에서는 디스크 사용량 확인
 		// 여기서는 간단한 예시
 		if _, err := os.Stat(config.Cache.File.Directory); os.IsNotExist(err) {

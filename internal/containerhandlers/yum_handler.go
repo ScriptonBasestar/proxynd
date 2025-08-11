@@ -339,19 +339,19 @@ func (h *YUMContainerHandler) fetchFromUpstream(c *fiber.Ctx, requestPath string
 		if resp.StatusCode == http.StatusOK {
 			// 파일 저장
 			if err := h.saveFile(cachedFile, resp.Body); err != nil {
-				resp.Body.Close()
+				func() { _ = resp.Body.Close() }()
 				h.logger.Error("Failed to save file",
 					logging.F("file", cachedFile),
 					logging.F("error", err))
 				return c.Status(fiber.StatusInternalServerError).SendString("Failed to save file")
 			}
-			resp.Body.Close()
+			func() { _ = resp.Body.Close() }()
 
 			// 성공적으로 저장된 파일 서빙
 			return h.serveCachedFile(c, cachedFile, requestPath)
 		}
 
-		resp.Body.Close()
+		func() { _ = resp.Body.Close() }()
 		h.logger.Warn("Upstream returned non-OK status",
 			logging.F("server", proxy.Name),
 			logging.F("status", resp.StatusCode))
@@ -366,12 +366,12 @@ func (h *YUMContainerHandler) saveFile(filePath string, body io.ReadCloser) erro
 	if err != nil {
 		return fmt.Errorf("failed to create file: %w", err)
 	}
-	defer out.Close()
+	defer func() { _ = out.Close() }()
 
 	_, err = io.Copy(out, body)
 	if err != nil {
 		// 실패한 파일 정리
-		os.Remove(filePath)
+		_ = os.Remove(filePath)
 		return fmt.Errorf("failed to copy file: %w", err)
 	}
 

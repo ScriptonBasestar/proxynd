@@ -15,6 +15,14 @@ import (
 	"proxynd/logging"
 )
 
+const (
+	extDeb                             = ".deb"
+	extGz                              = ".gz"
+	mimeApplicationDebianBinaryPackage = "application/vnd.debian.binary-package"
+	mimeApplicationGzip                = "application/gzip"
+	mimeApplicationOctetStream         = "application/octet-stream"
+)
+
 // cacheManagerImpl 캐시 관리 서비스 구현
 type cacheManagerImpl struct {
 	config      apt.ProxyConfig
@@ -66,7 +74,7 @@ func (c *cacheManagerImpl) Get(ctx context.Context, key string) (*apt.CacheEntry
 	// TTL 확인
 	if time.Since(fileInfo.ModTime()) > cacheConfig.TTL {
 		c.logger.Debug("Cache entry expired", logging.F("key", key))
-		os.Remove(cachePath) // 만료된 파일 삭제
+		_ = os.Remove(cachePath) // 만료된 파일 삭제
 		return nil, fmt.Errorf("cache entry expired")
 	}
 
@@ -112,7 +120,7 @@ func (c *cacheManagerImpl) Set(ctx context.Context, key string, data []byte, con
 	}
 
 	if err := os.Rename(tmpPath, cachePath); err != nil {
-		os.Remove(tmpPath) // 실패 시 임시 파일 정리
+		_ = os.Remove(tmpPath) // 실패 시 임시 파일 정리
 		return fmt.Errorf("failed to rename cache file: %w", err)
 	}
 
@@ -263,10 +271,10 @@ func (c *cacheManagerImpl) getCachePath(key string) string {
 func (c *cacheManagerImpl) guessContentType(filePath string) string {
 	ext := filepath.Ext(filePath)
 	switch ext {
-	case ".deb":
-		return "application/vnd.debian.binary-package"
-	case ".gz":
-		return "application/gzip"
+	case extDeb:
+		return mimeApplicationDebianBinaryPackage
+	case extGz:
+		return mimeApplicationGzip
 	default:
 		return "application/octet-stream"
 	}

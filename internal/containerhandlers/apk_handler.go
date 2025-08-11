@@ -25,6 +25,12 @@ import (
 	"proxynd/verification/apk"
 )
 
+const (
+	mimeApplicationGzip        = "application/gzip"
+	mimeTextPlain              = "text/plain"
+	mimeApplicationOctetStream = "application/octet-stream"
+)
+
 // APKContainerHandler Container 기반 APK 프록시 핸들러
 type APKContainerHandler struct {
 	logger            logging.Logger
@@ -480,13 +486,13 @@ func (h *APKContainerHandler) fetchFromUpstream(c *fiber.Ctx, requestPath string
 		if resp.StatusCode == http.StatusOK {
 			// 파일 저장
 			if err := h.saveFile(cachedFile, resp.Body); err != nil {
-				resp.Body.Close()
+				func() { _ = resp.Body.Close() }()
 				h.logger.Error("Failed to save file",
 					logging.F("file", cachedFile),
 					logging.F("error", err))
 				return c.Status(fiber.StatusInternalServerError).SendString("Failed to save file")
 			}
-			resp.Body.Close()
+			func() { _ = resp.Body.Close() }()
 
 			// 새로 다운로드한 APK 파일인 경우 서명 검증 수행
 			if h.apkConfig.Verification.Enabled && h.isApkFile(requestPath) {
@@ -499,7 +505,7 @@ func (h *APKContainerHandler) fetchFromUpstream(c *fiber.Ctx, requestPath string
 			return h.serveCachedFile(c, cachedFile, requestPath)
 		}
 
-		resp.Body.Close()
+		func() { _ = resp.Body.Close() }()
 		h.logger.Warn("Upstream returned non-OK status",
 			logging.F("server", proxy.Name),
 			logging.F("status", resp.StatusCode))
@@ -514,12 +520,12 @@ func (h *APKContainerHandler) saveFile(filePath string, body io.ReadCloser) erro
 	if err != nil {
 		return fmt.Errorf("failed to create file: %w", err)
 	}
-	defer out.Close()
+	defer func() { _ = out.Close() }()
 
 	_, err = io.Copy(out, body)
 	if err != nil {
 		// 실패한 파일 정리
-		os.Remove(filePath)
+		_ = os.Remove(filePath)
 		return fmt.Errorf("failed to copy file: %w", err)
 	}
 
@@ -571,19 +577,19 @@ func (h *APKContainerHandler) getApkContentType(filename string) string {
 	case strings.HasSuffix(filename, ".apk"):
 		return "application/vnd.alpine.apk"
 	case strings.HasSuffix(filename, "APKINDEX.tar.gz"):
-		return "application/gzip"
+		return mimeApplicationGzip
 	case strings.HasSuffix(filename, "APKINDEX"):
-		return "text/plain"
+		return mimeTextPlain
 	case strings.HasSuffix(filename, ".asc"):
 		return "application/pgp-signature"
 	case strings.HasSuffix(filename, ".rsa"):
-		return "application/octet-stream"
+		return mimeApplicationOctetStream
 	case strings.HasSuffix(filename, ".tar.gz"):
-		return "application/gzip"
+		return mimeApplicationGzip
 	case strings.HasSuffix(filename, ".gz"):
-		return "application/gzip"
+		return mimeApplicationGzip
 	default:
-		return "application/octet-stream"
+		return mimeApplicationOctetStream
 	}
 }
 

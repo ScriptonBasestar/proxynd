@@ -233,7 +233,7 @@ func (m *mirrorManagerImpl) performHealthCheck() {
 			wg.Add(1)
 			go func(osType string, mirror *apt.MirrorStatus) {
 				defer wg.Done()
-				m.CheckMirrorHealth(ctx, mirror)
+				_ = m.CheckMirrorHealth(ctx, mirror)
 			}(osType, mirror)
 		}
 	}

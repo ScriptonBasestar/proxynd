@@ -483,7 +483,7 @@ const (
 	statusPassed  = "passed"
 	statusFailed  = "failed"
 	statusSkipped = "skipped"
-	
+
 	iconPassed  = "✅"
 	iconFailed  = "❌"
 	iconSkipped = "⏭️"
