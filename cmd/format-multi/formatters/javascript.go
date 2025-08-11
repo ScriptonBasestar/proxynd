@@ -6,12 +6,19 @@ import (
 	"strings"
 )
 
+const (
+	toolPrettier = "prettier"
+	toolNPM      = "npm"
+	toolYarn     = "yarn" 
+	toolPNPM     = "pnpm"
+)
+
 // JavaScriptFormatter 는 JavaScript/TypeScript 언어 포맷터
 type JavaScriptFormatter struct{}
 
 // Name 은 포맷터 이름 반환
 func (f *JavaScriptFormatter) Name() string {
-	return "prettier"
+	return toolPrettier
 }
 
 // Language 는 언어 이름 반환
@@ -22,7 +29,7 @@ func (f *JavaScriptFormatter) Language() string {
 // IsAvailable 은 필요한 도구들이 설치되어 있는지 확인
 func (f *JavaScriptFormatter) IsAvailable() bool {
 	// prettier 확인
-	if _, err := exec.LookPath("prettier"); err != nil {
+	if _, err := exec.LookPath(toolPrettier); err != nil {
 		return false
 	}
 	return true
@@ -31,29 +38,29 @@ func (f *JavaScriptFormatter) IsAvailable() bool {
 // Install 은 JavaScript/TypeScript 포맷터를 설치
 func (f *JavaScriptFormatter) Install() error {
 	// npm이 있는지 확인
-	npmCmd := "npm"
-	if _, err := exec.LookPath("npm"); err != nil {
+	npmCmd := toolNPM
+	if _, err := exec.LookPath(toolNPM); err != nil {
 		// yarn 시도
-		if _, err := exec.LookPath("yarn"); err != nil {
+		if _, err := exec.LookPath(toolYarn); err != nil {
 			// pnpm 시도
-			if _, err := exec.LookPath("pnpm"); err != nil {
+			if _, err := exec.LookPath(toolPNPM); err != nil {
 				return fmt.Errorf("npm, yarn, or pnpm not found")
 			}
-			npmCmd = "pnpm"
+			npmCmd = toolPNPM
 		} else {
-			npmCmd = "yarn"
+			npmCmd = toolYarn
 		}
 	}
 
 	// prettier 전역 설치
 	var cmd *exec.Cmd
 	switch npmCmd {
-	case "npm":
-		cmd = exec.Command("npm", "install", "-g", "prettier")
-	case "yarn":
-		cmd = exec.Command("yarn", "global", "add", "prettier")
-	case "pnpm":
-		cmd = exec.Command("pnpm", "add", "-g", "prettier")
+	case toolNPM:
+		cmd = exec.Command(toolNPM, "install", "-g", toolPrettier)
+	case toolYarn:
+		cmd = exec.Command(toolYarn, "global", "add", toolPrettier)
+	case toolPNPM:
+		cmd = exec.Command(toolPNPM, "add", "-g", toolPrettier)
 	}
 
 	if output, err := cmd.CombinedOutput(); err != nil {
@@ -81,7 +88,7 @@ func (f *JavaScriptFormatter) Install() error {
 // Format 은 JavaScript/TypeScript 파일을 포맷팅
 func (f *JavaScriptFormatter) Format(filename string, config interface{}) error {
 	// 1. prettier 실행
-	cmd := exec.Command("prettier", "--write", filename)
+	cmd := exec.Command(toolPrettier, "--write", filename)
 	if output, err := cmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("prettier failed: %v\n%s", err, strings.TrimSpace(string(output)))
 	}

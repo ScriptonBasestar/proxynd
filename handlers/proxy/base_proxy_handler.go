@@ -179,7 +179,12 @@ func (h *BaseProxyHandler) isCacheExpired(handler ProxyHandlerInterface, c *fibe
 }
 
 // serveCachedFile 캐시된 파일 제공
-func (h *BaseProxyHandler) serveCachedFile(handler ProxyHandlerInterface, c *fiber.Ctx, cacheInfo CacheInfo, proxyType string) error {
+func (h *BaseProxyHandler) serveCachedFile(
+	handler ProxyHandlerInterface,
+	c *fiber.Ctx,
+	cacheInfo CacheInfo,
+	proxyType string,
+) error {
 	h.logger.Debug("Serving from cache",
 		logging.F("proxy_type", proxyType),
 		logging.F("path", cacheInfo.Path),
@@ -263,7 +268,13 @@ func (h *BaseProxyHandler) saveToCache(handler ProxyHandlerInterface, c *fiber.C
 }
 
 // sendResponse 응답 전송
-func (h *BaseProxyHandler) sendResponse(handler ProxyHandlerInterface, c *fiber.Ctx, body []byte, proxyType string, fromCache bool) error {
+func (h *BaseProxyHandler) sendResponse(
+	handler ProxyHandlerInterface,
+	c *fiber.Ctx,
+	body []byte,
+	proxyType string,
+	fromCache bool,
+) error {
 	// Content-Type 설정
 	contentType := handler.GetContentType(c.Path())
 	c.Set("Content-Type", contentType)
@@ -295,7 +306,12 @@ func (h *BaseProxyHandler) createProxyError(code, message, proxyType string) err
 }
 
 // RecordRequestMetrics 공통 메트릭 기록
-func (h *BaseProxyHandler) RecordRequestMetrics(handler ProxyHandlerInterface, c *fiber.Ctx, statusCode int, duration time.Duration) {
+func (h *BaseProxyHandler) RecordRequestMetrics(
+	handler ProxyHandlerInterface,
+	c *fiber.Ctx,
+	statusCode int,
+	duration time.Duration,
+) {
 	h.logger.Info("Proxy request metrics",
 		logging.F("proxy_type", handler.Type()),
 		logging.F("status_code", statusCode),

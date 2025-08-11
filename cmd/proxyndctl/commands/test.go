@@ -479,16 +479,27 @@ func outputSupportedTypesTable(result SupportedTypesResponse) error {
 	return nil
 }
 
+const (
+	statusPassed  = "passed"
+	statusFailed  = "failed"
+	statusSkipped = "skipped"
+	
+	iconPassed  = "✅"
+	iconFailed  = "❌"
+	iconSkipped = "⏭️"
+	iconUnknown = "❓"
+)
+
 // getStatusIcon 상태에 따른 아이콘 반환
 func getStatusIcon(status string) string {
 	switch status {
-	case "passed":
-		return "✅"
-	case "failed":
-		return "❌"
-	case "skipped":
-		return "⏭️"
+	case statusPassed:
+		return iconPassed
+	case statusFailed:
+		return iconFailed
+	case statusSkipped:
+		return iconSkipped
 	default:
-		return "❓"
+		return iconUnknown
 	}
 }
