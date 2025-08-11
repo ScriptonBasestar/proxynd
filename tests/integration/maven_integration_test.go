@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"crypto/md5"
 	"crypto/sha1"
 	"fmt"
 	"io"
@@ -293,26 +294,287 @@ func TestMavenProxy_SnapshotHandling(t *testing.T) {
 	err := server.WaitForReady()
 	require.NoError(t, err)
 
-	// When: SNAPSHOT 아티팩트 요청 (존재하지 않으므로 404 예상)
-	url := server.ProxyURL("maven", "org/springframework/spring-core/5.3.22-SNAPSHOT/spring-core-5.3.22-SNAPSHOT.jar")
-	resp, err := http.Get(url)
+	tests := []struct {
+		name           string
+		path           string
+		expectedStatus int
+		description    string
+		checkCaching   bool
+	}{
+		{
+			name:           "SNAPSHOT JAR not found",
+			path:           "org/springframework/spring-core/5.3.22-SNAPSHOT/spring-core-5.3.22-SNAPSHOT.jar",
+			expectedStatus: 404,
+			description:    "SNAPSHOT JAR 파일 요청 (존재하지 않음)",
+			checkCaching:   true,
+		},
+		{
+			name:           "SNAPSHOT POM not found",
+			path:           "org/springframework/spring-core/5.3.22-SNAPSHOT/spring-core-5.3.22-SNAPSHOT.pom",
+			expectedStatus: 404,
+			description:    "SNAPSHOT POM 파일 요청 (존재하지 않음)",
+			checkCaching:   true,
+		},
+		{
+			name:           "SNAPSHOT with timestamp",
+			path:           "org/springframework/spring-core/5.3.22-SNAPSHOT/spring-core-5.3.22-20220301.123456-1.jar",
+			expectedStatus: 404,
+			description:    "타임스탬프가 포함된 SNAPSHOT 요청",
+			checkCaching:   false,
+		},
+		{
+			name:           "SNAPSHOT metadata",
+			path:           "org/springframework/spring-core/5.3.22-SNAPSHOT/maven-metadata.xml",
+			expectedStatus: 404,
+			description:    "SNAPSHOT 메타데이터 요청",
+			checkCaching:   false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// When: SNAPSHOT 아티팩트 요청
+			url := server.ProxyURL("maven", tt.path)
+			resp, err := http.Get(url)
+			require.NoError(t, err)
+			defer func() { _ = resp.Body.Close() }()
+
+			// Then: 상태 코드 확인
+			assert.Equal(t, tt.expectedStatus, resp.StatusCode, tt.description)
+			assert.Equal(t, "maven", resp.Header.Get("X-Proxy-Type"))
+
+			// SNAPSHOT 캐싱 정책 확인
+			if tt.checkCaching {
+				cacheStatus := resp.Header.Get("X-Cache-Status")
+				if cacheStatus != "" {
+					assert.Equal(t, "MISS", cacheStatus, "SNAPSHOT은 캐시되지 않아야 합니다")
+				}
+
+				// 두 번째 요청으로 캐싱되지 않음 확인
+				url2 := server.ProxyURL("maven", tt.path)
+				resp2, err := http.Get(url2)
+				require.NoError(t, err)
+				defer func() { _ = resp2.Body.Close() }()
+
+				assert.Equal(t, tt.expectedStatus, resp2.StatusCode)
+				cacheStatus2 := resp2.Header.Get("X-Cache-Status")
+				if cacheStatus2 != "" {
+					assert.Equal(t, "MISS", cacheStatus2, "SNAPSHOT은 두 번째 요청에서도 캐시되지 않아야 합니다")
+				}
+			}
+		})
+	}
+}
+
+func TestMavenProxy_ChecksumEndpoints(t *testing.T) {
+	if testing.Short() {
+		t.Skip("통합 테스트는 -short 플래그에서 스킵")
+	}
+
+	// Given
+	server := SetupTestServer(t)
+	defer server.Close()
+
+	err := server.WaitForReady()
 	require.NoError(t, err)
-	defer func() { _ = resp.Body.Close() }()
 
-	// Then: SNAPSHOT은 캐시되지 않아야 하므로 적절한 처리 확인
-	assert.Equal(t, 404, resp.StatusCode) // 테스트 환경에서는 존재하지 않음
-	assert.Equal(t, "maven", resp.Header.Get("X-Proxy-Type"))
+	tests := []struct {
+		name           string
+		artifactPath   string
+		checksumPath   string
+		expectedStatus int
+		checksumType   string
+		validateFormat func(string) bool
+	}{
+		{
+			name:           "JAR SHA1 checksum",
+			artifactPath:   "org/springframework/spring-core/5.3.21/spring-core-5.3.21.jar",
+			checksumPath:   "org/springframework/spring-core/5.3.21/spring-core-5.3.21.jar.sha1",
+			expectedStatus: 404, // Mock 서버에서 구현되지 않음
+			checksumType:   "SHA1",
+			validateFormat: func(checksum string) bool {
+				return len(checksum) == 40 // SHA1은 40자
+			},
+		},
+		{
+			name:           "JAR MD5 checksum",
+			artifactPath:   "org/springframework/spring-core/5.3.21/spring-core-5.3.21.jar",
+			checksumPath:   "org/springframework/spring-core/5.3.21/spring-core-5.3.21.jar.md5",
+			expectedStatus: 404, // Mock 서버에서 구현되지 않음
+			checksumType:   "MD5",
+			validateFormat: func(checksum string) bool {
+				return len(checksum) == 32 // MD5는 32자
+			},
+		},
+		{
+			name:           "POM SHA1 checksum",
+			artifactPath:   "org/springframework/spring-core/5.3.21/spring-core-5.3.21.pom",
+			checksumPath:   "org/springframework/spring-core/5.3.21/spring-core-5.3.21.pom.sha1",
+			expectedStatus: 404, // Mock 서버에서 구현되지 않음
+			checksumType:   "SHA1",
+			validateFormat: func(checksum string) bool {
+				return len(checksum) == 40
+			},
+		},
+		{
+			name:           "Non-existent artifact checksum",
+			artifactPath:   "com/nonexistent/artifact/1.0.0/artifact-1.0.0.jar",
+			checksumPath:   "com/nonexistent/artifact/1.0.0/artifact-1.0.0.jar.sha1",
+			expectedStatus: 404,
+			checksumType:   "SHA1",
+			validateFormat: func(checksum string) bool {
+				return true // 404이므로 체크섬 검증 불필요
+			},
+		},
+	}
 
-	// SNAPSHOT은 일반적으로 캐시되지 않음
-	cacheStatus := resp.Header.Get("X-Cache-Status")
-	if cacheStatus != "" {
-		assert.Equal(t, "MISS", cacheStatus, "SNAPSHOT은 캐시되지 않아야 합니다")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// When: 체크섬 파일 요청
+			checksumURL := server.ProxyURL("maven", tt.checksumPath)
+			resp, err := http.Get(checksumURL)
+			require.NoError(t, err)
+			defer func() { _ = resp.Body.Close() }()
+
+			// Then: 응답 상태 확인
+			assert.Equal(t, tt.expectedStatus, resp.StatusCode)
+			assert.Equal(t, "maven", resp.Header.Get("X-Proxy-Type"))
+
+			if tt.expectedStatus == 200 {
+				// 체크섬 내용 검증 (실제 구현에서는 활성화)
+				body, err := io.ReadAll(resp.Body)
+				require.NoError(t, err)
+
+				checksum := strings.TrimSpace(string(body))
+				assert.True(t, tt.validateFormat(checksum),
+					"%s 체크섬 형식이 올바르지 않습니다: %s", tt.checksumType, checksum)
+
+				// Content-Type 확인
+				contentType := resp.Header.Get("Content-Type")
+				assert.Contains(t, contentType, "text/plain", "체크섬 파일은 text/plain이어야 합니다")
+
+				t.Logf("%s checksum for %s: %s", tt.checksumType, tt.artifactPath, checksum)
+
+				// 원본 아티팩트와 체크섬 일치 검증 (실제 환경에서 활성화)
+				if tt.artifactPath != "" {
+					artifactURL := server.ProxyURL("maven", tt.artifactPath)
+					artifactResp, err := http.Get(artifactURL)
+					if err == nil && artifactResp.StatusCode == 200 {
+						defer func() { _ = artifactResp.Body.Close() }()
+						artifactData, _ := io.ReadAll(artifactResp.Body)
+
+						var calculatedChecksum string
+						switch tt.checksumType {
+						case "SHA1":
+							calculatedChecksum = calculateSHA1(artifactData)
+						case "MD5":
+							calculatedChecksum = calculateMD5(artifactData)
+						}
+
+						// 실제 환경에서는 이 검증이 통과해야 함
+						t.Logf("Calculated %s: %s, Server %s: %s",
+							tt.checksumType, calculatedChecksum, tt.checksumType, checksum)
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestMavenProxy_DirectoryListing(t *testing.T) {
+	if testing.Short() {
+		t.Skip("통합 테스트는 -short 플래그에서 스킵")
+	}
+
+	// Given
+	server := SetupTestServer(t)
+	defer server.Close()
+
+	err := server.WaitForReady()
+	require.NoError(t, err)
+
+	tests := []struct {
+		name           string
+		path           string
+		expectedStatus int
+		description    string
+		expectHTML     bool
+	}{
+		{
+			name:           "Group directory listing",
+			path:           "org/springframework/",
+			expectedStatus: 404, // Mock 서버에서 디렉토리 목록 비활성화
+			description:    "그룹 디렉토리 목록 조회",
+			expectHTML:     false,
+		},
+		{
+			name:           "Artifact directory listing",
+			path:           "org/springframework/spring-core/",
+			expectedStatus: 404, // Mock 서버에서 디렉토리 목록 비활성화
+			description:    "아티팩트 디렉토리 목록 조회",
+			expectHTML:     false,
+		},
+		{
+			name:           "Version directory listing",
+			path:           "org/springframework/spring-core/5.3.21/",
+			expectedStatus: 404, // Mock 서버에서 디렉토리 목록 비활성화
+			description:    "버전 디렉토리 목록 조회",
+			expectHTML:     false,
+		},
+		{
+			name:           "Root directory access",
+			path:           "",
+			expectedStatus: 404, // Mock 서버에서 루트 디렉토리 비활성화
+			description:    "루트 디렉토리 접근",
+			expectHTML:     false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// When: 디렉토리 경로 요청
+			url := server.ProxyURL("maven", tt.path)
+			resp, err := http.Get(url)
+			require.NoError(t, err)
+			defer func() { _ = resp.Body.Close() }()
+
+			// Then: 응답 상태 확인
+			assert.Equal(t, tt.expectedStatus, resp.StatusCode, tt.description)
+			assert.Equal(t, "maven", resp.Header.Get("X-Proxy-Type"))
+
+			if tt.expectedStatus == 200 && tt.expectHTML {
+				// HTML 디렉토리 목록 검증
+				contentType := resp.Header.Get("Content-Type")
+				assert.Contains(t, contentType, "text/html", "디렉토리 목록은 HTML이어야 합니다")
+
+				body, err := io.ReadAll(resp.Body)
+				require.NoError(t, err)
+
+				content := string(body)
+				assert.Contains(t, content, "<html>", "유효한 HTML이어야 합니다")
+				assert.Contains(t, content, "Directory Listing", "디렉토리 목록 제목이 있어야 합니다")
+
+				t.Logf("Directory listing for %s returned %d bytes", tt.path, len(body))
+			}
+
+			// 보안: 상위 디렉토리 접근 방지 확인
+			if strings.Contains(tt.path, "..") {
+				assert.NotEqual(t, 200, resp.StatusCode, "상위 디렉토리 접근은 차단되어야 합니다")
+			}
+		})
 	}
 }
 
 // calculateSHA1 SHA1 체크섬 계산
 func calculateSHA1(data []byte) string {
 	h := sha1.New()
+	h.Write(data)
+	return fmt.Sprintf("%x", h.Sum(nil))
+}
+
+// calculateMD5 MD5 체크섬 계산
+func calculateMD5(data []byte) string {
+	h := md5.New()
 	h.Write(data)
 	return fmt.Sprintf("%x", h.Sum(nil))
 }

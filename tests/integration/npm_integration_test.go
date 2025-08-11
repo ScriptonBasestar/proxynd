@@ -414,8 +414,8 @@ func TestNPMProxy_CacheHeaders(t *testing.T) {
 	body2, _ := io.ReadAll(resp2.Body)
 
 	var package1, package2 map[string]interface{}
-	json.Unmarshal(body1, &package1)
-	json.Unmarshal(body2, &package2)
+	_ = json.Unmarshal(body1, &package1)
+	_ = json.Unmarshal(body2, &package2)
 
 	assert.Equal(t, package1["name"], package2["name"], "Cached response should have same content")
 }
