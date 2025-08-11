@@ -45,7 +45,7 @@ test:
 	docker-compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) run --rm test-runner
 
 # 모든 E2E 테스트 실행 (클라이언트별 테스트 포함)
-test-all: test test-maven test-yum test-npm test-pip test-apt test-docker
+test-all: test test-maven test-yum test-npm test-pip test-apt test-docker test-apk
 
 # Maven 클라이언트 테스트
 test-maven:
@@ -76,6 +76,11 @@ test-apt:
 test-docker:
 	@echo "🐳 Running Docker client tests..."
 	docker-compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) exec docker-client /scripts/test-docker.sh
+
+# APK 클라이언트 테스트
+test-apk:
+	@echo "🏔️ Running APK client tests..."
+	docker-compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) exec alpine-client /scripts/test-apk.sh
 
 # 로그 보기
 logs:
@@ -111,6 +116,9 @@ shell-centos:
 
 shell-docker:
 	docker-compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) exec docker-client sh
+
+shell-alpine:
+	docker-compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) exec alpine-client sh
 
 # 정리
 clean:

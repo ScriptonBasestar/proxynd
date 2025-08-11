@@ -23,10 +23,11 @@ E2E 테스트 스크립트와 업스트림 픽스처를 구현하는 태스크�
   - Scenarios: metadata sync, rpm fetch
   - Completed: Added comprehensive YUM E2E script with test scenarios, upstream fixtures, and Makefile integration
 
-- [ ] Add APK E2E script
+- [x] Add APK E2E script
   - File: `tests/e2e/scripts/test-apk.sh`
   - Upstream fixtures: index, signatures
   - Scenarios: index fetch, package fetch, bad signature
+  - Completed: Added comprehensive APK E2E script with 10 test scenarios, minimal Alpine Linux upstream fixtures (APKINDEX.tar.gz, mock APK packages), and Makefile integration
 
 ## Acceptance Criteria
 - E2E scripts runnable locally via `tests/e2e/Makefile`

@@ -1,0 +1,9 @@
+Mock APK package content for docker-20.10.14-r0.apk testing.
+This simulates an actual Alpine Linux APK package file.
+Package: docker
+Version: 20.10.14-r0
+Architecture: x86_64
+Description: Pack, ship and run any application as a lightweight container
+
+Binary APK data would normally be here...
+[Mock APK binary data - compressed tar archive with package files]
