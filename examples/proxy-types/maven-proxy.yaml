@@ -35,9 +35,32 @@ proxies:
     id: repo.spring.io-snapshots
     url: https://repo.spring.io/snapshot
 
-#  company_internal:
-#    url: http://company
-#    description: "my company"
-#    auth:
-#      method: BASIC
-#      username:
+  # Private repository with basic authentication
+  - name: company_nexus
+    id: company-nexus
+    url: https://nexus.company.com/repository/maven-public/
+    description: "Company internal Nexus repository"
+    auth:
+      method: BASIC
+      username: "deploy"
+      password: "${NEXUS_PASSWORD}"  # Use environment variable
+  
+  # Private repository with token authentication  
+  - name: github_packages
+    id: github-packages
+    url: https://maven.pkg.github.com/company/repository
+    description: "GitHub Packages Maven repository"
+    auth:
+      method: TOKEN
+      token: "${GITHUB_TOKEN}"  # Personal access token
+      
+  # Repository requiring certificate authentication
+  - name: secured_maven
+    id: secured-maven
+    url: https://secure-maven.enterprise.com/repository/
+    description: "Enterprise Maven repository with client certificates"
+    auth:
+      method: CERTIFICATE
+      cert_file: "/path/to/client.crt"
+      key_file: "/path/to/client.key"
+      ca_file: "/path/to/ca.crt"

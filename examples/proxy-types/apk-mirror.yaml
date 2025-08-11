@@ -1,0 +1,344 @@
+# APK (Alpine Linux) Mirror Configuration
+# This configuration sets up ProxyND as an APK mirror,
+# synchronizing and hosting Alpine Linux packages locally
+
+path: mirror/apk
+use_cache: true
+
+# Mirror configuration for Alpine Linux repositories
+mirrors:
+  # Alpine Linux official repositories by version
+  alpine_releases:
+    # Alpine 3.18 (latest stable)
+    v3_18:
+      main:
+        name: "Alpine 3.18 Main Mirror"
+        url: https://dl-cdn.alpinelinux.org/alpine/v3.18/main/
+        description: "Alpine 3.18 main packages mirror"
+        version: "3.18"
+        repository: "main"
+        architectures: ["x86_64", "aarch64", "armhf", "armv7", "s390x"]
+        
+      community:
+        name: "Alpine 3.18 Community Mirror" 
+        url: https://dl-cdn.alpinelinux.org/alpine/v3.18/community/
+        description: "Alpine 3.18 community packages mirror"
+        version: "3.18"
+        repository: "community"
+        architectures: ["x86_64", "aarch64", "armhf", "armv7", "s390x"]
+        
+    # Alpine 3.17
+    v3_17:
+      main:
+        name: "Alpine 3.17 Main Mirror"
+        url: https://dl-cdn.alpinelinux.org/alpine/v3.17/main/
+        description: "Alpine 3.17 main packages mirror"
+        version: "3.17"
+        repository: "main"
+        architectures: ["x86_64", "aarch64", "armhf", "armv7", "s390x"]
+        
+      community:
+        name: "Alpine 3.17 Community Mirror"
+        url: https://dl-cdn.alpinelinux.org/alpine/v3.17/community/
+        description: "Alpine 3.17 community packages mirror"
+        version: "3.17"
+        repository: "community"
+        architectures: ["x86_64", "aarch64", "armhf", "armv7", "s390x"]
+        
+    # Alpine Edge (development)
+    edge:
+      main:
+        name: "Alpine Edge Main Mirror"
+        url: https://dl-cdn.alpinelinux.org/alpine/edge/main/
+        description: "Alpine Edge main packages mirror"
+        version: "edge"
+        repository: "main"
+        architectures: ["x86_64", "aarch64", "armhf", "armv7", "s390x"]
+        sync_enabled: false  # Disable by default due to frequent changes
+        
+      community:
+        name: "Alpine Edge Community Mirror"
+        url: https://dl-cdn.alpinelinux.org/alpine/edge/community/
+        description: "Alpine Edge community packages mirror"
+        version: "edge"
+        repository: "community"
+        architectures: ["x86_64", "aarch64", "armhf", "armv7", "s390x"]
+        sync_enabled: false  # Disable by default due to frequent changes
+        
+      testing:
+        name: "Alpine Edge Testing Mirror"
+        url: https://dl-cdn.alpinelinux.org/alpine/edge/testing/
+        description: "Alpine Edge testing packages mirror"
+        version: "edge"
+        repository: "testing"
+        architectures: ["x86_64", "aarch64", "armhf", "armv7", "s390x"]
+        sync_enabled: false  # Disable by default
+        
+  # Regional mirrors for faster access
+  regional_mirrors:
+    # Asian mirrors
+    tsinghua:
+      name: "Tsinghua University Alpine Mirror"
+      url: https://mirrors.tuna.tsinghua.edu.cn/alpine/
+      region: "asia"
+      priority: 1
+      
+    kakao:
+      name: "Kakao Alpine Mirror"
+      url: https://mirror.kakao.com/alpine/
+      region: "asia"
+      priority: 2
+      
+    naver:
+      name: "Naver Alpine Mirror"
+      url: https://mirror.navercorp.com/alpine/
+      region: "asia"
+      priority: 3
+      
+    # European mirrors
+    dotsrc:
+      name: "DotSrc Alpine Mirror"
+      url: https://mirrors.dotsrc.org/alpine/
+      region: "europe"
+      priority: 2
+      
+    # Global CDN mirrors
+    fastly:
+      name: "Fastly Alpine Mirror"
+      url: https://alpine.global.ssl.fastly.net/alpine/
+      region: "global"
+      priority: 1
+
+# Mirror synchronization settings
+sync:
+  # Enable automatic synchronization
+  enabled: true
+  
+  # Synchronization schedule (cron format)
+  schedule: "0 6,18 * * *"  # Twice daily at 6 AM and 6 PM
+  
+  # Architectures to sync
+  architectures:
+    - "x86_64"     # Intel/AMD 64-bit (most common)
+    - "aarch64"    # ARM 64-bit
+    # - "armhf"    # ARM hard float (uncomment if needed)
+    # - "armv7"    # ARM v7 (uncomment if needed)
+    # - "s390x"    # IBM System z (uncomment if needed)
+    
+  # Sync strategy
+  strategy: "rsync"  # Options: rsync, wget, curl
+  
+  # Synchronization options
+  options:
+    # Verify APKINDEX signatures
+    verify_signatures: true
+    
+    # Update package index after sync
+    update_index: true
+    
+    # Delete packages removed from upstream
+    delete_removed: true
+    
+    # Preserve file timestamps
+    preserve_timestamps: true
+    
+  # Bandwidth and concurrency limits
+  limits:
+    # Maximum concurrent sync processes
+    max_concurrent_syncs: 4
+    
+    # Bandwidth limit per sync
+    bandwidth_limit: "50MB/s"
+    
+    # Skip packages larger than this size
+    max_package_size: "500MB"
+    
+    # Connection timeout
+    connection_timeout: "60s"
+
+# APK package signature verification
+signature_verification:
+  # Enable signature verification
+  enabled: true
+  
+  # Directory containing trusted public keys
+  key_directory: "/etc/apk/keys"
+  
+  # Auto-download missing keys
+  auto_download_keys: true
+  
+  # Fail sync if signature verification fails
+  fail_on_invalid: true
+  
+  # Alpine Linux official signing keys by architecture
+  trusted_keys:
+    x86_64:
+      - "alpine-devel@lists.alpinelinux.org-4a6a0840.rsa.pub"
+      - "alpine-devel@lists.alpinelinux.org-5243ef4b.rsa.pub"
+      - "alpine-devel@lists.alpinelinux.org-524d27bb.rsa.pub"
+      - "alpine-devel@lists.alpinelinux.org-5261cecb.rsa.pub"
+    aarch64:
+      - "alpine-devel@lists.alpinelinux.org-4a6a0840.rsa.pub"
+      - "alpine-devel@lists.alpinelinux.org-5243ef4b.rsa.pub"
+    armhf:
+      - "alpine-devel@lists.alpinelinux.org-4a6a0840.rsa.pub"
+      - "alpine-devel@lists.alpinelinux.org-5243ef4b.rsa.pub"
+
+# Storage configuration for mirrored packages
+storage:
+  # Storage backend
+  backend: "file"  # Options: file, s3, gcs
+  
+  # Repository structure (Alpine standard)
+  structure: "alpine_standard"
+  
+  # Retention policy
+  retention:
+    # Keep packages for this duration
+    max_age: "365d"
+    
+    # Maximum storage size
+    max_size: "100GB"
+    
+    # Cleanup strategy when limits exceeded
+    cleanup_strategy: "version_based"  # Options: version_based, lru, size_based
+    
+    # Keep minimum versions per package
+    min_versions_per_package: 3
+    
+    # Preserve latest versions of critical packages
+    preserve_packages:
+      - "alpine-base"
+      - "alpine-baselayout"
+      - "alpine-keys"
+      - "apk-tools"
+      - "busybox"
+      - "musl"
+      - "openssl"
+      
+  # Index file compression
+  compression:
+    enabled: true
+    format: "gz"  # APK uses gzip compression for APKINDEX
+
+# Mirror-specific cache settings
+cache:
+  # APKINDEX cache TTL
+  index_ttl: "30m"
+  
+  # Package cache TTL
+  package_ttl: "7d"
+  
+  # Signature cache TTL
+  signature_ttl: "24h"
+
+# Package filtering
+filters:
+  # Include only packages matching these patterns
+  include_patterns:
+    - "*"  # Include all by default
+    
+  # Exclude packages matching these patterns
+  exclude_patterns:
+    - "*-doc"      # Exclude documentation packages to save space
+    - "*-dev"      # Exclude development packages (uncomment if needed)
+    
+  # Size-based filtering
+  max_package_size: "200MB"
+  
+  # Only sync packages from specific repositories
+  repositories:
+    - "main"
+    - "community"
+    # - "testing"  # Uncomment to include testing packages
+
+# Popular packages to prioritize during sync
+priority_packages:
+  # Base system packages
+  system:
+    - "alpine-base"
+    - "alpine-baselayout"
+    - "alpine-keys" 
+    - "apk-tools"
+    - "busybox"
+    - "musl"
+    - "ca-certificates"
+    - "openssl"
+    - "tzdata"
+    
+  # Common utilities
+  utilities:
+    - "bash"
+    - "curl"
+    - "wget"
+    - "git"
+    - "nano"
+    - "vim"
+    - "htop"
+    - "rsync"
+    - "openssh"
+    
+  # Development tools
+  development:
+    - "build-base"
+    - "gcc" 
+    - "make"
+    - "cmake"
+    - "python3"
+    - "nodejs"
+    - "go"
+    - "rust"
+
+# Health monitoring for upstream repositories
+health_monitoring:
+  enabled: true
+  check_interval: "3m"
+  timeout: "20s"
+  failure_threshold: 3
+  recovery_threshold: 2
+  
+  # Check APKINDEX availability
+  check_index: true
+  
+  # Check sample packages
+  check_packages: true
+  sample_packages: ["alpine-base", "busybox", "musl"]
+
+# Mirror selection and load balancing
+mirror_selection:
+  # Strategy for selecting upstream mirror
+  strategy: "latency_based"  # Options: round_robin, latency_based, regional
+  
+  # Geographic preference
+  preferred_regions: ["asia", "global", "europe"]
+  
+  # Fallback behavior
+  fallback_enabled: true
+  max_failures_before_fallback: 2
+  
+  # Mirror health tracking
+  health_tracking:
+    enabled: true
+    check_interval: "10m"
+    track_latency: true
+    track_success_rate: true
+
+# Monitoring and alerting
+monitoring:
+  # Enable detailed metrics
+  enabled: true
+  
+  # Metrics to track
+  metrics:
+    - "sync_duration"
+    - "packages_synced"
+    - "storage_usage"
+    - "cache_hit_ratio"
+    - "mirror_latency"
+    - "signature_verification_failures"
+    
+  # Alert conditions
+  alerts:
+    sync_failures: 3
+    storage_usage_threshold: "90%"
+    mirror_downtime_threshold: "15m"
