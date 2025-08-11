@@ -11,7 +11,7 @@ source: tasks/todo/README.md (section A)
 
 ## Tasks
 
-- [ ] Add npm integration test
+- [x] Add npm integration test
   - File: `tests/integration/npm_integration_test.go`
   - Scope: GET tarball, metadata, scoped packages, auth fallback
   - Acceptance: green on CI, covers 3xx, 4xx, cache hit/miss
