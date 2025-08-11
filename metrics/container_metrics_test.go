@@ -3,15 +3,10 @@ package metrics_test
 import (
 	"testing"
 
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/assert"
 
 	"proxynd/metrics"
 )
-
-func createTestRegistry() *prometheus.Registry {
-	return prometheus.NewRegistry()
-}
 
 func TestNewContainerMetrics(t *testing.T) {
 	containerMetrics := metrics.NewContainerMetrics()

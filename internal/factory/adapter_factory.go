@@ -43,7 +43,7 @@ type HandlerLifecycleManager struct {
 	initOrder     []string
 	shutdownHooks map[string]func() error
 	initialized   map[string]bool
-	mu            sync.RWMutex
+	mu            sync.RWMutex //nolint:unused // 향후 동시성 제어를 위해 유지
 	logger        logging.Logger
 }
 

@@ -364,6 +364,8 @@ func (a *handlerAdapter) Handle(c *fiber.Ctx) error {
 }
 
 // registerDefaultHandlers 기본 핸들러들 등록 (stub)
+//
+//nolint:unused // 향후 기본 핸들러 등록을 위해 유지
 func registerDefaultHandlers(factory HandlerFactory) {
 	// TODO: 실제 핸들러들 등록 구현
 	// 현재는 컴파일 에러 방지를 위한 stub

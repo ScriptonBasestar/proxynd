@@ -94,9 +94,9 @@ type OptimizerConfig struct {
 	AggressiveOptimization       bool                   `yaml:"aggressive_optimization" json:"aggressive_optimization"`
 	MaxOptimizationHistory       int                    `yaml:"max_optimization_history" json:"max_optimization_history"`
 	EnableCacheOptimization      bool                   `yaml:"enable_cache_optimization" json:"enable_cache_optimization"`
-	EnableConnectionOptimization bool                   `yaml:"enable_connection_optimization" json:"enable_connection_optimization"`
-	EnableMemoryOptimization     bool                   `yaml:"enable_memory_optimization" json:"enable_memory_optimization"`
-	EnableRequestOptimization    bool                   `yaml:"enable_request_optimization" json:"enable_request_optimization"`
+	EnableConnectionOptimization bool                   `yaml:"enable_connection_optimization" json:"enable_connection_optimization"` //nolint:lll
+	EnableMemoryOptimization     bool                   `yaml:"enable_memory_optimization" json:"enable_memory_optimization"`         //nolint:lll
+	EnableRequestOptimization    bool                   `yaml:"enable_request_optimization" json:"enable_request_optimization"`       //nolint:lll
 	Thresholds                   *PerformanceThresholds `yaml:"thresholds" json:"thresholds"`
 }
 
@@ -174,7 +174,7 @@ type ConnectionOptimizationStrategy struct {
 type MemoryOptimizationStrategy struct {
 	logger  logging.Logger
 	lastGC  time.Time
-	gcStats runtime.MemStats
+	gcStats runtime.MemStats //nolint:unused // 향후 가비지 콜렉션 통계를 위해 유지
 }
 
 // RequestOptimizationStrategy optimizes request processing performance

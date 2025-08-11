@@ -2,8 +2,6 @@ package http
 
 import (
 	"fmt"
-	"io"
-	"os"
 	"strings"
 	"time"
 
@@ -260,50 +258,3 @@ func (a *PIPHandlerAdapter) RecordRequestMetrics(c *fiber.Ctx, statusCode int, d
 }
 
 // 추가 헬퍼 메서드들
-
-// getPipContentType PIP 패키지 경로에서 Content-Type 결정 (호환성용)
-func getPipContentType(packagePath, fileName string) string {
-	// Simple API HTML 응답
-	if strings.HasPrefix(packagePath, "simple/") && !strings.Contains(fileName, ".") {
-		return "text/html; charset=utf-8"
-	}
-
-	// JSON API 응답
-	if strings.Contains(packagePath, "/json") {
-		return "application/json"
-	}
-
-	// 패키지 파일 타입별
-	switch {
-	case strings.HasSuffix(fileName, ".whl"):
-		return "application/zip"
-	case strings.HasSuffix(fileName, ".tar.gz"):
-		return "application/x-gzip"
-	case strings.HasSuffix(fileName, ".tar.bz2"):
-		return "application/x-bzip2"
-	case strings.HasSuffix(fileName, ".zip"):
-		return "application/zip"
-	case strings.HasSuffix(fileName, ".egg"):
-		return "application/zip"
-	default:
-		return "application/octet-stream"
-	}
-}
-
-// shouldPipInline 인라인 표시 여부 결정 (호환성용)
-func shouldPipInline(packagePath string) bool {
-	// Simple API나 JSON API 응답은 inline
-	return strings.HasPrefix(packagePath, "simple/") || strings.Contains(packagePath, "/json")
-}
-
-// copyPipToFile 스트림을 파일로 복사 (유틸리티 함수)
-func copyPipToFile(dst string, src io.Reader) error {
-	file, err := os.Create(dst)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = file.Close() }()
-
-	_, err = io.Copy(file, src)
-	return err
-}

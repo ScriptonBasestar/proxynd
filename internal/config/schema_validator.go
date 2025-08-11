@@ -23,7 +23,7 @@ type SchemaValidator struct {
 
 // ValidationRule 검증 규칙 정의
 type ValidationRule struct {
-	Type        string                    `yaml:"type" json:"type"`             // string, int, bool, url, path, duration, size
+	Type        string                    `yaml:"type" json:"type"`             // Type: string,int,bool,url,path,dur,size
 	Required    bool                      `yaml:"required" json:"required"`     // 필수 필드 여부
 	MinValue    interface{}               `yaml:"min_value" json:"min_value"`   // 최소값
 	MaxValue    interface{}               `yaml:"max_value" json:"max_value"`   // 최대값

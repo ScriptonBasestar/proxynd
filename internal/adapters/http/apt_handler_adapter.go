@@ -2,8 +2,6 @@ package http
 
 import (
 	"fmt"
-	"io"
-	"os"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -192,27 +190,3 @@ func (a *APTHandlerAdapter) RecordRequestMetrics(c *fiber.Ctx, statusCode int, d
 }
 
 // 추가 헬퍼 메서드들
-
-// getContentType APT 패키지 경로에서 Content-Type 결정 (호환성용)
-func getAptContentType(packagePath string) string {
-	resolver := aptServices.NewContentResolver()
-	return resolver.GetContentType(packagePath)
-}
-
-// shouldInline 인라인 표시 여부 결정 (호환성용)
-func shouldInline(packagePath string) bool {
-	resolver := aptServices.NewContentResolver()
-	return resolver.ShouldInline(packagePath)
-}
-
-// copyToFile 스트림을 파일로 복사 (유틸리티 함수)
-func copyToFile(dst string, src io.Reader) error {
-	file, err := os.Create(dst)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = file.Close() }()
-
-	_, err = io.Copy(file, src)
-	return err
-}

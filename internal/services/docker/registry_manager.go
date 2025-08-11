@@ -295,6 +295,8 @@ func (r *registryManagerImpl) detectFeatures(headers http.Header) []string {
 }
 
 // performPeriodicHealthCheck 주기적 헬스체크 (백그라운드 작업)
+//
+//nolint:unused // 향후 Docker 레지스트리 헬스체크를 위해 유지
 func (r *registryManagerImpl) performPeriodicHealthCheck(ctx context.Context) {
 	ticker := time.NewTicker(5 * time.Minute)
 	defer ticker.Stop()
@@ -310,6 +312,8 @@ func (r *registryManagerImpl) performPeriodicHealthCheck(ctx context.Context) {
 }
 
 // checkAllRegistries 모든 레지스트리 상태 확인
+//
+//nolint:unused // 향후 Docker 레지스트리 헬스체크를 위해 유지
 func (r *registryManagerImpl) checkAllRegistries(ctx context.Context) {
 	registries := r.config.GetRegistries()
 

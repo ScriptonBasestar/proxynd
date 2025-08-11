@@ -209,9 +209,3 @@ func RequireRole(requiredRole string) fiber.Handler {
 		return c.Next()
 	}
 }
-
-// isAuthenticated 기존 미들웨어와의 호환성을 위한 간단한 인증 확인
-func isAuthenticated(c *fiber.Ctx) bool {
-	_, _, _, ok := GetUserFromContext(c)
-	return ok
-}

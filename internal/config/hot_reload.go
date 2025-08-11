@@ -912,6 +912,8 @@ func (uhr *UnifiedHotReload) GetValidationResult() *ValidationResult {
 }
 
 // Enhanced file watching with hash comparison
+//
+//nolint:unused // 향후 고급 리로드 기능을 위해 유지
 func (uhr *UnifiedHotReload) debounceReloadEnhanced(filePath string) {
 	uhr.debounceMu.Lock()
 	defer uhr.debounceMu.Unlock()

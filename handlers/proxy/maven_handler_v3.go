@@ -401,6 +401,8 @@ func (h *MavenHandlerV3) validateChecksumWithPool(repo config.MavenProxyServer, 
 }
 
 // extractRequestPath Base Handler에서 사용하는 메서드 (Maven은 기본 구현 사용)
+//
+//nolint:unused // BaseProxyHandler 인터페이스 호환성을 위해 유지
 func (h *MavenHandlerV3) extractRequestPath(c *fiber.Ctx) string {
 	return c.Params("*")
 }

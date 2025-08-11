@@ -292,6 +292,8 @@ func (a *DockerHandlerAdapter) ValidateDockerPath(requestPath string) error {
 }
 
 // extractRepositoryFromPath 경로에서 레포지토리명 추출
+//
+//nolint:unused // Docker 레지스트리 v2 API 지원을 위해 유지
 func (a *DockerHandlerAdapter) extractRepositoryFromPath(requestPath string) string {
 	// v2 prefix 제거
 	path := strings.TrimPrefix(requestPath, "v2/")

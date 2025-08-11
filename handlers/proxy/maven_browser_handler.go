@@ -1297,6 +1297,8 @@ func (h *MavenBrowserHandler) indexNode(
 }
 
 // indexDirectory 디렉토리를 재귀적으로 인덱싱
+//
+//nolint:unused // 향후 검색 기능 확장을 위해 유지
 func (h *MavenBrowserHandler) indexDirectory(path, parentGroupID string, entries *[]maven.SearchIndexEntry) {
 	// 캐시 확인
 	if cached, found := h.cache.Load(path); found {

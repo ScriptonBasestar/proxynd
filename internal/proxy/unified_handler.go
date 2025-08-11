@@ -2,13 +2,10 @@
 package proxy
 
 import (
-	"fmt"
 	"sync"
-	"time"
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/internal/container"
 	"proxynd/internal/errors"
 	"proxynd/internal/handlers"
 	"proxynd/logging"
@@ -145,60 +142,6 @@ func (h *UnifiedProxyHandler) Name() string {
 // Type 핸들러 타입 반환
 func (h *UnifiedProxyHandler) Type() string {
 	return "unified"
-}
-
-// baseHandlerAdapter BaseProxyHandler를 ContainerProxyHandler로 어댑트
-type baseHandlerAdapter struct {
-	handler handlers.BaseProxyHandler
-}
-
-// ContainerProxyHandler 인터페이스 구현 (모든 메서드 stub)
-func (a *baseHandlerAdapter) Handle(c *fiber.Ctx) error {
-	return fmt.Errorf("not implemented")
-}
-
-func (a *baseHandlerAdapter) Name() string {
-	return "base-adapter"
-}
-
-func (a *baseHandlerAdapter) Type() string {
-	return "base"
-}
-
-func (a *baseHandlerAdapter) BuildUpstreamURL(c *fiber.Ctx) (string, error) {
-	return c.Path(), nil
-}
-
-func (a *baseHandlerAdapter) GenerateCacheKey(c *fiber.Ctx) string {
-	return c.Path()
-}
-
-func (a *baseHandlerAdapter) GetCacheTTL(c *fiber.Ctx) time.Duration {
-	return time.Hour // 1시간
-}
-
-func (a *baseHandlerAdapter) ValidateRequest(c *fiber.Ctx) error {
-	return nil
-}
-
-func (a *baseHandlerAdapter) TransformRequest(c *fiber.Ctx) error {
-	return nil
-}
-
-func (a *baseHandlerAdapter) TransformResponse(c *fiber.Ctx, data []byte) ([]byte, error) {
-	return data, nil
-}
-
-func (a *baseHandlerAdapter) GetContainer() container.ContainerProvider {
-	return nil // stub
-}
-
-func (a *baseHandlerAdapter) HandleError(err error, c *fiber.Ctx) error {
-	return err // stub: 에러를 그대로 반환
-}
-
-func (a *baseHandlerAdapter) IsEnabled() bool {
-	return true // stub: 항상 활성화
 }
 
 // 편의 함수들

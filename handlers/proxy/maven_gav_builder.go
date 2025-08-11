@@ -86,6 +86,8 @@ func buildCompleteGAVTree(entries []DirectoryEntry) []*GAVTreeNode {
 }
 
 // buildPartialGAVTree 부분 GAV 트리 구성 (하위 레벨)
+//
+//nolint:unused // GAV 트리 빌더의 완전한 API 제공을 위해 유지
 func buildPartialGAVTree(entries []DirectoryEntry, currentPath string) []*GAVTreeNode {
 	// 현재 경로를 분석하여 컨텍스트 파악
 	pathInfo := parseMavenPath(currentPath)
@@ -143,6 +145,8 @@ func buildPartialGAVTree(entries []DirectoryEntry, currentPath string) []*GAVTre
 }
 
 // determineNodeType 현재 경로 컨텍스트에서 노드 타입 결정
+//
+//nolint:unused // GAV 트리 빌더의 완전한 API 제공을 위해 유지
 func determineNodeType(pathInfo *maven.PathInfo, entry DirectoryEntry) string {
 	// 디렉토리 타입 확인 - 다양한 형태를 모두 처리
 	if entry.Type != typeDirectory && entry.Type != maven.TypeDirectory &&
@@ -190,6 +194,8 @@ func determineNodeType(pathInfo *maven.PathInfo, entry DirectoryEntry) string {
 }
 
 // buildFullPath 전체 경로 생성
+//
+//nolint:unused // GAV 트리 빌더의 완전한 API 제공을 위해 유지
 func buildFullPath(currentPath, name, nodeType string) string {
 	base := "/proxy/maven"
 
@@ -214,6 +220,8 @@ func buildFullPath(currentPath, name, nodeType string) string {
 }
 
 // calculateCounts 재귀적으로 하위 항목 수 계산
+//
+//nolint:unused // GAV 트리 통계 기능을 위해 유지
 func calculateCounts(node *GAVTreeNode) (directCount, totalCount int) {
 	if node == nil {
 		return 0, 0
@@ -234,6 +242,8 @@ func calculateCounts(node *GAVTreeNode) (directCount, totalCount int) {
 }
 
 // estimateChildCount 하위 항목 수 추정 (실제로는 서버에서 가져와야 함)
+//
+//nolint:unused // GAV 트리 통계 기능을 위해 유지
 func estimateChildCount(node *GAVTreeNode) int {
 	switch node.Type {
 	case "group":
@@ -248,6 +258,8 @@ func estimateChildCount(node *GAVTreeNode) int {
 }
 
 // sortGAVNodes GAV 노드 정렬
+//
+//nolint:unused // GAV 트리 정렬 기능을 위해 유지
 func sortGAVNodes(nodes []*GAVTreeNode) {
 	sort.Slice(nodes, func(i, j int) bool {
 		// 타입별 우선순위: group > artifact > version > directory > file
@@ -279,6 +291,8 @@ func sortGAVNodes(nodes []*GAVTreeNode) {
 }
 
 // searchInTree 트리에서 검색하고 매칭되는 노드 하이라이트
+//
+//nolint:unused // GAV 트리 검색 기능을 위해 유지
 func searchInTree(nodes []*GAVTreeNode, query string) []*GAVTreeNode {
 	query = strings.ToLower(query)
 
@@ -321,6 +335,8 @@ func searchInTree(nodes []*GAVTreeNode, query string) []*GAVTreeNode {
 }
 
 // expandParents 부모 노드들을 확장 상태로 설정
+//
+//nolint:unused // GAV 트리 확장 기능을 위해 유지
 func expandParents(nodes []*GAVTreeNode, target *GAVTreeNode) {
 	for _, node := range nodes {
 		if containsChild(node, target) {
@@ -331,6 +347,8 @@ func expandParents(nodes []*GAVTreeNode, target *GAVTreeNode) {
 }
 
 // containsChild 노드가 특정 자식을 포함하는지 확인
+//
+//nolint:unused // GAV 트리 검색 기능을 위해 유지
 func containsChild(parent, target *GAVTreeNode) bool {
 	for _, child := range parent.Children {
 		if child == target {
@@ -344,6 +362,8 @@ func containsChild(parent, target *GAVTreeNode) bool {
 }
 
 // resetTreeHighlight 트리의 모든 하이라이트와 확장 상태 초기화
+//
+//nolint:unused // GAV 트리 상태 관리를 위해 유지
 func resetTreeHighlight(nodes []*GAVTreeNode) {
 	for _, node := range nodes {
 		node.IsHighlighted = false
