@@ -83,7 +83,7 @@ func (c *cacheManagerImpl) Get(ctx context.Context, key string) (*npm.CacheEntry
 }
 
 // Set 패키지를 캐시에 저장
-func (c *cacheManagerImpl) Set(ctx context.Context, key string, data []byte, contentType string, isMetadata bool) error {
+func (c *cacheManagerImpl) Set(ctx context.Context, key string, data []byte, contentType string, isMetadata bool) error { //nolint:lll
 	cacheConfig := c.config.GetCacheConfig()
 	if !cacheConfig.Enabled {
 		return nil // 캐시 비활성화 시 조용히 무시

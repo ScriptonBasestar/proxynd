@@ -76,7 +76,7 @@ func (r *registryManagerImpl) SelectRegistry(ctx context.Context, repository str
 }
 
 // CheckRegistryHealth 레지스트리 서버 상태 확인
-func (r *registryManagerImpl) CheckRegistryHealth(ctx context.Context, registryURL string) (*docker.RegistryStatus, error) {
+func (r *registryManagerImpl) CheckRegistryHealth(ctx context.Context, registryURL string) (*docker.RegistryStatus, error) { //nolint:lll
 	r.logger.Debug("Checking registry health", logging.F("url", registryURL))
 
 	startTime := time.Now()
@@ -125,7 +125,7 @@ func (r *registryManagerImpl) CheckRegistryHealth(ctx context.Context, registryU
 }
 
 // GetRegistryStatus 레지스트리 상태 정보 반환
-func (r *registryManagerImpl) GetRegistryStatus(ctx context.Context, registryURL string) (*docker.RegistryStatus, error) {
+func (r *registryManagerImpl) GetRegistryStatus(ctx context.Context, registryURL string) (*docker.RegistryStatus, error) { //nolint:lll
 	r.statusMutex.RLock()
 	if status, exists := r.registryStatus[registryURL]; exists {
 		// 캐시된 상태가 최근 것인지 확인 (5분 이내)

@@ -466,7 +466,11 @@ func (o *Optimizer) getActiveStrategies() []OptimizationStrategy {
 }
 
 // applyStrategy applies a specific optimization strategy
-func (o *Optimizer) applyStrategy(ctx context.Context, strategy OptimizationStrategy, currentMetrics map[string]interface{}) error {
+func (o *Optimizer) applyStrategy(
+	ctx context.Context,
+	strategy OptimizationStrategy,
+	currentMetrics map[string]interface{},
+) error {
 	strategyName := strategy.Name()
 	o.logger.Debug("Applying optimization strategy", logging.F("strategy", strategyName))
 
@@ -685,7 +689,10 @@ func (c *CacheOptimizationStrategy) Analyze(ctx context.Context) (*OptimizationA
 }
 
 // Apply applies cache optimizations
-func (c *CacheOptimizationStrategy) Apply(ctx context.Context, analysis *OptimizationAnalysis) (*OptimizationResult, error) {
+func (c *CacheOptimizationStrategy) Apply(
+	ctx context.Context,
+	analysis *OptimizationAnalysis,
+) (*OptimizationResult, error) {
 	result := &OptimizationResult{
 		Strategy:        c.Name(),
 		ActionsApplied:  make([]string, 0),
@@ -781,7 +788,10 @@ func (c *ConnectionOptimizationStrategy) Analyze(ctx context.Context) (*Optimiza
 }
 
 // Apply applies connection optimizations
-func (c *ConnectionOptimizationStrategy) Apply(ctx context.Context, analysis *OptimizationAnalysis) (*OptimizationResult, error) {
+func (c *ConnectionOptimizationStrategy) Apply(
+	ctx context.Context,
+	analysis *OptimizationAnalysis,
+) (*OptimizationResult, error) {
 	result := &OptimizationResult{
 		Strategy:        c.Name(),
 		ActionsApplied:  make([]string, 0),
@@ -875,7 +885,10 @@ func (m *MemoryOptimizationStrategy) Analyze(ctx context.Context) (*Optimization
 }
 
 // Apply applies memory optimizations
-func (m *MemoryOptimizationStrategy) Apply(ctx context.Context, analysis *OptimizationAnalysis) (*OptimizationResult, error) {
+func (m *MemoryOptimizationStrategy) Apply(
+	ctx context.Context,
+	analysis *OptimizationAnalysis,
+) (*OptimizationResult, error) {
 	result := &OptimizationResult{
 		Strategy:        m.Name(),
 		ActionsApplied:  make([]string, 0),
@@ -968,7 +981,10 @@ func (r *RequestOptimizationStrategy) Analyze(ctx context.Context) (*Optimizatio
 }
 
 // Apply applies request optimizations
-func (r *RequestOptimizationStrategy) Apply(ctx context.Context, analysis *OptimizationAnalysis) (*OptimizationResult, error) {
+func (r *RequestOptimizationStrategy) Apply(
+	ctx context.Context,
+	analysis *OptimizationAnalysis,
+) (*OptimizationResult, error) {
 	result := &OptimizationResult{
 		Strategy:        r.Name(),
 		ActionsApplied:  make([]string, 0),

@@ -16,7 +16,7 @@ type ConnectionPoolSettings struct {
 	MaxConnectionsPerHost int `yaml:"max_connections_per_host" toml:"max_connections_per_host" default:"20"`
 
 	// 유휴 연결 타임아웃 (분)
-	IdleConnectionTimeoutMinutes int `yaml:"idle_connection_timeout_minutes" toml:"idle_connection_timeout_minutes" default:"90"`
+	IdleConnectionTimeoutMinutes int `yaml:"idle_connection_timeout_minutes" toml:"idle_connection_timeout_minutes" default:"90"` //nolint:lll
 
 	// 연결 유지 시간 (초)
 	KeepAliveTimeoutSeconds int `yaml:"keep_alive_timeout_seconds" toml:"keep_alive_timeout_seconds" default:"30"`
@@ -28,10 +28,10 @@ type ConnectionPoolSettings struct {
 	TLSHandshakeTimeoutSeconds int `yaml:"tls_handshake_timeout_seconds" toml:"tls_handshake_timeout_seconds" default:"10"`
 
 	// Response Header 타임아웃 (초)
-	ResponseHeaderTimeoutSeconds int `yaml:"response_header_timeout_seconds" toml:"response_header_timeout_seconds" default:"30"`
+	ResponseHeaderTimeoutSeconds int `yaml:"response_header_timeout_seconds" toml:"response_header_timeout_seconds" default:"30"` //nolint:lll
 
 	// Expect Continue 타임아웃 (초)
-	ExpectContinueTimeoutSeconds int `yaml:"expect_continue_timeout_seconds" toml:"expect_continue_timeout_seconds" default:"1"`
+	ExpectContinueTimeoutSeconds int `yaml:"expect_continue_timeout_seconds" toml:"expect_continue_timeout_seconds" default:"1"` //nolint:lll
 
 	// 최대 리디렉션 수
 	MaxRedirects int `yaml:"max_redirects" toml:"max_redirects" default:"10"`

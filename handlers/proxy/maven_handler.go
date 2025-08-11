@@ -184,7 +184,7 @@ func (h *MavenHandler) Handle(c *fiber.Ctx) error {
 				checksumAgent.BasicAuth(repo.BasicAuth.Username, repo.BasicAuth.Password)
 			}
 
-			if checksumCode, checksumBody, checksumErrs := checksumAgent.Bytes(); len(checksumErrs) == 0 && checksumCode == fiber.StatusOK {
+			if checksumCode, checksumBody, checksumErrs := checksumAgent.Bytes(); len(checksumErrs) == 0 && checksumCode == fiber.StatusOK { //nolint:lll
 				expectedChecksum := strings.TrimSpace(string(checksumBody))
 				// SHA1 계산
 				hash := sha1.New()

@@ -426,12 +426,22 @@ func (hd *HealthDashboard) handleDashboard(c *fiber.Ctx) error {
         .degraded { background-color: #fff3cd; color: #856404; }
         .unhealthy { background-color: #f8d7da; color: #721c24; }
         .component { margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
-        .refresh-btn { background-color: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
+        .refresh-btn {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
     <h1>ProxyND Health Dashboard</h1>
-    <button class="refresh-btn" hx-get="/health/dashboard/data" hx-target="#dashboard-content" hx-trigger="click">Refresh</button>
+    <button class="refresh-btn"
+            hx-get="/health/dashboard/data"
+            hx-target="#dashboard-content"
+            hx-trigger="click">Refresh</button>
     <div id="dashboard-content" hx-get="/health/dashboard/data" hx-trigger="load, every 30s">
         Loading...
     </div>

@@ -145,7 +145,8 @@ func buildPartialGAVTree(entries []DirectoryEntry, currentPath string) []*GAVTre
 // determineNodeType 현재 경로 컨텍스트에서 노드 타입 결정
 func determineNodeType(pathInfo *maven.PathInfo, entry DirectoryEntry) string {
 	// 디렉토리 타입 확인 - 다양한 형태를 모두 처리
-	if entry.Type != "directory" && entry.Type != maven.TypeDirectory && entry.Type != maven.TypeGroup && entry.Type != maven.TypeArtifact {
+	if entry.Type != typeDirectory && entry.Type != maven.TypeDirectory &&
+		entry.Type != maven.TypeGroup && entry.Type != maven.TypeArtifact {
 		// 이름이 /로 끝나면 디렉토리로 처리
 		if !strings.HasSuffix(entry.Name, "/") {
 			return "file"

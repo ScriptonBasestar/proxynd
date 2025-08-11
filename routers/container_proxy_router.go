@@ -74,10 +74,11 @@ func (r *ContainerProxyRouter) registerHandlers() {
 	for _, handlerType := range handlerTypes {
 		proxyType := handlerType // 클로저 변수 캡처
 
-		if err := r.handlerFactory.RegisterHandler(proxyType, func(provider container.ContainerProvider) (handlers.ContainerProxyHandler, error) {
-			// 동적으로 핸들러 생성 (실제 구현은 나중에)
-			return r.createHandlerByType(proxyType, provider)
-		}); err != nil {
+		if err := r.handlerFactory.RegisterHandler(proxyType,
+			func(provider container.ContainerProvider) (handlers.ContainerProxyHandler, error) {
+				// 동적으로 핸들러 생성 (실제 구현은 나중에)
+				return r.createHandlerByType(proxyType, provider)
+			}); err != nil {
 			r.logger.Error("Failed to register handler",
 				logging.F("type", proxyType),
 				logging.F("error", err),
@@ -91,7 +92,10 @@ func (r *ContainerProxyRouter) registerHandlers() {
 }
 
 // createHandlerByType 타입별 핸들러 생성 (순환 참조 방지)
-func (r *ContainerProxyRouter) createHandlerByType(proxyType string, provider container.ContainerProvider) (handlers.ContainerProxyHandler, error) {
+func (r *ContainerProxyRouter) createHandlerByType(
+	proxyType string,
+	provider container.ContainerProvider,
+) (handlers.ContainerProxyHandler, error) {
 	switch proxyType {
 	case "apt":
 		return r.createAPTHandler(provider)
@@ -109,27 +113,37 @@ func (r *ContainerProxyRouter) createHandlerByType(proxyType string, provider co
 }
 
 // 핸들러 생성 함수들 (플레이스홀더)
-func (r *ContainerProxyRouter) createAPTHandler(provider container.ContainerProvider) (handlers.ContainerProxyHandler, error) {
+func (r *ContainerProxyRouter) createAPTHandler(
+	provider container.ContainerProvider,
+) (handlers.ContainerProxyHandler, error) {
 	// TODO: 실제 APT 핸들러 생성 로직 구현
 	return nil, fmt.Errorf("APT handler not implemented yet")
 }
 
-func (r *ContainerProxyRouter) createMavenHandler(provider container.ContainerProvider) (handlers.ContainerProxyHandler, error) {
+func (r *ContainerProxyRouter) createMavenHandler(
+	provider container.ContainerProvider,
+) (handlers.ContainerProxyHandler, error) {
 	// TODO: 실제 Maven 핸들러 생성 로직 구현
 	return nil, fmt.Errorf("Maven handler not implemented yet")
 }
 
-func (r *ContainerProxyRouter) createNPMHandler(provider container.ContainerProvider) (handlers.ContainerProxyHandler, error) {
+func (r *ContainerProxyRouter) createNPMHandler(
+	provider container.ContainerProvider,
+) (handlers.ContainerProxyHandler, error) {
 	// TODO: 실제 NPM 핸들러 생성 로직 구현
 	return nil, fmt.Errorf("NPM handler not implemented yet")
 }
 
-func (r *ContainerProxyRouter) createDockerHandler(provider container.ContainerProvider) (handlers.ContainerProxyHandler, error) {
+func (r *ContainerProxyRouter) createDockerHandler(
+	provider container.ContainerProvider,
+) (handlers.ContainerProxyHandler, error) {
 	// TODO: 실제 Docker 핸들러 생성 로직 구현
 	return nil, fmt.Errorf("Docker handler not implemented yet")
 }
 
-func (r *ContainerProxyRouter) createPIPHandler(provider container.ContainerProvider) (handlers.ContainerProxyHandler, error) {
+func (r *ContainerProxyRouter) createPIPHandler(
+	provider container.ContainerProvider,
+) (handlers.ContainerProxyHandler, error) {
 	// TODO: 실제 PIP 핸들러 생성 로직 구현
 	return nil, fmt.Errorf("PIP handler not implemented yet")
 }
@@ -308,7 +322,10 @@ func (r *ContainerProxyRouter) GetHandlerFactory() handlers.ProxyHandlerFactory 
 }
 
 // RegisterHandler 핸들러 등록 (동적 등록용)
-func (r *ContainerProxyRouter) RegisterHandler(proxyType string, createFn func(container.ContainerProvider) (handlers.ContainerProxyHandler, error)) error {
+func (r *ContainerProxyRouter) RegisterHandler(
+	proxyType string,
+	createFn func(container.ContainerProvider) (handlers.ContainerProxyHandler, error),
+) error {
 	return r.handlerFactory.RegisterHandler(proxyType, createFn)
 }
 

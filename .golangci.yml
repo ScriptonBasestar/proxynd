@@ -152,8 +152,8 @@ linters-settings:
       - fieldalignment # too strict
 
   lll:
-    # max line length, lines longer will be reported. Increased for development.
-    line-length: 150
+    # max line length, lines longer will be reported. Default to 120.
+    line-length: 120
     # tab width in spaces. Default to 1.
     tab-width: 1
 

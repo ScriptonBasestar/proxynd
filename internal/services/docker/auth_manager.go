@@ -41,7 +41,7 @@ func NewAuthenticationManager(
 }
 
 // GetAuthToken 레지스트리별 인증 토큰 조회 및 갱신
-func (a *authManagerImpl) GetAuthToken(ctx context.Context, registryURL, repository string) (*docker.RegistryAuth, error) {
+func (a *authManagerImpl) GetAuthToken(ctx context.Context, registryURL, repository string) (*docker.RegistryAuth, error) { //nolint:lll
 	a.logger.Debug("Getting auth token",
 		logging.F("registryURL", registryURL),
 		logging.F("repository", repository))
@@ -87,7 +87,7 @@ func (a *authManagerImpl) GetAuthToken(ctx context.Context, registryURL, reposit
 }
 
 // acquireToken 새로운 Bearer 토큰 획득
-func (a *authManagerImpl) acquireToken(ctx context.Context, registryURL, repository string) (*docker.RegistryAuth, error) {
+func (a *authManagerImpl) acquireToken(ctx context.Context, registryURL, repository string) (*docker.RegistryAuth, error) { //nolint:lll
 	// Docker Hub의 경우 토큰 서비스 URL
 	tokenURL := "https://auth.docker.io/token"
 	service := "registry.docker.io"

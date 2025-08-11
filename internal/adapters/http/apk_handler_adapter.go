@@ -33,7 +33,7 @@ func NewApkHandlerAdapter(config config.ApkProxySettings, logger logging.Logger)
 
 	// 서명 검증기 키 로드
 	if proxyConfig.GetVerificationEnabled() {
-		if err := signatureVerifier.LoadTrustedKeys(context.Background(), proxyConfig.GetVerificationKeyDirectory()); err != nil {
+		if err := signatureVerifier.LoadTrustedKeys(context.Background(), proxyConfig.GetVerificationKeyDirectory()); err != nil { //nolint:lll
 			logger.Warn("APK 신뢰 키 로드 실패", logging.F("error", err.Error()))
 		}
 	}

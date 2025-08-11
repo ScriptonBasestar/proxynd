@@ -110,13 +110,13 @@ func (s *packageServiceImpl) Handle(ctx context.Context, request *pip.PackageReq
 	}
 
 	// 메트릭 기록
-	s.recordMetrics(ctx, request, response.StatusCode, time.Since(startTime), false, response.ProxyUsed, int64(len(response.Data)))
+	s.recordMetrics(ctx, request, response.StatusCode, time.Since(startTime), false, response.ProxyUsed, int64(len(response.Data))) //nolint:lll
 
 	return response, nil
 }
 
 // fetchFromIndex 인덱스에서 패키지 데이터 가져오기
-func (s *packageServiceImpl) fetchFromIndex(ctx context.Context, request *pip.PackageRequest) (*pip.PackageResponse, error) {
+func (s *packageServiceImpl) fetchFromIndex(ctx context.Context, request *pip.PackageRequest) (*pip.PackageResponse, error) { //nolint:lll
 	index, err := s.indexManager.GetNextIndex()
 	if err != nil {
 		return nil, fmt.Errorf("no available index: %w", err)
@@ -208,7 +208,7 @@ func (s *packageServiceImpl) ValidatePackage(ctx context.Context, data []byte, e
 }
 
 // recordMetrics 요청 메트릭 기록
-func (s *packageServiceImpl) recordMetrics(ctx context.Context, request *pip.PackageRequest, statusCode int, duration time.Duration, fromCache bool, proxyUsed string, bytesServed int64) {
+func (s *packageServiceImpl) recordMetrics(ctx context.Context, request *pip.PackageRequest, statusCode int, duration time.Duration, fromCache bool, proxyUsed string, bytesServed int64) { //nolint:lll
 	metrics := &pip.RequestMetrics{
 		PackagePath:   request.PackagePath,
 		Method:        request.Method,

@@ -34,7 +34,7 @@ type searchIndex struct {
 }
 
 // NewSearchService SearchService 생성자
-func NewSearchService(config maven.ProxyConfig, logger logging.Logger, collector maven.DirectoryCollector) maven.SearchService {
+func NewSearchService(config maven.ProxyConfig, logger logging.Logger, collector maven.DirectoryCollector) maven.SearchService { //nolint:lll
 	service := &searchServiceImpl{
 		config:    config,
 		logger:    logger,
@@ -262,7 +262,7 @@ func (s *searchServiceImpl) indexMirror(ctx context.Context, proxy config.MavenP
 }
 
 // indexGroup 그룹 디렉토리 인덱싱 (재귀적)
-func (s *searchServiceImpl) indexGroup(ctx context.Context, proxy config.MavenProxyServer, groupName, currentPath string, depth, maxDepth int, index *searchIndex) {
+func (s *searchServiceImpl) indexGroup(ctx context.Context, proxy config.MavenProxyServer, groupName, currentPath string, depth, maxDepth int, index *searchIndex) { //nolint:lll
 	if depth >= maxDepth {
 		return
 	}
@@ -297,7 +297,7 @@ func (s *searchServiceImpl) indexGroup(ctx context.Context, proxy config.MavenPr
 }
 
 // indexArtifact 아티팩트 인덱싱
-func (s *searchServiceImpl) indexArtifact(ctx context.Context, proxy config.MavenProxyServer, groupPath, artifactName string, index *searchIndex) {
+func (s *searchServiceImpl) indexArtifact(ctx context.Context, proxy config.MavenProxyServer, groupPath, artifactName string, index *searchIndex) { //nolint:lll
 	groupID := strings.ReplaceAll(groupPath, "/", ".")
 	key := fmt.Sprintf("%s:%s", groupID, artifactName)
 
@@ -319,7 +319,7 @@ func (s *searchServiceImpl) indexArtifact(ctx context.Context, proxy config.Mave
 }
 
 // collectArtifactInfo 아티팩트 정보 수집
-func (s *searchServiceImpl) collectArtifactInfo(ctx context.Context, groupID, artifactID, path string) (*maven.SearchArtifact, error) {
+func (s *searchServiceImpl) collectArtifactInfo(ctx context.Context, groupID, artifactID, path string) (*maven.SearchArtifact, error) { //nolint:lll
 	// 버전 디렉토리 수집 - 첫 번째 사용 가능한 프록시 사용
 	proxies := s.config.GetProxies()
 	if len(proxies) == 0 {

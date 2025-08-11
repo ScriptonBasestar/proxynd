@@ -50,7 +50,7 @@ func NewPackageService(
 }
 
 // HandleRequest 패키지 요청 처리
-func (s *packageServiceImpl) HandleRequest(ctx context.Context, request *yum.PackageRequest) (*yum.PackageResponse, error) {
+func (s *packageServiceImpl) HandleRequest(ctx context.Context, request *yum.PackageRequest) (*yum.PackageResponse, error) { //nolint:lll
 	startTime := time.Now()
 
 	// 요청 경로 유효성 검증
@@ -168,7 +168,11 @@ func (s *packageServiceImpl) ValidatePackagePath(packagePath string) error {
 	}
 
 	// 허용된 파일 확장자 검증
-	allowedExtensions := []string{".rpm", ".xml", ".xml.gz", ".xml.bz2", ".xml.xz", ".sqlite", ".sqlite.gz", ".sqlite.bz2", ".sqlite.xz", ".asc", ".gpg"}
+	allowedExtensions := []string{ //nolint:lll
+		".rpm", ".xml", ".xml.gz", ".xml.bz2", ".xml.xz",
+		".sqlite", ".sqlite.gz", ".sqlite.bz2", ".sqlite.xz",
+		".asc", ".gpg",
+	}
 	hasValidExtension := false
 	for _, ext := range allowedExtensions {
 		if strings.HasSuffix(packagePath, ext) || strings.Contains(packagePath, "repomd.xml") {
@@ -190,7 +194,7 @@ func (s *packageServiceImpl) generateCacheKey(packagePath string) string {
 	return fmt.Sprintf("yum:%s", packagePath)
 }
 
-func (s *packageServiceImpl) downloadFromUpstream(ctx context.Context, packagePath, filePath string) ([]byte, string, error) {
+func (s *packageServiceImpl) downloadFromUpstream(ctx context.Context, packagePath, filePath string) ([]byte, string, error) { //nolint:lll
 	// 디렉토리 생성
 	if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
 		return nil, "", fmt.Errorf("failed to create directory: %w", err)
@@ -343,7 +347,7 @@ func (s *packageServiceImpl) parseRpmFilename(filename string) (name, version, r
 	return
 }
 
-func (s *packageServiceImpl) recordRequestMetrics(ctx context.Context, request *yum.PackageRequest, statusCode int, responseTime time.Duration, cacheHit bool, proxyUsed string, fileSize int64) {
+func (s *packageServiceImpl) recordRequestMetrics(ctx context.Context, request *yum.PackageRequest, statusCode int, responseTime time.Duration, cacheHit bool, proxyUsed string, fileSize int64) { //nolint:lll
 	metrics := &yum.RequestMetrics{
 		Path:         request.PackagePath,
 		Repository:   s.extractRepository(request.PackagePath),

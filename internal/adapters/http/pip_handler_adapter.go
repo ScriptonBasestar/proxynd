@@ -180,7 +180,7 @@ func (a *PIPHandlerAdapter) extractFileName(response *pip.PackageResponse) strin
 // getContentDisposition Content-Disposition 헤더 생성
 func (a *PIPHandlerAdapter) getContentDisposition(response *pip.PackageResponse, fileName string) string {
 	// Simple API나 메타데이터 응답은 inline
-	if response.IsSimpleAPI || strings.Contains(response.ContentType, "json") || strings.Contains(response.ContentType, "html") {
+	if response.IsSimpleAPI || strings.Contains(response.ContentType, "json") || strings.Contains(response.ContentType, "html") { //nolint:lll
 		return fmt.Sprintf("inline; filename=%s", fileName)
 	}
 

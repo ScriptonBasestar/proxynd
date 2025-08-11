@@ -159,7 +159,7 @@ func TestDockerProxyAuthentication(t *testing.T) {
 	// Docker CLI User-Agent 테스트
 	t.Run("Docker CLI User-Agent", func(t *testing.T) {
 		headers := map[string]string{
-			"User-Agent": "docker/20.10.7 go/go1.16.4 git-commit/f0df350 kernel/5.4.0-42-generic os/linux arch/amd64 UpstreamClient(Docker-Client/20.10.7 \\(linux\\))",
+			"User-Agent": "docker/20.10.7 go/go1.16.4 git-commit/f0df350 kernel/5.4.0-42-generic os/linux arch/amd64 UpstreamClient(Docker-Client/20.10.7 \\(linux\\))", //nolint:lll
 		}
 
 		resp, err := env.MakeRequest("GET", "/proxy/docker/v2/", headers)

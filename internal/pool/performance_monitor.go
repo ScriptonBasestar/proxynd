@@ -110,7 +110,7 @@ func NewPerformanceMonitor() *PerformanceMonitor {
 }
 
 // RecordRequest 요청 성능 기록
-func (m *PerformanceMonitor) RecordRequest(proxyType string, success bool, responseTime time.Duration, bytesReceived, bytesSent int64) {
+func (m *PerformanceMonitor) RecordRequest(proxyType string, success bool, responseTime time.Duration, bytesReceived, bytesSent int64) { //nolint:lll
 	if !m.monitoringEnabled {
 		return
 	}
@@ -176,7 +176,7 @@ func (m *PerformanceMonitor) RecordTimeout(proxyType string) {
 }
 
 // updateProxyMetrics 프록시별 메트릭 업데이트
-func (m *PerformanceMonitor) updateProxyMetrics(proxyType string, success bool, responseTime time.Duration, bytesTransferred int64, timestamp time.Time) {
+func (m *PerformanceMonitor) updateProxyMetrics(proxyType string, success bool, responseTime time.Duration, bytesTransferred int64, timestamp time.Time) { //nolint:lll
 	m.metrics.proxyMutex.Lock()
 	defer m.metrics.proxyMutex.Unlock()
 

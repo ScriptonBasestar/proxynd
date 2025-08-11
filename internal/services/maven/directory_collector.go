@@ -134,7 +134,7 @@ func (c *directoryCollectorImpl) CollectDirectory(ctx context.Context, path stri
 }
 
 // CollectFromMirror 특정 미러에서 디렉토리 데이터 수집
-func (c *directoryCollectorImpl) CollectFromMirror(ctx context.Context, mirror config.MavenProxyServer, path string) ([]maven.Entry, error) {
+func (c *directoryCollectorImpl) CollectFromMirror(ctx context.Context, mirror config.MavenProxyServer, path string) ([]maven.Entry, error) { //nolint:lll
 	// 미러 URL 구성
 	baseURL := strings.TrimRight(mirror.URL, "/")
 	cleanPath := strings.Trim(path, "/")
@@ -176,7 +176,7 @@ func (c *directoryCollectorImpl) CollectFromMirror(ctx context.Context, mirror c
 }
 
 // GetMirrorStatus 미러 상태 확인
-func (c *directoryCollectorImpl) GetMirrorStatus(ctx context.Context, mirror config.MavenProxyServer) (*maven.MirrorStatus, error) {
+func (c *directoryCollectorImpl) GetMirrorStatus(ctx context.Context, mirror config.MavenProxyServer) (*maven.MirrorStatus, error) { //nolint:lll
 	status := &maven.MirrorStatus{
 		Name: mirror.Name,
 		URL:  mirror.URL,
@@ -208,7 +208,7 @@ func (c *directoryCollectorImpl) GetMirrorStatus(ctx context.Context, mirror con
 }
 
 // parseDirectoryListing HTML 디렉토리 목록 파싱
-func (c *directoryCollectorImpl) parseDirectoryListing(resp *http.Response, baseURL, cleanPath string) ([]maven.Entry, error) {
+func (c *directoryCollectorImpl) parseDirectoryListing(resp *http.Response, baseURL, cleanPath string) ([]maven.Entry, error) { //nolint:lll
 	// 간단한 HTML 파싱 - Apache/Nginx 스타일 디렉토리 목록
 	body := make([]byte, 64*1024) // 64KB 제한
 	n, err := resp.Body.Read(body)
@@ -300,7 +300,7 @@ func (c *directoryCollectorImpl) extractEntryFromLine(line, parentPath string) *
 }
 
 // parseMetadata Maven 메타데이터 기반 파싱
-func (c *directoryCollectorImpl) parseMetadata(mirror config.MavenProxyServer, cleanPath string) ([]maven.Entry, error) {
+func (c *directoryCollectorImpl) parseMetadata(mirror config.MavenProxyServer, cleanPath string) ([]maven.Entry, error) { //nolint:lll
 	// maven-metadata.xml 파일 시도
 	metadataURL := strings.TrimRight(mirror.URL, "/") + "/" + cleanPath + "/maven-metadata.xml"
 

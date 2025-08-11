@@ -252,7 +252,7 @@ Description: small, powerful, scalable web/proxy server`)); err != nil {
 			}
 		default:
 			w.WriteHeader(http.StatusNotFound)
-			if _, err := w.Write([]byte(`{"errors":[{"code":"NAME_UNKNOWN","message":"repository name not known"}]}`)); err != nil {
+			if _, err := w.Write([]byte(`{"errors":[{"code":"NAME_UNKNOWN","message":"repository name not known"}]}`)); err != nil { //nolint:lll
 				log.Printf("Failed to write error response: %v", err)
 			}
 		}

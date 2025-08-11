@@ -65,7 +65,7 @@ func (s *signatureVerifierImpl) LoadTrustedKeys(ctx context.Context, keyDirector
 	return nil
 }
 
-func (s *signatureVerifierImpl) ValidateSignature(ctx context.Context, signaturePath string) (*apk.SignatureInfo, error) {
+func (s *signatureVerifierImpl) ValidateSignature(ctx context.Context, signaturePath string) (*apk.SignatureInfo, error) { //nolint:lll
 	if !s.IsSignatureFile(signaturePath) {
 		return nil, fmt.Errorf("not a signature file: %s", signaturePath)
 	}

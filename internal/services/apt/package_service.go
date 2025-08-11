@@ -133,7 +133,7 @@ func (s *packageServiceImpl) Handle(ctx context.Context, request *apt.PackageReq
 }
 
 // GetPackageMetadata 패키지 메타데이터 조회
-func (s *packageServiceImpl) GetPackageMetadata(ctx context.Context, osType, packagePath string) (*apt.PackageMetadata, error) {
+func (s *packageServiceImpl) GetPackageMetadata(ctx context.Context, osType, packagePath string) (*apt.PackageMetadata, error) { //nolint:lll
 	// 패키지 경로에서 메타데이터 추출
 	metadata := &apt.PackageMetadata{
 		OSType:      osType,
@@ -152,7 +152,7 @@ func (s *packageServiceImpl) GetPackageMetadata(ctx context.Context, osType, pac
 }
 
 // fetchFromMirror 특정 미러에서 패키지 가져오기
-func (s *packageServiceImpl) fetchFromMirror(ctx context.Context, mirrorURL string, request *apt.PackageRequest) (*apt.PackageResponse, error) {
+func (s *packageServiceImpl) fetchFromMirror(ctx context.Context, mirrorURL string, request *apt.PackageRequest) (*apt.PackageResponse, error) { //nolint:lll
 	// URL 구성
 	baseURL := filepath.Join(mirrorURL, request.PackagePath)
 
@@ -197,7 +197,7 @@ func (s *packageServiceImpl) fetchFromMirror(ctx context.Context, mirrorURL stri
 }
 
 // recordMetrics 요청 메트릭 기록
-func (s *packageServiceImpl) recordMetrics(ctx context.Context, request *apt.PackageRequest, response *apt.PackageResponse, duration time.Duration, mirrorUsed string) {
+func (s *packageServiceImpl) recordMetrics(ctx context.Context, request *apt.PackageRequest, response *apt.PackageResponse, duration time.Duration, mirrorUsed string) { //nolint:lll
 	metrics := &apt.RequestMetrics{
 		OSType:      request.OSType,
 		Path:        request.PackagePath,

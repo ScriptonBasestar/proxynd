@@ -43,7 +43,7 @@ func (h *HTTPTestHelper) CreateFiberContext(method, url string, body io.Reader) 
 }
 
 // CreateFiberContextWithHeaders 헤더가 포함된 Fiber 컨텍스트 생성
-func (h *HTTPTestHelper) CreateFiberContextWithHeaders(method, url string, body io.Reader, headers map[string]string) *fiber.Ctx {
+func (h *HTTPTestHelper) CreateFiberContextWithHeaders(method, url string, body io.Reader, headers map[string]string) *fiber.Ctx { //nolint:lll
 	c := h.CreateFiberContext(method, url, body)
 
 	for key, value := range headers {
@@ -177,7 +177,7 @@ func DelayedResponseHandler(delay int, handler http.HandlerFunc) http.HandlerFun
 }
 
 // ConditionalResponseHandler 조건부 응답 핸들러
-func ConditionalResponseHandler(condition func(*http.Request) bool, trueHandler, falseHandler http.HandlerFunc) http.HandlerFunc {
+func ConditionalResponseHandler(condition func(*http.Request) bool, trueHandler, falseHandler http.HandlerFunc) http.HandlerFunc { //nolint:lll
 	return func(w http.ResponseWriter, r *http.Request) {
 		if condition(r) {
 			trueHandler(w, r)

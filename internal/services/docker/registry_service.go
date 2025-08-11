@@ -47,7 +47,7 @@ func NewRegistryService(
 }
 
 // Handle Docker 레지스트리 요청을 처리하고 응답 반환
-func (s *registryServiceImpl) Handle(ctx context.Context, request *docker.RegistryRequest) (*docker.ManifestResponse, error) {
+func (s *registryServiceImpl) Handle(ctx context.Context, request *docker.RegistryRequest) (*docker.ManifestResponse, error) { //nolint:lll
 	startTime := time.Now()
 
 	// 요청 유효성 검증
@@ -159,21 +159,21 @@ func (s *registryServiceImpl) GetSupportedOperations() []string {
 }
 
 // handleManifestRequest 매니페스트 요청 처리
-func (s *registryServiceImpl) handleManifestRequest(ctx context.Context, request *docker.RegistryRequest) (*docker.ManifestResponse, error) {
-	s.logger.Debug("Handling manifest request", logging.F("repository", request.Repository), logging.F("reference", request.Reference))
+func (s *registryServiceImpl) handleManifestRequest(ctx context.Context, request *docker.RegistryRequest) (*docker.ManifestResponse, error) { //nolint:lll
+	s.logger.Debug("Handling manifest request", logging.F("repository", request.Repository), logging.F("reference", request.Reference)) //nolint:lll
 
 	return s.manifestManager.GetManifest(ctx, request.Repository, request.Reference)
 }
 
 // handleBlobRequest blob 요청 처리
-func (s *registryServiceImpl) handleBlobRequest(ctx context.Context, request *docker.RegistryRequest) (*docker.ManifestResponse, error) {
-	s.logger.Debug("Handling blob request", logging.F("repository", request.Repository), logging.F("reference", request.Reference))
+func (s *registryServiceImpl) handleBlobRequest(ctx context.Context, request *docker.RegistryRequest) (*docker.ManifestResponse, error) { //nolint:lll
+	s.logger.Debug("Handling blob request", logging.F("repository", request.Repository), logging.F("reference", request.Reference)) //nolint:lll
 
 	return s.blobManager.GetBlob(ctx, request.Repository, request.Reference)
 }
 
 // handleTagsRequest 태그 목록 요청 처리
-func (s *registryServiceImpl) handleTagsRequest(ctx context.Context, request *docker.RegistryRequest) (*docker.ManifestResponse, error) {
+func (s *registryServiceImpl) handleTagsRequest(ctx context.Context, request *docker.RegistryRequest) (*docker.ManifestResponse, error) { //nolint:lll
 	s.logger.Debug("Handling tags request", logging.F("repository", request.Repository))
 
 	// 캐시 확인
@@ -260,7 +260,7 @@ func (s *registryServiceImpl) handleTagsRequest(ctx context.Context, request *do
 }
 
 // handleCatalogRequest 카탈로그 요청 처리
-func (s *registryServiceImpl) handleCatalogRequest(ctx context.Context, request *docker.RegistryRequest) (*docker.ManifestResponse, error) {
+func (s *registryServiceImpl) handleCatalogRequest(ctx context.Context, request *docker.RegistryRequest) (*docker.ManifestResponse, error) { //nolint:lll
 	s.logger.Debug("Handling catalog request")
 
 	// 카탈로그는 일반적으로 캐시하지 않음 (동적 데이터)

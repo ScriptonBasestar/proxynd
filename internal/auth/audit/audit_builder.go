@@ -15,7 +15,7 @@ type AuditEventBuilder struct {
 }
 
 // NewAuditEventBuilder 새 감사 이벤트 빌더 생성
-func NewAuditEventBuilder(service *AuditService, eventType AuditEventType, level AuditLevel, message string) *AuditEventBuilder {
+func NewAuditEventBuilder(service *AuditService, eventType AuditEventType, level AuditLevel, message string) *AuditEventBuilder { //nolint:lll
 	// 이벤트 ID 생성
 	id := generateEventID()
 
@@ -399,7 +399,7 @@ func contains(slice []string, item string) bool {
 // Convenience methods for common audit patterns
 
 // AuthenticationEvent 인증 이벤트 생성
-func (s *AuditService) AuthenticationEvent(eventType AuditEventType, userID, userEmail, clientIP string, success bool) *AuditEventBuilder {
+func (s *AuditService) AuthenticationEvent(eventType AuditEventType, userID, userEmail, clientIP string, success bool) *AuditEventBuilder { //nolint:lll
 	level := LevelInfo
 	if !success {
 		level = LevelWarning
@@ -425,7 +425,7 @@ func (s *AuditService) AuthenticationEvent(eventType AuditEventType, userID, use
 }
 
 // SecurityEvent 보안 이벤트 생성
-func (s *AuditService) SecurityEvent(eventType AuditEventType, message, clientIP string, riskScore int) *AuditEventBuilder {
+func (s *AuditService) SecurityEvent(eventType AuditEventType, message, clientIP string, riskScore int) *AuditEventBuilder { //nolint:lll
 	return NewAuditEventBuilder(s, eventType, LevelSecurity, message).
 		WithClient(clientIP, "").
 		WithTag("security").
@@ -463,7 +463,7 @@ func (s *AuditService) AccessEvent(resource, action, userID, clientIP string, al
 }
 
 // OperationEvent 운영 이벤트 생성
-func (s *AuditService) OperationEvent(eventType AuditEventType, operation, userID string, success bool) *AuditEventBuilder {
+func (s *AuditService) OperationEvent(eventType AuditEventType, operation, userID string, success bool) *AuditEventBuilder { //nolint:lll
 	level := LevelInfo
 	if !success {
 		level = LevelWarning

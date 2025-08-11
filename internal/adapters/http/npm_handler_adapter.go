@@ -101,7 +101,7 @@ func (a *NPMHandlerAdapter) fiberToDomainRequest(c *fiber.Ctx) *npm.PackageReque
 }
 
 // domainToFiberResponse 도메인 응답을 Fiber 응답으로 변환
-func (a *NPMHandlerAdapter) domainToFiberResponse(c *fiber.Ctx, response *npm.PackageResponse, packagePath string) error {
+func (a *NPMHandlerAdapter) domainToFiberResponse(c *fiber.Ctx, response *npm.PackageResponse, packagePath string) error { //nolint:lll
 	// 상태 코드 설정
 	c.Status(response.StatusCode)
 

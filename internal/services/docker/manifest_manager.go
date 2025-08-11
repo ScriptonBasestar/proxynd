@@ -40,7 +40,7 @@ func NewManifestManager(
 }
 
 // GetManifest 매니페스트 조회 (캐시 우선, 실패 시 레지스트리에서 다운로드)
-func (m *manifestManagerImpl) GetManifest(ctx context.Context, repository, reference string) (*docker.ManifestResponse, error) {
+func (m *manifestManagerImpl) GetManifest(ctx context.Context, repository, reference string) (*docker.ManifestResponse, error) { //nolint:lll
 	m.logger.Debug("Getting manifest", logging.F("repository", repository), logging.F("reference", reference))
 
 	// 캐시 확인
@@ -83,7 +83,7 @@ func (m *manifestManagerImpl) GetManifest(ctx context.Context, repository, refer
 }
 
 // fetchManifestFromRegistry 레지스트리에서 매니페스트 가져오기
-func (m *manifestManagerImpl) fetchManifestFromRegistry(ctx context.Context, repository, reference string) (*docker.ManifestResponse, error) {
+func (m *manifestManagerImpl) fetchManifestFromRegistry(ctx context.Context, repository, reference string) (*docker.ManifestResponse, error) { //nolint:lll
 	registry, err := m.registryManager.SelectRegistry(ctx, repository)
 	if err != nil {
 		return nil, fmt.Errorf("failed to select registry: %w", err)
@@ -156,7 +156,7 @@ func (m *manifestManagerImpl) fetchManifestFromRegistry(ctx context.Context, rep
 	// Docker-Content-Digest 헤더가 있는 경우 검증
 	if expectedDigest := resp.Header.Get("Docker-Content-Digest"); expectedDigest != "" {
 		if err := m.ValidateManifest(ctx, data, expectedDigest); err != nil {
-			m.logger.Warn("Manifest digest validation failed", logging.F("expected", expectedDigest), logging.F("actual", digest))
+			m.logger.Warn("Manifest digest validation failed", logging.F("expected", expectedDigest), logging.F("actual", digest)) //nolint:lll
 		}
 	}
 

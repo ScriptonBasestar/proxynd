@@ -520,7 +520,7 @@ func (ac *AdvancedCollector) updateConnectionMetrics(handlerType string, metrics
 func (ac *AdvancedCollector) updateBusinessMetrics(handlerType string, metrics *HandlerMetrics) {
 	// Update registry health
 	if metrics.UpstreamMetrics.FailureRate < 0.1 {
-		ac.registryHealth.WithLabelValues(handlerType, "default").Set(0.9 + (0.1 * (1 - metrics.UpstreamMetrics.FailureRate*10)))
+		ac.registryHealth.WithLabelValues(handlerType, "default").Set(0.9 + (0.1 * (1 - metrics.UpstreamMetrics.FailureRate*10))) //nolint:lll
 	} else {
 		ac.registryHealth.WithLabelValues(handlerType, "default").Set(1.0 - metrics.UpstreamMetrics.FailureRate)
 	}

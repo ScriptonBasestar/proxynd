@@ -27,7 +27,7 @@ func NewRepositoryManager(config apk.ProxyConfig, logger logging.Logger, storage
 	}
 }
 
-func (r *repositoryManagerImpl) GetRepositoryInfo(ctx context.Context, architecture, branch, component string) (*apk.RepositoryInfo, error) {
+func (r *repositoryManagerImpl) GetRepositoryInfo(ctx context.Context, architecture, branch, component string) (*apk.RepositoryInfo, error) { //nolint:lll
 	key := fmt.Sprintf("%s:%s:%s", branch, component, architecture)
 
 	if info, exists := r.repos[key]; exists {

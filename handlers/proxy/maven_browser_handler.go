@@ -368,7 +368,10 @@ func (h *MavenBrowserHandler) collectDirectoryData(artifactPath string) (*MavenB
 }
 
 // fetchDirectoryFromMirror 특정 미러에서 디렉토리 정보 수집
-func (h *MavenBrowserHandler) fetchDirectoryFromMirror(proxy config.MavenProxyServer, artifactPath string) ([]DirectoryEntry, error) {
+func (h *MavenBrowserHandler) fetchDirectoryFromMirror(
+	proxy config.MavenProxyServer,
+	artifactPath string,
+) ([]DirectoryEntry, error) {
 	// 미러 URL 구성
 	baseURL := strings.TrimRight(proxy.URL, "/")
 	cleanPath := strings.Trim(artifactPath, "/")
@@ -402,7 +405,10 @@ func (h *MavenBrowserHandler) fetchDirectoryFromMirror(proxy config.MavenProxySe
 }
 
 // parseDirectoryListing HTML 디렉토리 목록 파싱
-func (h *MavenBrowserHandler) parseDirectoryListing(resp *http.Response, baseURL, cleanPath string) ([]DirectoryEntry, error) {
+func (h *MavenBrowserHandler) parseDirectoryListing(
+	resp *http.Response,
+	baseURL, cleanPath string,
+) ([]DirectoryEntry, error) {
 	// 간단한 HTML 파싱 - Apache/Nginx 스타일 디렉토리 목록
 	body := make([]byte, 64*1024) // 64KB 제한
 	n, err := resp.Body.Read(body)
@@ -828,7 +834,9 @@ func (h *MavenBrowserHandler) handleArtifactPage(c *fiber.Ctx, pathInfo *maven.P
 		if (entry.Type == maven.TypeDirectory || entry.Type == typeDirectory) &&
 			!hasFileExtension(entry.Name) {
 			// 버전처럼 보이거나 maven-metadata로 시작하지 않는 항목
-			if isVersionLike(entry.Name) || (!strings.HasPrefix(entry.Name, "maven-metadata") && entry.Name != "." && entry.Name != "..") {
+			if isVersionLike(entry.Name) ||
+				(!strings.HasPrefix(entry.Name, "maven-metadata") &&
+					entry.Name != "." && entry.Name != "..") {
 				versions = append(versions, entry.Name)
 			}
 		}
@@ -980,7 +988,13 @@ func (h *MavenBrowserHandler) performGlobalSearch(c *fiber.Ctx, searchQuery stri
 }
 
 // searchRecursively 재귀적으로 검색 수행
-func (h *MavenBrowserHandler) searchRecursively(nodes []*maven.GAVTreeNode, query, parentPath string, results *[]*maven.GAVTreeNode) {
+//
+//nolint:unused // Used in advanced search functionality
+func (h *MavenBrowserHandler) searchRecursively(
+	nodes []*maven.GAVTreeNode,
+	query, parentPath string,
+	results *[]*maven.GAVTreeNode,
+) {
 	query = strings.ToLower(query)
 
 	for _, node := range nodes {
@@ -1227,7 +1241,11 @@ func (h *MavenBrowserHandler) scheduleAutoRebuild() {
 }
 
 // indexNode 노드를 인덱싱 (maven.GAVTreeNode 사용)
-func (h *MavenBrowserHandler) indexNode(node *maven.GAVTreeNode, parentGroupID string, entries *[]maven.SearchIndexEntry) {
+func (h *MavenBrowserHandler) indexNode(
+	node *maven.GAVTreeNode,
+	parentGroupID string,
+	entries *[]maven.SearchIndexEntry,
+) {
 	if node == nil || len(*entries) > 50000 {
 		return
 	}
@@ -1309,7 +1327,13 @@ func (h *MavenBrowserHandler) indexDirectory(path, parentGroupID string, entries
 }
 
 // addToIndex 노드를 인덱스에 추가
-func (h *MavenBrowserHandler) addToIndex(node *maven.GAVTreeNode, parentPath, parentGroupID string, entries *[]maven.SearchIndexEntry) {
+//
+//nolint:unused // Used in search indexing functionality
+func (h *MavenBrowserHandler) addToIndex(
+	node *maven.GAVTreeNode,
+	parentPath, parentGroupID string,
+	entries *[]maven.SearchIndexEntry,
+) {
 	if node == nil {
 		return
 	}
@@ -1383,7 +1407,11 @@ func (h *MavenBrowserHandler) buildSearchResultTree(matchingPaths map[string]boo
 }
 
 // addChildrenFromPaths 매칭된 경로에서 하위 노드 추가
-func (h *MavenBrowserHandler) addChildrenFromPaths(parent *maven.GAVTreeNode, matchingPaths map[string]bool, query string) {
+func (h *MavenBrowserHandler) addChildrenFromPaths(
+	parent *maven.GAVTreeNode,
+	matchingPaths map[string]bool,
+	query string,
+) {
 	parentPath := strings.Trim(parent.FullPath, "/")
 
 	for path := range matchingPaths {

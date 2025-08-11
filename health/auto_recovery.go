@@ -324,7 +324,7 @@ func (ars *AutoRecoveryService) handleSystemFailure(results map[string]*CheckRes
 }
 
 // performRecovery 복구 수행
-func (ars *AutoRecoveryService) performRecovery(componentName string, trigger *RecoveryTrigger, config *RecoveryConfig) {
+func (ars *AutoRecoveryService) performRecovery(componentName string, trigger *RecoveryTrigger, config *RecoveryConfig) { //nolint:lll
 	start := time.Now()
 	trigger.AttemptCount++
 

@@ -35,7 +35,7 @@ func NewRepoManager(
 }
 
 // GetRepoMetadata 리포지토리 메타데이터 조회
-func (r *repoManagerImpl) GetRepoMetadata(ctx context.Context, repository, metadataType string) (*yum.RepoMetadata, error) {
+func (r *repoManagerImpl) GetRepoMetadata(ctx context.Context, repository, metadataType string) (*yum.RepoMetadata, error) { //nolint:lll
 	key := fmt.Sprintf("%s:%s", repository, metadataType)
 
 	// 메모리 캐시에서 조회

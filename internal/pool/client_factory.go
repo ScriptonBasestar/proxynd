@@ -116,7 +116,7 @@ type PooledUpstreamClient struct {
 }
 
 // Fetch 업스트림에서 데이터 가져오기 (Connection Pool 사용)
-func (c *PooledUpstreamClient) Fetch(ctx context.Context, url string, headers map[string]string) (*proxy.ProxyResponse, error) {
+func (c *PooledUpstreamClient) Fetch(ctx context.Context, url string, headers map[string]string) (*proxy.ProxyResponse, error) { //nolint:lll
 	// 요청 생성
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {

@@ -152,7 +152,7 @@ func (m *metricsCollectorImpl) GetCacheMetrics(ctx context.Context) (map[string]
 	}, nil
 }
 
-func (m *metricsCollectorImpl) RecordSignatureVerification(ctx context.Context, packagePath string, result *apk.SignatureInfo) error {
+func (m *metricsCollectorImpl) RecordSignatureVerification(ctx context.Context, packagePath string, result *apk.SignatureInfo) error { //nolint:lll
 	m.logger.Debug("APK 서명 검증 메트릭 기록",
 		logging.F("package", packagePath),
 		logging.F("valid", result.IsValid),

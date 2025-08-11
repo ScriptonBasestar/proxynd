@@ -27,12 +27,12 @@ func (m *MockDirectoryCollector) CollectDirectory(ctx context.Context, path stri
 	return args.Get(0).(*maven.DirectoryData), args.Error(1)
 }
 
-func (m *MockDirectoryCollector) CollectFromMirror(ctx context.Context, mirror config.MavenProxyServer, path string) ([]maven.Entry, error) {
+func (m *MockDirectoryCollector) CollectFromMirror(ctx context.Context, mirror config.MavenProxyServer, path string) ([]maven.Entry, error) { //nolint:lll
 	args := m.Called(ctx, mirror, path)
 	return args.Get(0).([]maven.Entry), args.Error(1)
 }
 
-func (m *MockDirectoryCollector) GetMirrorStatus(ctx context.Context, mirror config.MavenProxyServer) (*maven.MirrorStatus, error) {
+func (m *MockDirectoryCollector) GetMirrorStatus(ctx context.Context, mirror config.MavenProxyServer) (*maven.MirrorStatus, error) { //nolint:lll
 	args := m.Called(ctx, mirror)
 	return args.Get(0).(*maven.MirrorStatus), args.Error(1)
 }
@@ -124,7 +124,7 @@ func (m *MockPathAnalyzer) CompareVersions(v1, v2 string) int {
 
 // 테스트 헬퍼 함수들
 
-func createTestHandler() (*BrowserHandler, *MockDirectoryCollector, *MockSearchService, *MockCacheManager, *MockPathAnalyzer) {
+func createTestHandler() (*BrowserHandler, *MockDirectoryCollector, *MockSearchService, *MockCacheManager, *MockPathAnalyzer) { //nolint:lll
 	config := config.MavenProxySettings{}
 	logger := logging.NewLogger("test")
 

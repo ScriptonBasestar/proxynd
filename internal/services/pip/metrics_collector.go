@@ -289,7 +289,7 @@ func (m *metricsCollectorImpl) getTopPackages(packageStats map[string]*pip.Packa
 }
 
 // getTopUserAgents 상위 User Agent 목록 반환
-func (m *metricsCollectorImpl) getTopUserAgents(userAgentStats map[string]*pip.UserAgentStats, limit int) []pip.UserAgentStats {
+func (m *metricsCollectorImpl) getTopUserAgents(userAgentStats map[string]*pip.UserAgentStats, limit int) []pip.UserAgentStats { //nolint:lll
 	// 슬라이스로 변환
 	userAgents := make([]pip.UserAgentStats, 0, len(userAgentStats))
 	for _, uas := range userAgentStats {

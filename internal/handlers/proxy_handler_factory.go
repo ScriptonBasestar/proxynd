@@ -24,7 +24,7 @@ func NewStandardProxyHandlerFactory() *StandardProxyHandlerFactory {
 }
 
 // CreateHandler 특정 프록시 타입 핸들러 생성
-func (f *StandardProxyHandlerFactory) CreateHandler(proxyType string, provider container.ContainerProvider) (ContainerProxyHandler, error) {
+func (f *StandardProxyHandlerFactory) CreateHandler(proxyType string, provider container.ContainerProvider) (ContainerProxyHandler, error) { //nolint:lll
 	f.mu.RLock()
 	createFn, exists := f.handlers[proxyType]
 	f.mu.RUnlock()
@@ -75,7 +75,7 @@ func (f *StandardProxyHandlerFactory) SupportedTypes() []string {
 }
 
 // RegisterHandler 프록시 타입별 핸들러 등록
-func (f *StandardProxyHandlerFactory) RegisterHandler(proxyType string, createFn func(container.ContainerProvider) (ContainerProxyHandler, error)) error {
+func (f *StandardProxyHandlerFactory) RegisterHandler(proxyType string, createFn func(container.ContainerProvider) (ContainerProxyHandler, error)) error { //nolint:lll
 	if proxyType == "" {
 		return fmt.Errorf("proxy type cannot be empty")
 	}

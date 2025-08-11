@@ -449,7 +449,7 @@ func handleChallengeStart(c *fiber.Ctx, mfaService *mfa.MFAService, claims *jwt.
 }
 
 // handleChallengeVerify 챌린지 검증 처리
-func handleChallengeVerify(c *fiber.Ctx, mfaService *mfa.MFAService, jwtService *jwt.JWTService, logger logging.Logger) error {
+func handleChallengeVerify(c *fiber.Ctx, mfaService *mfa.MFAService, jwtService *jwt.JWTService, logger logging.Logger) error { //nolint:lll
 	var request MFAVerificationRequest
 
 	if err := c.BodyParser(&request); err != nil {

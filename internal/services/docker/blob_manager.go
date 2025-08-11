@@ -82,7 +82,7 @@ func (b *blobManagerImpl) GetBlob(ctx context.Context, repository, digest string
 }
 
 // fetchBlobFromRegistry 레지스트리에서 blob 가져오기
-func (b *blobManagerImpl) fetchBlobFromRegistry(ctx context.Context, repository, digest string) (*docker.ManifestResponse, error) {
+func (b *blobManagerImpl) fetchBlobFromRegistry(ctx context.Context, repository, digest string) (*docker.ManifestResponse, error) { //nolint:lll
 	registry, err := b.registryManager.SelectRegistry(ctx, repository)
 	if err != nil {
 		return nil, fmt.Errorf("failed to select registry: %w", err)

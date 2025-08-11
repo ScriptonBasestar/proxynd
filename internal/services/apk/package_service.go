@@ -50,7 +50,7 @@ func NewPackageService(
 }
 
 // HandleRequest 패키지 요청 처리
-func (s *packageServiceImpl) HandleRequest(ctx context.Context, request *apk.PackageRequest) (*apk.PackageResponse, error) {
+func (s *packageServiceImpl) HandleRequest(ctx context.Context, request *apk.PackageRequest) (*apk.PackageResponse, error) { //nolint:lll
 	startTime := time.Now()
 
 	// 요청 경로 유효성 검증
@@ -78,7 +78,7 @@ func (s *packageServiceImpl) HandleRequest(ctx context.Context, request *apk.Pac
 
 			// APK 파일인 경우 서명 검증
 			if s.config.GetVerificationEnabled() && s.signatureVerifier.IsPackageFile(request.PackagePath) {
-				if signatureInfo, err := s.signatureVerifier.VerifyPackage(ctx, cachedEntry.Path); err != nil || !signatureInfo.IsValid {
+				if signatureInfo, err := s.signatureVerifier.VerifyPackage(ctx, cachedEntry.Path); err != nil || !signatureInfo.IsValid { //nolint:lll
 					if s.config.GetVerificationFailOnInvalid() {
 						s.logger.Error("APK 캐시된 파일 서명 검증 실패",
 							logging.F("path", request.PackagePath),
@@ -222,7 +222,7 @@ func (s *packageServiceImpl) generateCacheKey(packagePath string) string {
 	return fmt.Sprintf("apk:%s", packagePath)
 }
 
-func (s *packageServiceImpl) downloadFromUpstream(ctx context.Context, packagePath, filePath string) ([]byte, string, error) {
+func (s *packageServiceImpl) downloadFromUpstream(ctx context.Context, packagePath, filePath string) ([]byte, string, error) { //nolint:lll
 	// 디렉토리 생성
 	if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
 		return nil, "", fmt.Errorf("failed to create directory: %w", err)
@@ -368,7 +368,7 @@ func (s *packageServiceImpl) parseApkFilename(filename string) (name, version st
 	return
 }
 
-func (s *packageServiceImpl) recordRequestMetrics(ctx context.Context, request *apk.PackageRequest, statusCode int, responseTime time.Duration, cacheHit bool, proxyUsed string, fileSize int64) {
+func (s *packageServiceImpl) recordRequestMetrics(ctx context.Context, request *apk.PackageRequest, statusCode int, responseTime time.Duration, cacheHit bool, proxyUsed string, fileSize int64) { //nolint:lll
 	arch, branch, component := s.parsePackagePath(request.PackagePath)
 
 	metrics := &apk.RequestMetrics{

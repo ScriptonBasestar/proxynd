@@ -130,7 +130,11 @@ type DatabaseConnectionChecker struct {
 }
 
 // NewDatabaseConnectionChecker 새 DB 연결 체커 생성
-func NewDatabaseConnectionChecker(name string, pingFunc func(ctx context.Context) error, statsFunc func() (int, int, time.Duration)) *DatabaseConnectionChecker {
+func NewDatabaseConnectionChecker(
+	name string,
+	pingFunc func(ctx context.Context) error,
+	statsFunc func() (int, int, time.Duration),
+) *DatabaseConnectionChecker {
 	return &DatabaseConnectionChecker{
 		name:      name,
 		pingFunc:  pingFunc,
@@ -290,7 +294,13 @@ type CacheHealthChecker struct {
 }
 
 // NewCacheHealthChecker 새 캐시 헬스 체커 생성
-func NewCacheHealthChecker(name string, setFunc func(string, string, time.Duration) error, getFunc func(string) (string, error), deleteFunc func(string) error, statsFunc func() map[string]interface{}) *CacheHealthChecker {
+func NewCacheHealthChecker(
+	name string,
+	setFunc func(string, string, time.Duration) error,
+	getFunc func(string) (string, error),
+	deleteFunc func(string) error,
+	statsFunc func() map[string]interface{},
+) *CacheHealthChecker {
 	return &CacheHealthChecker{
 		name:       name,
 		testKey:    fmt.Sprintf("health_check_%s_%d", name, time.Now().Unix()),
@@ -370,7 +380,7 @@ type PredictiveHealthChecker struct {
 }
 
 // NewPredictiveHealthChecker 새 예측적 헬스 체커 생성
-func NewPredictiveHealthChecker(name string, baseChecker HealthChecker, degradationRate float64) *PredictiveHealthChecker {
+func NewPredictiveHealthChecker(name string, baseChecker HealthChecker, degradationRate float64) *PredictiveHealthChecker { //nolint:lll
 	return &PredictiveHealthChecker{
 		name:            name,
 		baseChecker:     baseChecker,

@@ -223,7 +223,7 @@ func (s *AuditService) LogSecurityEvent(eventType AuditEventType, message string
 }
 
 // LogAuthEvent 인증 이벤트 로깅
-func (s *AuditService) LogAuthEvent(eventType AuditEventType, userID, userEmail string, success bool) *AuditEventBuilder {
+func (s *AuditService) LogAuthEvent(eventType AuditEventType, userID, userEmail string, success bool) *AuditEventBuilder { //nolint:lll
 	level := LevelInfo
 	if !success {
 		level = LevelWarning

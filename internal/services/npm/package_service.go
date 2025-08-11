@@ -100,13 +100,13 @@ func (s *packageServiceImpl) Handle(ctx context.Context, request *npm.PackageReq
 	}
 
 	// 메트릭 기록
-	s.recordMetrics(ctx, request, response.StatusCode, time.Since(startTime), false, response.ProxyUsed, int64(len(response.Data)))
+	s.recordMetrics(ctx, request, response.StatusCode, time.Since(startTime), false, response.ProxyUsed, int64(len(response.Data))) //nolint:lll
 
 	return response, nil
 }
 
 // fetchFromProxy 프록시에서 패키지 데이터 가져오기
-func (s *packageServiceImpl) fetchFromProxy(ctx context.Context, request *npm.PackageRequest) (*npm.PackageResponse, error) {
+func (s *packageServiceImpl) fetchFromProxy(ctx context.Context, request *npm.PackageRequest) (*npm.PackageResponse, error) { //nolint:lll
 	proxy, err := s.proxyManager.GetNextProxy()
 	if err != nil {
 		return nil, fmt.Errorf("no available proxy: %w", err)
@@ -182,7 +182,7 @@ func (s *packageServiceImpl) GetPackageMetadata(ctx context.Context, packagePath
 }
 
 // recordMetrics 요청 메트릭 기록
-func (s *packageServiceImpl) recordMetrics(ctx context.Context, request *npm.PackageRequest, statusCode int, duration time.Duration, fromCache bool, proxyUsed string, bytesServed int64) {
+func (s *packageServiceImpl) recordMetrics(ctx context.Context, request *npm.PackageRequest, statusCode int, duration time.Duration, fromCache bool, proxyUsed string, bytesServed int64) { //nolint:lll
 	metrics := &npm.RequestMetrics{
 		PackagePath: request.PackagePath,
 		Method:      request.Method,

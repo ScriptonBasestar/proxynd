@@ -732,7 +732,7 @@ func (c *Container) GetContainerProxyHandlerFactory() (*handlers.StandardProxyHa
 func (c *Container) registerContainerProxyHandlers(factory *handlers.StandardProxyHandlerFactory) error {
 	containerMetrics := metrics.GetContainerMetrics()
 	// APT 핸들러 등록
-	if err := factory.RegisterHandler("apt", func(provider container.ContainerProvider) (handlers.ContainerProxyHandler, error) {
+	if err := factory.RegisterHandler("apt", func(provider container.ContainerProvider) (handlers.ContainerProxyHandler, error) { //nolint:lll
 		containerMetrics.RecordHandlerFactoryOperation("create", "apt", true)
 		// 여기서 별도 패키지의 핸들러를 생성하고 인터페이스로 반환
 		return &containerHandlerAdapter{
@@ -747,7 +747,7 @@ func (c *Container) registerContainerProxyHandlers(factory *handlers.StandardPro
 	containerMetrics.RecordHandlerFactoryOperation("register", "apt", true)
 
 	// Maven 핸들러 등록
-	if err := factory.RegisterHandler("maven", func(provider container.ContainerProvider) (handlers.ContainerProxyHandler, error) {
+	if err := factory.RegisterHandler("maven", func(provider container.ContainerProvider) (handlers.ContainerProxyHandler, error) { //nolint:lll
 		containerMetrics.RecordHandlerFactoryOperation("create", "maven", true)
 		return &containerHandlerAdapter{
 			name:      "maven-container-handler",
@@ -761,7 +761,7 @@ func (c *Container) registerContainerProxyHandlers(factory *handlers.StandardPro
 	containerMetrics.RecordHandlerFactoryOperation("register", "maven", true)
 
 	// NPM 핸들러 등록
-	if err := factory.RegisterHandler("npm", func(provider container.ContainerProvider) (handlers.ContainerProxyHandler, error) {
+	if err := factory.RegisterHandler("npm", func(provider container.ContainerProvider) (handlers.ContainerProxyHandler, error) { //nolint:lll
 		containerMetrics.RecordHandlerFactoryOperation("create", "npm", true)
 		return &containerHandlerAdapter{
 			name:      "npm-container-handler",
@@ -775,7 +775,7 @@ func (c *Container) registerContainerProxyHandlers(factory *handlers.StandardPro
 	containerMetrics.RecordHandlerFactoryOperation("register", "npm", true)
 
 	// Docker 핸들러 등록
-	if err := factory.RegisterHandler("docker", func(provider container.ContainerProvider) (handlers.ContainerProxyHandler, error) {
+	if err := factory.RegisterHandler("docker", func(provider container.ContainerProvider) (handlers.ContainerProxyHandler, error) { //nolint:lll
 		containerMetrics.RecordHandlerFactoryOperation("create", "docker", true)
 		return &containerHandlerAdapter{
 			name:      "docker-container-handler",
@@ -789,7 +789,7 @@ func (c *Container) registerContainerProxyHandlers(factory *handlers.StandardPro
 	containerMetrics.RecordHandlerFactoryOperation("register", "docker", true)
 
 	// PIP 핸들러 등록
-	if err := factory.RegisterHandler("pip", func(provider container.ContainerProvider) (handlers.ContainerProxyHandler, error) {
+	if err := factory.RegisterHandler("pip", func(provider container.ContainerProvider) (handlers.ContainerProxyHandler, error) { //nolint:lll
 		containerMetrics.RecordHandlerFactoryOperation("create", "pip", true)
 		return &containerHandlerAdapter{
 			name:      "pip-container-handler",
@@ -803,7 +803,7 @@ func (c *Container) registerContainerProxyHandlers(factory *handlers.StandardPro
 	containerMetrics.RecordHandlerFactoryOperation("register", "pip", true)
 
 	// YUM 핸들러 등록
-	if err := factory.RegisterHandler("yum", func(provider container.ContainerProvider) (handlers.ContainerProxyHandler, error) {
+	if err := factory.RegisterHandler("yum", func(provider container.ContainerProvider) (handlers.ContainerProxyHandler, error) { //nolint:lll
 		containerMetrics.RecordHandlerFactoryOperation("create", "yum", true)
 		return &containerHandlerAdapter{
 			name:      "yum-container-handler",
@@ -817,7 +817,7 @@ func (c *Container) registerContainerProxyHandlers(factory *handlers.StandardPro
 	containerMetrics.RecordHandlerFactoryOperation("register", "yum", true)
 
 	// APK 핸들러 등록
-	if err := factory.RegisterHandler("apk", func(provider container.ContainerProvider) (handlers.ContainerProxyHandler, error) {
+	if err := factory.RegisterHandler("apk", func(provider container.ContainerProvider) (handlers.ContainerProxyHandler, error) { //nolint:lll
 		containerMetrics.RecordHandlerFactoryOperation("create", "apk", true)
 		return &containerHandlerAdapter{
 			name:      "apk-container-handler",

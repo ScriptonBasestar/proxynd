@@ -89,7 +89,7 @@ func (c *cacheManagerImpl) Get(ctx context.Context, key string) (*pip.CacheEntry
 }
 
 // Set 패키지를 캐시에 저장
-func (c *cacheManagerImpl) Set(ctx context.Context, key string, data []byte, contentType string, metadata *pip.PackageMetadata) error {
+func (c *cacheManagerImpl) Set(ctx context.Context, key string, data []byte, contentType string, metadata *pip.PackageMetadata) error { //nolint:lll
 	if !c.cacheConfig.Enabled {
 		return nil // 캐시 비활성화 시 조용히 무시
 	}

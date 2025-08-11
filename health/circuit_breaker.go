@@ -118,7 +118,7 @@ func (cb *CircuitBreaker) Execute(ctx context.Context, fn func(context.Context) 
 }
 
 // Call 서킷 브레이커를 통해 함수 호출 (반환값 포함)
-func (cb *CircuitBreaker) Call(ctx context.Context, fn func(context.Context) (interface{}, error)) (interface{}, error) {
+func (cb *CircuitBreaker) Call(ctx context.Context, fn func(context.Context) (interface{}, error)) (interface{}, error) { //nolint:lll
 	// 현재 상태 확인
 	if !cb.allow() {
 		cb.recordRejection()

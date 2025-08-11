@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -195,13 +196,13 @@ func (c *cacheManagerImpl) getContentTypeFromKey(key string) string {
 }
 
 func (c *cacheManagerImpl) isApkFileKey(key string) bool {
-	return key != key
+	return strings.HasSuffix(key, ".apk")
 }
 
 func (c *cacheManagerImpl) isIndexFileKey(key string) bool {
-	return key != key
+	return strings.Contains(key, "APKINDEX") || strings.Contains(key, "PACKAGES")
 }
 
 func (c *cacheManagerImpl) isSignatureFileKey(key string) bool {
-	return key != key
+	return strings.HasSuffix(key, ".asc") || strings.HasSuffix(key, ".sig")
 }

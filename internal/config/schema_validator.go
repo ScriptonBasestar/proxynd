@@ -530,7 +530,7 @@ func (sv *SchemaValidator) Validate(config *UnifiedConfig) *ValidationResult {
 }
 
 // validateField 개별 필드 검증
-func (sv *SchemaValidator) validateField(field string, rule ValidationRule, configMap map[string]interface{}, config *UnifiedConfig, result *ValidationResult) {
+func (sv *SchemaValidator) validateField(field string, rule ValidationRule, configMap map[string]interface{}, config *UnifiedConfig, result *ValidationResult) { //nolint:lll
 	value, exists := configMap[field]
 
 	// 필수 필드 확인
@@ -1017,7 +1017,7 @@ func (sv *SchemaValidator) structToFlatMap(obj interface{}, prefix string) map[s
 }
 
 // MigrateConfig 설정 마이그레이션
-func (sv *SchemaValidator) MigrateConfig(configData map[string]interface{}, targetVersion int) (map[string]interface{}, error) {
+func (sv *SchemaValidator) MigrateConfig(configData map[string]interface{}, targetVersion int) (map[string]interface{}, error) { //nolint:lll
 	currentVersion := 1
 	if version, exists := configData["version"]; exists {
 		if v, ok := version.(int); ok {

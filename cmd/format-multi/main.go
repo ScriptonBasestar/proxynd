@@ -148,7 +148,13 @@ func formatFiles(files []string, config *Config, dryRun bool, parallel int, verb
 	return nil
 }
 
-func formatWorker(jobs <-chan string, results chan<- FormatResult, config *Config, dryRun, verbose bool, wg *sync.WaitGroup) {
+func formatWorker(
+	jobs <-chan string,
+	results chan<- FormatResult,
+	config *Config,
+	dryRun, verbose bool,
+	wg *sync.WaitGroup,
+) {
 	defer wg.Done()
 
 	for file := range jobs {

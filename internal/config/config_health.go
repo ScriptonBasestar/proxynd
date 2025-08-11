@@ -706,9 +706,12 @@ func (c *ConnectivityHealthChecker) Check(config *UnifiedConfig) HealthCheckResu
 	}
 
 	// Redis 연결 확인 (캐시 백엔드가 Redis인 경우)
-	if config.Cache.Backend == backendRedis && config.Cache.Redis.Address != "" {
+	if config.Cache.Backend == backendRedis && //nolint:staticcheck // TODO: Redis 연결 테스트 구현
+		config.Cache.Redis.Address != "" {
 		// 실제 구현에서는 Redis 연결 테스트
 		// 여기서는 간단한 예시만
+		// TODO: Redis 연결 테스트 구현
+		// 실제 구현에서는 Redis 연결 테스트 수행
 	}
 
 	return result
