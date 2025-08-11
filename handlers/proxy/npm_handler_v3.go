@@ -108,8 +108,14 @@ func (h *NPMHandlerV3) FetchFromUpstream(c *fiber.Ctx, _ string) ([]byte, int, e
 		agent.Set("X-NPM-Proxy", "ProxyND")
 		agent.Set("Accept", "application/json")
 
-		// TODO: 레지스트리 인증 구현 필요
-		// 현재 NpmProxyServer에 BasicAuth 필드가 없음
+		// 레지스트리 인증 구현
+		if registry.BasicAuth.Username != "" && registry.BasicAuth.Password != "" {
+			h.GetLogger().Debug("Using basic auth for NPM registry",
+				logging.F("registry_name", registry.Name),
+				logging.F("username", registry.BasicAuth.Username),
+			)
+			agent.BasicAuth(registry.BasicAuth.Username, registry.BasicAuth.Password)
+		}
 
 		// 요청 실행
 		statusCode, body, errs := agent.Bytes()

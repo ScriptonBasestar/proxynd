@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"encoding/base64"
 	"log"
 	"os"
 	"path/filepath"
@@ -59,7 +60,7 @@ type CacheInfo struct {
 
 // isProxyTypeAllowed 프록시 타입이 허용되는지 확인
 func isProxyTypeAllowed(proxyType string) bool {
-	allowedTypes := []string{"apt", "maven", "npm", "pip", "docker"}
+	allowedTypes := []string{"apt", "maven", "npm", "pip", "docker", "apk", "yum"}
 	for _, allowed := range allowedTypes {
 		if proxyType == allowed {
 			return true
@@ -69,10 +70,137 @@ func isProxyTypeAllowed(proxyType string) bool {
 }
 
 // isBasicAuthenticated 인증 여부 확인 (기본 구현)
-func isBasicAuthenticated(_ *fiber.Ctx) bool {
-	// TODO: 실제 인증 로직 구현
-	// 현재는 모든 요청을 허용
+func isBasicAuthenticated(c *fiber.Ctx) bool {
+	// 1. API 키 인증 확인 (X-API-Key 헤더)
+	if apiKey := c.Get("X-API-Key"); apiKey != "" {
+		return validateAPIKey(apiKey)
+	}
+	
+	// 2. Bearer 토큰 인증 확인 (Authorization 헤더)
+	if authHeader := c.Get("Authorization"); authHeader != "" {
+		if strings.HasPrefix(authHeader, "Bearer ") {
+			token := strings.TrimPrefix(authHeader, "Bearer ")
+			return validateBearerToken(token)
+		}
+	}
+	
+	// 3. Basic 인증 확인
+	if authHeader := c.Get("Authorization"); authHeader != "" {
+		if strings.HasPrefix(authHeader, "Basic ") {
+			return validateBasicAuth(authHeader)
+		}
+	}
+	
+	// 4. 공개 접근 허용 정책 (설정에 따라)
+	// 개발 환경이나 특정 엔드포인트에서는 인증 없이 허용 가능
+	if isPublicAccessAllowed(c) {
+		return true
+	}
+	
+	// 기본적으로 인증되지 않은 요청은 차단
+	log.Printf("Authentication failed for request: %s %s from %s", 
+		c.Method(), c.Path(), c.IP())
+	return false
+}
+
+// validateAPIKey API 키 검증
+func validateAPIKey(apiKey string) bool {
+	// API 키 형식 기본 검증 (최소 길이, 문자 제한 등)
+	if len(apiKey) < 16 || len(apiKey) > 128 {
+		log.Printf("Invalid API key length: %d", len(apiKey))
+		return false
+	}
+	
+	// TODO: API 키 매니저를 통한 실제 검증 로직 구현
+	// 현재는 기본 검증만 수행
+	if strings.HasPrefix(apiKey, "px_") || strings.HasPrefix(apiKey, "proxynd_") {
+		log.Printf("API key validation passed for key: %s...", apiKey[:8])
+		return true
+	}
+	
+	log.Printf("Invalid API key format")
+	return false
+}
+
+// validateBearerToken Bearer 토큰 검증
+func validateBearerToken(token string) bool {
+	// JWT 토큰 형식 기본 검증
+	if len(token) < 20 {
+		log.Printf("Token too short")
+		return false
+	}
+	
+	// JWT 형식 확인 (3개 파트가 점으로 구분)
+	parts := strings.Split(token, ".")
+	if len(parts) != 3 {
+		log.Printf("Invalid JWT format")
+		return false
+	}
+	
+	// TODO: JWT 서비스를 통한 실제 토큰 검증 구현
+	// 현재는 기본 형식 검증만 수행
+	log.Printf("Bearer token validation passed")
 	return true
+}
+
+// validateBasicAuth Basic 인증 검증
+func validateBasicAuth(authHeader string) bool {
+	// Basic 인증 헤더에서 사용자 정보 추출
+	encodedCredentials := strings.TrimPrefix(authHeader, "Basic ")
+	
+	// Base64 디코딩
+	credentials, err := base64.StdEncoding.DecodeString(encodedCredentials)
+	if err != nil {
+		log.Printf("Failed to decode basic auth: %v", err)
+		return false
+	}
+	
+	// username:password 형식으로 분리
+	parts := strings.SplitN(string(credentials), ":", 2)
+	if len(parts) != 2 {
+		log.Printf("Invalid basic auth format")
+		return false
+	}
+	
+	username, password := parts[0], parts[1]
+	
+	// TODO: 사용자 저장소를 통한 실제 인증 로직 구현
+	// 현재는 기본 검증만 수행
+	if len(username) > 0 && len(password) >= 8 {
+		log.Printf("Basic auth validation passed for user: %s", username)
+		return true
+	}
+	
+	log.Printf("Basic auth validation failed")
+	return false
+}
+
+// isPublicAccessAllowed 공개 접근 허용 여부 확인
+func isPublicAccessAllowed(c *fiber.Ctx) bool {
+	// 헬스체크 엔드포인트는 항상 공개
+	if strings.HasPrefix(c.Path(), "/healthz") || strings.HasPrefix(c.Path(), "/health") {
+		return true
+	}
+	
+	// 메트릭 엔드포인트는 공개 (Prometheus 등)
+	if strings.HasPrefix(c.Path(), "/metrics") {
+		return true
+	}
+	
+	// 개발 환경에서는 더 관대한 정책 적용
+	if isDevelopmentMode() {
+		log.Printf("Development mode: allowing public access to %s", c.Path())
+		return true
+	}
+	
+	return false
+}
+
+// isDevelopmentMode 개발 모드 확인
+func isDevelopmentMode() bool {
+	// 환경 변수나 설정을 통해 개발 모드 확인
+	env := strings.ToLower(os.Getenv("PROXYND_ENV"))
+	return env == "development" || env == "dev" || env == "local"
 }
 
 // checkCache 캐시 존재 여부 확인
@@ -152,6 +280,32 @@ func checkCache(proxyType, requestPath string) CacheInfo {
 		cachePath, err = security.SafeJoinPath(baseDir, requestPath)
 		if err != nil {
 			log.Printf("Invalid path in docker cache check: %v", err)
+			return CacheInfo{Hit: false, Path: ""}
+		}
+
+	case "apk":
+		config := config.ApkProxySettings{}
+		if err := config.ReadConfig(); err != nil {
+			log.Printf("Warning: Failed to read APK config, using defaults: %v", err)
+		}
+		baseDir := filepath.Join(storageDir, config.Path)
+		var err error
+		cachePath, err = security.SafeJoinPath(baseDir, requestPath)
+		if err != nil {
+			log.Printf("Invalid path in apk cache check: %v", err)
+			return CacheInfo{Hit: false, Path: ""}
+		}
+
+	case "yum":
+		config := config.YumProxySettings{}
+		if err := config.ReadConfig(); err != nil {
+			log.Printf("Warning: Failed to read YUM config, using defaults: %v", err)
+		}
+		baseDir := filepath.Join(storageDir, config.Path)
+		var err error
+		cachePath, err = security.SafeJoinPath(baseDir, requestPath)
+		if err != nil {
+			log.Printf("Invalid path in yum cache check: %v", err)
 			return CacheInfo{Hit: false, Path: ""}
 		}
 

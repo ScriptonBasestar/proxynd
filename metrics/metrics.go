@@ -300,9 +300,11 @@ var globalMetrics *Metrics
 
 // InitMetrics 메트릭 초기화
 func InitMetrics() {
-	globalMetrics = NewMetrics()
-	// Container 메트릭도 함께 초기화
-	InitContainerMetrics()
+	if globalMetrics == nil {
+		globalMetrics = NewMetrics()
+		// Container 메트릭도 함께 초기화
+		InitContainerMetrics()
+	}
 }
 
 // GetMetrics 전역 메트릭 인스턴스 반환
@@ -313,7 +315,7 @@ func GetMetrics() *Metrics {
 	return globalMetrics
 }
 
-// ResetMetrics 메트릭 리셋 (테스트용)
+// ResetMetrics 테스트용 메트릭 리셋
 func ResetMetrics() {
-	globalMetrics = NewMetrics()
+	globalMetrics = nil
 }

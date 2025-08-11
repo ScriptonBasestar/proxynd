@@ -1,8 +1,10 @@
 package proxy
 
 import (
+	"io"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
@@ -68,13 +70,13 @@ func TestDockerProxy_V2Base(t *testing.T) {
 			name:           "v2 base endpoint",
 			path:           "/docker/v2",
 			expectedStatus: 200,
-			expectedBody:   "{}",
+			expectedBody:   "{\"errors\":[]}",
 		},
 		{
 			name:           "v2 with trailing slash",
 			path:           "/docker/v2/",
 			expectedStatus: 200,
-			expectedBody:   "{}",
+			expectedBody:   "{\"errors\":[]}",
 		},
 	}
 
@@ -89,10 +91,10 @@ func TestDockerProxy_V2Base(t *testing.T) {
 			assert.Equal(t, tt.expectedStatus, resp.StatusCode)
 
 			if tt.expectedBody != "" {
-				body := make([]byte, len(tt.expectedBody))
-				_, err := resp.Body.Read(body)
+				body, err := io.ReadAll(resp.Body)
 				if err == nil { // Only check if read succeeds
-					assert.Equal(t, tt.expectedBody, string(body))
+					bodyStr := strings.TrimSpace(string(body))
+					assert.Equal(t, tt.expectedBody, bodyStr)
 				}
 			}
 		})

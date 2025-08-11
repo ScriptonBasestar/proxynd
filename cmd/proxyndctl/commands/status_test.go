@@ -26,7 +26,7 @@ func TestBoolToStatus(t *testing.T) {
 func TestServerStatusResponse(t *testing.T) {
 	// 구조체 초기화 테스트
 	response := ServerStatusResponse{
-		Status:    "healthy",
+		Status:    statusHealthy,
 		Timestamp: time.Now(),
 		Uptime:    "1h 30m 45s",
 		Version:   "1.0.0",
@@ -49,7 +49,7 @@ func TestServerStatusResponse(t *testing.T) {
 	}
 
 	if response.Status != statusHealthy {
-		t.Errorf("Expected status to be 'healthy', got %s", response.Status)
+		t.Errorf("Expected status to be '%s', got %s", statusHealthy, response.Status)
 	}
 
 	if response.Server.Port != "8080" {

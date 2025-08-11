@@ -9,9 +9,9 @@ import (
 // NpmProxyServer is exported
 // NpmProxyServer provides server functionality
 type NpmProxyServer struct {
-	Name string `yaml:"name,omitempty" validate:"required,min=1,max=100"`
-	URL  string `yaml:"url,omitempty" validate:"required,url"`
-	// NpmProxySettings is exported
+	Name      string    `yaml:"name,omitempty" validate:"required,min=1,max=100"`
+	URL       string    `yaml:"url,omitempty" validate:"required,url"`
+	BasicAuth BasicAuth `yaml:"basic_auth,omitempty"`
 }
 
 // NpmProxySettings is exported
