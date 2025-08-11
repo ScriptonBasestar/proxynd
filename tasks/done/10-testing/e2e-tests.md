@@ -11,15 +11,17 @@ E2E 테스트 스크립트와 업스트림 픽스처를 구현하는 태스크�
 
 ## Tasks
 
-- [ ] Add Maven E2E script
+- [x] Add Maven E2E script
   - File: `tests/e2e/scripts/test-maven.sh`
   - Upstream fixtures: minimal maven repo layout
   - Scenarios: artifact fetch, metadata, index browsing
+  - Completed: Added comprehensive Maven E2E script with test scenarios, upstream fixtures, and Makefile integration
 
-- [ ] Add YUM E2E script
+- [x] Add YUM E2E script
   - File: `tests/e2e/scripts/test-yum.sh`
   - Upstream fixtures: minimal repodata
   - Scenarios: metadata sync, rpm fetch
+  - Completed: Added comprehensive YUM E2E script with test scenarios, upstream fixtures, and Makefile integration
 
 - [ ] Add APK E2E script
   - File: `tests/e2e/scripts/test-apk.sh`
