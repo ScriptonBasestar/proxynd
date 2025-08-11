@@ -1,0 +1,7 @@
+# Mock Spring Core JAR file for E2E testing
+# This is a placeholder file containing mock content for testing purposes
+# In a real scenario, this would be the actual Spring Core JAR file
+
+spring-core-5.3.10.jar mock content
+Binary JAR placeholder for E2E testing
+Contains mock Spring Framework core classes

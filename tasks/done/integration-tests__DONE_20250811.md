@@ -21,9 +21,10 @@ source: tasks/todo/README.md (section A)
   - Add cases: SNAPSHOT, checksum endpoints, directory listing toggle
   - Completed: Added comprehensive SNAPSHOT handling, checksum endpoint tests, and directory listing security tests
 
-- [ ] Harden yum integration tests
+- [x] Harden yum integration tests
   - File: `tests/integration/yum_integration_test.go`
   - Add: repodata freshness, gzip/pgp headers, range requests
+  - Completed: Added three comprehensive test functions covering repodata freshness, gzip/pgp headers, and range requests with 400+ lines of new test code
 
 - [ ] APK advanced cases
   - File: `tests/integration/apk_integration_test.go`

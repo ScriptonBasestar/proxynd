@@ -1,0 +1,6 @@
+# Mock JUnit JAR file for E2E testing
+# This is a placeholder file containing mock content for testing purposes
+# In a real scenario, this would be the actual JUnit JAR file
+
+junit-4.13.2.jar mock content
+Binary JAR placeholder for E2E testing

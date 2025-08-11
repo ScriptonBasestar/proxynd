@@ -45,7 +45,12 @@ test:
 	docker-compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) run --rm test-runner
 
 # 모든 E2E 테스트 실행 (클라이언트별 테스트 포함)
-test-all: test test-npm test-pip test-apt test-docker
+test-all: test test-maven test-npm test-pip test-apt test-docker
+
+# Maven 클라이언트 테스트
+test-maven:
+	@echo "☕ Running Maven client tests..."
+	docker-compose -f $(COMPOSE_FILE) -p $(PROJECT_NAME) exec maven-client /scripts/test-maven.sh
 
 # NPM 클라이언트 테스트
 test-npm:
