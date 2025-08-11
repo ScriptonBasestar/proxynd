@@ -12,10 +12,24 @@ import (
 
 	"proxynd/health"
 	"proxynd/internal/config"
+	"proxynd/internal/factory"
 )
+
+// AdapterHealthChecker 어댑터 헬스체크 인터페이스
+type AdapterHealthChecker interface {
+	HealthCheck() map[string]factory.HealthStatus
+}
 
 // healthService 전역 건강 상태 서비스
 var healthService *health.HealthService
+
+// handlerAdapterFactory 전역 핸들러 어댑터 팩토리
+var handlerAdapterFactory AdapterHealthChecker
+
+// InitHandlerAdapterFactory 핸들러 어댑터 팩토리 초기화
+func InitHandlerAdapterFactory(checker AdapterHealthChecker) {
+	handlerAdapterFactory = checker
+}
 
 // InitHealthService 건강 상태 서비스 초기화
 func InitHealthService(config *config.UnifiedConfig) {
@@ -213,6 +227,76 @@ func HealthRouterWithConfig(app *fiber.App, config *config.UnifiedConfig) {
 
 		return c.JSON(debugInfo)
 	})
+
+	// 어댑터 헬스체크 엔드포인트
+	app.Get("/health/adapters", func(c *fiber.Ctx) error {
+		if handlerAdapterFactory == nil {
+			return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+				"error": "Handler adapter factory not initialized",
+			})
+		}
+
+		// 모든 어댑터의 헬스체크 수행
+		adapterHealthStatus := handlerAdapterFactory.HealthCheck()
+
+		// 전체 건강 상태 확인
+		allHealthy := true
+		unhealthyAdapters := make([]string, 0)
+
+		for adapterType, status := range adapterHealthStatus {
+			if !status.IsHealthy || !status.Initialized {
+				allHealthy = false
+				unhealthyAdapters = append(unhealthyAdapters, adapterType)
+			}
+		}
+
+		response := fiber.Map{
+			"status":             getOverallAdapterStatus(allHealthy),
+			"timestamp":          time.Now(),
+			"adapters":           adapterHealthStatus,
+			"healthy_count":      getHealthyAdapterCount(adapterHealthStatus),
+			"total_count":        len(adapterHealthStatus),
+			"unhealthy_adapters": unhealthyAdapters,
+		}
+
+		// 상태에 따른 HTTP 상태 코드
+		httpStatus := fiber.StatusOK
+		if !allHealthy {
+			httpStatus = fiber.StatusServiceUnavailable
+		}
+
+		return c.Status(httpStatus).JSON(response)
+	})
+
+	// 개별 어댑터 헬스체크 엔드포인트
+	app.Get("/health/adapters/:type", func(c *fiber.Ctx) error {
+		if handlerAdapterFactory == nil {
+			return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+				"error": "Handler adapter factory not initialized",
+			})
+		}
+
+		adapterType := c.Params("type")
+		adapterHealthStatus := handlerAdapterFactory.HealthCheck()
+
+		if status, exists := adapterHealthStatus[adapterType]; exists {
+			httpStatus := fiber.StatusOK
+			if !status.IsHealthy || !status.Initialized {
+				httpStatus = fiber.StatusServiceUnavailable
+			}
+
+			return c.Status(httpStatus).JSON(fiber.Map{
+				"adapter_type": adapterType,
+				"status":       status,
+				"timestamp":    time.Now(),
+			})
+		}
+
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error":        "Adapter not found",
+			"adapter_type": adapterType,
+		})
+	})
 }
 
 // getMemoryStats 메모리 통계 반환
@@ -297,4 +381,23 @@ func formatUptime(d time.Duration) string {
 		return fmt.Sprintf("%dm %ds", minutes, seconds)
 	}
 	return fmt.Sprintf("%ds", seconds)
+}
+
+// getOverallAdapterStatus 전체 어댑터 상태 문자열 반환
+func getOverallAdapterStatus(allHealthy bool) string {
+	if allHealthy {
+		return "healthy"
+	}
+	return "unhealthy"
+}
+
+// getHealthyAdapterCount 건강한 어댑터 개수 반환
+func getHealthyAdapterCount(adapterStatus map[string]factory.HealthStatus) int {
+	count := 0
+	for _, status := range adapterStatus {
+		if status.IsHealthy && status.Initialized {
+			count++
+		}
+	}
+	return count
 }

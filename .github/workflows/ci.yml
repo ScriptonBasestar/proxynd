@@ -310,8 +310,21 @@ jobs:
       - name: Smoke test
         run: |
           echo "🧪 Running smoke tests..."
-          # curl -f https://staging.proxynd.example.com/health
-          echo "✅ Smoke tests passed"
+
+          # 기본 헬스체크
+          curl -f https://staging.proxynd.example.com/healthz || {
+            echo "❌ Basic health check failed"
+            exit 1
+          }
+
+          # 어댑터 헬스체크 (스크립트 사용)
+          chmod +x scripts/smoke-test-adapters.sh
+          scripts/smoke-test-adapters.sh \
+            --endpoint=https://staging.proxynd.example.com \
+            --timeout=30 \
+            --verbose
+
+          echo "✅ All smoke tests passed"
 
   # 📊 결과 요약
   summary:

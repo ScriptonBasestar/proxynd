@@ -239,6 +239,13 @@ func (app *Application) initializeFiberApp() {
 	routers.UnifiedRouterV1(app.fiberApp)
 
 	// === 기존 라우터들 (v1으로 마이그레이션 예정) ===
+	// 헬스 라우터 초기화 (어댑터 팩토리와 통합)
+	if adapterFactory, err := app.container.GetHandlerAdapterFactory(); err == nil {
+		routers.InitHandlerAdapterFactory(adapterFactory)
+	} else {
+		app.logger.Warn("Handler adapter factory initialization failed for health router",
+			logging.F("error", err))
+	}
 	routers.HealthRouter(app.fiberApp)
 	routers.ProxyRouter(app.fiberApp)      // 레거시 호환용
 	routers.ProxyRouterV3(app.fiberApp)    // V3 라우터 (deprecated)
