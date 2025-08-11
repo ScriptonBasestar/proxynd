@@ -191,6 +191,44 @@ cd tests/integration
 go test -v ./...
 ```
 
+## End-to-End (E2E) Testing
+
+ProxyND provides comprehensive E2E testing for all supported proxy types. Each proxy type has dedicated test guides with detailed scenarios:
+
+### Available E2E Test Guides
+
+- **[General E2E Testing](e2e.md)** - Overview of the E2E test environment and architecture
+- **[Maven Proxy E2E Testing](e2e-maven.md)** - Maven repository proxy testing with artifacts, POMs, and checksums  
+- **[NPM Proxy E2E Testing](e2e-npm.md)** - NPM registry proxy testing with packages, tarballs, and scoped packages
+- **[APT Proxy E2E Testing](e2e-apt.md)** - APT repository proxy testing with Release files, packages, and .deb files
+- **[Docker Proxy E2E Testing](e2e-docker.md)** - Docker registry proxy testing *(coming soon)*
+- **[PyPI Proxy E2E Testing](e2e-pip.md)** - PyPI proxy testing *(coming soon)*
+- **[YUM Proxy E2E Testing](e2e-yum.md)** - YUM repository proxy testing *(coming soon)*
+- **[APK Proxy E2E Testing](e2e-apk.md)** - APK repository proxy testing *(coming soon)*
+
+### Quick E2E Test Commands
+
+```bash
+# Run all E2E tests
+cd tests/e2e && make test-all
+
+# Run specific proxy type tests
+make test-maven    # Maven proxy tests
+make test-npm      # NPM proxy tests  
+make test-apt      # APT proxy tests
+make test-docker   # Docker proxy tests
+make test-pip      # PyPI proxy tests
+```
+
+### E2E Test Integration with CI
+
+The E2E tests are automatically executed in the CI/CD pipeline using a matrix strategy that tests each proxy type independently:
+
+- **Integration Tests Matrix**: Tests each proxy type's integration scenarios
+- **E2E Tests Matrix**: Tests each proxy type with real client tools
+- **Parallel Execution**: All proxy types tested simultaneously for faster feedback
+- **Artifact Collection**: Test results and logs collected for debugging
+
 ## Continuous Integration
 
 Tests are automatically run on:

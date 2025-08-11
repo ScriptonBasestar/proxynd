@@ -15,7 +15,7 @@ CI 매트릭스 확장과 관련 문서화 태스크들입니다.
   - Update: `.gitlab-ci.yml` / GitHub Actions if present
   - Cache upstream fixtures, parallelize jobs, collect logs
 
-- [ ] Add E2E how-to per type in docs
+- [x] Add E2E how-to per type in docs
   - Path: `docs/05-development/testing/` (new pages)
   - Reference: scripts in `tests/e2e/scripts`
 
