@@ -48,7 +48,8 @@ func getLanguageConfig(config *Config, language string) *LanguageConfig {
 	return config.Languages[language]
 }
 
-// 기본 설정
+// 기본 설정 (미사용 - 향후 사용 예정)
+// nolint:unused
 func defaultConfig() *Config {
 	return &Config{
 		Languages: map[string]*LanguageConfig{

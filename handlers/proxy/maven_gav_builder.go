@@ -26,7 +26,8 @@ type GAVTreeNode struct {
 	Version    string `json:"version,omitempty"`
 }
 
-// buildGAVTree 엔트리 목록을 GAV 트리로 구성
+// buildGAVTree 엔트리 목록을 GAV 트리로 구성 (향후 사용 예정)
+// nolint:unused
 func buildGAVTree(entries []DirectoryEntry, currentPath string) []*GAVTreeNode {
 	// 루트 레벨에서는 모든 엔트리를 분석하여 완전한 GAV 구조 생성
 	if currentPath == "" || currentPath == "/" {
@@ -45,7 +46,8 @@ func buildGAVTree(entries []DirectoryEntry, currentPath string) []*GAVTreeNode {
 	return buildPartialGAVTree(entries, currentPath)
 }
 
-// buildCompleteGAVTree 전체 GAV 트리 구성 (루트 레벨)
+// buildCompleteGAVTree 전체 GAV 트리 구성 (루트 레벨) - 향후 사용 예정
+// nolint:unused
 func buildCompleteGAVTree(entries []DirectoryEntry) []*GAVTreeNode {
 	// 루트 레벨에서는 최상위 디렉토리만 표시
 	// 예: org, com, net 등

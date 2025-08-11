@@ -343,7 +343,9 @@ func (s *AuditService) processEvents() {
 			for {
 				select {
 				case event := <-s.buffer:
-					s.writeEventToFile(event)
+					if err := s.writeEventToFile(event); err != nil {
+						s.logger.Error("Failed to write audit event during shutdown", logging.F("error", err))
+					}
 				default:
 					return
 				}
@@ -425,7 +427,9 @@ func (s *AuditService) flush() {
 	defer s.mutex.Unlock()
 
 	if s.file != nil {
-		s.file.Sync()
+		if err := s.file.Sync(); err != nil {
+			s.logger.Error("Failed to sync audit file", logging.F("error", err))
+		}
 	}
 }
 
@@ -458,7 +462,9 @@ func (s *AuditService) rotateLogFile() {
 	}
 
 	// 현재 파일 닫기
-	s.file.Close()
+	if err := s.file.Close(); err != nil {
+		s.logger.Error("Failed to close audit file during rotation", logging.F("error", err))
+	}
 
 	// 파일명 변경 (타임스탬프 추가)
 	timestamp := time.Now().Format("20060102-150405")
