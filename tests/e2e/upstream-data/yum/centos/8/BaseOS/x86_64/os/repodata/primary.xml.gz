@@ -1,0 +1,9 @@
+# Mock compressed primary.xml content for YUM E2E testing
+# This represents a gzipped XML file containing package metadata
+# In a real repository, this would contain detailed package information
+
+mock compressed primary.xml content for yum e2e testing
+Contains package metadata for nginx, httpd, and other RPM packages
+Package: nginx-1.20.1-1.el8.x86_64
+Package: httpd-2.4.37-43.module_el8.5.0.x86_64
+Package: kernel-4.18.0-348.el8.x86_64

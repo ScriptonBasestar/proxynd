@@ -1,0 +1,8 @@
+# Mock compressed other.xml content for YUM E2E testing
+# This represents a gzipped XML file containing additional package metadata
+# In a real repository, this would contain changelog and other metadata
+
+mock compressed other.xml content for yum e2e testing
+Contains additional package metadata like changelogs
+Changelog entries for nginx, httpd, and kernel packages
+Package update history and dependency information

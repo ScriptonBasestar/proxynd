@@ -1,0 +1,8 @@
+# Mock compressed filelists.xml content for YUM E2E testing
+# This represents a gzipped XML file containing file listings for packages
+# In a real repository, this would contain detailed file lists
+
+mock compressed filelists.xml content for yum e2e testing
+Contains file listings for packages
+Files for nginx: /usr/sbin/nginx, /etc/nginx/nginx.conf, /var/log/nginx/
+Files for httpd: /usr/sbin/httpd, /etc/httpd/conf/httpd.conf, /var/log/httpd/
