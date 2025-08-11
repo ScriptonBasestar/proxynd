@@ -209,6 +209,31 @@ func setupRoutes(app *fiber.App, _ *app.Container) {
 		return c.Status(404).SendString("Not Found")
 	})
 
+	// APK 프록시 라우트
+	proxy.All("/apk/*", func(c *fiber.Ctx) error {
+		path := c.Params("*")
+		c.Set("X-Proxy-Type", "apk")
+		c.Set("X-Cache-Status", "MISS")
+
+		// APK 모의 응답
+		if path == "alpine/v3.16/main/x86_64/APKINDEX.tar.gz" {
+			c.Set("Content-Type", "application/x-gzip")
+			return c.SendString("mock APKINDEX content")
+		}
+
+		if path == "alpine/v3.16/main/x86_64/nginx-1.22.0-r1.apk" {
+			c.Set("Content-Type", "application/vnd.alpine.apk")
+			return c.SendString("mock apk content")
+		}
+
+		// 시그니처 검증 실패 케이스 - 삭제 가능한 패키지는 404 반환
+		if path == "alpine/v3.16/main/x86_64/bad-signature-package.apk" {
+			return c.Status(404).SendString("Package not found or signature verification failed")
+		}
+
+		return c.Status(404).SendString("Not Found")
+	})
+
 	// 메트릭 엔드포인트
 	app.Get("/metrics", func(c *fiber.Ctx) error {
 		return c.SendString("# HELP proxynd_requests_total Total number of requests\n" +

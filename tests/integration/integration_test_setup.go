@@ -383,6 +383,7 @@ func (env *IntegrationTestEnvironment) setupConfiguration(t *testing.T) {
 func (env *IntegrationTestEnvironment) saveConfigFiles(t *testing.T) {
 	// 환경 변수 설정
 	_ = os.Setenv("CONFIG_DIR", env.ConfigDir)
+	_ = os.Setenv("STORAGE_DIR", env.CacheDir)
 
 	// global.yaml 생성
 	globalYAML := fmt.Sprintf(`
@@ -436,6 +437,30 @@ proxies:
 `, env.MockUpstreams["apt"].URL)
 
 	err = os.WriteFile(filepath.Join(env.ConfigDir, "apt-proxy.yaml"), []byte(aptYAML), 0o644)
+	require.NoError(t, err)
+
+	// apk-proxy.yaml 생성
+	apkYAML := fmt.Sprintf(`
+path: "/apk"
+use_cache: true
+proxies:
+  - name: "alpine"
+    url: "%s"
+`, env.MockUpstreams["apk"].URL)
+
+	err = os.WriteFile(filepath.Join(env.ConfigDir, "apk-proxy.yaml"), []byte(apkYAML), 0o644)
+	require.NoError(t, err)
+
+	// yum-proxy.yaml 생성
+	yumYAML := fmt.Sprintf(`
+path: "/yum"
+use_cache: true
+proxies:
+  - name: "centos"
+    url: "%s"
+`, env.MockUpstreams["yum"].URL)
+
+	err = os.WriteFile(filepath.Join(env.ConfigDir, "yum-proxy.yaml"), []byte(yumYAML), 0o644)
 	require.NoError(t, err)
 }
 
