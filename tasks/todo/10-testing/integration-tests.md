@@ -16,9 +16,10 @@ source: tasks/todo/README.md (section A)
   - Scope: GET tarball, metadata, scoped packages, auth fallback
   - Acceptance: green on CI, covers 3xx, 4xx, cache hit/miss
 
-- [ ] Review maven integration scenarios (if any gaps)
+- [x] Review maven integration scenarios (if any gaps)
   - File(s): `tests/integration/maven_integration_test.go`
   - Add cases: SNAPSHOT, checksum endpoints, directory listing toggle
+  - Completed: Added comprehensive SNAPSHOT handling, checksum endpoint tests, and directory listing security tests
 
 - [ ] Harden yum integration tests
   - File: `tests/integration/yum_integration_test.go`
