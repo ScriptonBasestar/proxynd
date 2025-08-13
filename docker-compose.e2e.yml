@@ -46,7 +46,7 @@ services:
       timeout: 10s
       retries: 3
 
-  # 업스트림 서버 시뮬레이션용 Nginx
+  # Step 4-2: 향상된 업스트림 모의 서버
   nginx-upstream:
     image: nginx:alpine
     container_name: nginx-upstream-e2e
@@ -55,15 +55,42 @@ services:
     volumes:
       - ./tests/e2e/nginx:/etc/nginx/conf.d
       - ./tests/e2e/upstream-data:/usr/share/nginx/html
+      - ./tests/e2e/scripts/update-fixtures.sh:/scripts/update-fixtures.sh:ro
     networks:
       - proxynd-test
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    environment:
+      - NGINX_ENTRYPOINT_QUIET_LOGS=1
 
-  # APT 테스트용 Ubuntu 클라이언트
+  # Step 4-2: 개선된 Maven 테스트용 클라이언트
+  maven-client:
+    image: maven:3.9-openjdk-11
+    container_name: maven-client-e2e
+    working_dir: /workspace
+    volumes:
+      - ./tests/e2e/scripts:/scripts
+      - ./tests/e2e/workspace:/workspace
+      - maven_cache:/root/.m2
+    environment:
+      - PROXYND_HOST=proxynd
+      - PROXYND_PORT=8080
+    command: tail -f /dev/null
+    networks:
+      - proxynd-test
+    depends_on:
+      - proxynd
+
+  # APT 테스트용 Ubuntu 클라이언트 (기존 유지 + 개선)
   ubuntu-client:
     image: ubuntu:22.04
     container_name: ubuntu-client-e2e
     volumes:
       - ./tests/e2e/scripts:/scripts
+      - apt_cache:/var/cache/apt
     environment:
       - DEBIAN_FRONTEND=noninteractive
       - PROXYND_HOST=proxynd
@@ -125,7 +152,7 @@ services:
     depends_on:
       - proxynd
 
-  # 테스트 러너
+  # Step 4-1: 향상된 테스트 러너
   test-runner:
     build:
       context: .
@@ -134,12 +161,18 @@ services:
     volumes:
       - ./tests/e2e:/tests
       - ./:/src
+      - test_results:/results
     working_dir: /tests
     environment:
       - PROXYND_HOST=proxynd
       - PROXYND_PORT=8080
       - MINIO_HOST=minio
       - MINIO_PORT=9000
+      - NGINX_HOST=nginx-upstream
+      - NGINX_PORT=80
+      - CI=${CI:-false}
+      - VERBOSE=${VERBOSE:-false}
+      - TEST_PARALLEL=${TEST_PARALLEL:-4}
     networks:
       - proxynd-test
     depends_on:
@@ -148,6 +181,11 @@ services:
       - nginx-upstream
     profiles:
       - test
+    healthcheck:
+      test: ["CMD", "test", "-f", "/results/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 networks:
   proxynd-test:
@@ -161,3 +199,6 @@ volumes:
   proxynd_cache:
   minio_data:
   docker_data:
+  test_results:  # Step 4: 테스트 결과 저장
+  maven_cache:   # Maven 의존성 캐시
+  apt_cache:     # APT 패키지 캐시

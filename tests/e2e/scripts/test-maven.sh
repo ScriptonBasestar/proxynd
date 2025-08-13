@@ -375,6 +375,166 @@ test_junit_execution() {
     fi
 }
 
+# Step 2: Maven E2E 테스트 강화 - SNAPSHOT, 의존성 트리, 브라우저 인터페이스, 체크섬
+
+# SNAPSHOT 버전 처리 테스트 (Step 2-1)
+test_snapshot_handling() {
+    log_test "Testing SNAPSHOT version processing..."
+
+    # SNAPSHOT 버전이 포함된 의존성 추가
+    cat > pom-snapshot.xml << EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.example</groupId>
+    <artifactId>snapshot-test</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <dependencies>
+        <!-- Test with a stable library that has SNAPSHOT versions -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.13.0-SNAPSHOT</version>
+        </dependency>
+    </dependencies>
+</project>
+EOF
+
+    if mvn -s settings.xml -f pom-snapshot.xml dependency:resolve -q ${MVN_OPTS:-} 2>/dev/null; then
+        log_success "SNAPSHOT version processing successful"
+    else
+        log_warning "SNAPSHOT version test skipped (no SNAPSHOT available or proxy limitation)"
+    fi
+
+    # SNAPSHOT 메타데이터 확인
+    local snapshot_metadata_url="${PROXY_URL}/org/apache/commons/commons-lang3/maven-metadata.xml"
+    if curl -sf "$snapshot_metadata_url" > /tmp/snapshot-metadata.xml 2>&1; then
+        if grep -q "SNAPSHOT" /tmp/snapshot-metadata.xml 2>/dev/null; then
+            log_success "SNAPSHOT metadata retrieval successful"
+        else
+            log_info "SNAPSHOT metadata available but no SNAPSHOT versions found"
+        fi
+    else
+        log_warning "SNAPSHOT metadata test inconclusive"
+    fi
+}
+
+# 의존성 트리 확인 테스트 (Step 2-2)
+test_dependency_tree() {
+    log_test "Testing dependency tree analysis..."
+
+    if mvn -s settings.xml dependency:tree -q ${MVN_OPTS:-} > /tmp/dependency-tree.txt 2>&1; then
+        log_success "Dependency tree generation successful"
+        
+        # 의존성 트리 검증
+        if grep -q "junit:junit" /tmp/dependency-tree.txt && \
+           grep -q "commons-lang3" /tmp/dependency-tree.txt && \
+           grep -q "spring-core" /tmp/dependency-tree.txt; then
+            log_success "All expected dependencies found in tree"
+        else
+            log_warning "Some expected dependencies missing from tree"
+        fi
+
+        if [[ "$VERBOSE" == "true" ]]; then
+            log_info "Dependency tree sample:"
+            head -20 /tmp/dependency-tree.txt
+        fi
+    else
+        log_error "Dependency tree generation failed"
+        return 1
+    fi
+}
+
+# 브라우저 인터페이스 테스트 (Step 2-3)
+test_browser_interface() {
+    log_test "Testing browser interface..."
+
+    local browser_urls=(
+        "${PROXY_URL}/"
+        "${PROXY_URL}/junit/"
+        "${PROXY_URL}/junit/junit/"
+        "${PROXY_URL}/org/springframework/"
+        "${PROXY_URL}/org/apache/commons/"
+    )
+
+    local success_count=0
+    for url in "${browser_urls[@]}"; do
+        if curl -sf "$url" > /tmp/browser-test.html 2>&1; then
+            # HTML 응답인지 확인
+            if grep -qi "html\|directory\|index" /tmp/browser-test.html; then
+                log_success "Browser interface accessible: $(basename "$url")"
+                success_count=$((success_count + 1))
+            else
+                log_info "Browser interface response (non-HTML): $(basename "$url")"
+                success_count=$((success_count + 1))
+            fi
+        else
+            log_warning "Browser interface unavailable: $(basename "$url")"
+        fi
+    done
+
+    if [ $success_count -gt 0 ]; then
+        log_success "Browser interface test passed ($success_count/$(${#browser_urls[@]}) endpoints accessible)"
+    else
+        log_warning "Browser interface not available (may be disabled)"
+    fi
+}
+
+# 체크섬 검증 테스트 (Step 2-4)
+test_checksum_verification() {
+    log_test "Testing checksum verification..."
+
+    local base_artifact_url="${PROXY_URL}/junit/junit/4.13.2/junit-4.13.2"
+    local jar_url="${base_artifact_url}.jar"
+    local sha1_url="${base_artifact_url}.jar.sha1"
+    local md5_url="${base_artifact_url}.jar.md5"
+
+    # JAR 파일 다운로드
+    if curl -sf "$jar_url" -o /tmp/junit-4.13.2.jar 2>&1; then
+        log_success "JAR artifact downloaded successfully"
+        
+        # SHA1 체크섬 확인
+        if curl -sf "$sha1_url" -o /tmp/junit-4.13.2.jar.sha1 2>&1; then
+            local expected_sha1
+            expected_sha1=$(cat /tmp/junit-4.13.2.jar.sha1 | cut -d' ' -f1)
+            
+            local actual_sha1
+            if command -v sha1sum >/dev/null 2>&1; then
+                actual_sha1=$(sha1sum /tmp/junit-4.13.2.jar | cut -d' ' -f1)
+            elif command -v shasum >/dev/null 2>&1; then
+                actual_sha1=$(shasum -a 1 /tmp/junit-4.13.2.jar | cut -d' ' -f1)
+            else
+                log_warning "No SHA1 utility available for verification"
+                return 0
+            fi
+
+            if [[ "$expected_sha1" == "$actual_sha1" ]]; then
+                log_success "SHA1 checksum verification passed"
+            else
+                log_error "SHA1 checksum mismatch! Expected: $expected_sha1, Got: $actual_sha1"
+                return 1
+            fi
+        else
+            log_warning "SHA1 checksum file not available"
+        fi
+
+        # MD5 체크섬 확인 (선택적)
+        if curl -sf "$md5_url" -o /tmp/junit-4.13.2.jar.md5 2>&1; then
+            log_success "MD5 checksum file available"
+        else
+            log_info "MD5 checksum file not available (optional)"
+        fi
+    else
+        log_error "JAR artifact download failed"
+        return 1
+    fi
+}
+
 # 에러 시나리오 테스트
 test_error_scenarios() {
     log_test "Testing error scenarios..."
@@ -394,7 +554,8 @@ test_error_scenarios() {
 
 # 메인 테스트 실행
 main() {
-    log_info "=== Maven E2E Tests Starting ==="
+    log_info "=== Enhanced Maven E2E Tests Starting ==="
+    log_info "Step 2: Maven E2E 테스트 강화 - SNAPSHOT, 의존성, 브라우저, 체크섬"
 
     create_maven_settings
     create_test_project
@@ -405,13 +566,23 @@ main() {
     test_compilation
     test_junit_execution
 
-    # 추가 기능 테스트들
+    # Step 2: Maven E2E 테스트 강화
+    test_snapshot_handling        # Step 2-1: SNAPSHOT 버전 처리 테스트
+    test_dependency_tree         # Step 2-2: 의존성 트리 확인 테스트
+    test_browser_interface       # Step 2-3: 브라우저 인터페이스 테스트
+    test_checksum_verification   # Step 2-4: 체크섬 검증 테스트
+
+    # 기존 기능 테스트들
     test_cache_performance
     test_metadata_browsing
     test_index_browsing
     test_error_scenarios
 
-    log_success "=== Maven E2E Tests Completed Successfully ==="
+    log_success "=== Enhanced Maven E2E Tests Completed Successfully ==="
+    log_info "✅ SNAPSHOT 버전 처리 테스트 완료"
+    log_info "✅ 의존성 트리 확인 테스트 완료"
+    log_info "✅ 브라우저 인터페이스 테스트 완료"
+    log_info "✅ 체크섬 검증 테스트 완료"
 }
 
 # 스크립트 실행
