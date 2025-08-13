@@ -105,6 +105,13 @@ func (a *NPMHandlerAdapter) domainToFiberResponse(c *fiber.Ctx, response *npm.Pa
 	// 상태 코드 설정
 	c.Status(response.StatusCode)
 
+	// 404나 다른 에러 상태 코드인 경우 JSON 형식으로 응답
+	if response.StatusCode >= 400 {
+		return c.JSON(fiber.Map{
+			"error": fmt.Sprintf("Package not found or error occurred (status: %d)", response.StatusCode),
+		})
+	}
+
 	// Content-Type 설정
 	c.Set("Content-Type", response.ContentType)
 
@@ -143,7 +150,9 @@ func (a *NPMHandlerAdapter) serveCachedFile(c *fiber.Ctx, packagePath string) er
 	}
 
 	// 파일이 없는 경우 404 반환
-	return c.Status(fiber.StatusNotFound).SendString("Cached file not found")
+	return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+		"error": "Cached file not found",
+	})
 }
 
 // IsEnabled 핸들러 활성화 상태 확인

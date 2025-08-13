@@ -206,7 +206,9 @@ func setupRoutes(app *fiber.App, _ *app.Container) {
 			})
 		}
 
-		return c.Status(404).SendString("Not Found")
+		return c.Status(404).JSON(fiber.Map{
+			"error": "Package not found",
+		})
 	})
 
 	// APK 프록시 라우트

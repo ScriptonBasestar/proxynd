@@ -34,11 +34,15 @@ func NpmProxy(c *fiber.Ctx) error {
 	storageDir := helpers.GetStorageDir()
 	globalConfig := config.GlobalConfig{}
 	if err := globalConfig.ReadConfig(); err != nil {
-		return c.Status(fiber.StatusInternalServerError).SendString("Failed to read global config")
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to read global config",
+		})
 	}
 	config := config.NpmProxySettings{}
 	if err := config.ReadConfig(); err != nil {
-		return c.Status(fiber.StatusInternalServerError).SendString("Failed to read NPM config")
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to read NPM config",
+		})
 	}
 
 	// 미들웨어에서 전달된 캐시 정보 확인
@@ -78,7 +82,9 @@ func NpmProxy(c *fiber.Ctx) error {
 	if !cacheHit {
 		dirpath := filepath.Dir(filefullpath)
 		if err := os.MkdirAll(dirpath, 0o766); err != nil {
-			return c.Status(fiber.StatusInternalServerError).SendString("Failed to create directory")
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Failed to create directory",
+			})
 		}
 
 		// HTTP 클라이언트 생성 (프록시 최적화 설정)
@@ -91,7 +97,9 @@ func NpmProxy(c *fiber.Ctx) error {
 		// 설정된 프록시 서버들을 순회하며 시도
 		proxies := config.Proxies["default"]
 		if proxies == nil {
-			return c.Status(fiber.StatusInternalServerError).SendString("No NPM proxy servers configured")
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "No NPM proxy servers configured",
+			})
 		}
 
 		for i, server := range proxies {
@@ -124,7 +132,9 @@ func NpmProxy(c *fiber.Ctx) error {
 				err = os.WriteFile(filefullpath, bytes, 0o766)
 				if err != nil {
 					log.Printf("Error writing file: %v", err)
-					return c.Status(fiber.StatusInternalServerError).SendString("Error writing file")
+					return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+						"error": "Error writing file",
+					})
 				}
 
 				responseContent = bytes
@@ -134,14 +144,18 @@ func NpmProxy(c *fiber.Ctx) error {
 		}
 
 		if responseContent == nil {
-			return c.Status(fiber.StatusNotFound).SendString("Package not found in any proxy")
+			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+				"error": "Package not found in any proxy",
+			})
 		}
 	}
 
 	// 파일 읽기
 	bytes, err := os.ReadFile(filefullpath)
 	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).SendString("Error reading cached file")
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Error reading cached file",
+		})
 	}
 
 	// Content-Type 설정
