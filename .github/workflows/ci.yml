@@ -1,11 +1,19 @@
 # 🔄 ProxyND CI/CD Pipeline
 name: CI/CD
 
+# Step 2: 조건부 실행 로직 - PR과 브랜치별 차별화
 on:
   push:
     branches: [ main, develop ]
   pull_request:
     branches: [ main, develop ]
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
+      - '.github/workflows/**'
+      - 'Dockerfile*'
+      - 'docker-compose*.yml'
 
 env:
   GO_VERSION: '1.24'
@@ -17,10 +25,72 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # 🧪 테스트 & 린트
-  test:
-    name: Test & Lint
+  # 🔍 변경 파일 감지 (Step 2-2: 선택적 테스트 실행)
+  changes:
+    name: Detect Changes
     runs-on: ubuntu-latest
+    outputs:
+      npm: ${{ steps.filter.outputs.npm }}
+      maven: ${{ steps.filter.outputs.maven }}
+      docker: ${{ steps.filter.outputs.docker }}
+      apt: ${{ steps.filter.outputs.apt }}
+      pip: ${{ steps.filter.outputs.pip }}
+      yum: ${{ steps.filter.outputs.yum }}
+      apk: ${{ steps.filter.outputs.apk }}
+      core: ${{ steps.filter.outputs.core }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Check changed files
+        uses: dorny/paths-filter@v2
+        id: filter
+        with:
+          filters: |
+            npm:
+              - 'internal/services/npm/**'
+              - 'handlers/proxy/npm_handler.go'
+              - 'tests/integration/npm_*'
+              - 'internal/adapters/http/npm_handler_adapter.go'
+            maven:
+              - 'internal/services/maven/**'  
+              - 'handlers/proxy/maven_handler.go'
+              - 'tests/integration/maven_*'
+            docker:
+              - 'internal/services/docker/**'
+              - 'handlers/proxy/docker_handler.go'
+              - 'tests/integration/docker_*'
+            apt:
+              - 'internal/services/apt/**'
+              - 'handlers/proxy/apt_handler.go'
+              - 'tests/integration/apt_*'
+            pip:
+              - 'internal/services/pip/**'
+              - 'handlers/proxy/pip_handler.go'
+              - 'tests/integration/pip_*'
+            yum:
+              - 'internal/services/yum/**'
+              - 'handlers/proxy/yum_handler.go'
+              - 'tests/integration/yum_*'
+            apk:
+              - 'internal/services/apk/**'
+              - 'handlers/proxy/apk_handler.go'
+              - 'tests/integration/apk_*'
+            core:
+              - 'internal/app/**'
+              - 'internal/config/**'
+              - 'cache/**'
+              - 'metrics/**'
+              - 'main.go'
+
+  # 🚀 빠른 피드백용 핵심 테스트 (Step 1-1: 계층화된 테스트 매트릭스)
+  quick-tests:
+    name: Quick Tests (${{ matrix.test-type }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        test-type: [unit, lint, format]
+      fail-fast: false
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -38,16 +108,20 @@ jobs:
           go mod download
           go mod verify
 
-      - name: Go vet
+      # 조건부 실행: 테스트 타입별로 분리 (Step 1-1: 계층화된 테스트 매트릭스)
+      - name: Go vet (unit tests only)
+        if: matrix.test-type == 'unit'
         run: go vet ./...
 
       - name: Lint
+        if: matrix.test-type == 'lint'
         uses: golangci/golangci-lint-action@v3
         with:
           version: latest
           args: --timeout=5m
 
       - name: Format check
+        if: matrix.test-type == 'format'
         run: |
           if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
             echo "❌ Code is not formatted:"
@@ -56,10 +130,12 @@ jobs:
           fi
 
       - name: Unit tests
+        if: matrix.test-type == 'unit'
         run: |
           go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
 
       - name: Upload coverage
+        if: matrix.test-type == 'unit'
         uses: codecov/codecov-action@v3
         with:
           files: ./coverage.out
@@ -143,15 +219,39 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # 🚀 통합 테스트 매트릭스
+  # 🧪 프록시별 통합 테스트 매트릭스 (Step 1-2: 계층화된 테스트 매트릭스)
   integration:
-    name: Integration Test (${{ matrix.proxy-type }})
+    name: Integration Test (${{ matrix.proxy-type }}, Go ${{ matrix.go-version }})
     runs-on: ubuntu-latest
-    needs: build
-    if: github.ref == 'refs/heads/develop'
+    needs: [changes, quick-tests, security]
+    if: |
+      github.ref == 'refs/heads/develop' || 
+      needs.changes.outputs.core == 'true' ||
+      (matrix.proxy-type == 'npm' && needs.changes.outputs.npm == 'true') ||
+      (matrix.proxy-type == 'maven' && needs.changes.outputs.maven == 'true') ||
+      (matrix.proxy-type == 'docker' && needs.changes.outputs.docker == 'true') ||
+      (matrix.proxy-type == 'apt' && needs.changes.outputs.apt == 'true') ||
+      (matrix.proxy-type == 'pip' && needs.changes.outputs.pip == 'true') ||
+      (matrix.proxy-type == 'yum' && needs.changes.outputs.yum == 'true') ||
+      (matrix.proxy-type == 'apk' && needs.changes.outputs.apk == 'true')
     strategy:
       matrix:
         proxy-type: [maven, npm, apt, docker, pip, yum, apk]
+        go-version: ['1.21', '1.22']
+        include:
+          # 높은 우선순위 프록시는 두 Go 버전 모두 테스트
+          - proxy-type: npm
+            priority: high
+          - proxy-type: maven
+            priority: high
+          - proxy-type: docker
+            priority: medium
+        exclude:
+          # 낮은 우선순위 프록시는 최신 Go 버전만 테스트
+          - proxy-type: apk
+            go-version: '1.21'
+          - proxy-type: yum
+            go-version: '1.21'
       fail-fast: false
     services:
       redis:
@@ -170,7 +270,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: ${{ env.GO_VERSION }}
+          go-version: ${{ matrix.go-version }}
           cache: true
 
       - name: Setup test environment
@@ -179,12 +279,25 @@ jobs:
           cp -r examples/proxy-types/*.yaml tmp/config/ 2>/dev/null || echo "No example configs found"
           cp -r sample-conf/* tmp/config/ 2>/dev/null || echo "No sample config found"
 
+      # Step 3: 캐시 최적화 - 통합 테스트용 향상된 캐시
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-${{ matrix.go-version }}-
+            ${{ runner.os }}-go-
+
       - name: Cache upstream fixtures
         uses: actions/cache@v4
         with:
           path: tests/e2e/upstream-data
-          key: upstream-fixtures-${{ matrix.proxy-type }}-${{ hashFiles('tests/e2e/upstream-data/**') }}
+          key: upstream-fixtures-${{ matrix.proxy-type }}-v2-${{ hashFiles('tests/e2e/upstream-data/**') }}
           restore-keys: |
+            upstream-fixtures-${{ matrix.proxy-type }}-v2-
             upstream-fixtures-${{ matrix.proxy-type }}-
 
       - name: Run integration tests for ${{ matrix.proxy-type }}
@@ -199,30 +312,60 @@ jobs:
           go test -tags=integration -v ./tests/integration/integration_test.go -run "Test.*${{ matrix.proxy-type | title }}" || \
           echo "No integration tests found for ${{ matrix.proxy-type }}"
 
-      - name: Collect integration test logs
+      # Step 4: 테스트 결과 수집 자동화
+      - name: Collect integration test logs and coverage
         if: always()
         run: |
-          mkdir -p test-results/${{ matrix.proxy-type }}
-          cp -r logs/* test-results/${{ matrix.proxy-type }}/ 2>/dev/null || echo "No logs to collect"
-          ls -la test-results/${{ matrix.proxy-type }}/ || echo "No test results"
+          mkdir -p test-results/${{ matrix.proxy-type }}-go${{ matrix.go-version }}
+          
+          # 로그 수집
+          cp -r logs/* test-results/${{ matrix.proxy-type }}-go${{ matrix.go-version }}/ 2>/dev/null || echo "No logs to collect"
+          
+          # 커버리지 리포트 생성
+          if [ -f coverage.out ]; then
+            go tool cover -html=coverage.out -o test-results/${{ matrix.proxy-type }}-go${{ matrix.go-version }}/coverage.html
+            go tool cover -func=coverage.out > test-results/${{ matrix.proxy-type }}-go${{ matrix.go-version }}/coverage.txt
+          fi
+          
+          # 실패 시 디버깅 정보 수집
+          if [ $? -ne 0 ]; then
+            echo "Test failed, collecting debug info..."
+            go version > test-results/${{ matrix.proxy-type }}-go${{ matrix.go-version }}/debug-info.txt
+            env | grep -E "(CONFIG|STORAGE|REDIS)" >> test-results/${{ matrix.proxy-type }}-go${{ matrix.go-version }}/debug-info.txt
+            ps aux | grep -E "(proxynd|redis)" >> test-results/${{ matrix.proxy-type }}-go${{ matrix.go-version }}/debug-info.txt
+          fi
+          
+          ls -la test-results/${{ matrix.proxy-type }}-go${{ matrix.go-version }}/ || echo "No test results"
 
       - name: Upload integration test results
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: integration-results-${{ matrix.proxy-type }}
-          path: test-results/${{ matrix.proxy-type }}/
+          name: integration-results-${{ matrix.proxy-type }}-go${{ matrix.go-version }}
+          path: test-results/${{ matrix.proxy-type }}-go${{ matrix.go-version }}/
           retention-days: 7
 
-  # 🧪 E2E 테스트 매트릭스
+  # 🌐 플랫폼별 E2E 테스트 (Step 1-3: 계층화된 테스트 매트릭스 - 핵심 타입만)
   e2e:
-    name: E2E Test (${{ matrix.proxy-type }})
-    runs-on: ubuntu-latest
-    needs: build
+    name: E2E Test (${{ matrix.proxy-type }}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    needs: integration
     if: github.ref == 'refs/heads/develop'
     strategy:
       matrix:
-        proxy-type: [maven, npm, apt, docker, pip, yum, apk]
+        proxy-type: [maven, npm, docker]  # 핵심 타입만 E2E 테스트
+        os: [ubuntu-latest, macos-latest]
+        include:
+          # 우선순위 기반 매트릭스 확장
+          - proxy-type: npm
+            priority: high
+            timeout: 10
+          - proxy-type: maven
+            priority: high  
+            timeout: 15
+          - proxy-type: docker
+            priority: medium
+            timeout: 20
       fail-fast: false
     steps:
       - name: Checkout
