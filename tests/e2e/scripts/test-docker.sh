@@ -101,7 +101,7 @@ test_manifest_inspection() {
 
     local images=(
         "library/nginx:latest"
-        "library/alpine:latest" 
+        "library/alpine:latest"
         "library/ubuntu:20.04"
         "library/hello-world:latest"
     )
@@ -121,27 +121,27 @@ test_manifest_inspection() {
             if curl -sf -H "Accept: $format" "$manifest_url" > "/tmp/manifest_${image//\//_}.json" 2>&1; then
                 log_success "Manifest retrieval successful for $image (format: $format)"
                 success=true
-                
+
                 # 매니페스트 내용 검증
                 local manifest_file="/tmp/manifest_${image//\//_}.json"
                 if jq -e '.schemaVersion' "$manifest_file" >/dev/null 2>&1; then
                     local schema_version
                     schema_version=$(jq -r '.schemaVersion' "$manifest_file")
                     log_success "Valid manifest schema version: $schema_version"
-                    
+
                     # 레이어 정보 확인
                     if jq -e '.layers // .fsLayers' "$manifest_file" >/dev/null 2>&1; then
                         local layer_count
                         layer_count=$(jq '.layers // .fsLayers | length' "$manifest_file")
                         log_info "Image $image has $layer_count layer(s)"
                     fi
-                    
+
                     # 아키텍처 정보 확인 (manifest list의 경우)
                     if jq -e '.manifests' "$manifest_file" >/dev/null 2>&1; then
                         local arch_count
                         arch_count=$(jq '.manifests | length' "$manifest_file")
                         log_success "Multi-arch manifest list with $arch_count architecture(s)"
-                        
+
                         if [[ "$VERBOSE" == "true" ]]; then
                             log_info "Available architectures:"
                             jq -r '.manifests[].platform.architecture' "$manifest_file" | sort | uniq
@@ -153,13 +153,13 @@ test_manifest_inspection() {
                 break
             fi
         done
-        
+
         if [ "$success" = false ]; then
             log_error "Manifest retrieval failed for $image with all formats"
             return 1
         fi
     done
-    
+
     log_success "Enhanced manifest inspection completed successfully"
 }
 
@@ -181,24 +181,24 @@ test_multi_architecture_images() {
 
     for image in "${multi_arch_images[@]}"; do
         local manifest_url="${PROXY_URL}/v2/${image}/manifests/latest"
-        
+
         # manifest list 확인
         if curl -sf -H "Accept: application/vnd.docker.distribution.manifest.list.v2+json" \
             "$manifest_url" > "/tmp/manifest_list_${image//\//_}.json" 2>&1; then
-            
+
             log_success "Multi-arch manifest list retrieved for $image"
-            
+
             # 지원 아키텍처 확인
             for arch in "${target_architectures[@]}"; do
                 if jq -e ".manifests[] | select(.platform.architecture == \"$arch\")" \
                     "/tmp/manifest_list_${image//\//_}.json" >/dev/null 2>&1; then
                     log_success "Architecture $arch supported for $image"
-                    
+
                     # 특정 아키텍처 매니페스트 조회
                     local digest
                     digest=$(jq -r ".manifests[] | select(.platform.architecture == \"$arch\") | .digest" \
                         "/tmp/manifest_list_${image//\//_}.json")
-                    
+
                     if curl -sf "${PROXY_URL}/v2/${image}/manifests/$digest" \
                         > "/tmp/arch_manifest_${image//\//_}_${arch//\//_}.json" 2>&1; then
                         log_success "Architecture-specific manifest retrieved: $arch"
@@ -213,7 +213,7 @@ test_multi_architecture_images() {
             log_warning "Multi-arch manifest list not available for $image"
         fi
     done
-    
+
     log_success "Multi-architecture image testing completed"
 }
 
@@ -233,12 +233,12 @@ test_blob_access() {
     else
         log_warning "Blob endpoint returned unexpected status: $response_code"
     fi
-    
+
     # 실제 이미지에서 blob SHA 추출 후 테스트
     if [ -f "/tmp/manifest_library_nginx.json" ]; then
         local config_digest
         config_digest=$(jq -r '.config.digest // empty' "/tmp/manifest_library_nginx.json" 2>/dev/null)
-        
+
         if [ -n "$config_digest" ]; then
             local config_url="${PROXY_URL}/v2/library/nginx/blobs/$config_digest"
             if curl -sf "$config_url" > /tmp/nginx_config.json 2>&1; then
@@ -256,13 +256,13 @@ test_catalog_api() {
 
     if curl -sf "${PROXY_URL}/v2/_catalog" > /tmp/catalog_test 2>&1; then
         log_success "Catalog API accessible"
-        
+
         # JSON 파싱 검증
         if jq -e '.repositories' /tmp/catalog_test >/dev/null 2>&1; then
             local repo_count
             repo_count=$(jq '.repositories | length' /tmp/catalog_test)
             log_success "Catalog contains $repo_count repositories"
-            
+
             if [[ "$VERBOSE" == "true" ]]; then
                 log_info "Available repositories:"
                 jq -r '.repositories[]' /tmp/catalog_test | head -10
@@ -273,7 +273,7 @@ test_catalog_api() {
     else
         log_warning "Catalog API not accessible (may be disabled)"
     fi
-    
+
     # 페이지네이션 테스트
     if curl -sf "${PROXY_URL}/v2/_catalog?n=5" > /tmp/catalog_paginated 2>&1; then
         log_success "Catalog pagination supported"
@@ -295,7 +295,7 @@ test_layer_caching() {
     for test_url in "${test_urls[@]}"; do
         local endpoint_name
         endpoint_name=$(basename "$test_url")
-        
+
         # 첫 번째 요청 (캐시 MISS)
         local start_time
         start_time=$(date +%s%N)
@@ -317,26 +317,26 @@ test_layer_caching() {
             log_warning "Cache behavior inconclusive for $endpoint_name"
         fi
     done
-    
+
     # 실제 블롭 캐싱 테스트 (가능한 경우)
     if [ -f "/tmp/manifest_library_nginx.json" ]; then
         local layer_digest
         layer_digest=$(jq -r '.layers[0].digest // empty' "/tmp/manifest_library_nginx.json" 2>/dev/null)
-        
+
         if [ -n "$layer_digest" ]; then
             local layer_url="${PROXY_URL}/v2/library/nginx/blobs/$layer_digest"
-            
+
             # 레이어 다운로드 성능 테스트
             start_time=$(date +%s%N)
             curl -sf --range "0-1023" "$layer_url" > /tmp/layer_sample_first 2>&1 || true
             first_duration=$(( ($(date +%s%N) - start_time) / 1000000 ))
-            
+
             start_time=$(date +%s%N)
             curl -sf --range "0-1023" "$layer_url" > /tmp/layer_sample_second 2>&1 || true
             second_duration=$(( ($(date +%s%N) - start_time) / 1000000 ))
-            
+
             log_info "Layer caching test: First: ${first_duration}ms, Second: ${second_duration}ms"
-            
+
             if [ $second_duration -lt $first_duration ]; then
                 log_success "Layer caching appears to be working"
             else
@@ -344,7 +344,7 @@ test_layer_caching() {
             fi
         fi
     fi
-    
+
     log_success "Layer caching verification completed"
 }
 
@@ -363,22 +363,22 @@ test_authentication_handling() {
     for header in "${auth_headers[@]}"; do
         local header_name
         header_name=$(echo "$header" | cut -d':' -f1)
-        
+
         local response_code
         response_code=$(curl -s -o /dev/null -w "%{http_code}" \
             -H "$header" "${PROXY_URL}/v2/" 2>&1)
-            
+
         if [ "$response_code" -eq 200 ] || [ "$response_code" -eq 401 ] || [ "$response_code" -eq 403 ]; then
             log_success "Auth header $header_name properly handled (status: $response_code)"
         else
             log_warning "Auth header $header_name returned unexpected status: $response_code"
         fi
     done
-    
+
     # 인증 챌린지 테스트 (private registry 시뮬레이션)
     local private_manifest_url="${PROXY_URL}/v2/private/test/manifests/latest"
     response_code=$(curl -s -o /dev/null -w "%{http_code}" "$private_manifest_url" 2>&1)
-    
+
     if [ "$response_code" -eq 401 ] || [ "$response_code" -eq 403 ]; then
         log_success "Authentication challenge properly returned for private repository"
     elif [ "$response_code" -eq 404 ]; then
@@ -386,7 +386,7 @@ test_authentication_handling() {
     else
         log_info "Authentication test inconclusive (status: $response_code)"
     fi
-    
+
     # WWW-Authenticate 헤더 확인
     local auth_challenge
     auth_challenge=$(curl -s -I "$private_manifest_url" 2>&1 | grep -i "www-authenticate" || true)
@@ -395,7 +395,7 @@ test_authentication_handling() {
     else
         log_info "WWW-Authenticate header not found (may not be required)"
     fi
-    
+
     log_success "Authentication handling tests completed"
 }
 
@@ -405,7 +405,7 @@ test_error_scenarios() {
 
     local error_urls=(
         "${PROXY_URL}/v2/nonexistent/repo/manifests/latest"
-        "${PROXY_URL}/v2/library/nginx/manifests/nonexistent-tag" 
+        "${PROXY_URL}/v2/library/nginx/manifests/nonexistent-tag"
         "${PROXY_URL}/v2/library/nginx/blobs/sha256:invalid-hash"
         "${PROXY_URL}/v2/invalid-endpoint"
     )
@@ -413,7 +413,7 @@ test_error_scenarios() {
     for url in "${error_urls[@]}"; do
         local endpoint_desc
         endpoint_desc=$(echo "$url" | sed "s|${PROXY_URL}/v2/||")
-        
+
         local response_code
         response_code=$(curl -s -o /dev/null -w "%{http_code}" "$url" 2>&1)
 
@@ -434,18 +434,18 @@ main() {
 
     # 필수 헬스 체크
     check_proxynd_health
-    
+
     # 기본 API 테스트
     test_docker_api_v2
     test_blob_access
     test_catalog_api
-    
+
     # Step 3: Docker E2E 테스트 강화
     test_multi_architecture_images    # Step 3-1: 다양한 아키텍처 이미지 테스트
     test_manifest_inspection         # Step 3-2: 매니페스트 조회 테스트 (강화)
     test_layer_caching              # Step 3-3: 레이어 캐싱 검증
     test_authentication_handling    # Step 3-4: 인증 처리 테스트
-    
+
     # 추가 테스트들
     test_error_scenarios
 

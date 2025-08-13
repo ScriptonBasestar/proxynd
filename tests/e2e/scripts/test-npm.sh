@@ -34,14 +34,14 @@ TESTS_TOTAL=0
 run_test() {
     local test_name="$1"
     local test_command="$2"
-    
+
     TESTS_TOTAL=$((TESTS_TOTAL + 1))
     log_info "Running test: $test_name"
-    
+
     if [[ "$VERBOSE" == "--verbose" ]]; then
         echo "Command: $test_command"
     fi
-    
+
     if eval "$test_command"; then
         log_success "$test_name - PASSED"
         TESTS_PASSED=$((TESTS_PASSED + 1))

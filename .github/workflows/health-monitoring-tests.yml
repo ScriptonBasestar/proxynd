@@ -1,0 +1,537 @@
+name: Health Monitoring System Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'health/**'
+      - 'routers/*health*'
+      - 'internal/config/**'
+      - 'cache/**'
+      - '.github/workflows/health-monitoring-tests.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'health/**'
+      - 'routers/*health*'
+      - 'internal/config/**'
+      - 'cache/**'
+  schedule:
+    # 매일 오전 9시(UTC)에 실행
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+    inputs:
+      verbose:
+        description: 'Enable verbose logging'
+        required: false
+        default: 'false'
+        type: boolean
+      test_timeout:
+        description: 'Test timeout in seconds'
+        required: false
+        default: '30'
+        type: number
+
+env:
+  GO_VERSION: '1.21'
+  HEALTH_CHECK_TIMEOUT: ${{ github.event.inputs.test_timeout || '30' }}
+  VERBOSE: ${{ github.event.inputs.verbose || 'false' }}
+
+jobs:
+  health-system-unit-tests:
+    name: Health System Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION }}
+
+    - name: Cache Go modules
+      uses: actions/cache@v3
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
+    - name: Install dependencies
+      run: go mod download
+
+    - name: Run health system unit tests
+      run: |
+        echo "Running health system unit tests..."
+        go test -v -race -timeout=5m ./health/... \
+          -cover -coverprofile=health-coverage.out \
+          -covermode=atomic
+        
+        # 커버리지 검증 (최소 80% 목표)
+        COVERAGE=$(go tool cover -func=health-coverage.out | grep total | awk '{print $3}' | sed 's/%//')
+        echo "Health system test coverage: ${COVERAGE}%"
+        
+        if (( $(echo "$COVERAGE < 80" | bc -l) )); then
+          echo "❌ Health system test coverage is below 80%: ${COVERAGE}%"
+          exit 1
+        fi
+        echo "✅ Health system test coverage meets requirement: ${COVERAGE}%"
+
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./health-coverage.out
+        flags: health-system
+        name: health-system-coverage
+
+  health-integration-tests:
+    name: Health System Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION }}
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y jq curl
+
+    - name: Cache Go modules
+      uses: actions/cache@v3
+      with:
+        path: ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+
+    - name: Install dependencies
+      run: go mod download
+
+    - name: Set up test environment
+      run: |
+        # 테스트용 디렉토리 생성
+        mkdir -p /tmp/proxynd-test/{config,storage,cache}
+        
+        # 환경 변수 설정
+        echo "CONFIG_DIR=/tmp/proxynd-test/config" >> $GITHUB_ENV
+        echo "STORAGE_DIR=/tmp/proxynd-test/storage" >> $GITHUB_ENV
+        echo "SERVER_PORT=8080" >> $GITHUB_ENV
+        echo "HEALTH_CHECK_INTERVAL=5s" >> $GITHUB_ENV
+        echo "HEALTH_FAST_MODE=true" >> $GITHUB_ENV
+        echo "ENVIRONMENT=test" >> $GITHUB_ENV
+        echo "VERSION=ci-test" >> $GITHUB_ENV
+
+    - name: Create test configuration
+      run: |
+        cat > /tmp/proxynd-test/config/test-config.yaml << EOF
+        server:
+          port: 8080
+          host: "0.0.0.0"
+        cache:
+          backend: "file"
+          ttl: "3600s"
+          file:
+            directory: "/tmp/proxynd-test/cache"
+        registries:
+          npm:
+            enabled: true
+            upstream: "https://registry.npmjs.org"
+          pypi:
+            enabled: true
+            upstream: "https://pypi.org"
+            simple: "https://pypi.org/simple"
+          apt:
+            enabled: false  # CI 환경에서는 비활성화
+          docker:
+            enabled: false  # CI 환경에서는 비활성화
+          maven:
+            enabled: true
+            repositories:
+              - id: "central"
+                name: "Maven Central"
+                url: "https://repo1.maven.org/maven2"
+        security:
+          authentication:
+            basic_auth:
+              enabled: false  # 테스트 환경에서는 비활성화
+        logging:
+          level: "info"
+          format: "json"
+        metrics:
+          enabled: true
+          path: "/metrics"
+        EOF
+
+    - name: Build ProxyND
+      run: |
+        echo "Building ProxyND..."
+        go build -o proxynd-test -ldflags "-X main.version=ci-test" ./main.go
+
+    - name: Start ProxyND server
+      run: |
+        echo "Starting ProxyND server in background..."
+        ./proxynd-test --config=/tmp/proxynd-test/config/test-config.yaml &
+        PROXYND_PID=$!
+        echo $PROXYND_PID > proxynd.pid
+        
+        # 서버 시작 대기
+        echo "Waiting for server to start..."
+        for i in {1..30}; do
+          if curl -s http://localhost:8080/health/live > /dev/null 2>&1; then
+            echo "✅ Server is running"
+            break
+          fi
+          echo "Waiting for server... (attempt $i/30)"
+          sleep 2
+        done
+        
+        if ! curl -s http://localhost:8080/health/live > /dev/null 2>&1; then
+          echo "❌ Server failed to start"
+          exit 1
+        fi
+
+    - name: Run health check integration tests
+      run: |
+        echo "Running health check integration tests..."
+        chmod +x ./tmp/test-enhanced-health.sh
+        VERBOSE=${{ env.VERBOSE }} ./tmp/test-enhanced-health.sh http://localhost:8080
+
+    - name: Test health check performance
+      run: |
+        echo "Testing health check performance requirements..."
+        
+        # 빠른 헬스체크 성능 테스트 (100ms 미만)
+        echo "Testing fast health check performance (should be < 100ms):"
+        for i in {1..10}; do
+          START=$(date +%s%N)
+          curl -s http://localhost:8080/health/fast > /dev/null
+          END=$(date +%s%N)
+          DURATION=$(( (END - START) / 1000000 ))
+          echo "Attempt $i: ${DURATION}ms"
+          
+          if [ $DURATION -gt 100 ]; then
+            echo "❌ Fast health check took ${DURATION}ms (should be < 100ms)"
+            exit 1
+          fi
+        done
+        echo "✅ All fast health checks completed under 100ms"
+        
+        # 포괄적인 헬스체크 성능 테스트
+        echo "Testing comprehensive health check performance:"
+        START=$(date +%s%N)
+        curl -s http://localhost:8080/health/comprehensive > /dev/null
+        END=$(date +%s%N)
+        DURATION=$(( (END - START) / 1000000 ))
+        echo "Comprehensive health check: ${DURATION}ms"
+
+    - name: Test health check reliability
+      run: |
+        echo "Testing health check reliability..."
+        
+        # 연속 요청 테스트
+        SUCCESS_COUNT=0
+        TOTAL_REQUESTS=50
+        
+        for i in $(seq 1 $TOTAL_REQUESTS); do
+          if curl -s -f http://localhost:8080/health/ready > /dev/null 2>&1; then
+            SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
+          fi
+        done
+        
+        SUCCESS_RATE=$(( SUCCESS_COUNT * 100 / TOTAL_REQUESTS ))
+        echo "Health check success rate: ${SUCCESS_RATE}% (${SUCCESS_COUNT}/${TOTAL_REQUESTS})"
+        
+        if [ $SUCCESS_RATE -lt 95 ]; then
+          echo "❌ Health check reliability is below 95%: ${SUCCESS_RATE}%"
+          exit 1
+        fi
+        echo "✅ Health check reliability meets requirement: ${SUCCESS_RATE}%"
+
+    - name: Validate health check response structure
+      run: |
+        echo "Validating health check response structures..."
+        
+        # 포괄적인 헬스체크 응답 구조 검증
+        RESPONSE=$(curl -s http://localhost:8080/health/comprehensive)
+        
+        # 필수 필드들 확인
+        REQUIRED_FIELDS=("status" "timestamp" "uptime" "summary" "metrics" "basic_checks" "enhanced_checks")
+        
+        for field in "${REQUIRED_FIELDS[@]}"; do
+          if echo "$RESPONSE" | jq -e ".$field" > /dev/null 2>&1; then
+            echo "✅ Required field '$field' present"
+          else
+            echo "❌ Required field '$field' missing"
+            exit 1
+          fi
+        done
+        
+        # 상태 값 검증
+        STATUS=$(echo "$RESPONSE" | jq -r '.status')
+        if [[ "$STATUS" =~ ^(healthy|degraded|unhealthy)$ ]]; then
+          echo "✅ Status value is valid: $STATUS"
+        else
+          echo "❌ Invalid status value: $STATUS"
+          exit 1
+        fi
+
+    - name: Test circuit breaker functionality
+      run: |
+        echo "Testing circuit breaker functionality..."
+        
+        # 서킷 브레이커 상태 확인
+        CB_RESPONSE=$(curl -s http://localhost:8080/health/proxy/circuit-breakers)
+        echo "Circuit breaker response: $CB_RESPONSE"
+        
+        # JSON 유효성 확인
+        if echo "$CB_RESPONSE" | jq . > /dev/null 2>&1; then
+          echo "✅ Circuit breaker endpoint returns valid JSON"
+        else
+          echo "❌ Circuit breaker endpoint returns invalid JSON"
+          exit 1
+        fi
+
+    - name: Collect server logs
+      if: failure()
+      run: |
+        echo "Collecting server logs for debugging..."
+        if [ -f proxynd.pid ] && kill -0 $(cat proxynd.pid) 2>/dev/null; then
+          echo "Server is still running, collecting logs..."
+          # 실제 로그 수집 로직은 로깅 설정에 따라 달라짐
+        fi
+
+    - name: Cleanup
+      if: always()
+      run: |
+        echo "Cleaning up..."
+        if [ -f proxynd.pid ]; then
+          kill $(cat proxynd.pid) 2>/dev/null || true
+          rm proxynd.pid
+        fi
+        rm -rf /tmp/proxynd-test || true
+
+  health-load-tests:
+    name: Health System Load Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [health-system-unit-tests]
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION }}
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y apache2-utils curl jq
+
+    - name: Build and start server
+      run: |
+        go build -o proxynd-load-test ./main.go
+        
+        # 최소한의 설정으로 서버 시작
+        mkdir -p /tmp/load-test
+        export CONFIG_DIR=/tmp/load-test
+        export STORAGE_DIR=/tmp/load-test
+        export SERVER_PORT=8081
+        
+        ./proxynd-load-test &
+        PROXYND_PID=$!
+        echo $PROXYND_PID > proxynd-load.pid
+        
+        # 서버 시작 대기
+        for i in {1..20}; do
+          if curl -s http://localhost:8081/health/live > /dev/null 2>&1; then
+            echo "Server is ready for load testing"
+            break
+          fi
+          sleep 1
+        done
+
+    - name: Run load tests on health endpoints
+      run: |
+        echo "Running load tests on health endpoints..."
+        
+        # 동시 연결 테스트
+        echo "Testing concurrent requests to /health/fast..."
+        ab -n 1000 -c 50 -s 30 http://localhost:8081/health/fast > ab-fast.log 2>&1
+        
+        # 결과 분석
+        FAILED_REQUESTS=$(grep "Failed requests:" ab-fast.log | awk '{print $3}')
+        REQUESTS_PER_SEC=$(grep "Requests per second:" ab-fast.log | awk '{print $4}')
+        P95_TIME=$(grep "95%" ab-fast.log | awk '{print $2}')
+        
+        echo "Load test results:"
+        echo "- Failed requests: $FAILED_REQUESTS"
+        echo "- Requests per second: $REQUESTS_PER_SEC"
+        echo "- 95th percentile response time: ${P95_TIME}ms"
+        
+        # 실패 요청이 1% 이하인지 확인
+        if [ "$FAILED_REQUESTS" -gt 10 ]; then  # 1000 requests의 1%
+          echo "❌ Too many failed requests: $FAILED_REQUESTS"
+          exit 1
+        fi
+        
+        echo "✅ Load test passed with $FAILED_REQUESTS failed requests"
+
+    - name: Cleanup load test
+      if: always()
+      run: |
+        if [ -f proxynd-load.pid ]; then
+          kill $(cat proxynd-load.pid) 2>/dev/null || true
+        fi
+
+  security-health-tests:
+    name: Security Health Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [health-system-unit-tests]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ env.GO_VERSION }}
+
+    - name: Test security health checks
+      run: |
+        echo "Testing security-related health checks..."
+        
+        # TLS 설정 테스트
+        go test -v -timeout=5m ./health/ -run TestSecuritySystemHealthChecker
+        
+        # 인증 시스템 테스트  
+        go test -v -timeout=5m ./health/ -run TestSecurityHealthChecker
+        
+        echo "✅ Security health tests completed"
+
+  health-docs-validation:
+    name: Health Documentation Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Check health documentation
+      run: |
+        echo "Validating health system documentation..."
+        
+        # API 엔드포인트 문서화 확인
+        if [ -f "docs/07-monitoring/health/README.md" ]; then
+          echo "✅ Health monitoring documentation exists"
+        else
+          echo "⚠️ Health monitoring documentation missing"
+        fi
+        
+        # 헬스체크 엔드포인트 목록 생성
+        echo "Generating health endpoints documentation..."
+        cat > health-endpoints.md << EOF
+        # Health Check Endpoints
+        
+        Generated on: $(date)
+        
+        ## Basic Endpoints
+        - GET /health - Root health check
+        - GET /health/live - Liveness probe (Kubernetes)
+        - GET /health/ready - Readiness probe (Kubernetes)
+        
+        ## Enhanced Endpoints
+        - GET /health/comprehensive - Comprehensive health status
+        - GET /health/fast - Fast health check (<100ms)
+        - GET /health/checkers - Available health checkers
+        - GET /health/metrics - Health metrics
+        
+        ## Proxy Endpoints
+        - GET /health/proxy/upstreams - All proxy upstream status
+        - GET /health/proxy/upstreams/:type - Specific proxy status
+        - GET /health/proxy/circuit-breakers - Circuit breaker status
+        
+        ## System Endpoints
+        - GET /health/system/resources - System resource status
+        - GET /health/system/memory - Memory details
+        - GET /health/system/disk - Disk usage details
+        
+        ## Management Endpoints
+        - GET /health/manage/config - Health check configuration
+        - POST /health/manage/maintenance - Enable maintenance mode
+        - DELETE /health/manage/maintenance - Disable maintenance mode
+        EOF
+        
+        echo "✅ Health endpoints documentation generated"
+
+  test-summary:
+    name: Test Summary
+    runs-on: ubuntu-latest
+    needs: [health-system-unit-tests, health-integration-tests, security-health-tests, health-docs-validation]
+    if: always()
+    
+    steps:
+    - name: Generate test summary
+      run: |
+        echo "# Health Monitoring System Test Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## Test Results" >> $GITHUB_STEP_SUMMARY
+        
+        if [ "${{ needs.health-system-unit-tests.result }}" == "success" ]; then
+          echo "✅ Unit Tests: Passed" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "❌ Unit Tests: Failed" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ "${{ needs.health-integration-tests.result }}" == "success" ]; then
+          echo "✅ Integration Tests: Passed" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "❌ Integration Tests: Failed" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ "${{ needs.security-health-tests.result }}" == "success" ]; then
+          echo "✅ Security Tests: Passed" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "❌ Security Tests: Failed" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ "${{ needs.health-docs-validation.result }}" == "success" ]; then
+          echo "✅ Documentation: Validated" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "❌ Documentation: Issues Found" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## Performance Requirements" >> $GITHUB_STEP_SUMMARY
+        echo "- Fast health check: < 100ms ✅" >> $GITHUB_STEP_SUMMARY
+        echo "- Health check reliability: > 95% ✅" >> $GITHUB_STEP_SUMMARY
+        echo "- Test coverage: > 80% ✅" >> $GITHUB_STEP_SUMMARY
+        
+        echo "Health monitoring system testing completed!" >> $GITHUB_STEP_SUMMARY

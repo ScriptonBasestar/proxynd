@@ -5,14 +5,17 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
 
-	"proxynd/internal/repositories/cache"
+	"proxynd/cache"
+	cacheRepo "proxynd/internal/repositories/cache"
 	"proxynd/internal/repositories/config"
+	configTypes "proxynd/internal/config"
 	"proxynd/internal/services/adapters"
 	configService "proxynd/internal/services/config"
 	"proxynd/internal/services/proxy"
@@ -29,7 +32,7 @@ type Application struct {
 	serviceFactory *proxy.ServiceFactory
 	configService  configService.Service
 	configRepo     *config.FileRepository
-	cacheRepo      *cache.FileRepository
+	cacheRepo      *cacheRepo.FileRepository
 }
 
 // Config holds application configuration
@@ -177,7 +180,7 @@ func (app *Application) GetFiberApp() *fiber.App {
 
 func (app *Application) initializeRepositories() error {
 	// Initialize cache repository
-	cacheRepo, err := cache.NewFileRepository(
+	cacheRepo, err := cacheRepo.NewFileRepository(
 		app.config.StorageDir,
 		10*1024*1024*1024, // 10GB max cache size
 		app.config.CacheMaxAge,
@@ -247,6 +250,51 @@ func (app *Application) initializeFiberApp() {
 			logging.F("error", err))
 	}
 	routers.HealthRouter(app.fiberApp)
+	
+	// === 강화된 헬스 모니터링 라우터 ===
+	config := app.container.GetConfig()
+	if _, err := app.container.GetCacheRepository(); err == nil {
+		// FileSystemBackend을 사용해 cache.Manager 생성
+		cacheBackend, err := cache.NewFileSystemBackend(config.StorageDir)
+		if err == nil {
+			cacheOptions := cache.CacheOptions{
+				MaxSize:    1024 * 1024 * 1024, // 1GB
+				DefaultTTL: time.Hour,
+				BasePath:   config.StorageDir,
+			}
+			cacheManager := cache.NewManager(cacheBackend, cacheOptions)
+			
+			// 포트를 정수로 변환
+			port := 8080 // 기본값
+			if config.Port != "" {
+				if p, err := strconv.Atoi(config.Port); err == nil {
+					port = p
+				}
+			}
+			
+			// RootConfig 구성 (기본값으로 생성)
+			rootConfig := &configTypes.RootConfig{
+				Server: configTypes.ServerConfig{
+					Host: "0.0.0.0",
+					Port: port,
+				},
+				Cache: configTypes.CacheSettings{
+					TTL: 3600,
+				},
+			}
+			
+			enhancedHealthRouter := routers.NewEnhancedHealthRouter(rootConfig, cacheManager)
+			enhancedHealthRouter.RegisterRoutes(app.fiberApp)
+			app.logger.Info("Enhanced health monitoring system initialized")
+		} else {
+			app.logger.Warn("Enhanced health router initialization failed: cache backend creation failed",
+				logging.F("error", err))
+		}
+	} else {
+		app.logger.Warn("Enhanced health router initialization failed: cache repository not available",
+			logging.F("error", err))
+	}
+	
 	routers.ProxyRouter(app.fiberApp)      // 레거시 호환용
 	routers.ProxyRouterV3(app.fiberApp)    // V3 라우터 (deprecated)
 	routers.RegisterProxyAPI(app.fiberApp) // V3 API (이미 v1)

@@ -49,6 +49,34 @@ type Metrics struct {
 	ConfigReloads        prometheus.Counter
 	ConfigReloadFailures prometheus.Counter
 	UptimeSeconds        prometheus.Counter
+
+	// 비즈니스 메트릭 강화
+	PackageDownloadsTotal    *prometheus.CounterVec
+	PackageUploadsTotal      *prometheus.CounterVec
+	PopularPackagesGauge     *prometheus.GaugeVec
+	UserAgentRequests        *prometheus.CounterVec
+	GeographicRequests       *prometheus.CounterVec
+
+	// 성능 메트릭 강화
+	ConcurrentConnections    *prometheus.GaugeVec
+	ThroughputRequestsPerSec *prometheus.GaugeVec
+	LatencyPercentiles       *prometheus.GaugeVec
+	ResourceUtilization      *prometheus.GaugeVec
+
+	// 에러 메트릭 강화
+	HTTPStatusDistribution   *prometheus.CounterVec
+	RetryAttempts            *prometheus.CounterVec
+	RetrySuccessRate         *prometheus.GaugeVec
+	TimeoutErrors            *prometheus.CounterVec
+	ConnectionErrors         *prometheus.CounterVec
+	UpstreamFailureRate      *prometheus.GaugeVec
+
+	// 사용자 활동 메트릭
+	UniqueUsers              *prometheus.GaugeVec
+	RequestPatterns          *prometheus.CounterVec
+	SessionDuration          *prometheus.HistogramVec
+	AuthenticationMetrics    *prometheus.CounterVec
+	UserBehaviorMetrics      *prometheus.CounterVec
 }
 
 // NewMetrics 새 메트릭 인스턴스 생성
@@ -291,6 +319,171 @@ func NewMetrics() *Metrics {
 				Name: "proxynd_uptime_seconds",
 				Help: "Uptime in seconds",
 			},
+		),
+
+		// 비즈니스 메트릭 강화
+		PackageDownloadsTotal: promauto.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "proxynd_package_downloads_total",
+				Help: "Total package downloads by name and version",
+			},
+			[]string{"registry_type", "package_name", "package_version", "file_type"},
+		),
+
+		PackageUploadsTotal: promauto.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "proxynd_package_uploads_total",
+				Help: "Total package uploads by name and version",
+			},
+			[]string{"registry_type", "package_name", "package_version"},
+		),
+
+		PopularPackagesGauge: promauto.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: "proxynd_popular_packages_rank",
+				Help: "Popular packages ranking by download count",
+			},
+			[]string{"registry_type", "package_name", "rank_position"},
+		),
+
+		UserAgentRequests: promauto.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "proxynd_user_agent_requests_total",
+				Help: "Total requests by user agent category",
+			},
+			[]string{"user_agent_category", "user_agent_version", "registry_type"},
+		),
+
+		GeographicRequests: promauto.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "proxynd_geographic_requests_total",
+				Help: "Total requests by geographic location",
+			},
+			[]string{"country_code", "region", "registry_type"},
+		),
+
+		// 성능 메트릭 강화
+		ConcurrentConnections: promauto.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: "proxynd_concurrent_connections",
+				Help: "Current number of concurrent connections",
+			},
+			[]string{"registry_type", "connection_type"},
+		),
+
+		ThroughputRequestsPerSec: promauto.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: "proxynd_throughput_requests_per_second",
+				Help: "Current throughput in requests per second",
+			},
+			[]string{"registry_type", "time_window"},
+		),
+
+		LatencyPercentiles: promauto.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: "proxynd_latency_percentiles_seconds",
+				Help: "Response time percentiles (P50, P90, P95, P99)",
+			},
+			[]string{"registry_type", "percentile", "method"},
+		),
+
+		ResourceUtilization: promauto.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: "proxynd_resource_utilization_percent",
+				Help: "Resource utilization percentages",
+			},
+			[]string{"resource_type", "measurement"},
+		),
+
+		// 에러 메트릭 강화
+		HTTPStatusDistribution: promauto.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "proxynd_http_status_distribution_total",
+				Help: "HTTP status code distribution",
+			},
+			[]string{"registry_type", "status_class", "status_code"},
+		),
+
+		RetryAttempts: promauto.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "proxynd_retry_attempts_total",
+				Help: "Total retry attempts by type and outcome",
+			},
+			[]string{"registry_type", "retry_reason", "attempt_number", "outcome"},
+		),
+
+		RetrySuccessRate: promauto.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: "proxynd_retry_success_rate",
+				Help: "Retry success rate by registry type",
+			},
+			[]string{"registry_type", "retry_reason"},
+		),
+
+		TimeoutErrors: promauto.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "proxynd_timeout_errors_total",
+				Help: "Total timeout errors by type",
+			},
+			[]string{"registry_type", "timeout_type", "upstream"},
+		),
+
+		ConnectionErrors: promauto.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "proxynd_connection_errors_total",
+				Help: "Total connection errors by type",
+			},
+			[]string{"registry_type", "error_type", "upstream"},
+		),
+
+		UpstreamFailureRate: promauto.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: "proxynd_upstream_failure_rate",
+				Help: "Upstream failure rate by registry type",
+			},
+			[]string{"registry_type", "upstream", "failure_type"},
+		),
+
+		// 사용자 활동 메트릭
+		UniqueUsers: promauto.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: "proxynd_unique_users",
+				Help: "Number of unique users by time window",
+			},
+			[]string{"registry_type", "time_window", "user_type"},
+		),
+
+		RequestPatterns: promauto.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "proxynd_request_patterns_total",
+				Help: "Request patterns by time and behavior",
+			},
+			[]string{"registry_type", "pattern_type", "time_period"},
+		),
+
+		SessionDuration: promauto.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Name:    "proxynd_session_duration_seconds",
+				Help:    "User session duration distribution",
+				Buckets: prometheus.ExponentialBuckets(60, 2, 12), // 1min to ~68 hours
+			},
+			[]string{"registry_type", "user_type"},
+		),
+
+		AuthenticationMetrics: promauto.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "proxynd_authentication_events_total",
+				Help: "Authentication events by type and outcome",
+			},
+			[]string{"auth_method", "event_type", "outcome", "failure_reason"},
+		),
+
+		UserBehaviorMetrics: promauto.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: "proxynd_user_behavior_events_total",
+				Help: "User behavior events and patterns",
+			},
+			[]string{"registry_type", "behavior_type", "user_category"},
 		),
 	}
 }

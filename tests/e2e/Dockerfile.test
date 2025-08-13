@@ -18,7 +18,7 @@ RUN apk add --no-cache \
 # Node.js (NPM 테스트용)
 RUN apk add --no-cache nodejs npm
 
-# Python (PIP 테스트용) 
+# Python (PIP 테스트용)
 RUN apk add --no-cache python3 py3-pip
 
 # Java/Maven (Maven 테스트용)

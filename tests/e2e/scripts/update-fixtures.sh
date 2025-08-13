@@ -107,22 +107,22 @@ ensure_directory() {
 # NPM 픽스처 업데이트
 update_npm_fixtures() {
     log_test "Updating NPM fixtures..."
-    
+
     local npm_dir="$UPSTREAM_DATA_DIR/npm"
     ensure_directory "$npm_dir"
-    
+
     local packages=(
         "express"
         "lodash"
-        "react" 
+        "react"
         "@types/node"
         "@angular/core"
     )
-    
+
     for package in "${packages[@]}"; do
         local package_dir="$npm_dir/$package"
         ensure_directory "$package_dir"
-        
+
         if [[ "$DRY_RUN" == "true" ]]; then
             log_info "Would update NPM package: $package"
         else
@@ -141,24 +141,24 @@ update_npm_fixtures() {
   "license": "MIT"
 }
 EOF
-            
+
             # 간단한 인덱스 파일 생성
             echo "module.exports = { name: '$package', version: '1.0.0-test' };" > "$package_dir/index.js"
-            
+
             log_success "Updated NPM fixture: $package"
         fi
     done
-    
+
     log_success "NPM fixtures update completed"
 }
 
 # Maven 픽스처 업데이트
 update_maven_fixtures() {
     log_test "Updating Maven fixtures..."
-    
+
     local maven_dir="$UPSTREAM_DATA_DIR/maven"
     ensure_directory "$maven_dir"
-    
+
     # 새로운 인기 라이브러리 추가
     local artifacts=(
         "com/google/guava/guava/31.1-jre"
@@ -166,17 +166,17 @@ update_maven_fixtures() {
         "com/fasterxml/jackson/core/jackson-core/2.14.2"
         "org/mockito/mockito-core/5.1.1"
     )
-    
+
     for artifact in "${artifacts[@]}"; do
         local artifact_dir="$maven_dir/$artifact"
         ensure_directory "$artifact_dir"
-        
+
         if [[ "$DRY_RUN" == "true" ]]; then
             log_info "Would update Maven artifact: $artifact"
         else
             local artifact_name=$(basename "$artifact")
             local version=$(basename "$(dirname "$artifact")")
-            
+
             # POM 파일 생성
             cat > "$artifact_dir/$artifact_name.pom" << EOF
 <?xml version="1.0" encoding="UTF-8"?>
@@ -188,24 +188,24 @@ update_maven_fixtures() {
     <packaging>jar</packaging>
 </project>
 EOF
-            
+
             # 더미 JAR 파일 생성
             echo "Test JAR content for $artifact_name" > "$artifact_dir/$artifact_name.jar"
-            
+
             log_success "Updated Maven artifact: $artifact"
         fi
     done
-    
+
     log_success "Maven fixtures update completed"
 }
 
 # Docker 픽스처 업데이트
 update_docker_fixtures() {
     log_test "Updating Docker registry fixtures..."
-    
+
     local docker_dir="$UPSTREAM_DATA_DIR/docker"
     ensure_directory "$docker_dir"
-    
+
     # Docker registry v2 API 응답 모사
     local registries=(
         "library/nginx"
@@ -213,12 +213,12 @@ update_docker_fixtures() {
         "library/ubuntu"
         "library/hello-world"
     )
-    
+
     for registry in "${registries[@]}"; do
         local registry_dir="$docker_dir/v2/$registry"
         ensure_directory "$registry_dir/manifests"
         ensure_directory "$registry_dir/blobs"
-        
+
         if [[ "$DRY_RUN" == "true" ]]; then
             log_info "Would update Docker registry: $registry"
         else
@@ -241,22 +241,22 @@ update_docker_fixtures() {
    ]
 }
 EOF
-            
+
             log_success "Updated Docker registry: $registry"
         fi
     done
-    
+
     log_success "Docker fixtures update completed"
 }
 
 # APT 픽스처 업데이트
 update_apt_fixtures() {
     log_test "Updating APT repository fixtures..."
-    
+
     local apt_dir="$UPSTREAM_DATA_DIR/apt/ubuntu/dists/jammy"
     ensure_directory "$apt_dir/main/binary-amd64"
     ensure_directory "$apt_dir/universe/binary-amd64"
-    
+
     if [[ "$DRY_RUN" == "true" ]]; then
         log_info "Would update APT fixtures"
     else
@@ -272,7 +272,7 @@ Architectures: amd64
 Components: main universe
 Description: Ubuntu Jammy 22.04
 EOF
-        
+
         # Packages 파일 생성
         cat > "$apt_dir/main/binary-amd64/Packages" << EOF
 Package: curl
@@ -295,17 +295,17 @@ Size: 1024000
 SHA256: test-sha256-nginx
 Description: small, powerful, scalable web/proxy server
 EOF
-        
+
         log_success "Updated APT fixtures"
     fi
-    
+
     log_success "APT fixtures update completed"
 }
 
 # 업데이트 실행 함수
 run_updates() {
     local types_to_update=()
-    
+
     if [[ "$UPDATE_ALL" == "true" ]]; then
         types_to_update=("npm" "maven" "docker" "apt")
     elif [[ -n "$PROXY_TYPE" ]]; then
@@ -315,7 +315,7 @@ run_updates() {
         show_help
         exit 1
     fi
-    
+
     for type in "${types_to_update[@]}"; do
         case "$type" in
             npm)
@@ -350,14 +350,14 @@ create_backup() {
 # 메인 실행
 main() {
     log_info "=== Test Fixture Update Starting ==="
-    
+
     if [[ "$DRY_RUN" == "true" ]]; then
         log_info "DRY RUN MODE - No changes will be made"
     fi
-    
+
     create_backup
     run_updates
-    
+
     if [[ "$DRY_RUN" == "false" ]]; then
         log_success "=== Test Fixture Update Completed Successfully ==="
         log_info "Updated fixtures are available in: $UPSTREAM_DATA_DIR"

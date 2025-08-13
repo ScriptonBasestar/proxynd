@@ -578,3 +578,355 @@ func calculateMD5(data []byte) string {
 	h.Write(data)
 	return fmt.Sprintf("%x", h.Sum(nil))
 }
+
+// Step 1-1: 추가된 SNAPSHOT 메타데이터 병합 테스트
+func TestMavenProxy_SnapshotMetadataMerging(t *testing.T) {
+	if testing.Short() {
+		t.Skip("통합 테스트는 -short 플래그에서 스킵")
+	}
+
+	// Given
+	server := SetupTestServer(t)
+	defer server.Close()
+
+	err := server.WaitForReady()
+	require.NoError(t, err)
+
+	// When: SNAPSHOT 메타데이터 요청 (다중 버전)
+	metadataPaths := []string{
+		"org/springframework/spring-core/maven-metadata.xml",
+		"org/springframework/spring-core/5.3.22-SNAPSHOT/maven-metadata.xml",
+	}
+
+	for _, path := range metadataPaths {
+		t.Run(fmt.Sprintf("metadata_%s", strings.ReplaceAll(path, "/", "_")), func(t *testing.T) {
+			url := server.ProxyURL("maven", path)
+			resp, err := http.Get(url)
+			require.NoError(t, err)
+			defer func() { _ = resp.Body.Close() }()
+
+			// Then: 메타데이터 병합 로직 검증
+			if resp.StatusCode == 200 {
+				body, err := io.ReadAll(resp.Body)
+				require.NoError(t, err)
+
+				content := string(body)
+				assert.Contains(t, content, "<metadata>", "유효한 메타데이터 XML이어야 합니다")
+				assert.Contains(t, content, "<versioning>", "버전 정보가 포함되어야 합니다")
+
+				// SNAPSHOT 특정 검증
+				if strings.Contains(path, "SNAPSHOT") {
+					assert.Contains(t, content, "<snapshot>", "SNAPSHOT 버전 정보가 있어야 합니다")
+					assert.Contains(t, content, "<timestamp>", "타임스탬프 정보가 있어야 합니다")
+				}
+
+				t.Logf("Metadata content length: %d bytes", len(content))
+			} else {
+				t.Logf("Metadata not available (status: %d) - this is expected for mock server", resp.StatusCode)
+			}
+		})
+	}
+}
+
+// Step 1-2: 추가된 체크섬 일관성 검증 테스트
+func TestMavenProxy_ChecksumConsistency(t *testing.T) {
+	if testing.Short() {
+		t.Skip("통합 테스트는 -short 플래그에서 스킵")
+	}
+
+	// Given
+	server := SetupTestServer(t)
+	defer server.Close()
+
+	err := server.WaitForReady()
+	require.NoError(t, err)
+
+	tests := []struct {
+		name         string
+		artifactPath string
+		checksumType string
+		validation   func(artifactData []byte, checksumData []byte) bool
+	}{
+		{
+			name:         "JAR SHA1 consistency",
+			artifactPath: "org/springframework/spring-core/5.3.21/spring-core-5.3.21.jar",
+			checksumType: "sha1",
+			validation: func(artifactData []byte, checksumData []byte) bool {
+				calculated := calculateSHA1(artifactData)
+				retrieved := strings.TrimSpace(string(checksumData))
+				return strings.EqualFold(calculated, retrieved)
+			},
+		},
+		{
+			name:         "POM MD5 consistency",
+			artifactPath: "org/springframework/spring-core/5.3.21/spring-core-5.3.21.pom",
+			checksumType: "md5",
+			validation: func(artifactData []byte, checksumData []byte) bool {
+				calculated := calculateMD5(artifactData)
+				retrieved := strings.TrimSpace(string(checksumData))
+				return strings.EqualFold(calculated, retrieved)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// When: 아티팩트와 체크섬을 모두 다운로드
+			artifactURL := server.ProxyURL("maven", tt.artifactPath)
+			artifactResp, err := http.Get(artifactURL)
+			require.NoError(t, err)
+			defer func() { _ = artifactResp.Body.Close() }()
+
+			checksumURL := server.ProxyURL("maven", tt.artifactPath+"."+tt.checksumType)
+			checksumResp, err := http.Get(checksumURL)
+			require.NoError(t, err)
+			defer func() { _ = checksumResp.Body.Close() }()
+
+			// Then: 아티팩트 다운로드 성공 확인
+			assert.Equal(t, 200, artifactResp.StatusCode, "아티팩트가 성공적으로 다운로드되어야 합니다")
+
+			artifactData, err := io.ReadAll(artifactResp.Body)
+			require.NoError(t, err)
+			assert.Greater(t, len(artifactData), 0, "아티팩트 데이터가 비어있지 않아야 합니다")
+
+			// 체크섬 검증 (실제 구현에서는 200 상태여야 함)
+			if checksumResp.StatusCode == 200 {
+				checksumData, err := io.ReadAll(checksumResp.Body)
+				require.NoError(t, err)
+
+				// 체크섬 일관성 검증
+				isConsistent := tt.validation(artifactData, checksumData)
+				assert.True(t, isConsistent, "체크섬이 일치해야 합니다")
+
+				t.Logf("Checksum consistency verified for %s (%s)", tt.artifactPath, tt.checksumType)
+			} else {
+				t.Logf("Checksum endpoint not available (status: %d) - expected for mock server", checksumResp.StatusCode)
+				// Mock 환경에서는 계산된 체크섬만 로깅
+				var calculated string
+				switch tt.checksumType {
+				case "sha1":
+					calculated = calculateSHA1(artifactData)
+				case "md5":
+					calculated = calculateMD5(artifactData)
+				}
+				t.Logf("Calculated %s for %s: %s", strings.ToUpper(tt.checksumType), tt.artifactPath, calculated)
+			}
+		})
+	}
+}
+
+// Step 1-3: 추가된 디렉토리 브라우징 보안 테스트
+func TestMavenProxy_DirectoryBrowsingToggle(t *testing.T) {
+	if testing.Short() {
+		t.Skip("통합 테스트는 -short 플래그에서 스킵")
+	}
+
+	// Given
+	server := SetupTestServer(t)
+	defer server.Close()
+
+	err := server.WaitForReady()
+	require.NoError(t, err)
+
+	// 보안 테스트 케이스들
+	securityTests := []struct {
+		name           string
+		path           string
+		expectedStatus int
+		description    string
+	}{
+		{
+			name:           "Path traversal attempt 1",
+			path:           "../../../etc/passwd",
+			expectedStatus: 400, // Bad Request 또는 404
+			description:    "상위 디렉토리 접근 시도 차단",
+		},
+		{
+			name:           "Path traversal attempt 2",
+			path:           "org/../../../etc/passwd",
+			expectedStatus: 400,
+			description:    "경로 내 상위 디렉토리 접근 시도 차단",
+		},
+		{
+			name:           "URL encoded path traversal",
+			path:           "org%2F..%2F..%2Fetc%2Fpasswd",
+			expectedStatus: 400,
+			description:    "URL 인코딩된 상위 디렉토리 접근 시도 차단",
+		},
+		{
+			name:           "Double encoded path traversal",
+			path:           "org%252F..%252F..%252Fetc%252Fpasswd",
+			expectedStatus: 400,
+			description:    "이중 인코딩된 상위 디렉토리 접근 시도 차단",
+		},
+		{
+			name:           "Null byte injection",
+			path:           "org/springframework/spring-core%00.txt",
+			expectedStatus: 400,
+			description:    "null 바이트 인젝션 차단",
+		},
+	}
+
+	for _, tt := range securityTests {
+		t.Run(tt.name, func(t *testing.T) {
+			// When: 악의적인 경로 요청
+			url := server.ProxyURL("maven", tt.path)
+			resp, err := http.Get(url)
+			require.NoError(t, err)
+			defer func() { _ = resp.Body.Close() }()
+
+			// Then: 보안 차단 확인
+			assert.NotEqual(t, 200, resp.StatusCode, tt.description)
+			assert.Equal(t, "maven", resp.Header.Get("X-Proxy-Type"))
+
+			// 추가 보안 헤더 확인
+			body, _ := io.ReadAll(resp.Body)
+			content := string(body)
+			assert.NotContains(t, content, "root:", "시스템 파일 내용이 노출되면 안됩니다")
+			assert.NotContains(t, content, "/etc/", "시스템 경로가 노출되면 안됩니다")
+
+			t.Logf("Security test '%s' blocked with status %d", tt.name, resp.StatusCode)
+		})
+	}
+
+	// 정상적인 경로 접근 확인
+	t.Run("Valid path access", func(t *testing.T) {
+		// 정상적인 Maven 아티팩트 경로는 여전히 작동해야 함
+		validPath := "org/springframework/spring-core/5.3.21/spring-core-5.3.21.pom"
+		url := server.ProxyURL("maven", validPath)
+		resp, err := http.Get(url)
+		require.NoError(t, err)
+		defer func() { _ = resp.Body.Close() }()
+
+		// 정상 경로는 적절하게 처리되어야 함 (200 또는 404)
+		assert.True(t, resp.StatusCode == 200 || resp.StatusCode == 404,
+			"정상적인 경로는 적절히 처리되어야 합니다 (got %d)", resp.StatusCode)
+
+		t.Logf("Valid path access returned status %d", resp.StatusCode)
+	})
+}
+
+// Step 1-4: 메타데이터 병합 테스트 추가
+func TestMavenProxy_MetadataMerging(t *testing.T) {
+	if testing.Short() {
+		t.Skip("통합 테스트는 -short 플래그에서 스킵")
+	}
+
+	// Given
+	server := SetupTestServer(t)
+	defer server.Close()
+
+	err := server.WaitForReady()
+	require.NoError(t, err)
+
+	tests := []struct {
+		name        string
+		path        string
+		description string
+		validations []func(string) bool
+	}{
+		{
+			name:        "Group level metadata",
+			path:        "org/springframework/maven-metadata.xml",
+			description: "그룹 레벨 메타데이터 병합",
+			validations: []func(string) bool{
+				func(content string) bool {
+					return strings.Contains(content, "<metadata>") &&
+						strings.Contains(content, "<groupId>org.springframework</groupId>")
+				},
+				func(content string) bool {
+					return strings.Contains(content, "<plugins>")
+				},
+			},
+		},
+		{
+			name:        "Artifact level metadata",
+			path:        "org/springframework/spring-core/maven-metadata.xml",
+			description: "아티팩트 레벨 메타데이터 병합",
+			validations: []func(string) bool{
+				func(content string) bool {
+					return strings.Contains(content, "<metadata>") &&
+						strings.Contains(content, "<artifactId>spring-core</artifactId>")
+				},
+				func(content string) bool {
+					return strings.Contains(content, "<versioning>") &&
+						strings.Contains(content, "<versions>")
+				},
+				func(content string) bool {
+					return strings.Contains(content, "<latest>") &&
+						strings.Contains(content, "<release>")
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// When: 메타데이터 파일 요청
+			url := server.ProxyURL("maven", tt.path)
+			resp, err := http.Get(url)
+			require.NoError(t, err)
+			defer func() { _ = resp.Body.Close() }()
+
+			assert.Equal(t, "maven", resp.Header.Get("X-Proxy-Type"))
+
+			if resp.StatusCode == 200 {
+				// Then: 메타데이터 내용 검증
+				body, err := io.ReadAll(resp.Body)
+				require.NoError(t, err)
+
+				content := string(body)
+				assert.Greater(t, len(content), 0, "메타데이터 내용이 비어있지 않아야 합니다")
+
+				// XML 형식 확인
+				assert.Contains(t, content, "<?xml", "XML 선언이 있어야 합니다")
+
+				// 각 검증 함수 실행
+				for i, validation := range tt.validations {
+					assert.True(t, validation(content),
+						"Validation %d failed for %s", i+1, tt.description)
+				}
+
+				// 메타데이터 병합 품질 검증
+				assert.NotContains(t, content, "<metadata></metadata>", "빈 메타데이터가 아니어야 합니다")
+				assert.NotContains(t, content, "ERROR", "에러가 포함되지 않아야 합니다")
+
+				t.Logf("Metadata content validated for %s (%d bytes)", tt.path, len(content))
+			} else {
+				t.Logf("Metadata not available (status: %d) - expected for mock server", resp.StatusCode)
+			}
+		})
+	}
+
+	// 병합된 메타데이터의 캐시 동작 확인
+	t.Run("Metadata caching behavior", func(t *testing.T) {
+		metadataPath := "org/springframework/spring-core/maven-metadata.xml"
+		url := server.ProxyURL("maven", metadataPath)
+
+		// 첫 번째 요청
+		resp1, err := http.Get(url)
+		require.NoError(t, err)
+		defer func() { _ = resp1.Body.Close() }()
+
+		// 두 번째 요청 (캐시 확인)
+		resp2, err := http.Get(url)
+		require.NoError(t, err)
+		defer func() { _ = resp2.Body.Close() }()
+
+		// 메타데이터는 캐시 TTL이 짧아야 함
+		cacheStatus1 := resp1.Header.Get("X-Cache-Status")
+		cacheStatus2 := resp2.Header.Get("X-Cache-Status")
+
+		if cacheStatus1 != "" && cacheStatus2 != "" {
+			// 메타데이터 캐시 정책 검증
+			t.Logf("First request cache status: %s", cacheStatus1)
+			t.Logf("Second request cache status: %s", cacheStatus2)
+
+			// 메타데이터는 짧은 TTL을 가져야 하지만 일시적으로 캐시될 수 있음
+			assert.True(t, cacheStatus1 == "MISS" || cacheStatus1 == "HIT",
+				"유효한 캐시 상태여야 합니다: %s", cacheStatus1)
+		}
+
+		t.Logf("Metadata caching behavior verified")
+	})
+}

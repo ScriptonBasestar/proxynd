@@ -430,7 +430,7 @@ test_dependency_tree() {
 
     if mvn -s settings.xml dependency:tree -q ${MVN_OPTS:-} > /tmp/dependency-tree.txt 2>&1; then
         log_success "Dependency tree generation successful"
-        
+
         # 의존성 트리 검증
         if grep -q "junit:junit" /tmp/dependency-tree.txt && \
            grep -q "commons-lang3" /tmp/dependency-tree.txt && \
@@ -497,12 +497,12 @@ test_checksum_verification() {
     # JAR 파일 다운로드
     if curl -sf "$jar_url" -o /tmp/junit-4.13.2.jar 2>&1; then
         log_success "JAR artifact downloaded successfully"
-        
+
         # SHA1 체크섬 확인
         if curl -sf "$sha1_url" -o /tmp/junit-4.13.2.jar.sha1 2>&1; then
             local expected_sha1
             expected_sha1=$(cat /tmp/junit-4.13.2.jar.sha1 | cut -d' ' -f1)
-            
+
             local actual_sha1
             if command -v sha1sum >/dev/null 2>&1; then
                 actual_sha1=$(sha1sum /tmp/junit-4.13.2.jar | cut -d' ' -f1)

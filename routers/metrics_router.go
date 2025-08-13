@@ -11,6 +11,7 @@ import (
 	"github.com/valyala/fasthttp/fasthttpadaptor"
 
 	"proxynd/internal/config"
+	"proxynd/logging"
 	"proxynd/metrics"
 )
 
@@ -18,6 +19,11 @@ import (
 func MetricsRouter(app *fiber.App, config *config.UnifiedConfig) {
 	// 메트릭 초기화
 	metrics.InitMetrics()
+
+	// 강화된 메트릭 수집기 초기화
+	logger := logging.NewLogger("metrics")
+	enhancedConfig := metrics.DefaultEnhancedCollectorConfig()
+	metrics.InitEnhancedMetricsCollector(logger, enhancedConfig)
 
 	// 커스텀 수집기 등록
 	prometheus.MustRegister(metrics.NewCustomCollector())

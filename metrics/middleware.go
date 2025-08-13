@@ -151,11 +151,37 @@ func PrometheusMiddleware() fiber.Handler {
 			return c.Next()
 		}
 
-		// Initialize tracing for this request
+			// Initialize tracing for this request
 		var trace *RequestTrace
 		if globalTraceCollector != nil && globalTraceCollector.shouldTrace() {
 			trace = globalTraceCollector.startTrace(c)
 			c.Locals("trace", trace)
+		}
+
+		// Extract registry type early for enhanced metrics
+		registryType := extractRegistryType(c)
+
+		// Enhanced metrics collection
+		enhancedCollector := GetEnhancedMetricsCollector()
+		if enhancedCollector != nil {
+			// Record user agent
+			userAgent := c.Get("User-Agent")
+			if userAgent != "" {
+				enhancedCollector.RecordUserAgent(userAgent, registryType)
+			}
+
+			// Record geographic request (if IP geolocation is enabled)
+			clientIP := c.IP()
+			if clientIP != "" {
+				enhancedCollector.RecordGeographicRequest(clientIP, registryType)
+			}
+
+			// Record connection
+			enhancedCollector.RecordConnection(registryType, "http", 1)
+			defer enhancedCollector.RecordConnection(registryType, "http", -1)
+
+			// Record throughput
+			enhancedCollector.RecordThroughput(registryType)
 		}
 
 		// 활성 요청 수 증가
@@ -173,7 +199,6 @@ func PrometheusMiddleware() fiber.Handler {
 		// 요청 크기 기록
 		if c.Request().Header.ContentLength() > 0 {
 			size := float64(c.Request().Header.ContentLength())
-			registryType := extractRegistryType(c)
 			metrics.HTTPRequestSize.WithLabelValues(
 				c.Method(),
 				normalizePath(c.Path()),
@@ -188,7 +213,6 @@ func PrometheusMiddleware() fiber.Handler {
 		duration := time.Since(start)
 		status := strconv.Itoa(c.Response().StatusCode())
 		path := normalizePath(c.Path())
-		registryType := extractRegistryType(c)
 
 		// Complete performance metrics collection
 		if trace != nil && perfMetrics != nil {
@@ -209,6 +233,29 @@ func PrometheusMiddleware() fiber.Handler {
 
 			// Store trace and check if it's slow
 			globalTraceCollector.finishTrace(trace)
+		}
+
+		// Enhanced metrics collection - latency and HTTP status
+		if enhancedCollector := GetEnhancedMetricsCollector(); enhancedCollector != nil {
+			// Record latency
+			enhancedCollector.RecordLatency(registryType, c.Method(), duration.Seconds())
+
+			// Record HTTP status
+			enhancedCollector.RecordHTTPStatus(registryType, c.Response().StatusCode())
+
+			// Record package download if applicable
+			if isPackageDownload(c) {
+				packageName, version, fileType := extractPackageInfo(c, registryType)
+				responseSize := int64(len(c.Response().Body()))
+				enhancedCollector.RecordPackageDownload(registryType, packageName, version, fileType, responseSize)
+			}
+
+			// Record user activity
+			userID := extractUserID(c)
+			userType := extractUserType(c)
+			if userID != "" {
+				enhancedCollector.RecordUserActivity(userID, userType, registryType)
+			}
 		}
 
 		// HTTP 메트릭 기록
@@ -247,6 +294,41 @@ func PrometheusMiddleware() fiber.Handler {
 
 		// 검증 메트릭 업데이트
 		updateVerificationMetrics(c, metrics, registryType)
+
+		// Enhanced metrics - error tracking
+		if enhancedCollector := GetEnhancedMetricsCollector(); enhancedCollector != nil {
+			// Record retry attempts if any
+			if retryAttempts := c.Locals("retry_attempts"); retryAttempts != nil {
+				if attempts, ok := retryAttempts.(int); ok && attempts > 0 {
+					retryReason := getRetryReason(c)
+					success := c.Response().StatusCode() < 400
+					enhancedCollector.RecordRetryAttempt(registryType, retryReason, attempts, success)
+				}
+			}
+
+			// Record timeout errors
+			if timeoutType := c.Locals("timeout_type"); timeoutType != nil {
+				if tt, ok := timeoutType.(string); ok {
+					upstream := getUpstream(c, registryType)
+					enhancedCollector.RecordTimeout(registryType, tt, upstream)
+				}
+			}
+
+			// Record connection errors
+			if connectionError := c.Locals("connection_error"); connectionError != nil {
+				if ce, ok := connectionError.(string); ok {
+					upstream := getUpstream(c, registryType)
+					enhancedCollector.RecordConnectionError(registryType, ce, upstream)
+				}
+			}
+
+			// Record upstream failures
+			if c.Response().StatusCode() >= 500 {
+				upstream := getUpstream(c, registryType)
+				failureType := "server_error"
+				enhancedCollector.RecordUpstreamFailure(registryType, upstream, failureType)
+			}
+		}
 
 		return err
 	}
