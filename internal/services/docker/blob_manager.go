@@ -12,6 +12,10 @@ import (
 	"proxynd/logging"
 )
 
+const (
+	mimeApplicationOctetStream = "application/octet-stream"
+)
+
 // blobManagerImpl Docker blob 관리 구현
 type blobManagerImpl struct {
 	config          docker.ProxyConfig
@@ -97,9 +101,9 @@ func (b *blobManagerImpl) fetchBlobFromRegistry(ctx context.Context, repository,
 
 	// 인증 설정
 	if auth, err := b.authManager.GetAuthToken(ctx, registry.URL, repository); err == nil {
-		if auth.Type == "bearer" && auth.Token != "" {
+		if auth.Type == authTypeBearer && auth.Token != "" {
 			_ = b.authManager.SetBearerAuth(req, auth.Token)
-		} else if auth.Type == "basic" && auth.Username != "" {
+		} else if auth.Type == authTypeBasic && auth.Username != "" {
 			_ = b.authManager.SetBasicAuth(req, auth.Username, auth.Password)
 		}
 	}
@@ -132,7 +136,7 @@ func (b *blobManagerImpl) fetchBlobFromRegistry(ctx context.Context, repository,
 
 	contentType := resp.Header.Get("Content-Type")
 	if contentType == "" {
-		contentType = "application/octet-stream"
+		contentType = mimeApplicationOctetStream
 	}
 
 	// 응답 생성
@@ -224,7 +228,7 @@ func (b *blobManagerImpl) GetBlobInfo(ctx context.Context, repository, digest st
 
 	// 인증 설정
 	if auth, err := b.authManager.GetAuthToken(ctx, registry.URL, repository); err == nil {
-		if auth.Type == "bearer" && auth.Token != "" {
+		if auth.Type == authTypeBearer && auth.Token != "" {
 			_ = b.authManager.SetBearerAuth(req, auth.Token)
 		}
 	}
@@ -242,7 +246,7 @@ func (b *blobManagerImpl) GetBlobInfo(ctx context.Context, repository, digest st
 
 	contentType := resp.Header.Get("Content-Type")
 	if contentType == "" {
-		contentType = "application/octet-stream"
+		contentType = mimeApplicationOctetStream
 	}
 
 	return &docker.BlobReference{

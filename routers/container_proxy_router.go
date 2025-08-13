@@ -124,7 +124,7 @@ func (r *ContainerProxyRouter) createMavenHandler(
 	provider container.ContainerProvider,
 ) (handlers.ContainerProxyHandler, error) {
 	// TODO: 실제 Maven 핸들러 생성 로직 구현
-	return nil, fmt.Errorf("Maven handler not implemented yet")
+	return nil, fmt.Errorf("maven handler not implemented yet")
 }
 
 func (r *ContainerProxyRouter) createNPMHandler(
@@ -138,7 +138,7 @@ func (r *ContainerProxyRouter) createDockerHandler(
 	provider container.ContainerProvider,
 ) (handlers.ContainerProxyHandler, error) {
 	// TODO: 실제 Docker 핸들러 생성 로직 구현
-	return nil, fmt.Errorf("Docker handler not implemented yet")
+	return nil, fmt.Errorf("docker handler not implemented yet")
 }
 
 func (r *ContainerProxyRouter) createPIPHandler(

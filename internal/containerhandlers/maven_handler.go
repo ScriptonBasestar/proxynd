@@ -19,6 +19,11 @@ import (
 	"proxynd/logging"
 )
 
+const (
+	headerHost         = "Host"
+	mimeApplicationXML = "application/xml"
+)
+
 // MavenContainerHandler Container 기반 Maven 핸들러
 type MavenContainerHandler struct {
 	logger            logging.Logger
@@ -146,13 +151,13 @@ func (h *MavenContainerHandler) GenerateCacheKey(c *fiber.Ctx) string {
 // BuildUpstreamURL Maven 레포지토리 URL 구성 (라운드로빈 지원)
 func (h *MavenContainerHandler) BuildUpstreamURL(c *fiber.Ctx) (string, error) {
 	if err := h.LoadConfig(); err != nil {
-		return "", fmt.Errorf("Maven 설정 로드 실패: %w", err)
+		return "", fmt.Errorf("maven 설정 로드 실패: %w", err)
 	}
 
 	artifactPath := c.Params("*")
 
 	if len(h.mavenConfig.Proxies) == 0 {
-		return "", fmt.Errorf("Maven 레포지토리가 설정되지 않았습니다")
+		return "", fmt.Errorf("maven 레포지토리가 설정되지 않았습니다")
 	}
 
 	// 라운드로빈으로 레포지토리 선택
@@ -160,7 +165,7 @@ func (h *MavenContainerHandler) BuildUpstreamURL(c *fiber.Ctx) (string, error) {
 	repository := h.mavenConfig.Proxies[idx%int32(len(h.mavenConfig.Proxies))]
 
 	if repository.URL == "" {
-		return "", fmt.Errorf("Maven 레포지토리 URL이 설정되지 않았습니다")
+		return "", fmt.Errorf("maven 레포지토리 URL이 설정되지 않았습니다")
 	}
 
 	// URL 구성
@@ -388,7 +393,7 @@ func (h *MavenContainerHandler) transformRequest(c *fiber.Ctx, upstreamReq *fibe
 	// 클라이언트 헤더 복사 (Host 제외)
 	c.Request().Header.VisitAll(func(key, value []byte) {
 		keyStr := string(key)
-		if keyStr != "Host" {
+		if keyStr != headerHost {
 			upstreamReq.Set(keyStr, string(value))
 		}
 	})
@@ -400,10 +405,10 @@ func getMavenContentType(path string) string {
 		return "application/java-archive"
 	}
 	if strings.HasSuffix(path, ".pom") {
-		return "application/xml"
+		return mimeApplicationXML
 	}
 	if strings.HasSuffix(path, ".xml") {
-		return "application/xml"
+		return mimeApplicationXML
 	}
 	if strings.HasSuffix(path, ".sha1") {
 		return "text/plain"
@@ -411,7 +416,7 @@ func getMavenContentType(path string) string {
 	if strings.HasSuffix(path, ".md5") {
 		return "text/plain"
 	}
-	return "application/octet-stream"
+	return "application/octet-stream" //nolint:goconst // Already has constant
 }
 
 func generateSHA1(data []byte) string {

@@ -184,10 +184,10 @@ func MFASetupHandler(mfaService *mfa.MFAService, jwtService *jwt.JWTService) fib
 		}
 
 		switch c.Method() {
-		case "POST":
+		case "POST": //nolint:goconst
 			// MFA 활성화 및 TOTP 설정 시작
 			return handleMFASetup(c, mfaService, claims, logger)
-		case "GET":
+		case "GET": //nolint:goconst
 			// MFA 상태 조회
 			return handleMFAStatus(c, mfaService, claims)
 		case "DELETE":

@@ -77,6 +77,8 @@ func SetupIntegrationTest(t *testing.T) *IntegrationTestEnvironment {
 }
 
 // setupMockUpstreams Mock upstream 서버들 설정
+//
+//nolint:gocyclo // Test setup complexity is acceptable
 func (env *IntegrationTestEnvironment) setupMockUpstreams(_ *testing.T) {
 	// NPM Mock Server
 	npmServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

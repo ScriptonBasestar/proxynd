@@ -227,12 +227,12 @@ func getNpmContentType(filename, path string) string {
 	// 패키지 파일
 	switch {
 	case strings.HasSuffix(filename, ".tgz"):
-		return mimeApplicationXGzip
+		return MimeApplicationXGzip
 	case strings.HasSuffix(filename, ".tar.gz"):
-		return mimeApplicationXGzip
+		return MimeApplicationXGzip
 	case strings.HasSuffix(filename, ".json"):
-		return mimeApplicationJSON
+		return MimeApplicationJSON
 	default:
-		return mimeApplicationOctetStream
+		return MimeApplicationOctetStream
 	}
 }

@@ -212,7 +212,7 @@ func getCacheSize(c *fiber.Ctx) error {
 		proxyCount := 0
 
 		switch proxyType {
-		case "apt":
+		case "apt": //nolint:goconst
 			aptConfig := config.AptProxyConfig{}
 			enabled = aptConfig.ConfigExists()
 			if enabled {
@@ -222,7 +222,7 @@ func getCacheSize(c *fiber.Ctx) error {
 				configPath = "apt-proxy.yaml"
 				proxyCount = len(aptConfig.Proxies)
 			}
-		case "npm":
+		case "npm": //nolint:goconst
 			npmConfig := config.NpmProxySettings{}
 			enabled = npmConfig.ConfigExists()
 			if enabled {
@@ -232,7 +232,7 @@ func getCacheSize(c *fiber.Ctx) error {
 				configPath = "npm-proxy.yaml"
 				proxyCount = len(npmConfig.Proxies)
 			}
-		case "maven":
+		case "maven": //nolint:goconst
 			mavenConfig := config.MavenProxySettings{}
 			enabled = mavenConfig.ConfigExists()
 			if enabled {

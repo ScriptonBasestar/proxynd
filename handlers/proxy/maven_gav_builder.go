@@ -56,7 +56,7 @@ func buildCompleteGAVTree(entries []DirectoryEntry) []*GAVTreeNode {
 
 	for _, entry := range entries {
 		// 디렉토리 타입만 처리
-		if entry.Type != typeDirectory && entry.Type != maven.TypeDirectory && entry.Type != maven.TypeGroup {
+		if entry.Type != TypeDirectory && entry.Type != maven.TypeDirectory && entry.Type != maven.TypeGroup {
 			continue
 		}
 
@@ -114,16 +114,16 @@ func buildPartialGAVTree(entries []DirectoryEntry, currentPath string) []*GAVTre
 
 		// GAV 정보 설정
 		switch nodeType {
-		case "group":
+		case LevelGroup:
 			if pathInfo.GroupID == "" {
 				node.GroupID = entry.Name
 			} else {
 				node.GroupID = pathInfo.GroupID + "." + entry.Name
 			}
-		case "artifact":
+		case LevelArtifact:
 			node.GroupID = pathInfo.GroupID
 			node.ArtifactID = entry.Name
-		case levelVersion:
+		case LevelVersion:
 			node.GroupID = pathInfo.GroupID
 			node.ArtifactID = pathInfo.ArtifactID
 			node.Version = entry.Name
@@ -134,7 +134,7 @@ func buildPartialGAVTree(entries []DirectoryEntry, currentPath string) []*GAVTre
 
 	// 각 노드의 하위 항목 수 계산 (실제로는 API 호출이 필요하지만 여기서는 추정)
 	for _, node := range nodes {
-		if node.Type != typeFile {
+		if node.Type != TypeFile {
 			// 디렉토리인 경우 하위 항목이 있을 수 있음으로 표시
 			node.ChildCount = 1 // 최소 1개로 설정하여 확장 가능하도록
 		}
@@ -149,7 +149,7 @@ func buildPartialGAVTree(entries []DirectoryEntry, currentPath string) []*GAVTre
 //nolint:unused // GAV 트리 빌더의 완전한 API 제공을 위해 유지
 func determineNodeType(pathInfo *maven.PathInfo, entry DirectoryEntry) string {
 	// 디렉토리 타입 확인 - 다양한 형태를 모두 처리
-	if entry.Type != typeDirectory && entry.Type != maven.TypeDirectory &&
+	if entry.Type != TypeDirectory && entry.Type != maven.TypeDirectory &&
 		entry.Type != maven.TypeGroup && entry.Type != maven.TypeArtifact {
 		// 이름이 /로 끝나면 디렉토리로 처리
 		if !strings.HasSuffix(entry.Name, "/") {
@@ -162,7 +162,7 @@ func determineNodeType(pathInfo *maven.PathInfo, entry DirectoryEntry) string {
 	switch pathInfo.Type {
 	case maven.TypeDirectory:
 		// 루트 디렉토리에서는 모든 디렉토리가 그룹 시작
-		return "group"
+		return LevelGroup
 
 	case maven.TypeGroup:
 		// 그룹 경로에서는 다음은 또 다른 그룹이거나 아티팩트
@@ -181,15 +181,15 @@ func determineNodeType(pathInfo *maven.PathInfo, entry DirectoryEntry) string {
 			return "version"
 		}
 		// 버전처럼 보이지 않으면 일반 디렉토리
-		return "directory"
+		return TypeDirectory
 
 	case maven.TypeVersion:
 		// 버전 하위는 파일 또는 일반 디렉토리
-		return "directory"
+		return TypeDirectory
 
 	default:
 		// 기타 경우는 기본적으로 디렉토리
-		return "directory"
+		return TypeDirectory
 	}
 }
 

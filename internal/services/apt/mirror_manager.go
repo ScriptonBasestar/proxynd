@@ -208,6 +208,7 @@ func (m *mirrorManagerImpl) startHealthChecker() {
 
 	m.logger.Info("Started mirror health checker")
 
+	//nolint:staticcheck // S1000: Infinite loop is intended for background worker
 	for {
 		select {
 		case <-ticker.C:

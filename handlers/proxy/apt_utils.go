@@ -6,25 +6,25 @@ import "strings"
 func getAptContentType(filename string) string {
 	switch {
 	case strings.HasSuffix(filename, ".gz"):
-		return mimeApplicationXGzip
+		return MimeApplicationXGzip
 	case strings.HasSuffix(filename, ".bz2"):
-		return mimeApplicationXBzip2
+		return MimeApplicationXBzip2
 	case strings.HasSuffix(filename, ".xz"):
 		return "application/x-xz"
 	case strings.HasSuffix(filename, ".deb"):
 		return "application/vnd.debian.binary-package"
 	case filename == "Release" || filename == "InRelease":
-		return mimeTextPlain
+		return MimeTextPlain
 	case filename == "Release.gpg":
-		return mimeApplicationPGPSignature
+		return MimeApplicationPGPSignature
 	case filename == "Packages" || strings.HasPrefix(filename, "Packages."):
-		return mimeTextPlain
+		return MimeTextPlain
 	case strings.HasSuffix(filename, ".dsc"):
-		return mimeTextPlain
+		return MimeTextPlain
 	case strings.HasSuffix(filename, ".changes"):
-		return mimeTextPlain
+		return MimeTextPlain
 	default:
-		return mimeApplicationOctetStream
+		return MimeApplicationOctetStream
 	}
 }
 

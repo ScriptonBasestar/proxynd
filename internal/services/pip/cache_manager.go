@@ -15,6 +15,10 @@ import (
 	"proxynd/logging"
 )
 
+const (
+	mimeApplicationZip = "application/zip"
+)
+
 // cacheManagerImpl PIP 캐시 관리 서비스 구현
 type cacheManagerImpl struct {
 	config      pip.ProxyConfig
@@ -289,7 +293,7 @@ func (c *cacheManagerImpl) guessContentType(key string) string {
 	}
 
 	if strings.Contains(key, ".whl") || strings.Contains(key, ".zip") {
-		return "application/zip"
+		return mimeApplicationZip
 	}
 
 	if strings.Contains(key, ".tar.gz") {

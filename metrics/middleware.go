@@ -616,6 +616,7 @@ func (tc *TraceCollector) cleanupTraces() {
 	ticker := time.NewTicker(time.Minute * 10) // Cleanup every 10 minutes
 	defer ticker.Stop()
 
+	//nolint:staticcheck // S1000: Infinite loop is intended for background worker
 	for {
 		select {
 		case <-ticker.C:

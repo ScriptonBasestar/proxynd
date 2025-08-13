@@ -65,9 +65,9 @@ func (m *metricsCollectorImpl) RecordRequest(ctx context.Context, metrics *docke
 
 	// 작업별 요청 통계
 	switch metrics.Operation {
-	case "manifest":
+	case dockerResourceManifest:
 		m.requestStats.ManifestRequests++
-	case "blob":
+	case dockerResourceBlob:
 		m.requestStats.BlobRequests++
 	}
 
@@ -93,7 +93,7 @@ func (m *metricsCollectorImpl) RecordRequest(ctx context.Context, metrics *docke
 	m.updateRepositoryStats(metrics)
 
 	// 이미지별 통계 업데이트 (매니페스트 요청의 경우)
-	if metrics.Operation == "manifest" && metrics.StatusCode == 200 {
+	if metrics.Operation == "manifest" && metrics.StatusCode == 200 { //nolint:goconst
 		m.updateImageStats(metrics)
 	}
 
@@ -417,13 +417,13 @@ func (m *metricsCollectorImpl) getPopularOperations() []string {
 		switch operations[i] {
 		case "manifest":
 			countI = m.requestStats.ManifestRequests
-		case "blob":
+		case "blob": //nolint:goconst
 			countJ = m.requestStats.BlobRequests
 		}
 		switch operations[j] {
 		case "manifest":
 			countJ = m.requestStats.ManifestRequests
-		case "blob":
+		case "blob": //nolint:goconst
 			countJ = m.requestStats.BlobRequests
 		}
 		return countI > countJ

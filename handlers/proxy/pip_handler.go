@@ -170,16 +170,16 @@ func getPipContentType(filename, path string) string {
 	// 패키지 파일
 	switch {
 	case strings.HasSuffix(filename, ".whl"):
-		return mimeApplicationZip
+		return MimeApplicationZip
 	case strings.HasSuffix(filename, ".tar.gz"):
 		return "application/x-gzip"
 	case strings.HasSuffix(filename, ".tar.bz2"):
 		return "application/x-bzip2"
 	case strings.HasSuffix(filename, ".zip"):
-		return mimeApplicationZip
+		return MimeApplicationZip
 	case strings.HasSuffix(filename, ".egg"):
-		return mimeApplicationZip
+		return MimeApplicationZip
 	default:
-		return mimeApplicationOctetStream
+		return MimeApplicationOctetStream
 	}
 }

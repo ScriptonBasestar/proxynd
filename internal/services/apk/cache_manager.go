@@ -13,6 +13,11 @@ import (
 	"proxynd/logging"
 )
 
+const (
+	mimeApplicationGzip        = "application/gzip"
+	mimeApplicationOctetStream = "application/octet-stream"
+)
+
 type cacheManagerImpl struct {
 	config     apk.ProxyConfig
 	logger     logging.Logger
@@ -190,9 +195,9 @@ func (c *cacheManagerImpl) getContentTypeFromKey(key string) string {
 	if c.isApkFileKey(key) {
 		return "application/vnd.alpine.apk"
 	} else if c.isIndexFileKey(key) {
-		return "application/gzip"
+		return mimeApplicationGzip
 	}
-	return "application/octet-stream"
+	return mimeApplicationOctetStream
 }
 
 func (c *cacheManagerImpl) isApkFileKey(key string) bool {

@@ -268,19 +268,19 @@ func (h *ApkHandlerV3) GetContentType(path string) string {
 	case strings.HasSuffix(path, ".apk"):
 		return "application/vnd.alpine.apk"
 	case strings.HasSuffix(path, "APKINDEX.tar.gz"):
-		return mimeApplicationGzip
+		return MimeApplicationGzip
 	case strings.HasSuffix(path, "APKINDEX"):
-		return mimeTextPlain
+		return MimeTextPlain
 	case strings.HasSuffix(path, ".asc"):
-		return mimeApplicationPGPSignature
+		return MimeApplicationPGPSignature
 	case strings.HasSuffix(path, ".rsa"):
-		return mimeApplicationOctetStream
+		return MimeApplicationOctetStream
 	case strings.HasSuffix(path, ".tar.gz"):
-		return mimeApplicationGzip
+		return MimeApplicationGzip
 	case strings.HasSuffix(path, ".gz"):
-		return mimeApplicationGzip
+		return MimeApplicationGzip
 	default:
-		return mimeApplicationOctetStream
+		return MimeApplicationOctetStream
 	}
 }
 

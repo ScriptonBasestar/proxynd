@@ -36,17 +36,17 @@ func (r *contentResolverImpl) GetContentType(packagePath string) string {
 	basename := strings.ToLower(filepath.Base(packagePath))
 
 	switch ext {
-	case ".deb":
-		return "application/vnd.debian.binary-package"
+	case extDeb:
+		return mimeApplicationDebianBinaryPackage
 	case ".udeb":
-		return "application/vnd.debian.binary-package"
-	case ".gz":
+		return mimeApplicationDebianBinaryPackage
+	case extGz:
 		// 압축된 메타데이터 파일들
 		if strings.Contains(basename, "packages") {
-			return "application/gzip" // Packages.gz
+			return mimeApplicationGzip // Packages.gz
 		}
 		if strings.Contains(basename, "release") {
-			return "application/gzip" // Release.gz
+			return "application/gzip" //nolint:goconst // Release.gz
 		}
 		if strings.Contains(basename, "sources") {
 			return "application/gzip" // Sources.gz
@@ -95,7 +95,7 @@ func (r *contentResolverImpl) ShouldInline(packagePath string) bool {
 
 	// 압축된 메타데이터도 인라인으로 표시
 	switch ext {
-	case ".gz", ".bz2", ".xz", ".lzma":
+	case ".gz", ".bz2", ".xz", ".lzma": //nolint:goconst
 		if strings.Contains(basename, "packages") ||
 			strings.Contains(basename, "release") ||
 			strings.Contains(basename, "sources") {
@@ -186,7 +186,7 @@ func (r *contentResolverImpl) EstimateDownloadPriority(packagePath string) int {
 	category := r.GetFileCategory(packagePath)
 
 	switch category {
-	case "metadata":
+	case aptContentMetadata:
 		return 10 // 최고 우선순위 - 자주 접근됨
 	case "package":
 		return 5 // 중간 우선순위 - 크기가 클 수 있음

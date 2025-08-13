@@ -13,6 +13,10 @@ import (
 	"proxynd/logging"
 )
 
+const (
+	mimeApplicationDockerManifestV2JSON = "application/vnd.docker.distribution.manifest.v2+json"
+)
+
 // manifestManagerImpl Docker 매니페스트 관리 구현
 type manifestManagerImpl struct {
 	config          docker.ProxyConfig
@@ -107,7 +111,7 @@ func (m *manifestManagerImpl) fetchManifestFromRegistry(ctx context.Context, rep
 
 	// 인증 설정
 	if auth, err := m.authManager.GetAuthToken(ctx, registry.URL, repository); err == nil {
-		if auth.Type == "bearer" && auth.Token != "" {
+		if auth.Type == "bearer" && auth.Token != "" { //nolint:goconst
 			_ = m.authManager.SetBearerAuth(req, auth.Token)
 		} else if auth.Type == "basic" && auth.Username != "" {
 			_ = m.authManager.SetBasicAuth(req, auth.Username, auth.Password)
@@ -244,7 +248,7 @@ func (m *manifestManagerImpl) ValidateManifest(ctx context.Context, data []byte,
 func (m *manifestManagerImpl) DetectManifestType(data []byte) string {
 	var manifest map[string]interface{}
 	if err := json.Unmarshal(data, &manifest); err != nil {
-		return "application/vnd.docker.distribution.manifest.v2+json"
+		return mimeApplicationDockerManifestV2JSON
 	}
 
 	// 매니페스트 리스트 (멀티 플랫폼)
@@ -264,7 +268,7 @@ func (m *manifestManagerImpl) DetectManifestType(data []byte) string {
 					return "application/vnd.oci.image.manifest.v1+json"
 				}
 			}
-			return "application/vnd.docker.distribution.manifest.v2+json"
+			return mimeApplicationDockerManifestV2JSON
 		}
 	}
 

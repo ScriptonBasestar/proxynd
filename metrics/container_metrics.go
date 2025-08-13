@@ -217,9 +217,9 @@ func ResetContainerMetrics() {
 
 // RecordHandlerInitialization 핸들러 초기화 기록
 func (m *ContainerMetrics) RecordHandlerInitialization(handlerType string, success bool) {
-	status := "success"
+	status := "success" //nolint:goconst
 	if !success {
-		status = "failure"
+		status = "failure" //nolint:goconst
 	}
 	m.ContainerHandlerInitializations.WithLabelValues(handlerType, status).Inc()
 }

@@ -281,7 +281,7 @@ func validateOutputConfig(config logging.OutputConfig) error {
 		return fmt.Errorf("invalid output type: %s", config.Type)
 	}
 
-	if config.Type == "file" && config.Path == "" {
+	if config.Type == backendFile && config.Path == "" {
 		return fmt.Errorf("file path is required for file output")
 	}
 

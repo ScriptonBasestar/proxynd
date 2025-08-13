@@ -102,7 +102,7 @@ func (c *HTTPUpstreamClient) Fetch(ctx context.Context, url string,
 			bytesReceived = resp.ContentLength
 		}
 
-		c.performanceMonitor.RecordRequest(c.proxyType, success, responseTime, bytesReceived, int64(req.ContentLength))
+		c.performanceMonitor.RecordRequest(c.proxyType, success, responseTime, bytesReceived, req.ContentLength)
 
 		if err != nil {
 			c.performanceMonitor.RecordTimeout(c.proxyType)

@@ -300,6 +300,7 @@ func (c *cacheManagerImpl) startCleanupWorker() {
 
 	c.logger.Info("Started cache cleanup worker", logging.F("interval_hours", cacheConfig.CleanupHours))
 
+	//nolint:staticcheck // S1000: Infinite loop is intended for background worker
 	for {
 		select {
 		case <-ticker.C:

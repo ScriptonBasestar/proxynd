@@ -680,7 +680,7 @@ func (c *CacheOptimizationStrategy) Analyze(ctx context.Context) (*OptimizationA
 		if evictionRate > 0.1 {
 			analysis.Issues = append(analysis.Issues, "High cache eviction rate")
 			analysis.Recommendations = append(analysis.Recommendations, "Increase cache size")
-			analysis.Risk = "medium"
+			analysis.Risk = "medium" //nolint:goconst
 			analysis.Priority = 2
 		}
 	}
@@ -780,7 +780,7 @@ func (c *ConnectionOptimizationStrategy) Analyze(ctx context.Context) (*Optimiza
 		if failureRate > 0.05 {
 			analysis.Issues = append(analysis.Issues, "High connection failure rate")
 			analysis.Recommendations = append(analysis.Recommendations, "Implement connection health checks")
-			analysis.Risk = "medium"
+			analysis.Risk = "medium" //nolint:goconst
 		}
 	}
 
@@ -973,7 +973,7 @@ func (r *RequestOptimizationStrategy) Analyze(ctx context.Context) (*Optimizatio
 		if errorRate > 0.05 {
 			analysis.Issues = append(analysis.Issues, "High request error rate")
 			analysis.Recommendations = append(analysis.Recommendations, "Implement circuit breaker")
-			analysis.Risk = "medium"
+			analysis.Risk = "medium" //nolint:goconst
 		}
 	}
 

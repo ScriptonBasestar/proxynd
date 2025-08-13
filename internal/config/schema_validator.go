@@ -901,7 +901,7 @@ func (sv *SchemaValidator) convertToDuration(v1, v2 interface{}) (time.Duration,
 	d1, err1 := sv.toDuration(v1)
 	d2, err2 := sv.toDuration(v2)
 	if err1 != nil || err2 != nil {
-		return 0, 0, fmt.Errorf("Duration 변환 실패")
+		return 0, 0, fmt.Errorf("duration 변환 실패")
 	}
 	return d1, d2, nil
 }
@@ -911,7 +911,7 @@ func (sv *SchemaValidator) toDuration(v interface{}) (time.Duration, error) {
 	if str, ok := v.(string); ok {
 		return time.ParseDuration(str)
 	}
-	return 0, fmt.Errorf("Duration으로 변환할 수 없는 타입")
+	return 0, fmt.Errorf("duration으로 변환할 수 없는 타입")
 }
 
 // convertToSize 크기로 변환

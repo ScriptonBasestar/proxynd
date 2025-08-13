@@ -432,7 +432,7 @@ func (chm *ConfigHealthMonitor) calculateOverallStatus(status *HealthStatus) {
 // handleHealthStatus 헬스 상태 처리
 func (chm *ConfigHealthMonitor) handleHealthStatus(config *UnifiedConfig, status *HealthStatus) {
 	// 상태가 심각한 경우 백업 생성
-	if status.Overall == "unhealthy" || len(status.AutoHealed) > 0 {
+	if status.Overall == statusUnhealthy || len(status.AutoHealed) > 0 {
 		if err := chm.backupManager.CreateBackup(config); err != nil {
 			chm.logger.Error("Failed to create config backup", logging.F("error", err))
 		}

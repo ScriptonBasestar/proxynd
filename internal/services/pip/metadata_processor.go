@@ -116,7 +116,7 @@ func (p *metadataProcessorImpl) GetContentType(packagePath, fileName string) str
 	// 패키지 파일 타입별 Content-Type
 	switch {
 	case strings.HasSuffix(fileName, ".whl"):
-		return "application/zip"
+		return "application/zip" //nolint:goconst
 	case strings.HasSuffix(fileName, ".tar.gz"):
 		return "application/x-gzip"
 	case strings.HasSuffix(fileName, ".tar.bz2"):

@@ -63,12 +63,12 @@ func (h *MavenHandlerV3) BuildUpstreamURL(c *fiber.Ctx) (string, error) {
 	artifactPath := c.Params("*")
 
 	if len(h.Config.Proxies) == 0 {
-		return "", fmt.Errorf("Maven 레포지토리가 설정되지 않았습니다")
+		return "", fmt.Errorf("maven 레포지토리가 설정되지 않았습니다")
 	}
 
 	repo := h.Config.Proxies[0] // 첫 번째 레포지토리 사용
 	if repo.URL == "" {
-		return "", fmt.Errorf("Maven 레포지토리 URL이 설정되지 않았습니다")
+		return "", fmt.Errorf("maven 레포지토리 URL이 설정되지 않았습니다")
 	}
 
 	baseURL := strings.TrimRight(repo.URL, "/")
@@ -251,29 +251,29 @@ func (h *MavenHandlerV3) GetCacheTTL(c *fiber.Ctx) time.Duration {
 func (h *MavenHandlerV3) GetContentType(path string) string {
 	switch {
 	case strings.HasSuffix(path, ".jar"):
-		return mimeApplicationJavaArchive
+		return MimeApplicationJavaArchive
 	case strings.HasSuffix(path, ".war"):
-		return mimeApplicationJavaArchive
+		return MimeApplicationJavaArchive
 	case strings.HasSuffix(path, ".ear"):
-		return mimeApplicationJavaArchive
+		return MimeApplicationJavaArchive
 	case strings.HasSuffix(path, ".pom"):
-		return mimeApplicationXML
+		return MimeApplicationXML
 	case strings.HasSuffix(path, ".xml"):
-		return mimeApplicationXML
+		return MimeApplicationXML
 	case strings.HasSuffix(path, ".sha1"):
-		return mimeTextPlain
+		return MimeTextPlain
 	case strings.HasSuffix(path, ".sha256"):
-		return mimeTextPlain
+		return MimeTextPlain
 	case strings.HasSuffix(path, ".md5"):
-		return mimeTextPlain
+		return MimeTextPlain
 	case strings.HasSuffix(path, ".asc"):
-		return "application/pgp-signature"
+		return MimeApplicationPGPSignature
 	case strings.HasSuffix(path, ".zip"):
-		return mimeApplicationZip
+		return MimeApplicationZip
 	case strings.HasSuffix(path, ".tar.gz"):
-		return "application/gzip"
+		return MimeApplicationGzip
 	default:
-		return "application/octet-stream"
+		return MimeApplicationOctetStream
 	}
 }
 

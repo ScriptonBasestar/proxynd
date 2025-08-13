@@ -119,19 +119,19 @@ func getYumContentType(filename string) string {
 	case strings.HasSuffix(filename, ".rpm"):
 		return "application/x-rpm"
 	case strings.HasSuffix(filename, ".xml") || strings.HasSuffix(filename, ".xml.gz"):
-		return "application/xml"
+		return MimeApplicationXML
 	case strings.HasSuffix(filename, ".xml.bz2") || strings.HasSuffix(filename, ".xml.xz"):
-		return "application/xml"
+		return MimeApplicationXML
 	case strings.HasSuffix(filename, ".sqlite") || strings.HasSuffix(filename, ".sqlite.bz2"):
-		return mimeApplicationOctetStream
+		return MimeApplicationOctetStream
 	case strings.HasSuffix(filename, ".sqlite.gz") || strings.HasSuffix(filename, ".sqlite.xz"):
-		return mimeApplicationOctetStream
+		return MimeApplicationOctetStream
 	case strings.HasSuffix(filename, ".asc") || strings.HasSuffix(filename, ".gpg"):
 		return "application/pgp-signature"
 	case strings.Contains(filename, "repomd.xml"):
 		return "text/xml"
 	default:
-		return mimeApplicationOctetStream
+		return MimeApplicationOctetStream
 	}
 }
 

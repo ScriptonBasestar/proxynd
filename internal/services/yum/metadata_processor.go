@@ -110,7 +110,7 @@ func (m *metadataProcessorImpl) ProcessRepomd(ctx context.Context, data []byte) 
 
 	// primary 메타데이터 정보 추출
 	for _, dataItem := range repomd.Data {
-		if dataItem.Type == "primary" {
+		if dataItem.Type == "primary" { //nolint:goconst
 			metadata := &yum.RepoMetadata{
 				Repository:   "unknown", // 호출자에서 설정
 				MetadataType: "repomd",

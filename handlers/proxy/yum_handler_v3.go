@@ -220,15 +220,15 @@ func (h *YumHandlerV3) GetContentType(path string) string {
 	case strings.HasSuffix(path, ".xml.bz2") || strings.HasSuffix(path, ".xml.xz"):
 		return "application/xml"
 	case strings.HasSuffix(path, ".sqlite") || strings.HasSuffix(path, ".sqlite.bz2"):
-		return "application/octet-stream"
+		return MimeApplicationOctetStream
 	case strings.HasSuffix(path, ".sqlite.gz") || strings.HasSuffix(path, ".sqlite.xz"):
-		return "application/octet-stream"
+		return MimeApplicationOctetStream
 	case strings.HasSuffix(path, ".asc") || strings.HasSuffix(path, ".gpg"):
 		return "application/pgp-signature"
 	case strings.Contains(path, "repomd.xml"):
 		return "text/xml"
 	default:
-		return "application/octet-stream"
+		return MimeApplicationOctetStream
 	}
 }
 

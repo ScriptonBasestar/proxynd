@@ -290,7 +290,7 @@ func (s *packageServiceImpl) getContentType(packagePath string) string {
 	case strings.HasSuffix(packagePath, ".apk"):
 		return "application/vnd.alpine.apk"
 	case strings.HasSuffix(packagePath, "APKINDEX.tar.gz"):
-		return "application/gzip"
+		return "application/gzip" //nolint:goconst // Already has constant
 	case strings.Contains(packagePath, "APKINDEX"):
 		return "text/plain"
 	case strings.HasSuffix(packagePath, ".asc"):

@@ -21,6 +21,10 @@ import (
 	"proxynd/logging"
 )
 
+const (
+	mimeApplicationZip = "application/zip"
+)
+
 // PIPContainerHandler Container 기반 PIP 핸들러
 type PIPContainerHandler struct {
 	logger            logging.Logger
@@ -439,15 +443,15 @@ func (h *PIPContainerHandler) getPipContentType(filename, path string) string {
 	// 패키지 파일
 	switch {
 	case strings.HasSuffix(filename, ".whl"):
-		return "application/zip"
+		return mimeApplicationZip
 	case strings.HasSuffix(filename, ".tar.gz"):
 		return "application/x-gzip"
 	case strings.HasSuffix(filename, ".tar.bz2"):
 		return "application/x-bzip2"
 	case strings.HasSuffix(filename, ".zip"):
-		return "application/zip"
+		return mimeApplicationZip
 	case strings.HasSuffix(filename, ".egg"):
-		return "application/zip"
+		return mimeApplicationZip
 	default:
 		return "application/octet-stream"
 	}

@@ -174,11 +174,12 @@ func (h *MavenBrowserHandler) Handle(c *fiber.Ctx) error {
 					if browserData.TreeRoot != nil {
 						// TODO: searchInTree 함수 구현 필요
 						// searchInTree(browserData.TreeRoot, searchQuery)
+						_ = browserData.TreeRoot // 현재는 미구현
 					}
 				}
 
 				// JSON API 요청인 경우
-				if strings.Contains(c.Get("Accept"), mimeApplicationJSON) || c.Query("format") == formatJSON {
+				if strings.Contains(c.Get("Accept"), MimeApplicationJSON) || c.Query("format") == FormatJSON {
 					return c.JSON(browserData)
 				}
 				return c.Render("maven-browser", browserData)
@@ -209,7 +210,7 @@ func (h *MavenBrowserHandler) Handle(c *fiber.Ctx) error {
 	}
 
 	// JSON API 요청인 경우 (AJAX 요청 또는 format=json 파라미터)
-	if strings.Contains(c.Get("Accept"), mimeApplicationJSON) || c.Query("format") == formatJSON {
+	if strings.Contains(c.Get("Accept"), MimeApplicationJSON) || c.Query("format") == FormatJSON {
 		return c.JSON(browserData)
 	}
 
@@ -483,11 +484,11 @@ func (h *MavenBrowserHandler) extractEntryFromLine(line string) *DirectoryEntry 
 	if strings.HasSuffix(decodedHref, "/") {
 		// 이름이 /로 끝나는 경우
 		entry.Name = strings.TrimSuffix(decodedHref, "/")
-		entry.Type = typeDirectory
+		entry.Type = TypeDirectory
 	} else if !hasFileExtension(decodedHref) {
 		// 파일 확장자가 없으면 디렉토리로 간주
 		// Maven 리포지토리에서 디렉토리는 보통 확장자가 없음
-		entry.Type = typeDirectory
+		entry.Type = TypeDirectory
 	}
 
 	return entry
@@ -721,10 +722,10 @@ func createMavenContext(pathInfo *maven.PathInfo, entries []DirectoryEntry) *mav
 	// 레벨에 따른 컨텍스트 설정
 	switch pathInfo.Type {
 	case maven.TypeGroup:
-		context.Level = levelGroup
+		context.Level = LevelGroup
 
 	case maven.TypeArtifact:
-		context.Level = levelArtifact
+		context.Level = LevelArtifact
 		// 하위 디렉토리에서 버전 정보 수집
 		versions := make([]string, 0)
 		for _, entry := range entries {
@@ -738,7 +739,7 @@ func createMavenContext(pathInfo *maven.PathInfo, entries []DirectoryEntry) *mav
 		}
 
 	case maven.TypeVersion:
-		context.Level = levelVersion
+		context.Level = LevelVersion
 	}
 
 	return context
@@ -831,7 +832,7 @@ func (h *MavenBrowserHandler) handleArtifactPage(c *fiber.Ctx, pathInfo *maven.P
 	versions := make([]string, 0, len(versionEntries))
 	for _, entry := range versionEntries {
 		// 디렉토리이면서 파일 확장자가 없는 항목만 포함
-		if (entry.Type == maven.TypeDirectory || entry.Type == typeDirectory) &&
+		if (entry.Type == maven.TypeDirectory || entry.Type == TypeDirectory) &&
 			!hasFileExtension(entry.Name) {
 			// 버전처럼 보이거나 maven-metadata로 시작하지 않는 항목
 			if isVersionLike(entry.Name) ||
@@ -879,7 +880,7 @@ func (h *MavenBrowserHandler) handleArtifactPage(c *fiber.Ctx, pathInfo *maven.P
 	}
 
 	// JSON API 요청인 경우
-	if strings.Contains(c.Get("Accept"), mimeApplicationJSON) || c.Query("format") == formatJSON {
+	if strings.Contains(c.Get("Accept"), MimeApplicationJSON) || c.Query("format") == FormatJSON {
 		return c.JSON(artifactData)
 	}
 
@@ -936,7 +937,7 @@ func (h *MavenBrowserHandler) performGlobalSearch(c *fiber.Ctx, searchQuery stri
 			SearchQuery: searchQuery,
 		}
 
-		if strings.Contains(c.Get("Accept"), mimeApplicationJSON) || c.Query("format") == formatJSON {
+		if strings.Contains(c.Get("Accept"), MimeApplicationJSON) || c.Query("format") == FormatJSON {
 			return c.JSON(emptyData)
 		}
 
@@ -980,7 +981,7 @@ func (h *MavenBrowserHandler) performGlobalSearch(c *fiber.Ctx, searchQuery stri
 	}
 
 	// JSON API 요청인 경우
-	if strings.Contains(c.Get("Accept"), mimeApplicationJSON) || c.Query("format") == formatJSON {
+	if strings.Contains(c.Get("Accept"), MimeApplicationJSON) || c.Query("format") == FormatJSON {
 		return c.JSON(resultData)
 	}
 
@@ -1021,7 +1022,7 @@ func (h *MavenBrowserHandler) searchRecursively(
 
 		// 하위 항목 검색
 		hasMatchingChildren := false
-		if node.Type == levelGroup || node.Type == levelArtifact {
+		if node.Type == LevelGroup || node.Type == LevelArtifact {
 			// 하위 디렉토리 로드
 			childPath := strings.TrimPrefix(node.FullPath, "/proxy/maven")
 			childData, err := h.collectDirectoryData(childPath)
@@ -1129,6 +1130,7 @@ func (h *MavenBrowserHandler) initializeIndex() {
 	// 인덱스 저장소 초기화
 	// TODO: NewFileIndexStorage 함수 구현 필요
 	// h.indexStorage = NewFileIndexStorage(storageDir)
+	_ = storageDir // TODO: remove when NewFileIndexStorage is implemented
 
 	// 기존 인덱스 로드
 	h.loadExistingIndex()
@@ -1271,7 +1273,7 @@ func (h *MavenBrowserHandler) indexNode(
 	*entries = append(*entries, entry)
 
 	// 그룹이나 아티팩트면 하위 탐색
-	if node.Type == levelGroup || node.Type == levelArtifact {
+	if node.Type == LevelGroup || node.Type == LevelArtifact {
 		childPath := strings.TrimPrefix(node.FullPath, "/proxy/maven")
 
 		// 캐시 확인
@@ -1366,7 +1368,7 @@ func (h *MavenBrowserHandler) addToIndex(
 	}
 
 	// 그룹이나 아티팩트면 하위 탐색
-	if node.Type == levelGroup || node.Type == levelArtifact {
+	if node.Type == LevelGroup || node.Type == LevelArtifact {
 		childPath := strings.TrimPrefix(node.FullPath, "/proxy/maven")
 		h.indexDirectory(childPath, entry.GroupID, entries)
 

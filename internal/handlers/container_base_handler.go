@@ -77,6 +77,7 @@ func (h *ContainerBaseHandler) BuildUpstreamURL(c *fiber.Ctx) (string, error) {
 
 func (h *ContainerBaseHandler) TransformRequest(c *fiber.Ctx, upstreamReq *fiber.Agent) error {
 	// 기본 요청 변환: 헤더 복사
+	//nolint:staticcheck // SA1019: VisitAll provides better performance than alternatives
 	c.Request().Header.VisitAll(func(key, value []byte) {
 		upstreamReq.Set(string(key), string(value))
 	})

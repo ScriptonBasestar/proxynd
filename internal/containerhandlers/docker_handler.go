@@ -150,13 +150,13 @@ func (h *DockerContainerHandler) GenerateCacheKey(c *fiber.Ctx) string {
 // BuildUpstreamURL 업스트림 URL 구성 (라운드로빈 지원)
 func (h *DockerContainerHandler) BuildUpstreamURL(c *fiber.Ctx) (string, error) {
 	if err := h.LoadConfig(); err != nil {
-		return "", fmt.Errorf("Docker 설정 로드 실패: %w", err)
+		return "", fmt.Errorf("docker 설정 로드 실패: %w", err)
 	}
 
 	requestPath := c.Params("*")
 
 	if len(h.dockerConfig.Proxies) == 0 {
-		return "", fmt.Errorf("Docker 프록시 서버가 설정되지 않았습니다")
+		return "", fmt.Errorf("docker 프록시 서버가 설정되지 않았습니다")
 	}
 
 	// 라운드로빈으로 서버 선택
@@ -164,7 +164,7 @@ func (h *DockerContainerHandler) BuildUpstreamURL(c *fiber.Ctx) (string, error) 
 	server := h.dockerConfig.Proxies[idx%int32(len(h.dockerConfig.Proxies))]
 
 	if server.URL == "" {
-		return "", fmt.Errorf("Docker 프록시 URL이 설정되지 않았습니다")
+		return "", fmt.Errorf("docker 프록시 URL이 설정되지 않았습니다")
 	}
 
 	return h.buildDockerURL(server.URL, requestPath), nil

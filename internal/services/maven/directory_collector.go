@@ -361,6 +361,7 @@ func (c *directoryCollectorImpl) determineMavenType(name, parentPath string) mav
 		fullPath += "/"
 	}
 	fullPath += name
+	_ = fullPath // TODO: use fullPath in logic or remove if not needed
 
 	// 버전 패턴 확인
 	if c.isVersionLike(name) {

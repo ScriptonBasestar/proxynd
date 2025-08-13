@@ -260,7 +260,7 @@ func (s *packageServiceImpl) getContentType(packagePath string) string {
 	case strings.HasSuffix(packagePath, ".xml.bz2") || strings.HasSuffix(packagePath, ".xml.xz"):
 		return "application/xml"
 	case strings.HasSuffix(packagePath, ".sqlite") || strings.HasSuffix(packagePath, ".sqlite.bz2"):
-		return "application/octet-stream"
+		return "application/octet-stream" //nolint:goconst
 	case strings.HasSuffix(packagePath, ".sqlite.gz") || strings.HasSuffix(packagePath, ".sqlite.xz"):
 		return "application/octet-stream"
 	case strings.HasSuffix(packagePath, ".asc") || strings.HasSuffix(packagePath, ".gpg"):

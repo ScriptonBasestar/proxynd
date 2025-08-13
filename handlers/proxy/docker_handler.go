@@ -24,7 +24,7 @@ func DockerProxy(c *fiber.Ctx) error {
 	log.Printf("Docker request path: %s\n", requestPath)
 
 	// Docker Registry v2 API 라우팅
-	if requestPath == "v2" || requestPath == dockerAPIV2Path {
+	if requestPath == "v2" || requestPath == DockerAPIV2Path {
 		return handleDockerV2Base(c)
 	}
 
@@ -231,7 +231,7 @@ func copyResponseHeaders(from http.Header, to *fiber.Ctx) {
 func detectManifestType(data []byte) string {
 	var manifest map[string]interface{}
 	if err := json.Unmarshal(data, &manifest); err != nil {
-		return mimeApplicationDockerManifestV2JSON
+		return MimeApplicationDockerManifestV2JSON
 	}
 
 	if schemaVersion, ok := manifest["schemaVersion"].(float64); ok {
@@ -245,7 +245,7 @@ func detectManifestType(data []byte) string {
 		}
 	}
 
-	return mimeApplicationDockerManifestV2JSON
+	return MimeApplicationDockerManifestV2JSON
 }
 
 // extractDigest 경로에서 다이제스트 추출

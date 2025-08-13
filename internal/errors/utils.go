@@ -225,9 +225,9 @@ func ValidateErrorCode(code string) error {
 
 	// 영문자, 숫자, 밑줄만 허용
 	for _, char := range code {
-		if !((char >= 'A' && char <= 'Z') ||
-			(char >= '0' && char <= '9') ||
-			char == '_') {
+		if (char < 'A' || char > 'Z') &&
+			(char < '0' || char > '9') &&
+			char != '_' {
 			return fmt.Errorf("invalid character in error code: %c", char)
 		}
 	}

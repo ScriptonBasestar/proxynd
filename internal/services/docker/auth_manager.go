@@ -371,7 +371,7 @@ func (a *authManagerImpl) ClearExpiredTokens(ctx context.Context) error {
 	expiredKeys := make([]string, 0)
 
 	for key, auth := range a.tokenCache {
-		if auth.Type == "bearer" && now.After(auth.ExpiresAt) {
+		if auth.Type == authTypeBearer && now.After(auth.ExpiresAt) {
 			expiredKeys = append(expiredKeys, key)
 		}
 	}

@@ -17,6 +17,11 @@ import (
 	"proxynd/logging"
 )
 
+const (
+	mimeTextPlainCharsetUTF8           = "text/plain; charset=utf-8"
+	mimeApplicationDebianBinaryPackage = "application/vnd.debian.binary-package"
+)
+
 // APTContainerHandler Container 기반 APT 핸들러
 type APTContainerHandler struct {
 	logger            logging.Logger
@@ -344,18 +349,18 @@ func (h *APTContainerHandler) saveToCache(osType, packagePath string, content []
 // 유틸리티 함수들 (기존 코드에서 복사)
 func getAptContentType(path string) string {
 	if strings.HasSuffix(path, ".deb") {
-		return "application/vnd.debian.binary-package"
+		return mimeApplicationDebianBinaryPackage
 	}
 	if strings.Contains(path, "Release") {
-		return "text/plain; charset=utf-8"
+		return mimeTextPlainCharsetUTF8
 	}
 	if strings.Contains(path, "Packages") {
-		return "text/plain; charset=utf-8"
+		return mimeTextPlainCharsetUTF8
 	}
 	if strings.Contains(path, "Sources") {
-		return "text/plain; charset=utf-8"
+		return mimeTextPlainCharsetUTF8
 	}
-	return "application/octet-stream"
+	return mimeApplicationOctetStream
 }
 
 func shouldInline(path string) bool {

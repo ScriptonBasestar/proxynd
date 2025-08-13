@@ -13,6 +13,11 @@ import (
 	"proxynd/logging"
 )
 
+const (
+	mimeApplicationJSONCharsetUTF8 = "application/json; charset=utf-8"
+	mimeApplicationXGzip           = "application/x-gzip"
+)
+
 // cacheManagerImpl 캐시 관리 서비스 구현
 type cacheManagerImpl struct {
 	config npm.ProxyConfig
@@ -255,9 +260,9 @@ func (c *cacheManagerImpl) isMetadataPath(path string) bool {
 // getContentTypeFromPath 파일 경로에서 Content-Type 추정
 func (c *cacheManagerImpl) getContentTypeFromPath(path string) string {
 	if c.isMetadataPath(path) {
-		return "application/json; charset=utf-8"
+		return mimeApplicationJSONCharsetUTF8
 	} else if strings.Contains(path, ".tgz") {
-		return "application/x-gzip"
+		return mimeApplicationXGzip
 	}
 	return "application/octet-stream"
 }

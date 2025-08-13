@@ -172,25 +172,25 @@ func (h *APTHandlerV3) GetCacheTTL(c *fiber.Ctx) time.Duration {
 func (h *APTHandlerV3) GetContentType(path string) string {
 	switch {
 	case strings.HasSuffix(path, ".deb"):
-		return mimeApplicationDebianBinaryPackage
+		return MimeApplicationDebianBinaryPackage
 	case strings.HasSuffix(path, ".udeb"):
-		return mimeApplicationDebianBinaryPackage
+		return MimeApplicationDebianBinaryPackage
 	case strings.HasSuffix(path, ".gz"):
-		return mimeApplicationGzip
+		return MimeApplicationGzip
 	case strings.HasSuffix(path, ".xz"):
 		return "application/x-xz"
 	case strings.HasSuffix(path, ".bz2"):
-		return mimeApplicationXBzip2
+		return MimeApplicationXBzip2
 	case strings.Contains(path, "Release"):
-		return mimeTextPlain
+		return MimeTextPlain
 	case strings.Contains(path, "Packages"):
-		return mimeTextPlain
+		return MimeTextPlain
 	case strings.Contains(path, "Sources"):
-		return mimeTextPlain
+		return MimeTextPlain
 	case strings.HasSuffix(path, ".gpg"):
-		return mimeApplicationPGPSignature
+		return MimeApplicationPGPSignature
 	default:
-		return mimeApplicationOctetStream
+		return MimeApplicationOctetStream
 	}
 }
 

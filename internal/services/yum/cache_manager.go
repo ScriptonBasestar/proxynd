@@ -14,6 +14,11 @@ import (
 	"proxynd/logging"
 )
 
+const (
+	mimeApplicationXML         = "application/xml"
+	mimeApplicationOctetStream = "application/octet-stream"
+)
+
 // cacheManagerImpl YUM 캐시 관리 서비스 구현
 type cacheManagerImpl struct {
 	config     yum.ProxyConfig
@@ -265,9 +270,9 @@ func (c *cacheManagerImpl) getContentTypeFromKey(key string) string {
 	if c.isRpmFileKey(key) {
 		return "application/x-rpm"
 	} else if c.isRepoMetadataKey(key) {
-		return "application/xml"
+		return mimeApplicationXML
 	}
-	return "application/octet-stream"
+	return mimeApplicationOctetStream
 }
 
 func (c *cacheManagerImpl) isRepoMetadataKey(key string) bool {
