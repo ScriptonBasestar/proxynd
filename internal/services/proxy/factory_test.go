@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"testing"
 
-	configpkg "proxynd/internal/config"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+
+	configpkg "proxynd/internal/config"
 )
 
 // Test constants for proxy types
