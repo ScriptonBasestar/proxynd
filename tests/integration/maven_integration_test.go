@@ -645,13 +645,13 @@ func TestMavenProxy_ChecksumConsistency(t *testing.T) {
 		name         string
 		artifactPath string
 		checksumType string
-		validation   func(artifactData []byte, checksumData []byte) bool
+		validation   func(artifactData, checksumData []byte) bool
 	}{
 		{
 			name:         "JAR SHA1 consistency",
 			artifactPath: "org/springframework/spring-core/5.3.21/spring-core-5.3.21.jar",
 			checksumType: "sha1",
-			validation: func(artifactData []byte, checksumData []byte) bool {
+			validation: func(artifactData, checksumData []byte) bool {
 				calculated := calculateSHA1(artifactData)
 				retrieved := strings.TrimSpace(string(checksumData))
 				return strings.EqualFold(calculated, retrieved)
@@ -661,7 +661,7 @@ func TestMavenProxy_ChecksumConsistency(t *testing.T) {
 			name:         "POM MD5 consistency",
 			artifactPath: "org/springframework/spring-core/5.3.21/spring-core-5.3.21.pom",
 			checksumType: "md5",
-			validation: func(artifactData []byte, checksumData []byte) bool {
+			validation: func(artifactData, checksumData []byte) bool {
 				calculated := calculateMD5(artifactData)
 				retrieved := strings.TrimSpace(string(checksumData))
 				return strings.EqualFold(calculated, retrieved)
