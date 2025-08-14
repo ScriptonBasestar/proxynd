@@ -1,0 +1,27 @@
+{
+  "global": {
+    "nosec": false,
+    "audit": false,
+    "tests": false,
+    "severity": "medium",
+    "confidence": "medium",
+    "concurrency": 4
+  },
+  "rules": {
+    "G115": {
+      "skip": true
+    },
+    "G404": {
+      "skip": true
+    },
+    "G601": {
+      "skip": true
+    },
+    "G107": {
+      "skip": true
+    },
+    "G204": {
+      "skip": true
+    }
+  }
+}

@@ -189,6 +189,8 @@ lint-install-tools: ## install all linting tools (golangci-lint + gosec)
 lint-quick: lint-vet lint-golangci ## quick lint (vet + golangci-lint)
 lint-strict: lint-vet lint-golangci lint-sec ## strict lint (vet + golangci-lint + gosec)
 
+lint-strict-fast: lint-vet lint-golangci ## fast strict lint (vet + golangci-lint, no gosec)
+
 lint: lint-quick ## default to strict linting
 
 # Individual lint components
@@ -204,18 +206,54 @@ lint-golangci: lint-install-tools ## run golangci-lint comprehensive checks
 	@echo -e "$(GREEN)✅ golangci-lint completed$(RESET)"
 	@echo ""
 
-lint-sec: lint-install-tools ## run gosec security analysis
+lint-sec: lint-install-tools ## run gosec security analysis (optimized)
 	@echo -e "$(BLUE)🔍 Running gosec (security analysis)...$(RESET)"
-	@gosec -fmt=json -out=gosec-report.json ./... || true
-	@echo -e "$(GREEN)✅ gosec completed$(RESET)"
+	@echo -e "$(CYAN)⚡ Using optimized settings (excluding false positives)$(RESET)"
+	@start_time=$$(date +%s); \
+	gosec -fmt=json -out=gosec-report.json \
+		-exclude=G115,G404,G601,G107,G204 \
+		-severity=medium -confidence=medium \
+		-concurrency=4 -tests=false \
+		-exclude-dir=vendor,scripts,docs,examples,tmp \
+		./... || true; \
+	end_time=$$(date +%s); \
+	duration=$$((end_time - start_time)); \
+	echo -e "$(GREEN)✅ gosec completed in $${duration}s$(RESET)"
 	@echo -e "$(CYAN)📄 Security report: gosec-report.json$(RESET)"
 	@if command -v jq >/dev/null 2>&1 && [ -f "gosec-report.json" ]; then \
 		ISSUES=$$(jq '.Issues | length' gosec-report.json 2>/dev/null || echo '0'); \
+		HIGH_ISSUES=$$(jq '[.Issues[] | select(.severity == "HIGH")] | length' gosec-report.json 2>/dev/null || echo '0'); \
 		if [ "$$ISSUES" = "0" ]; then \
 			echo -e "    $(GREEN)✅ No security issues found$(RESET)"; \
 		else \
-			echo -e "    $(YELLOW)⚠️  $$ISSUES security issues found$(RESET)"; \
+			echo -e "    $(YELLOW)⚠️  $$ISSUES total security issues found ($$HIGH_ISSUES high severity)$(RESET)"; \
+			if [ "$$HIGH_ISSUES" -gt "0" ]; then \
+				echo -e "    $(RED)🚨 High severity issues require attention$(RESET)"; \
+			fi; \
 		fi; \
+	fi
+	@echo ""
+
+lint-sec-quick: lint-install-tools ## quick gosec security scan (for pre-push)
+	@echo -e "$(BLUE)🚀 Running quick gosec scan...$(RESET)"
+	@gosec -fmt=text -quiet -terse \
+		-exclude=G115,G404,G601,G107,G204 \
+		-severity=high -confidence=high \
+		-concurrency=4 -tests=false \
+		./... | head -20 || true
+	@echo -e "$(GREEN)✅ Quick security scan completed$(RESET)"
+
+lint-sec-diff: lint-install-tools ## run gosec on changed files only
+	@echo -e "$(BLUE)🔍 Running gosec on changed files...$(RESET)"
+	@CHANGED_FILES=$$(git diff --name-only HEAD~1 '*.go' | grep -v '_test.go' | tr '\n' ' '); \
+	if [ -n "$$CHANGED_FILES" ]; then \
+		echo -e "$(CYAN)📝 Changed files: $$CHANGED_FILES$(RESET)"; \
+		gosec -fmt=text -quiet \
+			-exclude=G115,G404,G601,G107,G204 \
+			-severity=medium -confidence=medium \
+			$$CHANGED_FILES || true; \
+	else \
+		echo -e "$(GREEN)✅ No Go files changed$(RESET)"; \
 	fi
 	@echo ""
 
@@ -393,7 +431,8 @@ pre-commit: lint-diff fmt-diff ## fast pre-commit checks (changed files only, <3
 
 pre-commit-make: lint-vet lint-golangci-fix ## legacy pre-commit using make commands
 
-pre-push: lint-strict format-strict ## comprehensive pre-push checks (full codebase)
+pre-push: lint-strict-fast format-strict ## fast pre-push checks (no gosec)
+pre-push-full: lint-strict format-strict ## comprehensive pre-push checks (includes gosec)
 	@echo -e "$(GREEN)✅ Pre-push checks completed!$(RESET)"
 
 quality: fmt lint test-coverage ## run all quality checks

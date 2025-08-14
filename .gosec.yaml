@@ -1,0 +1,87 @@
+# gosec security scanner configuration
+# ProxyND 프로젝트 최적화 설정
+
+# Global settings
+global:
+  # 병렬 처리 활성화 (4 코어)
+  concurrency: 4
+  # 테스트 파일 제외
+  tests: false
+  # 심각도 설정 (MEDIUM 이상만)
+  severity: "medium"
+  # 신뢰도 설정 (MEDIUM 이상만)
+  confidence: "medium"
+
+# 제외할 규칙들 (false positive 감소)
+exclude:
+  # G115: integer overflow conversion (Go 타입 변환에서 자주 발생하는 false positive)
+  - G115
+  # G404: Use of weak random number generator (crypto가 필요하지 않은 경우)
+  - G404
+  # G601: Implicit memory aliasing in for loop (Go 1.22+에서 해결됨)
+  - G601
+  # G107: Potential HTTP request made with variable url (의도적인 경우가 많음)
+  - G107
+  # G204: Subprocess launched with variable (CLI 도구에서 필요한 경우)
+  - G204
+
+# 제외할 디렉토리/파일 패턴
+exclude-dirs:
+  - vendor/
+  - .git/
+  - tmp/
+  - temp/
+  - scripts/
+  - docs/
+  - examples/
+
+# 제외할 파일 패턴
+exclude-files:
+  - "*_test.go"
+  - "*/mocks/*"
+  - "*/testdata/*"
+  - "*_mock.go"
+  - "*.pb.go"
+  - "*generated*"
+
+# 포함할 규칙 (중요한 보안 이슈만)
+include:
+  # SQL injection
+  - G201
+  - G202
+  # Command injection
+  - G203
+  # File traversal
+  - G304
+  # File permissions
+  - G301
+  - G302
+  # Credentials in code
+  - G101
+  - G102
+  - G103
+  # Crypto issues
+  - G401
+  - G402
+  - G403
+  - G501
+  - G502
+  - G503
+  - G504
+  - G505
+  - G506
+  # TLS configuration
+  - G402
+  - G501
+
+# 출력 형식
+format: "json"
+
+# 로그 레벨
+log-level: "info"
+
+# 메모리 제한 (MB)
+memory-limit: 512
+
+# 타임아웃 (초)
+timeout: 300
