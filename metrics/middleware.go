@@ -16,9 +16,11 @@ import (
 
 // Constants for metrics middleware
 const (
-	metricsPath   = "/metrics"
-	resultFailure = "failure"
-	statusUnknown = "unknown"
+	metricsPath            = "/metrics"
+	resultFailure          = "failure"
+	statusUnknown          = "unknown"
+	statusLocal            = "local"
+	failureTypeServerError = "server_error"
 
 	// Tracing constants
 	traceIDHeader    = "X-Trace-ID"
@@ -151,7 +153,7 @@ func PrometheusMiddleware() fiber.Handler {
 			return c.Next()
 		}
 
-			// Initialize tracing for this request
+		// Initialize tracing for this request
 		var trace *RequestTrace
 		if globalTraceCollector != nil && globalTraceCollector.shouldTrace() {
 			trace = globalTraceCollector.startTrace(c)
@@ -325,7 +327,7 @@ func PrometheusMiddleware() fiber.Handler {
 			// Record upstream failures
 			if c.Response().StatusCode() >= 500 {
 				upstream := getUpstream(c, registryType)
-				failureType := "server_error"
+				failureType := failureTypeServerError
 				enhancedCollector.RecordUpstreamFailure(registryType, upstream, failureType)
 			}
 		}

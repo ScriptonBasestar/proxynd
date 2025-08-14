@@ -87,9 +87,9 @@ func (a *APTHandlerAdapter) Type() string {
 func (a *APTHandlerAdapter) fiberToDomainRequest(c *fiber.Ctx) *apt.PackageRequest {
 	// 헤더 추출
 	headers := make(map[string]string)
-	c.Request().Header.VisitAll(func(key, value []byte) {
+	for key, value := range c.Request().Header.All() {
 		headers[string(key)] = string(value)
-	})
+	}
 
 	return &apt.PackageRequest{
 		OSType:      c.Params("osType", "ubuntu"),

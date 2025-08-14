@@ -118,9 +118,9 @@ func (a *DockerHandlerAdapter) parseDockerRequest(c *fiber.Ctx, requestPath stri
 
 	// HTTP 헤더 변환
 	headers := make(map[string]string)
-	c.Request().Header.VisitAll(func(key, value []byte) {
+	for key, value := range c.Request().Header.All() {
 		headers[string(key)] = string(value)
-	})
+	}
 
 	// 클라이언트 IP 추출
 	clientIP := c.IP()

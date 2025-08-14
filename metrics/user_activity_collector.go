@@ -3,6 +3,7 @@ package metrics
 import (
 	"context"
 	"net"
+	"strings"
 	"sync"
 	"time"
 
@@ -13,20 +14,20 @@ import (
 // UserActivityCollector 사용자 활동 메트릭 수집기
 type UserActivityCollector struct {
 	// Prometheus 메트릭
-	activeUsers           prometheus.Gauge
-	userRequests          *prometheus.CounterVec
-	userBandwidth         *prometheus.CounterVec
-	userSessionDuration   *prometheus.HistogramVec
-	uniqueUsersDaily      prometheus.Gauge
-	topUsersByRequests    *prometheus.GaugeVec
-	userGeolocation       *prometheus.CounterVec
-	userErrors            *prometheus.CounterVec
+	activeUsers         prometheus.Gauge
+	userRequests        *prometheus.CounterVec
+	userBandwidth       *prometheus.CounterVec
+	userSessionDuration *prometheus.HistogramVec
+	uniqueUsersDaily    prometheus.Gauge
+	topUsersByRequests  *prometheus.GaugeVec
+	userGeolocation     *prometheus.CounterVec
+	userErrors          *prometheus.CounterVec
 
 	// 내부 상태
 	activeSessions map[string]*UserSession
 	dailyUsers     map[string]time.Time
 	mutex          sync.RWMutex
-	
+
 	// 설정
 	cleanupInterval time.Duration
 	sessionTimeout  time.Duration
@@ -54,38 +55,38 @@ func NewUserActivityCollector() *UserActivityCollector {
 			Name: "proxynd_active_users_total",
 			Help: "Number of currently active users",
 		}),
-		
+
 		userRequests: promauto.NewCounterVec(prometheus.CounterOpts{
 			Name: "proxynd_user_requests_total",
 			Help: "Total number of requests by user",
 		}, []string{"user_id", "proxy_type", "status"}),
-		
+
 		userBandwidth: promauto.NewCounterVec(prometheus.CounterOpts{
 			Name: "proxynd_user_bandwidth_bytes_total",
 			Help: "Total bandwidth usage by user",
 		}, []string{"user_id", "proxy_type", "direction"}),
-		
+
 		userSessionDuration: promauto.NewHistogramVec(prometheus.HistogramOpts{
 			Name:    "proxynd_user_session_duration_seconds",
 			Help:    "User session duration in seconds",
 			Buckets: prometheus.ExponentialBuckets(60, 2, 12), // 1분부터 68시간까지
 		}, []string{"user_id"}),
-		
+
 		uniqueUsersDaily: promauto.NewGauge(prometheus.GaugeOpts{
 			Name: "proxynd_unique_users_daily",
 			Help: "Number of unique users in the last 24 hours",
 		}),
-		
+
 		topUsersByRequests: promauto.NewGaugeVec(prometheus.GaugeOpts{
 			Name: "proxynd_top_users_requests",
 			Help: "Top users by request count",
 		}, []string{"user_id", "rank"}),
-		
+
 		userGeolocation: promauto.NewCounterVec(prometheus.CounterOpts{
 			Name: "proxynd_user_geolocation_total",
 			Help: "User requests by geographic location",
 		}, []string{"country", "proxy_type"}),
-		
+
 		userErrors: promauto.NewCounterVec(prometheus.CounterOpts{
 			Name: "proxynd_user_errors_total",
 			Help: "User errors by type and proxy",
@@ -93,44 +94,46 @@ func NewUserActivityCollector() *UserActivityCollector {
 
 		// 내부 상태 초기화
 		activeSessions:  make(map[string]*UserSession),
-		dailyUsers:     make(map[string]time.Time),
+		dailyUsers:      make(map[string]time.Time),
 		cleanupInterval: 5 * time.Minute,
 		sessionTimeout:  30 * time.Minute,
 	}
 
 	// 백그라운드 정리 작업 시작
 	go collector.startCleanupWorker()
-	
+
 	return collector
 }
 
 // RecordUserRequest 사용자 요청 기록
-func (uac *UserActivityCollector) RecordUserRequest(userID, ipAddress, userAgent, proxyType, status string, responseSize int64) {
+func (uac *UserActivityCollector) RecordUserRequest(
+	userID, ipAddress, userAgent, proxyType, status string, responseSize int64,
+) {
 	uac.mutex.Lock()
 	defer uac.mutex.Unlock()
 
 	// 세션 가져오기 또는 생성
 	session := uac.getOrCreateSession(userID, ipAddress, userAgent)
-	
+
 	// 요청 카운트 증가
 	session.RequestCount++
 	session.LastActivity = time.Now()
 	session.ProxyTypes[proxyType]++
-	
+
 	// Prometheus 메트릭 업데이트
 	uac.userRequests.WithLabelValues(userID, proxyType, status).Inc()
-	
+
 	// 대역폭 기록 (다운로드)
 	if responseSize > 0 {
 		session.BytesDownload += responseSize
 		uac.userBandwidth.WithLabelValues(userID, proxyType, "download").Add(float64(responseSize))
 	}
-	
+
 	// 지리적 위치 기록
 	country := uac.getCountryFromIP(ipAddress)
 	session.Country = country
 	uac.userGeolocation.WithLabelValues(country, proxyType).Inc()
-	
+
 	// 오늘 사용자 기록
 	today := time.Now().Format("2006-01-02")
 	uac.dailyUsers[userID+":"+today] = time.Now()
@@ -145,7 +148,7 @@ func (uac *UserActivityCollector) RecordUserError(userID, proxyType, errorType s
 func (uac *UserActivityCollector) RecordUserUpload(userID, proxyType string, uploadSize int64) {
 	uac.mutex.Lock()
 	defer uac.mutex.Unlock()
-	
+
 	if session, exists := uac.activeSessions[userID]; exists {
 		session.BytesUpload += uploadSize
 		uac.userBandwidth.WithLabelValues(userID, proxyType, "upload").Add(float64(uploadSize))
@@ -157,7 +160,7 @@ func (uac *UserActivityCollector) getOrCreateSession(userID, ipAddress, userAgen
 	if session, exists := uac.activeSessions[userID]; exists {
 		return session
 	}
-	
+
 	// 새 세션 생성
 	session := &UserSession{
 		UserID:       userID,
@@ -167,7 +170,7 @@ func (uac *UserActivityCollector) getOrCreateSession(userID, ipAddress, userAgen
 		LastActivity: time.Now(),
 		ProxyTypes:   make(map[string]int64),
 	}
-	
+
 	uac.activeSessions[userID] = session
 	return session
 }
@@ -177,14 +180,14 @@ func (uac *UserActivityCollector) getCountryFromIP(ipAddress string) string {
 	// 로컬 IP 범위 확인
 	ip := net.ParseIP(ipAddress)
 	if ip == nil {
-		return "unknown"
+		return statusUnknown
 	}
-	
+
 	// 로컬 IP 범위
 	if ip.IsLoopback() || ip.IsPrivate() {
-		return "local"
+		return statusLocal
 	}
-	
+
 	// 실제 구현에서는 GeoIP 데이터베이스를 사용
 	// 여기서는 간단한 예시만 제공
 	switch {
@@ -200,7 +203,7 @@ func (uac *UserActivityCollector) getCountryFromIP(ipAddress string) string {
 			return "other"
 		}
 	default:
-		return "unknown"
+		return statusUnknown
 	}
 }
 
@@ -208,7 +211,7 @@ func (uac *UserActivityCollector) getCountryFromIP(ipAddress string) string {
 func (uac *UserActivityCollector) startCleanupWorker() {
 	ticker := time.NewTicker(uac.cleanupInterval)
 	defer ticker.Stop()
-	
+
 	for range ticker.C {
 		uac.cleanup()
 	}
@@ -218,31 +221,31 @@ func (uac *UserActivityCollector) startCleanupWorker() {
 func (uac *UserActivityCollector) cleanup() {
 	uac.mutex.Lock()
 	defer uac.mutex.Unlock()
-	
+
 	now := time.Now()
 	activeCount := 0
-	
+
 	// 만료된 세션 제거
 	for userID, session := range uac.activeSessions {
 		if now.Sub(session.LastActivity) > uac.sessionTimeout {
 			// 세션 종료 메트릭 기록
 			sessionDuration := session.LastActivity.Sub(session.StartTime).Seconds()
 			uac.userSessionDuration.WithLabelValues(userID).Observe(sessionDuration)
-			
+
 			delete(uac.activeSessions, userID)
 		} else {
 			activeCount++
 		}
 	}
-	
+
 	// 활성 사용자 수 업데이트
 	uac.activeUsers.Set(float64(activeCount))
-	
+
 	// 오래된 일일 사용자 데이터 정리 (7일 이상)
 	cutoff := now.AddDate(0, 0, -7)
 	uniqueToday := 0
 	today := now.Format("2006-01-02")
-	
+
 	for key, timestamp := range uac.dailyUsers {
 		if timestamp.Before(cutoff) {
 			delete(uac.dailyUsers, key)
@@ -250,7 +253,7 @@ func (uac *UserActivityCollector) cleanup() {
 			uniqueToday++
 		}
 	}
-	
+
 	// 오늘의 고유 사용자 수 업데이트
 	uac.uniqueUsersDaily.Set(float64(uniqueToday))
 }
@@ -259,7 +262,7 @@ func (uac *UserActivityCollector) cleanup() {
 func (uac *UserActivityCollector) GetActiveUsers() map[string]*UserSession {
 	uac.mutex.RLock()
 	defer uac.mutex.RUnlock()
-	
+
 	// 복사본 반환
 	result := make(map[string]*UserSession)
 	for k, v := range uac.activeSessions {
@@ -270,7 +273,7 @@ func (uac *UserActivityCollector) GetActiveUsers() map[string]*UserSession {
 		}
 		result[k] = &sessionCopy
 	}
-	
+
 	return result
 }
 
@@ -278,19 +281,19 @@ func (uac *UserActivityCollector) GetActiveUsers() map[string]*UserSession {
 func (uac *UserActivityCollector) GetUserStats(userID string) (*UserSession, bool) {
 	uac.mutex.RLock()
 	defer uac.mutex.RUnlock()
-	
+
 	session, exists := uac.activeSessions[userID]
 	if !exists {
 		return nil, false
 	}
-	
+
 	// 복사본 반환
 	sessionCopy := *session
 	sessionCopy.ProxyTypes = make(map[string]int64)
 	for pt, count := range session.ProxyTypes {
 		sessionCopy.ProxyTypes[pt] = count
 	}
-	
+
 	return &sessionCopy, true
 }
 
@@ -298,13 +301,13 @@ func (uac *UserActivityCollector) GetUserStats(userID string) (*UserSession, boo
 func (uac *UserActivityCollector) UpdateTopUsers() {
 	uac.mutex.RLock()
 	defer uac.mutex.RUnlock()
-	
+
 	// 요청 수 기준으로 정렬
 	type userStat struct {
 		userID   string
 		requests int64
 	}
-	
+
 	var users []userStat
 	for userID, session := range uac.activeSessions {
 		users = append(users, userStat{
@@ -312,7 +315,7 @@ func (uac *UserActivityCollector) UpdateTopUsers() {
 			requests: session.RequestCount,
 		})
 	}
-	
+
 	// 상위 10명만 기록
 	maxUsers := 10
 	if len(users) > maxUsers {
@@ -330,7 +333,7 @@ func (uac *UserActivityCollector) UpdateTopUsers() {
 		}
 		users = users[:maxUsers]
 	}
-	
+
 	// 메트릭 업데이트
 	for rank, user := range users {
 		uac.topUsersByRequests.WithLabelValues(user.userID, string(rune(rank+1))).Set(float64(user.requests))
@@ -341,16 +344,16 @@ func (uac *UserActivityCollector) UpdateTopUsers() {
 func (uac *UserActivityCollector) GetDailyUserCount() int {
 	uac.mutex.RLock()
 	defer uac.mutex.RUnlock()
-	
+
 	today := time.Now().Format("2006-01-02")
 	count := 0
-	
+
 	for key := range uac.dailyUsers {
 		if strings.HasSuffix(key, ":"+today) {
 			count++
 		}
 	}
-	
+
 	return count
 }
 
@@ -358,14 +361,14 @@ func (uac *UserActivityCollector) GetDailyUserCount() int {
 func (uac *UserActivityCollector) GetUserGeolocationStats() map[string]int {
 	uac.mutex.RLock()
 	defer uac.mutex.RUnlock()
-	
+
 	stats := make(map[string]int)
 	for _, session := range uac.activeSessions {
 		if session.Country != "" {
 			stats[session.Country]++
 		}
 	}
-	
+
 	return stats
 }
 
@@ -373,14 +376,14 @@ func (uac *UserActivityCollector) GetUserGeolocationStats() map[string]int {
 func (uac *UserActivityCollector) GetProxyTypeUsage() map[string]int64 {
 	uac.mutex.RLock()
 	defer uac.mutex.RUnlock()
-	
+
 	usage := make(map[string]int64)
 	for _, session := range uac.activeSessions {
 		for proxyType, count := range session.ProxyTypes {
 			usage[proxyType] += count
 		}
 	}
-	
+
 	return usage
 }
 
@@ -388,12 +391,12 @@ func (uac *UserActivityCollector) GetProxyTypeUsage() map[string]int64 {
 func (uac *UserActivityCollector) Shutdown(ctx context.Context) error {
 	uac.mutex.Lock()
 	defer uac.mutex.Unlock()
-	
+
 	// 모든 활성 세션에 대해 세션 종료 메트릭 기록
 	for userID, session := range uac.activeSessions {
-		sessionDuration := time.Now().Sub(session.StartTime).Seconds()
+		sessionDuration := time.Since(session.StartTime).Seconds()
 		uac.userSessionDuration.WithLabelValues(userID).Observe(sessionDuration)
 	}
-	
+
 	return nil
 }
