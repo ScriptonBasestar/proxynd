@@ -10,6 +10,61 @@ groups:
         annotations:
           summary: "ProxyND service is down"
           description: "ProxyND service has been down for more than 1 minute"
+      
+      # Health monitoring alerts
+      - alert: ProxyNDHealthCheckFailing
+        expr: proxynd_health_status{component!="overall"} == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ProxyND health check failing"
+          description: "ProxyND {{ $labels.component }} health check is failing for more than 2 minutes"
+      
+      - alert: ProxyNDOverallHealthCritical
+        expr: proxynd_health_status{component="overall"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "ProxyND overall health critical"
+          description: "ProxyND overall health is critical - multiple components are failing"
+      
+      - alert: ProxyNDProxyHealthDown
+        expr: proxynd_proxy_health_status == 0
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ProxyND proxy health down"
+          description: "ProxyND {{ $labels.proxy_type }} proxy health is down for more than 3 minutes"
+      
+      - alert: ProxyNDCacheHealthDegraded
+        expr: proxynd_cache_health_status < 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ProxyND cache health degraded"
+          description: "ProxyND cache health is degraded - hit rate: {{ $value | humanizePercentage }}"
+      
+      - alert: ProxyNDSecurityHealthWarning
+        expr: proxynd_security_health_status < 1
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ProxyND security health warning"
+          description: "ProxyND security health status is degraded"
+      
+      - alert: ProxyNDSystemHealthCritical
+        expr: proxynd_system_health_status == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "ProxyND system health critical"
+          description: "ProxyND system health is critical - CPU: {{ $labels.cpu_usage }}%, Memory: {{ $labels.memory_usage }}%"
 
       - alert: ProxyNDHighLatency
         expr: histogram_quantile(0.95, rate(proxynd_http_request_duration_seconds_bucket[5m])) > 2
@@ -38,6 +93,52 @@ groups:
         annotations:
           summary: "ProxyND critical error rate"
           description: "ProxyND error rate is {{ $value | humanizePercentage }} for more than 2 minutes"
+      
+      # User activity alerts
+      - alert: ProxyNDHighUserErrorRate
+        expr: rate(proxynd_user_errors_total[5m]) > 0.1
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ProxyND high user error rate"
+          description: "ProxyND user error rate is {{ $value }} errors/second for {{ $labels.proxy_type }}"
+      
+      - alert: ProxyNDUnusualUserActivity
+        expr: proxynd_active_users_total > 1000
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ProxyND unusual user activity"
+          description: "ProxyND has {{ $value }} active users, which is unusually high"
+      
+      - alert: ProxyNDLongUserSessions
+        expr: histogram_quantile(0.95, rate(proxynd_user_session_duration_seconds_bucket[5m])) > 86400
+        for: 15m
+        labels:
+          severity: info
+        annotations:
+          summary: "ProxyND long user sessions detected"
+          description: "ProxyND 95th percentile user session duration is {{ $value }}s (over 24 hours)"
+      
+      - alert: ProxyNDHighBandwidthUsage
+        expr: rate(proxynd_user_bandwidth_bytes_total[5m]) > 1073741824
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ProxyND high bandwidth usage"
+          description: "ProxyND bandwidth usage is {{ $value | humanizeBytes }}/second for {{ $labels.proxy_type }}"
+      
+      - alert: ProxyNDGeolocationAnomalies
+        expr: increase(proxynd_user_geolocation_total{country="unknown"}[1h]) > 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ProxyND geolocation anomalies detected"
+          description: "ProxyND detected {{ $value }} requests from unknown locations in the last hour"
 
       # Cache performance alerts
       - alert: ProxyNDLowCacheHitRate
@@ -189,3 +290,91 @@ groups:
 
       - record: proxynd:network_latency:quantile99
         expr: histogram_quantile(0.99, rate(proxynd_http_request_duration_seconds_bucket[5m]))
+      
+      # Health monitoring recording rules
+      - record: proxynd:health_score:overall
+        expr: avg(proxynd_health_status{component!="overall"})
+      
+      - record: proxynd:health_failures:rate5m
+        expr: rate(proxynd_health_check_failures_total[5m])
+      
+      - record: proxynd:health_duration:quantile95
+        expr: histogram_quantile(0.95, rate(proxynd_health_check_duration_seconds_bucket[5m]))
+      
+      # User activity recording rules
+      - record: proxynd:user_requests:rate5m
+        expr: rate(proxynd_user_requests_total[5m])
+      
+      - record: proxynd:user_requests:rate1h
+        expr: rate(proxynd_user_requests_total[1h])
+      
+      - record: proxynd:user_bandwidth:rate5m
+        expr: rate(proxynd_user_bandwidth_bytes_total[5m])
+      
+      - record: proxynd:user_errors:rate5m
+        expr: rate(proxynd_user_errors_total[5m])
+      
+      - record: proxynd:user_session_duration:quantile95
+        expr: histogram_quantile(0.95, rate(proxynd_user_session_duration_seconds_bucket[5m]))
+      
+      - record: proxynd:user_session_duration:quantile99
+        expr: histogram_quantile(0.99, rate(proxynd_user_session_duration_seconds_bucket[5m]))
+      
+      - record: proxynd:daily_active_users:current
+        expr: proxynd_unique_users_daily
+      
+      # Proxy type usage recording rules
+      - record: proxynd:proxy_requests:rate5m_by_type
+        expr: sum by (proxy_type) (rate(proxynd_user_requests_total[5m]))
+      
+      - record: proxynd:proxy_bandwidth:rate5m_by_type
+        expr: sum by (proxy_type) (rate(proxynd_user_bandwidth_bytes_total[5m]))
+      
+      - record: proxynd:proxy_errors:rate5m_by_type
+        expr: sum by (proxy_type) (rate(proxynd_user_errors_total[5m]))
+      
+      # Geographic distribution recording rules
+      - record: proxynd:geo_requests:rate5m_by_country
+        expr: sum by (country) (rate(proxynd_user_geolocation_total[5m]))
+      
+      - record: proxynd:geo_distribution:percentage
+        expr: rate(proxynd_user_geolocation_total[5m]) / ignoring(country) group_left sum(rate(proxynd_user_geolocation_total[5m]))
+
+  - name: proxynd.health.alerts
+    rules:
+      # Advanced health monitoring alerts
+      - alert: ProxyNDHealthCheckLatency
+        expr: histogram_quantile(0.95, rate(proxynd_health_check_duration_seconds_bucket[5m])) > 5
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ProxyND health check latency high"
+          description: "ProxyND {{ $labels.component }} health check 95th percentile latency is {{ $value }}s"
+      
+      - alert: ProxyNDHealthCheckFailures
+        expr: rate(proxynd_health_check_failures_total[5m]) > 0.01
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ProxyND health check failures"
+          description: "ProxyND {{ $labels.component }} health check failure rate is {{ $value }} failures/second"
+      
+      - alert: ProxyNDMultipleHealthFailures
+        expr: count(proxynd_health_status{component!="overall"} == 0) >= 2
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "ProxyND multiple health failures"
+          description: "ProxyND has {{ $value }} failing health checks simultaneously"
+      
+      - alert: ProxyNDHealthTrendDegrading
+        expr: proxynd:health_score:overall < 0.8
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ProxyND health trend degrading"
+          description: "ProxyND overall health score is {{ $value | humanizePercentage }} and degrading"
