@@ -4,6 +4,53 @@
 
 This guide describes the testing strategy and implementation for ProxyND services. We use table-driven tests with the testify framework to ensure comprehensive coverage and maintainability.
 
+## Quick Start
+
+### Prerequisites
+
+```bash
+# Install Go 1.21 or later
+go version
+
+# Install test dependencies
+go mod download
+
+# Install development tools (optional)
+go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+```
+
+### Running Tests
+
+```bash
+# Quick test run (unit tests only)
+make test-unit
+
+# Full test suite with coverage
+make test-coverage
+
+# Integration tests
+make test-integration
+
+# All tests (unit + integration + e2e)
+make test-all
+
+# Run with race detection
+make test-race
+```
+
+### Test Categories
+
+- **[Unit Tests](unit-testing.md)** - Fast tests for individual components
+- **[Integration Tests](integration-testing.md)** - Tests for component interactions  
+- **[E2E Tests](e2e.md)** - End-to-end proxy functionality tests
+
+### Development Workflow
+
+1. **Write tests first** (TDD approach)
+2. **Run unit tests** during development: `go test ./internal/services/...`
+3. **Check coverage** before committing: `make test-coverage`
+4. **Run full suite** before pushing: `make test-all`
+
 ## Test Structure
 
 ### Unit Tests

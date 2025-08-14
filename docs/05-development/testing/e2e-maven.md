@@ -136,7 +136,7 @@ time curl -s "http://proxynd:8080/api/v1/proxy/maven/junit/junit/4.13.2/junit-4.
     <groupId>com.example</groupId>
     <artifactId>test-project</artifactId>
     <version>1.0.0</version>
-    
+
     <dependencies>
         <dependency>
             <groupId>junit</groupId>
