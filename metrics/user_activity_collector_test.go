@@ -11,7 +11,11 @@ import (
 
 func TestUserActivityCollector_RecordUserRequest(t *testing.T) {
 	collector := NewUserActivityCollector()
-	defer collector.Shutdown(context.Background())
+	defer func() {
+		if err := collector.Shutdown(context.Background()); err != nil {
+			t.Errorf("Failed to shutdown collector: %v", err)
+		}
+	}()
 
 	tests := []struct {
 		name         string
@@ -69,7 +73,11 @@ func TestUserActivityCollector_RecordUserRequest(t *testing.T) {
 
 func TestUserActivityCollector_RecordUserError(t *testing.T) {
 	collector := NewUserActivityCollector()
-	defer collector.Shutdown(context.Background())
+	defer func() {
+		if err := collector.Shutdown(context.Background()); err != nil {
+			t.Errorf("Failed to shutdown collector: %v", err)
+		}
+	}()
 
 	// 먼저 사용자 요청 기록 (세션 생성)
 	collector.RecordUserRequest("user1", "192.168.1.100", "test-agent", "maven", "success", 1024)
@@ -85,7 +93,11 @@ func TestUserActivityCollector_RecordUserError(t *testing.T) {
 
 func TestUserActivityCollector_RecordUserUpload(t *testing.T) {
 	collector := NewUserActivityCollector()
-	defer collector.Shutdown(context.Background())
+	defer func() {
+		if err := collector.Shutdown(context.Background()); err != nil {
+			t.Errorf("Failed to shutdown collector: %v", err)
+		}
+	}()
 
 	// 먼저 사용자 요청 기록 (세션 생성)
 	collector.RecordUserRequest("user1", "192.168.1.100", "test-agent", "maven", "success", 1024)
@@ -101,7 +113,11 @@ func TestUserActivityCollector_RecordUserUpload(t *testing.T) {
 
 func TestUserActivityCollector_GetActiveUsers(t *testing.T) {
 	collector := NewUserActivityCollector()
-	defer collector.Shutdown(context.Background())
+	defer func() {
+		if err := collector.Shutdown(context.Background()); err != nil {
+			t.Errorf("Failed to shutdown collector: %v", err)
+		}
+	}()
 
 	// 여러 사용자 요청 기록
 	users := []string{"user1", "user2", "user3"}
@@ -166,7 +182,11 @@ func TestUserActivityCollector_SessionTimeout(t *testing.T) {
 	// 짧은 세션 타임아웃으로 테스트
 	collector := NewUserActivityCollector()
 	collector.sessionTimeout = 100 * time.Millisecond
-	defer collector.Shutdown(context.Background())
+	defer func() {
+		if err := collector.Shutdown(context.Background()); err != nil {
+			t.Errorf("Failed to shutdown collector: %v", err)
+		}
+	}()
 
 	// 사용자 요청 기록
 	collector.RecordUserRequest("user1", "192.168.1.100", "test-agent", "maven", "success", 1024)
@@ -189,7 +209,11 @@ func TestUserActivityCollector_SessionTimeout(t *testing.T) {
 
 func TestUserActivityCollector_UpdateTopUsers(t *testing.T) {
 	collector := NewUserActivityCollector()
-	defer collector.Shutdown(context.Background())
+	defer func() {
+		if err := collector.Shutdown(context.Background()); err != nil {
+			t.Errorf("Failed to shutdown collector: %v", err)
+		}
+	}()
 
 	// 다양한 요청 수로 사용자들 생성
 	userRequestCounts := map[string]int{
@@ -219,7 +243,11 @@ func TestUserActivityCollector_UpdateTopUsers(t *testing.T) {
 
 func TestUserActivityCollector_GetDailyUserCount(t *testing.T) {
 	collector := NewUserActivityCollector()
-	defer collector.Shutdown(context.Background())
+	defer func() {
+		if err := collector.Shutdown(context.Background()); err != nil {
+			t.Errorf("Failed to shutdown collector: %v", err)
+		}
+	}()
 
 	// 오늘 날짜로 사용자들 추가
 	users := []string{"user1", "user2", "user3"}
@@ -234,7 +262,11 @@ func TestUserActivityCollector_GetDailyUserCount(t *testing.T) {
 
 func TestUserActivityCollector_GetUserGeolocationStats(t *testing.T) {
 	collector := NewUserActivityCollector()
-	defer collector.Shutdown(context.Background())
+	defer func() {
+		if err := collector.Shutdown(context.Background()); err != nil {
+			t.Errorf("Failed to shutdown collector: %v", err)
+		}
+	}()
 
 	// 다양한 IP로 사용자 요청 기록
 	testCases := []struct {
@@ -261,7 +293,11 @@ func TestUserActivityCollector_GetUserGeolocationStats(t *testing.T) {
 
 func TestUserActivityCollector_GetProxyTypeUsage(t *testing.T) {
 	collector := NewUserActivityCollector()
-	defer collector.Shutdown(context.Background())
+	defer func() {
+		if err := collector.Shutdown(context.Background()); err != nil {
+			t.Errorf("Failed to shutdown collector: %v", err)
+		}
+	}()
 
 	// 다양한 프록시 타입으로 요청 기록
 	testCases := []struct {
@@ -284,14 +320,18 @@ func TestUserActivityCollector_GetProxyTypeUsage(t *testing.T) {
 
 	// 프록시 타입별 사용량 확인
 	usage := collector.GetProxyTypeUsage()
-	assert.Equal(t, int64(7), usage["maven"]) // user1:5 + user2:2
-	assert.Equal(t, int64(4), usage["npm"])   // user1:3 + user3:1
+	assert.Equal(t, int64(7), usage["maven"])  // user1:5 + user2:2
+	assert.Equal(t, int64(4), usage["npm"])    // user1:3 + user3:1
 	assert.Equal(t, int64(4), usage["docker"]) // user2:4
 }
 
 func TestUserActivityCollector_ConcurrentAccess(t *testing.T) {
 	collector := NewUserActivityCollector()
-	defer collector.Shutdown(context.Background())
+	defer func() {
+		if err := collector.Shutdown(context.Background()); err != nil {
+			t.Errorf("Failed to shutdown collector: %v", err)
+		}
+	}()
 
 	// 동시성 테스트
 	const numGoroutines = 10
@@ -303,7 +343,7 @@ func TestUserActivityCollector_ConcurrentAccess(t *testing.T) {
 	for i := 0; i < numGoroutines; i++ {
 		go func(goroutineID int) {
 			defer func() { done <- true }()
-			
+
 			userID := "user" + string(rune(goroutineID))
 			for j := 0; j < requestsPerGoroutine; j++ {
 				collector.RecordUserRequest(userID, "192.168.1.100", "test-agent", "maven", "success", 1024)
@@ -330,7 +370,11 @@ func TestUserActivityCollector_ConcurrentAccess(t *testing.T) {
 
 func BenchmarkUserActivityCollector_RecordUserRequest(b *testing.B) {
 	collector := NewUserActivityCollector()
-	defer collector.Shutdown(context.Background())
+	defer func() {
+		if err := collector.Shutdown(context.Background()); err != nil {
+			b.Errorf("Failed to shutdown collector: %v", err)
+		}
+	}()
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -347,7 +391,11 @@ func BenchmarkUserActivityCollector_RecordUserRequest(b *testing.B) {
 
 func BenchmarkUserActivityCollector_GetActiveUsers(b *testing.B) {
 	collector := NewUserActivityCollector()
-	defer collector.Shutdown(context.Background())
+	defer func() {
+		if err := collector.Shutdown(context.Background()); err != nil {
+			b.Errorf("Failed to shutdown collector: %v", err)
+		}
+	}()
 
 	// 테스트 데이터 준비
 	for i := 0; i < 1000; i++ {
