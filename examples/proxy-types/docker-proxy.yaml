@@ -6,13 +6,13 @@ proxies:
   - name: docker-hub
     url: https://registry-1.docker.io
     description: "Docker Hub public registry"
-  - name: gcr-public  
+  - name: gcr-public
     url: https://gcr.io
     description: "Google Container Registry public"
   - name: quay-public
     url: https://quay.io
     description: "Red Hat Quay public registry"
-    
+
   # Private/authenticated registries
   - name: docker-hub-private
     url: https://registry-1.docker.io
@@ -21,14 +21,14 @@ proxies:
       method: BASIC
       username: "${DOCKER_USERNAME}"
       password: "${DOCKER_PASSWORD}"
-      
+
   - name: gcr-private
     url: https://gcr.io
     description: "Google Container Registry with service account"
     auth:
       method: TOKEN
       token: "${GCR_TOKEN}"  # Service account token
-      
+
   - name: aws-ecr
     url: https://123456789012.dkr.ecr.us-west-2.amazonaws.com
     description: "AWS Elastic Container Registry"
@@ -37,7 +37,7 @@ proxies:
       region: "us-west-2"
       access_key: "${AWS_ACCESS_KEY_ID}"
       secret_key: "${AWS_SECRET_ACCESS_KEY}"
-      
+
   - name: company-registry
     url: https://registry.company.com
     description: "Company private Docker registry"

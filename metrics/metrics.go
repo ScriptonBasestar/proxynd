@@ -51,11 +51,11 @@ type Metrics struct {
 	UptimeSeconds        prometheus.Counter
 
 	// 비즈니스 메트릭 강화
-	PackageDownloadsTotal    *prometheus.CounterVec
-	PackageUploadsTotal      *prometheus.CounterVec
-	PopularPackagesGauge     *prometheus.GaugeVec
-	UserAgentRequests        *prometheus.CounterVec
-	GeographicRequests       *prometheus.CounterVec
+	PackageDownloadsTotal *prometheus.CounterVec
+	PackageUploadsTotal   *prometheus.CounterVec
+	PopularPackagesGauge  *prometheus.GaugeVec
+	UserAgentRequests     *prometheus.CounterVec
+	GeographicRequests    *prometheus.CounterVec
 
 	// 성능 메트릭 강화
 	ConcurrentConnections    *prometheus.GaugeVec
@@ -64,19 +64,19 @@ type Metrics struct {
 	ResourceUtilization      *prometheus.GaugeVec
 
 	// 에러 메트릭 강화
-	HTTPStatusDistribution   *prometheus.CounterVec
-	RetryAttempts            *prometheus.CounterVec
-	RetrySuccessRate         *prometheus.GaugeVec
-	TimeoutErrors            *prometheus.CounterVec
-	ConnectionErrors         *prometheus.CounterVec
-	UpstreamFailureRate      *prometheus.GaugeVec
+	HTTPStatusDistribution *prometheus.CounterVec
+	RetryAttempts          *prometheus.CounterVec
+	RetrySuccessRate       *prometheus.GaugeVec
+	TimeoutErrors          *prometheus.CounterVec
+	ConnectionErrors       *prometheus.CounterVec
+	UpstreamFailureRate    *prometheus.GaugeVec
 
 	// 사용자 활동 메트릭
-	UniqueUsers              *prometheus.GaugeVec
-	RequestPatterns          *prometheus.CounterVec
-	SessionDuration          *prometheus.HistogramVec
-	AuthenticationMetrics    *prometheus.CounterVec
-	UserBehaviorMetrics      *prometheus.CounterVec
+	UniqueUsers           *prometheus.GaugeVec
+	RequestPatterns       *prometheus.CounterVec
+	SessionDuration       *prometheus.HistogramVec
+	AuthenticationMetrics *prometheus.CounterVec
+	UserBehaviorMetrics   *prometheus.CounterVec
 }
 
 // NewMetrics 새 메트릭 인스턴스 생성

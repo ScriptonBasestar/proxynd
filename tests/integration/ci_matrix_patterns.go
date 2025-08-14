@@ -2,24 +2,35 @@ package integration
 
 import (
 	"fmt"
+	"os"
 	"testing"
 	"time"
+)
+
+const (
+	ciEnvPR      = "pr"
+	ciEnvDevelop = "develop"
+	ciEnvMain    = "main"
+	ciEnvMaster  = "master"
+	ciEnvNightly = "nightly"
+	truthy       = "true"
+	scheduleEvt  = "schedule"
 )
 
 // CIMatrixConfig CI 매트릭스 최적화 설정
 type CIMatrixConfig struct {
 	// 테스트 레벨 구분
-	UnitTestsOnly     bool // 단위 테스트만 실행
-	IntegrationTests  bool // 통합 테스트 실행
-	PerformanceTests  bool // 성능 테스트 실행
-	ExtendedTests     bool // 확장 테스트 실행
+	UnitTestsOnly    bool // 단위 테스트만 실행
+	IntegrationTests bool // 통합 테스트 실행
+	PerformanceTests bool // 성능 테스트 실행
+	ExtendedTests    bool // 확장 테스트 실행
 
 	// 프록시 타입 선택
 	ProxyTypes []string // 테스트할 프록시 타입들
 
 	// 성능 테스트 설정
 	PerformanceConfig PerformanceTestConfig
-	
+
 	// 병렬 실행 설정
 	ParallelJobs int // 병렬 실행할 작업 수
 }
@@ -36,7 +47,7 @@ type PerformanceTestConfig struct {
 // GetCIMatrixForEnvironment 환경별 CI 매트릭스 설정 반환
 func GetCIMatrixForEnvironment(env string) CIMatrixConfig {
 	switch env {
-	case "pr": // Pull Request
+	case ciEnvPR: // Pull Request
 		return CIMatrixConfig{
 			UnitTestsOnly:    true,
 			IntegrationTests: true,
@@ -51,7 +62,7 @@ func GetCIMatrixForEnvironment(env string) CIMatrixConfig {
 			},
 			ParallelJobs: 2,
 		}
-	case "develop": // Develop 브랜치
+	case ciEnvDevelop: // Develop 브랜치
 		return CIMatrixConfig{
 			UnitTestsOnly:    false,
 			IntegrationTests: true,
@@ -67,7 +78,7 @@ func GetCIMatrixForEnvironment(env string) CIMatrixConfig {
 			},
 			ParallelJobs: 4,
 		}
-	case "main", "master": // 메인 브랜치
+	case ciEnvMain, ciEnvMaster: // 메인 브랜치
 		return CIMatrixConfig{
 			UnitTestsOnly:    false,
 			IntegrationTests: true,
@@ -83,7 +94,7 @@ func GetCIMatrixForEnvironment(env string) CIMatrixConfig {
 			},
 			ParallelJobs: 6,
 		}
-	case "nightly": // 야간 테스트
+	case ciEnvNightly: // 야간 테스트
 		return CIMatrixConfig{
 			UnitTestsOnly:    false,
 			IntegrationTests: true,
@@ -129,7 +140,7 @@ func RunCIMatrixTests(t *testing.T, config CIMatrixConfig) {
 	if config.IntegrationTests {
 		t.Run("BasicIntegrationTests", func(t *testing.T) {
 			t.Parallel()
-			
+
 			suite := &ProxyTestSuite{
 				ProxyTypes: config.ProxyTypes,
 				TestPaths: map[string]string{
@@ -153,17 +164,17 @@ func RunCIMatrixTests(t *testing.T, config CIMatrixConfig) {
 				t.Skip("Skipping performance tests in short mode")
 			}
 			t.Parallel()
-			
+
 			for _, proxyType := range config.ProxyTypes {
 				proxyType := proxyType // 클로저 변수 캡처
 				t.Run(fmt.Sprintf("Performance_%s", proxyType), func(t *testing.T) {
 					t.Parallel()
-					
+
 					testPath := getTestPathForProxy(proxyType)
 					if testPath == "" {
 						t.Skipf("No test path defined for proxy type: %s", proxyType)
 					}
-					
+
 					pattern := PerformancePattern{
 						ProxyType:           proxyType,
 						Path:                testPath,
@@ -185,17 +196,17 @@ func RunCIMatrixTests(t *testing.T, config CIMatrixConfig) {
 			if testing.Short() {
 				t.Skip("Skipping extended tests in short mode")
 			}
-			
+
 			t.Run("StressTest", func(t *testing.T) {
 				t.Parallel()
 				runStressTests(t, env, config)
 			})
-			
+
 			t.Run("CacheEfficiencyTest", func(t *testing.T) {
 				t.Parallel()
 				runCacheEfficiencyTests(t, env, config)
 			})
-			
+
 			t.Run("ErrorResilienceTest", func(t *testing.T) {
 				t.Parallel()
 				runErrorResilienceTests(t, env, config)
@@ -238,9 +249,9 @@ func runStressTests(t *testing.T, env *IntegrationTestEnvironment, config CIMatr
 		pattern := PerformancePattern{
 			ProxyType:           proxyType,
 			Path:                testPath,
-			MaxResponseTime:     config.PerformanceConfig.MaxResponseTime * 2, // 스트레스 테스트에서는 응답시간을 여유있게
-			ConcurrentUsers:     config.PerformanceConfig.ConcurrentUsers * 3, // 동시 사용자를 3배로
-			TestDuration:        config.PerformanceConfig.TestDuration * 2,    // 테스트 시간을 2배로
+			MaxResponseTime:     config.PerformanceConfig.MaxResponseTime * 2,     // 스트레스 테스트에서는 응답시간을 여유있게
+			ConcurrentUsers:     config.PerformanceConfig.ConcurrentUsers * 3,     // 동시 사용자를 3배로
+			TestDuration:        config.PerformanceConfig.TestDuration * 2,        // 테스트 시간을 2배로
 			AcceptableErrorRate: config.PerformanceConfig.AcceptableErrorRate * 2, // 에러율을 2배까지 허용
 		}
 		TestPerformance(t, env, pattern)
@@ -305,7 +316,7 @@ func runHealthCheckTests(t *testing.T, env *IntegrationTestEnvironment) {
 		ExpectedContent: "healthy",
 		MaxResponseTime: 100 * time.Millisecond,
 	}
-	TestHealthCheck(t, env, healthPattern)
+	RunHealthCheckPattern(t, env, healthPattern)
 
 	// 메트릭 엔드포인트 체크
 	metricsPattern := HealthCheckPattern{
@@ -314,73 +325,70 @@ func runHealthCheckTests(t *testing.T, env *IntegrationTestEnvironment) {
 		ExpectedContent: "proxynd_requests_total",
 		MaxResponseTime: 50 * time.Millisecond,
 	}
-	TestHealthCheck(t, env, metricsPattern)
+	RunHealthCheckPattern(t, env, metricsPattern)
 }
 
 // CIEnvironmentFromEnv 환경 변수에서 CI 환경 감지
 func CIEnvironmentFromEnv() string {
 	// GitHub Actions
-	if os.Getenv("GITHUB_ACTIONS") == "true" {
+	if os.Getenv("GITHUB_ACTIONS") == truthy {
 		if os.Getenv("GITHUB_EVENT_NAME") == "pull_request" {
-			return "pr"
+			return ciEnvPR
 		}
 		if os.Getenv("GITHUB_REF") == "refs/heads/main" || os.Getenv("GITHUB_REF") == "refs/heads/master" {
-			return "main"
+			return ciEnvMain
 		}
 		if os.Getenv("GITHUB_REF") == "refs/heads/develop" {
-			return "develop"
+			return ciEnvDevelop
 		}
-		if os.Getenv("GITHUB_EVENT_NAME") == "schedule" {
-			return "nightly"
+		if os.Getenv("GITHUB_EVENT_NAME") == scheduleEvt {
+			return ciEnvNightly
 		}
-		return "develop" // 기본값
+		return ciEnvDevelop // 기본값
 	}
-	
+
 	// GitLab CI
-	if os.Getenv("GITLAB_CI") == "true" {
+	if os.Getenv("GITLAB_CI") == truthy {
 		if os.Getenv("CI_PIPELINE_SOURCE") == "merge_request_event" {
-			return "pr"
+			return ciEnvPR
 		}
-		if os.Getenv("CI_COMMIT_REF_NAME") == "main" || os.Getenv("CI_COMMIT_REF_NAME") == "master" {
-			return "main"
+		if os.Getenv("CI_COMMIT_REF_NAME") == ciEnvMain || os.Getenv("CI_COMMIT_REF_NAME") == ciEnvMaster {
+			return ciEnvMain
 		}
-		if os.Getenv("CI_PIPELINE_SOURCE") == "schedule" {
-			return "nightly"
+		if os.Getenv("CI_PIPELINE_SOURCE") == scheduleEvt {
+			return ciEnvNightly
 		}
-		return "develop"
+		return ciEnvDevelop
 	}
-	
+
 	// Jenkins
 	if os.Getenv("JENKINS_URL") != "" {
 		if os.Getenv("CHANGE_ID") != "" { // Pull Request
-			return "pr"
+			return ciEnvPR
 		}
-		if os.Getenv("BRANCH_NAME") == "main" || os.Getenv("BRANCH_NAME") == "master" {
-			return "main"
+		if os.Getenv("BRANCH_NAME") == ciEnvMain || os.Getenv("BRANCH_NAME") == ciEnvMaster {
+			return ciEnvMain
 		}
-		return "develop"
+		return ciEnvDevelop
 	}
-	
+
 	// 로컬 개발환경
 	return "local"
 }
-
-// 환경 변수 패키지 import 추가
-import "os"
 
 // OptimizedTestRunner CI 매트릭스 최적화된 테스트 러너
 func OptimizedTestRunner(t *testing.T) {
 	// CI 환경 감지
 	ciEnv := CIEnvironmentFromEnv()
-	
+
 	// 환경에 맞는 설정 로드
 	config := GetCIMatrixForEnvironment(ciEnv)
-	
+
 	t.Logf("Running tests in CI environment: %s", ciEnv)
-	t.Logf("Test configuration: Integration=%v, Performance=%v, Extended=%v", 
+	t.Logf("Test configuration: Integration=%v, Performance=%v, Extended=%v",
 		config.IntegrationTests, config.PerformanceTests, config.ExtendedTests)
 	t.Logf("Proxy types: %v", config.ProxyTypes)
-	
+
 	// 최적화된 테스트 실행
 	RunCIMatrixTests(t, config)
 }

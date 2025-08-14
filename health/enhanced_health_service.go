@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"proxynd/cache"
 	"proxynd/internal/config"
 )
 
@@ -16,20 +15,28 @@ import (
 type EnhancedHealthService struct {
 	*HealthService
 	config           *config.RootConfig
-	cacheManager     *cache.Manager
+	cacheManager     minimalCache
 	proxyChecker     *ProxyHealthChecker
 	cacheChecker     *CacheSystemHealthChecker
 	securityChecker  *SecuritySystemHealthChecker
 	systemChecker    *SystemResourceHealthChecker
 	enhancedCheckers map[string]HealthChecker
-	mutex           sync.RWMutex
+	mutex            sync.RWMutex
+}
+
+// minimalCache 헬스 체커에서 필요로 하는 최소 캐시 인터페이스
+// 실제 구현체(*cache.Manager)와 테스트용 모크 모두 이 인터페이스를 만족하도록 한다.
+type minimalCache interface {
+	Put(key string, data []byte, ttl time.Duration) error
+	Get(key string) ([]byte, bool)
+	Delete(key string) error
 }
 
 // EnhancedHealthConfig 강화된 헬스 서비스 설정
 type EnhancedHealthConfig struct {
 	CheckInterval       time.Duration
 	EnableProxyCheck    bool
-	EnableCacheCheck    bool  
+	EnableCacheCheck    bool
 	EnableSecurityCheck bool
 	EnableSystemCheck   bool
 	SystemCheckPaths    []string
@@ -55,8 +62,8 @@ func DefaultEnhancedHealthConfig() *EnhancedHealthConfig {
 
 // NewEnhancedHealthService 새 강화된 헬스 서비스 생성
 func NewEnhancedHealthService(
-	config *config.RootConfig, 
-	cacheManager *cache.Manager,
+	config *config.RootConfig,
+	cacheManager minimalCache,
 	healthConfig *EnhancedHealthConfig,
 ) *EnhancedHealthService {
 	if healthConfig == nil {
@@ -68,8 +75,8 @@ func NewEnhancedHealthService(
 
 	ehs := &EnhancedHealthService{
 		HealthService:    baseService,
-		config:          config,
-		cacheManager:    cacheManager,
+		config:           config,
+		cacheManager:     cacheManager,
 		enhancedCheckers: make(map[string]HealthChecker),
 	}
 
@@ -159,14 +166,14 @@ func (ehs *EnhancedHealthService) GetComprehensiveStatus() (*ComprehensiveHealth
 	overallStatus, checks := ehs.GetStatus()
 
 	status := &ComprehensiveHealthStatus{
-		OverallStatus: overallStatus,
-		Timestamp:     time.Now(),
-		Uptime:        ehs.GetUptime(),
-		ResponseTime:  time.Since(start),
-		BasicChecks:   checks,
+		OverallStatus:  overallStatus,
+		Timestamp:      time.Now(),
+		Uptime:         ehs.GetUptime(),
+		ResponseTime:   time.Since(start),
+		BasicChecks:    checks,
 		EnhancedChecks: make(map[string]*CheckResult),
-		Summary:       make(map[string]interface{}),
-		Metrics:       make(map[string]interface{}),
+		Summary:        make(map[string]interface{}),
+		Metrics:        make(map[string]interface{}),
 	}
 
 	// 강화된 체커들의 결과 수집
@@ -198,16 +205,16 @@ func (ehs *EnhancedHealthService) GetComprehensiveStatus() (*ComprehensiveHealth
 
 // ComprehensiveHealthStatus 포괄적인 건강 상태
 type ComprehensiveHealthStatus struct {
-	OverallStatus  Status                     `json:"status"`
-	Timestamp      time.Time                  `json:"timestamp"`
-	Uptime         time.Duration              `json:"uptime"`
-	ResponseTime   time.Duration              `json:"response_time_ms"`
-	Environment    string                     `json:"environment,omitempty"`
-	Version        string                     `json:"version,omitempty"`
-	BasicChecks    map[string]*CheckResult    `json:"basic_checks"`
-	EnhancedChecks map[string]*CheckResult    `json:"enhanced_checks"`
-	Summary        map[string]interface{}     `json:"summary"`
-	Metrics        map[string]interface{}     `json:"metrics"`
+	OverallStatus  Status                  `json:"status"`
+	Timestamp      time.Time               `json:"timestamp"`
+	Uptime         time.Duration           `json:"uptime"`
+	ResponseTime   time.Duration           `json:"response_time_ms"`
+	Environment    string                  `json:"environment,omitempty"`
+	Version        string                  `json:"version,omitempty"`
+	BasicChecks    map[string]*CheckResult `json:"basic_checks"`
+	EnhancedChecks map[string]*CheckResult `json:"enhanced_checks"`
+	Summary        map[string]interface{}  `json:"summary"`
+	Metrics        map[string]interface{}  `json:"metrics"`
 }
 
 // generateSummary 요약 정보 생성
@@ -230,10 +237,10 @@ func (ehs *EnhancedHealthService) generateSummary(checks map[string]*CheckResult
 	}
 
 	summary := map[string]interface{}{
-		"total_checks":     len(checks),
-		"healthy_checks":   healthyCount,
-		"degraded_checks":  degradedCount,
-		"unhealthy_checks": unhealthyCount,
+		"total_checks":      len(checks),
+		"healthy_checks":    healthyCount,
+		"degraded_checks":   degradedCount,
+		"unhealthy_checks":  unhealthyCount,
 		"health_percentage": float64(healthyCount) / float64(len(checks)) * 100,
 	}
 
@@ -296,11 +303,11 @@ func (ehs *EnhancedHealthService) analyzeCategorizedHealth(checks map[string]*Ch
 			}
 
 			categoryStatus[category] = map[string]interface{}{
-				"status":         string(status),
-				"healthy_count":  healthy,
-				"degraded_count": degraded,
+				"status":          string(status),
+				"healthy_count":   healthy,
+				"degraded_count":  degraded,
 				"unhealthy_count": unhealthy,
-				"checks":         matchedChecks,
+				"checks":          matchedChecks,
 			}
 		}
 	}
@@ -362,14 +369,14 @@ func (ehs *EnhancedHealthService) generateMetrics() map[string]interface{} {
 // GetFastHealthStatus 빠른 건강 상태 반환 (100ms 미만 목표)
 func (ehs *EnhancedHealthService) GetFastHealthStatus() (*FastHealthStatus, error) {
 	start := time.Now()
-	
+
 	// 캐시된 결과 사용 또는 필수 체크만 수행
 	status, checks := ehs.GetStatus()
 
 	// 핵심 지표만 확인
 	coreChecks := []string{"environment", "memory", "goroutines"}
 	coreStatus := make(map[string]*CheckResult)
-	
+
 	for _, checkName := range coreChecks {
 		if result, exists := checks[checkName]; exists {
 			coreStatus[checkName] = result
@@ -393,8 +400,12 @@ func (ehs *EnhancedHealthService) GetFastHealthStatus() (*FastHealthStatus, erro
 		}
 	}
 
-	fastStatus.HealthRatio = float64(healthy) / float64(total) * 100
-	
+	if total > 0 {
+		fastStatus.HealthRatio = float64(healthy) / float64(total) * 100
+	} else {
+		fastStatus.HealthRatio = 0.0
+	}
+
 	return fastStatus, nil
 }
 
@@ -438,7 +449,7 @@ func (ehs *EnhancedHealthService) GetAvailableCheckers() map[string]interface{} 
 	defer ehs.mutex.RUnlock()
 
 	checkers := make(map[string]interface{})
-	
+
 	for name, checker := range ehs.enhancedCheckers {
 		checkers[name] = map[string]interface{}{
 			"name":        checker.Name(),
@@ -453,12 +464,12 @@ func (ehs *EnhancedHealthService) GetAvailableCheckers() map[string]interface{} 
 // getCheckerDescription 체커 설명 반환
 func (ehs *EnhancedHealthService) getCheckerDescription(name string) string {
 	descriptions := map[string]string{
-		"proxy_upstreams":   "프록시별 업스트림 레지스트리 연결성 확인",
-		"cache_system":      "캐시 백엔드 및 성능 확인",
-		"security_system":   "TLS, 인증, 접근제어 등 보안 설정 확인",
-		"system_resources":  "CPU, 메모리, 디스크 등 시스템 리소스 확인",
+		"proxy_upstreams":  "프록시별 업스트림 레지스트리 연결성 확인",
+		"cache_system":     "캐시 백엔드 및 성능 확인",
+		"security_system":  "TLS, 인증, 접근제어 등 보안 설정 확인",
+		"system_resources": "CPU, 메모리, 디스크 등 시스템 리소스 확인",
 	}
-	
+
 	if desc, exists := descriptions[name]; exists {
 		return desc
 	}
@@ -473,7 +484,7 @@ func (ehs *EnhancedHealthService) EnableMaintMode(reason string) {
 		reason:  reason,
 		since:   time.Now(),
 	}
-	
+
 	ehs.RegisterChecker(maintChecker)
 }
 

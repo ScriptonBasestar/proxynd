@@ -283,13 +283,13 @@ fi
 on_error {
     echo "Error occurred in batch job"
     echo "Last command exit code: ${?}"
-    
+
     # 정리 작업
     cache clear --type temp --force
-    
+
     # 알림 발송 (향후 구현)
     # notify --email admin@company.com --subject "Batch job failed"
-    
+
     exit 1
 }
 
@@ -424,10 +424,10 @@ func TestBatchParser(t *testing.T) {
     set name = "test"
     echo ${name}
     `
-    
+
     parser := NewBatchParser()
     job, err := parser.Parse(script)
-    
+
     assert.NoError(t, err)
     assert.Equal(t, 2, len(job.Commands))
 }

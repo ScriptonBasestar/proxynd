@@ -90,7 +90,7 @@ func (h *OldHandler) Handle(c *fiber.Ctx) error {
     if err := config.ReadConfig(); err != nil {  // 매번 파일 읽기
         return err
     }
-    
+
     // 비즈니스 로직
     return nil
 }
@@ -110,13 +110,13 @@ func NewSomeContainerHandler(provider container.ContainerProvider) *NewContainer
     handler := &NewContainerHandler{
         BaseContainerHandler: NewBaseContainerHandler(provider, "some", "some-container-handler"),
     }
-    
+
     // 생성 시점에 한 번만 설정 로딩
     if err := handler.LoadConfig(); err != nil {
         handler.enabled = false
         return handler
     }
-    
+
     handler.enabled = true
     return handler
 }
@@ -127,7 +127,7 @@ func (h *NewContainerHandler) LoadConfig() error {
         h.RecordConfigCacheMiss("some-config")
         return err
     }
-    
+
     h.RecordConfigCacheHit("some-config")
     h.proxyConfig = config
     return nil
@@ -145,7 +145,7 @@ func (h *NewContainerHandler) IsEnabled() bool {
 func (h *NewContainerHandler) GenerateCacheKey(c *fiber.Ctx) string {
     start := time.Now()
     defer h.RecordCacheKeyGeneration(time.Since(start))
-    
+
     return fmt.Sprintf("%s:%s:%s", h.Type(), c.Method(), c.Path())
 }
 
@@ -153,17 +153,17 @@ func (h *NewContainerHandler) BuildUpstreamURL(c *fiber.Ctx) (string, error) {
     if !h.IsEnabled() {
         return "", errors.New("handler not enabled")
     }
-    
+
     // 캐시된 설정 사용
     servers := h.proxyConfig.Proxies
     if len(servers) == 0 {
         return "", errors.New("no upstream servers configured")
     }
-    
+
     // 라운드 로빈 서버 선택
     serverIdx := atomic.AddUint32(&h.serverIdx, 1) % uint32(len(servers))
     server := servers[serverIdx]
-    
+
     upstreamURL := server.URL + c.Path()
     h.RecordUpstreamBuild(true)
     return upstreamURL, nil
@@ -176,7 +176,7 @@ func (h *NewContainerHandler) Handle(c *fiber.Ctx) error {
         if err != nil {
             return err
         }
-        
+
         // 실제 프록시 처리
         return h.proxyRequest(c, upstreamURL)
     })
@@ -190,7 +190,7 @@ func (h *NewContainerHandler) Handle(c *fiber.Ctx) error {
 // internal/app/container.go
 func (c *Container) registerContainerProxyHandlers(factory *handlers.StandardProxyHandlerFactory) error {
     containerMetrics := metrics.GetContainerMetrics()
-    
+
     if err := factory.RegisterHandler("some", func(provider container.ContainerProvider) (handlers.ContainerProxyHandler, error) {
         containerMetrics.RecordHandlerFactoryOperation("create", "some", true)
         return &containerHandlerAdapter{
@@ -203,7 +203,7 @@ func (c *Container) registerContainerProxyHandlers(factory *handlers.StandardPro
         return fmt.Errorf("failed to register Some handler: %w", err)
     }
     containerMetrics.RecordHandlerFactoryOperation("register", "some", true)
-    
+
     return nil
 }
 ```
@@ -216,7 +216,7 @@ func TestOldHandler(t *testing.T) {
     // 설정 파일 생성
     configPath := createTempConfig(t)
     defer os.Remove(configPath)
-    
+
     handler := &OldHandler{configPath: configPath}
     // 복잡한 테스트 설정...
 }
@@ -227,7 +227,7 @@ func TestOldHandler(t *testing.T) {
 func TestNewContainerHandler(t *testing.T) {
     mockContainer := testutil.NewMockContainerProvider(t)
     handler := NewSomeContainerHandler(mockContainer)
-    
+
     assert.NotNil(t, handler)
     assert.Equal(t, "some-container-handler", handler.Name())
     assert.Equal(t, "some", handler.Type())
@@ -238,7 +238,7 @@ func TestNewContainerHandler(t *testing.T) {
 func TestHandlerWithConfigError(t *testing.T) {
     mockContainer := testutil.NewMockContainerProvider(t).
         WithError("GetSomeProxyConfig", assert.AnError)
-    
+
     handler := NewSomeContainerHandler(mockContainer)
     assert.False(t, handler.IsEnabled())
 }

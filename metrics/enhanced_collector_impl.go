@@ -12,7 +12,7 @@ import (
 // updatePopularPackages 인기 패키지 업데이트
 func (ec *EnhancedMetricsCollector) updatePopularPackages() {
 	ec.popularPackages.UpdateRankings()
-	
+
 	// 프로메테우스 메트릭 업데이트
 	for registryType, rankings := range ec.popularPackages.rankings {
 		for i, packageName := range rankings {
@@ -26,11 +26,11 @@ func (ec *EnhancedMetricsCollector) updatePopularPackages() {
 func (ec *EnhancedMetricsCollector) updateThroughputMetrics() {
 	registryTypes := []string{"npm", "maven", "apt", "docker", "pypi", "yum", "apk"}
 	timeWindows := []string{"1m", "5m", "15m"}
-	
+
 	for _, registryType := range registryTypes {
 		for _, window := range timeWindows {
 			var throughput float64
-			
+
 			switch window {
 			case "1m":
 				throughput = ec.throughputTracker.CalculateThroughput(registryType)
@@ -41,7 +41,7 @@ func (ec *EnhancedMetricsCollector) updateThroughputMetrics() {
 				// 15분 평균 계산
 				throughput = ec.calculateThroughputForWindow(registryType, 15*time.Minute)
 			}
-			
+
 			ec.metrics.ThroughputRequestsPerSec.WithLabelValues(registryType, window).Set(throughput)
 		}
 	}
@@ -51,11 +51,11 @@ func (ec *EnhancedMetricsCollector) updateThroughputMetrics() {
 func (ec *EnhancedMetricsCollector) calculateThroughputForWindow(registryType string, window time.Duration) float64 {
 	ec.throughputTracker.mu.RLock()
 	defer ec.throughputTracker.mu.RUnlock()
-	
+
 	now := time.Now()
 	cutoff := now.Add(-window)
 	totalRequests := int64(0)
-	
+
 	for windowKey, timeWindow := range ec.throughputTracker.windows {
 		if timeWindow.Start.After(cutoff) && timeWindow.Start.Before(now) {
 			if len(windowKey) > len(registryType) && windowKey[:len(registryType)] == registryType {
@@ -63,7 +63,7 @@ func (ec *EnhancedMetricsCollector) calculateThroughputForWindow(registryType st
 			}
 		}
 	}
-	
+
 	return float64(totalRequests) / window.Seconds()
 }
 
@@ -71,7 +71,7 @@ func (ec *EnhancedMetricsCollector) calculateThroughputForWindow(registryType st
 func (ec *EnhancedMetricsCollector) updateRetryRates() {
 	ec.retryTracker.mu.RLock()
 	defer ec.retryTracker.mu.RUnlock()
-	
+
 	for _, stats := range ec.retryTracker.retryStats {
 		ec.metrics.RetrySuccessRate.WithLabelValues(stats.RegistryType, stats.RetryReason).Set(stats.SuccessRate)
 	}
@@ -81,9 +81,15 @@ func (ec *EnhancedMetricsCollector) updateRetryRates() {
 func (ec *EnhancedMetricsCollector) updateUpstreamFailureRates() {
 	ec.upstreamTracker.mu.RLock()
 	defer ec.upstreamTracker.mu.RUnlock()
-	
+
 	for _, stats := range ec.upstreamTracker.upstreamStats {
-		ec.metrics.UpstreamFailureRate.WithLabelValues(stats.RegistryType, stats.Upstream, stats.FailureType).Set(stats.FailureRate)
+		ec.metrics.UpstreamFailureRate.
+			WithLabelValues(
+				stats.RegistryType,
+				stats.Upstream,
+				stats.FailureType,
+			).
+			Set(stats.FailureRate)
 	}
 }
 
@@ -92,7 +98,7 @@ func (ec *EnhancedMetricsCollector) updateUniqueUsers() {
 	registryTypes := []string{"npm", "maven", "apt", "docker", "pypi", "yum", "apk"}
 	timeWindows := []string{"1h", "24h", "7d"}
 	userTypes := []string{"authenticated", "anonymous", "bot"}
-	
+
 	for _, registryType := range registryTypes {
 		for _, timeWindow := range timeWindows {
 			for _, userType := range userTypes {
@@ -107,11 +113,11 @@ func (ec *EnhancedMetricsCollector) updateUniqueUsers() {
 func (ec *EnhancedMetricsCollector) calculateLatencyPercentiles() {
 	ec.latencyTracker.mu.Lock()
 	defer ec.latencyTracker.mu.Unlock()
-	
+
 	for _, measurement := range ec.latencyTracker.measurements {
 		if len(measurement.Samples) > 10 { // 최소 10개 샘플 필요
 			ec.latencyTracker.CalculatePercentiles(measurement.RegistryType, measurement.Method)
-			
+
 			// 프로메테우스 메트릭 업데이트
 			percentiles := map[string]float64{
 				"p50": measurement.P50,
@@ -119,7 +125,7 @@ func (ec *EnhancedMetricsCollector) calculateLatencyPercentiles() {
 				"p95": measurement.P95,
 				"p99": measurement.P99,
 			}
-			
+
 			for percentile, value := range percentiles {
 				ec.metrics.LatencyPercentiles.WithLabelValues(
 					measurement.RegistryType,
@@ -134,26 +140,26 @@ func (ec *EnhancedMetricsCollector) calculateLatencyPercentiles() {
 // performCleanup 오래된 데이터 정리
 func (ec *EnhancedMetricsCollector) performCleanup() {
 	cutoff := time.Now().Add(-ec.retentionPeriod)
-	
+
 	// 패키지 통계 정리
 	ec.cleanupPackageStats(cutoff)
-	
+
 	// 사용자 에이전트 정리
 	ec.cleanupUserAgentStats(cutoff)
-	
+
 	// 지리적 통계 정리
 	ec.cleanupGeographicStats(cutoff)
-	
+
 	// 지연시간 측정값 정리
 	ec.cleanupLatencyMeasurements(cutoff)
-	
+
 	// 처리량 윈도우 정리
 	ec.cleanupThroughputWindows(cutoff)
-	
+
 	// 세션 정리
 	ec.cleanupSessions(cutoff)
-	
-	ec.logger.Debug("Completed metrics cleanup", 
+
+	ec.logger.Debug("Completed metrics cleanup",
 		logging.F("cutoff", cutoff),
 		logging.F("retention_hours", ec.retentionPeriod.Hours()))
 }
@@ -162,7 +168,7 @@ func (ec *EnhancedMetricsCollector) performCleanup() {
 func (ec *EnhancedMetricsCollector) cleanupPackageStats(cutoff time.Time) {
 	ec.mu.Lock()
 	defer ec.mu.Unlock()
-	
+
 	for key, stats := range ec.packageStats {
 		if stats.LastActivity.Before(cutoff) {
 			delete(ec.packageStats, key)
@@ -174,7 +180,7 @@ func (ec *EnhancedMetricsCollector) cleanupPackageStats(cutoff time.Time) {
 func (ec *EnhancedMetricsCollector) cleanupUserAgentStats(cutoff time.Time) {
 	ec.userAgentTracker.mu.Lock()
 	defer ec.userAgentTracker.mu.Unlock()
-	
+
 	for agentKey, stats := range ec.userAgentTracker.agentStats {
 		if stats.LastSeen.Before(cutoff) {
 			delete(ec.userAgentTracker.agentStats, agentKey)
@@ -186,7 +192,7 @@ func (ec *EnhancedMetricsCollector) cleanupUserAgentStats(cutoff time.Time) {
 func (ec *EnhancedMetricsCollector) cleanupGeographicStats(cutoff time.Time) {
 	ec.geoLocationTracker.mu.Lock()
 	defer ec.geoLocationTracker.mu.Unlock()
-	
+
 	for locationKey, stats := range ec.geoLocationTracker.locationStats {
 		if stats.LastSeen.Before(cutoff) {
 			delete(ec.geoLocationTracker.locationStats, locationKey)
@@ -198,7 +204,7 @@ func (ec *EnhancedMetricsCollector) cleanupGeographicStats(cutoff time.Time) {
 func (ec *EnhancedMetricsCollector) cleanupLatencyMeasurements(cutoff time.Time) {
 	ec.latencyTracker.mu.Lock()
 	defer ec.latencyTracker.mu.Unlock()
-	
+
 	for measurementKey, measurement := range ec.latencyTracker.measurements {
 		if measurement.LastUpdate.Before(cutoff) {
 			delete(ec.latencyTracker.measurements, measurementKey)
@@ -210,7 +216,7 @@ func (ec *EnhancedMetricsCollector) cleanupLatencyMeasurements(cutoff time.Time)
 func (ec *EnhancedMetricsCollector) cleanupThroughputWindows(cutoff time.Time) {
 	ec.throughputTracker.mu.Lock()
 	defer ec.throughputTracker.mu.Unlock()
-	
+
 	for windowKey, window := range ec.throughputTracker.windows {
 		if window.End.Before(cutoff) {
 			delete(ec.throughputTracker.windows, windowKey)
@@ -222,7 +228,7 @@ func (ec *EnhancedMetricsCollector) cleanupThroughputWindows(cutoff time.Time) {
 func (ec *EnhancedMetricsCollector) cleanupSessions(cutoff time.Time) {
 	ec.sessionTracker.mu.Lock()
 	defer ec.sessionTracker.mu.Unlock()
-	
+
 	for sessionKey, session := range ec.sessionTracker.sessions {
 		if session.LastActivity.Before(cutoff) {
 			delete(ec.sessionTracker.sessions, sessionKey)
@@ -234,7 +240,7 @@ func (ec *EnhancedMetricsCollector) cleanupSessions(cutoff time.Time) {
 func (ec *EnhancedMetricsCollector) GetMetricsSnapshot() *EnhancedMetricsSnapshot {
 	ec.mu.RLock()
 	defer ec.mu.RUnlock()
-	
+
 	return &EnhancedMetricsSnapshot{
 		Timestamp:         time.Now(),
 		PackageStats:      ec.copyPackageStats(),
@@ -255,20 +261,20 @@ func (ec *EnhancedMetricsCollector) GetMetricsSnapshot() *EnhancedMetricsSnapsho
 
 // EnhancedMetricsSnapshot 강화된 메트릭 스냅샷
 type EnhancedMetricsSnapshot struct {
-	Timestamp         time.Time                           `json:"timestamp"`
-	PackageStats      map[string]*PackageStatistics       `json:"package_stats"`
-	PopularPackages   map[string][]string                 `json:"popular_packages"`
-	UserAgentStats    map[string]*UserAgentStats          `json:"user_agent_stats"`
-	GeographicStats   map[string]*GeographicStats         `json:"geographic_stats"`
-	LatencyStats      map[string]*LatencyMeasurements     `json:"latency_stats"`
-	ThroughputStats   map[string]*ThroughputMeasurements  `json:"throughput_stats"`
-	ConnectionStats   map[string]*ConnectionStats         `json:"connection_stats"`
-	ErrorStats        map[string]*ErrorStats              `json:"error_stats"`
-	RetryStats        map[string]*RetryStats              `json:"retry_stats"`
-	UpstreamStats     map[string]*UpstreamStats           `json:"upstream_stats"`
-	UserActivityStats map[string]*UserStats               `json:"user_activity_stats"`
-	SessionStats      map[string]*SessionInfo             `json:"session_stats"`
-	BehaviorStats     map[string]*BehaviorStats           `json:"behavior_stats"`
+	Timestamp         time.Time                          `json:"timestamp"`
+	PackageStats      map[string]*PackageStatistics      `json:"package_stats"`
+	PopularPackages   map[string][]string                `json:"popular_packages"`
+	UserAgentStats    map[string]*UserAgentStats         `json:"user_agent_stats"`
+	GeographicStats   map[string]*GeographicStats        `json:"geographic_stats"`
+	LatencyStats      map[string]*LatencyMeasurements    `json:"latency_stats"`
+	ThroughputStats   map[string]*ThroughputMeasurements `json:"throughput_stats"`
+	ConnectionStats   map[string]*ConnectionStats        `json:"connection_stats"`
+	ErrorStats        map[string]*ErrorStats             `json:"error_stats"`
+	RetryStats        map[string]*RetryStats             `json:"retry_stats"`
+	UpstreamStats     map[string]*UpstreamStats          `json:"upstream_stats"`
+	UserActivityStats map[string]*UserStats              `json:"user_activity_stats"`
+	SessionStats      map[string]*SessionInfo            `json:"session_stats"`
+	BehaviorStats     map[string]*BehaviorStats          `json:"behavior_stats"`
 }
 
 // Copy methods for thread-safe snapshot creation
@@ -296,7 +302,7 @@ func (ec *EnhancedMetricsCollector) copyPackageStats() map[string]*PackageStatis
 func (ec *EnhancedMetricsCollector) copyPopularPackages() map[string][]string {
 	ec.popularPackages.mu.RLock()
 	defer ec.popularPackages.mu.RUnlock()
-	
+
 	result := make(map[string][]string)
 	for registryType, packages := range ec.popularPackages.rankings {
 		result[registryType] = make([]string, len(packages))
@@ -308,7 +314,7 @@ func (ec *EnhancedMetricsCollector) copyPopularPackages() map[string][]string {
 func (ec *EnhancedMetricsCollector) copyUserAgentStats() map[string]*UserAgentStats {
 	ec.userAgentTracker.mu.RLock()
 	defer ec.userAgentTracker.mu.RUnlock()
-	
+
 	result := make(map[string]*UserAgentStats)
 	for key, stats := range ec.userAgentTracker.agentStats {
 		newStats := *stats
@@ -326,7 +332,7 @@ func (ec *EnhancedMetricsCollector) copyUserAgentStats() map[string]*UserAgentSt
 func (ec *EnhancedMetricsCollector) copyGeographicStats() map[string]*GeographicStats {
 	ec.geoLocationTracker.mu.RLock()
 	defer ec.geoLocationTracker.mu.RUnlock()
-	
+
 	result := make(map[string]*GeographicStats)
 	for key, stats := range ec.geoLocationTracker.locationStats {
 		newStats := *stats
@@ -344,7 +350,7 @@ func (ec *EnhancedMetricsCollector) copyGeographicStats() map[string]*Geographic
 func (ec *EnhancedMetricsCollector) copyLatencyStats() map[string]*LatencyMeasurements {
 	ec.latencyTracker.mu.RLock()
 	defer ec.latencyTracker.mu.RUnlock()
-	
+
 	result := make(map[string]*LatencyMeasurements)
 	for key, stats := range ec.latencyTracker.measurements {
 		newStats := *stats
@@ -358,7 +364,7 @@ func (ec *EnhancedMetricsCollector) copyLatencyStats() map[string]*LatencyMeasur
 func (ec *EnhancedMetricsCollector) copyThroughputStats() map[string]*ThroughputMeasurements {
 	ec.throughputTracker.mu.RLock()
 	defer ec.throughputTracker.mu.RUnlock()
-	
+
 	result := make(map[string]*ThroughputMeasurements)
 	for key, measurement := range ec.throughputTracker.measurements {
 		newMeasurement := *measurement
@@ -376,7 +382,7 @@ func (ec *EnhancedMetricsCollector) copyThroughputStats() map[string]*Throughput
 func (ec *EnhancedMetricsCollector) copyConnectionStats() map[string]*ConnectionStats {
 	ec.connectionTracker.mu.RLock()
 	defer ec.connectionTracker.mu.RUnlock()
-	
+
 	result := make(map[string]*ConnectionStats)
 	for key, stats := range ec.connectionTracker.connections {
 		newStats := *stats
@@ -388,7 +394,7 @@ func (ec *EnhancedMetricsCollector) copyConnectionStats() map[string]*Connection
 func (ec *EnhancedMetricsCollector) copyErrorStats() map[string]*ErrorStats {
 	ec.errorTracker.mu.RLock()
 	defer ec.errorTracker.mu.RUnlock()
-	
+
 	result := make(map[string]*ErrorStats)
 	for key, stats := range ec.errorTracker.errorStats {
 		newStats := *stats
@@ -400,7 +406,7 @@ func (ec *EnhancedMetricsCollector) copyErrorStats() map[string]*ErrorStats {
 func (ec *EnhancedMetricsCollector) copyRetryStats() map[string]*RetryStats {
 	ec.retryTracker.mu.RLock()
 	defer ec.retryTracker.mu.RUnlock()
-	
+
 	result := make(map[string]*RetryStats)
 	for key, stats := range ec.retryTracker.retryStats {
 		newStats := *stats
@@ -412,7 +418,7 @@ func (ec *EnhancedMetricsCollector) copyRetryStats() map[string]*RetryStats {
 func (ec *EnhancedMetricsCollector) copyUpstreamStats() map[string]*UpstreamStats {
 	ec.upstreamTracker.mu.RLock()
 	defer ec.upstreamTracker.mu.RUnlock()
-	
+
 	result := make(map[string]*UpstreamStats)
 	for key, stats := range ec.upstreamTracker.upstreamStats {
 		newStats := *stats
@@ -424,7 +430,7 @@ func (ec *EnhancedMetricsCollector) copyUpstreamStats() map[string]*UpstreamStat
 func (ec *EnhancedMetricsCollector) copyUserActivityStats() map[string]*UserStats {
 	ec.userTracker.mu.RLock()
 	defer ec.userTracker.mu.RUnlock()
-	
+
 	result := make(map[string]*UserStats)
 	for key, stats := range ec.userTracker.userStats {
 		newStats := *stats
@@ -436,7 +442,7 @@ func (ec *EnhancedMetricsCollector) copyUserActivityStats() map[string]*UserStat
 func (ec *EnhancedMetricsCollector) copySessionStats() map[string]*SessionInfo {
 	ec.sessionTracker.mu.RLock()
 	defer ec.sessionTracker.mu.RUnlock()
-	
+
 	result := make(map[string]*SessionInfo)
 	for key, stats := range ec.sessionTracker.sessions {
 		newStats := *stats
@@ -448,7 +454,7 @@ func (ec *EnhancedMetricsCollector) copySessionStats() map[string]*SessionInfo {
 func (ec *EnhancedMetricsCollector) copyBehaviorStats() map[string]*BehaviorStats {
 	ec.behaviorTracker.mu.RLock()
 	defer ec.behaviorTracker.mu.RUnlock()
-	
+
 	result := make(map[string]*BehaviorStats)
 	for key, stats := range ec.behaviorTracker.behaviorStats {
 		newStats := *stats

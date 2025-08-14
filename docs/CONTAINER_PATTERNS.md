@@ -74,22 +74,22 @@ func (c *Container) GetMavenProxyConfig() (*config.MavenProxySettings, error) {
         return cached.(*config.MavenProxySettings), nil
     }
     c.mu.RUnlock()
-    
+
     // 2차 체크: 쓰기 락 (Slow Path)  
     c.mu.Lock()
     defer c.mu.Unlock()
-    
+
     // Double-check: 락 대기 중 다른 고루틴이 생성했을 수 있음
     if cached, exists := c.singletons["maven-proxy-config"]; exists {
         return cached.(*config.MavenProxySettings), nil
     }
-    
+
     // 실제 생성 및 캐싱
     cfg, err := c.loadMavenConfig()
     if err != nil {
         return nil, err
     }
-    
+
     c.singletons["maven-proxy-config"] = cfg
     return cfg, nil
 }
@@ -128,13 +128,13 @@ type StandardProxyHandlerFactory struct {
 type HandlerCreator func(ContainerProvider) (ContainerProxyHandler, error)
 
 func (f *StandardProxyHandlerFactory) RegisterHandler(
-    proxyType string, 
+    proxyType string,
     creator HandlerCreator,
 ) error {
     if f.creators == nil {
         f.creators = make(map[string]HandlerCreator)
     }
-    
+
     f.creators[proxyType] = creator
     return nil
 }
@@ -146,7 +146,7 @@ func (f *StandardProxyHandlerFactory) CreateHandler(
     if !exists {
         return nil, fmt.Errorf("unsupported proxy type: %s", proxyType)
     }
-    
+
     return creator(f.provider)
 }
 ```
@@ -156,7 +156,7 @@ func (f *StandardProxyHandlerFactory) CreateHandler(
 // 초기화 시점에 모든 핸들러 등록
 func (c *Container) initializeHandlerFactory() error {
     factory := NewStandardProxyHandlerFactory(c)
-    
+
     // 각 핸들러 타입별 등록
     handlers := map[string]HandlerCreator{
         "apt":    func(p ContainerProvider) (ContainerProxyHandler, error) {
@@ -169,13 +169,13 @@ func (c *Container) initializeHandlerFactory() error {
             return containerhandlers.NewNPMContainerHandler(p), nil
         },
     }
-    
+
     for proxyType, creator := range handlers {
         if err := factory.RegisterHandler(proxyType, creator); err != nil {
             return fmt.Errorf("failed to register %s handler: %w", proxyType, err)
         }
     }
-    
+
     c.handlerFactory = factory
     return nil
 }
@@ -198,7 +198,7 @@ func (a *containerHandlerAdapter) Handle(c *fiber.Ctx) error {
     if err != nil {
         return err
     }
-    
+
     return handler.Handle(c)
 }
 
@@ -224,7 +224,7 @@ func (a *containerHandlerAdapter) getOrCreateHandler() (ContainerProxyHandler, e
             err = fmt.Errorf("unsupported proxy type: %s", a.proxyType)
         }
     })
-    
+
     return a.instance, err
 }
 ```
@@ -249,21 +249,21 @@ func WrapWithMetrics(handler ContainerProxyHandler) ContainerProxyHandler {
 
 func (w *ContainerHandlerMetricsWrapper) Handle(c *fiber.Ctx) error {
     start := time.Now()
-    
+
     // 원본 핸들러 호출
     err := w.handler.Handle(c)
-    
+
     // 메트릭 수집
     duration := time.Since(start).Seconds()
     statusCode := c.Response().StatusCode()
-    
+
     w.containerMetrics.RecordHandlerRequest(w.handlerType, c.Method(), statusCode)
     w.containerMetrics.RecordHandlerDuration(w.handlerType, c.Method(), duration)
-    
+
     if statusCode >= 400 {
         w.containerMetrics.RecordHandlerError(w.handlerType, "http_error")
     }
-    
+
     return err
 }
 
@@ -272,7 +272,7 @@ func (w *ContainerHandlerMetricsWrapper) GenerateCacheKey(c *fiber.Ctx) string {
     start := time.Now()
     key := w.handler.GenerateCacheKey(c)
     duration := time.Since(start).Seconds()
-    
+
     w.containerMetrics.RecordCacheKeyGeneration(w.handlerType, duration)
     return key
 }
@@ -295,25 +295,25 @@ func (h *BaseContainerHandler) ProcessRequest(c *fiber.Ctx) error {
     if err := h.validateRequest(c); err != nil {
         return err
     }
-    
+
     // 2. 설정 확인
     if !h.IsConfigured() {
         return errors.New("handler not configured")
     }
-    
+
     // 3. 캐시 확인
     if h.IsCacheable(c) {
         if cached := h.getCachedResponse(c); cached != nil {
             return h.sendCachedResponse(c, cached)
         }
     }
-    
+
     // 4. 업스트림 처리 (서브클래스에서 구현)
     response, err := h.processUpstream(c)
     if err != nil {
         return h.handleError(c, err)
     }
-    
+
     // 5. 응답 후처리
     return h.postProcess(c, response)
 }
@@ -346,18 +346,18 @@ type CacheEntry struct {
 func (c *ConfigurationCache) Get(key string) (interface{}, bool) {
     c.mu.RLock()
     defer c.mu.RUnlock()
-    
+
     entry, exists := c.cache[key]
     if !exists {
         return nil, false
     }
-    
+
     // TTL 체크
     if time.Since(entry.timestamp) > c.maxAge {
         delete(c.cache, key)
         return nil, false
     }
-    
+
     // 히트 카운트 증가 (atomic)
     atomic.AddInt64(&entry.hitCount, 1)
     return entry.value, true
@@ -366,12 +366,12 @@ func (c *ConfigurationCache) Get(key string) (interface{}, bool) {
 func (c *ConfigurationCache) Set(key string, value interface{}) {
     c.mu.Lock()
     defer c.mu.Unlock()
-    
+
     // 캐시 크기 제한
     if len(c.cache) >= c.maxSize {
         c.evictLRU()
     }
-    
+
     c.cache[key] = &CacheEntry{
         value:     value,
         timestamp: time.Now(),
@@ -385,7 +385,7 @@ func (c *ConfigurationCache) Set(key string, value interface{}) {
 type EnvironmentConfig struct {
     Environment string `yaml:"environment"`
     Debug       bool   `yaml:"debug"`
-    
+
     // 환경별 오버라이드
     Development *EnvOverride `yaml:"development,omitempty"`
     Production  *EnvOverride `yaml:"production,omitempty"`
@@ -425,14 +425,14 @@ func (f *FallbackConfigProvider) GetMavenProxyConfig() (*config.MavenProxySettin
     if f.circuit.IsOpen() {
         return f.secondary.GetMavenProxyConfig()
     }
-    
+
     cfg, err := f.primary.GetMavenProxyConfig()
     if err != nil {
         f.circuit.RecordFailure()
         // Fallback to secondary
         return f.secondary.GetMavenProxyConfig()
     }
-    
+
     f.circuit.RecordSuccess()
     return cfg, nil
 }
@@ -449,21 +449,21 @@ type RetryableContainer struct {
 
 func (r *RetryableContainer) GetConfigWithRetry(configKey string) (interface{}, error) {
     var lastErr error
-    
+
     for attempt := 0; attempt <= r.maxRetries; attempt++ {
         config, err := r.loadConfig(configKey)
         if err == nil {
             return config, nil
         }
-        
+
         lastErr = err
-        
+
         if attempt < r.maxRetries {
             delay := r.calculateDelay(attempt)
             time.Sleep(delay)
         }
     }
-    
+
     return nil, fmt.Errorf("failed after %d attempts: %w", r.maxRetries, lastErr)
 }
 
@@ -505,7 +505,7 @@ func (p *HandlerPool) Put(handler ContainerProxyHandler) {
     if resettable, ok := handler.(interface{ Reset() }); ok {
         resettable.Reset()
     }
-    
+
     p.pool.Put(handler)
 }
 ```
@@ -524,15 +524,15 @@ func (s *StringInterner) Intern(str string) string {
         return interned
     }
     s.mu.RUnlock()
-    
+
     s.mu.Lock()
     defer s.mu.Unlock()
-    
+
     // Double-check
     if interned, exists := s.strings[str]; exists {
         return interned
     }
-    
+
     s.strings[str] = str
     return str
 }
@@ -580,17 +580,17 @@ func (t *TestContainer) WithError(method string, err error) *TestContainer {
 func (t *TestContainer) GetMavenProxyConfig() (*config.MavenProxySettings, error) {
     t.mu.Lock()
     defer t.mu.Unlock()
-    
+
     t.callCount["GetMavenProxyConfig"]++
-    
+
     if err, exists := t.errors["GetMavenProxyConfig"]; exists {
         return nil, err
     }
-    
+
     if cfg, exists := t.configs["maven"]; exists {
         return cfg.(*config.MavenProxySettings), nil
     }
-    
+
     return &config.MavenProxySettings{}, nil
 }
 
@@ -603,9 +603,9 @@ func TestHandlerWithMockContainer(t *testing.T) {
                 {Name: "central", URL: "https://test.maven.org"},
             },
         })
-    
+
     handler := containerhandlers.NewMavenContainerHandler(mockContainer)
-    
+
     assert.True(t, handler.IsEnabled())
     assert.Equal(t, "maven", handler.Type())
 }
@@ -626,7 +626,7 @@ func NewIntegrationTestSuite(t *testing.T) *IntegrationTestSuite {
         tempDir:     t.TempDir(),
         configFiles: make(map[string]string),
     }
-    
+
     suite.setupEnvironment()
     return suite
 }
@@ -640,7 +640,7 @@ proxies:
   - name: central
     url: https://repo1.maven.org/maven2
 `)
-    
+
     // Container 초기화
     s.container = app.NewContainer(&app.Config{
         ConfigDir:  filepath.Join(s.tempDir, "config"),
@@ -651,25 +651,25 @@ proxies:
 func (s *IntegrationTestSuite) createConfigFile(name, content string) {
     configDir := filepath.Join(s.tempDir, "config")
     os.MkdirAll(configDir, 0755)
-    
+
     configPath := filepath.Join(configDir, name)
     err := ioutil.WriteFile(configPath, []byte(content), 0644)
     require.NoError(s.t, err)
-    
+
     s.configFiles[name] = configPath
 }
 
 func (s *IntegrationTestSuite) TestAllHandlersLoadConfig() {
     handlerTypes := []string{"apt", "maven", "npm", "docker", "pip", "yum", "apk"}
-    
+
     for _, handlerType := range handlerTypes {
         s.t.Run(handlerType, func(t *testing.T) {
             factory, err := s.container.GetContainerProxyHandlerFactory()
             require.NoError(t, err)
-            
+
             handler, err := factory.CreateHandler(handlerType, s.container)
             require.NoError(t, err)
-            
+
             assert.True(t, handler.IsEnabled())
             assert.NoError(t, handler.LoadConfig())
         })
@@ -694,7 +694,7 @@ func (l *ContainerLogger) LogConfigLoad(operation string, duration time.Duration
         "operation":    operation,
         "duration_ms":  duration.Milliseconds(),
     }
-    
+
     if err != nil {
         fields["error"] = err.Error()
         l.logger.WithFields(fields).Error("Config load failed")
@@ -731,20 +731,20 @@ func (h *HealthChecker) RegisterCheck(name string, check HealthCheck) {
 
 func (h *HealthChecker) CheckAll() map[string]error {
     results := make(map[string]error)
-    
+
     // Container 자체 헬스체크
     results["container"] = h.checkContainer()
-    
+
     // 각 핸들러 헬스체크
     for _, handlerType := range h.handlerFactory.SupportedTypes() {
         results[handlerType] = h.checkHandler(handlerType)
     }
-    
+
     // 커스텀 헬스체크
     for name, check := range h.checks {
         results[name] = check()
     }
-    
+
     return results
 }
 
@@ -753,15 +753,15 @@ func (h *HealthChecker) checkHandler(handlerType string) error {
     if err != nil {
         return fmt.Errorf("handler creation failed: %w", err)
     }
-    
+
     if !handler.IsEnabled() {
         return fmt.Errorf("handler not enabled")
     }
-    
+
     if healthCheck, ok := handler.(interface{ HealthCheck() error }); ok {
         return healthCheck.HealthCheck()
     }
-    
+
     return nil
 }
 ```

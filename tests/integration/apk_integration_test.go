@@ -2,9 +2,11 @@ package integration
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -862,10 +864,10 @@ func TestAPKProxySignatureVerificationAdvanced(t *testing.T) {
 
 		// 서명 검증 실패로 인한 에러 응답 확인
 		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
-		
+
 		body, err := io.ReadAll(resp.Body)
 		require.NoError(t, err)
-		
+
 		responseBody := string(body)
 		assert.Contains(t, responseBody, "signature verification failed")
 		assert.Contains(t, responseBody, "untrusted package")
@@ -883,10 +885,10 @@ func TestAPKProxySignatureVerificationAdvanced(t *testing.T) {
 		defer func() { _ = resp.Body.Close() }()
 
 		assert.Equal(t, http.StatusServiceUnavailable, resp.StatusCode)
-		
+
 		body, err := io.ReadAll(resp.Body)
 		require.NoError(t, err)
-		
+
 		responseBody := string(body)
 		assert.Contains(t, responseBody, "public key not found")
 		assert.Contains(t, responseBody, "keyring unavailable")
@@ -905,10 +907,10 @@ func TestAPKProxySignatureVerificationAdvanced(t *testing.T) {
 
 		// 보안 정책에 따라 우회가 차단되어야 함
 		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
-		
+
 		body, err := io.ReadAll(resp.Body)
 		require.NoError(t, err)
-		
+
 		responseBody := string(body)
 		assert.Contains(t, responseBody, "security policy violation")
 		assert.Contains(t, responseBody, "signature verification cannot be bypassed")
@@ -926,10 +928,10 @@ func TestAPKProxySignatureVerificationAdvanced(t *testing.T) {
 		defer func() { _ = resp.Body.Close() }()
 
 		assert.Equal(t, http.StatusUnprocessableEntity, resp.StatusCode)
-		
+
 		body, err := io.ReadAll(resp.Body)
 		require.NoError(t, err)
-		
+
 		responseBody := string(body)
 		assert.Contains(t, responseBody, "signature corrupted")
 		assert.Contains(t, responseBody, "unable to verify integrity")
@@ -945,8 +947,8 @@ func TestAPKProxyMirrorAutoSwitchAdvanced(t *testing.T) {
 		// 주 미러 서버 다운 시 자동 전환
 		headers := map[string]string{
 			"X-Primary-Mirror-Status": "down",
-			"X-Failover-Enabled":     "true",
-			"X-Max-Retries":          "3",
+			"X-Failover-Enabled":      "true",
+			"X-Max-Retries":           "3",
 		}
 
 		resp, err := env.MakeRequest("GET", "/proxy/apk/alpine/v3.16/main/x86_64/APKINDEX.tar.gz", headers)
@@ -954,7 +956,7 @@ func TestAPKProxyMirrorAutoSwitchAdvanced(t *testing.T) {
 		defer func() { _ = resp.Body.Close() }()
 
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		
+
 		// 대체 미러에서 성공적으로 응답받았는지 확인
 		mirrorUsed := resp.Header.Get("X-Mirror-Used")
 		assert.Contains(t, mirrorUsed, "fallback")
@@ -964,9 +966,9 @@ func TestAPKProxyMirrorAutoSwitchAdvanced(t *testing.T) {
 	t.Run("RegionalMirrorPreference", func(t *testing.T) {
 		// 지역별 미러 우선순위 테스트
 		headers := map[string]string{
-			"X-Client-Region":        "asia-pacific",
-			"X-Mirror-Selection":     "regional-priority",
-			"Accept-Language":        "ko-KR",
+			"X-Client-Region":    "asia-pacific",
+			"X-Mirror-Selection": "regional-priority",
+			"Accept-Language":    "ko-KR",
 		}
 
 		resp, err := env.MakeRequest("GET", "/proxy/apk/alpine/v3.16/main/x86_64/APKINDEX.tar.gz", headers)
@@ -974,13 +976,13 @@ func TestAPKProxyMirrorAutoSwitchAdvanced(t *testing.T) {
 		defer func() { _ = resp.Body.Close() }()
 
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		
+
 		mirrorUsed := resp.Header.Get("X-Mirror-Used")
 		latency := resp.Header.Get("X-Mirror-Latency")
-		
+
 		assert.Contains(t, mirrorUsed, "asia")
 		assert.NotEmpty(t, latency)
-		
+
 		// 지연시간이 합리적인 범위인지 확인
 		latencyMs := resp.Header.Get("X-Mirror-Latency-Ms")
 		if latencyMs != "" {
@@ -992,7 +994,7 @@ func TestAPKProxyMirrorAutoSwitchAdvanced(t *testing.T) {
 	t.Run("LoadBalancing", func(t *testing.T) {
 		// 로드 밸런싱 동작 확인
 		mirrorCounts := make(map[string]int)
-		
+
 		for i := 0; i < 10; i++ {
 			headers := map[string]string{
 				"X-Load-Balancing": "round-robin",
@@ -1001,18 +1003,18 @@ func TestAPKProxyMirrorAutoSwitchAdvanced(t *testing.T) {
 
 			resp, err := env.MakeRequest("GET", "/proxy/apk/alpine/v3.16/main/x86_64/APKINDEX.tar.gz", headers)
 			require.NoError(t, err)
-			
+
 			mirrorUsed := resp.Header.Get("X-Mirror-Used")
 			if mirrorUsed != "" {
 				mirrorCounts[mirrorUsed]++
 			}
-			
+
 			_ = resp.Body.Close()
 		}
 
 		// 여러 미러에 요청이 분산되었는지 확인
 		assert.Greater(t, len(mirrorCounts), 1, "Load balancing should use multiple mirrors")
-		
+
 		for mirror, count := range mirrorCounts {
 			t.Logf("Mirror %s used %d times", mirror, count)
 			assert.Greater(t, count, 0, "Each mirror should handle at least one request")
@@ -1031,19 +1033,19 @@ func TestAPKProxyMirrorAutoSwitchAdvanced(t *testing.T) {
 		resp1, err := env.MakeRequest("GET", "/proxy/apk/alpine/v3.16/main/x86_64/APKINDEX.tar.gz", headers)
 		require.NoError(t, err)
 		defer func() { _ = resp1.Body.Close() }()
-		
+
 		assert.Equal(t, http.StatusOK, resp1.StatusCode)
-		
+
 		circuitState := resp1.Header.Get("X-Circuit-State")
 		assert.Equal(t, "closed", circuitState)
 
 		// 실패 시뮬레이션
 		headers["X-Simulate-Failures"] = "3"
-		
+
 		resp2, err := env.MakeRequest("GET", "/proxy/apk/alpine/v3.16/main/x86_64/APKINDEX.tar.gz", headers)
 		require.NoError(t, err)
 		defer func() { _ = resp2.Body.Close() }()
-		
+
 		// 서킷이 열려서 빠른 실패 응답
 		circuitState2 := resp2.Header.Get("X-Circuit-State")
 		assert.Contains(t, []string{"open", "half-open"}, circuitState2)
@@ -1067,10 +1069,10 @@ func TestAPKProxyAPKIndexCompressionAdvanced(t *testing.T) {
 		defer func() { _ = resp.Body.Close() }()
 
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		
+
 		contentEncoding := resp.Header.Get("Content-Encoding")
 		assert.Contains(t, contentEncoding, "gzip")
-		
+
 		contentType := resp.Header.Get("Content-Type")
 		assert.Contains(t, contentType, "application/gzip")
 	})
@@ -1087,7 +1089,7 @@ func TestAPKProxyAPKIndexCompressionAdvanced(t *testing.T) {
 		defer func() { _ = resp.Body.Close() }()
 
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		
+
 		contentType := resp.Header.Get("Content-Type")
 		assert.Contains(t, contentType, "application/x-xz")
 	})
@@ -1104,11 +1106,11 @@ func TestAPKProxyAPKIndexCompressionAdvanced(t *testing.T) {
 		defer func() { _ = resp.Body.Close() }()
 
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		
+
 		// 가장 적합한 압축 방식이 선택되었는지 확인
 		contentEncoding := resp.Header.Get("Content-Encoding")
 		varyHeader := resp.Header.Get("Vary")
-		
+
 		assert.NotEmpty(t, contentEncoding)
 		assert.Contains(t, varyHeader, "Accept-Encoding")
 	})
@@ -1125,10 +1127,10 @@ func TestAPKProxyAPKIndexCompressionAdvanced(t *testing.T) {
 		defer func() { _ = resp.Body.Close() }()
 
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		
+
 		contentEncoding := resp.Header.Get("Content-Encoding")
 		assert.Empty(t, contentEncoding)
-		
+
 		contentLength := resp.Header.Get("Content-Length")
 		assert.NotEmpty(t, contentLength)
 	})
@@ -1136,9 +1138,9 @@ func TestAPKProxyAPKIndexCompressionAdvanced(t *testing.T) {
 	t.Run("CompressionRatioOptimization", func(t *testing.T) {
 		// 압축 효율성 테스트
 		headers := map[string]string{
-			"Accept-Encoding":      "gzip, deflate",
-			"X-Compression-Level":  "9", // 최고 압축률
-			"X-Optimize-For":       "bandwidth",
+			"Accept-Encoding":     "gzip, deflate",
+			"X-Compression-Level": "9", // 최고 압축률
+			"X-Optimize-For":      "bandwidth",
 		}
 
 		resp, err := env.MakeRequest("GET", "/proxy/apk/alpine/v3.16/main/x86_64/APKINDEX.tar.gz", headers)
@@ -1146,16 +1148,16 @@ func TestAPKProxyAPKIndexCompressionAdvanced(t *testing.T) {
 		defer func() { _ = resp.Body.Close() }()
 
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		
+
 		compressionRatio := resp.Header.Get("X-Compression-Ratio")
 		if compressionRatio != "" {
 			t.Logf("Compression ratio: %s", compressionRatio)
 		}
-		
+
 		// 압축된 응답의 크기 확인
 		body, err := io.ReadAll(resp.Body)
 		require.NoError(t, err)
-		
+
 		assert.Greater(t, len(body), 0)
 		t.Logf("Compressed response size: %d bytes", len(body))
 	})
@@ -1178,11 +1180,11 @@ func TestAPKProxyPackageDownloadVerificationAdvanced(t *testing.T) {
 		defer func() { _ = resp.Body.Close() }()
 
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		
+
 		// 체크섬 헤더 확인
 		checksumHeader := resp.Header.Get("X-Checksum-SHA256")
 		assert.NotEmpty(t, checksumHeader)
-		
+
 		integrityHeader := resp.Header.Get("X-Integrity-Verified")
 		assert.Equal(t, "true", integrityHeader)
 	})
@@ -1190,9 +1192,9 @@ func TestAPKProxyPackageDownloadVerificationAdvanced(t *testing.T) {
 	t.Run("SizeValidation", func(t *testing.T) {
 		// 패키지 크기 검증
 		headers := map[string]string{
-			"X-Verify-Size":    "true",
-			"X-Expected-Size":  "1024000", // 1MB
-			"Range":            "bytes=0-1023", // 첫 1KB만 요청
+			"X-Verify-Size":   "true",
+			"X-Expected-Size": "1024000",      // 1MB
+			"Range":           "bytes=0-1023", // 첫 1KB만 요청
 		}
 
 		resp, err := env.MakeRequest("GET", "/proxy/apk/alpine/v3.16/main/x86_64/large-package-2.0.apk", headers)
@@ -1200,10 +1202,10 @@ func TestAPKProxyPackageDownloadVerificationAdvanced(t *testing.T) {
 		defer func() { _ = resp.Body.Close() }()
 
 		assert.Equal(t, http.StatusPartialContent, resp.StatusCode)
-		
+
 		contentRange := resp.Header.Get("Content-Range")
 		assert.Contains(t, contentRange, "bytes 0-1023/1024000")
-		
+
 		body, err := io.ReadAll(resp.Body)
 		require.NoError(t, err)
 		assert.Equal(t, 1024, len(body))
@@ -1212,8 +1214,8 @@ func TestAPKProxyPackageDownloadVerificationAdvanced(t *testing.T) {
 	t.Run("ResumeDownload", func(t *testing.T) {
 		// 다운로드 재개 기능 테스트
 		headers1 := map[string]string{
-			"Range":           "bytes=0-1023",
-			"X-Resume-Token":  "test-token-123",
+			"Range":          "bytes=0-1023",
+			"X-Resume-Token": "test-token-123",
 		}
 
 		resp1, err := env.MakeRequest("GET", "/proxy/apk/alpine/v3.16/main/x86_64/resume-test-package.apk", headers1)
@@ -1221,7 +1223,7 @@ func TestAPKProxyPackageDownloadVerificationAdvanced(t *testing.T) {
 		defer func() { _ = resp1.Body.Close() }()
 
 		assert.Equal(t, http.StatusPartialContent, resp1.StatusCode)
-		
+
 		// 첫 번째 청크 읽기
 		firstChunk, err := io.ReadAll(resp1.Body)
 		require.NoError(t, err)
@@ -1229,9 +1231,9 @@ func TestAPKProxyPackageDownloadVerificationAdvanced(t *testing.T) {
 
 		// 두 번째 요청: 이어서 다운로드
 		headers2 := map[string]string{
-			"Range":           "bytes=1024-2047",
-			"X-Resume-Token":  "test-token-123",
-			"If-Range":        resp1.Header.Get("ETag"),
+			"Range":          "bytes=1024-2047",
+			"X-Resume-Token": "test-token-123",
+			"If-Range":       resp1.Header.Get("ETag"),
 		}
 
 		resp2, err := env.MakeRequest("GET", "/proxy/apk/alpine/v3.16/main/x86_64/resume-test-package.apk", headers2)
@@ -1239,11 +1241,11 @@ func TestAPKProxyPackageDownloadVerificationAdvanced(t *testing.T) {
 		defer func() { _ = resp2.Body.Close() }()
 
 		assert.Equal(t, http.StatusPartialContent, resp2.StatusCode)
-		
+
 		secondChunk, err := io.ReadAll(resp2.Body)
 		require.NoError(t, err)
 		assert.Equal(t, 1024, len(secondChunk))
-		
+
 		// 두 청크가 다른 내용인지 확인
 		assert.NotEqual(t, firstChunk, secondChunk)
 	})
@@ -1253,12 +1255,12 @@ func TestAPKProxyPackageDownloadVerificationAdvanced(t *testing.T) {
 		const numConcurrent = 5
 		var wg sync.WaitGroup
 		results := make([]bool, numConcurrent)
-		
+
 		for i := 0; i < numConcurrent; i++ {
 			wg.Add(1)
 			go func(index int) {
 				defer wg.Done()
-				
+
 				headers := map[string]string{
 					"X-Concurrent-ID": fmt.Sprintf("download-%d", index),
 					"User-Agent":      fmt.Sprintf("TestClient-%d", index),
@@ -1272,7 +1274,7 @@ func TestAPKProxyPackageDownloadVerificationAdvanced(t *testing.T) {
 				defer func() { _ = resp.Body.Close() }()
 
 				results[index] = (resp.StatusCode == http.StatusOK)
-				
+
 				// 응답 본문을 읽어서 완전성 확인
 				body, err := io.ReadAll(resp.Body)
 				if err != nil || len(body) == 0 {
@@ -1280,9 +1282,9 @@ func TestAPKProxyPackageDownloadVerificationAdvanced(t *testing.T) {
 				}
 			}(i)
 		}
-		
+
 		wg.Wait()
-		
+
 		// 모든 동시 다운로드가 성공했는지 확인
 		for i, success := range results {
 			assert.True(t, success, "Concurrent download %d should succeed", i)
@@ -1301,16 +1303,16 @@ func TestAPKProxyPackageDownloadVerificationAdvanced(t *testing.T) {
 		defer func() { _ = resp.Body.Close() }()
 
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		
+
 		// 메타데이터 헤더 확인
 		packageName := resp.Header.Get("X-Package-Name")
 		packageVersion := resp.Header.Get("X-Package-Version")
 		packageArch := resp.Header.Get("X-Package-Arch")
-		
+
 		assert.NotEmpty(t, packageName)
 		assert.NotEmpty(t, packageVersion)
 		assert.NotEmpty(t, packageArch)
-		
+
 		// 의존성 정보 확인
 		dependencies := resp.Header.Get("X-Package-Dependencies")
 		if dependencies != "" {

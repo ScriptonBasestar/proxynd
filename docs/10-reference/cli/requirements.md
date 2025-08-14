@@ -86,7 +86,7 @@
 - **제공 정보**:
   - 사용자명 및 권한 레벨 (user/admin)
   - 계정 생성일 및 마지막 로그인 시간
-  - 사용자 설명 (description) 
+  - 사용자 설명 (description)
   - 계정 활성화 상태 (active/inactive)
   - 소속 그룹 정보 (해당시)
 - **출력 형식**: Table, JSON, YAML 지원

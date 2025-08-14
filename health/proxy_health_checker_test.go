@@ -37,11 +37,11 @@ func TestProxyHealthChecker_Check(t *testing.T) {
 		case "/-/ping":
 			// NPM ping 엔드포인트
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("{}"))
+			_, _ = w.Write([]byte("{}"))
 		case "/simple/":
 			// PyPI simple 엔드포인트
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("<html><head><title>Simple Index</title></head></html>"))
+			_, _ = w.Write([]byte("<html><head><title>Simple Index</title></head></html>"))
 		default:
 			w.WriteHeader(http.StatusOK)
 		}
@@ -70,16 +70,16 @@ func TestProxyHealthChecker_Check(t *testing.T) {
 	assert.NotNil(t, result)
 	assert.Equal(t, "proxy_upstreams", result.Name)
 	assert.NotEmpty(t, result.Details)
-	
+
 	// 세부 내용 확인
 	details, ok := result.Details["npm"].(map[string]interface{})
 	require.True(t, ok, "NPM details should exist")
 	assert.Equal(t, "healthy", details["status"])
-	
+
 	details, ok = result.Details["pypi"].(map[string]interface{})
 	require.True(t, ok, "PyPI details should exist")
 	assert.Equal(t, "healthy", details["status"])
-	
+
 	summary, ok := result.Details["summary"].(map[string]interface{})
 	require.True(t, ok, "Summary should exist")
 	assert.Greater(t, summary["healthy_proxies"], 0)
@@ -95,7 +95,7 @@ func TestProxyHealthChecker_checkNPMUpstream(t *testing.T) {
 			name: "healthy npm registry",
 			serverResponse: func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusOK)
-				w.Write([]byte("{}"))
+				_, _ = w.Write([]byte("{}"))
 			},
 			expectedStatus: StatusHealthy,
 		},
@@ -138,7 +138,7 @@ func TestProxyHealthChecker_checkPyPIUpstream(t *testing.T) {
 	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/simple/" {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("<html><head><title>Simple Index</title></head></html>"))
+			_, _ = w.Write([]byte("<html><head><title>Simple Index</title></head></html>"))
 		} else {
 			w.WriteHeader(http.StatusNotFound)
 		}
@@ -221,7 +221,7 @@ func TestProxyHealthChecker_checkAPTUpstream(t *testing.T) {
 func TestProxyHealthChecker_GetUpstreamStatus(t *testing.T) {
 	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("{}"))
+		_, _ = w.Write([]byte("{}"))
 	}))
 	defer mockServer.Close()
 
@@ -261,7 +261,7 @@ func TestProxyHealthChecker_GetUpstreamStatus(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := checker.GetUpstreamStatus(tt.proxyType)
-			
+
 			if tt.expectError {
 				assert.Error(t, err)
 				assert.Nil(t, result)
@@ -302,7 +302,7 @@ func TestProxyHealthChecker_CircuitBreaker(t *testing.T) {
 	// 서킷 브레이커 상태 확인
 	cbStatus := checker.GetCircuitBreakerStatus()
 	assert.NotEmpty(t, cbStatus)
-	
+
 	npmCB, exists := cbStatus["npm"]
 	assert.True(t, exists)
 	assert.NotNil(t, npmCB)
@@ -313,7 +313,7 @@ func TestProxyHealthChecker_PerformanceCheck(t *testing.T) {
 	slowServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		time.Sleep(100 * time.Millisecond)
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("{}"))
+		_, _ = w.Write([]byte("{}"))
 	}))
 	defer slowServer.Close()
 
@@ -331,7 +331,7 @@ func TestProxyHealthChecker_PerformanceCheck(t *testing.T) {
 	defer cancel()
 
 	result := checker.checkNPMUpstream(ctx)
-	
+
 	// 느린 응답이지만 성공해야 함
 	assert.Equal(t, StatusHealthy, result.Status) // 100ms는 성능 저하 임계값(2초)보다 빠름
 	assert.Greater(t, result.ResponseTime, 50*time.Millisecond)
@@ -355,7 +355,7 @@ func TestProxyHealthChecker_TimeoutHandling(t *testing.T) {
 	}
 
 	checker := NewProxyHealthChecker(config)
-	
+
 	// 짧은 타임아웃으로 컨텍스트 생성
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
@@ -366,14 +366,14 @@ func TestProxyHealthChecker_TimeoutHandling(t *testing.T) {
 
 	// 타임아웃으로 인해 실패해야 함
 	assert.Equal(t, StatusUnhealthy, result.Status)
-	assert.Less(t, duration, 2*time.Second) // 타임아웃에 의해 빠르게 실패
+	assert.Less(t, duration, 2*time.Second)  // 타임아웃에 의해 빠르게 실패
 	assert.Contains(t, result.Message, "실패") // 한국어 에러 메시지
 }
 
 func BenchmarkProxyHealthChecker_Check(b *testing.B) {
 	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("{}"))
+		_, _ = w.Write([]byte("{}"))
 	}))
 	defer mockServer.Close()
 
@@ -425,12 +425,12 @@ func TestProxyHealthChecker_Integration(t *testing.T) {
 
 	assert.NotNil(t, result)
 	assert.Equal(t, "proxy_upstreams", result.Name)
-	
+
 	// 실제 레지스트리는 정상이어야 함
 	if result.Status == StatusUnhealthy {
 		t.Logf("Integration test failed - this might be due to network issues: %s", result.Message)
 	}
-	
+
 	// 응답에 필요한 필드들이 있는지 확인
 	assert.NotEmpty(t, result.Details)
 	assert.NotEmpty(t, result.Message)

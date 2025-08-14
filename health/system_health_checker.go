@@ -13,15 +13,15 @@ import (
 
 // SystemResourceHealthChecker 시스템 리소스 건강성 체커
 type SystemResourceHealthChecker struct {
-	name              string
-	cpuThreshold      float64
-	memoryThreshold   float64
-	diskThreshold     float64
+	name               string
+	cpuThreshold       float64
+	memoryThreshold    float64
+	diskThreshold      float64
 	goroutineThreshold int
-	fdThreshold       int
-	checkPaths        []string
-	history           *ResourceHistory
-	mutex             sync.RWMutex
+	fdThreshold        int
+	checkPaths         []string
+	history            *ResourceHistory
+	mutex              sync.RWMutex
 }
 
 // ResourceHistory 리소스 사용량 이력
@@ -94,7 +94,7 @@ func (srh *SystemResourceHealthChecker) Check(ctx context.Context) *CheckResult 
 
 	// 전체 상태 결정
 	allResults := []map[string]interface{}{
-		cpuResult, memoryResult, diskResult, 
+		cpuResult, memoryResult, diskResult,
 		goroutineResult, fdResult, loadResult,
 	}
 
@@ -162,7 +162,7 @@ func (srh *SystemResourceHealthChecker) checkCPUUsage() map[string]interface{} {
 	// Go 런타임 정보
 	numCPU := runtime.NumCPU()
 	numGoroutine := runtime.NumGoroutine()
-	
+
 	result["details"].(map[string]interface{})["num_cpu"] = numCPU
 	result["details"].(map[string]interface{})["num_goroutines"] = numGoroutine
 	result["details"].(map[string]interface{})["gomaxprocs"] = runtime.GOMAXPROCS(0)
@@ -228,7 +228,7 @@ func (srh *SystemResourceHealthChecker) checkMemoryUsage() map[string]interface{
 		result["status"] = string(StatusDegraded)
 		result["message"] = fmt.Sprintf("메모리 사용률이 높습니다 (%.1f%%)", usagePercent)
 	} else {
-		result["message"] = fmt.Sprintf("메모리 사용률이 정상입니다 (%.1f%%, %.1fMB/%.1fMB)", 
+		result["message"] = fmt.Sprintf("메모리 사용률이 정상입니다 (%.1f%%, %.1fMB/%.1fMB)",
 			usagePercent, allocMB, sysMB)
 	}
 
@@ -236,7 +236,7 @@ func (srh *SystemResourceHealthChecker) checkMemoryUsage() map[string]interface{
 	if m.NumGC > 0 {
 		avgPauseNs := m.PauseTotalNs / uint64(m.NumGC)
 		result["details"].(map[string]interface{})["avg_gc_pause_ns"] = avgPauseNs
-		
+
 		// GC 일시 정지 시간이 1ms를 초과하면 경고
 		if avgPauseNs > 1000000 { // 1ms = 1,000,000 nanoseconds
 			result["status"] = string(StatusDegraded)
@@ -260,7 +260,7 @@ func (srh *SystemResourceHealthChecker) checkDiskUsage() map[string]interface{} 
 		return result
 	}
 
-	var overallMinFreePercent float64 = 100.0
+	overallMinFreePercent := 100.0
 	var criticalPaths []string
 	var warningPaths []string
 
@@ -269,8 +269,8 @@ func (srh *SystemResourceHealthChecker) checkDiskUsage() map[string]interface{} 
 		pathStats, err := getDiskUsage(path)
 		if err != nil {
 			result["paths"].(map[string]interface{})[path] = map[string]interface{}{
-				"error":   err.Error(),
-				"status":  "error",
+				"error":  err.Error(),
+				"status": "error",
 			}
 			continue
 		}
@@ -332,7 +332,7 @@ func (srh *SystemResourceHealthChecker) checkGoroutineCount() map[string]interfa
 
 	if numGoroutines >= srh.goroutineThreshold {
 		result["status"] = string(StatusUnhealthy)
-		result["message"] = fmt.Sprintf("고루틴 수가 매우 많습니다 (%d개, 임계값: %d)", 
+		result["message"] = fmt.Sprintf("고루틴 수가 매우 많습니다 (%d개, 임계값: %d)",
 			numGoroutines, srh.goroutineThreshold)
 	} else if numGoroutines >= srh.goroutineThreshold/2 {
 		result["status"] = string(StatusDegraded)
@@ -364,7 +364,7 @@ func (srh *SystemResourceHealthChecker) checkFileDescriptors() map[string]interf
 
 	if fdCount >= srh.fdThreshold {
 		result["status"] = string(StatusUnhealthy)
-		result["message"] = fmt.Sprintf("파일 디스크립터 수가 매우 많습니다 (%d개, 임계값: %d)", 
+		result["message"] = fmt.Sprintf("파일 디스크립터 수가 매우 많습니다 (%d개, 임계값: %d)",
 			fdCount, srh.fdThreshold)
 	} else if fdCount >= srh.fdThreshold/2 {
 		result["status"] = string(StatusDegraded)
@@ -406,14 +406,14 @@ func (srh *SystemResourceHealthChecker) checkSystemLoad() map[string]interface{}
 	// 부하 평가 (1분 평균 기준)
 	if loadRatio1 > 2.0 { // CPU 대비 200% 이상 부하
 		result["status"] = string(StatusUnhealthy)
-		result["message"] = fmt.Sprintf("시스템 부하가 매우 높습니다 (1분: %.2f, CPU 대비: %.0f%%)", 
+		result["message"] = fmt.Sprintf("시스템 부하가 매우 높습니다 (1분: %.2f, CPU 대비: %.0f%%)",
 			load1, loadRatio1*100)
 	} else if loadRatio1 > 1.0 { // CPU 대비 100% 이상 부하
 		result["status"] = string(StatusDegraded)
-		result["message"] = fmt.Sprintf("시스템 부하가 높습니다 (1분: %.2f, CPU 대비: %.0f%%)", 
+		result["message"] = fmt.Sprintf("시스템 부하가 높습니다 (1분: %.2f, CPU 대비: %.0f%%)",
 			load1, loadRatio1*100)
 	} else {
-		result["message"] = fmt.Sprintf("시스템 부하가 정상입니다 (1분: %.2f, 5분: %.2f, 15분: %.2f)", 
+		result["message"] = fmt.Sprintf("시스템 부하가 정상입니다 (1분: %.2f, 5분: %.2f, 15분: %.2f)",
 			load1, load5, load15)
 	}
 
@@ -426,7 +426,7 @@ func (srh *SystemResourceHealthChecker) updateHistory(cpu, memory, disk map[stri
 	defer srh.mutex.Unlock()
 
 	now := time.Now()
-	
+
 	// CPU 사용률 (고루틴 비율로 추정)
 	if ratio, ok := cpu["details"].(map[string]interface{})["goroutine_cpu_ratio"].(float64); ok {
 		srh.history.CPUUsage = append(srh.history.CPUUsage, ratio)
@@ -461,7 +461,7 @@ func (srh *SystemResourceHealthChecker) analyzeTrends() map[string]interface{} {
 
 	if len(srh.history.CPUUsage) < 5 {
 		return map[string]interface{}{
-			"status": "insufficient_data",
+			"status":       "insufficient_data",
 			"sample_count": len(srh.history.CPUUsage),
 		}
 	}
@@ -521,26 +521,35 @@ func analyzeTrend(data []float64, recentSize int) map[string]interface{} {
 	changePercent := ((recentAvg - overallAvg) / overallAvg) * 100
 
 	trend := map[string]interface{}{
-		"overall_avg": overallAvg,
-		"recent_avg":  recentAvg,
+		"overall_avg":    overallAvg,
+		"recent_avg":     recentAvg,
 		"change_percent": changePercent,
 	}
 
+	const (
+		trendIncreasing     = "increasing"
+		trendDecreasing     = "decreasing"
+		trendStable         = "stable"
+		severitySignificant = "significant"
+		severityModerate    = "moderate"
+		severityNone        = "none"
+	)
+
 	if changePercent > 20 {
-		trend["direction"] = "increasing"
-		trend["severity"] = "significant"
+		trend["direction"] = trendIncreasing
+		trend["severity"] = severitySignificant
 	} else if changePercent > 10 {
-		trend["direction"] = "increasing"
-		trend["severity"] = "moderate"
+		trend["direction"] = trendIncreasing
+		trend["severity"] = severityModerate
 	} else if changePercent < -20 {
-		trend["direction"] = "decreasing"
-		trend["severity"] = "significant"
+		trend["direction"] = trendDecreasing
+		trend["severity"] = severitySignificant
 	} else if changePercent < -10 {
-		trend["direction"] = "decreasing"
-		trend["severity"] = "moderate"
+		trend["direction"] = trendDecreasing
+		trend["severity"] = severityModerate
 	} else {
-		trend["direction"] = "stable"
-		trend["severity"] = "none"
+		trend["direction"] = trendStable
+		trend["severity"] = severityNone
 	}
 
 	return trend
@@ -555,6 +564,7 @@ func getFileDescriptorCount() (int, error) {
 	if err != nil {
 		return 0, fmt.Errorf("cannot open /proc/self/fd: %w", err)
 	}
+	//nolint:errcheck // best effort close in test-friendly utility
 	defer fdDir.Close()
 
 	entries, err := fdDir.Readdir(-1)
@@ -587,13 +597,13 @@ func (srh *SystemResourceHealthChecker) GetResourceSummary() map[string]interfac
 	runtime.ReadMemStats(&m)
 
 	return map[string]interface{}{
-		"cpu_count":        runtime.NumCPU(),
-		"goroutine_count":  runtime.NumGoroutine(),
-		"memory_alloc_mb":  float64(m.Alloc) / 1024 / 1024,
-		"memory_sys_mb":    float64(m.Sys) / 1024 / 1024,
-		"gc_count":         m.NumGC,
+		"cpu_count":         runtime.NumCPU(),
+		"goroutine_count":   runtime.NumGoroutine(),
+		"memory_alloc_mb":   float64(m.Alloc) / 1024 / 1024,
+		"memory_sys_mb":     float64(m.Sys) / 1024 / 1024,
+		"gc_count":          m.NumGC,
 		"gc_pause_total_ns": m.PauseTotalNs,
-		"check_paths":      srh.checkPaths,
+		"check_paths":       srh.checkPaths,
 		"thresholds": map[string]interface{}{
 			"cpu_threshold":       srh.cpuThreshold,
 			"memory_threshold":    srh.memoryThreshold,
@@ -670,7 +680,7 @@ func predictExhaustion(data []float64, threshold float64) map[string]interface{}
 	// 최근 5개 데이터로 트렌드 계산
 	recentStart := len(data) - 5
 	var slope float64
-	
+
 	for i := 1; i < 5; i++ {
 		slope += data[recentStart+i] - data[recentStart+i-1]
 	}

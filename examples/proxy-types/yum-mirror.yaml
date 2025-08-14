@@ -17,7 +17,7 @@ mirrors:
       distribution: "centos"
       version: "7"
       architecture: "x86_64"
-      
+
     centos7_updates:
       name: "CentOS 7 Updates Mirror"
       url: http://mirror.centos.org/centos/7/updates/x86_64/
@@ -25,7 +25,7 @@ mirrors:
       distribution: "centos"
       version: "7"
       architecture: "x86_64"
-      
+
     centos7_extras:
       name: "CentOS 7 Extras Mirror"
       url: http://mirror.centos.org/centos/7/extras/x86_64/
@@ -33,7 +33,7 @@ mirrors:
       distribution: "centos"
       version: "7"
       architecture: "x86_64"
-      
+
     # CentOS 8 Stream
     centos8_stream:
       name: "CentOS 8 Stream Mirror"
@@ -42,7 +42,7 @@ mirrors:
       distribution: "centos"
       version: "8-stream"
       architecture: "x86_64"
-      
+
   # Rocky Linux repositories
   rocky:
     rocky8_baseos:
@@ -52,7 +52,7 @@ mirrors:
       distribution: "rocky"
       version: "8"
       architecture: "x86_64"
-      
+
     rocky8_appstream:
       name: "Rocky Linux 8 AppStream Mirror"
       url: https://download.rockylinux.org/pub/rocky/8/AppStream/x86_64/os/
@@ -60,7 +60,7 @@ mirrors:
       distribution: "rocky"
       version: "8"
       architecture: "x86_64"
-      
+
     rocky9_baseos:
       name: "Rocky Linux 9 BaseOS Mirror"
       url: https://download.rockylinux.org/pub/rocky/9/BaseOS/x86_64/os/
@@ -68,7 +68,7 @@ mirrors:
       distribution: "rocky"
       version: "9"
       architecture: "x86_64"
-      
+
     rocky9_appstream:
       name: "Rocky Linux 9 AppStream Mirror"
       url: https://download.rockylinux.org/pub/rocky/9/AppStream/x86_64/os/
@@ -76,7 +76,7 @@ mirrors:
       distribution: "rocky"
       version: "9"
       architecture: "x86_64"
-      
+
   # EPEL (Extra Packages for Enterprise Linux)
   epel:
     epel7:
@@ -86,7 +86,7 @@ mirrors:
       distribution: "epel"
       version: "7"
       architecture: "x86_64"
-      
+
     epel8:
       name: "EPEL 8 Mirror"
       url: https://download.fedoraproject.org/pub/epel/8/Everything/x86_64/
@@ -94,7 +94,7 @@ mirrors:
       distribution: "epel"
       version: "8"
       architecture: "x86_64"
-      
+
     epel9:
       name: "EPEL 9 Mirror"
       url: https://download.fedoraproject.org/pub/epel/9/Everything/x86_64/
@@ -102,7 +102,7 @@ mirrors:
       distribution: "epel"
       version: "9"
       architecture: "x86_64"
-      
+
   # Regional mirrors for faster access
   regional_mirrors:
     # Asian mirrors
@@ -110,7 +110,7 @@ mirrors:
       name: "Kakao CentOS Mirror"
       url: https://mirror.kakao.com/centos/
       region: "asia"
-      
+
     naver:
       name: "Naver CentOS Mirror"
       url: https://mirror.navercorp.com/centos/
@@ -120,38 +120,38 @@ mirrors:
 sync:
   # Enable automatic synchronization
   enabled: true
-  
+
   # Synchronization schedule (cron format)
   schedule: "0 4 * * *"  # Daily at 4 AM
-  
+
   # Sync strategy
   strategy: "rsync"  # Options: rsync, reposync, createrepo
-  
+
   # Synchronization options
   options:
     # Delete packages removed from upstream
     delete_removed: true
-    
+
     # Verify GPG signatures during sync
     verify_signatures: true
-    
+
     # Create metadata after sync
     create_metadata: true
-    
+
     # Compress metadata
     compress_metadata: true
-    
+
   # Bandwidth and concurrency limits
   limits:
     # Maximum concurrent sync processes
     max_concurrent_syncs: 3
-    
+
     # Bandwidth limit per sync
     bandwidth_limit: "100MB/s"
-    
+
     # Skip packages larger than this size
     max_package_size: "1GB"
-    
+
     # Timeout for individual package downloads
     download_timeout: "300s"
 
@@ -159,24 +159,24 @@ sync:
 storage:
   # Storage backend
   backend: "file"  # Options: file, s3, gcs
-  
+
   # Repository structure
   structure: "standard"  # Standard YUM repo structure
-  
+
   # Retention policy
   retention:
     # Keep packages for this duration
     max_age: "180d"
-    
+
     # Maximum storage size
     max_size: "2TB"
-    
+
     # Cleanup strategy when limits exceeded
     cleanup_strategy: "oldest_first"  # Options: oldest_first, size_based, lru
-    
+
     # Keep minimum number of versions per package
     min_versions_per_package: 2
-    
+
   # Compression settings for stored metadata
   compression:
     enabled: true
@@ -186,16 +186,16 @@ storage:
 gpg_verification:
   # Enable GPG signature verification
   enabled: true
-  
+
   # GPG keyring directory
   keyring_dir: "/etc/pki/rpm-gpg/"
-  
+
   # Auto-import missing keys
   auto_import_keys: true
-  
+
   # Fail sync if signature verification fails
   fail_on_invalid: true
-  
+
   # Known GPG keys for different distributions
   known_keys:
     centos7: "RPM-GPG-KEY-CentOS-7"
@@ -210,16 +210,16 @@ gpg_verification:
 metadata:
   # Update metadata frequency
   update_frequency: "hourly"  # Options: hourly, daily, weekly
-  
+
   # Include file lists in metadata
   include_filelists: true
-  
+
   # Include other metadata
   include_other: true
-  
+
   # Metadata compression
   compression: ["gz", "bz2", "xz"]
-  
+
   # Delta RPM support
   deltarpm:
     enabled: false
@@ -229,10 +229,10 @@ metadata:
 cache:
   # Metadata cache TTL
   metadata_ttl: "1h"
-  
+
   # Package cache TTL
   package_ttl: "7d"
-  
+
   # Repository index cache TTL
   repodata_ttl: "30m"
 
@@ -243,10 +243,10 @@ health_monitoring:
   timeout: "30s"
   failure_threshold: 3
   recovery_threshold: 2
-  
+
   # Check repodata availability
   check_repodata: true
-  
+
   # Check sample packages
   check_packages: true
   sample_packages: ["bash", "glibc", "kernel"]
@@ -255,7 +255,7 @@ health_monitoring:
 load_balancing:
   # Strategy for selecting mirror
   strategy: "geolocation"  # Options: round_robin, geolocation, latency_based
-  
+
   # Fallback behavior
   fallback_enabled: true
   fallback_order: ["primary", "regional", "global"]
@@ -269,7 +269,7 @@ private_repositories:
       method: CERTIFICATE
       cert_file: "/etc/pki/consumer/cert.pem"
       key_file: "/etc/pki/consumer/key.pem"
-      
+
   # Nexus Repository Manager
   nexus:
     url: https://nexus.company.com/repository/yum-group/

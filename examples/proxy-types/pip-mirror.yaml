@@ -14,7 +14,7 @@ mirrors:
     description: "Complete PyPI registry mirror"
     sync_interval: "6h"  # Sync every 6 hours
     priority: 1
-    
+
   # Regional and alternative mirrors
   regional_mirrors:
     # Chinese mirrors
@@ -23,19 +23,19 @@ mirrors:
       url: https://pypi.tuna.tsinghua.edu.cn
       region: "china"
       priority: 2
-      
+
     douban:
       name: "Douban PyPI Mirror"
       url: https://pypi.doubanio.com
       region: "china"
       priority: 3
-      
+
     aliyun:
       name: "Alibaba Cloud PyPI Mirror"
       url: https://mirrors.aliyun.com/pypi
       region: "china"
       priority: 4
-      
+
     # European mirrors
     python_org_eu:
       name: "Python.org Europe Mirror"
@@ -47,43 +47,43 @@ mirrors:
 sync:
   # Enable automatic synchronization
   enabled: true
-  
+
   # Synchronization schedule (cron format)
   schedule: "0 */6 * * *"  # Every 6 hours
-  
+
   # Sync strategy
   strategy: "incremental"  # Options: full, incremental, smart
-  
+
   # Package filtering
   filters:
     # Include only packages matching these patterns
     include_patterns:
       - "*"  # Include all packages by default
-    
+
     # Exclude packages matching these patterns
     exclude_patterns:
       - "*-dev"          # Exclude development versions
       - "*-alpha*"       # Exclude alpha versions
       - "*-beta*"        # Exclude beta versions
       - "test-*"         # Exclude test packages
-      
+
     # Include only packages with minimum download count
     min_downloads: 100
-    
+
     # Include only packages updated within timeframe
     max_age: "2y"  # 2 years
-    
+
   # Synchronization limits
   limits:
     # Maximum packages to sync per run
     max_packages_per_sync: 5000
-    
+
     # Maximum concurrent downloads
     max_concurrent_downloads: 20
-    
+
     # Bandwidth limit per download
     bandwidth_limit: "50MB/s"
-    
+
     # Skip packages larger than this size
     max_package_size: "500MB"
 
@@ -131,29 +131,29 @@ priority_packages:
 storage:
   # Storage backend
   backend: "file"  # Options: file, s3, gcs, azure
-  
+
   # Package organization
   structure: "simple"  # Options: simple, legacy, custom
-  
+
   # Retention policy
   retention:
     # Keep packages for this duration
     max_age: "365d"
-    
+
     # Maximum storage size
     max_size: "200GB"
-    
+
     # Cleanup strategy when limits exceeded
     cleanup_strategy: "lru"  # Options: lru, fifo, popularity
-    
+
     # Preserve packages matching patterns
     preserve_patterns:
       - "requests*"
-      - "urllib3*" 
+      - "urllib3*"
       - "certifi*"
       - "numpy*"
       - "pandas*"
-      
+
   # Compression settings
   compression:
     enabled: true
@@ -164,13 +164,13 @@ storage:
 cache:
   # Package index cache TTL
   index_ttl: "30m"
-  
+
   # Package metadata cache TTL
   metadata_ttl: "2h"
-  
+
   # Package file cache TTL
   package_ttl: "30d"
-  
+
   # Simple API cache TTL
   simple_api_ttl: "1h"
 
@@ -178,16 +178,16 @@ cache:
 pypi_features:
   # Enable simple API (/simple/) compatibility
   simple_api: true
-  
+
   # Enable JSON API compatibility
   json_api: true
-  
+
   # Enable RSS feeds for new packages
   rss_feeds: false
-  
+
   # Enable search functionality
   search: true
-  
+
   # Enable statistics tracking
   statistics: true
 
@@ -200,7 +200,7 @@ private_repositories:
       method: BASIC
       username: "${DEVPI_USERNAME}"
       password: "${DEVPI_PASSWORD}"
-      
+
   # AWS CodeArtifact
   codeartifact:
     url: https://company-123456789012.d.codeartifact.us-west-2.amazonaws.com/pypi/repo/
@@ -215,7 +215,7 @@ health_monitoring:
   timeout: "15s"
   failure_threshold: 3
   recovery_threshold: 2
-  
+
   # Endpoints to check
   endpoints:
     - "/simple/"
@@ -226,7 +226,7 @@ health_monitoring:
 security:
   # Enable package vulnerability scanning
   vulnerability_scanning: false
-  
+
   # Scanner configuration
   # scanner:
   #   provider: "safety"  # Options: safety, bandit, semgrep

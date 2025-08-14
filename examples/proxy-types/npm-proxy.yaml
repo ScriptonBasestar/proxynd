@@ -8,12 +8,12 @@ proxies:
       url: https://registry.npmjs.org
       description: "NPM official public registry"
     - name: yarn
-      url: https://registry.yarnpkg.com  
+      url: https://registry.yarnpkg.com
       description: "Yarn registry mirror"
     - name: taobao
       url: https://registry.npm.taobao.org
       description: "Taobao NPM mirror (China)"
-      
+
   # Private/authenticated registries
   authenticated:
     - name: npmjs-private
@@ -22,14 +22,14 @@ proxies:
       auth:
         method: TOKEN
         token: "${NPM_TOKEN}"  # NPM authentication token
-        
+
     - name: github-packages
       url: https://npm.pkg.github.com
       description: "GitHub Package Registry for NPM"
       auth:
         method: TOKEN
         token: "${GITHUB_TOKEN}"  # GitHub personal access token
-        
+
     - name: company-nexus
       url: https://nexus.company.com/repository/npm-group/
       description: "Company Nexus NPM repository"
@@ -37,7 +37,7 @@ proxies:
         method: BASIC
         username: "${NEXUS_USERNAME}"
         password: "${NEXUS_PASSWORD}"
-        
+
     - name: azure-artifacts
       url: https://pkgs.dev.azure.com/company/_packaging/feed/npm/registry/
       description: "Azure DevOps Artifacts NPM feed"
@@ -45,10 +45,10 @@ proxies:
         method: BASIC
         username: "${AZURE_USERNAME}"
         password: "${AZURE_PAT}"  # Personal Access Token
-        
+
     - name: company-verdaccio
       url: https://npm.company.com
-      description: "Company private Verdaccio registry"  
+      description: "Company private Verdaccio registry"
       auth:
         method: TOKEN
         token: "${VERDACCIO_TOKEN}"

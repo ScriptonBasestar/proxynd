@@ -316,7 +316,7 @@ GOMAXPROCS=4               # CPU 코어 수
 - alert: ContainerCacheHitRateLow
   expr: container_cache_hit_rate < 95
   for: 2m
-  
+
 - alert: ContainerHandlerErrorHigh  
   expr: container_handler_error_rate > 0.5
   for: 1m

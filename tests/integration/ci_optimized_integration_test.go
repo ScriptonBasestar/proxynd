@@ -37,8 +37,8 @@ func TestPullRequestMatrix(t *testing.T) {
 
 	config := CIMatrixConfig{
 		IntegrationTests: true,
-		PerformanceTests: false, // PR에서는 성능 테스트 제외
-		ExtendedTests:    false, // PR에서는 확장 테스트 제외
+		PerformanceTests: false,                    // PR에서는 성능 테스트 제외
+		ExtendedTests:    false,                    // PR에서는 확장 테스트 제외
 		ProxyTypes:       []string{"npm", "maven"}, // 핵심 프록시만 테스트
 		PerformanceConfig: PerformanceTestConfig{
 			MaxResponseTime:     1 * time.Second, // 관대한 설정
@@ -80,9 +80,9 @@ func TestDevelopBranchMatrix(t *testing.T) {
 func TestMainBranchMatrix(t *testing.T) {
 	ref := os.Getenv("GITHUB_REF")
 	commitRef := os.Getenv("CI_COMMIT_REF_NAME")
-	
-	if ref != "refs/heads/main" && ref != "refs/heads/master" && 
-	   commitRef != "main" && commitRef != "master" {
+
+	if ref != "refs/heads/main" && ref != "refs/heads/master" &&
+		commitRef != "main" && commitRef != "master" {
 		t.Skip("Skipping main branch tests outside of main/master branch")
 	}
 
@@ -131,7 +131,7 @@ func TestNightlyMatrix(t *testing.T) {
 // TestLocalDevelopment 로컬 개발용 빠른 테스트
 func TestLocalDevelopment(t *testing.T) {
 	// CI 환경이 아닌 경우에만 실행
-	if os.Getenv("CI") == "true" || os.Getenv("GITHUB_ACTIONS") == "true" || os.Getenv("GITLAB_CI") == "true" {
+	if os.Getenv("CI") == truthy || os.Getenv("GITHUB_ACTIONS") == truthy || os.Getenv("GITLAB_CI") == truthy {
 		t.Skip("Skipping local development tests in CI environment")
 	}
 
@@ -172,7 +172,7 @@ func TestSmokeTesting(t *testing.T) {
 	for _, test := range smokeTests {
 		t.Run(test.proxyType, func(t *testing.T) {
 			t.Parallel()
-			
+
 			resp, err := env.MakeRequest("GET", "/proxy/"+test.proxyType+"/"+test.path, nil)
 			if err != nil {
 				t.Fatalf("Smoke test failed for %s: %v", test.proxyType, err)
@@ -182,7 +182,7 @@ func TestSmokeTesting(t *testing.T) {
 			if resp.StatusCode != 200 {
 				t.Fatalf("Smoke test failed for %s: expected 200, got %d", test.proxyType, resp.StatusCode)
 			}
-			
+
 			t.Logf("✓ Smoke test passed for %s proxy", test.proxyType)
 		})
 	}
@@ -213,7 +213,7 @@ func TestCriticalPathOnly(t *testing.T) {
 			start := time.Now()
 			resp, err := env.MakeRequest("GET", test.endpoint, nil)
 			duration := time.Since(start)
-			
+
 			if err != nil {
 				t.Fatalf("Critical path test failed for %s: %v", test.name, err)
 			}
@@ -226,7 +226,7 @@ func TestCriticalPathOnly(t *testing.T) {
 			if duration > test.timeout {
 				t.Fatalf("Critical path test too slow for %s: %v > %v", test.name, duration, test.timeout)
 			}
-			
+
 			t.Logf("✓ Critical path test passed for %s in %v", test.name, duration)
 		})
 	}

@@ -389,10 +389,10 @@ if [ $SIZE -gt 10737418240 ]; then
     echo "3단계: 프록시별 세부 정리"
     # NPM 캐시는 7일 이상만 정리
     proxyndctl cache clear -t npm --older-than 7d -f
-    
+
     # APT 캐시는 2GB로 제한
     proxyndctl cache clear -t apt --size-limit 2GB -f
-    
+
     # Maven 캐시는 14일 이상만 정리 (개발 환경을 위해 길게 설정)
     proxyndctl cache clear -t maven --older-than 14d -f
 
@@ -481,7 +481,7 @@ $(proxyndctl cache size -h)
 
 ### 프록시 타입별 캐시 크기
 $(proxyndctl cache size --format json | jq -r '
-.size_by_type | to_entries[] | 
+.size_by_type | to_entries[] |
 "- \(.key): \(.value | . / 1024 / 1024 | floor)MB"
 ')
 

@@ -12,31 +12,31 @@ mirrors:
     name: "Docker Hub Mirror"
     url: https://registry-1.docker.io
     description: "Complete Docker Hub registry mirror"
-    
+
   # Google Container Registry
   gcr:
     name: "Google Container Registry Mirror"
     url: https://gcr.io
     description: "Google Container Registry mirror"
-    
+
   # Amazon Elastic Container Registry Public
   ecr_public:
     name: "Amazon ECR Public Mirror"
     url: https://public.ecr.aws
     description: "Amazon ECR Public registry mirror"
-    
+
   # Red Hat Quay.io
   quay:
     name: "Quay.io Mirror"
     url: https://quay.io
     description: "Red Hat Quay.io registry mirror"
-    
+
   # GitHub Container Registry
   ghcr:
     name: "GitHub Container Registry Mirror"
     url: https://ghcr.io
     description: "GitHub Container Registry mirror"
-    
+
   # Microsoft Container Registry
   mcr:
     name: "Microsoft Container Registry Mirror"
@@ -47,16 +47,16 @@ mirrors:
 sync:
   # Enable automatic image pulling and caching
   enabled: true
-  
+
   # Pre-pull popular images
   prepull:
     enabled: true
-    
+
     # List of popular images to pre-pull
     images:
       - "nginx:latest"
       - "nginx:alpine"
-      - "redis:latest"  
+      - "redis:latest"
       - "redis:alpine"
       - "postgres:latest"
       - "postgres:13"
@@ -68,10 +68,10 @@ sync:
       - "python:3.9-slim"
       - "ubuntu:latest"
       - "alpine:latest"
-      
-    # Pre-pull schedule (cron format)  
+
+    # Pre-pull schedule (cron format)
     schedule: "0 3 * * 0"  # Weekly on Sunday at 3 AM
-    
+
   # Image layer deduplication
   deduplication:
     enabled: true
@@ -82,26 +82,26 @@ sync:
 storage:
   # Storage backend
   backend: "file"  # Options: file, s3, gcs, azure
-  
+
   # Layer storage optimization
   layer_storage:
     # Compress stored layers
     compression: true
-    
+
     # Compression algorithm
     compression_algo: "gzip"  # Options: gzip, zstd, lz4
-    
+
   # Retention policy
   retention:
     # Keep images for this duration
     max_age: "90d"
-    
+
     # Maximum storage size
     max_size: "1TB"
-    
+
     # Cleanup strategy when limits exceeded
     cleanup_strategy: "lru"  # Options: lru, fifo, size-based
-    
+
     # Preserve specific image patterns from cleanup
     preserve_patterns:
       - "*/latest"
@@ -118,14 +118,14 @@ registries:
       method: BASIC
       username: "${DOCKER_USERNAME}"
       password: "${DOCKER_PASSWORD}"
-      
+
   # Private Google Container Registry
   gcr_private:
     url: https://gcr.io/private-project
     auth:
       method: SERVICE_ACCOUNT
       credentials_file: "/path/to/gcr-service-account.json"
-      
+
   # AWS Elastic Container Registry
   aws_ecr:
     url: https://123456789012.dkr.ecr.us-west-2.amazonaws.com
@@ -134,7 +134,7 @@ registries:
       region: "us-west-2"
       access_key: "${AWS_ACCESS_KEY_ID}"
       secret_key: "${AWS_SECRET_ACCESS_KEY}"
-      
+
   # Azure Container Registry
   azure_acr:
     url: https://mycompany.azurecr.io
@@ -147,19 +147,19 @@ registries:
 mirror_settings:
   # Enable manifest caching
   cache_manifests: true
-  
+
   # Manifest cache TTL
   manifest_ttl: "1h"
-  
+
   # Enable blob caching (image layers)
   cache_blobs: true
-  
+
   # Blob cache TTL
   blob_ttl: "7d"
-  
+
   # Enable registry API v2 compatibility
   v2_compatibility: true
-  
+
   # Enable image scanning integration (if available)
   security_scanning:
     enabled: false
@@ -169,19 +169,19 @@ mirror_settings:
 load_balancing:
   # Strategy for selecting upstream registry
   strategy: "round_robin"  # Options: round_robin, weighted, latency_based
-  
+
   # Health check configuration
   health_check:
     enabled: true
     interval: "30s"
     timeout: "10s"
     failure_threshold: 3
-    
+
 # Monitoring and metrics
 monitoring:
   # Enable detailed metrics
   enabled: true
-  
+
   # Metrics to track
   metrics:
     - "pull_requests_total"

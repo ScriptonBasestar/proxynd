@@ -15,12 +15,12 @@ import (
 
 // CacheScenarioPattern 캐시 시나리오 검증 공통 패턴
 type CacheScenarioPattern struct {
-	ProxyType     string
-	Path          string
-	ExpectedMiss  string // 캐시 MISS 시 기대하는 응답 내용
-	ExpectedHit   string // 캐시 HIT 시 기대하는 응답 내용  
-	CacheTTL      time.Duration
-	ValidateFunc  func(t *testing.T, body []byte, headers http.Header) // 커스텀 검증 함수
+	ProxyType    string
+	Path         string
+	ExpectedMiss string // 캐시 MISS 시 기대하는 응답 내용
+	ExpectedHit  string // 캐시 HIT 시 기대하는 응답 내용
+	CacheTTL     time.Duration
+	ValidateFunc func(t *testing.T, body []byte, headers http.Header) // 커스텀 검증 함수
 }
 
 // TestCacheScenario 캐시 시나리오 테스트 패턴
@@ -35,19 +35,19 @@ func TestCacheScenario(t *testing.T, env *IntegrationTestEnvironment, pattern Ca
 			defer func() { _ = resp.Body.Close() }()
 
 			assert.Equal(t, http.StatusOK, resp.StatusCode)
-			
+
 			body, err := io.ReadAll(resp.Body)
 			require.NoError(t, err)
 
 			// 캐시 상태 헤더 확인 (MISS이어야 함)
 			cacheStatus := resp.Header.Get("X-Cache-Status")
 			t.Logf("Cache status: %s", cacheStatus)
-			
+
 			// 응답 내용 검증
 			if pattern.ExpectedMiss != "" {
 				assert.Contains(t, string(body), pattern.ExpectedMiss)
 			}
-			
+
 			// 커스텀 검증 함수 실행
 			if pattern.ValidateFunc != nil {
 				pattern.ValidateFunc(t, body, resp.Header)
@@ -62,7 +62,7 @@ func TestCacheScenario(t *testing.T, env *IntegrationTestEnvironment, pattern Ca
 			defer func() { _ = resp.Body.Close() }()
 
 			assert.Equal(t, http.StatusOK, resp.StatusCode)
-			
+
 			body, err := io.ReadAll(resp.Body)
 			require.NoError(t, err)
 
@@ -70,7 +70,7 @@ func TestCacheScenario(t *testing.T, env *IntegrationTestEnvironment, pattern Ca
 			if pattern.ExpectedHit != "" {
 				assert.Contains(t, string(body), pattern.ExpectedHit)
 			}
-			
+
 			// 커스텀 검증 함수 실행
 			if pattern.ValidateFunc != nil {
 				pattern.ValidateFunc(t, body, resp.Header)
@@ -85,13 +85,13 @@ func TestCacheScenario(t *testing.T, env *IntegrationTestEnvironment, pattern Ca
 
 			// TTL보다 조금 더 오래 대기
 			time.Sleep(pattern.CacheTTL + 100*time.Millisecond)
-			
+
 			resp, err := env.MakeRequest("GET", fmt.Sprintf("/proxy/%s/%s", pattern.ProxyType, pattern.Path), nil)
 			require.NoError(t, err)
 			defer func() { _ = resp.Body.Close() }()
 
 			assert.Equal(t, http.StatusOK, resp.StatusCode)
-			
+
 			// 캐시가 만료되어 다시 MISS가 되어야 함
 			body, err := io.ReadAll(resp.Body)
 			require.NoError(t, err)
@@ -110,7 +110,7 @@ type ErrorRecoveryPattern struct {
 	ErrorSimulation  func(env *IntegrationTestEnvironment) // 에러 상황 시뮬레이션
 	RecoveryAction   func(env *IntegrationTestEnvironment) // 복구 액션
 	ExpectedError    int                                   // 기대하는 에러 코드
-	ExpectedRecovery string                               // 복구 후 기대하는 응답
+	ExpectedRecovery string                                // 복구 후 기대하는 응답
 }
 
 // TestErrorRecovery 에러 처리 및 복구 테스트 패턴
@@ -220,14 +220,14 @@ func TestPerformance(t *testing.T, env *IntegrationTestEnvironment, pattern Perf
 			start := time.Now()
 			resp, err := env.MakeRequest("GET", url, nil)
 			duration := time.Since(start)
-			
+
 			require.NoError(t, err)
 			defer func() { _ = resp.Body.Close() }()
 
 			assert.Equal(t, http.StatusOK, resp.StatusCode)
 			assert.True(t, duration <= pattern.MaxResponseTime,
 				"Response time %v should be <= %v", duration, pattern.MaxResponseTime)
-			
+
 			t.Logf("Response time: %v", duration)
 		})
 
@@ -245,11 +245,11 @@ func TestPerformance(t *testing.T, env *IntegrationTestEnvironment, pattern Perf
 				wg.Add(1)
 				go func(index int) {
 					defer wg.Done()
-					
+
 					start := time.Now()
 					resp, err := env.MakeRequest("GET", url, nil)
 					responseTimes[index] = time.Since(start)
-					
+
 					if err == nil && resp != nil && resp.StatusCode == http.StatusOK {
 						results[index] = true
 						_ = resp.Body.Close()
@@ -273,7 +273,7 @@ func TestPerformance(t *testing.T, env *IntegrationTestEnvironment, pattern Perf
 
 			successRate := float64(successCount) / float64(pattern.ConcurrentUsers)
 			avgResponseTime := totalTime / time.Duration(pattern.ConcurrentUsers)
-			
+
 			// 에러율 검증
 			errorRate := 1.0 - successRate
 			if pattern.AcceptableErrorRate > 0 {
@@ -312,10 +312,10 @@ func TestPerformance(t *testing.T, env *IntegrationTestEnvironment, pattern Perf
 					start := time.Now()
 					resp, err := env.MakeRequest("GET", url, nil)
 					duration := time.Since(start)
-					
+
 					totalRequests++
 					totalResponseTime += duration
-					
+
 					if err == nil && resp != nil && resp.StatusCode == http.StatusOK {
 						successRequests++
 						_ = resp.Body.Close()
@@ -412,22 +412,22 @@ func NewTestEnvironment(t *testing.T) *IntegrationTestEnvironment {
 
 // HealthCheckPattern 헬스체크 공통 패턴
 type HealthCheckPattern struct {
-	Endpoint         string
-	ExpectedStatus   int
-	ExpectedContent  string
-	MaxResponseTime  time.Duration
-	RequiredHeaders  map[string]string
+	Endpoint        string
+	ExpectedStatus  int
+	ExpectedContent string
+	MaxResponseTime time.Duration
+	RequiredHeaders map[string]string
 }
 
-// TestHealthCheck 헬스체크 테스트 패턴
-func TestHealthCheck(t *testing.T, env *IntegrationTestEnvironment, pattern HealthCheckPattern) {
+// RunHealthCheckPattern 헬스체크 테스트 패턴 실행
+func RunHealthCheckPattern(t *testing.T, env *IntegrationTestEnvironment, pattern HealthCheckPattern) {
 	t.Helper()
 
 	t.Run("HealthCheck", func(t *testing.T) {
 		start := time.Now()
 		resp, err := env.MakeRequest("GET", pattern.Endpoint, nil)
 		duration := time.Since(start)
-		
+
 		require.NoError(t, err)
 		defer func() { _ = resp.Body.Close() }()
 

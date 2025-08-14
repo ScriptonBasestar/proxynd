@@ -14,7 +14,7 @@ mirrors:
     description: "Official NPM registry complete mirror"
     sync_interval: "24h"  # Sync every 24 hours
     sync_strategy: "incremental"  # Options: full, incremental
-    
+
   # Regional mirrors for faster access
   regional_mirrors:
     # US mirrors
@@ -22,18 +22,18 @@ mirrors:
       name: "NPM US East Mirror"
       url: https://registry.npmjs.org
       region: "us-east-1"
-      
+
     us_west:
-      name: "NPM US West Mirror" 
+      name: "NPM US West Mirror"
       url: https://registry.npmjs.org
       region: "us-west-2"
-      
+
     # European mirrors
     europe:
       name: "NPM Europe Mirror"
       url: https://registry.npmjs.org
       region: "eu-west-1"
-      
+
     # Asian mirrors
     asia_pacific:
       name: "NPM Asia Pacific Mirror"
@@ -44,28 +44,28 @@ mirrors:
 sync:
   # Enable automatic synchronization
   enabled: true
-  
+
   # Synchronization schedule (cron format)
   schedule: "0 2 * * *"  # Daily at 2 AM
-  
+
   # Package filtering
   filters:
     # Include only packages matching these patterns
     include_patterns:
       - "*"  # Include all packages by default
-    
+
     # Exclude packages matching these patterns
     exclude_patterns:
       - "@internal/*"  # Exclude internal scoped packages
-      
+
   # Synchronization limits
   limits:
     # Maximum packages to sync per run
     max_packages_per_sync: 10000
-    
+
     # Maximum concurrent downloads
     max_concurrent_downloads: 10
-    
+
     # Bandwidth limit per download (optional)
     bandwidth_limit: "10MB/s"
 
@@ -73,15 +73,15 @@ sync:
 storage:
   # Storage backend (file, s3, gcs)
   backend: "file"
-  
+
   # Retention policy
   retention:
     # Keep packages for this duration
     max_age: "365d"
-    
+
     # Maximum storage size
     max_size: "500GB"
-    
+
     # Cleanup strategy when limits exceeded
     cleanup_strategy: "lru"  # Options: lru, fifo, size-based
 
@@ -89,10 +89,10 @@ storage:
 cache:
   # Package metadata cache TTL
   metadata_ttl: "1h"
-  
+
   # Package tarball cache TTL
   package_ttl: "7d"
-  
+
   # Cache validation strategy
   validation_strategy: "etag"  # Options: etag, last-modified, checksum
 

@@ -144,42 +144,33 @@ format-env: ## format files specified in FILES environment variable (usage: FILE
 	@echo "$(GREEN)🎉 All files processed!$(RESET)"
 
 # ==============================================================================
-# Multi-Language Formatter
+# Non-Go Language Formatting (Prettier, Black, shfmt)
 # ==============================================================================
 
-.PHONY: format-multi format-multi-env format-multi-install format-multi-list
+.PHONY: format-js format-py format-md format-yaml format-sh format-non-go format-all
 
-# Build the multi-language formatter if needed
-bin/format-multi:
-	@echo "$(CYAN)Building format-multi tool...$(RESET)"
-	@cd cmd/format-multi && go build -o ../../bin/format-multi
-	@echo "$(GREEN)✅ format-multi built$(RESET)"
+format-js:
+	@which prettier > /dev/null || { echo "$(YELLOW)⚠️ prettier not found. Install: npm i -g prettier$(RESET)"; exit 0; }
+	@echo -e "$(CYAN)🧹 Formatting JS/TS/JSON/MD/YAML with Prettier...$(RESET)"
+	@prettier -w "**/*.{js,jsx,ts,tsx,json,md,yaml,yml}"
 
-format-multi: bin/format-multi ## format files using multi-language formatter (auto-detects file types)
-	@if [ -z "$(filter-out format-multi,$(MAKECMDGOALS))" ]; then \
-		echo "$(RED)❌ Error: At least one file must be specified$(RESET)"; \
-		echo "$(YELLOW)Usage: make format-multi file1.go file2.py file3.js ...$(RESET)"; \
-		exit 1; \
-	fi
-	@./bin/format-multi $(filter-out format-multi,$(MAKECMDGOALS))
+format-md: format-js
 
-format-multi-env: bin/format-multi ## format files using FILES or CLAUDE_FILES environment variable
-	@if [ -n "$(FILES)" ]; then \
-		./bin/format-multi $(FILES); \
-	elif [ -n "$$CLAUDE_FILES" ]; then \
-		./bin/format-multi $$CLAUDE_FILES; \
-	else \
-		echo "$(RED)❌ Error: FILES or CLAUDE_FILES environment variable must be set$(RESET)"; \
-		echo "$(YELLOW)Usage: FILES='file1.go file2.py' make format-multi-env$(RESET)"; \
-		echo "$(YELLOW)Or: CLAUDE_FILES='file1.go file2.py' make format-multi-env$(RESET)"; \
-		exit 1; \
-	fi
+format-yaml: format-js
 
-format-multi-install: bin/format-multi ## install all multi-language formatters
-	@./bin/format-multi -install
+format-py:
+	@which black > /dev/null || { echo "$(YELLOW)⚠️ black not found. Install: pip install black$(RESET)"; exit 0; }
+	@echo -e "$(CYAN)🐍 Formatting Python with black...$(RESET)"
+	@black .
 
-format-multi-list: bin/format-multi ## list supported file formats
-	@./bin/format-multi -list
+format-sh:
+	@which shfmt > /dev/null || { echo "$(YELLOW)⚠️ shfmt not found. Install: go install mvdan.cc/sh/v3/cmd/shfmt@latest$(RESET)"; exit 0; }
+	@echo -e "$(CYAN)🐚 Formatting shell scripts with shfmt...$(RESET)"
+	@shfmt -w .
+
+format-non-go: format-js format-py format-sh
+
+format-all: format-quick format-non-go
 
 # ==============================================================================
 # Enhanced Linting Workflow (vet + golangci-lint + gosec)

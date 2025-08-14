@@ -6,11 +6,11 @@ search_index:
   # 서버 시작 시 자동으로 인덱스 빌드 (기본값: false)
   # 권장: CLI 도구 (proxyndctl maven-index build)를 사용하여 수동으로 빌드
   auto_build_on_startup: false
-  
+
   # 인덱스 자동 갱신 주기 (시간 단위, 0이면 자동 갱신 안함, 기본값: 0)
   # 예: 24 = 하루마다, 168 = 일주일마다
   auto_rebuild_interval_hours: 0
-  
+
   # 인덱스 저장 경로 (기본값: STORAGE_DIR/maven-index)
   # storage_path: /custom/path/to/maven-index
 
@@ -44,8 +44,8 @@ proxies:
       method: BASIC
       username: "deploy"
       password: "${NEXUS_PASSWORD}"  # Use environment variable
-  
-  # Private repository with token authentication  
+
+  # Private repository with token authentication
   - name: github_packages
     id: github-packages
     url: https://maven.pkg.github.com/company/repository
@@ -53,7 +53,7 @@ proxies:
     auth:
       method: TOKEN
       token: "${GITHUB_TOKEN}"  # Personal access token
-      
+
   # Repository requiring certificate authentication
   - name: secured_maven
     id: secured-maven

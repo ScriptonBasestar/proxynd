@@ -9,7 +9,7 @@ languages:
       - goimports
     options:
       local_import: "proxynd"  # goimports -local flag
-  
+
   python:
     enabled: true
     tools:
@@ -18,53 +18,53 @@ languages:
       - autoflake  # optional
     options:
       profile: "black"  # isort profile
-  
+
   javascript:
     enabled: true
     tools:
       - prettier
       - eslint  # optional, requires .eslintrc
-  
+
   typescript:
     enabled: true
     tools:
       - prettier
       - eslint  # optional, requires .eslintrc
-  
+
   kotlin:
     enabled: true
     tools:
       - ktfmt
-  
+
   shell:
     enabled: true
     tools:
       - shfmt
     options:
       indent: "2"  # indentation spaces
-  
+
   yaml:
     enabled: true
     tools:
       - prettier
-  
+
   json:
     enabled: true
     tools:
       - prettier
-  
+
   markdown:
     enabled: true
     tools:
       - prettier
     options:
       prose_wrap: "always"
-  
+
   html:
     enabled: true
     tools:
       - prettier
-  
+
   css:
     enabled: true
     tools:

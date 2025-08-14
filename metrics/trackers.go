@@ -104,39 +104,39 @@ func NewUserAgentTracker() *UserAgentTracker {
 // buildUserAgentCategoryMap 사용자 에이전트 카테고리 맵 구축
 func buildUserAgentCategoryMap() map[string]string {
 	return map[string]string{
-		"npm":        "npm_cli",
-		"yarn":       "yarn_cli", 
-		"pnpm":       "pnpm_cli",
-		"pip":        "pip_cli",
-		"conda":      "conda_cli",
-		"poetry":     "poetry_cli",
-		"maven":      "maven_cli",
-		"gradle":     "gradle_cli",
-		"docker":     "docker_cli",
-		"curl":       "curl",
-		"wget":       "wget",
-		"python":     "python",
-		"go":         "go_cli",
-		"rust":       "rust_cli",
-		"node":       "nodejs",
-		"chrome":     "browser_chrome",
-		"firefox":    "browser_firefox",
-		"safari":     "browser_safari",
-		"postman":    "api_client",
-		"insomnia":   "api_client",
-		"jenkins":    "ci_jenkins",
-		"github":     "ci_github",
-		"gitlab":     "ci_gitlab",
-		"circleci":   "ci_circleci",
-		"travis":     "ci_travis",
-		"azure":      "ci_azure",
+		"npm":      "npm_cli",
+		"yarn":     "yarn_cli",
+		"pnpm":     "pnpm_cli",
+		"pip":      "pip_cli",
+		"conda":    "conda_cli",
+		"poetry":   "poetry_cli",
+		"maven":    "maven_cli",
+		"gradle":   "gradle_cli",
+		"docker":   "docker_cli",
+		"curl":     "curl",
+		"wget":     "wget",
+		"python":   "python",
+		"go":       "go_cli",
+		"rust":     "rust_cli",
+		"node":     "nodejs",
+		"chrome":   "browser_chrome",
+		"firefox":  "browser_firefox",
+		"safari":   "browser_safari",
+		"postman":  "api_client",
+		"insomnia": "api_client",
+		"jenkins":  "ci_jenkins",
+		"github":   "ci_github",
+		"gitlab":   "ci_gitlab",
+		"circleci": "ci_circleci",
+		"travis":   "ci_travis",
+		"azure":    "ci_azure",
 	}
 }
 
 // ParseUserAgent 사용자 에이전트 파싱
 func (uat *UserAgentTracker) ParseUserAgent(userAgent string) (category, version string) {
 	userAgent = strings.ToLower(userAgent)
-	
+
 	// 카테고리 결정
 	category = "other"
 	for keyword, cat := range uat.categoryMap {
@@ -147,7 +147,7 @@ func (uat *UserAgentTracker) ParseUserAgent(userAgent string) (category, version
 	}
 
 	// 버전 추출
-	version = "unknown"
+	version = statusUnknown
 	if matches := uat.versionRegex.FindStringSubmatch(userAgent); len(matches) > 1 {
 		version = matches[1]
 		// 버전이 너무 상세한 경우 간소화 (예: 1.2.3.4 -> 1.2)
@@ -229,7 +229,7 @@ func (resolver *SimpleIPLocationResolver) ResolveLocation(ip string) (countryCod
 	// 개발/테스트용 간단한 구현
 	parsedIP := net.ParseIP(ip)
 	if parsedIP == nil {
-		return "unknown", "unknown", nil
+		return statusUnknown, statusUnknown, nil
 	}
 
 	// RFC 1918 사설 IP 주소 체크
@@ -239,11 +239,11 @@ func (resolver *SimpleIPLocationResolver) ResolveLocation(ip string) (countryCod
 
 	// 로컬호스트 체크
 	if parsedIP.IsLoopback() {
-		return "local", "local", nil
+		return statusLocal, statusLocal, nil
 	}
 
 	// 실제 구현에서는 여기서 GeoIP 데이터베이스 조회
-	return "unknown", "unknown", nil
+	return statusUnknown, statusUnknown, nil
 }
 
 // isPrivateIP 사설 IP 확인
@@ -362,7 +362,7 @@ func (tt *ThroughputTracker) CalculateThroughput(registryType string) float64 {
 	for i := 0; i < 5; i++ {
 		windowTime := now.Add(-time.Duration(i) * time.Minute)
 		windowKey := registryType + ":" + windowTime.Format("2006-01-02T15:04")
-		
+
 		if window, exists := tt.windows[windowKey]; exists {
 			totalRequests += window.RequestCount
 			windowCount++
@@ -410,7 +410,7 @@ func (ct *ConnectionTracker) UpdateConnections(registryType, connectionType stri
 			CurrentConnections: currentConn,
 			MaxConnections:     currentConn,
 			TotalConnections:   1,
-			LastUpdate:        time.Now(),
+			LastUpdate:         time.Now(),
 		}
 	}
 }
@@ -738,13 +738,13 @@ func (st *SessionTracker) EndSession(sessionID string) float64 {
 	if session, exists := st.sessions[sessionID]; exists && session.IsActive {
 		duration := time.Since(session.StartTime).Seconds()
 		session.IsActive = false
-		
+
 		// 세션 지속시간 기록
 		if len(st.durations) >= st.maxSessions {
 			st.durations = st.durations[1:]
 		}
 		st.durations = append(st.durations, duration)
-		
+
 		return duration
 	}
 	return 0
@@ -754,7 +754,7 @@ func (st *SessionTracker) EndSession(sessionID string) float64 {
 func (st *SessionTracker) GetSession(sessionID string) *SessionInfo {
 	st.mu.RLock()
 	defer st.mu.RUnlock()
-	
+
 	return st.sessions[sessionID]
 }
 
@@ -815,7 +815,7 @@ func calculatePercentileRefined(sortedData []float64, percentile float64) float6
 	return sortedData[lowerIndex]*(1-weight) + sortedData[upperIndex]*weight
 }
 
-// Helper function to convert status code to string
+//nolint:unused // helper reserved for future metrics formatting
 func statusCodeToString(statusCode int) string {
 	return strconv.Itoa(statusCode)
 }

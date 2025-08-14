@@ -36,7 +36,7 @@ func TestCachePatternCustomized(t *testing.T) {
 			assert.Contains(t, string(body), "\"name\":")
 			assert.Contains(t, string(body), "\"version\":")
 			assert.Contains(t, string(body), "\"description\":")
-			
+
 			// Content-Type 헤더 검증
 			contentType := headers.Get("Content-Type")
 			assert.Contains(t, contentType, "application/json")
@@ -105,7 +105,7 @@ func TestHealthCheckPatterns(t *testing.T) {
 		},
 	}
 
-	TestHealthCheck(t, env, healthPattern)
+	RunHealthCheckPattern(t, env, healthPattern)
 
 	// 메트릭 엔드포인트 헬스체크
 	metricsPattern := HealthCheckPattern{
@@ -115,7 +115,7 @@ func TestHealthCheckPatterns(t *testing.T) {
 		MaxResponseTime: 50 * time.Millisecond,
 	}
 
-	TestHealthCheck(t, env, metricsPattern)
+	RunHealthCheckPattern(t, env, metricsPattern)
 }
 
 // TestCrossProxyScenarios 프록시 간 상호 작용 시나리오 테스트
@@ -140,7 +140,7 @@ func TestCrossProxyScenarios(t *testing.T) {
 				resp, err := env.MakeRequest("GET", "/proxy/"+proxy.proxyType+"/"+proxy.path, nil)
 				assert.NoError(t, err)
 				defer func() { _ = resp.Body.Close() }()
-				
+
 				assert.Equal(t, http.StatusOK, resp.StatusCode)
 				// Additional validation can be added here
 			})
@@ -157,7 +157,7 @@ func TestCrossProxyScenarios(t *testing.T) {
 		}
 
 		results := make(chan bool, len(proxies))
-		
+
 		for _, proxyType := range proxies {
 			go func(pt string) {
 				resp, err := env.MakeRequest("GET", "/proxy/"+pt+"/"+paths[pt], nil)
@@ -324,12 +324,12 @@ func TestExtendedPerformanceScenarios(t *testing.T) {
 	t.Run("CacheEfficiencyTest", func(t *testing.T) {
 		// 캐시 효율성 테스트 - 같은 리소스를 반복 요청
 		url := "/proxy/apt/dists/jammy/Release"
-		
+
 		// 첫 번째 요청 (캐시 MISS)
 		resp1, err := env.MakeRequest("GET", url, nil)
 		assert.NoError(t, err)
 		defer func() { _ = resp1.Body.Close() }()
-		
+
 		start := time.Now()
 		// 연속 요청들 (캐시 HIT이어야 함)
 		for i := 0; i < 10; i++ {
@@ -339,10 +339,10 @@ func TestExtendedPerformanceScenarios(t *testing.T) {
 			_ = resp.Body.Close()
 		}
 		duration := time.Since(start)
-		
+
 		avgTime := duration / 10
 		t.Logf("Average cached response time: %v", avgTime)
-		
+
 		// 캐시된 응답은 매우 빨라야 함
 		assert.True(t, avgTime < 50*time.Millisecond,
 			"Cached responses should be very fast, got %v", avgTime)

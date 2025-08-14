@@ -18,7 +18,7 @@ func isPackageDownload(c *fiber.Ctx) bool {
 	}
 
 	path := c.Path()
-	
+
 	// 각 레지스트리별 패키지 다운로드 패턴 확인
 	switch {
 	case strings.HasPrefix(path, "/proxy/npm/"):
@@ -52,7 +52,7 @@ func isMavenPackageDownload(requestPath string) bool {
 	// Maven artifact 패턴: .jar, .pom, .war, .zip 등
 	ext := strings.ToLower(path.Ext(requestPath))
 	mavenExtensions := []string{".jar", ".war", ".ear", ".zip", ".tar.gz", ".pom", ".aar"}
-	
+
 	for _, validExt := range mavenExtensions {
 		if ext == validExt || strings.HasSuffix(requestPath, validExt) {
 			return true
@@ -66,26 +66,26 @@ func isPypiPackageDownload(requestPath string) bool {
 	// PyPI 패키지 패턴: .whl, .tar.gz, .zip
 	ext := strings.ToLower(path.Ext(requestPath))
 	pypiExtensions := []string{".whl", ".zip"}
-	
+
 	for _, validExt := range pypiExtensions {
 		if ext == validExt {
 			return true
 		}
 	}
-	
+
 	// .tar.gz 확인
 	if strings.HasSuffix(strings.ToLower(requestPath), ".tar.gz") {
 		return true
 	}
-	
+
 	return false
 }
 
 // isDockerPackageDownload Docker 이미지 다운로드 확인
 func isDockerPackageDownload(requestPath string) bool {
 	// Docker blob 또는 manifest 다운로드
-	return strings.Contains(requestPath, "/blobs/") || 
-		   strings.Contains(requestPath, "/manifests/")
+	return strings.Contains(requestPath, "/blobs/") ||
+		strings.Contains(requestPath, "/manifests/")
 }
 
 // isAptPackageDownload APT 패키지 다운로드 확인
@@ -109,7 +109,7 @@ func isApkPackageDownload(requestPath string) bool {
 // extractPackageInfo 패키지 정보 추출
 func extractPackageInfo(c *fiber.Ctx, registryType string) (packageName, version, fileType string) {
 	requestPath := c.Path()
-	
+
 	switch registryType {
 	case "npm":
 		return extractNpmPackageInfo(requestPath)
@@ -126,7 +126,7 @@ func extractPackageInfo(c *fiber.Ctx, registryType string) (packageName, version
 	case "apk":
 		return extractApkPackageInfo(requestPath)
 	default:
-		return "unknown", "unknown", "unknown"
+		return statusUnknown, statusUnknown, statusUnknown
 	}
 }
 
@@ -135,12 +135,12 @@ func extractNpmPackageInfo(requestPath string) (packageName, version, fileType s
 	// NPM tarball 패턴 파싱
 	// 예: /proxy/npm/@scope/package/-/package-1.2.3.tgz
 	// 또는: /proxy/npm/package/-/package-1.2.3.tgz
-	
+
 	parts := strings.Split(requestPath, "/-/")
 	if len(parts) != 2 {
-		return "unknown", "unknown", "tgz"
+		return statusUnknown, statusUnknown, "tgz"
 	}
-	
+
 	// 패키지명 추출
 	pathParts := strings.Split(strings.TrimPrefix(parts[0], "/proxy/npm/"), "/")
 	if len(pathParts) == 1 {
@@ -150,7 +150,7 @@ func extractNpmPackageInfo(requestPath string) (packageName, version, fileType s
 		// 스코프 패키지
 		packageName = pathParts[0] + "/" + pathParts[1]
 	}
-	
+
 	// 버전 추출 (파일명에서)
 	filename := parts[1]
 	if strings.HasSuffix(filename, ".tgz") {
@@ -161,14 +161,14 @@ func extractNpmPackageInfo(requestPath string) (packageName, version, fileType s
 			version = filenameWithoutExt[lastDash+1:]
 		}
 	}
-	
+
 	if packageName == "" {
-		packageName = "unknown"
+		packageName = statusUnknown
 	}
 	if version == "" {
-		version = "unknown"
+		version = statusUnknown
 	}
-	
+
 	return packageName, version, "tgz"
 }
 
@@ -177,27 +177,27 @@ func extractMavenPackageInfo(requestPath string) (packageName, version, fileType
 	// Maven 경로 패턴: /proxy/maven/group/artifact/version/artifact-version.extension
 	pathWithoutPrefix := strings.TrimPrefix(requestPath, "/proxy/maven/")
 	parts := strings.Split(pathWithoutPrefix, "/")
-	
+
 	if len(parts) >= 4 {
 		// group을 제외하고 artifact와 version 추출
 		artifact := parts[len(parts)-3]
 		version = parts[len(parts)-2]
 		filename := parts[len(parts)-1]
-		
+
 		packageName = artifact
 		fileType = strings.TrimPrefix(path.Ext(filename), ".")
 	}
-	
+
 	if packageName == "" {
-		packageName = "unknown"
+		packageName = statusUnknown
 	}
 	if version == "" {
-		version = "unknown"
+		version = statusUnknown
 	}
 	if fileType == "" {
-		fileType = "unknown"
+		fileType = statusUnknown
 	}
-	
+
 	return packageName, version, fileType
 }
 
@@ -205,8 +205,8 @@ func extractMavenPackageInfo(requestPath string) (packageName, version, fileType
 func extractPypiPackageInfo(requestPath string) (packageName, version, fileType string) {
 	// PyPI 경로에서 패키지 정보 추출
 	filename := path.Base(requestPath)
-	fileType = "unknown"
-	
+	fileType = statusUnknown
+
 	// 파일 확장자 결정
 	if strings.HasSuffix(filename, ".whl") {
 		fileType = "whl"
@@ -235,14 +235,14 @@ func extractPypiPackageInfo(requestPath string) (packageName, version, fileType 
 			packageName = strings.Join(parts[:len(parts)-1], "-")
 		}
 	}
-	
+
 	if packageName == "" {
-		packageName = "unknown"
+		packageName = statusUnknown
 	}
 	if version == "" {
-		version = "unknown"
+		version = statusUnknown
 	}
-	
+
 	return packageName, version, fileType
 }
 
@@ -255,7 +255,7 @@ func extractDockerPackageInfo(requestPath string) (packageName, version, fileTyp
 		if len(parts) == 2 {
 			namePartWithPrefix := parts[0]
 			version = parts[1] // tag가 version 역할
-			
+
 			// 이름 부분에서 실제 이미지명 추출
 			nameParts := strings.Split(namePartWithPrefix, "/")
 			if len(nameParts) >= 3 { // /proxy/docker/v2/[name]
@@ -268,8 +268,8 @@ func extractDockerPackageInfo(requestPath string) (packageName, version, fileTyp
 		parts := strings.Split(requestPath, "/blobs/")
 		if len(parts) == 2 {
 			namePartWithPrefix := parts[0]
-			version = "unknown" // blob에는 명시적 버전이 없음
-			
+			version = statusUnknown // blob에는 명시적 버전이 없음
+
 			nameParts := strings.Split(namePartWithPrefix, "/")
 			if len(nameParts) >= 3 {
 				packageName = strings.Join(nameParts[3:], "/")
@@ -277,14 +277,14 @@ func extractDockerPackageInfo(requestPath string) (packageName, version, fileTyp
 		}
 		fileType = "blob"
 	}
-	
+
 	if packageName == "" {
-		packageName = "unknown"
+		packageName = statusUnknown
 	}
 	if version == "" {
-		version = "unknown"
+		version = statusUnknown
 	}
-	
+
 	return packageName, version, fileType
 }
 
@@ -301,14 +301,14 @@ func extractAptPackageInfo(requestPath string) (packageName, version, fileType s
 		}
 		fileType = "deb"
 	}
-	
+
 	if packageName == "" {
-		packageName = "unknown"
+		packageName = statusUnknown
 	}
 	if version == "" {
-		version = "unknown"
+		version = statusUnknown
 	}
-	
+
 	return packageName, version, fileType
 }
 
@@ -318,13 +318,13 @@ func extractYumPackageInfo(requestPath string) (packageName, version, fileType s
 	if strings.HasSuffix(filename, ".rpm") {
 		// RPM 파일명 파싱: package-version-release.architecture.rpm
 		basename := strings.TrimSuffix(filename, ".rpm")
-		
+
 		// 아키텍처 제거
 		lastDot := strings.LastIndex(basename, ".")
 		if lastDot != -1 {
 			basename = basename[:lastDot]
 		}
-		
+
 		// 패키지명과 버전-릴리스 분리
 		parts := strings.Split(basename, "-")
 		if len(parts) >= 3 {
@@ -337,14 +337,14 @@ func extractYumPackageInfo(requestPath string) (packageName, version, fileType s
 		}
 		fileType = "rpm"
 	}
-	
+
 	if packageName == "" {
-		packageName = "unknown"
+		packageName = statusUnknown
 	}
 	if version == "" {
-		version = "unknown"
+		version = statusUnknown
 	}
-	
+
 	return packageName, version, fileType
 }
 
@@ -362,14 +362,14 @@ func extractApkPackageInfo(requestPath string) (packageName, version, fileType s
 		}
 		fileType = "apk"
 	}
-	
+
 	if packageName == "" {
-		packageName = "unknown"
+		packageName = statusUnknown
 	}
 	if version == "" {
-		version = "unknown"
+		version = statusUnknown
 	}
-	
+
 	return packageName, version, fileType
 }
 
@@ -381,7 +381,7 @@ func extractUserID(c *fiber.Ctx) string {
 			return uid
 		}
 	}
-	
+
 	// JWT 토큰에서 사용자 ID 추출
 	if user := c.Locals("user"); user != nil {
 		if userMap, ok := user.(map[string]interface{}); ok {
@@ -392,14 +392,14 @@ func extractUserID(c *fiber.Ctx) string {
 			}
 		}
 	}
-	
+
 	// 익명 사용자의 경우 IP 기반으로 생성
 	clientIP := c.IP()
 	if clientIP != "" {
 		return "anon_" + strings.ReplaceAll(clientIP, ".", "_")
 	}
-	
-	return "unknown"
+
+	return statusUnknown
 }
 
 // extractUserType 사용자 타입 추출
@@ -410,17 +410,17 @@ func extractUserType(c *fiber.Ctx) string {
 			return "authenticated"
 		}
 	}
-	
+
 	// User-Agent 기반으로 봇 감지
 	userAgent := strings.ToLower(c.Get("User-Agent"))
 	botKeywords := []string{"bot", "crawler", "spider", "scraper", "curl", "wget"}
-	
+
 	for _, keyword := range botKeywords {
 		if strings.Contains(userAgent, keyword) {
 			return "bot"
 		}
 	}
-	
+
 	return "anonymous"
 }
 
@@ -431,7 +431,7 @@ func getRetryReason(c *fiber.Ctx) string {
 			return reasonStr
 		}
 	}
-	
+
 	// 응답 코드 기반으로 사유 추측
 	statusCode := c.Response().StatusCode()
 	switch {
@@ -444,6 +444,6 @@ func getRetryReason(c *fiber.Ctx) string {
 	case statusCode >= 400 && statusCode < 500:
 		return "client_error"
 	default:
-		return "unknown"
+		return statusUnknown
 	}
 }

@@ -53,7 +53,7 @@ if [[ -f "${COVERAGE_DIR}/coverage.out" ]]; then
     COVERAGE_PERCENTAGE=$(go tool cover -func="${COVERAGE_DIR}/coverage.out" | grep "total:" | awk '{print $3}' | sed 's/%//')
     echo ""
     blue "📊 테스트 커버리지 결과: ${COVERAGE_PERCENTAGE}%"
-    
+
     # HTML 리포트 생성
     go tool cover -html="${COVERAGE_DIR}/coverage.out" -o "${COVERAGE_DIR}/coverage.html"
     log_success "HTML 리포트 생성 완료: ${COVERAGE_DIR}/coverage.html"

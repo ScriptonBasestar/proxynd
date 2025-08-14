@@ -1097,7 +1097,7 @@ func TestYUMProxyRepodataFreshnessAdvanced(t *testing.T) {
 
 		bodyStr := string(body)
 		assert.Contains(t, bodyStr, "<revision>")
-		
+
 		// revision 값이 유닉스 타임스탬프 형식인지 확인
 		if strings.Contains(bodyStr, "<revision>1640995200</revision>") {
 			// 2022-01-01 00:00:00 UTC 확인
@@ -1207,13 +1207,13 @@ func TestYUMProxyGzipPGPHeadersAdvanced(t *testing.T) {
 		if resp.StatusCode == http.StatusOK {
 			contentType := resp.Header.Get("Content-Type")
 			assert.True(t, strings.Contains(contentType, "application/pgp-signature") ||
-				strings.Contains(contentType, "text/plain"), 
+				strings.Contains(contentType, "text/plain"),
 				"PGP signature should have appropriate content type")
 
 			// 서명 파일 내용 기본 검증
 			body, err := io.ReadAll(resp.Body)
 			require.NoError(t, err)
-			
+
 			if len(body) > 0 {
 				bodyStr := string(body)
 				// PGP 서명의 기본 구조 확인
@@ -1295,7 +1295,7 @@ func TestYUMProxyGzipPGPHeadersAdvanced(t *testing.T) {
 		// 실제 내용 크기와 헤더 일치 확인
 		body, err := io.ReadAll(resp.Body)
 		require.NoError(t, err)
-		
+
 		if contentLength != "" {
 			expectedLength, _ := strconv.Atoi(contentLength)
 			assert.Equal(t, expectedLength, len(body), "Content-Length should match actual body size")
@@ -1569,7 +1569,7 @@ func TestYUMProxyMirrorFailover(t *testing.T) {
 					assert.Equal(t, http.StatusOK, resp.StatusCode)
 				} else {
 					// 다른 미러는 404 또는 적절한 에러 처리
-					assert.True(t, resp.StatusCode >= 400, 
+					assert.True(t, resp.StatusCode >= 400,
 						"Non-configured mirrors should return appropriate error")
 				}
 			})
@@ -1583,7 +1583,7 @@ func TestYUMProxyMirrorFailover(t *testing.T) {
 
 		for i := 0; i < 3; i++ {
 			start := time.Now()
-			
+
 			resp, err := env.MakeRequest("GET", yumRepomdPath, nil)
 			require.NoError(t, err)
 			defer func() { _ = resp.Body.Close() }()
@@ -1608,23 +1608,23 @@ func TestYUMProxyMirrorFailover(t *testing.T) {
 	t.Run("Mirror Status Monitoring", func(t *testing.T) {
 		// 서로 다른 아키텍처 경로로 미러 상태 확인
 		architectureTests := []struct {
-			name string
-			path string
+			name          string
+			path          string
 			expectSuccess bool
 		}{
 			{
-				name: "x86_64 Architecture",
-				path: "/proxy/yum/centos/8/BaseOS/x86_64/os/repodata/repomd.xml",
+				name:          "x86_64 Architecture",
+				path:          "/proxy/yum/centos/8/BaseOS/x86_64/os/repodata/repomd.xml",
 				expectSuccess: true,
 			},
 			{
-				name: "i386 Architecture",
-				path: "/proxy/yum/centos/8/BaseOS/i386/os/repodata/repomd.xml",
+				name:          "i386 Architecture",
+				path:          "/proxy/yum/centos/8/BaseOS/i386/os/repodata/repomd.xml",
 				expectSuccess: false, // Mock에서 지원하지 않음
 			},
 			{
-				name: "aarch64 Architecture",
-				path: "/proxy/yum/centos/8/BaseOS/aarch64/os/repodata/repomd.xml",
+				name:          "aarch64 Architecture",
+				path:          "/proxy/yum/centos/8/BaseOS/aarch64/os/repodata/repomd.xml",
 				expectSuccess: false, // Mock에서 지원하지 않음
 			},
 		}
@@ -1683,7 +1683,7 @@ func TestYUMProxyMirrorFailover(t *testing.T) {
 
 				if test.expectOK {
 					assert.Equal(t, http.StatusOK, resp.StatusCode)
-					
+
 					// User-Agent가 로그에 기록되는지 간접 확인
 					body, err := io.ReadAll(resp.Body)
 					require.NoError(t, err)
@@ -1734,18 +1734,18 @@ func TestYUMProxyMirrorFailover(t *testing.T) {
 			require.NoError(t, err)
 			bodies[i] = string(body)
 
-			resp.Body.Close()
+			_ = resp.Body.Close()
 		}
 
 		// 모든 응답이 동일한지 확인 (미러 동기화)
 		for i := 1; i < len(bodies); i++ {
-			assert.Equal(t, bodies[0], bodies[i], 
+			assert.Equal(t, bodies[0], bodies[i],
 				"All requests should return identical content (mirror sync)")
 		}
 
 		// 모든 응답이 성공인지 확인
 		for i, resp := range responses {
-			assert.Equal(t, http.StatusOK, resp.StatusCode, 
+			assert.Equal(t, http.StatusOK, resp.StatusCode,
 				"Request %d should be successful", i)
 		}
 	})

@@ -55,15 +55,15 @@ type PluginManager interface {
     LoadPlugin(pluginPath string) (*Plugin, error)
     UnloadPlugin(pluginID string) error
     ReloadPlugin(pluginID string) error
-    
+
     // 플러그인 조회
     ListPlugins() ([]*Plugin, error)
     GetPlugin(pluginID string) (*Plugin, error)
-    
+
     // 플러그인 상태 관리
     EnablePlugin(pluginID string) error
     DisablePlugin(pluginID string) error
-    
+
     // 설정 관리
     ConfigurePlugin(pluginID string, config map[string]interface{}) error
 }
@@ -110,12 +110,12 @@ const (
 // ProxyPlugin 프록시 플러그인 인터페이스
 type ProxyPlugin interface {
     Plugin
-    
+
     // 프록시 기본 기능
     HandleRequest(ctx context.Context, req *ProxyRequest) (*ProxyResponse, error)
     GetProxyType() string
     ValidateConfig(config map[string]interface{}) error
-    
+
     // 메타데이터
     GetSupportedURLPatterns() []string
     GetCacheConfig() *CacheConfig
@@ -124,11 +124,11 @@ type ProxyPlugin interface {
 // AuthPlugin 인증 플러그인 인터페이스
 type AuthPlugin interface {
     Plugin
-    
+
     // 인증 기능
     Authenticate(ctx context.Context, credentials map[string]string) (*User, error)
     Authorize(ctx context.Context, user *User, resource string, action string) (bool, error)
-    
+
     // 사용자 관리
     CreateUser(ctx context.Context, user *User) error
     UpdateUser(ctx context.Context, user *User) error
@@ -139,12 +139,12 @@ type AuthPlugin interface {
 // CachePlugin 캐시 플러그인 인터페이스
 type CachePlugin interface {
     Plugin
-    
+
     // 캐시 기본 기능
     Get(ctx context.Context, key string) ([]byte, error)
     Set(ctx context.Context, key string, value []byte, ttl time.Duration) error
     Delete(ctx context.Context, key string) error
-    
+
     // 고급 기능
     Clear(ctx context.Context, pattern string) error
     Size(ctx context.Context) (int64, error)
@@ -240,7 +240,7 @@ import (
     "context"
     "fmt"
     "log"
-    
+
     "github.com/scriptonbasestar/proxynd/plugin"
 )
 
@@ -280,7 +280,7 @@ func (p *GitProxyPlugin) Initialize(config map[string]interface{}) error {
     if err := plugin.ParseConfig(config, p.config); err != nil {
         return fmt.Errorf("failed to parse config: %w", err)
     }
-    
+
     // Git 클라이언트 초기화
     p.client = NewGitClient(p.config)
     return nil
@@ -323,7 +323,7 @@ func (p *GitProxyPlugin) ValidateConfig(config map[string]interface{}) error {
 func (p *GitProxyPlugin) handleGitClone(ctx context.Context, req *plugin.ProxyRequest) (*plugin.ProxyResponse, error) {
     // Git clone 로직 구현
     repoURL := req.URL.Path[len("/proxy/git/"):]
-    
+
     // 캐시 확인
     if cached, err := p.getCachedRepo(repoURL); err == nil {
         return &plugin.ProxyResponse{
@@ -332,16 +332,16 @@ func (p *GitProxyPlugin) handleGitClone(ctx context.Context, req *plugin.ProxyRe
             Body:       cached,
         }, nil
     }
-    
+
     // 업스트림에서 가져오기
     data, err := p.client.Clone(ctx, repoURL)
     if err != nil {
         return nil, err
     }
-    
+
     // 캐시 저장
     _ = p.cacheRepo(repoURL, data)
-    
+
     return &plugin.ProxyResponse{
         StatusCode: 200,
         Headers:    map[string]string{"Content-Type": "application/x-git-upload-pack"},
@@ -352,7 +352,7 @@ func (p *GitProxyPlugin) handleGitClone(ctx context.Context, req *plugin.ProxyRe
 // 플러그인 엔트리포인트
 func main() {
     plugin := &GitProxyPlugin{}
-    
+
     // 플러그인 서버 시작
     server := plugin.NewServer(plugin)
     if err := server.Serve(); err != nil {
@@ -462,14 +462,14 @@ permissions:
       - "/tmp"
     write:
       - "/var/lib/proxynd/plugins/${plugin.id}"
-    
+
   # 네트워크 접근
   network:
     outbound:
       - "github.com:443"
       - "gitlab.com:443"
     inbound: false
-    
+
   # 시스템 호출 제한
   syscalls:
     allow:
@@ -481,7 +481,7 @@ permissions:
       - "exec"
       - "fork"
       - "socket"
-    
+
   # API 접근 권한
   api:
     - "cache.read"
@@ -499,20 +499,20 @@ func setupSecureConnection(pluginID string) (*grpc.ClientConn, error) {
     if err != nil {
         return nil, err
     }
-    
+
     // TLS 설정
     creds := credentials.NewTLS(&tls.Config{
         Certificates: []tls.Certificate{cert},
         ServerName:   pluginID,
     })
-    
+
     // gRPC 연결
     conn, err := grpc.Dial(
         getPluginAddress(pluginID),
         grpc.WithTransportCredentials(creds),
         grpc.WithTimeout(30*time.Second),
     )
-    
+
     return conn, err
 }
 ```
@@ -665,20 +665,20 @@ func TestGitProxy(t *testing.T) {
     plugin := &GitProxyPlugin{}
     suite := plugintest.NewTestSuite(t, plugin)
     defer suite.Cleanup()
-    
+
     // 플러그인 초기화 테스트
     err := plugin.Initialize(map[string]interface{}{
         "upstream_repos": []string{"https://github.com/example/repo"},
         "cache_ttl": "1h",
     })
     assert.NoError(t, err)
-    
+
     // 요청 처리 테스트
     req := &plugin.ProxyRequest{
         Method: "GET",
         URL:    "/proxy/git/example/repo",
     }
-    
+
     resp, err := plugin.HandleRequest(context.Background(), req)
     assert.NoError(t, err)
     assert.Equal(t, 200, resp.StatusCode)

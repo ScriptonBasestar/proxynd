@@ -41,7 +41,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      
+
       - name: Check changed files
         uses: dorny/paths-filter@v2
         id: filter
@@ -53,7 +53,7 @@ jobs:
               - 'tests/integration/npm_*'
               - 'internal/adapters/http/npm_handler_adapter.go'
             maven:
-              - 'internal/services/maven/**'  
+              - 'internal/services/maven/**'
               - 'handlers/proxy/maven_handler.go'
               - 'tests/integration/maven_*'
             docker:
@@ -225,7 +225,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [changes, quick-tests, security]
     if: |
-      github.ref == 'refs/heads/develop' || 
+      github.ref == 'refs/heads/develop' ||
       needs.changes.outputs.core == 'true' ||
       (matrix.proxy-type == 'npm' && needs.changes.outputs.npm == 'true') ||
       (matrix.proxy-type == 'maven' && needs.changes.outputs.maven == 'true') ||
@@ -317,16 +317,16 @@ jobs:
         if: always()
         run: |
           mkdir -p test-results/${{ matrix.proxy-type }}-go${{ matrix.go-version }}
-          
+
           # 로그 수집
           cp -r logs/* test-results/${{ matrix.proxy-type }}-go${{ matrix.go-version }}/ 2>/dev/null || echo "No logs to collect"
-          
+
           # 커버리지 리포트 생성
           if [ -f coverage.out ]; then
             go tool cover -html=coverage.out -o test-results/${{ matrix.proxy-type }}-go${{ matrix.go-version }}/coverage.html
             go tool cover -func=coverage.out > test-results/${{ matrix.proxy-type }}-go${{ matrix.go-version }}/coverage.txt
           fi
-          
+
           # 실패 시 디버깅 정보 수집
           if [ $? -ne 0 ]; then
             echo "Test failed, collecting debug info..."
@@ -334,7 +334,7 @@ jobs:
             env | grep -E "(CONFIG|STORAGE|REDIS)" >> test-results/${{ matrix.proxy-type }}-go${{ matrix.go-version }}/debug-info.txt
             ps aux | grep -E "(proxynd|redis)" >> test-results/${{ matrix.proxy-type }}-go${{ matrix.go-version }}/debug-info.txt
           fi
-          
+
           ls -la test-results/${{ matrix.proxy-type }}-go${{ matrix.go-version }}/ || echo "No test results"
 
       - name: Upload integration test results
@@ -361,7 +361,7 @@ jobs:
             priority: high
             timeout: 10
           - proxy-type: maven
-            priority: high  
+            priority: high
             timeout: 15
           - proxy-type: docker
             priority: medium

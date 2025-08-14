@@ -62,7 +62,7 @@ func (sshc *SecuritySystemHealthChecker) Check(ctx context.Context) *CheckResult
 
 	// 전체 상태 결정
 	allResults := []map[string]interface{}{
-		tlsResult, authResult, accessControlResult, 
+		tlsResult, authResult, accessControlResult,
 		packageFilterResult, hashVerificationResult,
 	}
 
@@ -212,21 +212,17 @@ func (sshc *SecuritySystemHealthChecker) checkAuthenticationSystem() map[string]
 
 	authConfig := sshc.config.Security.Authentication
 	result["details"].(map[string]interface{})["auth_config"] = map[string]interface{}{
-		"basic_auth_enabled": authConfig.BasicAuth != nil && 
-			authConfig.BasicAuth.Enabled != nil && 
+		"basic_auth_enabled": authConfig.BasicAuth != nil &&
+			authConfig.BasicAuth.Enabled != nil &&
 			*authConfig.BasicAuth.Enabled,
 		"oauth2_enabled": authConfig.OAuth2 != nil && authConfig.OAuth2.Enabled,
-		"jwt_enabled": false, // JWT 지원은 현재 미구현
+		"jwt_enabled":    false, // JWT 지원은 현재 미구현
 	}
 
 	// 기본 인증 확인
-	if authConfig.BasicAuth != nil && 
-		authConfig.BasicAuth.Enabled != nil && 
-		*authConfig.BasicAuth.Enabled {
-		
+	if authConfig.BasicAuth != nil && authConfig.BasicAuth.Enabled != nil && *authConfig.BasicAuth.Enabled {
 		basicAuthResult := sshc.checkBasicAuth(authConfig.BasicAuth)
 		result["details"].(map[string]interface{})["basic_auth"] = basicAuthResult
-		
 		if basicAuthResult["status"] == string(StatusUnhealthy) {
 			result["status"] = string(StatusUnhealthy)
 			result["message"] = "기본 인증 설정에 문제가 있습니다"
@@ -238,7 +234,7 @@ func (sshc *SecuritySystemHealthChecker) checkAuthenticationSystem() map[string]
 	if authConfig.OAuth2 != nil && authConfig.OAuth2.Enabled {
 		oauth2Result := sshc.checkOAuth2(authConfig.OAuth2)
 		result["details"].(map[string]interface{})["oauth2"] = oauth2Result
-		
+
 		if oauth2Result["status"] == string(StatusUnhealthy) {
 			result["status"] = string(StatusUnhealthy)
 			result["message"] = "OAuth2 설정에 문제가 있습니다"
@@ -246,13 +242,11 @@ func (sshc *SecuritySystemHealthChecker) checkAuthenticationSystem() map[string]
 		}
 	}
 
-	// JWT 지원 여부는 실제 구현에 따라 조정
-	// 현재 AuthenticationConfig에는 JWT 필드가 없음
-	// TODO: JWT 지원이 추가되면 여기에 구현
+	// (JWT 체크는 미구현 상태이며, AuthenticationConfig 확장 시 구현 예정)
 
 	// 전체적으로 인증이 비활성화된 경우
-	noAuthEnabled := (authConfig.BasicAuth == nil || 
-		authConfig.BasicAuth.Enabled == nil || 
+	noAuthEnabled := (authConfig.BasicAuth == nil ||
+		authConfig.BasicAuth.Enabled == nil ||
 		!*authConfig.BasicAuth.Enabled) &&
 		(authConfig.OAuth2 == nil || !authConfig.OAuth2.Enabled)
 
@@ -273,13 +267,13 @@ func (sshc *SecuritySystemHealthChecker) checkBasicAuth(basicAuth interface{}) m
 		"status": string(StatusHealthy),
 	}
 
-	// 실제 BasicAuth 구조체의 필드를 확인해야 하지만, 
+	// 실제 BasicAuth 구조체의 필드를 확인해야 하지만,
 	// 현재는 기본적인 활성화 상태만 확인
 	result["message"] = "기본 인증이 활성화되어 있습니다"
-	
+
 	// TODO: 실제 사용자 수, 암호 정책 등 확인 필요
 	result["note"] = "사용자 정보는 보안상 표시하지 않습니다"
-	
+
 	return result
 }
 
@@ -291,19 +285,7 @@ func (sshc *SecuritySystemHealthChecker) checkOAuth2(oauth2 interface{}) map[str
 
 	result["message"] = "OAuth2가 활성화되어 있습니다"
 	result["note"] = "OAuth2 프로바이더 연결성은 별도 확인이 필요합니다"
-	
-	return result
-}
 
-// checkJWT JWT 확인
-func (sshc *SecuritySystemHealthChecker) checkJWT(jwt interface{}) map[string]interface{} {
-	result := map[string]interface{}{
-		"status": string(StatusHealthy),
-	}
-
-	result["message"] = "JWT가 활성화되어 있습니다"
-	result["note"] = "JWT 비밀키는 보안상 표시하지 않습니다"
-	
 	return result
 }
 
@@ -320,7 +302,7 @@ func (sshc *SecuritySystemHealthChecker) checkAccessControl() map[string]interfa
 	if accessControl.IPWhitelist.Enabled {
 		ipResult := sshc.checkIPWhitelist(accessControl.IPWhitelist)
 		result["details"].(map[string]interface{})["ip_whitelist"] = ipResult
-		
+
 		if ipResult["status"] == string(StatusUnhealthy) {
 			result["status"] = string(StatusUnhealthy)
 			result["message"] = "IP 화이트리스트 설정에 문제가 있습니다"
@@ -396,7 +378,7 @@ func (sshc *SecuritySystemHealthChecker) checkIPWhitelist(ipWhitelist config.IPW
 		return result
 	}
 
-	result["message"] = fmt.Sprintf("IP 화이트리스트가 정상적으로 구성되어 있습니다 (%d IPs, %d CIDRs)", 
+	result["message"] = fmt.Sprintf("IP 화이트리스트가 정상적으로 구성되어 있습니다 (%d IPs, %d CIDRs)",
 		validIPs, validCIDRs)
 	return result
 }
@@ -426,11 +408,11 @@ func (sshc *SecuritySystemHealthChecker) checkPermissions(permissions []config.P
 			userCount++
 		}
 		groupCount += len(rule.Groups)
-		
+
 		for _, action := range rule.Actions {
 			actionTypes[action]++
 		}
-		
+
 		for _, registry := range rule.Registries {
 			registryTypes[registry]++
 		}
@@ -491,7 +473,7 @@ func (sshc *SecuritySystemHealthChecker) checkPackageFilter() map[string]interfa
 	}
 
 	result["details"].(map[string]interface{})["rule_analysis"] = ruleAnalysis
-	result["message"] = fmt.Sprintf("패키지 필터가 구성되어 있습니다 (%s 모드, %d개 규칙)", 
+	result["message"] = fmt.Sprintf("패키지 필터가 구성되어 있습니다 (%s 모드, %d개 규칙)",
 		packageFilter.Mode, len(packageFilter.Rules))
 
 	return result
@@ -545,7 +527,7 @@ func (sshc *SecuritySystemHealthChecker) checkHashVerification() map[string]inte
 		return result
 	}
 
-	result["message"] = fmt.Sprintf("해시 검증이 안전하게 구성되어 있습니다 (%d개 헤더)", 
+	result["message"] = fmt.Sprintf("해시 검증이 안전하게 구성되어 있습니다 (%d개 헤더)",
 		len(hashVerification.RequiredHashHeaders))
 
 	return result
@@ -554,11 +536,11 @@ func (sshc *SecuritySystemHealthChecker) checkHashVerification() map[string]inte
 // GetSecurityMetrics 보안 관련 메트릭 반환
 func (sshc *SecuritySystemHealthChecker) GetSecurityMetrics() map[string]interface{} {
 	return map[string]interface{}{
-		"tls_enabled":              sshc.config.Server.TLS.Enabled,
-		"authentication_methods":   sshc.countAuthenticationMethods(),
-		"access_control_rules":     len(sshc.config.Security.AccessControl.Permissions),
-		"ip_whitelist_enabled":     sshc.config.Security.AccessControl.IPWhitelist.Enabled,
-		"package_filter_enabled":   sshc.config.Security.PackageFilter.Enabled,
+		"tls_enabled":               sshc.config.Server.TLS.Enabled,
+		"authentication_methods":    sshc.countAuthenticationMethods(),
+		"access_control_rules":      len(sshc.config.Security.AccessControl.Permissions),
+		"ip_whitelist_enabled":      sshc.config.Security.AccessControl.IPWhitelist.Enabled,
+		"package_filter_enabled":    sshc.config.Security.PackageFilter.Enabled,
 		"hash_verification_enabled": sshc.config.Security.HashVerification.Enabled,
 	}
 }
@@ -566,20 +548,20 @@ func (sshc *SecuritySystemHealthChecker) GetSecurityMetrics() map[string]interfa
 // countAuthenticationMethods 활성화된 인증 방법 수 계산
 func (sshc *SecuritySystemHealthChecker) countAuthenticationMethods() int {
 	count := 0
-	
+
 	if sshc.config.Security.Authentication.BasicAuth != nil &&
 		sshc.config.Security.Authentication.BasicAuth.Enabled != nil &&
 		*sshc.config.Security.Authentication.BasicAuth.Enabled {
 		count++
 	}
-	
+
 	if sshc.config.Security.Authentication.OAuth2 != nil &&
 		sshc.config.Security.Authentication.OAuth2.Enabled {
 		count++
 	}
-	
+
 	// JWT 지원은 현재 미구현
 	// TODO: JWT 지원 추가 시 이 주석 제거
-	
+
 	return count
 }

@@ -17,26 +17,26 @@ type EnhancedMetricsCollector struct {
 	mu      sync.RWMutex
 
 	// 비즈니스 메트릭 추적
-	packageStats      map[string]*PackageStatistics
-	popularPackages   *PopularityTracker
-	userAgentTracker  *UserAgentTracker
+	packageStats       map[string]*PackageStatistics
+	popularPackages    *PopularityTracker
+	userAgentTracker   *UserAgentTracker
 	geoLocationTracker *GeographicTracker
 
 	// 성능 메트릭 추적
-	latencyTracker     *LatencyTracker
-	throughputTracker  *ThroughputTracker
-	connectionTracker  *ConnectionTracker
-	resourceTracker    *ResourceTracker
+	latencyTracker    *LatencyTracker
+	throughputTracker *ThroughputTracker
+	connectionTracker *ConnectionTracker
+	resourceTracker   *ResourceTracker
 
 	// 에러 메트릭 추적
-	errorTracker       *ErrorTracker
-	retryTracker       *RetryTracker
-	upstreamTracker    *UpstreamTracker
+	errorTracker    *ErrorTracker
+	retryTracker    *RetryTracker
+	upstreamTracker *UpstreamTracker
 
 	// 사용자 활동 추적
-	userTracker        *UserActivityTracker
-	sessionTracker     *SessionTracker
-	behaviorTracker    *BehaviorTracker
+	userTracker     *UserActivityTracker
+	sessionTracker  *SessionTracker
+	behaviorTracker *BehaviorTracker
 
 	// 수집 설정
 	collectInterval    time.Duration
@@ -45,10 +45,10 @@ type EnhancedMetricsCollector struct {
 	maxTrackedUsers    int
 
 	// 제어
-	ctx       context.Context
-	cancel    context.CancelFunc
-	running   bool
-	stopCh    chan struct{}
+	ctx     context.Context
+	cancel  context.CancelFunc
+	running bool
+	stopCh  chan struct{}
 }
 
 // PackageStatistics 패키지별 통계
@@ -113,10 +113,10 @@ type IPLocationResolver interface {
 
 // LatencyTracker 지연시간 추적기
 type LatencyTracker struct {
-	mu            sync.RWMutex
-	measurements  map[string]*LatencyMeasurements
-	buckets       []float64
-	maxSamples    int
+	mu           sync.RWMutex
+	measurements map[string]*LatencyMeasurements
+	buckets      []float64
+	maxSamples   int
 }
 
 // LatencyMeasurements 지연시간 측정값
@@ -133,18 +133,18 @@ type LatencyMeasurements struct {
 
 // ThroughputTracker 처리량 추적기
 type ThroughputTracker struct {
-	mu            sync.RWMutex
-	measurements  map[string]*ThroughputMeasurements
-	windows       map[string]*TimeWindow
-	maxWindows    int
+	mu           sync.RWMutex
+	measurements map[string]*ThroughputMeasurements
+	windows      map[string]*TimeWindow
+	maxWindows   int
 }
 
 // ThroughputMeasurements 처리량 측정값
 type ThroughputMeasurements struct {
-	RegistryType  string
+	RegistryType   string
 	RequestsPerSec float64
-	Windows       map[string]float64 // time_window -> rps
-	LastUpdate    time.Time
+	Windows        map[string]float64 // time_window -> rps
+	LastUpdate     time.Time
 }
 
 // TimeWindow 시간 윈도우
@@ -162,12 +162,12 @@ type ConnectionTracker struct {
 
 // ConnectionStats 연결 통계
 type ConnectionStats struct {
-	RegistryType      string
-	ConnectionType    string
+	RegistryType       string
+	ConnectionType     string
 	CurrentConnections int64
 	MaxConnections     int64
 	TotalConnections   int64
-	LastUpdate        time.Time
+	LastUpdate         time.Time
 }
 
 // ResourceTracker 리소스 추적기
@@ -179,12 +179,12 @@ type ResourceTracker struct {
 
 // ResourceStats 리소스 통계
 type ResourceStats struct {
-	ResourceType   string
-	Measurement    string
-	CurrentValue   float64
-	MaxValue       float64
-	AverageValue   float64
-	LastUpdate     time.Time
+	ResourceType string
+	Measurement  string
+	CurrentValue float64
+	MaxValue     float64
+	AverageValue float64
+	LastUpdate   time.Time
 }
 
 // ResourceCollector 리소스 수집기 인터페이스
@@ -235,9 +235,9 @@ type UpstreamTracker struct {
 
 // UpstreamStats 업스트림 통계
 type UpstreamStats struct {
-	RegistryType string
-	Upstream     string
-	FailureType  string
+	RegistryType  string
+	Upstream      string
+	FailureType   string
 	TotalRequests int64
 	FailureCount  int64
 	FailureRate   float64
@@ -263,10 +263,10 @@ type UserStats struct {
 
 // SessionTracker 세션 추적기
 type SessionTracker struct {
-	mu           sync.RWMutex
-	sessions     map[string]*SessionInfo
-	durations    []float64
-	maxSessions  int
+	mu          sync.RWMutex
+	sessions    map[string]*SessionInfo
+	durations   []float64
+	maxSessions int
 }
 
 // SessionInfo 세션 정보
@@ -282,25 +282,25 @@ type SessionInfo struct {
 
 // BehaviorTracker 행동 추적기
 type BehaviorTracker struct {
-	mu             sync.RWMutex
-	behaviorStats  map[string]*BehaviorStats
-	patterns       map[string]*BehaviorPattern
+	mu            sync.RWMutex
+	behaviorStats map[string]*BehaviorStats
+	patterns      map[string]*BehaviorPattern
 }
 
 // BehaviorStats 행동 통계
 type BehaviorStats struct {
-	RegistryType   string
-	BehaviorType   string
-	UserCategory   string
-	EventCount     int64
-	LastEvent      time.Time
+	RegistryType string
+	BehaviorType string
+	UserCategory string
+	EventCount   int64
+	LastEvent    time.Time
 }
 
 // BehaviorPattern 행동 패턴
 type BehaviorPattern struct {
-	PatternType string
-	TimePeriod  string
-	Frequency   int64
+	PatternType  string
+	TimePeriod   string
+	Frequency    int64
 	LastDetected time.Time
 }
 
@@ -406,12 +406,20 @@ func (ec *EnhancedMetricsCollector) Stop() error {
 }
 
 // RecordPackageDownload 패키지 다운로드 기록
-func (ec *EnhancedMetricsCollector) RecordPackageDownload(registryType, packageName, version, fileType string, size int64) {
+func (ec *EnhancedMetricsCollector) RecordPackageDownload(
+	registryType string,
+	packageName string,
+	version string,
+	fileType string,
+	size int64,
+) {
 	ec.mu.Lock()
 	defer ec.mu.Unlock()
 
 	// 메트릭 업데이트
-	ec.metrics.PackageDownloadsTotal.WithLabelValues(registryType, packageName, version, fileType).Inc()
+	ec.metrics.PackageDownloadsTotal.
+		WithLabelValues(registryType, packageName, version, fileType).
+		Inc()
 
 	// 내부 통계 업데이트
 	key := registryType + ":" + packageName
@@ -498,7 +506,7 @@ func (ec *EnhancedMetricsCollector) RecordConnection(registryType, connectionTyp
 func (ec *EnhancedMetricsCollector) RecordHTTPStatus(registryType string, statusCode int) {
 	statusClass := getStatusClass(statusCode)
 	statusStr := getStatusString(statusCode)
-	
+
 	ec.metrics.HTTPStatusDistribution.WithLabelValues(registryType, statusClass, statusStr).Inc()
 	ec.errorTracker.RecordStatus(registryType, statusClass, statusStr)
 }
@@ -509,7 +517,7 @@ func (ec *EnhancedMetricsCollector) RecordRetryAttempt(registryType, reason stri
 	if !success {
 		outcome = "failure"
 	}
-	
+
 	ec.metrics.RetryAttempts.WithLabelValues(registryType, reason, getAttemptString(attemptNum), outcome).Inc()
 	ec.retryTracker.RecordAttempt(registryType, reason, success)
 }
@@ -635,7 +643,7 @@ func getStatusClass(statusCode int) string {
 	case statusCode >= 500:
 		return "5xx"
 	default:
-		return "unknown"
+		return statusUnknown
 	}
 }
 
@@ -655,7 +663,7 @@ func getAttemptString(attempt int) string {
 
 // 이후 구현할 메서드들:
 // - updatePopularPackages()
-// - updateThroughputMetrics() 
+// - updateThroughputMetrics()
 // - updateRetryRates()
 // - updateUpstreamFailureRates()
 // - updateUniqueUsers()

@@ -51,29 +51,29 @@ done
 declare -a ENDPOINTS=(
     # 캐시 관리 API
     "GET /api/cache/list"
-    "GET /api/cache/size" 
+    "GET /api/cache/size"
     "GET /api/cache/stats"
     "GET /api/cache/ttl"
-    
+
     # 설정 관리 API
     "GET /api/config/validate"
     "GET /api/config/show"
     "GET /api/config/files"
-    
+
     # 사용자 관리 API
     "GET /api/user/list"
-    
+
     # 프록시 테스트 API
     "GET /api/test/types"
     "POST /api/test/all"
-    
+
     # 서버 상태 API
     "GET /api/status"
     "GET /api/status/health"
     "GET /api/status/metrics"
     "GET /api/status/dependencies"
     "GET /api/status/stats"
-    
+
     # 기존 엔드포인트
     "GET /healthz"
     "GET /metrics"
@@ -119,18 +119,18 @@ test_endpoint() {
     local method="$1"
     local path="$2"
     local url="${BASE_URL}${path}"
-    
+
     if [[ "$VERBOSE" == "true" && "$OUTPUT_FORMAT" == "text" ]]; then
         echo -n "Testing $method $path ... "
     fi
-    
+
     # 요청 수행
     local start_time=$(date +%s%N)
     local response
     local http_code
     local success=false
     local error_message=""
-    
+
     if [[ "$method" == "POST" ]]; then
         # POST 요청의 경우 빈 JSON 바디 전송
         response=$(curl -s -w "%{http_code}" -X "$method" \
@@ -145,10 +145,10 @@ test_endpoint() {
                   --max-time "$TIMEOUT" \
                   "$url" 2>/dev/null || echo "000")
     fi
-    
+
     local end_time=$(date +%s%N)
     local duration=$(((end_time - start_time) / 1000000)) # 밀리초로 변환
-    
+
     # HTTP 코드 추출
     if [[ ${#response} -ge 3 ]]; then
         http_code="${response: -3}"
@@ -157,7 +157,7 @@ test_endpoint() {
         http_code="000"
         response_body=""
     fi
-    
+
     # 응답 분석
     case "$http_code" in
         200|201)
@@ -190,7 +190,7 @@ test_endpoint() {
             error_message="예상치 못한 응답 코드"
             ;;
     esac
-    
+
     # 결과 출력
     if [[ "$OUTPUT_FORMAT" == "text" ]]; then
         if [[ "$VERBOSE" == "true" ]]; then
@@ -198,7 +198,7 @@ test_endpoint() {
         else
             printf "%-30s %s\n" "$method $path" "$status"
         fi
-        
+
         # 상세 정보 출력 (verbose 모드)
         if [[ "$VERBOSE" == "true" && ! "$success" == "true" ]]; then
             echo "  └─ Error: $error_message"
@@ -207,7 +207,7 @@ test_endpoint() {
             fi
         fi
     fi
-    
+
     # JSON 결과 저장
     local json_result=$(cat <<EOF
 {
@@ -223,7 +223,7 @@ test_endpoint() {
 EOF
 )
     JSON_RESULTS+=("$json_result")
-    
+
     # 성공 여부 반환
     if [[ "$success" == "true" ]]; then
         return 0
@@ -238,14 +238,14 @@ main() {
     local passed=0
     local failed=0
     local warnings=0
-    
+
     if [[ "$OUTPUT_FORMAT" == "text" ]]; then
         log_info "🔍 ProxyND API 엔드포인트 검증 시작"
         log_info "서버 URL: $BASE_URL"
         log_info "타임아웃: ${TIMEOUT}초"
         echo ""
     fi
-    
+
     # 서버 연결성 사전 체크
     if ! curl -s --connect-timeout 5 "$BASE_URL" >/dev/null 2>&1; then
         if [[ "$OUTPUT_FORMAT" == "text" ]]; then
@@ -256,12 +256,12 @@ main() {
         fi
         exit 1
     fi
-    
+
     # 각 엔드포인트 테스트
     for endpoint in "${ENDPOINTS[@]}"; do
         IFS=' ' read -r method path <<< "$endpoint"
         total=$((total + 1))
-        
+
         if test_endpoint "$method" "$path"; then
             passed=$((passed + 1))
         else
@@ -272,7 +272,7 @@ main() {
             fi
         fi
     done
-    
+
     # 결과 출력
     if [[ "$OUTPUT_FORMAT" == "json" ]]; then
         # JSON 형식 출력
@@ -287,14 +287,14 @@ main() {
         echo "  \"base_url\": \"$BASE_URL\","
         echo "  \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\","
         echo "  \"results\": ["
-        
+
         for i in "${!JSON_RESULTS[@]}"; do
             echo "    ${JSON_RESULTS[$i]}"
             if [[ $i -lt $((${#JSON_RESULTS[@]} - 1)) ]]; then
                 echo ","
             fi
         done
-        
+
         echo "  ]"
         echo "}"
     else
@@ -306,24 +306,24 @@ main() {
         echo "실패: $failed"
         echo "경고: $warnings"
         echo "성공률: $(awk "BEGIN {printf \"%.1f%%\", $passed/$total*100}")"
-        
+
         # 권장사항
         echo ""
         if [[ $failed -gt 0 ]]; then
             log_warning "일부 엔드포인트가 구현되지 않았습니다."
             log_info "프로젝트의 CLAUDE.md를 참조하여 누락된 API를 구현해주세요."
         fi
-        
+
         if [[ $warnings -gt 0 ]]; then
             log_warning "일부 엔드포인트에서 경고가 발생했습니다."
             log_info "서버 로그를 확인하여 문제를 진단해주세요."
         fi
-        
+
         if [[ $passed -eq $total ]]; then
             log_success "🎉 모든 API 엔드포인트가 정상적으로 작동합니다!"
         fi
     fi
-    
+
     # 종료 코드 설정
     if [[ $failed -gt 0 ]]; then
         exit 1

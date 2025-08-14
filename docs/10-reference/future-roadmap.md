@@ -71,7 +71,7 @@ proxyndctl batch cancel <job-id>
 
 #### 구현 계획
 - **예상 작업량**: 3-5일
-- **기술 스택**: 
+- **기술 스택**:
   - Go template 엔진을 활용한 스크립트 파싱
   - Context 기반 취소 지원
   - JSON 기반 작업 이력 저장

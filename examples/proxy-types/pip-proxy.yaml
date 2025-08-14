@@ -15,7 +15,7 @@ proxies:
   - name: tsinghua
     url: https://pypi.tuna.tsinghua.edu.cn
     description: "Tsinghua University PyPI mirror"
-    
+
   # Private/authenticated repositories
   - name: company-devpi
     url: https://devpi.company.com/root/pypi
@@ -24,14 +24,14 @@ proxies:
       method: BASIC
       username: "${DEVPI_USERNAME}"
       password: "${DEVPI_PASSWORD}"
-      
+
   - name: aws-codeartifact
     url: https://company-123456789012.d.codeartifact.us-west-2.amazonaws.com/pypi/pypi-repo/
     description: "AWS CodeArtifact Python repository"
     auth:
       method: TOKEN
       token: "${CODEARTIFACT_TOKEN}"
-      
+
   - name: azure-artifacts-pypi
     url: https://pkgs.dev.azure.com/company/_packaging/feed/pypi/
     description: "Azure DevOps Artifacts Python feed"
@@ -39,15 +39,15 @@ proxies:
       method: BASIC
       username: "${AZURE_USERNAME}"
       password: "${AZURE_PAT}"
-      
+
   - name: nexus-pypi
     url: https://nexus.company.com/repository/pypi-group/
     description: "Nexus PyPI repository group"
     auth:
       method: BASIC
-      username: "${NEXUS_USERNAME}" 
+      username: "${NEXUS_USERNAME}"
       password: "${NEXUS_PASSWORD}"
-      
+
   - name: gemfury
     url: https://pypi.fury.io/company/
     description: "Gemfury private Python repository"

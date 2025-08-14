@@ -9,19 +9,25 @@ import (
 	"strings"
 	"time"
 
-	"proxynd/cache"
 	"proxynd/internal/config"
+)
+
+const (
+	backendFile       = "file"
+	backendFilesystem = "filesystem"
+	backendS3         = "s3"
+	backendRedis      = "redis"
 )
 
 // CacheSystemHealthChecker 캐시 시스템 전반적인 건강성 체커
 type CacheSystemHealthChecker struct {
-	config      *config.RootConfig
-	cacheManager *cache.Manager
+	config        *config.RootConfig
+	cacheManager  minimalCache
 	testKeyPrefix string
 }
 
 // NewCacheSystemHealthChecker 새 캐시 시스템 헬스체커 생성
-func NewCacheSystemHealthChecker(config *config.RootConfig, cacheManager *cache.Manager) *CacheSystemHealthChecker {
+func NewCacheSystemHealthChecker(config *config.RootConfig, cacheManager minimalCache) *CacheSystemHealthChecker {
 	return &CacheSystemHealthChecker{
 		config:        config,
 		cacheManager:  cacheManager,
@@ -103,9 +109,9 @@ func (cshc *CacheSystemHealthChecker) Check(_ context.Context) *CheckResult {
 func (cshc *CacheSystemHealthChecker) checkCacheBackend() map[string]interface{} {
 	start := time.Now()
 	result := map[string]interface{}{
-		"status":   string(StatusHealthy),
-		"backend":  cshc.config.Cache.Backend,
-		"details":  make(map[string]interface{}),
+		"status":  string(StatusHealthy),
+		"backend": cshc.config.Cache.Backend,
+		"details": make(map[string]interface{}),
 	}
 
 	testKey := fmt.Sprintf("%s_backend_test", cshc.testKeyPrefix)
@@ -222,7 +228,7 @@ func (cshc *CacheSystemHealthChecker) checkCachePerformance() map[string]interfa
 
 	if avgSetTime > slowSetThreshold || avgGetTime > slowGetThreshold {
 		result["status"] = string(StatusDegraded)
-		result["message"] = fmt.Sprintf("캐시 성능이 저하되었습니다 (Set: %dms, Get: %dms)", 
+		result["message"] = fmt.Sprintf("캐시 성능이 저하되었습니다 (Set: %dms, Get: %dms)",
 			avgSetTime.Milliseconds(), avgGetTime.Milliseconds())
 	} else {
 		result["message"] = "캐시 성능이 정상입니다"
@@ -240,11 +246,11 @@ func (cshc *CacheSystemHealthChecker) checkCacheCapacity() map[string]interface{
 	}
 
 	switch strings.ToLower(cshc.config.Cache.Backend) {
-	case "file", "filesystem":
+	case backendFile, backendFilesystem:
 		return cshc.checkFileSystemCapacity(result)
-	case "s3":
+	case backendS3:
 		return cshc.checkS3Capacity(result)
-	case "redis":
+	case backendRedis:
 		return cshc.checkRedisCapacity(result)
 	default:
 		result["status"] = string(StatusUnhealthy)
@@ -371,11 +377,11 @@ func (cshc *CacheSystemHealthChecker) checkCacheConsistency() map[string]interfa
 func (cshc *CacheSystemHealthChecker) checkKeyPatternConsistency() map[string]interface{} {
 	consistency := map[string]interface{}{
 		"patterns_checked": 0,
-		"note":            "키 패턴 일관성은 백엔드 스캔 기능이 필요합니다",
+		"note":             "키 패턴 일관성은 백엔드 스캔 기능이 필요합니다",
 	}
 
 	// 파일시스템 백엔드인 경우 디렉토리 구조 확인
-	if strings.ToLower(cshc.config.Cache.Backend) == "file" {
+	if strings.ToLower(cshc.config.Cache.Backend) == backendFile {
 		if cshc.config.Cache.File.Directory != "" {
 			patterns := cshc.analyzeCacheDirectoryPatterns(cshc.config.Cache.File.Directory)
 			consistency["file_patterns"] = patterns
@@ -399,7 +405,7 @@ func (cshc *CacheSystemHealthChecker) analyzeCacheDirectoryPatterns(cacheDir str
 
 		if info.IsDir() {
 			patterns["total_dirs"] = patterns["total_dirs"].(int) + 1
-			
+
 			// 프록시 타입별 디렉토리 카운트
 			relPath, _ := filepath.Rel(cacheDir, path)
 			if relPath != "." && strings.Count(relPath, string(filepath.Separator)) == 0 {
@@ -411,7 +417,6 @@ func (cshc *CacheSystemHealthChecker) analyzeCacheDirectoryPatterns(cacheDir str
 		}
 		return nil
 	})
-
 	if err != nil {
 		patterns["error"] = err.Error()
 	}
@@ -450,14 +455,14 @@ func (cshc *CacheSystemHealthChecker) GetCacheStatistics() map[string]interface{
 
 	// 백엔드별 추가 정보
 	switch strings.ToLower(cshc.config.Cache.Backend) {
-	case "file":
+	case backendFile:
 		stats["directory"] = cshc.config.Cache.File.Directory
 		stats["max_file_size"] = cshc.config.Cache.File.MaxFileSize
-	case "s3":
+	case backendS3:
 		stats["bucket"] = cshc.config.Cache.S3.Bucket
 		stats["region"] = cshc.config.Cache.S3.Region
 		stats["use_ssl"] = cshc.config.Cache.S3.UseSSL
-	case "redis":
+	case backendRedis:
 		stats["address"] = cshc.config.Cache.Redis.Address
 		stats["db"] = cshc.config.Cache.Redis.DB
 		stats["key_prefix"] = cshc.config.Cache.Redis.KeyPrefix

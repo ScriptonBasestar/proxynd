@@ -2,7 +2,6 @@ package health
 
 import (
 	"context"
-	"os"
 	"testing"
 	"time"
 
@@ -26,7 +25,8 @@ func NewMockCacheManager() *MockCacheManager {
 	}
 }
 
-func (m *MockCacheManager) Set(ctx context.Context, key string, value []byte, ttl time.Duration) error {
+// Put 캐시에 데이터 저장 (minimalCache 인터페이스와 호환)
+func (m *MockCacheManager) Put(key string, value []byte, ttl time.Duration) error {
 	if m.setError != nil {
 		return m.setError
 	}
@@ -34,17 +34,19 @@ func (m *MockCacheManager) Set(ctx context.Context, key string, value []byte, tt
 	return nil
 }
 
-func (m *MockCacheManager) Get(ctx context.Context, key string) ([]byte, error) {
+// Get 캐시에서 데이터 조회 (minimalCache 인터페이스와 호환)
+func (m *MockCacheManager) Get(key string) ([]byte, bool) {
 	if m.getError != nil {
-		return nil, m.getError
+		return nil, false
 	}
 	if value, exists := m.data[key]; exists {
-		return value, nil
+		return value, true
 	}
-	return nil, os.ErrNotExist
+	return nil, false
 }
 
-func (m *MockCacheManager) Delete(ctx context.Context, key string) error {
+// Delete 캐시 키 삭제 (minimalCache 인터페이스와 호환)
+func (m *MockCacheManager) Delete(key string) error {
 	if m.deleteError != nil {
 		return m.deleteError
 	}
@@ -52,12 +54,14 @@ func (m *MockCacheManager) Delete(ctx context.Context, key string) error {
 	return nil
 }
 
-func (m *MockCacheManager) Exists(ctx context.Context, key string) (bool, error) {
+// Exists 키 존재 여부 확인 (테스트 헬퍼)
+func (m *MockCacheManager) Exists(key string) bool {
 	_, exists := m.data[key]
-	return exists, nil
+	return exists
 }
 
-func (m *MockCacheManager) Clear(ctx context.Context) error {
+// Clear 모든 데이터 삭제 (테스트 헬퍼)
+func (m *MockCacheManager) Clear() error {
 	m.data = make(map[string][]byte)
 	return nil
 }
@@ -129,7 +133,7 @@ func TestEnhancedHealthService_GetComprehensiveStatus(t *testing.T) {
 	healthConfig.SystemCheckPaths = []string{tempDir}
 
 	service := NewEnhancedHealthService(config, cacheManager, healthConfig)
-	
+
 	// 서비스 시작 (백그라운드)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -189,8 +193,8 @@ func TestEnhancedHealthService_GetFastHealthStatus(t *testing.T) {
 	assert.Greater(t, status.ResponseTime, time.Duration(0))
 	assert.NotNil(t, status.CoreChecks)
 	assert.GreaterOrEqual(t, status.CheckCount, 0)
-	assert.GreaterOrEqual(t, status.HealthRatio, 0.0)
-	assert.LessOrEqual(t, status.HealthRatio, 100.0)
+	assert.True(t, status.HealthRatio >= 0.0, "HealthRatio should be >= 0.0, got: %v", status.HealthRatio)
+	assert.True(t, status.HealthRatio <= 100.0, "HealthRatio should be <= 100.0, got: %v", status.HealthRatio)
 }
 
 func TestEnhancedHealthService_GetProxyUpstreamStatus(t *testing.T) {
@@ -233,7 +237,7 @@ func TestEnhancedHealthService_GetProxyUpstreamStatus(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := service.GetProxyUpstreamStatus(tt.proxyType)
-			
+
 			if tt.expectError {
 				assert.Error(t, err)
 				assert.Nil(t, result)
@@ -286,7 +290,7 @@ func TestEnhancedHealthService_RunHealthCheckFor(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := service.RunHealthCheckFor(tt.checkerName)
-			
+
 			if tt.expectError {
 				assert.Error(t, err)
 				assert.Nil(t, result)
@@ -318,7 +322,7 @@ func TestEnhancedHealthService_GetAvailableCheckers(t *testing.T) {
 
 	// 예상되는 체커들이 있는지 확인
 	expectedCheckers := []string{"proxy_upstreams", "cache_system", "security_system", "system_resources"}
-	
+
 	for _, expected := range expectedCheckers {
 		if checker, exists := checkers[expected]; exists {
 			checkerMap, ok := checker.(map[string]interface{})
@@ -342,12 +346,12 @@ func TestEnhancedHealthService_MaintenanceMode(t *testing.T) {
 	service.EnableMaintMode(reason)
 
 	// 상태 확인
-	status, checks := service.GetStatus()
-	
+	_, checks := service.GetStatus()
+
 	// 유지보수 모드 체커가 등록되었는지 확인
 	maintChecker, exists := checks["maintenance_mode"]
 	require.True(t, exists, "Maintenance mode checker should be registered")
-	
+
 	assert.Equal(t, StatusDegraded, maintChecker.Status)
 	assert.Contains(t, maintChecker.Message, reason)
 	assert.Contains(t, maintChecker.Details, "reason")
@@ -388,7 +392,7 @@ func TestMaintenanceChecker(t *testing.T) {
 			result := checker.Check(context.Background())
 			assert.Equal(t, tt.expectedStatus, result.Status)
 			assert.NotEmpty(t, result.Message)
-			
+
 			if tt.enabled {
 				assert.Contains(t, result.Message, tt.reason)
 				assert.Contains(t, result.Details, "reason")
@@ -428,12 +432,12 @@ func TestEnhancedHealthService_CategorizedHealth(t *testing.T) {
 
 	// 예상되는 카테고리들 확인
 	expectedCategories := []string{"infrastructure", "performance", "security", "connectivity"}
-	
+
 	for _, category := range expectedCategories {
 		if categoryInfo, exists := categoriesMap[category]; exists {
 			categoryMap, ok := categoryInfo.(map[string]interface{})
 			require.True(t, ok)
-			
+
 			assert.Contains(t, categoryMap, "status")
 			assert.Contains(t, categoryMap, "healthy_count")
 			assert.Contains(t, categoryMap, "checks")

@@ -108,15 +108,15 @@ func (p *Prompt) Render(ctx *ContextManager) string {
     if ctx.LastCommandFailed() {
         status = "✗"
     }
-    
+
     server := ctx.GetServerURL()
     if server == "" {
         server = "disconnected"
     }
-    
+
     workDir := ctx.GetWorkingDirectory()
-    
-    return fmt.Sprintf("[%s] %s:%s ProxyND> ", 
+
+    return fmt.Sprintf("[%s] %s:%s ProxyND> ",
         p.colorize(status, p.colors.Primary),
         p.colorize(server, p.colors.Highlight),
         p.colorize(workDir, p.colors.Muted),
@@ -159,7 +159,7 @@ func (ac *AutoCompleter) Complete(ctx *CompletionContext) []Suggestion {
         // 첫 번째 단어: 명령어 완성
         return ac.completeCommands(ctx)
     }
-    
+
     command := ctx.Words[0]
     switch command {
     case "cache":
@@ -179,11 +179,11 @@ func (ac *AutoCompleter) completeCacheCommand(ctx *CompletionContext) []Suggesti
         {Text: "clear", Description: "캐시 삭제", Type: "subcommand"},
         {Text: "size", Description: "캐시 크기 조회", Type: "subcommand"},
     }
-    
+
     if ctx.WordIndex == 1 {
         return subcommands
     }
-    
+
     // 옵션 완성
     if strings.HasPrefix(ctx.Words[ctx.WordIndex], "--") {
         return []Suggestion{
@@ -192,7 +192,7 @@ func (ac *AutoCompleter) completeCacheCommand(ctx *CompletionContext) []Suggesti
             {Text: "--older-than", Description: "시간 기준 필터", Type: "option"},
         }
     }
-    
+
     return nil
 }
 ```
@@ -227,7 +227,7 @@ Available commands:
   test      - 프록시 테스트 명령어
   status    - 서버 상태 조회
   batch     - 배치 작업 관리 (Phase 3)
-  
+
 Built-in commands:
   help      - 도움말 표시
   history   - 명령어 히스토리
@@ -462,14 +462,14 @@ Options:
   --older-than string 시간 기준 (7d, 24h, 30m)
   --size-limit string 크기 기준 (1GB, 500MB)
   --force            확인 없이 강제 삭제
-  
+
 Examples:
   cache clear --type maven --older-than 30d
   cache clear --pattern "*.tmp" --force
   cache clear --size-limit 1GB
 
 # 명령어 입력 중 실시간 힌트
-ProxyND> cache clear --older-than 
+ProxyND> cache clear --older-than
 Hint: 시간 형식 예시 - 7d (7일), 24h (24시간), 30m (30분)
 ```
 
@@ -485,7 +485,7 @@ interactive:
   history_size: 1000
   auto_complete: true
   color_output: true
-  
+
   # 테마 설정
   theme: "default"
   custom_colors:
@@ -495,7 +495,7 @@ interactive:
     error: "\033[31m"
     highlight: "\033[36m"
     muted: "\033[37m"
-  
+
   # 별칭 설정
   aliases:
     ll: "cache list --format table"
@@ -503,28 +503,28 @@ interactive:
     clean: "cache clear --older-than 7d --force"
     backup: "maven-backup create --target /backup/$(date +%Y%m%d)"
     daily: "test parallel --concurrency 5"
-  
+
   # 변수 설정
   variables:
     cleanup_days: 7
     backup_path: "/backup"
     default_concurrency: 3
     server_timeout: "30s"
-  
+
   # 자동완성 설정
   completion:
     fuzzy_matching: true
     max_suggestions: 10
     show_descriptions: true
     cache_completions: true
-  
+
   # 출력 설정
   output:
     page_size: 20
     table_style: "rounded"
     progress_bar_width: 40
     timestamp_format: "15:04:05"
-  
+
   # 플러그인 설정 (Phase 3 연동)
   plugins:
     - name: "git-integration"
@@ -575,22 +575,22 @@ func (s *SessionManager) LoadState(filename string) error {
 ```go
 func TestAutoCompleter(t *testing.T) {
     completer := NewAutoCompleter()
-    
+
     ctx := &CompletionContext{
         Line:      "cache ",
         Words:     []string{"cache", ""},
         WordIndex: 1,
         CursorPos: 6,
     }
-    
+
     suggestions := completer.Complete(ctx)
-    
+
     expected := []string{"list", "clear", "size"}
     actual := make([]string, len(suggestions))
     for i, s := range suggestions {
         actual[i] = s.Text
     }
-    
+
     assert.ElementsMatch(t, expected, actual)
 }
 
@@ -598,10 +598,10 @@ func TestVariableSubstitution(t *testing.T) {
     session := NewSessionManager(nil)
     session.SetVariable("test_type", "maven")
     session.SetVariable("timeout", 60)
-    
+
     result := session.SubstituteVariables("test ${test_type} --timeout ${timeout}s")
     expected := "test maven --timeout 60s"
-    
+
     assert.Equal(t, expected, result)
 }
 ```
@@ -610,17 +610,17 @@ func TestVariableSubstitution(t *testing.T) {
 ```go
 func TestInteractiveSession(t *testing.T) {
     shell := NewInteractiveShell(nil)
-    
+
     // 명령어 실행 테스트
     output, err := shell.ExecuteCommand("cache list --type maven")
     assert.NoError(t, err)
     assert.Contains(t, output, "maven")
-    
+
     // 변수 설정 테스트
     shell.ExecuteCommand("set test_var = hello")
     output, _ = shell.ExecuteCommand("echo ${test_var}")
     assert.Contains(t, output, "hello")
-    
+
     // 별칭 테스트
     shell.ExecuteCommand("alias test_alias = 'status'")
     output, _ = shell.ExecuteCommand("test_alias")
@@ -666,7 +666,7 @@ type CompletionCache struct {
 func (c *CompletionCache) Get(key string) ([]Suggestion, bool) {
     c.mutex.RLock()
     defer c.mutex.RUnlock()
-    
+
     suggestions, exists := c.cache[key]
     return suggestions, exists
 }
@@ -674,9 +674,9 @@ func (c *CompletionCache) Get(key string) ([]Suggestion, bool) {
 func (c *CompletionCache) Set(key string, suggestions []Suggestion) {
     c.mutex.Lock()
     defer c.mutex.Unlock()
-    
+
     c.cache[key] = suggestions
-    
+
     // TTL 기반 정리 (백그라운드에서)
     go c.cleanupAfter(key, c.ttl)
 }

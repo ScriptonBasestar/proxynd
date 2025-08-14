@@ -13,9 +13,9 @@ import (
 	"github.com/joho/godotenv"
 
 	"proxynd/cache"
+	configTypes "proxynd/internal/config"
 	cacheRepo "proxynd/internal/repositories/cache"
 	"proxynd/internal/repositories/config"
-	configTypes "proxynd/internal/config"
 	"proxynd/internal/services/adapters"
 	configService "proxynd/internal/services/config"
 	"proxynd/internal/services/proxy"
@@ -250,7 +250,7 @@ func (app *Application) initializeFiberApp() {
 			logging.F("error", err))
 	}
 	routers.HealthRouter(app.fiberApp)
-	
+
 	// === 강화된 헬스 모니터링 라우터 ===
 	config := app.container.GetConfig()
 	if _, err := app.container.GetCacheRepository(); err == nil {
@@ -263,7 +263,7 @@ func (app *Application) initializeFiberApp() {
 				BasePath:   config.StorageDir,
 			}
 			cacheManager := cache.NewManager(cacheBackend, cacheOptions)
-			
+
 			// 포트를 정수로 변환
 			port := 8080 // 기본값
 			if config.Port != "" {
@@ -271,7 +271,7 @@ func (app *Application) initializeFiberApp() {
 					port = p
 				}
 			}
-			
+
 			// RootConfig 구성 (기본값으로 생성)
 			rootConfig := &configTypes.RootConfig{
 				Server: configTypes.ServerConfig{
@@ -282,7 +282,7 @@ func (app *Application) initializeFiberApp() {
 					TTL: 3600,
 				},
 			}
-			
+
 			enhancedHealthRouter := routers.NewEnhancedHealthRouter(rootConfig, cacheManager)
 			enhancedHealthRouter.RegisterRoutes(app.fiberApp)
 			app.logger.Info("Enhanced health monitoring system initialized")
@@ -294,7 +294,7 @@ func (app *Application) initializeFiberApp() {
 		app.logger.Warn("Enhanced health router initialization failed: cache repository not available",
 			logging.F("error", err))
 	}
-	
+
 	routers.ProxyRouter(app.fiberApp)      // 레거시 호환용
 	routers.ProxyRouterV3(app.fiberApp)    // V3 라우터 (deprecated)
 	routers.RegisterProxyAPI(app.fiberApp) // V3 API (이미 v1)
