@@ -1,0 +1,376 @@
+name: Health Monitoring Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    - cron: '0 */6 * * *'  # Every 6 hours
+
+jobs:
+  health-check-tests:
+    runs-on: ubuntu-latest
+    
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+      
+      - name: Cache Go modules
+        uses: actions/cache@v3
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+      
+      - name: Install dependencies
+        run: |
+          go mod download
+          sudo apt-get update
+          sudo apt-get install -y curl jq
+      
+      - name: Setup test environment
+        run: |
+          make dev-setup
+          mkdir -p logs
+        env:
+          CONFIG_DIR: ./tmp/config
+          STORAGE_DIR: ./tmp/storage
+      
+      - name: Start ProxyND server
+        run: |
+          nohup make dev-run > logs/server.log 2>&1 &
+          echo $! > server.pid
+          sleep 10
+        env:
+          CONFIG_DIR: ./tmp/config
+          STORAGE_DIR: ./tmp/storage
+          SERVER_PORT: 8081
+      
+      - name: Wait for server startup
+        run: |
+          for i in {1..30}; do
+            if curl -f http://localhost:8081/healthz; then
+              echo "Server is ready"
+              break
+            fi
+            echo "Waiting for server startup... ($i/30)"
+            sleep 2
+          done
+      
+      - name: Test basic health endpoints
+        run: |
+          echo "Testing basic health endpoint..."
+          curl -f http://localhost:8081/healthz | jq .
+          
+          echo "Testing detailed health endpoint..."
+          curl -f http://localhost:8081/health/detailed | jq .
+          
+          echo "Testing health status..."
+          curl -f http://localhost:8081/health/status | jq .
+      
+      - name: Test proxy health checks
+        run: |
+          echo "Testing Maven proxy health..."
+          curl -f http://localhost:8081/health/proxy/maven | jq .
+          
+          echo "Testing NPM proxy health..."
+          curl -f http://localhost:8081/health/proxy/npm | jq .
+          
+          echo "Testing Docker proxy health..."
+          curl -f http://localhost:8081/health/proxy/docker | jq .
+      
+      - name: Test cache health
+        run: |
+          echo "Testing cache health..."
+          curl -f http://localhost:8081/health/cache | jq .
+          
+          echo "Testing cache operations..."
+          # Trigger some cache operations
+          curl -s http://localhost:8081/proxy/maven/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.pom > /dev/null
+          
+          # Check cache health after operations
+          curl -f http://localhost:8081/health/cache | jq .
+      
+      - name: Test security health
+        run: |
+          echo "Testing security health..."
+          curl -f http://localhost:8081/health/security | jq .
+      
+      - name: Test system health
+        run: |
+          echo "Testing system health..."
+          curl -f http://localhost:8081/health/system | jq .
+      
+      - name: Test health categorization
+        run: |
+          echo "Testing categorized health..."
+          curl -f http://localhost:8081/health/categories | jq .
+      
+      - name: Test health summary
+        run: |
+          echo "Testing health summary..."
+          curl -f http://localhost:8081/health/summary | jq .
+      
+      - name: Test fast health check
+        run: |
+          echo "Testing fast health check..."
+          time curl -f http://localhost:8081/health/fast | jq .
+      
+      - name: Test health check performance
+        run: |
+          echo "Performance testing health endpoints..."
+          
+          # Test response times
+          for endpoint in healthz health/detailed health/fast; do
+            echo "Testing $endpoint performance..."
+            time curl -s http://localhost:8081/$endpoint > /dev/null
+          done
+      
+      - name: Test health metrics
+        run: |
+          echo "Testing health metrics..."
+          curl -f http://localhost:8081/metrics | grep "proxynd_health"
+          
+          echo "Testing individual health checker metrics..."
+          curl -f http://localhost:8081/metrics | grep -E "(cache_health|proxy_health|system_health)"
+      
+      - name: Test health under load
+        run: |
+          echo "Testing health endpoints under load..."
+          
+          # Start background load
+          for i in {1..10}; do
+            curl -s http://localhost:8081/proxy/maven/org/apache/commons/commons-lang3/3.12.0/commons-lang3-3.12.0.pom > /dev/null &
+            curl -s http://localhost:8081/proxy/npm/express > /dev/null &
+          done
+          
+          # Wait a bit for load
+          sleep 5
+          
+          # Test health during load
+          curl -f http://localhost:8081/health/detailed | jq .
+          curl -f http://localhost:8081/health/performance | jq .
+          
+          # Wait for background jobs to complete
+          wait
+      
+      - name: Test health alerting
+        run: |
+          echo "Testing health alerting endpoints..."
+          curl -f http://localhost:8081/health/alerts | jq .
+      
+      - name: Test circuit breaker status
+        run: |
+          echo "Testing circuit breaker status..."
+          curl -f http://localhost:8081/health/circuit-breakers | jq .
+      
+      - name: Collect server logs
+        if: always()
+        run: |
+          echo "=== Server Logs ==="
+          cat logs/server.log || echo "No server logs found"
+          
+          echo "=== Health Check Logs ==="
+          grep -i health logs/server.log || echo "No health logs found"
+      
+      - name: Stop server
+        if: always()
+        run: |
+          if [ -f server.pid ]; then
+            kill $(cat server.pid) || true
+            rm server.pid
+          fi
+      
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: health-monitoring-logs
+          path: |
+            logs/
+            tmp/storage/
+          retention-days: 7
+
+  health-integration-tests:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+      
+      - name: Run health integration tests
+        run: |
+          go test -v -tags=integration ./health/... -run "TestHealth.*Integration"
+        env:
+          CONFIG_DIR: ./tmp/config
+          STORAGE_DIR: ./tmp/storage
+      
+      - name: Run health benchmark tests
+        run: |
+          go test -bench=BenchmarkHealth -benchmem ./health/...
+      
+      - name: Generate health test coverage
+        run: |
+          go test -coverprofile=health-coverage.out ./health/...
+          go tool cover -html=health-coverage.out -o health-coverage.html
+      
+      - name: Upload coverage
+        uses: actions/upload-artifact@v3
+        with:
+          name: health-coverage
+          path: |
+            health-coverage.out
+            health-coverage.html
+
+  monitoring-stack-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup monitoring stack
+        run: |
+          cd monitoring
+          docker-compose up -d
+          
+          # Wait for services to be ready
+          sleep 30
+      
+      - name: Test Prometheus metrics collection
+        run: |
+          # Check if Prometheus is collecting metrics
+          curl -f http://localhost:9090/api/v1/query?query=up
+          
+          # Check ProxyND metrics
+          curl -f "http://localhost:9090/api/v1/query?query=proxynd_health_status"
+      
+      - name: Test Grafana dashboards
+        run: |
+          # Check if Grafana is accessible
+          curl -f http://localhost:3000/api/health
+          
+          # Test dashboard availability
+          curl -f -u admin:admin http://localhost:3000/api/dashboards/home
+      
+      - name: Test alerting rules
+        run: |
+          # Check alert rules are loaded
+          curl -f http://localhost:9090/api/v1/rules
+          
+          # Check for ProxyND specific alerts
+          curl -f http://localhost:9090/api/v1/rules | jq '.data.groups[] | select(.name == "proxynd-health")'
+      
+      - name: Cleanup monitoring stack
+        if: always()
+        run: |
+          cd monitoring
+          docker-compose down -v
+
+  health-performance-baseline:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+      
+      - name: Setup test environment
+        run: make dev-setup
+      
+      - name: Start server for performance testing
+        run: |
+          make dev-run &
+          sleep 10
+        env:
+          CONFIG_DIR: ./tmp/config
+          STORAGE_DIR: ./tmp/storage
+      
+      - name: Measure health endpoint performance
+        run: |
+          echo "Measuring health endpoint performance..."
+          
+          # Create performance test script
+          cat > health_perf_test.sh << 'EOF'
+          #!/bin/bash
+          
+          ENDPOINTS=(
+            "healthz"
+            "health/fast"
+            "health/detailed"
+            "health/status"
+            "health/summary"
+          )
+          
+          echo "Endpoint,Requests,Duration(s),RPS,AvgTime(ms)"
+          
+          for endpoint in "${ENDPOINTS[@]}"; do
+            echo "Testing $endpoint..."
+            
+            start_time=$(date +%s.%N)
+            
+            # Run 100 requests
+            for i in {1..100}; do
+              curl -s "http://localhost:8081/$endpoint" > /dev/null
+            done
+            
+            end_time=$(date +%s.%N)
+            duration=$(echo "$end_time - $start_time" | bc -l)
+            rps=$(echo "scale=2; 100 / $duration" | bc -l)
+            avg_time=$(echo "scale=2; $duration * 1000 / 100" | bc -l)
+            
+            echo "$endpoint,100,$duration,$rps,$avg_time"
+          done
+          EOF
+          
+          chmod +x health_perf_test.sh
+          ./health_perf_test.sh > health_performance_results.csv
+          
+          echo "Performance Results:"
+          cat health_performance_results.csv
+      
+      - name: Check performance thresholds
+        run: |
+          # Fast health check should be under 50ms
+          fast_time=$(grep "health/fast" health_performance_results.csv | cut -d',' -f5)
+          if (( $(echo "$fast_time > 50" | bc -l) )); then
+            echo "❌ Fast health check too slow: ${fast_time}ms"
+            exit 1
+          else
+            echo "✅ Fast health check performance OK: ${fast_time}ms"
+          fi
+          
+          # Basic health check should be under 100ms
+          basic_time=$(grep "healthz" health_performance_results.csv | cut -d',' -f5)
+          if (( $(echo "$basic_time > 100" | bc -l) )); then
+            echo "❌ Basic health check too slow: ${basic_time}ms"
+            exit 1
+          else
+            echo "✅ Basic health check performance OK: ${basic_time}ms"
+          fi
+      
+      - name: Upload performance results
+        uses: actions/upload-artifact@v3
+        with:
+          name: health-performance-results
+          path: health_performance_results.csv
