@@ -44,13 +44,90 @@
 
 ## Architecture Overview
 
-ProxyND is a high-performance, multi-format package manager proxy server designed with a clean architecture pattern:
+ProxyND is a high-performance, multi-format package manager proxy server designed with **Hexagonal Architecture (Ports and Adapters)** pattern for maximum maintainability and testability:
 
-### Core Architecture
-- **Unified Proxy Handler**: Single handler supporting multiple package managers
-- **Container-based Architecture**: Docker-first design with multi-arch support
-- **Modular Design**: Clean separation of concerns with domain-driven structure
-- **Middleware Pipeline**: Comprehensive security, authentication, and monitoring
+### Hexagonal Architecture Implementation
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    External Systems                         │
+├─────────────────────────────────────────────────────────────┤
+│  Web UI  │  CLI  │  Package Registries  │  Cache  │  Auth  │
+└─────────┬─────────┬───────────────────────┬───────┬─────────┘
+          │         │                       │       │
+          ▼         ▼                       ▼       ▼
+┌─────────────────────────────────────────────────────────────┐
+│                     Adapters Layer                         │
+├─────────────────────────────────────────────────────────────┤
+│  HTTP/Fiber  │  CLI  │  NPM/Maven/APT  │  S3/FS  │  OAuth2 │
+└─────────┬─────────┬───────────────────────┬───────┬─────────┘
+          │         │                       │       │
+          ▼         ▼                       ▼       ▼
+┌─────────────────────────────────────────────────────────────┐
+│                      Ports Layer                           │
+├─────────────────────────────────────────────────────────────┤
+│  HTTPServer  │  PackageManager  │  CacheBackend  │  Auth   │
+└─────────┬─────────┬───────────────────────┬───────┬─────────┘
+          │         │                       │       │
+          ▼         ▼                       ▼       ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    Use Cases Layer                         │
+├─────────────────────────────────────────────────────────────┤
+│  ProxyService  │  CacheStrategy  │  HealthService         │
+└─────────┬─────────┬───────────────────────┬───────────────────┘
+          │         │                       │
+          ▼         ▼                       ▼
+┌─────────────────────────────────────────────────────────────┐
+│                     Domain Layer                           │
+├─────────────────────────────────────────────────────────────┤
+│  APT  │  Maven  │  NPM  │  Docker  │  PyPI  │  YUM  │  APK │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### New Architecture Components
+
+#### Ports Layer (`internal/ports/`)
+- **HTTPServer**: HTTP server abstraction independent of web framework
+- **PackageManager**: Unified interface for all package manager types
+- **CacheBackend**: Multi-tier caching strategy interfaces
+- **AuthService**: Authentication and authorization abstractions
+- **Logger**: Structured logging interface with observability
+
+#### Use Cases Layer (`internal/usecase/`)
+- **ProxyService**: Core proxy business logic (framework-independent)
+- **CacheStrategyService**: Intelligent caching strategies per package type
+- **HealthService**: Comprehensive health checking and monitoring
+
+#### Adapters Layer (`internal/adapters/`)
+- **HTTP/Fiber**: Fiber framework adapter implementing HTTP ports
+- **Package Managers**: Type-specific adapters (NPM, Maven, APT, etc.)
+- **Cache Backends**: Filesystem and S3 adapter implementations
+- **Auth Providers**: OAuth2 provider adapters (GitHub, GitLab, Google)
+
+### Migration Status
+
+#### ✅ Completed
+- Hexagonal architecture scaffolding created
+- Ports interfaces defined (`internal/ports/`)
+- Use case layer skeleton (`internal/usecase/`)
+- Fiber adapter foundation (`internal/adapters/http/fiber/`)
+
+#### 🚧 In Progress  
+- Handler migration from `handlers/` → `internal/usecase/`
+- Middleware migration from `middlewares/` → `internal/adapters/http/fiber/middleware/`
+- Service layer integration
+
+#### 📋 Planned
+- Complete handler migration
+- Dependency injection container setup
+- Legacy code removal
+- Performance optimization
+
+### Core Architecture Principles
+- **Single Responsibility**: Each layer has a clear, focused purpose
+- **Dependency Inversion**: High-level modules don't depend on low-level modules
+- **Interface Segregation**: Clients depend only on interfaces they use
+- **Open/Closed Principle**: Open for extension, closed for modification
 
 ### Supported Package Managers
 - **Maven** (Java/Kotlin/Scala) - Repository proxy and mirroring

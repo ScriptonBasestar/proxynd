@@ -91,13 +91,45 @@ SERVER_PORT=8080
 - Kubernetes/Helm 차트 제공
 - 강력한 CLI 관리 도구 (proxyndctl)
 
+## 🏛️ 아키텍처
+
+ProxyND는 **헥사고널 아키텍처 (Ports and Adapters)** 패턴을 채택하여 유지보수성과 테스트 가능성을 극대화했습니다:
+
+### 계층 구조
+```
+internal/
+├── ports/          # 인바운드/아웃바운드 포트 정의
+│   ├── http.go     # HTTP 서버 인터페이스
+│   ├── pm.go       # 패키지 매니저 인터페이스
+│   ├── cache.go    # 캐시 인터페이스
+│   ├── auth.go     # 인증 인터페이스
+│   └── observability.go # 모니터링/로깅 인터페이스
+├── usecase/        # 비즈니스 로직 (프레임워크 독립적)
+│   ├── proxy_service.go    # 프록시 핵심 로직
+│   ├── cache_strategy.go   # 캐시 전략 관리
+│   └── health.go          # 헬스체크 로직
+└── adapters/       # 외부 시스템 어댑터
+    └── http/fiber/ # Fiber 웹 프레임워크 어댑터
+```
+
+### 설계 원칙
+- **단방향 의존성**: `adapters → ports → usecase → domain`
+- **프레임워크 독립성**: 비즈니스 로직이 웹 프레임워크에 의존하지 않음
+- **테스트 용이성**: 모든 외부 의존성을 인터페이스로 추상화
+- **확장 가능성**: 새로운 패키지 매니저나 캐시 백엔드 쉽게 추가
+
 ## 🛠️ 기술 스택
-- **언어**: Go 1.23+
-- **웹 프레임워크**: Fiber v2
-- **설정**: YAML/TOML
-- **캐시**: 파일시스템/S3
-- **모니터링**: Prometheus, 구조화 로깅
-- **배포**: Docker, Kubernetes, Systemd
+
+상세한 기술 스택 정보는 [TECH_STACK.md](TECH_STACK.md)를 참조하세요.
+
+- **언어**: Go 1.23+ (toolchain 1.24.4)
+- **아키텍처**: Hexagonal Architecture (Ports and Adapters)
+- **웹 프레임워크**: Fiber v2.52.9
+- **설정 관리**: Viper + YAML
+- **캐시 백엔드**: 파일시스템/S3 (멀티티어)
+- **인증**: OAuth2 (GitHub/GitLab/Google) + JWT + MFA
+- **모니터링**: Prometheus + Grafana + 구조화 로깅
+- **배포**: Docker (멀티아키텍처) + Kubernetes/Helm + Terraform
 
 ## 🔧 CLI 관리 도구
 
