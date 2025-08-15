@@ -82,8 +82,8 @@ func BaseRouter() *fiber.App {
 	// Add search API
 	app.Get("/api/search", handlers.SearchHandler)
 
-	// Add metrics router (use default if no config)
-	MetricsRouter(app, nil)
+	// NOTE: MetricsRouter is now handled by SetupRoutes to avoid duplication
+	// MetricsRouter(app, nil) // REMOVED - Called in SetupRoutes instead
 
 	// Add APK signature verification router
 	APKVerificationRouter(app)

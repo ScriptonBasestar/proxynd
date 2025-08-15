@@ -26,8 +26,19 @@ type service struct {
 	apkConfig    *config.ApkProxySettings
 }
 
-// NewService creates a new configuration service
+// NewService creates a new configuration service using the unified configuration approach
 func NewService(ctx context.Context, configDir string) (Service, error) {
+	if configDir == "" {
+		configDir = helpers.GetConfigDir()
+	}
+
+	// Use the new unified service by default
+	return NewUnifiedService(ctx, configDir)
+}
+
+// NewLegacyService creates a new configuration service using the legacy approach
+// This is kept for backward compatibility during migration
+func NewLegacyService(ctx context.Context, configDir string) (Service, error) {
 	if configDir == "" {
 		configDir = helpers.GetConfigDir()
 	}

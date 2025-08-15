@@ -61,30 +61,9 @@ func New(cfg *Config) (*Application, error) {
 
 	logger := logging.GetLogger()
 
-	// Set defaults from environment if not provided
-	if cfg.Port == "" {
-		cfg.Port = os.Getenv("SERVER_PORT")
-		if cfg.Port == "" {
-			return nil, fmt.Errorf("SERVER_PORT not set")
-		}
-	}
-
-	if cfg.StorageDir == "" {
-		cfg.StorageDir = os.Getenv("STORAGE_DIR")
-		if cfg.StorageDir == "" {
-			cfg.StorageDir = "./storage"
-		}
-	}
-
-	if cfg.ConfigDir == "" {
-		cfg.ConfigDir = os.Getenv("CONFIG_DIR")
-		if cfg.ConfigDir == "" {
-			cfg.ConfigDir = "./config"
-		}
-	}
-
-	if cfg.CacheMaxAge == 0 {
-		cfg.CacheMaxAge = 24 * time.Hour
+	// Validate required environment variables and set defaults
+	if err := validateAndSetEnvironmentDefaults(cfg, logger); err != nil {
+		return nil, fmt.Errorf("environment validation failed: %w", err)
 	}
 
 	app := &Application{
@@ -342,4 +321,64 @@ func (app *Application) initializeFiberApp() {
 		logging.F("supported_handlers", []string{"apt", "maven", "npm"}),
 		logging.F("new_architecture_enabled", routeConfig.UseNewArchitecture),
 	)
+}
+
+// validateAndSetEnvironmentDefaults validates required environment variables and sets defaults
+func validateAndSetEnvironmentDefaults(cfg *Config, logger logging.Logger) error {
+	// Environment variables (matching README requirements)
+	envVars := []struct {
+		name        string
+		description string
+		envKey      string
+		cfgField    *string
+		required    bool
+		defaultVal  string
+	}{
+		{"CONFIG_DIR", "Configuration directory path", "CONFIG_DIR", &cfg.ConfigDir, true, ""},
+		{"STORAGE_DIR", "Storage directory path for cache and data", "STORAGE_DIR", &cfg.StorageDir, true, ""},
+		{"SERVER_PORT", "Server port number", "SERVER_PORT", &cfg.Port, false, "8080"},
+	}
+
+	for _, envVar := range envVars {
+		if *envVar.cfgField == "" {
+			value := os.Getenv(envVar.envKey)
+			if value == "" {
+				if envVar.required {
+					return fmt.Errorf("required environment variable %s is not set (%s)", envVar.name, envVar.description)
+				}
+				// Set default value for optional variables
+				if envVar.defaultVal != "" {
+					*envVar.cfgField = envVar.defaultVal
+					logger.Debug("Set config default value",
+						logging.F("field", envVar.name),
+						logging.F("value", envVar.defaultVal))
+				}
+			} else {
+				*envVar.cfgField = value
+				logger.Debug("Set config value from environment",
+					logging.F("field", envVar.name),
+					logging.F("value", value))
+			}
+		}
+	}
+
+	// Validate SERVER_PORT is a valid integer
+	if cfg.Port != "" {
+		if _, err := strconv.Atoi(cfg.Port); err != nil {
+			return fmt.Errorf("SERVER_PORT must be a valid integer, got: %s", cfg.Port)
+		}
+	}
+
+	// Set defaults for other optional fields
+	if cfg.CacheMaxAge == 0 {
+		cfg.CacheMaxAge = 24 * time.Hour
+	}
+
+	logger.Info("Environment variables validated and defaults set",
+		logging.F("port", cfg.Port),
+		logging.F("storage_dir", cfg.StorageDir),
+		logging.F("config_dir", cfg.ConfigDir),
+		logging.F("cache_max_age", cfg.CacheMaxAge))
+
+	return nil
 }

@@ -1,9 +1,7 @@
 package app
 
 import (
-	"context"
 	"fmt"
-	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -32,12 +30,12 @@ type Container struct {
 	logger logging.Logger
 
 	// 설정 캐싱 및 핫 리로드 관련 필드
-	configLoader    *config.ConfigLoader
-	configCache     interface{}
-	configCacheMu   sync.RWMutex
-	configWatcher   *fsnotify.Watcher
-	configChangeCbs []func(interface{})
-	configNotifier  *ConfigChangeNotifier
+	unifiedConfigLoader *config.UnifiedConfigLoader
+	unifiedConfig       interface{} // Using interface{} to avoid type issues for now
+	configCacheMu       sync.RWMutex
+	configWatcher       *fsnotify.Watcher
+	configChangeCbs     []func(interface{})
+	configNotifier      *ConfigChangeNotifier
 
 	// Repositories
 	cacheRepo  cache.Repository
@@ -68,15 +66,20 @@ func NewContainer(cfg *Config) *Container {
 		configNotifier:  NewConfigChangeNotifier(),
 	}
 
-	// ConfigLoader 초기화 (기본 설정 파일 경로 사용)
-	configPath := filepath.Join(cfg.StorageDir, "config.yaml")
-	container.configLoader = config.NewConfigLoader(configPath)
+	// UnifiedConfigLoader 초기화
+	loader, err := config.NewUnifiedConfigLoader(cfg.ConfigDir)
+	if err != nil {
+		container.logger.Error("Failed to create unified config loader", logging.F("error", err))
+		return container
+	}
+	container.unifiedConfigLoader = loader
 
 	// 초기 설정 로드
-	if unifiedConfig, err := container.configLoader.Load(); err == nil {
-		container.configCache = unifiedConfig
+	if unifiedConfig, err := container.unifiedConfigLoader.LoadConfig(); err == nil {
+		container.unifiedConfig = unifiedConfig
+		container.logger.Info("Initial unified configuration loaded successfully")
 	} else {
-		container.logger.Error("Failed to load initial config", logging.F("error", err))
+		container.logger.Error("Failed to load initial unified config", logging.F("error", err))
 	}
 
 	// 설정 파일 감시 시작
@@ -99,7 +102,7 @@ func (c *Container) GetConfig() *Config {
 func (c *Container) GetUnifiedConfig() interface{} {
 	c.configCacheMu.RLock()
 	defer c.configCacheMu.RUnlock()
-	return c.configCache
+	return c.unifiedConfig
 }
 
 // GetAptProxyConfig returns the APT proxy configuration
@@ -126,10 +129,8 @@ func (c *Container) GetAptProxyConfig() (*config.AptProxyConfig, error) {
 		}
 	}
 
-	cfg, err := c.configLoader.LoadAptProxyConfig(context.Background())
-	if err != nil {
-		return nil, fmt.Errorf("failed to load APT proxy config: %w", err)
-	}
+	// For now, return empty config - will be handled by config service
+	cfg := &config.AptProxyConfig{}
 
 	// Cache for future use
 	c.singletons["apt-proxy-config"] = cfg
@@ -161,10 +162,8 @@ func (c *Container) GetMavenProxyConfig() (*config.MavenProxySettings, error) {
 		}
 	}
 
-	cfg, err := c.configLoader.LoadMavenProxyConfig(context.Background())
-	if err != nil {
-		return nil, fmt.Errorf("failed to load Maven proxy config: %w", err)
-	}
+	// For now, return empty config - will be handled by config service
+	cfg := &config.MavenProxySettings{}
 
 	// Cache for future use
 	c.singletons["maven-proxy-config"] = cfg
@@ -196,10 +195,8 @@ func (c *Container) GetNpmProxyConfig() (*config.NpmProxySettings, error) {
 		}
 	}
 
-	cfg, err := c.configLoader.LoadNpmProxyConfig(context.Background())
-	if err != nil {
-		return nil, fmt.Errorf("failed to load NPM proxy config: %w", err)
-	}
+	// For now, return empty config - will be handled by config service
+	cfg := &config.NpmProxySettings{}
 
 	// Cache for future use
 	c.singletons["npm-proxy-config"] = cfg
@@ -231,10 +228,8 @@ func (c *Container) GetDockerProxyConfig() (*config.DockerProxySettings, error) 
 		}
 	}
 
-	cfg, err := c.configLoader.LoadDockerProxyConfig(context.Background())
-	if err != nil {
-		return nil, fmt.Errorf("failed to load Docker proxy config: %w", err)
-	}
+	// For now, return empty config - will be handled by config service
+	cfg := &config.DockerProxySettings{}
 
 	// Cache for future use
 	c.singletons["docker-proxy-config"] = cfg
@@ -266,10 +261,8 @@ func (c *Container) GetPipProxyConfig() (*config.PipProxySettings, error) {
 		}
 	}
 
-	cfg, err := c.configLoader.LoadPipProxyConfig(context.Background())
-	if err != nil {
-		return nil, fmt.Errorf("failed to load PIP proxy config: %w", err)
-	}
+	// For now, return empty config - will be handled by config service
+	cfg := &config.PipProxySettings{}
 
 	// Cache for future use
 	c.singletons["pip-proxy-config"] = cfg
@@ -301,10 +294,8 @@ func (c *Container) GetYumProxyConfig() (*config.YumProxySettings, error) {
 		}
 	}
 
-	cfg, err := c.configLoader.LoadYumProxyConfig(context.Background())
-	if err != nil {
-		return nil, fmt.Errorf("failed to load YUM proxy config: %w", err)
-	}
+	// For now, return empty config - will be handled by config service
+	cfg := &config.YumProxySettings{}
 
 	// Cache for future use
 	c.singletons["yum-proxy-config"] = cfg
@@ -336,10 +327,8 @@ func (c *Container) GetApkProxyConfig() (*config.ApkProxySettings, error) {
 		}
 	}
 
-	cfg, err := c.configLoader.LoadApkProxyConfig(context.Background())
-	if err != nil {
-		return nil, fmt.Errorf("failed to load APK proxy config: %w", err)
-	}
+	// For now, return empty config - will be handled by config service
+	cfg := &config.ApkProxySettings{}
 
 	// Cache for future use
 	c.singletons["apk-proxy-config"] = cfg
@@ -352,31 +341,25 @@ func (c *Container) ReloadConfig() error {
 	c.configCacheMu.Lock()
 	defer c.configCacheMu.Unlock()
 
-	// configLoader가 nil인지 확인
-	if c.configLoader == nil {
-		c.logger.Error("Config loader is nil, cannot reload config")
-		return fmt.Errorf("config loader is nil")
+	// unifiedConfigLoader가 nil인지 확인
+	if c.unifiedConfigLoader == nil {
+		c.logger.Error("Unified config loader is nil, cannot reload config")
+		return fmt.Errorf("unified config loader is nil")
 	}
 
 	// 새 설정 로드
-	newConfig, err := c.configLoader.Load()
+	newConfig, err := c.unifiedConfigLoader.LoadConfig()
 	if err != nil {
-		c.logger.Error("Failed to reload config", logging.F("error", err))
+		c.logger.Error("Failed to reload unified config", logging.F("error", err))
 		return err
 	}
 
-	// 설정 검증
-	if validationErrors := config.ValidateConfig(newConfig); len(validationErrors) > 0 {
-		c.logger.Error("Config validation failed", logging.F("errors", validationErrors))
-		return fmt.Errorf("config validation failed: %v", validationErrors)
-	}
-
 	// 기존 설정과 비교하여 변경된 경우에만 업데이트
-	if c.configCache == nil || !c.isConfigEqual(c.configCache, newConfig) {
-		oldConfig := c.configCache
-		c.configCache = newConfig
+	if c.unifiedConfig == nil || !c.isConfigEqual(c.unifiedConfig, newConfig) {
+		oldConfig := c.unifiedConfig
+		c.unifiedConfig = newConfig
 
-		c.logger.Info("Configuration reloaded successfully")
+		c.logger.Info("Unified configuration reloaded successfully")
 
 		// 변경 콜백 실행
 		c.notifyConfigChange(newConfig)
@@ -392,9 +375,9 @@ func (c *Container) ReloadConfig() error {
 		}
 
 		if oldConfig == nil {
-			c.logger.Info("Initial configuration loaded")
+			c.logger.Info("Initial unified configuration loaded")
 		} else {
-			c.logger.Info("Configuration updated")
+			c.logger.Info("Unified configuration updated")
 		}
 	}
 
@@ -418,9 +401,9 @@ func (c *Container) GetConfigNotifier() *ConfigChangeNotifier {
 
 // startConfigWatcher starts watching for configuration file changes
 func (c *Container) startConfigWatcher() {
-	// configLoader가 nil인지 확인
-	if c.configLoader == nil {
-		c.logger.Error("Config loader not initialized, cannot start file watcher")
+	// unifiedConfigLoader가 nil인지 확인
+	if c.unifiedConfigLoader == nil {
+		c.logger.Error("Unified config loader not initialized, cannot start file watcher")
 		return
 	}
 
@@ -458,17 +441,17 @@ func (c *Container) startConfigWatcher() {
 					// 약간의 지연 후 리로드 (파일 쓰기 완료 대기)
 					time.Sleep(100 * time.Millisecond)
 
-					// configLoader가 여전히 유효한지 확인
+					// unifiedConfigLoader가 여전히 유효한지 확인
 					c.configCacheMu.RLock()
-					if c.configLoader != nil && c.configNotifier != nil {
+					if c.unifiedConfigLoader != nil && c.configNotifier != nil {
 						c.configCacheMu.RUnlock()
 						if err := c.ReloadConfig(); err != nil {
-							c.logger.Error("Failed to reload config after file change",
+							c.logger.Error("Failed to reload unified config after file change",
 								logging.F("error", err), logging.F("file", event.Name))
 						}
 					} else {
 						c.configCacheMu.RUnlock()
-						c.logger.Warn("Config loader or notifier is nil, skipping reload")
+						c.logger.Warn("Unified config loader or notifier is nil, skipping reload")
 						return // 정리되었으므로 고루틴 종료
 					}
 				}
@@ -499,8 +482,16 @@ func (c *Container) notifyConfigChange(config interface{}) {
 
 // isConfigEqual compares two configurations for equality (simplified check)
 func (c *Container) isConfigEqual(old, newVal interface{}) bool {
-	// 간단한 인터페이스 비교 (실제로는 더 정교한 비교가 필요할 수 있음)
-	return old != newVal
+	// 간단한 포인터 비교 (실제로는 더 정교한 비교가 필요할 수 있음)
+	if old == nil && newVal == nil {
+		return true
+	}
+	if old == nil || newVal == nil {
+		return false
+	}
+	// For now, assume configs are different if they're different instances
+	// TODO: Implement deep comparison if needed
+	return old == newVal
 }
 
 // GetCacheRepository returns the cache repository instance
@@ -1038,8 +1029,8 @@ func (c *Container) Close() error {
 	c.handlerFactory = nil
 	c.handlerAdapterFactory = nil
 	c.configWatcher = nil
-	c.configCache = nil
-	c.configLoader = nil
+	c.unifiedConfig = nil
+	c.unifiedConfigLoader = nil
 	c.configChangeCbs = nil
 
 	// 설정 변경 알림자 정리

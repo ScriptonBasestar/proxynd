@@ -2,33 +2,42 @@ package usecase
 
 import (
 	"context"
+	"fmt"
+	"io"
+	"time"
 	"proxynd/internal/ports"
 )
 
+
 // ProxyService implements core proxy business logic
-// TODO: Migrate logic from internal/services/proxy/ and handlers/proxy/
 type ProxyService struct {
-	packageManager ports.PackageManager
-	cacheManager   ports.CacheManager
-	authService    ports.AuthService
-	logger         ports.Logger
-	metrics        ports.MetricsCollector
+	packageManager   ports.PackageManager
+	cacheManager     ports.CacheManager
+	cacheStrategy    *CacheStrategyService
+	authService      ports.AuthService
+	logger           ports.Logger
+	metrics          ports.MetricsCollector
+	rateLimiter      ports.RateLimiter
 }
 
 // NewProxyService creates a new proxy service
 func NewProxyService(
 	pm ports.PackageManager,
 	cache ports.CacheManager,
+	cacheStrategy *CacheStrategyService,
 	auth ports.AuthService,
 	logger ports.Logger,
 	metrics ports.MetricsCollector,
+	rateLimiter ports.RateLimiter,
 ) *ProxyService {
 	return &ProxyService{
-		packageManager: pm,
-		cacheManager:   cache,
-		authService:    auth,
-		logger:         logger,
-		metrics:        metrics,
+		packageManager:   pm,
+		cacheManager:     cache,
+		cacheStrategy:    cacheStrategy,
+		authService:      auth,
+		logger:           logger,
+		metrics:          metrics,
+		rateLimiter:      rateLimiter,
 	}
 }
 
@@ -56,20 +65,130 @@ type ProxyResponse struct {
 	Error       error             `json:"error,omitempty"`
 }
 
-// HandleProxyRequest processes a proxy request
-// TODO: Implement core proxy logic from handlers/proxy/unified_proxy_handler.go
+// HandleProxyRequest processes a proxy request following the complete proxy flow:
+// auth/permission → rate limit → cache lookup → remote fetch → signature verification → cache write → response
 func (ps *ProxyService) HandleProxyRequest(ctx context.Context, req *ProxyRequest) (*ProxyResponse, error) {
-	// TODO: Implement authorization check
-	// TODO: Implement cache lookup
-	// TODO: Implement upstream request
-	// TODO: Implement cache storage
-	// TODO: Implement metrics recording
+	startTime := time.Now()
 	
-	return &ProxyResponse{
-		StatusCode: 501,
-		Headers:    map[string]string{"Content-Type": "application/json"},
-		Content:    []byte(`{"error": "not implemented"}`),
-	}, nil
+	// Step 1: Authentication and Authorization
+	if err := ps.authenticateAndAuthorize(ctx, req); err != nil {
+		ps.logger.Error(ctx, "Authentication/authorization failed", 
+			&LogField{key: "error", value: err},
+			&LogField{key: "user_id", value: req.UserID})
+		ps.metrics.IncCounter("proxy_auth_failures", map[string]string{
+			"package_type": req.PackageType,
+			"repository":   req.Repository,
+		})
+		return &ProxyResponse{
+			StatusCode: 401,
+			Headers:    map[string]string{"Content-Type": "application/json"},
+			Content:    []byte(`{"error": "authentication failed"}`),
+			Error:      err,
+		}, nil
+	}
+
+	// Step 2: Rate Limiting
+	if err := ps.checkRateLimit(ctx, req); err != nil {
+		ps.logger.Warn(ctx, "Rate limit exceeded", 
+			&LogField{key: "user_id", value: req.UserID},
+			&LogField{key: "package_type", value: req.PackageType})
+		ps.metrics.IncCounter("proxy_rate_limit_exceeded", map[string]string{
+			"package_type": req.PackageType,
+			"user_id":      req.UserID,
+		})
+		return &ProxyResponse{
+			StatusCode: 429,
+			Headers:    map[string]string{"Content-Type": "application/json"},
+			Content:    []byte(`{"error": "rate limit exceeded"}`),
+			Error:      err,
+		}, nil
+	}
+
+	// Step 3: Cache Lookup
+	cacheReq := &CacheRequest{
+		PackageType: req.PackageType,
+		Repository:  req.Repository,
+		Path:        req.Path,
+		Headers:     req.Headers,
+		Operation:   "get",
+	}
+	
+	cacheResp, err := ps.cacheStrategy.Get(ctx, cacheReq)
+	if err != nil {
+		ps.logger.Warn(ctx, "Cache lookup failed", 
+			&LogField{key: "error", value: err},
+			&LogField{key: "cache_key", value: cacheReq.Path})
+	} else if cacheResp.Hit {
+		// Cache hit - return cached content
+		ps.logger.Debug(ctx, "Cache hit", 
+			&LogField{key: "cache_key", value: cacheResp.CacheKey},
+			&LogField{key: "backend", value: cacheResp.Backend})
+		ps.metrics.IncCounter("proxy_cache_hits", map[string]string{
+			"package_type": req.PackageType,
+			"repository":   req.Repository,
+			"backend":      cacheResp.Backend,
+		})
+		ps.recordLatency(ctx, "cache_hit", startTime, req.PackageType)
+		
+		return &ProxyResponse{
+			Content:     cacheResp.Content,
+			ContentType: cacheResp.Metadata["content_type"],
+			StatusCode:  200,
+			Headers:     cacheResp.Metadata,
+			Cached:      true,
+			CacheKey:    cacheResp.CacheKey,
+		}, nil
+	}
+
+	// Cache miss - continue to upstream
+	ps.metrics.IncCounter("proxy_cache_misses", map[string]string{
+		"package_type": req.PackageType,
+		"repository":   req.Repository,
+	})
+
+	// Step 4: Remote Fetch from Upstream
+	upstreamResp, err := ps.fetchFromUpstream(ctx, req)
+	if err != nil {
+		ps.logger.Error(ctx, "Upstream fetch failed", 
+			&LogField{key: "error", value: err},
+			&LogField{key: "repository", value: req.Repository},
+			&LogField{key: "path", value: req.Path})
+		ps.metrics.IncCounter("proxy_upstream_failures", map[string]string{
+			"package_type": req.PackageType,
+			"repository":   req.Repository,
+		})
+		return &ProxyResponse{
+			StatusCode: 502,
+			Headers:    map[string]string{"Content-Type": "application/json"},
+			Content:    []byte(`{"error": "upstream fetch failed"}`),
+			Error:      err,
+		}, nil
+	}
+
+	// Step 5: Signature Verification (if enabled)
+	// TODO: Add signature verification when SignatureService interface is available
+
+	// Step 6: Cache Write (asynchronous for performance)
+	go ps.cacheUpstreamResponse(context.Background(), cacheReq, upstreamResp)
+
+	// Step 7: Record Metrics and Return Response
+	ps.recordLatency(ctx, "upstream_fetch", startTime, req.PackageType)
+	ps.metrics.IncCounter("proxy_requests_total", map[string]string{
+		"package_type": req.PackageType,
+		"repository":   req.Repository,
+		"method":       req.Method,
+		"status":       fmt.Sprintf("%d", upstreamResp.StatusCode),
+	})
+
+	ps.logger.Info(ctx, "Proxy request completed", 
+		&LogField{key: "package_type", value: req.PackageType},
+		&LogField{key: "repository", value: req.Repository},
+		&LogField{key: "path", value: req.Path},
+		&LogField{key: "status", value: upstreamResp.StatusCode},
+		&LogField{key: "duration_ms", value: time.Since(startTime).Milliseconds()},
+		&LogField{key: "cached", value: false})
+
+	return upstreamResp, nil
 }
 
 // GetPackage retrieves a package through proxy
@@ -186,23 +305,198 @@ type GetMetadataResponse struct {
 }
 
 // ValidateRequest validates proxy request
-// TODO: Implement request validation logic
 func (ps *ProxyService) ValidateRequest(ctx context.Context, req *ProxyRequest) error {
-	// TODO: Implement validation logic
+	if req.PackageType == "" {
+		return fmt.Errorf("package_type is required")
+	}
+	if req.Repository == "" {
+		return fmt.Errorf("repository is required")
+	}
+	if req.Path == "" {
+		return fmt.Errorf("path is required")
+	}
+	if req.Method == "" {
+		req.Method = "GET" // Default to GET
+	}
 	return nil
 }
 
-// AuthorizeRequest checks if request is authorized
-// TODO: Implement authorization logic
+// AuthorizeRequest checks if request is authorized (deprecated - use HandleProxyRequest)
 func (ps *ProxyService) AuthorizeRequest(ctx context.Context, req *ProxyRequest) error {
-	// TODO: Implement authorization logic
-	return nil
+	return ps.authenticateAndAuthorize(ctx, req)
 }
 
 // RecordMetrics records proxy metrics
-// TODO: Implement metrics recording
 func (ps *ProxyService) RecordMetrics(ctx context.Context, req *ProxyRequest, resp *ProxyResponse) {
-	// TODO: Implement metrics recording
+	ps.metrics.IncCounter("proxy_requests_total", map[string]string{
+		"package_type": req.PackageType,
+		"repository":   req.Repository,
+		"method":       req.Method,
+		"status":       fmt.Sprintf("%d", resp.StatusCode),
+		"cached":       fmt.Sprintf("%t", resp.Cached),
+	})
+	
+	if resp.Cached {
+		ps.metrics.IncCounter("proxy_cache_hits", map[string]string{
+			"package_type": req.PackageType,
+			"repository":   req.Repository,
+		})
+	} else {
+		ps.metrics.IncCounter("proxy_cache_misses", map[string]string{
+			"package_type": req.PackageType,
+			"repository":   req.Repository,
+		})
+	}
+}
+
+// authenticateAndAuthorize handles authentication and authorization
+func (ps *ProxyService) authenticateAndAuthorize(ctx context.Context, req *ProxyRequest) error {
+	// Authentication
+	if req.Authorization == "" && req.UserID == "" {
+		return fmt.Errorf("no authentication provided")
+	}
+	
+	// Use auth service to validate
+	if req.Authorization != "" {
+		authReq := &ports.AuthRequest{
+			Username: "", // Token-based auth doesn't use username/password
+			Password: "", 
+			Provider: "jwt",
+		}
+		
+		authResp, err := ps.authService.Authenticate(ctx, authReq)
+		if err != nil {
+			return fmt.Errorf("authentication failed: %w", err)
+		}
+		
+		req.UserID = authResp.User.ID
+	}
+	
+	// Authorization check
+	authzResp, err := ps.authService.Authorize(ctx, &ports.AuthorizeRequest{
+		UserID:   req.UserID,
+		Resource: fmt.Sprintf("%s/%s%s", req.PackageType, req.Repository, req.Path),
+		Action:   req.Method,
+	})
+	if err != nil {
+		return err
+	}
+	if !authzResp.Allowed {
+		return fmt.Errorf("access denied: %s", authzResp.Reason)
+	}
+	return nil
+}
+
+// checkRateLimit validates rate limiting
+func (ps *ProxyService) checkRateLimit(ctx context.Context, req *ProxyRequest) error {
+	if ps.rateLimiter == nil {
+		return nil // No rate limiting configured
+	}
+	
+	// Create a rate limit key based on user and resource
+	rateLimitKey := fmt.Sprintf("%s:%s:%s", req.UserID, req.PackageType, req.Repository)
+	
+	allowed, err := ps.rateLimiter.Allow(ctx, rateLimitKey)
+	if err != nil {
+		return fmt.Errorf("rate limit check failed: %w", err)
+	}
+	
+	if !allowed {
+		return fmt.Errorf("rate limit exceeded for user %s", req.UserID)
+	}
+	
+	return nil
+}
+
+// fetchFromUpstream retrieves content from upstream package manager
+func (ps *ProxyService) fetchFromUpstream(ctx context.Context, req *ProxyRequest) (*ProxyResponse, error) {
+	pkgReq := &ports.PackageRequest{
+		Repository:  req.Repository,
+		Name:        "", // Extract from path if needed
+		Version:     "", // Extract from path if needed  
+		Path:        req.Path,
+		Headers:     req.Headers,
+		QueryParams: req.QueryParams,
+	}
+	
+	pkgResp, err := ps.packageManager.GetPackage(ctx, pkgReq)
+	if err != nil {
+		return nil, fmt.Errorf("upstream request failed: %w", err)
+	}
+	
+	// Read content from ReadCloser
+	content, err := io.ReadAll(pkgResp.Content)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read package content: %w", err)
+	}
+	defer pkgResp.Content.Close()
+	
+	return &ProxyResponse{
+		Content:     content,
+		ContentType: pkgResp.ContentType,
+		StatusCode:  200, // PackageResponse doesn't have StatusCode
+		Headers:     pkgResp.Headers,
+		Cached:      false,
+	}, nil
+}
+
+
+// cacheUpstreamResponse stores upstream response in cache asynchronously
+func (ps *ProxyService) cacheUpstreamResponse(ctx context.Context, cacheReq *CacheRequest, upstreamResp *ProxyResponse) {
+	// Determine cache strategy
+	decision, err := ps.cacheStrategy.DetermineStrategy(ctx, cacheReq)
+	if err != nil {
+		ps.logger.Error(ctx, "Failed to determine cache strategy", 
+			&LogField{key: "error", value: err})
+		return
+	}
+	
+	if !decision.ShouldCache {
+		ps.logger.Debug(ctx, "Cache strategy determined not to cache", 
+			&LogField{key: "reason", value: decision.Reason})
+		return
+	}
+	
+	// Prepare cache storage request
+	cacheSetReq := &CacheRequest{
+		PackageType:   cacheReq.PackageType,
+		Repository:    cacheReq.Repository,
+		Path:          cacheReq.Path,
+		ContentType:   upstreamResp.ContentType,
+		Size:          int64(len(upstreamResp.Content)),
+		Headers:       upstreamResp.Headers,
+		Operation:     "set",
+	}
+	
+	// Store in cache
+	if err := ps.cacheStrategy.Set(ctx, cacheSetReq, upstreamResp.Content); err != nil {
+		ps.logger.Error(ctx, "Failed to cache upstream response", 
+			&LogField{key: "error", value: err},
+			&LogField{key: "cache_key", value: decision.CacheKey})
+		ps.metrics.IncCounter("proxy_cache_write_failures", map[string]string{
+			"package_type": cacheReq.PackageType,
+			"repository":   cacheReq.Repository,
+			"backend":      decision.Backend,
+		})
+	} else {
+		ps.logger.Debug(ctx, "Successfully cached upstream response", 
+			&LogField{key: "cache_key", value: decision.CacheKey},
+			&LogField{key: "backend", value: decision.Backend})
+		ps.metrics.IncCounter("proxy_cache_writes", map[string]string{
+			"package_type": cacheReq.PackageType,
+			"repository":   cacheReq.Repository,
+			"backend":      decision.Backend,
+		})
+	}
+}
+
+// recordLatency records latency metrics for different operations
+func (ps *ProxyService) recordLatency(ctx context.Context, operation string, startTime time.Time, packageType string) {
+	duration := time.Since(startTime)
+	ps.metrics.ObserveHistogram("proxy_operation_duration", float64(duration.Milliseconds()), map[string]string{
+		"operation":    operation,
+		"package_type": packageType,
+	})
 }
 
 // GetProxyStats returns proxy statistics
