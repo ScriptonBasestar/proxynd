@@ -1,3 +1,6 @@
+//go:build linux
+// +build linux
+
 // Package health provides system resource health checking functionality
 package health
 

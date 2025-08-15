@@ -1,4 +1,4 @@
-package middleware
+package middlewares
 
 import (
 	"time"
@@ -78,39 +78,7 @@ func (h *AuthMiddlewareHandler) Handle(ctx ports.HTTPContext) error {
 	return h.next.Handle(ctx)
 }
 
-// SecurityMiddleware handles security headers and validation
-// TODO: Migrate from middlewares/security.go
-type SecurityMiddleware struct {
-	*BaseMiddleware
-}
-
-// NewSecurityMiddleware creates a new security middleware
-func NewSecurityMiddleware(base *BaseMiddleware) *SecurityMiddleware {
-	return &SecurityMiddleware{
-		BaseMiddleware: base,
-	}
-}
-
-// Process implements security middleware
-func (m *SecurityMiddleware) Process(next ports.HTTPHandler) ports.HTTPHandler {
-	return &SecurityMiddlewareHandler{
-		next:   next,
-		logger: m.logger,
-	}
-}
-
-// SecurityMiddlewareHandler handles security
-type SecurityMiddlewareHandler struct {
-	next   ports.HTTPHandler
-	logger ports.Logger
-}
-
-// Handle processes security checks
-func (h *SecurityMiddlewareHandler) Handle(ctx ports.HTTPContext) error {
-	// TODO: Implement security middleware logic
-	// TODO: Add security headers, validate input, check rate limits
-	return h.next.Handle(ctx)
-}
+// TODO: HEXAGONAL_MIGRATION - SecurityMiddleware implementation moved to security.go
 
 // LoggingMiddleware handles request logging
 // TODO: Migrate from middlewares/access_log.go
@@ -284,48 +252,7 @@ func (h *CORSMiddlewareHandler) Handle(ctx ports.HTTPContext) error {
 	return h.next.Handle(ctx)
 }
 
-// ErrorRecoveryMiddleware handles panic recovery
-// TODO: Migrate from middlewares/error_recovery.go
-type ErrorRecoveryMiddleware struct {
-	*BaseMiddleware
-}
-
-// NewErrorRecoveryMiddleware creates a new error recovery middleware
-func NewErrorRecoveryMiddleware(base *BaseMiddleware) *ErrorRecoveryMiddleware {
-	return &ErrorRecoveryMiddleware{
-		BaseMiddleware: base,
-	}
-}
-
-// Process implements error recovery middleware
-func (m *ErrorRecoveryMiddleware) Process(next ports.HTTPHandler) ports.HTTPHandler {
-	return &ErrorRecoveryMiddlewareHandler{
-		next:   next,
-		logger: m.logger,
-	}
-}
-
-// ErrorRecoveryMiddlewareHandler handles error recovery
-type ErrorRecoveryMiddlewareHandler struct {
-	next   ports.HTTPHandler
-	logger ports.Logger
-}
-
-// Handle processes error recovery
-func (h *ErrorRecoveryMiddlewareHandler) Handle(ctx ports.HTTPContext) error {
-	// TODO: Implement panic recovery logic
-	defer func() {
-		if r := recover(); r != nil {
-			if h.logger != nil {
-				h.logger.Error(ctx.Context(), "Panic recovered",
-					NewField("panic", r),
-				)
-			}
-		}
-	}()
-	
-	return h.next.Handle(ctx)
-}
+// TODO: HEXAGONAL_MIGRATION - ErrorRecoveryMiddleware implementation moved to error_recovery.go
 
 // NewField creates a new log field
 func NewField(key string, value interface{}) ports.Field {

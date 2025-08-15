@@ -48,6 +48,10 @@ type SearchResponse struct {
 
 // SearchHandler handles content search across proxies
 func SearchHandler(c *fiber.Ctx) error {
+	// TODO: HEXAGONAL_MIGRATION - Replace direct search logic with usecase calls
+	// Current implementation has search logic mixed in HTTP handler
+	// Should be migrated to use usecase.SearchService.Search()
+	
 	query := c.Query("q")
 	if query == "" {
 		return c.Status(400).JSON(SearchResponse{

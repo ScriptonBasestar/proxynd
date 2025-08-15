@@ -9,11 +9,17 @@ import (
 	"proxynd/internal/adapters/http"
 	"proxynd/internal/config"
 	"proxynd/internal/factory"
+	"proxynd/internal/ports"
+	"proxynd/internal/usecase"
 	"proxynd/logging"
 )
 
 // 전역 팩토리 인스턴스
 var globalAdapterFactory *factory.HandlerAdapterFactory
+
+// TODO: HEXAGONAL_MIGRATION - Replace with dependency injection
+// Global proxy service for migration - should be injected via DI container
+var globalProxyService *usecase.ProxyService
 
 // InitializeGlobalFactory 전역 팩토리 초기화
 func InitializeGlobalFactory() {
@@ -25,24 +31,67 @@ func InitializeGlobalFactory() {
 
 // UnifiedProxyHandlerWithFactory 팩토리 기반 통합 프록시 핸들러
 func UnifiedProxyHandlerWithFactory(c *fiber.Ctx) error {
+	// TODO: HEXAGONAL_MIGRATION - Replace factory logic with usecase calls
+	// Current implementation uses factory pattern for adapter selection
+	// Should be migrated to use usecase.ProxyService.HandleProxyRequest()
+	
 	proxyType := c.Params("type")
 	path := c.Params("*")
 
 	log.Printf("Access unified proxy (factory) - type: %s, path: %s\n", proxyType, path)
 
-	// 전역 팩토리 확인
+	// TODO: HEXAGONAL_MIGRATION - Remove factory dependency, use injected ProxyService
+	if globalProxyService != nil {
+		// New architecture path
+		req := &usecase.ProxyRequest{
+			PackageType:   proxyType,
+			Path:          path,
+			Method:        c.Method(),
+			Headers:       make(map[string]string),
+			QueryParams:   make(map[string]string),
+			Body:          c.Body(),
+		}
+		
+		// Copy headers
+		c.GetReqHeaders()
+		for key, values := range c.GetReqHeaders() {
+			if len(values) > 0 {
+				req.Headers[key] = values[0]
+			}
+		}
+		
+		// Copy query params
+		c.Context().QueryArgs().VisitAll(func(key, value []byte) {
+			req.QueryParams[string(key)] = string(value)
+		})
+		
+		resp, err := globalProxyService.HandleProxyRequest(c.Context(), req)
+		if err != nil {
+			log.Printf("ProxyService error: %v", err)
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": err.Error(),
+			})
+		}
+		
+		// Set response headers
+		for key, value := range resp.Headers {
+			c.Set(key, value)
+		}
+		
+		return c.Status(resp.StatusCode).Send(resp.Content)
+	}
+
+	// Legacy factory path (fallback during migration)
 	if globalAdapterFactory == nil {
 		InitializeGlobalFactory()
 	}
 
-	// 프록시 타입에 맞는 어댑터 가져오기
 	adapter, err := globalAdapterFactory.GetAdapter(proxyType)
 	if err != nil {
 		log.Printf("Failed to get adapter for type %s: %v", proxyType, err)
 		return c.Status(fiber.StatusBadRequest).SendString("Unknown proxy type: " + proxyType)
 	}
 
-	// 어댑터로 요청 처리
 	return adapter.Handle(c)
 }
 

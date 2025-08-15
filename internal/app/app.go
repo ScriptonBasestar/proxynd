@@ -235,6 +235,37 @@ func (app *Application) initializeFiberApp() {
 			logging.F("error", err))
 	}
 
+	// TODO: HEXAGONAL_MIGRATION - Convert to unified config loading
+	// Load unified config for new routing system
+	var unifiedConfig *configTypes.RootConfig
+	config := app.container.GetConfig()
+	if config != nil {
+		// 포트를 정수로 변환
+		port := 8080 // 기본값
+		if config.Port != "" {
+			if p, err := strconv.Atoi(config.Port); err == nil {
+				port = p
+			}
+		}
+
+		// RootConfig 구성
+		unifiedConfig = &configTypes.RootConfig{
+			Server: configTypes.ServerConfig{
+				Host: "0.0.0.0",
+				Port: port,
+				// TODO: Add Auth config when available
+			},
+			Cache: configTypes.CacheSettings{
+				TTL: 3600,
+			},
+		}
+	}
+
+	// === NEW ARCHITECTURE ROUTING (Hybrid Mode) ===
+	// TODO: HEXAGONAL_MIGRATION - Start with legacy mode, gradually enable new architecture
+	routeConfig := InitializeRouteConfig(unifiedConfig, false) // Start with legacy mode
+	SetupRoutes(app.fiberApp, routeConfig)
+
 	// === Container 기반 프록시 라우터 (우선순위 최고) ===
 	routers.ContainerProxyRouterSetup(app.fiberApp, app.container)
 
@@ -252,7 +283,6 @@ func (app *Application) initializeFiberApp() {
 	routers.HealthRouter(app.fiberApp)
 
 	// === 강화된 헬스 모니터링 라우터 ===
-	config := app.container.GetConfig()
 	if _, err := app.container.GetCacheRepository(); err == nil {
 		// FileSystemBackend을 사용해 cache.Manager 생성
 		cacheBackend, err := cache.NewFileSystemBackend(config.StorageDir)
@@ -264,26 +294,7 @@ func (app *Application) initializeFiberApp() {
 			}
 			cacheManager := cache.NewManager(cacheBackend, cacheOptions)
 
-			// 포트를 정수로 변환
-			port := 8080 // 기본값
-			if config.Port != "" {
-				if p, err := strconv.Atoi(config.Port); err == nil {
-					port = p
-				}
-			}
-
-			// RootConfig 구성 (기본값으로 생성)
-			rootConfig := &configTypes.RootConfig{
-				Server: configTypes.ServerConfig{
-					Host: "0.0.0.0",
-					Port: port,
-				},
-				Cache: configTypes.CacheSettings{
-					TTL: 3600,
-				},
-			}
-
-			enhancedHealthRouter := routers.NewEnhancedHealthRouter(rootConfig, cacheManager)
+			enhancedHealthRouter := routers.NewEnhancedHealthRouter(unifiedConfig, cacheManager)
 			enhancedHealthRouter.RegisterRoutes(app.fiberApp)
 			app.logger.Info("Enhanced health monitoring system initialized")
 		} else {
@@ -323,10 +334,12 @@ func (app *Application) initializeFiberApp() {
 	app.fiberApp.Use(func(c *fiber.Ctx) error {
 		c.Locals("serviceFactory", app.serviceFactory)
 		c.Locals("container", app.container)
+		c.Locals("routeConfig", routeConfig) // TODO: HEXAGONAL_MIGRATION - Add route config for runtime switching
 		return c.Next()
 	})
 
 	app.logger.Info("Container-based proxy router initialized",
 		logging.F("supported_handlers", []string{"apt", "maven", "npm"}),
+		logging.F("new_architecture_enabled", routeConfig.UseNewArchitecture),
 	)
 }

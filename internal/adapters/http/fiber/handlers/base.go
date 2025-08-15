@@ -216,26 +216,9 @@ func (h *AdminHandler) Handle(ctx ports.HTTPContext) error {
 	})
 }
 
-// SearchHandler handles search requests
-// TODO: Migrate from handlers/search_handler.go
-type SearchHandler struct {
-	*BaseHandler
-}
+// TODO: HEXAGONAL_MIGRATION - SearchHandler implementation moved to search_handler.go
 
-// NewSearchHandler creates a new search handler
-func NewSearchHandler(base *BaseHandler) *SearchHandler {
-	return &SearchHandler{
-		BaseHandler: base,
-	}
-}
-
-// Handle implements ports.HTTPHandler for search requests
-func (h *SearchHandler) Handle(ctx ports.HTTPContext) error {
-	// TODO: Implement search handler logic
-	return ctx.Status(501).JSON(map[string]string{
-		"error": "search handler not implemented",
-	})
-}
+// TODO: HEXAGONAL_MIGRATION - SearchHandler Handle method moved to search_handler.go
 
 // ConfigHandler handles configuration requests
 // TODO: Create configuration management endpoints

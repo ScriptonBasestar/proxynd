@@ -359,7 +359,7 @@ func (ehs *EnhancedHealthService) generateMetrics() map[string]interface{} {
 	// 시스템 리소스 메트릭
 	if ehs.systemChecker != nil {
 		metrics["resource_summary"] = ehs.systemChecker.GetResourceSummary()
-		metrics["resource_trends"] = ehs.systemChecker.GetHistoryData()
+		metrics["resource_trends"] = ehs.systemChecker.GetHistoryData(24) // Last 24 hours
 		metrics["resource_predictions"] = ehs.systemChecker.PredictResourceExhaustion()
 	}
 
