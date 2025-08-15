@@ -2,14 +2,37 @@
 # All testing-related targets including unit, integration, benchmarks, and coverage
 
 # ==============================================================================
-# Basic Test Targets
+# 4-Layer Test Architecture (Hexagonal + Clean Architecture)
 # ==============================================================================
 
-.PHONY: test-unit test-race test-services test-coverage test-integration test-integration-bench
+.PHONY: test-unit test-contract test-integration test-e2e test-race test-services test-coverage
 .PHONY: test-all test-runner test-runner-unit test-runner-coverage test-api verify-api
 
-test-unit: ## run unit tests only
-	@echo "Running unit tests..."
+# Layer 1: Unit Tests (Domain/Usecase layers)
+test-unit: ## run unit tests (domain/usecase layers)
+	@echo "🧪 Running unit tests (domain/usecase layers)..."
+	go test -v -short -race ./internal/domain/... ./internal/usecase/...
+
+# Layer 2: Contract Tests (Ports layer)
+test-contract: ## run contract tests (ports layer)
+	@echo "🤝 Running contract tests (ports layer)..."
+	go test -v -tags=contract ./internal/ports/...
+
+# Layer 3: Integration Tests (Adapters layer)
+test-integration: ## run integration tests (adapters layer)
+	@echo "🔗 Running integration tests (adapters layer)..."
+	go test -v -tags=integration ./tests/integration/...
+
+# Layer 4: E2E Tests (Full system)
+test-e2e: ## run end-to-end tests (full system)
+	@echo "🌐 Running E2E tests (full system)..."
+	@docker-compose -f docker-compose.e2e.yml up -d --wait
+	@go test -v -tags=e2e ./tests/e2e/... || (docker-compose -f docker-compose.e2e.yml down && exit 1)
+	@docker-compose -f docker-compose.e2e.yml down
+
+# Legacy test targets (for backward compatibility)
+test-unit-legacy: ## run legacy unit tests
+	@echo "Running legacy unit tests..."
 	go test -v -short ./...
 
 test-race: ## run tests with race detector
@@ -32,8 +55,105 @@ test-integration-bench: ## run integration tests with benchmarks
 	@echo "Running integration tests with benchmarks..."
 	./scripts/run_integration_tests.sh --bench
 
-test-all: test-unit test-race test-services ## run all tests
-	@echo "All tests completed!"
+# Combined test targets
+test-all: test-unit test-contract test-integration ## run all layer tests (excluding E2E)
+	@echo "✅ All layer tests completed!"
+
+test-full: test-unit test-contract test-integration test-e2e ## run complete test suite including E2E
+	@echo "✅ Full test suite completed!"
+
+test-legacy: test-unit-legacy test-race test-services ## run legacy test suite
+	@echo "All legacy tests completed!"
+
+# ==============================================================================
+# Package Manager Specific Tests
+# ==============================================================================
+
+.PHONY: test-npm test-pip test-apt test-docker test-maven test-yum test-apk
+.PHONY: test-package-managers
+
+test-npm: ## run NPM proxy tests
+	@echo "📦 Running NPM proxy tests..."
+	go test -v -tags=integration ./tests/integration/npm_*
+	go test -v ./handlers/proxy/npm_handler_test.go
+	go test -v ./internal/adapters/http/fiber/handlers/proxy/npm_handler_test.go
+
+test-pip: ## run PyPI proxy tests
+	@echo "🐍 Running PyPI proxy tests..."
+	go test -v -tags=integration ./tests/integration/pip_*
+	go test -v ./handlers/proxy/pip_handler_test.go
+	go test -v ./internal/adapters/http/fiber/handlers/proxy/pip_handler_test.go
+
+test-apt: ## run APT proxy tests
+	@echo "📋 Running APT proxy tests..."
+	go test -v -tags=integration ./tests/integration/apt_*
+
+test-docker: ## run Docker registry tests
+	@echo "🐳 Running Docker registry tests..."
+	go test -v -tags=integration ./tests/integration/docker_*
+	go test -v ./handlers/proxy/docker_handler_test.go
+	go test -v ./internal/adapters/http/fiber/handlers/proxy/docker_handler_test.go
+
+test-maven: ## run Maven repository tests
+	@echo "☕ Running Maven repository tests..."
+	go test -v -tags=integration ./tests/integration/maven_*
+
+test-yum: ## run YUM repository tests
+	@echo "🔴 Running YUM repository tests..."
+	go test -v -tags=integration ./tests/integration/yum_*
+
+test-apk: ## run APK repository tests
+	@echo "🏔️ Running APK repository tests..."
+	go test -v -tags=integration ./tests/integration/apk_*
+
+test-package-managers: test-npm test-pip test-apt test-docker test-maven test-yum test-apk ## run all package manager tests
+	@echo "✅ All package manager tests completed!"
+
+# ==============================================================================
+# Coverage by Layer
+# ==============================================================================
+
+.PHONY: test-coverage-unit test-coverage-contract test-coverage-integration test-coverage-all
+.PHONY: test-coverage-package-managers
+
+test-coverage-unit: ## generate unit test coverage
+	@echo "📊 Generating unit test coverage..."
+	@mkdir -p ./reports/coverage
+	go test -coverprofile=./reports/coverage/unit.coverage ./internal/domain/... ./internal/usecase/...
+	go tool cover -html=./reports/coverage/unit.coverage -o ./reports/coverage/unit.html
+	@echo "Unit coverage report: ./reports/coverage/unit.html"
+
+test-coverage-contract: ## generate contract test coverage
+	@echo "📊 Generating contract test coverage..."
+	@mkdir -p ./reports/coverage
+	go test -coverprofile=./reports/coverage/contract.coverage -tags=contract ./internal/ports/...
+	go tool cover -html=./reports/coverage/contract.coverage -o ./reports/coverage/contract.html
+	@echo "Contract coverage report: ./reports/coverage/contract.html"
+
+test-coverage-integration: ## generate integration test coverage
+	@echo "📊 Generating integration test coverage..."
+	@mkdir -p ./reports/coverage
+	go test -coverprofile=./reports/coverage/integration.coverage -tags=integration ./tests/integration/...
+	go tool cover -html=./reports/coverage/integration.coverage -o ./reports/coverage/integration.html
+	@echo "Integration coverage report: ./reports/coverage/integration.html"
+
+test-coverage-package-managers: ## generate package manager test coverage
+	@echo "📊 Generating package manager test coverage..."
+	@mkdir -p ./reports/coverage
+	go test -coverprofile=./reports/coverage/npm.coverage ./handlers/proxy/npm_handler_test.go ./internal/adapters/http/fiber/handlers/proxy/npm_handler_test.go
+	go test -coverprofile=./reports/coverage/pip.coverage ./handlers/proxy/pip_handler_test.go ./internal/adapters/http/fiber/handlers/proxy/pip_handler_test.go
+	go test -coverprofile=./reports/coverage/docker.coverage ./handlers/proxy/docker_handler_test.go ./internal/adapters/http/fiber/handlers/proxy/docker_handler_test.go
+	@echo "Package manager coverage reports generated in ./reports/coverage/"
+
+test-coverage-all: test-coverage-unit test-coverage-contract test-coverage-integration ## generate all coverage reports
+	@echo "📊 Generating combined coverage report..."
+	@mkdir -p ./reports/coverage
+	echo "mode: set" > ./reports/coverage/combined.coverage
+	tail -n +2 ./reports/coverage/unit.coverage >> ./reports/coverage/combined.coverage 2>/dev/null || true
+	tail -n +2 ./reports/coverage/contract.coverage >> ./reports/coverage/combined.coverage 2>/dev/null || true
+	tail -n +2 ./reports/coverage/integration.coverage >> ./reports/coverage/combined.coverage 2>/dev/null || true
+	go tool cover -html=./reports/coverage/combined.coverage -o ./reports/coverage/combined.html
+	@echo "✅ Combined coverage report: ./reports/coverage/combined.html"
 
 # ==============================================================================
 # API Testing Targets
@@ -134,14 +254,71 @@ validate-gitignore: ## validate gitignore patterns
 	@echo "Validating .gitignore patterns..."
 	@./scripts/validate-gitignore.sh
 
-check: lint test-unit ## quick quality check (lint + unit tests)
-	@echo "✅ Quick checks passed!"
+# ==============================================================================
+# Quality Gates & CI Pipeline
+# ==============================================================================
 
-check-all: lint test-all test-coverage ## comprehensive quality check
+.PHONY: check check-all check-quick check-full ci ci-quick ci-full
+
+# Quick quality checks (fail fast)
+check-quick: lint test-unit ## quick quality check (lint + unit tests)
+	@echo "🚀 Quick checks passed!"
+
+# Standard quality checks
+check: check-quick test-contract ## standard quality check (lint + unit + contract tests)
+	@echo "✅ Standard checks passed!"
+
+# Comprehensive quality checks
+check-all: lint test-all test-coverage-all ## comprehensive quality check
 	@echo "✅ All checks passed!"
 
-ci: deps lint test-coverage ## CI pipeline checks
-	@echo "CI checks passed!"
+# Full validation including E2E
+check-full: lint test-full test-coverage-all ## complete validation including E2E
+	@echo "✅ Full validation passed!"
+
+# CI Pipeline Stages
+ci-quick: deps lint test-unit ## CI quick feedback (Stage 1)
+	@echo "🚀 CI quick checks passed!"
+
+ci: deps lint test-unit test-contract test-integration ## CI standard pipeline (Stage 2)
+	@echo "✅ CI standard checks passed!"
+
+ci-full: deps lint test-full test-coverage-all ## CI complete pipeline (Stage 3)
+	@echo "✅ CI full pipeline passed!"
+
+# Legacy CI target (backward compatibility)
+ci-legacy: deps lint test-coverage ## legacy CI pipeline checks
+	@echo "CI legacy checks passed!"
+
+# ==============================================================================
+# Test Environment Setup
+# ==============================================================================
+
+.PHONY: test-setup test-teardown test-clean test-deps
+
+test-setup: ## setup test environment
+	@echo "🔧 Setting up test environment..."
+	@mkdir -p ./tmp/test-cache ./tmp/test-storage ./tmp/test-config
+	@mkdir -p ./reports/coverage ./reports/benchmarks ./reports/test-results
+	@mkdir -p ./tests/fixtures/npm ./tests/fixtures/pip ./tests/fixtures/apt
+	@mkdir -p ./tests/fixtures/docker ./tests/fixtures/maven ./tests/fixtures/yum ./tests/fixtures/apk
+
+test-teardown: ## teardown test environment
+	@echo "🧹 Tearing down test environment..."
+	@docker-compose -f docker-compose.e2e.yml down -v 2>/dev/null || true
+	@rm -rf ./tmp/test-* 2>/dev/null || true
+
+test-clean: test-teardown ## clean test artifacts
+	@echo "🧹 Cleaning test artifacts..."
+	@rm -rf ./reports/coverage/* ./reports/benchmarks/* ./reports/test-results/* 2>/dev/null || true
+	@go clean -testcache
+
+test-deps: ## install test dependencies
+	@echo "📦 Installing test dependencies..."
+	@go install github.com/stretchr/testify@latest
+	@go install go.uber.org/mock/mockgen@latest
+	@go mod download
+	@go mod tidy
 
 # ==============================================================================
 # Test Data and Cleanup

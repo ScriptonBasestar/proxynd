@@ -32,6 +32,12 @@ make docker-run
 - [⚙️ 설정 가이드](docs/03-configuration/README.md)
 - [🔧 개발 가이드](docs/05-development/README.md)
 
+## 🤖 AI 협업 가이드
+- [🛡️ AI 협업 가드레일](CLAUDE.md) - **대규모 리팩토링 필수 가이드**
+- [🤝 기여 가이드](CONTRIBUTING.md) - 일반 기여 및 AI 지원 개발
+- [📋 리팩토링 체크리스트](REFACTORING_CHECKLIST.md) - 단계별 마이그레이션 절차
+- [🧪 테스트 전략](TESTING.md) - 4계층 테스트 아키텍처
+
 ## ⚙️ Configuration
 
 1. Copy example configuration:

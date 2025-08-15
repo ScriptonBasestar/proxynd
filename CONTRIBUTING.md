@@ -164,6 +164,62 @@ make quality
 기여하신 모든 코드는 AGPL-3.0 라이센스가 적용됩니다.
 엔터프라이즈 기능 포함 모든 코드가 공개됩니다.
 
+## 🤖 AI 지원 개발 (AI-Assisted Development)
+
+### AI 협업 가드레일
+ProxyND는 **Hexagonal + Clean Architecture** 기반의 대규모 리팩토링을 진행 중입니다. AI를 활용한 개발 시 반드시 준수해야 할 가이드라인:
+
+📋 **필수 문서**: [CLAUDE.md](./CLAUDE.md) - AI 협업 가드레일
+
+### 핵심 원칙
+```bash
+# 의존성 방향 (엄격 준수)
+adapters → ports → usecase → domain
+
+# 금지된 의존성
+❌ domain → usecase/ports/adapters
+❌ usecase → adapters  
+❌ ports → adapters
+```
+
+### 대규모 리팩토링 프로토콜
+1. **Phase 1**: 파일 이동만 (별도 커밋)
+2. **Phase 2**: import 경로 수정 (별도 커밋)  
+3. **Phase 3**: 아키텍처 개선 (별도 커밋)
+
+### 보호 구역 (수정 금지)
+- `scripts/verify-api-endpoints.sh` (회귀 테스트 기준)
+- `Makefile`, `Makefile.*.mk` (빌드 시스템)
+- `docker-compose.e2e.yml` (E2E 환경)
+- `README.md` 개발 워크플로 섹션
+
+### 검증 체크리스트
+```bash
+make build              # 빌드 성공 필수
+make test-unit          # 단위 테스트 통과
+make verify-api         # API 회귀 검증 (CRITICAL)
+```
+
+## 🏛️ 아키텍처 가이드
+
+### 계층별 책임
+| 계층 | 위치 | 책임 | 의존성 |
+|------|------|------|--------|
+| Domain | `internal/domain/` | 비즈니스 규칙, 엔티티 | 없음 |
+| Usecase | `internal/usecase/` | 애플리케이션 로직 | Domain, Ports |
+| Ports | `internal/ports/` | 인터페이스 정의 | Domain |
+| Adapters | `internal/adapters/` | 외부 구현체 | Ports, Usecase, Domain |
+
+### 파일 이동 가이드
+```bash
+# 현재 → 목표
+handlers/           → internal/adapters/http/fiber/handlers/
+routers/           → internal/adapters/http/fiber/routers/
+middlewares/       → internal/adapters/http/fiber/middleware/
+cache/             → internal/adapters/cache/
+internal/services/ → internal/usecase/
+```
+
 ## 🙋 도움 요청
 
 - Discord: [참여하기](https://discord.gg/proxynd)
