@@ -96,7 +96,7 @@ func NewStandardized(config ...StandardizedMiddlewareConfig) fiber.Handler {
 		} else {
 			principal = "anonymous"
 		}
-		
+
 		ctx = context.WithValue(ctx, StandardizedFields.Principal, principal)
 		c.SetUserContext(ctx)
 		c.Locals(StandardizedFields.Principal, principal)
@@ -125,7 +125,7 @@ func NewStandardized(config ...StandardizedMiddlewareConfig) fiber.Handler {
 				manager = "unknown"
 			}
 		}
-		
+
 		ctx = context.WithValue(ctx, StandardizedFields.Manager, manager)
 		c.SetUserContext(ctx)
 		c.Locals(StandardizedFields.Manager, manager)
@@ -286,7 +286,7 @@ func StandardizedRequestLogger() fiber.Handler {
 
 		// Create context with standardized fields
 		ctx := context.WithValue(c.Context(), StandardizedFields.RequestID, requestID)
-		
+
 		// Extract principal
 		principal := "anonymous"
 		if username := c.Locals("username"); username != nil {
@@ -395,7 +395,7 @@ func StandardizedRecoveryLogger() fiber.Handler {
 // LogStandardizedCacheOperation logs cache operations with standardized fields
 func LogStandardizedCacheOperation(ctx context.Context, operation string, cacheHit bool, manager, key string) {
 	logger := GetLogger().WithContext(ctx)
-	
+
 	fields := []Field{
 		F("operation", operation),
 		F(StandardizedFields.CacheHit, cacheHit),
@@ -409,7 +409,7 @@ func LogStandardizedCacheOperation(ctx context.Context, operation string, cacheH
 // LogStandardizedProxyOperation logs proxy operations with standardized fields
 func LogStandardizedProxyOperation(ctx context.Context, manager, upstream, packageName, version string, bytesIn, bytesOut int64, err error) {
 	logger := GetLogger().WithContext(ctx)
-	
+
 	fields := []Field{
 		F(StandardizedFields.Manager, manager),
 		F(StandardizedFields.Upstream, upstream),
@@ -430,7 +430,7 @@ func LogStandardizedProxyOperation(ctx context.Context, manager, upstream, packa
 // LogStandardizedHTTPRequest logs HTTP requests with standardized fields
 func LogStandardizedHTTPRequest(ctx context.Context, method, path string, statusCode int, latencyMs int64, cacheHit bool) {
 	logger := GetLogger().WithContext(ctx)
-	
+
 	fields := []Field{
 		F(StandardizedFields.Method, method),
 		F(StandardizedFields.Path, path),

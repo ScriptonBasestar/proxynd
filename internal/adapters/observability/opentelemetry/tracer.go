@@ -36,10 +36,10 @@ func NewTraceService(config *TracingConfig) ports.TraceService {
 	if config == nil {
 		config = DefaultTracingConfig()
 	}
-	
+
 	tracer := otel.Tracer(config.ServiceName)
 	propagator := otel.GetTextMapPropagator()
-	
+
 	return &TraceService{
 		tracer:     tracer,
 		propagator: propagator,
@@ -52,7 +52,7 @@ func (t *TraceService) StartSpan(ctx context.Context, operationName string) (por
 	if !t.enabled {
 		return &TraceSpan{span: trace.SpanFromContext(ctx)}, ctx
 	}
-	
+
 	ctx, span := t.tracer.Start(ctx, operationName)
 	return &TraceSpan{span: span}, ctx
 }
@@ -62,7 +62,7 @@ func (t *TraceService) StartChildSpan(ctx context.Context, parent ports.TraceSpa
 	if !t.enabled {
 		return &TraceSpan{span: trace.SpanFromContext(ctx)}, ctx
 	}
-	
+
 	// The context should already contain the parent span
 	ctx, span := t.tracer.Start(ctx, operationName)
 	return &TraceSpan{span: span}, ctx
@@ -73,7 +73,7 @@ func (t *TraceService) InjectHeaders(span ports.TraceSpan, headers map[string]st
 	if !t.enabled {
 		return
 	}
-	
+
 	ctx := trace.ContextWithSpan(context.Background(), span.(*TraceSpan).span)
 	carrier := propagation.MapCarrier(headers)
 	t.propagator.Inject(ctx, carrier)
@@ -84,11 +84,11 @@ func (t *TraceService) ExtractHeaders(headers map[string]string) (ports.TraceCon
 	if !t.enabled {
 		return &TraceContext{}, nil
 	}
-	
+
 	carrier := propagation.MapCarrier(headers)
 	ctx := t.propagator.Extract(context.Background(), carrier)
 	spanContext := trace.SpanContextFromContext(ctx)
-	
+
 	return &TraceContext{
 		spanContext: spanContext,
 		baggage:     make(map[string]string),
@@ -105,7 +105,7 @@ func (s *TraceSpan) SetTag(key string, value interface{}) {
 	if s.span == nil {
 		return
 	}
-	
+
 	attr := convertToAttribute(key, value)
 	s.span.SetAttributes(attr)
 }
@@ -115,7 +115,7 @@ func (s *TraceSpan) SetError(err error) {
 	if s.span == nil {
 		return
 	}
-	
+
 	s.span.SetStatus(codes.Error, err.Error())
 	s.span.RecordError(err)
 }
@@ -125,12 +125,12 @@ func (s *TraceSpan) LogEvent(event string, fields map[string]interface{}) {
 	if s.span == nil {
 		return
 	}
-	
+
 	attrs := make([]attribute.KeyValue, 0, len(fields))
 	for key, value := range fields {
 		attrs = append(attrs, convertToAttribute(key, value))
 	}
-	
+
 	s.span.AddEvent(event, trace.WithAttributes(attrs...))
 }
 
@@ -146,7 +146,7 @@ func (s *TraceSpan) Context() ports.TraceContext {
 	if s.span == nil {
 		return &TraceContext{}
 	}
-	
+
 	return &TraceContext{
 		spanContext: s.span.SpanContext(),
 		baggage:     make(map[string]string),
@@ -213,10 +213,10 @@ func convertToAttribute(key string, value interface{}) attribute.KeyValue {
 
 // TracingConfig defines OpenTelemetry tracing configuration
 type TracingConfig struct {
-	Enabled     bool    `json:"enabled" yaml:"enabled"`
-	ServiceName string  `json:"service_name" yaml:"service_name"`
-	SampleRate  float64 `json:"sample_rate" yaml:"sample_rate"`
-	Endpoint    string  `json:"endpoint" yaml:"endpoint"`
+	Enabled     bool              `json:"enabled" yaml:"enabled"`
+	ServiceName string            `json:"service_name" yaml:"service_name"`
+	SampleRate  float64           `json:"sample_rate" yaml:"sample_rate"`
+	Endpoint    string            `json:"endpoint" yaml:"endpoint"`
 	Headers     map[string]string `json:"headers" yaml:"headers"`
 }
 

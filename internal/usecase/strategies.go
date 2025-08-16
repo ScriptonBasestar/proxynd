@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"time"
+
 	"proxynd/internal/ports"
 )
 
@@ -93,10 +94,10 @@ func (wts *WriteThroughStrategy) GetEvictionPolicy() ports.EvictionPolicy {
 // StaleWhileRevalidateStrategy implements stale-while-revalidate caching
 // Serves stale content while asynchronously updating cache
 type StaleWhileRevalidateStrategy struct {
-	ttl                  time.Duration
-	staleWindow          time.Duration
-	backend              string
-	evictionPolicy       ports.EvictionPolicy
+	ttl            time.Duration
+	staleWindow    time.Duration
+	backend        string
+	evictionPolicy ports.EvictionPolicy
 }
 
 // NewStaleWhileRevalidateStrategy creates a new stale-while-revalidate strategy
@@ -157,12 +158,12 @@ func (lru *LRUEvictionPolicy) ShouldEvict(metadata ports.CacheMetadata, stats po
 	if stats.Size > lru.maxSize {
 		return true
 	}
-	
+
 	// Evict old items that haven't been accessed recently
 	if time.Since(metadata.LastAccessed) > time.Hour*24*7 { // 7 days
 		return true
 	}
-	
+
 	return false
 }
 
@@ -170,16 +171,16 @@ func (lru *LRUEvictionPolicy) ShouldEvict(metadata ports.CacheMetadata, stats po
 func (lru *LRUEvictionPolicy) GetPriority(metadata ports.CacheMetadata) int {
 	// Priority based on last access time and access count
 	daysSinceAccess := int(time.Since(metadata.LastAccessed).Hours() / 24)
-	
+
 	// Higher priority (more likely to evict) for:
 	// - Items accessed long ago
 	// - Items with low access count
 	priority := daysSinceAccess * 10
-	
+
 	if metadata.AccessCount < 5 {
 		priority += 50 // Boost priority for rarely accessed items
 	}
-	
+
 	return priority
 }
 
@@ -205,12 +206,12 @@ func (ttl *TTLEvictionPolicy) ShouldEvict(metadata ports.CacheMetadata, stats po
 // GetPriority returns eviction priority (higher = evict first)
 func (ttl *TTLEvictionPolicy) GetPriority(metadata ports.CacheMetadata) int {
 	expiryTime := metadata.CachedAt.Add(ttl.defaultTTL)
-	
+
 	if time.Now().After(expiryTime) {
 		// Expired items get highest priority
 		return 1000
 	}
-	
+
 	// Priority based on how close to expiry
 	timeToExpiry := time.Until(expiryTime)
 	if timeToExpiry < time.Hour {
@@ -218,6 +219,6 @@ func (ttl *TTLEvictionPolicy) GetPriority(metadata ports.CacheMetadata) int {
 	} else if timeToExpiry < time.Hour*6 {
 		return 50
 	}
-	
+
 	return 10
 }

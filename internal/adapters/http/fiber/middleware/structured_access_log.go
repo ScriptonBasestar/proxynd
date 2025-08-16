@@ -9,6 +9,13 @@ import (
 	"proxynd/logging"
 )
 
+// HTTP method constants
+const (
+	HTTPMethodGET  = "GET"
+	HTTPMethodHEAD = "HEAD"
+	HTTPMethodPOST = "POST"
+)
+
 // StructuredAccessLogConfig 구조화된 액세스 로그 설정
 type StructuredAccessLogConfig struct {
 	// Logger 사용할 로거
@@ -222,7 +229,7 @@ func addVerificationFields(fields []logging.Field, c *fiber.Ctx) []logging.Field
 
 // shouldLogRequestBody 요청 본문을 로깅할지 확인
 func shouldLogRequestBody(cfg StructuredAccessLogConfig, c *fiber.Ctx) bool {
-	return cfg.IncludeRequestBody && c.Method() != "GET" && c.Method() != "HEAD"
+	return cfg.IncludeRequestBody && c.Method() != HTTPMethodGET && c.Method() != HTTPMethodHEAD
 }
 
 // addRequestBody 요청 본문 추가

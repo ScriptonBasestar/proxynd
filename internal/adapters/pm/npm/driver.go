@@ -22,46 +22,46 @@ type Driver struct {
 
 // Config represents NPM driver configuration
 type Config struct {
-	Enabled     bool                         `json:"enabled" yaml:"enabled"`
-	Registries  map[string]*RegistryConfig   `json:"registries" yaml:"registries"`
-	CacheTTL    time.Duration                `json:"cache_ttl" yaml:"cache_ttl"`
-	Timeout     time.Duration                `json:"timeout" yaml:"timeout"`
-	Scopes      map[string]string            `json:"scopes" yaml:"scopes"` // scope -> registry mapping
+	Enabled    bool                       `json:"enabled" yaml:"enabled"`
+	Registries map[string]*RegistryConfig `json:"registries" yaml:"registries"`
+	CacheTTL   time.Duration              `json:"cache_ttl" yaml:"cache_ttl"`
+	Timeout    time.Duration              `json:"timeout" yaml:"timeout"`
+	Scopes     map[string]string          `json:"scopes" yaml:"scopes"` // scope -> registry mapping
 }
 
 // RegistryConfig represents NPM registry configuration
 type RegistryConfig struct {
-	Name     string           `json:"name" yaml:"name"`
-	URL      string           `json:"url" yaml:"url"`
-	Enabled  bool             `json:"enabled" yaml:"enabled"`
-	Auth     *ports.AuthConfig `json:"auth,omitempty" yaml:"auth,omitempty"`
-	Token    string           `json:"token,omitempty" yaml:"token,omitempty"`
-	AlwaysAuth bool           `json:"always_auth" yaml:"always_auth"`
+	Name       string            `json:"name" yaml:"name"`
+	URL        string            `json:"url" yaml:"url"`
+	Enabled    bool              `json:"enabled" yaml:"enabled"`
+	Auth       *ports.AuthConfig `json:"auth,omitempty" yaml:"auth,omitempty"`
+	Token      string            `json:"token,omitempty" yaml:"token,omitempty"`
+	AlwaysAuth bool              `json:"always_auth" yaml:"always_auth"`
 }
 
 // PackageInfo represents NPM package.json structure
 type PackageInfo struct {
-	Name         string            `json:"name"`
-	Version      string            `json:"version"`
-	Description  string            `json:"description"`
-	Keywords     []string          `json:"keywords"`
-	Homepage     string            `json:"homepage"`
-	License      string            `json:"license"`
-	Author       interface{}       `json:"author"` // can be string or object
-	Repository   interface{}       `json:"repository"`
-	Dependencies map[string]string `json:"dependencies"`
-	DevDependencies map[string]string `json:"devDependencies"`
+	Name             string            `json:"name"`
+	Version          string            `json:"version"`
+	Description      string            `json:"description"`
+	Keywords         []string          `json:"keywords"`
+	Homepage         string            `json:"homepage"`
+	License          string            `json:"license"`
+	Author           interface{}       `json:"author"` // can be string or object
+	Repository       interface{}       `json:"repository"`
+	Dependencies     map[string]string `json:"dependencies"`
+	DevDependencies  map[string]string `json:"devDependencies"`
 	PeerDependencies map[string]string `json:"peerDependencies"`
-	Dist         *DistInfo         `json:"dist"`
+	Dist             *DistInfo         `json:"dist"`
 }
 
 // DistInfo represents NPM distribution info
 type DistInfo struct {
-	Tarball   string `json:"tarball"`
-	Shasum    string `json:"shasum"`
-	Integrity string `json:"integrity"`
-	FileCount int    `json:"fileCount"`
-	UnpackedSize int64 `json:"unpackedSize"`
+	Tarball      string `json:"tarball"`
+	Shasum       string `json:"shasum"`
+	Integrity    string `json:"integrity"`
+	FileCount    int    `json:"fileCount"`
+	UnpackedSize int64  `json:"unpackedSize"`
 }
 
 // NewDriver creates a new NPM driver
@@ -80,7 +80,7 @@ func NewDriver(
 			Scopes:   make(map[string]string),
 		}
 	}
-	
+
 	return &Driver{
 		config:      config,
 		httpClient:  httpClient,
@@ -102,21 +102,21 @@ func (d *Driver) IsSupported(path string) bool {
 	// /package-name (regular packages)
 	// /package-name/-/package-name-version.tgz (tarball)
 	// /package-name/version (specific version)
-	
+
 	patterns := []string{
-		`^/@[^/]+/[^/]+$`,                          // scoped package
-		`^/[^@][^/]*$`,                             // regular package
-		`^/[^/]+/-/[^/]+-[^/]+\.tgz$`,             // tarball
-		`^/@[^/]+/[^/]+/-/[^/]+-[^/]+\.tgz$`,      // scoped tarball
-		`^/[^/]+/[^/]+$`,                          // package/version
+		`^/@[^/]+/[^/]+$`,                    // scoped package
+		`^/[^@][^/]*$`,                       // regular package
+		`^/[^/]+/-/[^/]+-[^/]+\.tgz$`,        // tarball
+		`^/@[^/]+/[^/]+/-/[^/]+-[^/]+\.tgz$`, // scoped tarball
+		`^/[^/]+/[^/]+$`,                     // package/version
 	}
-	
+
 	for _, pattern := range patterns {
 		if matched, _ := regexp.MatchString(pattern, path); matched {
 			return true
 		}
 	}
-	
+
 	return false
 }
 
@@ -125,36 +125,36 @@ func (d *Driver) NormalizePath(path string) (string, error) {
 	if d.normalizer != nil {
 		return d.normalizer.NormalizePath(d.Type(), path)
 	}
-	
+
 	// Basic normalization
 	normalized := strings.TrimSpace(path)
 	if !strings.HasPrefix(normalized, "/") {
 		normalized = "/" + normalized
 	}
-	
+
 	// Handle double encoding of scoped packages
 	normalized = strings.ReplaceAll(normalized, "%40", "@")
 	normalized = strings.ReplaceAll(normalized, "%2F", "/")
-	
+
 	return normalized, nil
 }
 
 // BuildUpstreamURL builds upstream URL for NPM request
 func (d *Driver) BuildUpstreamURL(req *ports.DriverRequest) (string, error) {
 	registry := d.getRegistryForPath(req.Path)
-	
+
 	registryConfig, exists := d.config.Registries[registry]
 	if !exists {
 		return "", fmt.Errorf("registry '%s' not configured", registry)
 	}
-	
+
 	if !registryConfig.Enabled {
 		return "", fmt.Errorf("registry '%s' is disabled", registry)
 	}
-	
+
 	baseURL := strings.TrimRight(registryConfig.URL, "/")
 	cleanPath := strings.TrimLeft(req.Path, "/")
-	
+
 	return fmt.Sprintf("%s/%s", baseURL, cleanPath), nil
 }
 
@@ -164,17 +164,17 @@ func (d *Driver) FetchPackage(ctx context.Context, req *ports.DriverRequest) (*p
 	if err != nil {
 		return nil, d.mapError(err)
 	}
-	
+
 	// Prepare headers
 	headers := make(map[string]string)
 	for k, v := range req.Headers {
 		headers[k] = v
 	}
-	
+
 	// Add NPM-specific headers
 	headers["User-Agent"] = "ProxyND/1.0 NPM-Proxy"
 	headers["Accept"] = "application/json"
-	
+
 	// Add authentication if configured
 	registry := d.getRegistryForPath(req.Path)
 	if registryConfig, exists := d.config.Registries[registry]; exists {
@@ -184,13 +184,13 @@ func (d *Driver) FetchPackage(ctx context.Context, req *ports.DriverRequest) (*p
 			// TODO: Handle basic auth
 		}
 	}
-	
+
 	// Fetch from upstream
 	httpResp, err := d.httpClient.Get(ctx, upstreamURL, headers)
 	if err != nil {
 		return nil, d.mapError(err)
 	}
-	
+
 	// Convert to driver response
 	response := &ports.DriverResponse{
 		Content:      httpResp.Body,
@@ -200,7 +200,7 @@ func (d *Driver) FetchPackage(ctx context.Context, req *ports.DriverRequest) (*p
 		StatusCode:   httpResp.StatusCode,
 		LastModified: time.Now(), // TODO: Parse from headers
 	}
-	
+
 	return response, nil
 }
 
@@ -210,7 +210,7 @@ func (d *Driver) ParseMetadata(content []byte) (*ports.PackageMetadata, error) {
 	if err := json.Unmarshal(content, &packageInfo); err != nil {
 		return nil, fmt.Errorf("failed to parse package.json: %w", err)
 	}
-	
+
 	// Extract author string
 	var author string
 	switch a := packageInfo.Author.(type) {
@@ -221,13 +221,13 @@ func (d *Driver) ParseMetadata(content []byte) (*ports.PackageMetadata, error) {
 			author = name
 		}
 	}
-	
+
 	// Extract dependencies
 	var dependencies []string
 	for name, version := range packageInfo.Dependencies {
 		dependencies = append(dependencies, fmt.Sprintf("%s@%s", name, version))
 	}
-	
+
 	return &ports.PackageMetadata{
 		Name:         packageInfo.Name,
 		Version:      packageInfo.Version,
@@ -247,7 +247,7 @@ func (d *Driver) ValidateSignature(content []byte, signature []byte) error {
 	if d.verifier != nil {
 		return d.verifier.VerifySignature(d.Type(), content, signature)
 	}
-	
+
 	// TODO: Implement NPM-specific signature validation
 	// NPM uses SHA1, SHA512, and integrity hashes
 	return nil
@@ -266,7 +266,7 @@ func (d *Driver) ShouldCache(resp *ports.DriverResponse) bool {
 	if resp.StatusCode >= 400 {
 		return false
 	}
-	
+
 	// Cache package metadata and tarballs
 	return true
 }
@@ -277,7 +277,7 @@ func (d *Driver) GetCacheTTL(resp *ports.DriverResponse) time.Duration {
 	if strings.Contains(resp.ContentType, "application/octet-stream") {
 		return 24 * time.Hour
 	}
-	
+
 	// Package metadata expires faster
 	return d.config.CacheTTL
 }
@@ -294,22 +294,22 @@ func (d *Driver) ValidateConfig() error {
 	if d.config == nil {
 		return fmt.Errorf("npm config is nil")
 	}
-	
+
 	if !d.config.Enabled {
 		return fmt.Errorf("npm driver is disabled")
 	}
-	
+
 	if len(d.config.Registries) == 0 {
 		return fmt.Errorf("no npm registries configured")
 	}
-	
+
 	// Validate each registry
 	for name, registry := range d.config.Registries {
 		if registry.URL == "" {
 			return fmt.Errorf("registry '%s' has empty URL", name)
 		}
 	}
-	
+
 	return nil
 }
 
@@ -325,7 +325,7 @@ func (d *Driver) getRegistryForPath(path string) string {
 			}
 		}
 	}
-	
+
 	// Default registry
 	return "npmjs"
 }
@@ -343,7 +343,7 @@ func getContentType(path string) string {
 	if strings.HasSuffix(path, ".tgz") || strings.HasSuffix(path, ".tar.gz") {
 		return "application/octet-stream"
 	}
-	
+
 	// Package metadata
 	return "application/json"
 }

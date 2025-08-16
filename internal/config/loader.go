@@ -79,7 +79,7 @@ func (loader *UnifiedConfigLoader) validateRequiredEnvVars() error {
 			}
 			// Set default value for optional variables
 			if envVar.defaultVal != "" {
-				os.Setenv(envVar.name, envVar.defaultVal)
+				_ = os.Setenv(envVar.name, envVar.defaultVal) // Error ignored for default value setting
 				value = envVar.defaultVal
 			}
 		}
@@ -99,7 +99,7 @@ func (loader *UnifiedConfigLoader) validateRequiredEnvVars() error {
 				if err != nil {
 					return fmt.Errorf("failed to resolve absolute path for %s: %w", envVar.name, err)
 				}
-				os.Setenv(envVar.name, absPath)
+				_ = os.Setenv(envVar.name, absPath) // Error ignored for path setting
 			}
 		}
 
@@ -146,23 +146,23 @@ func (loader *UnifiedConfigLoader) loadConfigFile() error {
 
 	// Set up environment variable bindings
 	v.AutomaticEnv()
-	
+
 	// Bind specific environment variables
 	envBindings := map[string]string{
-		"server.port":           "SERVER_PORT",
-		"cache.file.directory":  "STORAGE_DIR",
-		"cache.redis.address":   "REDIS_ADDRESS",
-		"cache.redis.password":  "REDIS_PASSWORD",
-		"cache.s3.access_key_id": "AWS_ACCESS_KEY_ID",
+		"server.port":                "SERVER_PORT",
+		"cache.file.directory":       "STORAGE_DIR",
+		"cache.redis.address":        "REDIS_ADDRESS",
+		"cache.redis.password":       "REDIS_PASSWORD",
+		"cache.s3.access_key_id":     "AWS_ACCESS_KEY_ID",
 		"cache.s3.secret_access_key": "AWS_SECRET_ACCESS_KEY",
-		"cache.s3.region":       "AWS_REGION",
-		"cache.s3.bucket":       "S3_BUCKET",
-		"logging.level":         "LOG_LEVEL",
-		"logging.format":        "LOG_FORMAT",
+		"cache.s3.region":            "AWS_REGION",
+		"cache.s3.bucket":            "S3_BUCKET",
+		"logging.level":              "LOG_LEVEL",
+		"logging.format":             "LOG_FORMAT",
 	}
 
 	for configKey, envKey := range envBindings {
-		v.BindEnv(configKey, envKey)
+		_ = v.BindEnv(configKey, envKey) // Error ignored for env binding
 	}
 
 	// Try to read the config file
@@ -282,7 +282,7 @@ func (loader *UnifiedConfigLoader) validateConfig() error {
 	// Validate cache directory exists or can be created
 	cacheDir := config.Cache.File.Directory
 	if cacheDir != "" {
-		if err := os.MkdirAll(cacheDir, 0755); err != nil {
+		if err := os.MkdirAll(cacheDir, 0o755); err != nil {
 			return fmt.Errorf("failed to create cache directory %s: %w", cacheDir, err)
 		}
 	}

@@ -16,7 +16,7 @@ type SearchResult = usecase.SearchResult
 // GroupedSearchResult represents grouped search results for Maven
 type GroupedSearchResult = usecase.GroupedSearchResult
 
-// SearchResultMirror represents a mirror where the artifact is available  
+// SearchResultMirror represents a mirror where the artifact is available
 type SearchResultMirror = usecase.SearchResultMirror
 
 // SearchResponse represents the API response
@@ -50,7 +50,7 @@ func SearchHandler(c *fiber.Ctx) error {
 		if err.Error() == "empty search query" {
 			return c.Status(400).JSON(response)
 		}
-		
+
 		// TODO: HEXAGONAL_MIGRATION - Add proper error logging via injected logger
 		return c.Status(500).JSON(&usecase.SearchResponse{
 			Error: "검색 중 오류가 발생했습니다",

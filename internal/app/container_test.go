@@ -280,7 +280,7 @@ server:
 	assert.NoError(t, err)
 	// 정리가 제대로 되었는지 확인
 	assert.Nil(t, container.configWatcher)
-	assert.Nil(t, container.configCache)
-	assert.Nil(t, container.configLoader)
+	assert.Nil(t, container.unifiedConfig) // Use correct field name
+	assert.Nil(t, container.unifiedConfigLoader) // Use correct field name
 	assert.Nil(t, container.configChangeCbs)
 }

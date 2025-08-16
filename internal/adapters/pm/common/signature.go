@@ -13,6 +13,17 @@ import (
 	"proxynd/internal/ports"
 )
 
+// Package manager type constants
+const (
+	PMTypeMaven    = "maven"
+	PMTypeNpm      = "npm"
+	PMTypeApt      = "apt"
+	PMTypePypi     = "pypi"
+	PMTypeYum      = "yum"
+	PMTypeApk      = "apk"
+	PMTypeRegistry = "registry"
+)
+
 // SignatureVerifier implements ports.SignatureVerifier for all package managers
 type SignatureVerifier struct{}
 
@@ -24,19 +35,19 @@ func NewSignatureVerifier() ports.SignatureVerifier {
 // VerifySignature verifies package signature
 func (v *SignatureVerifier) VerifySignature(pmType string, content []byte, signature []byte) error {
 	switch pmType {
-	case "maven":
+	case PMTypeMaven:
 		return v.verifyMavenSignature(content, signature)
-	case "npm":
+	case PMTypeNpm:
 		return v.verifyNpmSignature(content, signature)
-	case "apt":
+	case PMTypeApt:
 		return v.verifyAptSignature(content, signature)
-	case "pypi":
+	case PMTypePypi:
 		return v.verifyPypiSignature(content, signature)
-	case "yum":
+	case PMTypeYum:
 		return v.verifyYumSignature(content, signature)
-	case "apk":
+	case PMTypeApk:
 		return v.verifyApkSignature(content, signature)
-	case "registry":
+	case PMTypeRegistry:
 		return v.verifyRegistrySignature(content, signature)
 	default:
 		return v.verifyGenericSignature(content, signature)
@@ -46,19 +57,19 @@ func (v *SignatureVerifier) VerifySignature(pmType string, content []byte, signa
 // GenerateSignature generates signature for content
 func (v *SignatureVerifier) GenerateSignature(pmType string, content []byte) ([]byte, error) {
 	switch pmType {
-	case "maven":
+	case PMTypeMaven:
 		return v.generateMavenSignature(content)
-	case "npm":
+	case PMTypeNpm:
 		return v.generateNpmSignature(content)
-	case "apt":
+	case PMTypeApt:
 		return v.generateAptSignature(content)
-	case "pypi":
+	case PMTypePypi:
 		return v.generatePypiSignature(content)
-	case "yum":
+	case PMTypeYum:
 		return v.generateYumSignature(content)
-	case "apk":
+	case PMTypeApk:
 		return v.generateApkSignature(content)
-	case "registry":
+	case PMTypeRegistry:
 		return v.generateRegistrySignature(content)
 	default:
 		return v.generateGenericSignature(content)
@@ -68,29 +79,29 @@ func (v *SignatureVerifier) GenerateSignature(pmType string, content []byte) ([]
 // SupportedSignatureTypes returns supported signature types
 func (v *SignatureVerifier) SupportedSignatureTypes(pmType string) []string {
 	switch pmType {
-	case "maven":
+	case PMTypeMaven:
 		return []string{"md5", "sha1", "sha256", "sha512", "asc"} // Maven checksums and PGP
-	case "npm":
-		return []string{"sha1", "sha512", "integrity"}           // NPM integrity hashes
-	case "apt":
-		return []string{"gpg", "sha256"}                         // APT GPG signatures
-	case "pypi":
-		return []string{"md5", "sha256", "gpg"}                  // PyPI hashes and GPG
-	case "yum":
-		return []string{"gpg", "sha256"}                         // YUM GPG signatures
-	case "apk":
-		return []string{"rsa"}                                   // APK RSA signatures
-	case "registry":
-		return []string{"sha256", "notary"}                      // Docker content trust
+	case PMTypeNpm:
+		return []string{"sha1", "sha512", "integrity"} // NPM integrity hashes
+	case PMTypeApt:
+		return []string{"gpg", "sha256"} // APT GPG signatures
+	case PMTypePypi:
+		return []string{"md5", "sha256", "gpg"} // PyPI hashes and GPG
+	case PMTypeYum:
+		return []string{"gpg", "sha256"} // YUM GPG signatures
+	case PMTypeApk:
+		return []string{"rsa"} // APK RSA signatures
+	case PMTypeRegistry:
+		return []string{"sha256", "notary"} // Docker content trust
 	default:
-		return []string{"sha256"}                                // Default hash
+		return []string{"sha256"} // Default hash
 	}
 }
 
 // Maven signature verification
 func (v *SignatureVerifier) verifyMavenSignature(content []byte, signature []byte) error {
 	signatureStr := strings.TrimSpace(string(signature))
-	
+
 	// Try different hash algorithms based on signature length
 	switch len(signatureStr) {
 	case 32: // MD5
@@ -118,7 +129,7 @@ func (v *SignatureVerifier) generateMavenSignature(content []byte) ([]byte, erro
 // NPM signature verification
 func (v *SignatureVerifier) verifyNpmSignature(content []byte, signature []byte) error {
 	signatureStr := strings.TrimSpace(string(signature))
-	
+
 	// NPM integrity format: "sha512-base64hash" or "sha1-hexhash"
 	if strings.HasPrefix(signatureStr, "sha512-") {
 		// TODO: Implement base64 SHA512 verification
@@ -157,7 +168,7 @@ func (v *SignatureVerifier) generateAptSignature(content []byte) ([]byte, error)
 // PyPI signature verification
 func (v *SignatureVerifier) verifyPypiSignature(content []byte, signature []byte) error {
 	signatureStr := strings.TrimSpace(string(signature))
-	
+
 	switch len(signatureStr) {
 	case 32: // MD5
 		return v.verifyHashSignature(content, signatureStr, crypto.MD5)
@@ -224,7 +235,7 @@ func (v *SignatureVerifier) generateRegistrySignature(content []byte) ([]byte, e
 // Generic signature verification
 func (v *SignatureVerifier) verifyGenericSignature(content []byte, signature []byte) error {
 	signatureStr := strings.TrimSpace(string(signature))
-	
+
 	// Try to detect hash type by length
 	switch len(signatureStr) {
 	case 32:
@@ -282,7 +293,7 @@ func (v *SignatureVerifier) verifyHashSignature(content []byte, expectedHash str
 	default:
 		return fmt.Errorf("unsupported hash type: %v", hashType)
 	}
-	
+
 	return nil
 }
 

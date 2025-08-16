@@ -189,6 +189,6 @@ func (r *RedisClient) GetInfo(ctx context.Context) (map[string]string, error) {
 	// Basic parsing - for more complex parsing, consider using a library
 	// This is simplified for the current use case
 	infoMap["raw"] = info
-	
+
 	return infoMap, nil
 }

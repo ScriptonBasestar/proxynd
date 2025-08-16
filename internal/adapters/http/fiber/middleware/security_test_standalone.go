@@ -206,7 +206,7 @@ func TestContentTypeValidationStandalone(t *testing.T) {
 	allowedTypes := []string{"application/json", "application/xml", "text/plain"}
 
 	app.Use(func(c *fiber.Ctx) error {
-		if c.Method() == "POST" && len(c.Body()) > 0 {
+		if c.Method() == HTTPMethodPOST && len(c.Body()) > 0 {
 			contentType := c.Get("Content-Type")
 
 			isValid := false

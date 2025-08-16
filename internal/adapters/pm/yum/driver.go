@@ -30,14 +30,14 @@ type Config struct {
 
 // RepositoryConfig represents YUM repository configuration
 type RepositoryConfig struct {
-	Name        string           `json:"name" yaml:"name"`
-	BaseURL     string           `json:"baseurl" yaml:"baseurl"`
-	MirrorList  string           `json:"mirrorlist" yaml:"mirrorlist"`
-	Enabled     bool             `json:"enabled" yaml:"enabled"`
-	GPGCheck    bool             `json:"gpgcheck" yaml:"gpgcheck"`
-	GPGKey      string           `json:"gpgkey" yaml:"gpgkey"`
-	Auth        *ports.AuthConfig `json:"auth,omitempty" yaml:"auth,omitempty"`
-	Priority    int              `json:"priority" yaml:"priority"`
+	Name       string            `json:"name" yaml:"name"`
+	BaseURL    string            `json:"baseurl" yaml:"baseurl"`
+	MirrorList string            `json:"mirrorlist" yaml:"mirrorlist"`
+	Enabled    bool              `json:"enabled" yaml:"enabled"`
+	GPGCheck   bool              `json:"gpgcheck" yaml:"gpgcheck"`
+	GPGKey     string            `json:"gpgkey" yaml:"gpgkey"`
+	Auth       *ports.AuthConfig `json:"auth,omitempty" yaml:"auth,omitempty"`
+	Priority   int               `json:"priority" yaml:"priority"`
 }
 
 // NewDriver creates a new YUM driver
@@ -55,7 +55,7 @@ func NewDriver(
 			Timeout:  30 * time.Second,
 		}
 	}
-	
+
 	return &Driver{
 		config:      config,
 		httpClient:  httpClient,
@@ -76,22 +76,22 @@ func (d *Driver) IsSupported(path string) bool {
 	// /repodata/repomd.xml
 	// /repodata/primary.xml.gz
 	// /Packages/package-1.0-1.el7.x86_64.rpm
-	
+
 	patterns := []string{
-		`^/repodata/.*\.xml(\.gz|\.bz2|\.xz)?$`,   // Repository metadata
-		`^/repodata/repomd\.xml$`,                 // Repository metadata descriptor
-		`^/Packages/.*\.rpm$`,                     // RPM packages
-		`^/.*\.rpm$`,                              // RPM packages (alternative layout)
-		`^/.*\.drpm$`,                             // Delta RPMs
-		`^/.*\.src\.rpm$`,                         // Source RPMs
+		`^/repodata/.*\.xml(\.gz|\.bz2|\.xz)?$`, // Repository metadata
+		`^/repodata/repomd\.xml$`,               // Repository metadata descriptor
+		`^/Packages/.*\.rpm$`,                   // RPM packages
+		`^/.*\.rpm$`,                            // RPM packages (alternative layout)
+		`^/.*\.drpm$`,                           // Delta RPMs
+		`^/.*\.src\.rpm$`,                       // Source RPMs
 	}
-	
+
 	for _, pattern := range patterns {
 		if matched, _ := regexp.MatchString(pattern, path); matched {
 			return true
 		}
 	}
-	
+
 	return false
 }
 
@@ -100,13 +100,13 @@ func (d *Driver) NormalizePath(path string) (string, error) {
 	if d.normalizer != nil {
 		return d.normalizer.NormalizePath(d.Type(), path)
 	}
-	
+
 	// Basic normalization
 	normalized := filepath.Clean(path)
 	if !strings.HasPrefix(normalized, "/") {
 		normalized = "/" + normalized
 	}
-	
+
 	return normalized, nil
 }
 
@@ -116,29 +116,29 @@ func (d *Driver) BuildUpstreamURL(req *ports.DriverRequest) (string, error) {
 	if repository == "" {
 		repository = "centos" // Default repository
 	}
-	
+
 	repoConfig, exists := d.config.Repositories[repository]
 	if !exists {
 		return "", fmt.Errorf("repository '%s' not configured", repository)
 	}
-	
+
 	if !repoConfig.Enabled {
 		return "", fmt.Errorf("repository '%s' is disabled", repository)
 	}
-	
+
 	baseURL := repoConfig.BaseURL
 	if baseURL == "" && repoConfig.MirrorList != "" {
 		// TODO: Resolve mirror list to get actual URLs
 		return "", fmt.Errorf("mirror list resolution not implemented")
 	}
-	
+
 	if baseURL == "" {
 		return "", fmt.Errorf("no base URL configured for repository '%s'", repository)
 	}
-	
+
 	baseURL = strings.TrimRight(baseURL, "/")
 	cleanPath := strings.TrimLeft(req.Path, "/")
-	
+
 	return fmt.Sprintf("%s/%s", baseURL, cleanPath), nil
 }
 
@@ -148,40 +148,40 @@ func (d *Driver) FetchPackage(ctx context.Context, req *ports.DriverRequest) (*p
 	if err != nil {
 		return nil, d.mapError(err)
 	}
-	
+
 	// Prepare headers
 	headers := make(map[string]string)
 	for k, v := range req.Headers {
 		headers[k] = v
 	}
-	
+
 	// Add YUM-specific headers
 	headers["User-Agent"] = "ProxyND/1.0 YUM-Proxy"
-	
+
 	// Accept appropriate content types
 	if strings.Contains(req.Path, ".xml") {
 		headers["Accept"] = "application/xml, text/xml"
 	} else if strings.Contains(req.Path, ".rpm") {
 		headers["Accept"] = "application/x-rpm"
 	}
-	
+
 	// Add authentication if configured
 	repository := req.Repository
 	if repository == "" {
 		repository = "centos"
 	}
-	
+
 	if repoConfig, exists := d.config.Repositories[repository]; exists && repoConfig.Auth != nil {
 		// TODO: Implement authentication headers
 		// This will be handled by the unified HTTP client
 	}
-	
+
 	// Fetch from upstream
 	httpResp, err := d.httpClient.Get(ctx, upstreamURL, headers)
 	if err != nil {
 		return nil, d.mapError(err)
 	}
-	
+
 	// Convert to driver response
 	response := &ports.DriverResponse{
 		Content:      httpResp.Body,
@@ -191,7 +191,7 @@ func (d *Driver) FetchPackage(ctx context.Context, req *ports.DriverRequest) (*p
 		StatusCode:   httpResp.StatusCode,
 		LastModified: time.Now(), // TODO: Parse from headers
 	}
-	
+
 	return response, nil
 }
 
@@ -212,7 +212,7 @@ func (d *Driver) ValidateSignature(content []byte, signature []byte) error {
 	if d.verifier != nil {
 		return d.verifier.VerifySignature(d.Type(), content, signature)
 	}
-	
+
 	// TODO: Implement YUM-specific signature validation
 	// YUM uses GPG signatures for packages and repository metadata
 	return nil
@@ -224,7 +224,7 @@ func (d *Driver) GetCacheKey(req *ports.DriverRequest) string {
 	if repository == "" {
 		repository = "centos"
 	}
-	
+
 	normalizedPath, _ := d.NormalizePath(req.Path)
 	return fmt.Sprintf("yum:%s:%s", repository, strings.ReplaceAll(normalizedPath, "/", "_"))
 }
@@ -235,7 +235,7 @@ func (d *Driver) ShouldCache(resp *ports.DriverResponse) bool {
 	if resp.StatusCode >= 400 {
 		return false
 	}
-	
+
 	return true
 }
 
@@ -245,12 +245,12 @@ func (d *Driver) GetCacheTTL(resp *ports.DriverResponse) time.Duration {
 	if strings.Contains(resp.ContentType, "application/x-rpm") {
 		return 7 * 24 * time.Hour // 1 week
 	}
-	
+
 	// Metadata files expire faster
 	if strings.Contains(resp.ContentType, "xml") {
 		return 6 * time.Hour
 	}
-	
+
 	return d.config.CacheTTL
 }
 
@@ -265,22 +265,22 @@ func (d *Driver) ValidateConfig() error {
 	if d.config == nil {
 		return fmt.Errorf("yum config is nil")
 	}
-	
+
 	if !d.config.Enabled {
 		return fmt.Errorf("yum driver is disabled")
 	}
-	
+
 	if len(d.config.Repositories) == 0 {
 		return fmt.Errorf("no yum repositories configured")
 	}
-	
+
 	// Validate each repository
 	for name, repo := range d.config.Repositories {
 		if repo.BaseURL == "" && repo.MirrorList == "" {
 			return fmt.Errorf("repository '%s' has neither baseurl nor mirrorlist", name)
 		}
 	}
-	
+
 	return nil
 }
 
@@ -295,7 +295,7 @@ func (d *Driver) mapError(err error) error {
 // getContentType returns content type based on file extension
 func getContentType(path string) string {
 	ext := strings.ToLower(filepath.Ext(path))
-	
+
 	switch ext {
 	case ".rpm":
 		return "application/x-rpm"

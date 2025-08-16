@@ -26,7 +26,7 @@ func NewAuthMiddleware(
 			RequireAuth: false,
 		}
 	}
-	
+
 	return &AuthMiddleware{
 		config:      config,
 		authService: authService,
@@ -73,12 +73,12 @@ func (h *AuthHandler) Handle(ctx ports.HTTPContext) error {
 	if h.shouldSkipPath(ctx.Path()) {
 		return h.next.Handle(ctx)
 	}
-	
+
 	// Skip if authentication is not enabled
 	if !h.config.Enabled || h.authService == nil || !h.authService.IsEnabled() {
 		return h.next.Handle(ctx)
 	}
-	
+
 	// TODO: Implement actual authentication logic
 	// For now, just pass through
 	return h.next.Handle(ctx)

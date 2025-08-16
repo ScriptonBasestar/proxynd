@@ -1,7 +1,6 @@
 package middlewares
 
 import (
-	"time"
 	"proxynd/internal/ports"
 )
 
@@ -40,186 +39,19 @@ func (mh *MiddlewareHandler) Handle(ctx ports.HTTPContext) error {
 	return mh.next.Handle(ctx)
 }
 
-// AuthMiddleware handles authentication
-// TODO: Migrate from middlewares/auth.go and middlewares/jwt_auth.go
-type AuthMiddleware struct {
-	*BaseMiddleware
-	authService ports.AuthService
-}
+// TODO: AuthMiddleware implementation moved to auth_middleware.go
 
-// NewAuthMiddleware creates a new auth middleware
-func NewAuthMiddleware(base *BaseMiddleware, authService ports.AuthService) *AuthMiddleware {
-	return &AuthMiddleware{
-		BaseMiddleware: base,
-		authService:    authService,
-	}
-}
-
-// Process implements authentication middleware
-func (m *AuthMiddleware) Process(next ports.HTTPHandler) ports.HTTPHandler {
-	return &AuthMiddlewareHandler{
-		next:        next,
-		authService: m.authService,
-		logger:      m.logger,
-	}
-}
-
-// AuthMiddlewareHandler handles authentication
-type AuthMiddlewareHandler struct {
-	next        ports.HTTPHandler
-	authService ports.AuthService
-	logger      ports.Logger
-}
-
-// Handle processes authentication
-func (h *AuthMiddlewareHandler) Handle(ctx ports.HTTPContext) error {
-	// TODO: Implement authentication logic
-	// TODO: Validate JWT tokens, check permissions
-	return h.next.Handle(ctx)
-}
+// TODO: AuthMiddleware methods moved to auth_middleware.go
 
 // TODO: HEXAGONAL_MIGRATION - SecurityMiddleware implementation moved to security.go
 
-// LoggingMiddleware handles request logging
-// TODO: Migrate from middlewares/access_log.go
-type LoggingMiddleware struct {
-	*BaseMiddleware
-}
+// TODO: LoggingMiddleware implementation moved to logging.go
 
-// NewLoggingMiddleware creates a new logging middleware
-func NewLoggingMiddleware(base *BaseMiddleware) *LoggingMiddleware {
-	return &LoggingMiddleware{
-		BaseMiddleware: base,
-	}
-}
+// TODO: LoggingMiddlewareHandler implementation moved to logging.go
 
-// Process implements logging middleware
-func (m *LoggingMiddleware) Process(next ports.HTTPHandler) ports.HTTPHandler {
-	return &LoggingMiddlewareHandler{
-		next:   next,
-		logger: m.logger,
-	}
-}
+// TODO: MetricsMiddleware implementation moved to metrics.go
 
-// LoggingMiddlewareHandler handles request logging
-type LoggingMiddlewareHandler struct {
-	next   ports.HTTPHandler
-	logger ports.Logger
-}
-
-// Handle processes request logging
-func (h *LoggingMiddlewareHandler) Handle(ctx ports.HTTPContext) error {
-	start := time.Now()
-	
-	// Log request
-	if h.logger != nil {
-		h.logger.Info(ctx.Context(), "HTTP Request",
-			NewField("method", ctx.Method()),
-			NewField("path", ctx.Path()),
-		)
-	}
-	
-	// Process request
-	err := h.next.Handle(ctx)
-	
-	// Log response
-	if h.logger != nil {
-		duration := time.Since(start)
-		h.logger.Info(ctx.Context(), "HTTP Response",
-			NewField("method", ctx.Method()),
-			NewField("path", ctx.Path()),
-			NewField("duration", duration),
-		)
-	}
-	
-	return err
-}
-
-// MetricsMiddleware handles metrics collection
-// TODO: Migrate from middlewares/ metrics logic
-type MetricsMiddleware struct {
-	*BaseMiddleware
-}
-
-// NewMetricsMiddleware creates a new metrics middleware
-func NewMetricsMiddleware(base *BaseMiddleware) *MetricsMiddleware {
-	return &MetricsMiddleware{
-		BaseMiddleware: base,
-	}
-}
-
-// Process implements metrics middleware
-func (m *MetricsMiddleware) Process(next ports.HTTPHandler) ports.HTTPHandler {
-	return &MetricsMiddlewareHandler{
-		next:    next,
-		metrics: m.metrics,
-	}
-}
-
-// MetricsMiddlewareHandler handles metrics collection
-type MetricsMiddlewareHandler struct {
-	next    ports.HTTPHandler
-	metrics ports.MetricsCollector
-}
-
-// Handle processes metrics collection
-func (h *MetricsMiddlewareHandler) Handle(ctx ports.HTTPContext) error {
-	start := time.Now()
-	
-	// Process request
-	err := h.next.Handle(ctx)
-	
-	// Record metrics
-	if h.metrics != nil {
-		duration := time.Since(start)
-		labels := map[string]string{
-			"method": ctx.Method(),
-			"path":   ctx.Path(),
-		}
-		
-		h.metrics.IncCounter("http_requests_total", labels)
-		h.metrics.ObserveHistogram("http_request_duration_seconds", duration.Seconds(), labels)
-		
-		if err != nil {
-			h.metrics.IncCounter("http_requests_errors_total", labels)
-		}
-	}
-	
-	return err
-}
-
-// RateLimitMiddleware handles rate limiting
-// TODO: Migrate from middlewares/rate_limiter.go
-type RateLimitMiddleware struct {
-	*BaseMiddleware
-}
-
-// NewRateLimitMiddleware creates a new rate limit middleware
-func NewRateLimitMiddleware(base *BaseMiddleware) *RateLimitMiddleware {
-	return &RateLimitMiddleware{
-		BaseMiddleware: base,
-	}
-}
-
-// Process implements rate limiting middleware
-func (m *RateLimitMiddleware) Process(next ports.HTTPHandler) ports.HTTPHandler {
-	return &RateLimitMiddlewareHandler{
-		next:   next,
-		logger: m.logger,
-	}
-}
-
-// RateLimitMiddlewareHandler handles rate limiting
-type RateLimitMiddlewareHandler struct {
-	next   ports.HTTPHandler
-	logger ports.Logger
-}
-
-// Handle processes rate limiting
-func (h *RateLimitMiddlewareHandler) Handle(ctx ports.HTTPContext) error {
-	// TODO: Implement rate limiting logic
-	return h.next.Handle(ctx)
-}
+// TODO: RateLimitMiddleware implementation moved to rate_limit_middleware.go
 
 // CORSMiddleware handles CORS headers
 // TODO: Add CORS support

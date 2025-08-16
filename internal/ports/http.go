@@ -9,13 +9,13 @@ import (
 type HTTPServer interface {
 	// Start starts the HTTP server on given address
 	Start(ctx context.Context, addr string) error
-	
+
 	// Stop gracefully stops the HTTP server
 	Stop(ctx context.Context) error
-	
+
 	// RegisterRoute registers a route with handler
 	RegisterRoute(method, path string, handler HTTPHandler)
-	
+
 	// Use registers middleware
 	Use(middleware HTTPMiddleware)
 }
@@ -44,16 +44,22 @@ type HTTPContext interface {
 	Param(key string) string
 	Body() []byte
 	Header(key string) string
-	
+	SetHeader(key, value string)
+	ClientIP() string
+	UserAgent() string
+
 	// Response operations
 	Status(code int) HTTPContext
 	JSON(obj interface{}) error
+	SendJSON(status int, obj interface{}) error  
 	Send(data []byte) error
 	SendString(data string) error
-	
+
 	// Context operations
 	Context() context.Context
 	Locals(key string, value ...interface{}) interface{}
+	Get(key string) interface{}
+	Set(key string, value interface{})
 }
 
 // HTTPRouter defines routing interface
@@ -61,7 +67,7 @@ type HTTPContext interface {
 type HTTPRouter interface {
 	// Group creates a route group
 	Group(prefix string) HTTPRouter
-	
+
 	// HTTP methods
 	GET(path string, handler HTTPHandler)
 	POST(path string, handler HTTPHandler)
@@ -72,10 +78,10 @@ type HTTPRouter interface {
 
 // HTTPResponse represents HTTP response structure
 type HTTPResponse struct {
-	StatusCode int                    `json:"status_code"`
-	Headers    map[string]string      `json:"headers"`
-	Body       interface{}            `json:"body"`
-	Error      string                 `json:"error,omitempty"`
+	StatusCode int               `json:"status_code"`
+	Headers    map[string]string `json:"headers"`
+	Body       interface{}       `json:"body"`
+	Error      string            `json:"error,omitempty"`
 }
 
 // HTTPRequest represents HTTP request structure
@@ -91,7 +97,7 @@ type HTTPRequest struct {
 // TODO: Migrate from handlers/proxy/
 type ProxyHandler interface {
 	HTTPHandler
-	
+
 	// HandleProxy processes proxy requests
 	HandleProxy(ctx HTTPContext, proxyType string) error
 }
@@ -100,7 +106,7 @@ type ProxyHandler interface {
 // TODO: Migrate from health/
 type HealthHandler interface {
 	HTTPHandler
-	
+
 	// CheckHealth performs health check
 	CheckHealth(ctx HTTPContext) error
 }

@@ -22,26 +22,26 @@ type Driver struct {
 
 // Config represents Maven driver configuration
 type Config struct {
-	Enabled     bool                       `json:"enabled" yaml:"enabled"`
+	Enabled      bool                         `json:"enabled" yaml:"enabled"`
 	Repositories map[string]*RepositoryConfig `json:"repositories" yaml:"repositories"`
-	CacheTTL    time.Duration              `json:"cache_ttl" yaml:"cache_ttl"`
-	Timeout     time.Duration              `json:"timeout" yaml:"timeout"`
+	CacheTTL     time.Duration                `json:"cache_ttl" yaml:"cache_ttl"`
+	Timeout      time.Duration                `json:"timeout" yaml:"timeout"`
 }
 
 // RepositoryConfig represents Maven repository configuration
 type RepositoryConfig struct {
-	Name        string           `json:"name" yaml:"name"`
-	URL         string           `json:"url" yaml:"url"`
-	Enabled     bool             `json:"enabled" yaml:"enabled"`
-	Auth        *ports.AuthConfig `json:"auth,omitempty" yaml:"auth,omitempty"`
-	LayoutType  string           `json:"layout_type" yaml:"layout_type"` // default, legacy
-	SnapshotPolicy *SnapshotPolicy `json:"snapshot_policy,omitempty" yaml:"snapshot_policy,omitempty"`
+	Name           string            `json:"name" yaml:"name"`
+	URL            string            `json:"url" yaml:"url"`
+	Enabled        bool              `json:"enabled" yaml:"enabled"`
+	Auth           *ports.AuthConfig `json:"auth,omitempty" yaml:"auth,omitempty"`
+	LayoutType     string            `json:"layout_type" yaml:"layout_type"` // default, legacy
+	SnapshotPolicy *SnapshotPolicy   `json:"snapshot_policy,omitempty" yaml:"snapshot_policy,omitempty"`
 }
 
 // SnapshotPolicy defines snapshot handling policy
 type SnapshotPolicy struct {
 	Enabled        bool   `json:"enabled" yaml:"enabled"`
-	UpdatePolicy   string `json:"update_policy" yaml:"update_policy"` // daily, always, never
+	UpdatePolicy   string `json:"update_policy" yaml:"update_policy"`     // daily, always, never
 	ChecksumPolicy string `json:"checksum_policy" yaml:"checksum_policy"` // fail, warn, ignore
 }
 
@@ -60,7 +60,7 @@ func NewDriver(
 			Timeout:  30 * time.Second,
 		}
 	}
-	
+
 	return &Driver{
 		config:      config,
 		httpClient:  httpClient,
@@ -87,13 +87,13 @@ func (d *Driver) NormalizePath(path string) (string, error) {
 	if d.normalizer != nil {
 		return d.normalizer.NormalizePath(d.Type(), path)
 	}
-	
+
 	// Basic normalization - remove duplicate slashes, clean path
 	normalized := filepath.Clean(path)
 	if !strings.HasPrefix(normalized, "/") {
 		normalized = "/" + normalized
 	}
-	
+
 	return normalized, nil
 }
 
@@ -103,19 +103,19 @@ func (d *Driver) BuildUpstreamURL(req *ports.DriverRequest) (string, error) {
 	if repository == "" {
 		repository = "central" // Default to Maven Central
 	}
-	
+
 	repoConfig, exists := d.config.Repositories[repository]
 	if !exists {
 		return "", fmt.Errorf("repository '%s' not configured", repository)
 	}
-	
+
 	if !repoConfig.Enabled {
 		return "", fmt.Errorf("repository '%s' is disabled", repository)
 	}
-	
+
 	baseURL := strings.TrimRight(repoConfig.URL, "/")
 	cleanPath := strings.TrimLeft(req.Path, "/")
-	
+
 	return fmt.Sprintf("%s/%s", baseURL, cleanPath), nil
 }
 
@@ -125,34 +125,34 @@ func (d *Driver) FetchPackage(ctx context.Context, req *ports.DriverRequest) (*p
 	if err != nil {
 		return nil, d.mapError(err)
 	}
-	
+
 	// Prepare headers
 	headers := make(map[string]string)
 	for k, v := range req.Headers {
 		headers[k] = v
 	}
-	
+
 	// Add Maven-specific headers
 	headers["User-Agent"] = "ProxyND/1.0 Maven-Proxy"
 	headers["Accept"] = "*/*"
-	
+
 	// Add authentication if configured
 	repository := req.Repository
 	if repository == "" {
 		repository = "central"
 	}
-	
+
 	if repoConfig, exists := d.config.Repositories[repository]; exists && repoConfig.Auth != nil {
 		// TODO: Implement authentication headers
 		// This will be handled by the unified HTTP client
 	}
-	
+
 	// Fetch from upstream
 	httpResp, err := d.httpClient.Get(ctx, upstreamURL, headers)
 	if err != nil {
 		return nil, d.mapError(err)
 	}
-	
+
 	// Convert to driver response
 	response := &ports.DriverResponse{
 		Content:      httpResp.Body,
@@ -162,7 +162,7 @@ func (d *Driver) FetchPackage(ctx context.Context, req *ports.DriverRequest) (*p
 		StatusCode:   httpResp.StatusCode,
 		LastModified: time.Now(), // TODO: Parse from headers
 	}
-	
+
 	return response, nil
 }
 
@@ -183,7 +183,7 @@ func (d *Driver) ValidateSignature(content []byte, signature []byte) error {
 	if d.verifier != nil {
 		return d.verifier.VerifySignature(d.Type(), content, signature)
 	}
-	
+
 	// TODO: Implement Maven-specific signature validation
 	// Maven uses MD5, SHA1, SHA256, SHA512, PGP signatures
 	return nil
@@ -195,7 +195,7 @@ func (d *Driver) GetCacheKey(req *ports.DriverRequest) string {
 	if repository == "" {
 		repository = "central"
 	}
-	
+
 	normalizedPath, _ := d.NormalizePath(req.Path)
 	return fmt.Sprintf("maven:%s:%s", repository, strings.ReplaceAll(normalizedPath, "/", "_"))
 }
@@ -206,12 +206,12 @@ func (d *Driver) ShouldCache(resp *ports.DriverResponse) bool {
 	if resp.StatusCode >= 400 {
 		return false
 	}
-	
+
 	// Don't cache snapshot artifacts (they change frequently)
 	if strings.Contains(resp.Headers["Content-Type"], "SNAPSHOT") {
 		return false
 	}
-	
+
 	return true
 }
 
@@ -221,7 +221,7 @@ func (d *Driver) GetCacheTTL(resp *ports.DriverResponse) time.Duration {
 	if strings.Contains(resp.Headers["Content-Type"], "SNAPSHOT") {
 		return 1 * time.Hour
 	}
-	
+
 	// Release artifacts can be cached longer
 	return d.config.CacheTTL
 }
@@ -238,22 +238,22 @@ func (d *Driver) ValidateConfig() error {
 	if d.config == nil {
 		return fmt.Errorf("maven config is nil")
 	}
-	
+
 	if !d.config.Enabled {
 		return fmt.Errorf("maven driver is disabled")
 	}
-	
+
 	if len(d.config.Repositories) == 0 {
 		return fmt.Errorf("no maven repositories configured")
 	}
-	
+
 	// Validate each repository
 	for name, repo := range d.config.Repositories {
 		if repo.URL == "" {
 			return fmt.Errorf("repository '%s' has empty URL", name)
 		}
 	}
-	
+
 	return nil
 }
 
@@ -268,7 +268,7 @@ func (d *Driver) mapError(err error) error {
 // getContentType returns content type based on file extension
 func getContentType(path string) string {
 	ext := strings.ToLower(filepath.Ext(path))
-	
+
 	switch ext {
 	case ".pom":
 		return "application/xml"

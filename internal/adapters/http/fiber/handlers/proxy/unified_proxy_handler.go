@@ -9,7 +9,6 @@ import (
 	"proxynd/internal/adapters/http"
 	"proxynd/internal/config"
 	"proxynd/internal/factory"
-	"proxynd/internal/ports"
 	"proxynd/internal/usecase"
 	"proxynd/logging"
 )
@@ -34,7 +33,7 @@ func UnifiedProxyHandlerWithFactory(c *fiber.Ctx) error {
 	// TODO: HEXAGONAL_MIGRATION - Replace factory logic with usecase calls
 	// Current implementation uses factory pattern for adapter selection
 	// Should be migrated to use usecase.ProxyService.HandleProxyRequest()
-	
+
 	proxyType := c.Params("type")
 	path := c.Params("*")
 
@@ -44,14 +43,14 @@ func UnifiedProxyHandlerWithFactory(c *fiber.Ctx) error {
 	if globalProxyService != nil {
 		// New architecture path
 		req := &usecase.ProxyRequest{
-			PackageType:   proxyType,
-			Path:          path,
-			Method:        c.Method(),
-			Headers:       make(map[string]string),
-			QueryParams:   make(map[string]string),
-			Body:          c.Body(),
+			PackageType: proxyType,
+			Path:        path,
+			Method:      c.Method(),
+			Headers:     make(map[string]string),
+			QueryParams: make(map[string]string),
+			Body:        c.Body(),
 		}
-		
+
 		// Copy headers
 		c.GetReqHeaders()
 		for key, values := range c.GetReqHeaders() {
@@ -59,12 +58,12 @@ func UnifiedProxyHandlerWithFactory(c *fiber.Ctx) error {
 				req.Headers[key] = values[0]
 			}
 		}
-		
+
 		// Copy query params
 		c.Context().QueryArgs().VisitAll(func(key, value []byte) {
 			req.QueryParams[string(key)] = string(value)
 		})
-		
+
 		resp, err := globalProxyService.HandleProxyRequest(c.Context(), req)
 		if err != nil {
 			log.Printf("ProxyService error: %v", err)
@@ -72,12 +71,12 @@ func UnifiedProxyHandlerWithFactory(c *fiber.Ctx) error {
 				"error": err.Error(),
 			})
 		}
-		
+
 		// Set response headers
 		for key, value := range resp.Headers {
 			c.Set(key, value)
 		}
-		
+
 		return c.Status(resp.StatusCode).Send(resp.Content)
 	}
 

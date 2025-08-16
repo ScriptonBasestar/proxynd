@@ -1,6 +1,9 @@
 package handlers
 
 import (
+	"bytes"
+	"context"
+	"io"
 	"testing"
 	"time"
 
@@ -10,7 +13,7 @@ import (
 	"github.com/valyala/fasthttp"
 
 	"proxynd/cache"
-	"proxynd/cache/mocks"
+	cacheMocks "proxynd/internal/services/proxy/mocks"
 )
 
 // SimpleCacheHandler 간단한 캐시 테스트용 Mock 핸들러
@@ -134,28 +137,32 @@ func TestBaseProxyHandlerImpl_SimpleCacheTest(t *testing.T) {
 
 	t.Run("Cache operations", func(t *testing.T) {
 		// Mock 설정
-		mockCache := &mocks.MockCache{}
+		mockCache := &cacheMocks.MockCacheService{}
 
 		cacheKey := "test-key"
 		data := []byte("test data")
-		ttl := 1 * time.Hour
 
 		// 캐시 저장 성공
-		mockCache.On("Put", cacheKey, data, ttl).Return(nil).Once()
-		err := mockCache.Put(cacheKey, data, ttl)
+		mockCache.On("Put", mock.Anything, cacheKey, mock.Anything).Return(nil).Once()
+		err := mockCache.Put(context.Background(), cacheKey, bytes.NewReader(data))
 		assert.NoError(t, err)
 
-		// 캐시 조회 성공
-		mockCache.On("Get", cacheKey).Return(data, true).Once()
-		retrievedData, found := mockCache.Get(cacheKey)
+		// 캐시 조회 성공  
+		dataReader := bytes.NewReader(data)
+		mockCache.On("Get", mock.Anything, cacheKey).Return(dataReader, true, nil).Once()
+		retrievedReader, found, err := mockCache.Get(context.Background(), cacheKey)
+		assert.NoError(t, err)
+		retrievedData, err := io.ReadAll(retrievedReader)
+		assert.NoError(t, err)
 		assert.True(t, found)
 		assert.Equal(t, data, retrievedData)
 
 		// 캐시 미스
-		mockCache.On("Get", "nonexistent-key").Return([]byte(nil), false).Once()
-		retrievedData, found = mockCache.Get("nonexistent-key")
+		mockCache.On("Get", mock.Anything, "nonexistent-key").Return(nil, false, nil).Once()
+		missReader, found, err := mockCache.Get(context.Background(), "nonexistent-key")
+		assert.NoError(t, err)
 		assert.False(t, found)
-		assert.Nil(t, retrievedData)
+		assert.Nil(t, missReader)
 
 		mockCache.AssertExpectations(t)
 	})
@@ -164,7 +171,7 @@ func TestBaseProxyHandlerImpl_SimpleCacheTest(t *testing.T) {
 		// Mock 설정
 		mockHandler := &SimpleCacheHandler{}
 		mockContainer := &SimpleCacheContainer{}
-		mockCache := &mocks.MockCache{}
+		mockCache := &cacheMocks.MockCacheService{}
 
 		mockContainer.On("Cache").Return(mockCache)
 		mockHandler.On("IsEnabled").Return(true)
@@ -173,7 +180,8 @@ func TestBaseProxyHandlerImpl_SimpleCacheTest(t *testing.T) {
 
 		// 캐시 히트 설정
 		cachedData := []byte("cached response")
-		mockCache.On("Get", "test-key").Return(cachedData, true)
+		cachedReader := bytes.NewReader(cachedData)
+		mockCache.On("Get", mock.Anything, "test-key").Return(cachedReader, true, nil)
 
 		impl := NewBaseProxyHandlerImpl(mockContainer, mockHandler)
 

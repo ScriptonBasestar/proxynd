@@ -212,7 +212,6 @@ func (s *SearchService) searchMavenContent(ctx context.Context, query string, li
 		if strings.Contains(strings.ToLower(artifact.GroupID), queryLower) ||
 			strings.Contains(strings.ToLower(artifact.ArtifactID), queryLower) ||
 			strings.Contains(strings.ToLower(artifact.Description), queryLower) {
-
 			artifactPath := fmt.Sprintf("%s/%s/%s",
 				strings.ReplaceAll(artifact.GroupID, ".", "/"),
 				artifact.ArtifactID,
@@ -277,7 +276,6 @@ func (s *SearchService) searchAptContent(ctx context.Context, query string, limi
 
 				if strings.Contains(strings.ToLower(pkg.Name), queryLower) ||
 					strings.Contains(strings.ToLower(pkg.Description), queryLower) {
-
 					result := SearchResult{
 						Type:        "apt",
 						Name:        pkg.Name,
@@ -327,7 +325,6 @@ func (s *SearchService) searchNpmContent(ctx context.Context, query string, limi
 
 		if strings.Contains(strings.ToLower(pkg.Name), queryLower) ||
 			strings.Contains(strings.ToLower(pkg.Description), queryLower) {
-
 			// NPM config has a map structure: map[string][]NpmProxyServer
 			for registry, servers := range npmConfig.Proxies {
 				if len(servers) == 0 {

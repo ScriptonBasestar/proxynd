@@ -11,39 +11,39 @@ type StandardizedMetrics struct {
 
 // StandardizedLabels defines standardized label names for ProxyND metrics
 var StandardizedLabels = struct {
-	RequestID     string
-	Principal     string
-	Manager       string
-	Path          string
-	Method        string
-	StatusCode    string
-	CacheHit      string
-	Upstream      string
-	PackageName   string
-	Version       string
-	ErrorType     string
-	RegistryType  string
-	CacheBackend  string
-	UserAgent     string
-	Country       string
-	Region        string
+	RequestID    string
+	Principal    string
+	Manager      string
+	Path         string
+	Method       string
+	StatusCode   string
+	CacheHit     string
+	Upstream     string
+	PackageName  string
+	Version      string
+	ErrorType    string
+	RegistryType string
+	CacheBackend string
+	UserAgent    string
+	Country      string
+	Region       string
 }{
-	RequestID:     "request_id",
-	Principal:     "principal", 
-	Manager:       "manager",
-	Path:          "path",
-	Method:        "method",
-	StatusCode:    "status_code",
-	CacheHit:      "cache_hit",
-	Upstream:      "upstream",
-	PackageName:   "package_name",
-	Version:       "version",
-	ErrorType:     "error_type",
-	RegistryType:  "registry_type",
-	CacheBackend:  "cache_backend",
-	UserAgent:     "user_agent",
-	Country:       "country",
-	Region:        "region",
+	RequestID:    "request_id",
+	Principal:    "principal",
+	Manager:      "manager",
+	Path:         "path",
+	Method:       "method",
+	StatusCode:   "status_code",
+	CacheHit:     "cache_hit",
+	Upstream:     "upstream",
+	PackageName:  "package_name",
+	Version:      "version",
+	ErrorType:    "error_type",
+	RegistryType: "registry_type",
+	CacheBackend: "cache_backend",
+	UserAgent:    "user_agent",
+	Country:      "country",
+	Region:       "region",
 }
 
 // MetricsContext contains standardized context information for metrics
@@ -144,7 +144,6 @@ func (s *StandardizedMetrics) RecordHTTPRequest(ctx MetricsContext, latencySecon
 
 // RecordCacheOperation records cache operation metrics with standardized labels
 func (s *StandardizedMetrics) RecordCacheOperation(ctx MetricsContext, operation string, hit bool, backend string, bandwidthSavedBytes int64) {
-
 	if hit {
 		s.CacheHitsTotal.WithLabelValues(
 			ctx.RegistryType,
@@ -315,10 +314,10 @@ func (s *StandardizedMetrics) RecordSessionDuration(registryType, userType strin
 func (s *StandardizedMetrics) UpdateGaugeMetrics(ctx MetricsContext) {
 	// Update active requests
 	s.HTTPActiveRequests.Inc()
-	
+
 	// Update cache size if available
 	// This would typically be called from cache management components
-	
+
 	// Update resource utilization
 	// This would typically be called from system monitoring components
 }
@@ -425,9 +424,9 @@ func getFileType(path string) string {
 }
 
 func contains(s, substr string) bool {
-	return len(s) >= len(substr) && s[len(s)-len(substr):] == substr || 
-		   (len(s) > len(substr) && s[:len(substr)] == substr) ||
-		   (len(s) > len(substr) && findSubstring(s, substr))
+	return len(s) >= len(substr) && s[len(s)-len(substr):] == substr ||
+		(len(s) > len(substr) && s[:len(substr)] == substr) ||
+		(len(s) > len(substr) && findSubstring(s, substr))
 }
 
 func findSubstring(s, substr string) bool {

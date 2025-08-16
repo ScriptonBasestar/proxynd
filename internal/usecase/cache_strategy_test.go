@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+
 	"proxynd/internal/ports"
 )
 
@@ -39,15 +40,15 @@ func TestCacheStrategyService_DetermineStrategy(t *testing.T) {
 	mockLogger := &MockLogger{}
 	mockMetrics := &MockMetricsCollector{}
 	mockKeyBuilder := &MockCacheKeyBuilder{}
-	
+
 	// Create service
 	css := NewCacheStrategyService(mockCache, mockLogger, mockMetrics, mockKeyBuilder)
-	
+
 	// Mock key builder
 	mockKeyBuilder.On("BuildKey", "maven", "central", "com.example", "1.0.0", "/test.jar").Return("maven:central:com.example:1.0.0:/test.jar")
-	
+
 	// Mock logger
-	mockLogger.On("Debug", mock.AnythingOfType("string"), mock.Anything).Return()
+	mockLogger.On("Debug", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return()
 
 	// Test request
 	req := &CacheRequest{
@@ -79,12 +80,12 @@ func TestCacheStrategyService_DetermineStrategy_FallbackToDefault(t *testing.T) 
 	mockCache := &MockCacheManager{}
 	mockLogger := &MockLogger{}
 	mockMetrics := &MockMetricsCollector{}
-	
+
 	// Create service without key builder (fallback)
 	css := NewCacheStrategyService(mockCache, mockLogger, mockMetrics, nil)
-	
+
 	// Mock logger
-	mockLogger.On("Debug", mock.AnythingOfType("string"), mock.Anything).Return()
+	mockLogger.On("Debug", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return()
 
 	// Test request for unknown package type
 	req := &CacheRequest{
@@ -101,8 +102,8 @@ func TestCacheStrategyService_DetermineStrategy_FallbackToDefault(t *testing.T) 
 	// Assertions
 	require.NoError(t, err)
 	assert.NotNil(t, decision)
-	assert.True(t, decision.ShouldCache) // Default strategy should cache
-	assert.Equal(t, time.Hour*24, decision.TTL) // Default TTL
+	assert.True(t, decision.ShouldCache)                               // Default strategy should cache
+	assert.Equal(t, time.Hour*24, decision.TTL)                        // Default TTL
 	assert.Equal(t, "unknown:test-repo:/test/path", decision.CacheKey) // Generated key
 	assert.Equal(t, "unknown", decision.Strategy)
 }
@@ -112,7 +113,7 @@ func TestCacheStrategyService_Get_CacheHit(t *testing.T) {
 	mockCache := &MockCacheManager{}
 	mockLogger := &MockLogger{}
 	mockMetrics := &MockMetricsCollector{}
-	
+
 	css := NewCacheStrategyService(mockCache, mockLogger, mockMetrics, nil)
 
 	// Cache hit response
@@ -127,7 +128,7 @@ func TestCacheStrategyService_Get_CacheHit(t *testing.T) {
 			Headers:     map[string]string{"X-Custom": "value"},
 		},
 	}
-	
+
 	mockCache.On("Get", mock.Anything, mock.AnythingOfType("*ports.CacheRequest")).Return(cacheResp, nil)
 	mockMetrics.On("IncrementCounter", "cache_hits", mock.AnythingOfType("map[string]string")).Return()
 
@@ -160,7 +161,7 @@ func TestCacheStrategyService_Get_CacheMiss(t *testing.T) {
 	mockCache := &MockCacheManager{}
 	mockLogger := &MockLogger{}
 	mockMetrics := &MockMetricsCollector{}
-	
+
 	css := NewCacheStrategyService(mockCache, mockLogger, mockMetrics, nil)
 
 	// Cache miss (nil response)
@@ -193,7 +194,7 @@ func TestCacheStrategyService_Get_CacheError(t *testing.T) {
 	mockCache := &MockCacheManager{}
 	mockLogger := &MockLogger{}
 	mockMetrics := &MockMetricsCollector{}
-	
+
 	css := NewCacheStrategyService(mockCache, mockLogger, mockMetrics, nil)
 
 	// Cache error
@@ -226,12 +227,12 @@ func TestCacheStrategyService_Set_Success(t *testing.T) {
 	mockCache := &MockCacheManager{}
 	mockLogger := &MockLogger{}
 	mockMetrics := &MockMetricsCollector{}
-	
+
 	css := NewCacheStrategyService(mockCache, mockLogger, mockMetrics, nil)
 
 	// Mock cache set operation
 	mockCache.On("Set", mock.Anything, mock.AnythingOfType("*ports.CacheSetRequest")).Return(nil)
-	mockLogger.On("Debug", mock.AnythingOfType("string"), mock.Anything).Return()
+	mockLogger.On("Debug", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return()
 	mockMetrics.On("IncrementCounter", "cache_writes", mock.AnythingOfType("map[string]string")).Return()
 
 	// Test request
@@ -259,9 +260,9 @@ func TestCacheStrategyService_Set_ShouldNotCache(t *testing.T) {
 	mockCache := &MockCacheManager{}
 	mockLogger := &MockLogger{}
 	mockMetrics := &MockMetricsCollector{}
-	
+
 	css := NewCacheStrategyService(mockCache, mockLogger, mockMetrics, nil)
-	
+
 	// Register a strategy that doesn't cache
 	noCacheStrategy := &MockCacheStrategy{}
 	noCacheStrategy.On("ShouldCache", mock.AnythingOfType("*ports.CacheRequest")).Return(false)
@@ -294,7 +295,7 @@ func TestCacheStrategyService_RegisterAndGetStrategy(t *testing.T) {
 	mockCache := &MockCacheManager{}
 	mockLogger := &MockLogger{}
 	mockMetrics := &MockMetricsCollector{}
-	
+
 	css := NewCacheStrategyService(mockCache, mockLogger, mockMetrics, nil)
 
 	// Mock logger for registration

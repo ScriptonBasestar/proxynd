@@ -22,21 +22,21 @@ type Driver struct {
 
 // Config represents APT driver configuration
 type Config struct {
-	Enabled      bool                       `json:"enabled" yaml:"enabled"`
-	Mirrors      map[string]*MirrorConfig   `json:"mirrors" yaml:"mirrors"`
-	CacheTTL     time.Duration              `json:"cache_ttl" yaml:"cache_ttl"`
-	Timeout      time.Duration              `json:"timeout" yaml:"timeout"`
-	Distributions map[string]*DistroConfig  `json:"distributions" yaml:"distributions"`
+	Enabled       bool                     `json:"enabled" yaml:"enabled"`
+	Mirrors       map[string]*MirrorConfig `json:"mirrors" yaml:"mirrors"`
+	CacheTTL      time.Duration            `json:"cache_ttl" yaml:"cache_ttl"`
+	Timeout       time.Duration            `json:"timeout" yaml:"timeout"`
+	Distributions map[string]*DistroConfig `json:"distributions" yaml:"distributions"`
 }
 
 // MirrorConfig represents APT mirror configuration
 type MirrorConfig struct {
-	Name        string           `json:"name" yaml:"name"`
-	URL         string           `json:"url" yaml:"url"`
-	Enabled     bool             `json:"enabled" yaml:"enabled"`
-	Auth        *ports.AuthConfig `json:"auth,omitempty" yaml:"auth,omitempty"`
-	Priority    int              `json:"priority" yaml:"priority"`
-	Architectures []string       `json:"architectures" yaml:"architectures"`
+	Name          string            `json:"name" yaml:"name"`
+	URL           string            `json:"url" yaml:"url"`
+	Enabled       bool              `json:"enabled" yaml:"enabled"`
+	Auth          *ports.AuthConfig `json:"auth,omitempty" yaml:"auth,omitempty"`
+	Priority      int               `json:"priority" yaml:"priority"`
+	Architectures []string          `json:"architectures" yaml:"architectures"`
 }
 
 // DistroConfig represents distribution configuration
@@ -62,7 +62,7 @@ func NewDriver(
 			Timeout:  30 * time.Second,
 		}
 	}
-	
+
 	return &Driver{
 		config:      config,
 		httpClient:  httpClient,
@@ -84,26 +84,26 @@ func (d *Driver) IsSupported(path string) bool {
 	// /dists/focal/main/binary-amd64/Packages
 	// /pool/main/a/apache2/apache2_2.4.41-4ubuntu3_amd64.deb
 	// /ubuntu/dists/focal/Release
-	
+
 	patterns := []string{
-		`^/dists/[^/]+/Release`,                    // Release files
-		`^/dists/[^/]+/Release\.gpg`,              // GPG signatures
-		`^/dists/[^/]+/InRelease`,                 // Inline release
-		`^/dists/[^/]+/[^/]+/binary-[^/]+/Packages`, // Package lists
-		`^/dists/[^/]+/[^/]+/source/Sources`,      // Source lists
-		`^/pool/[^/]+/[^/]+/[^/]+/.*\.deb$`,       // Package files
-		`^/pool/[^/]+/[^/]+/[^/]+/.*\.dsc$`,       // Source description
+		`^/dists/[^/]+/Release`,                          // Release files
+		`^/dists/[^/]+/Release\.gpg`,                     // GPG signatures
+		`^/dists/[^/]+/InRelease`,                        // Inline release
+		`^/dists/[^/]+/[^/]+/binary-[^/]+/Packages`,      // Package lists
+		`^/dists/[^/]+/[^/]+/source/Sources`,             // Source lists
+		`^/pool/[^/]+/[^/]+/[^/]+/.*\.deb$`,              // Package files
+		`^/pool/[^/]+/[^/]+/[^/]+/.*\.dsc$`,              // Source description
 		`^/pool/[^/]+/[^/]+/[^/]+/.*\.tar\.(gz|xz|bz2)$`, // Source archives
-		`^/[^/]+/dists/`,                          // Mirror prefix
-		`^/[^/]+/pool/`,                           // Mirror prefix
+		`^/[^/]+/dists/`,                                 // Mirror prefix
+		`^/[^/]+/pool/`,                                  // Mirror prefix
 	}
-	
+
 	for _, pattern := range patterns {
 		if matched, _ := regexp.MatchString(pattern, path); matched {
 			return true
 		}
 	}
-	
+
 	return false
 }
 
@@ -112,40 +112,40 @@ func (d *Driver) NormalizePath(path string) (string, error) {
 	if d.normalizer != nil {
 		return d.normalizer.NormalizePath(d.Type(), path)
 	}
-	
+
 	// Basic normalization
 	normalized := filepath.Clean(path)
 	if !strings.HasPrefix(normalized, "/") {
 		normalized = "/" + normalized
 	}
-	
+
 	// Remove duplicate slashes
 	normalized = regexp.MustCompile(`/+`).ReplaceAllString(normalized, "/")
-	
+
 	return normalized, nil
 }
 
 // BuildUpstreamURL builds upstream URL for APT request
 func (d *Driver) BuildUpstreamURL(req *ports.DriverRequest) (string, error) {
 	mirror := d.getMirrorForPath(req.Path)
-	
+
 	mirrorConfig, exists := d.config.Mirrors[mirror]
 	if !exists {
 		return "", fmt.Errorf("mirror '%s' not configured", mirror)
 	}
-	
+
 	if !mirrorConfig.Enabled {
 		return "", fmt.Errorf("mirror '%s' is disabled", mirror)
 	}
-	
+
 	baseURL := strings.TrimRight(mirrorConfig.URL, "/")
 	cleanPath := strings.TrimLeft(req.Path, "/")
-	
+
 	// Remove mirror prefix if present in path
 	if strings.HasPrefix(cleanPath, mirror+"/") {
 		cleanPath = strings.TrimPrefix(cleanPath, mirror+"/")
 	}
-	
+
 	return fmt.Sprintf("%s/%s", baseURL, cleanPath), nil
 }
 
@@ -155,36 +155,36 @@ func (d *Driver) FetchPackage(ctx context.Context, req *ports.DriverRequest) (*p
 	if err != nil {
 		return nil, d.mapError(err)
 	}
-	
+
 	// Prepare headers
 	headers := make(map[string]string)
 	for k, v := range req.Headers {
 		headers[k] = v
 	}
-	
+
 	// Add APT-specific headers
 	headers["User-Agent"] = "ProxyND/1.0 APT-Proxy"
-	
+
 	// APT expects specific Accept headers for different content types
 	if strings.Contains(req.Path, "Packages") {
 		headers["Accept"] = "text/plain, application/x-gzip"
 	} else if strings.Contains(req.Path, "Release") {
 		headers["Accept"] = "text/plain"
 	}
-	
+
 	// Add authentication if configured
 	mirror := d.getMirrorForPath(req.Path)
 	if mirrorConfig, exists := d.config.Mirrors[mirror]; exists && mirrorConfig.Auth != nil {
 		// TODO: Implement authentication headers
 		// This will be handled by the unified HTTP client
 	}
-	
+
 	// Fetch from upstream
 	httpResp, err := d.httpClient.Get(ctx, upstreamURL, headers)
 	if err != nil {
 		return nil, d.mapError(err)
 	}
-	
+
 	// Convert to driver response
 	response := &ports.DriverResponse{
 		Content:      httpResp.Body,
@@ -194,7 +194,7 @@ func (d *Driver) FetchPackage(ctx context.Context, req *ports.DriverRequest) (*p
 		StatusCode:   httpResp.StatusCode,
 		LastModified: time.Now(), // TODO: Parse from headers
 	}
-	
+
 	return response, nil
 }
 
@@ -203,7 +203,7 @@ func (d *Driver) ParseMetadata(content []byte) (*ports.PackageMetadata, error) {
 	// TODO: Implement APT metadata parsing
 	// This should parse Release files, Packages files, etc.
 	// APT metadata format is RFC 822-style fields
-	
+
 	return &ports.PackageMetadata{
 		Name:      "unknown",
 		Version:   "unknown",
@@ -217,7 +217,7 @@ func (d *Driver) ValidateSignature(content []byte, signature []byte) error {
 	if d.verifier != nil {
 		return d.verifier.VerifySignature(d.Type(), content, signature)
 	}
-	
+
 	// TODO: Implement APT-specific signature validation
 	// APT uses GPG signatures for Release files
 	return nil
@@ -236,7 +236,7 @@ func (d *Driver) ShouldCache(resp *ports.DriverResponse) bool {
 	if resp.StatusCode >= 400 {
 		return false
 	}
-	
+
 	// Cache everything for APT
 	return true
 }
@@ -247,12 +247,12 @@ func (d *Driver) GetCacheTTL(resp *ports.DriverResponse) time.Duration {
 	if strings.HasSuffix(resp.ContentType, "application/x-debian-package") {
 		return 7 * 24 * time.Hour // 1 week
 	}
-	
+
 	// Metadata files expire faster
 	if strings.Contains(resp.ContentType, "text/plain") {
 		return 6 * time.Hour
 	}
-	
+
 	return d.config.CacheTTL
 }
 
@@ -268,22 +268,22 @@ func (d *Driver) ValidateConfig() error {
 	if d.config == nil {
 		return fmt.Errorf("apt config is nil")
 	}
-	
+
 	if !d.config.Enabled {
 		return fmt.Errorf("apt driver is disabled")
 	}
-	
+
 	if len(d.config.Mirrors) == 0 {
 		return fmt.Errorf("no apt mirrors configured")
 	}
-	
+
 	// Validate each mirror
 	for name, mirror := range d.config.Mirrors {
 		if mirror.URL == "" {
 			return fmt.Errorf("mirror '%s' has empty URL", name)
 		}
 	}
-	
+
 	return nil
 }
 
@@ -295,7 +295,7 @@ func (d *Driver) getMirrorForPath(path string) string {
 			return name
 		}
 	}
-	
+
 	// Default mirror
 	return "ubuntu"
 }
@@ -311,7 +311,7 @@ func (d *Driver) mapError(err error) error {
 // getContentType returns content type based on file extension
 func getContentType(path string) string {
 	ext := strings.ToLower(filepath.Ext(path))
-	
+
 	switch ext {
 	case ".deb":
 		return "application/x-debian-package"

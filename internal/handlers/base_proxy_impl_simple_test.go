@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"proxynd/cache"
-	"proxynd/cache/mocks"
+	cacheMocks "proxynd/internal/services/proxy/mocks"
 )
 
 // MockSimpleHandler 간단한 Mock 핸들러
@@ -77,7 +77,7 @@ func TestBaseProxyHandlerImpl_Constructor(t *testing.T) {
 		// Mock 설정
 		mockHandler := &MockSimpleHandler{}
 		mockContainer := &MockSimpleContainer{}
-		mockCache := &mocks.MockCache{}
+		mockCache := &cacheMocks.MockCacheService{}
 
 		mockContainer.On("Cache").Return(mockCache)
 
@@ -235,7 +235,7 @@ func TestBaseProxyHandlerImpl_Logging(t *testing.T) {
 		// Mock 설정
 		mockHandler := &MockSimpleHandler{}
 		mockContainer := &MockSimpleContainer{}
-		mockCache := &mocks.MockCache{}
+		mockCache := &cacheMocks.MockCacheService{}
 
 		mockContainer.On("Cache").Return(mockCache)
 

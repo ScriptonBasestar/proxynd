@@ -10,25 +10,25 @@ import (
 type MiddlewareSettings struct {
 	// Recovery middleware
 	Recovery *RecoverySettings `json:"recovery,omitempty" yaml:"recovery,omitempty"`
-	
+
 	// Authentication middleware
 	Auth *AuthSettings `json:"auth,omitempty" yaml:"auth,omitempty"`
-	
-	// Authorization middleware  
+
+	// Authorization middleware
 	Permission *PermissionSettings `json:"permission,omitempty" yaml:"permission,omitempty"`
-	
+
 	// Rate limiting middleware
 	RateLimit *RateLimitSettings `json:"rate_limit,omitempty" yaml:"rate_limit,omitempty"`
-	
+
 	// Request ID middleware
 	RequestID *RequestIDSettings `json:"request_id,omitempty" yaml:"request_id,omitempty"`
-	
+
 	// Logging middleware
 	Logging *MiddlewareLoggingSettings `json:"logging,omitempty" yaml:"logging,omitempty"`
-	
+
 	// Metrics middleware
 	Metrics *MetricsSettings `json:"metrics,omitempty" yaml:"metrics,omitempty"`
-	
+
 	// Tracing middleware
 	Tracing *TracingSettings `json:"tracing,omitempty" yaml:"tracing,omitempty"`
 }
@@ -101,9 +101,9 @@ func (m *MiddlewareSettings) ToPortsConfig() *ports.MiddlewareConfig {
 	if m == nil {
 		return DefaultMiddlewareConfig()
 	}
-	
+
 	config := &ports.MiddlewareConfig{}
-	
+
 	// Recovery
 	if m.Recovery != nil {
 		config.Recovery = &ports.RecoveryConfig{
@@ -111,7 +111,7 @@ func (m *MiddlewareSettings) ToPortsConfig() *ports.MiddlewareConfig {
 			EnableStackTrace: m.Recovery.EnableStackTrace,
 		}
 	}
-	
+
 	// Auth
 	if m.Auth != nil {
 		config.Auth = &ports.MiddlewareAuthConfig{
@@ -121,7 +121,7 @@ func (m *MiddlewareSettings) ToPortsConfig() *ports.MiddlewareConfig {
 			RequireAuth: m.Auth.RequireAuth,
 		}
 	}
-	
+
 	// Permission
 	if m.Permission != nil {
 		config.Permission = &ports.PermissionConfig{
@@ -129,7 +129,7 @@ func (m *MiddlewareSettings) ToPortsConfig() *ports.MiddlewareConfig {
 			SkipPaths: m.Permission.SkipPaths,
 		}
 	}
-	
+
 	// Rate Limit
 	if m.RateLimit != nil {
 		config.RateLimit = &ports.RateLimitConfig{
@@ -139,7 +139,7 @@ func (m *MiddlewareSettings) ToPortsConfig() *ports.MiddlewareConfig {
 			TrustedProxies:    m.RateLimit.TrustedProxies,
 		}
 	}
-	
+
 	// Request ID
 	if m.RequestID != nil {
 		config.RequestID = &ports.RequestIDConfig{
@@ -148,7 +148,7 @@ func (m *MiddlewareSettings) ToPortsConfig() *ports.MiddlewareConfig {
 			Generator:  m.RequestID.Generator,
 		}
 	}
-	
+
 	// Logging
 	if m.Logging != nil {
 		config.Logging = &ports.LoggingConfig{
@@ -160,7 +160,7 @@ func (m *MiddlewareSettings) ToPortsConfig() *ports.MiddlewareConfig {
 			MaxBodySize: m.Logging.MaxBodySize,
 		}
 	}
-	
+
 	// Metrics
 	if m.Metrics != nil {
 		config.Metrics = &ports.MetricsConfig{
@@ -171,7 +171,7 @@ func (m *MiddlewareSettings) ToPortsConfig() *ports.MiddlewareConfig {
 			Subsystem: m.Metrics.Subsystem,
 		}
 	}
-	
+
 	// Tracing
 	if m.Tracing != nil {
 		config.Tracing = &ports.TracingConfig{
@@ -182,7 +182,7 @@ func (m *MiddlewareSettings) ToPortsConfig() *ports.MiddlewareConfig {
 			TraceIDHeader: m.Tracing.TraceIDHeader,
 		}
 	}
-	
+
 	return config
 }
 
@@ -241,42 +241,42 @@ func DefaultMiddlewareConfig() *ports.MiddlewareConfig {
 // DevelopmentMiddlewareConfig returns a development-friendly middleware configuration
 func DevelopmentMiddlewareConfig() *ports.MiddlewareConfig {
 	config := DefaultMiddlewareConfig()
-	
+
 	// Enable more verbose logging in development
 	config.Logging.LogBody = true
 	config.Logging.LogHeaders = true
 	config.Logging.MaxBodySize = 10240 // 10KB
-	
+
 	// Enable tracing with full sampling in development
 	config.Tracing.Enabled = true
 	config.Tracing.SampleRate = 1.0
-	
+
 	// More relaxed rate limiting in development
 	config.RateLimit.RequestsPerSecond = 1000
 	config.RateLimit.BurstSize = 100
-	
+
 	return config
 }
 
 // ProductionMiddlewareConfig returns a production-ready middleware configuration
 func ProductionMiddlewareConfig() *ports.MiddlewareConfig {
 	config := DefaultMiddlewareConfig()
-	
+
 	// Disable stack traces in production
 	config.Recovery.EnableStackTrace = false
-	
+
 	// More restrictive logging in production
 	config.Logging.LogBody = false
 	config.Logging.LogHeaders = false
-	
+
 	// Conservative tracing sampling in production
 	config.Tracing.Enabled = true
 	config.Tracing.SampleRate = 0.01 // 1% sampling
-	
+
 	// Tighter rate limiting in production
 	config.RateLimit.RequestsPerSecond = 50
 	config.RateLimit.BurstSize = 10
-	
+
 	return config
 }
 
@@ -285,7 +285,7 @@ func ValidateMiddlewareConfig(config *ports.MiddlewareConfig) error {
 	if config == nil {
 		return nil
 	}
-	
+
 	// Validate rate limit settings
 	if config.RateLimit != nil {
 		if config.RateLimit.RequestsPerSecond <= 0 {
@@ -295,20 +295,20 @@ func ValidateMiddlewareConfig(config *ports.MiddlewareConfig) error {
 			return fmt.Errorf("rate_limit.burst_size must be positive")
 		}
 	}
-	
+
 	// Validate tracing settings
 	if config.Tracing != nil {
 		if config.Tracing.SampleRate < 0 || config.Tracing.SampleRate > 1 {
 			return fmt.Errorf("tracing.sample_rate must be between 0 and 1")
 		}
 	}
-	
+
 	// Validate logging settings
 	if config.Logging != nil {
 		if config.Logging.MaxBodySize < 0 {
 			return fmt.Errorf("logging.max_body_size must be non-negative")
 		}
 	}
-	
+
 	return nil
 }

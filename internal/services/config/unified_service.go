@@ -11,17 +11,17 @@ import (
 
 // unifiedService implements the Service interface using UnifiedConfigLoader
 type unifiedService struct {
-	mu               sync.RWMutex
-	configLoader     *config.UnifiedConfigLoader
-	unifiedConfig    *config.RootConfig
-	logger           logging.Logger
-	configDir        string
+	mu            sync.RWMutex
+	configLoader  *config.UnifiedConfigLoader
+	unifiedConfig *config.RootConfig
+	logger        logging.Logger
+	configDir     string
 }
 
 // NewUnifiedService creates a new unified configuration service
 func NewUnifiedService(ctx context.Context, configDir string) (Service, error) {
 	logger := logging.GetLogger()
-	
+
 	if configDir == "" {
 		return nil, fmt.Errorf("configDir is required")
 	}
@@ -314,7 +314,7 @@ func (s *unifiedService) ValidateAll(ctx context.Context) error {
 // Reload reloads all configurations
 func (s *unifiedService) Reload(ctx context.Context) error {
 	s.logger.Info("Reloading unified configuration")
-	
+
 	if err := s.loadConfiguration(ctx); err != nil {
 		return fmt.Errorf("failed to reload configuration: %w", err)
 	}

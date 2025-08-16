@@ -2,7 +2,6 @@ package middlewares
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -11,9 +10,9 @@ import (
 
 // TracingMiddleware implements ports.HTTPMiddleware for distributed tracing
 type TracingMiddleware struct {
-	config  *ports.TracingConfig
-	tracer  ports.TraceService
-	logger  ports.Logger
+	config *ports.TracingConfig
+	tracer ports.TraceService
+	logger ports.Logger
 }
 
 // NewTracingMiddleware creates a new tracing middleware
@@ -31,7 +30,7 @@ func NewTracingMiddleware(
 			TraceIDHeader: "X-Trace-ID",
 		}
 	}
-	
+
 	return &TracingMiddleware{
 		config: config,
 		tracer: tracer,
@@ -78,14 +77,14 @@ func (h *TracingHandler) Handle(ctx ports.HTTPContext) error {
 	if h.shouldSkipPath(ctx.Path()) {
 		return h.next.Handle(ctx)
 	}
-	
+
 	// Skip if tracing is not enabled or tracer is not available
 	if !h.config.Enabled || h.tracer == nil || !h.tracer.IsEnabled() {
 		return h.next.Handle(ctx)
 	}
-	
+
 	startTime := time.Now()
-	
+
 	// Extract trace context from headers
 	headers := h.extractHeaders(ctx)
 	traceContext, err := h.tracer.ExtractHeaders(headers)
@@ -94,32 +93,32 @@ func (h *TracingHandler) Handle(ctx ports.HTTPContext) error {
 			&TracingField{key: "error", value: err.Error()},
 		)
 	}
-	
+
 	// Create operation name
 	operationName := fmt.Sprintf("%s %s", ctx.Method(), ctx.Path())
-	
+
 	// Start span
 	span, spanCtx := h.tracer.StartSpan(ctx.Context(), operationName)
 	defer span.Finish()
-	
+
 	// Set span tags
 	h.setSpanTags(span, ctx)
-	
+
 	// Set trace ID in response headers
 	if traceContext != nil && traceContext.TraceID() != "" {
 		ctx.SetHeader(h.config.TraceIDHeader, traceContext.TraceID())
 	}
-	
+
 	// Store span in context for downstream use
 	ctx.Set("trace_span", span)
 	ctx.Set("trace_context", traceContext)
-	
+
 	// Process request
 	err = h.next.Handle(ctx)
-	
+
 	// Set span status and tags based on response
 	h.setResponseTags(span, ctx, err, time.Since(startTime))
-	
+
 	// Log tracing info if logger is available
 	if h.logger != nil {
 		fields := []*TracingField{
@@ -128,14 +127,14 @@ func (h *TracingHandler) Handle(ctx ports.HTTPContext) error {
 			{key: "operation", value: operationName},
 			{key: "duration_ms", value: time.Since(startTime).Milliseconds()},
 		}
-		
+
 		if err != nil {
 			fields = append(fields, &TracingField{key: "error", value: err.Error()})
 		}
-		
+
 		h.logger.Debug(spanCtx, "Request traced", convertTracingFields(fields)...)
 	}
-	
+
 	return err
 }
 
@@ -152,7 +151,7 @@ func (h *TracingHandler) shouldSkipPath(path string) bool {
 // extractHeaders extracts HTTP headers for trace propagation
 func (h *TracingHandler) extractHeaders(ctx ports.HTTPContext) map[string]string {
 	headers := make(map[string]string)
-	
+
 	// Common trace headers
 	traceHeaders := []string{
 		"traceparent",
@@ -167,13 +166,13 @@ func (h *TracingHandler) extractHeaders(ctx ports.HTTPContext) map[string]string
 		"x-b3-sampled",
 		"x-b3-flags",
 	}
-	
+
 	for _, header := range traceHeaders {
 		if value := ctx.Header(header); value != "" {
 			headers[header] = value
 		}
 	}
-	
+
 	return headers
 }
 
@@ -185,16 +184,16 @@ func (h *TracingHandler) setSpanTags(span ports.TraceSpan, ctx ports.HTTPContext
 	span.SetTag("http.remote_addr", ctx.ClientIP())
 	span.SetTag("component", "http")
 	span.SetTag("span.kind", "server")
-	
+
 	// Add custom tags based on context
 	if requestID := ctx.Get("request_id"); requestID != nil {
 		span.SetTag("request.id", requestID)
 	}
-	
+
 	if userID := ctx.Get("user_id"); userID != nil {
 		span.SetTag("user.id", userID)
 	}
-	
+
 	// Add query parameters if present
 	if queryParams := h.extractQueryParams(ctx); len(queryParams) > 0 {
 		for key, value := range queryParams {
@@ -206,12 +205,12 @@ func (h *TracingHandler) setSpanTags(span ports.TraceSpan, ctx ports.HTTPContext
 // setResponseTags sets response-related span tags
 func (h *TracingHandler) setResponseTags(span ports.TraceSpan, ctx ports.HTTPContext, err error, duration time.Duration) {
 	span.SetTag("http.duration_ms", duration.Milliseconds())
-	
+
 	// Set status code if available from context
 	if statusCode := ctx.Get("status_code"); statusCode != nil {
 		if code, ok := statusCode.(int); ok {
 			span.SetTag("http.status_code", code)
-			
+
 			// Mark span as error for 4xx and 5xx responses
 			if code >= 400 {
 				span.SetTag("error", true)
@@ -219,14 +218,14 @@ func (h *TracingHandler) setResponseTags(span ports.TraceSpan, ctx ports.HTTPCon
 			}
 		}
 	}
-	
+
 	// Set error information
 	if err != nil {
 		span.SetError(err)
 		span.SetTag("error", true)
 		span.SetTag("error.message", err.Error())
 	}
-	
+
 	// Add response size if available
 	if responseSize := ctx.Get("response_size"); responseSize != nil {
 		span.SetTag("http.response.size", responseSize)
@@ -238,16 +237,16 @@ func (h *TracingHandler) extractQueryParams(ctx ports.HTTPContext) map[string]st
 	// This is a simplified implementation
 	// In a real implementation, you might want to limit which query params are traced
 	params := make(map[string]string)
-	
+
 	// Add common parameters that are safe to trace
 	safeParams := []string{"limit", "offset", "page", "size", "sort", "order", "format"}
-	
+
 	for _, param := range safeParams {
 		if value := ctx.Query(param); value != "" {
 			params[param] = value
 		}
 	}
-	
+
 	return params
 }
 
@@ -299,7 +298,7 @@ func (sl *SpanLogger) LogInfo(message string, fields map[string]interface{}) {
 			"fields":  fields,
 		})
 	}
-	
+
 	if sl.logger != nil {
 		logFields := make([]ports.Field, 0, len(fields))
 		for key, value := range fields {
@@ -317,23 +316,23 @@ func (sl *SpanLogger) LogError(message string, err error, fields map[string]inte
 			"level":   "error",
 			"error":   err.Error(),
 		}
-		
+
 		for key, value := range fields {
 			eventFields[key] = value
 		}
-		
+
 		sl.span.LogEvent("error", eventFields)
 		sl.span.SetError(err)
 	}
-	
+
 	if sl.logger != nil {
 		logFields := make([]ports.Field, 0, len(fields)+1)
 		logFields = append(logFields, &TracingField{key: "error", value: err.Error()})
-		
+
 		for key, value := range fields {
 			logFields = append(logFields, &TracingField{key: key, value: value})
 		}
-		
+
 		sl.logger.Error(nil, message, logFields...)
 	}
 }
@@ -362,16 +361,16 @@ func ShouldSample(sampleRate float64, traceID string) bool {
 	if sampleRate >= 1.0 {
 		return true
 	}
-	
+
 	// Use deterministic sampling based on trace ID
 	if traceID == "" {
 		return false
 	}
-	
+
 	// Simple hash-based sampling
 	hash := simpleHash(traceID)
 	threshold := uint32(sampleRate * float64(^uint32(0)))
-	
+
 	return hash < threshold
 }
 

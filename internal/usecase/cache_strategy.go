@@ -5,16 +5,17 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
 	"proxynd/internal/ports"
 )
 
 // CacheStrategyService manages caching strategies for different package types
 type CacheStrategyService struct {
-	cacheManager  ports.CacheManager
-	logger        ports.Logger
-	metrics       ports.MetricsCollector
-	strategies    map[string]ports.CacheStrategy
-	defaultTTLs   map[string]time.Duration
+	cacheManager    ports.CacheManager
+	logger          ports.Logger
+	metrics         ports.MetricsCollector
+	strategies      map[string]ports.CacheStrategy
+	defaultTTLs     map[string]time.Duration
 	cacheKeyBuilder ports.CacheKeyBuilder
 }
 
@@ -32,19 +33,19 @@ func NewCacheStrategyService(
 		strategies:      make(map[string]ports.CacheStrategy),
 		cacheKeyBuilder: cacheKeyBuilder,
 		defaultTTLs: map[string]time.Duration{
-			"maven":  time.Hour * 24,      // Maven artifacts are stable
-			"npm":    time.Hour * 12,      // NPM packages change frequently
-			"apt":    time.Hour * 6,       // APT packages update regularly
-			"docker": time.Hour * 48,      // Docker images are large and stable
-			"pypi":   time.Hour * 24,      // PyPI packages are relatively stable
-			"yum":    time.Hour * 6,       // YUM packages update regularly
-			"apk":    time.Hour * 6,       // APK packages update regularly
+			"maven":  time.Hour * 24, // Maven artifacts are stable
+			"npm":    time.Hour * 12, // NPM packages change frequently
+			"apt":    time.Hour * 6,  // APT packages update regularly
+			"docker": time.Hour * 48, // Docker images are large and stable
+			"pypi":   time.Hour * 24, // PyPI packages are relatively stable
+			"yum":    time.Hour * 6,  // YUM packages update regularly
+			"apk":    time.Hour * 6,  // APK packages update regularly
 		},
 	}
-	
+
 	// Register default strategies
 	css.registerDefaultStrategies()
-	
+
 	return css
 }
 
@@ -60,15 +61,15 @@ type CacheDecision struct {
 
 // CacheRequest represents a cache operation request
 type CacheRequest struct {
-	PackageType   string            `json:"package_type"`
-	Repository    string            `json:"repository"`
-	Name          string            `json:"name"`
-	Version       string            `json:"version"`
-	Path          string            `json:"path"`
-	ContentType   string            `json:"content_type"`
-	Size          int64             `json:"size"`
-	Headers       map[string]string `json:"headers"`
-	Operation     string            `json:"operation"` // get, set, delete
+	PackageType string            `json:"package_type"`
+	Repository  string            `json:"repository"`
+	Name        string            `json:"name"`
+	Version     string            `json:"version"`
+	Path        string            `json:"path"`
+	ContentType string            `json:"content_type"`
+	Size        int64             `json:"size"`
+	Headers     map[string]string `json:"headers"`
+	Operation   string            `json:"operation"` // get, set, delete
 }
 
 // CacheResponse represents a cache operation response
@@ -88,7 +89,7 @@ func (cs *CacheStrategyService) DetermineStrategy(ctx context.Context, req *Cach
 	if strategy == nil {
 		strategy = cs.GetStrategy("default")
 	}
-	
+
 	// Check if we should cache this request
 	shouldCache := strategy.ShouldCache(&ports.CacheRequest{
 		Key:         req.Path,
@@ -100,14 +101,14 @@ func (cs *CacheStrategyService) DetermineStrategy(ctx context.Context, req *Cach
 			Headers:     req.Headers,
 		},
 	})
-	
+
 	var reason string
 	if !shouldCache {
 		reason = "strategy determined not to cache"
 	} else {
 		reason = fmt.Sprintf("using %s strategy", strategy.GetEvictionPolicy())
 	}
-	
+
 	// Generate cache key
 	var cacheKey string
 	if cs.cacheKeyBuilder != nil {
@@ -115,7 +116,7 @@ func (cs *CacheStrategyService) DetermineStrategy(ctx context.Context, req *Cach
 	} else {
 		cacheKey = cs.generateCacheKey(req)
 	}
-	
+
 	// Determine TTL
 	var ttl time.Duration
 	if shouldCache {
@@ -130,7 +131,7 @@ func (cs *CacheStrategyService) DetermineStrategy(ctx context.Context, req *Cach
 			},
 		})
 	}
-	
+
 	// Determine backend
 	backend := "filesystem" // default
 	if shouldCache {
@@ -145,7 +146,7 @@ func (cs *CacheStrategyService) DetermineStrategy(ctx context.Context, req *Cach
 			},
 		})
 	}
-	
+
 	decision := &CacheDecision{
 		ShouldCache: shouldCache,
 		TTL:         ttl,
@@ -154,14 +155,14 @@ func (cs *CacheStrategyService) DetermineStrategy(ctx context.Context, req *Cach
 		Strategy:    req.PackageType,
 		Reason:      reason,
 	}
-	
-	cs.logger.Debug(ctx, "Cache strategy decision", 
+
+	cs.logger.Debug(ctx, "Cache strategy decision",
 		&LogField{key: "package_type", value: req.PackageType},
 		&LogField{key: "should_cache", value: shouldCache},
 		&LogField{key: "ttl", value: ttl},
 		&LogField{key: "backend", value: backend},
 		&LogField{key: "reason", value: reason})
-	
+
 	return decision, nil
 }
 
@@ -174,7 +175,7 @@ func (cs *CacheStrategyService) Get(ctx context.Context, req *CacheRequest) (*Ca
 	} else {
 		cacheKey = cs.generateCacheKey(req)
 	}
-	
+
 	// Create cache request for manager
 	cacheManagerReq := &ports.CacheRequest{
 		Key:         cacheKey,
@@ -187,11 +188,11 @@ func (cs *CacheStrategyService) Get(ctx context.Context, req *CacheRequest) (*Ca
 			Headers:     req.Headers,
 		},
 	}
-	
+
 	// Get from cache manager
 	cacheResp, err := cs.cacheManager.Get(ctx, cacheManagerReq)
 	if err != nil {
-		cs.logger.Error(ctx, "Cache retrieval failed", 
+		cs.logger.Error(ctx, "Cache retrieval failed",
 			&LogField{key: "error", value: err},
 			&LogField{key: "cache_key", value: cacheKey})
 		cs.metrics.IncCounter("cache_errors", map[string]string{
@@ -203,7 +204,7 @@ func (cs *CacheStrategyService) Get(ctx context.Context, req *CacheRequest) (*Ca
 			Hit: false,
 		}, nil // Don't fail the whole request on cache error
 	}
-	
+
 	if cacheResp == nil || len(cacheResp.Data) == 0 {
 		// Cache miss
 		cs.metrics.IncCounter("cache_misses", map[string]string{
@@ -215,14 +216,14 @@ func (cs *CacheStrategyService) Get(ctx context.Context, req *CacheRequest) (*Ca
 			CacheKey: cacheKey,
 		}, nil
 	}
-	
+
 	// Cache hit
 	cs.metrics.IncCounter("cache_hits", map[string]string{
 		"package_type": req.PackageType,
 		"repository":   req.Repository,
 		"backend":      cacheResp.Backend,
 	})
-	
+
 	// Convert metadata
 	metadata := make(map[string]string)
 	if cacheResp.Metadata.ContentType != "" {
@@ -231,7 +232,7 @@ func (cs *CacheStrategyService) Get(ctx context.Context, req *CacheRequest) (*Ca
 	for k, v := range cacheResp.Metadata.Headers {
 		metadata[k] = v
 	}
-	
+
 	return &CacheResponse{
 		Hit:       true,
 		Content:   cacheResp.Data,
@@ -250,13 +251,13 @@ func (cs *CacheStrategyService) Set(ctx context.Context, req *CacheRequest, cont
 	if err != nil {
 		return fmt.Errorf("failed to determine cache strategy: %w", err)
 	}
-	
+
 	if !decision.ShouldCache {
-		cs.logger.Debug(ctx, "Strategy determined not to cache", 
+		cs.logger.Debug(ctx, "Strategy determined not to cache",
 			&LogField{key: "reason", value: decision.Reason})
 		return nil
 	}
-	
+
 	// Create cache set request
 	cacheSetReq := &ports.CacheSetRequest{
 		Key:         decision.CacheKey,
@@ -274,10 +275,10 @@ func (cs *CacheStrategyService) Set(ctx context.Context, req *CacheRequest, cont
 			AccessCount:  1,
 		},
 	}
-	
+
 	// Store in cache manager
 	if err := cs.cacheManager.Set(ctx, cacheSetReq); err != nil {
-		cs.logger.Error(ctx, "Cache storage failed", 
+		cs.logger.Error(ctx, "Cache storage failed",
 			&LogField{key: "error", value: err},
 			&LogField{key: "cache_key", value: decision.CacheKey})
 		cs.metrics.IncCounter("cache_errors", map[string]string{
@@ -288,18 +289,18 @@ func (cs *CacheStrategyService) Set(ctx context.Context, req *CacheRequest, cont
 		})
 		return fmt.Errorf("cache storage failed: %w", err)
 	}
-	
-	cs.logger.Debug(ctx, "Successfully stored in cache", 
+
+	cs.logger.Debug(ctx, "Successfully stored in cache",
 		&LogField{key: "cache_key", value: decision.CacheKey},
 		&LogField{key: "backend", value: decision.Backend},
 		&LogField{key: "ttl", value: decision.TTL},
 		&LogField{key: "size_bytes", value: len(content)})
-	
+
 	cs.metrics.IncCounter("cache_writes", map[string]string{
 		"package_type": req.PackageType,
 		"backend":      decision.Backend,
 	})
-	
+
 	return nil
 }
 
@@ -311,7 +312,7 @@ func (cs *CacheStrategyService) Invalidate(ctx context.Context, pattern string) 
 // RegisterStrategy registers a caching strategy for a package type
 func (cs *CacheStrategyService) RegisterStrategy(packageType string, strategy ports.CacheStrategy) {
 	cs.strategies[packageType] = strategy
-	cs.logger.Info(context.Background(), "Registered cache strategy", 
+	cs.logger.Info(context.Background(), "Registered cache strategy",
 		&LogField{key: "package_type", value: packageType})
 }
 
@@ -332,11 +333,11 @@ func (cs *CacheStrategyService) GetStrategy(packageType string) ports.CacheStrat
 func (cs *CacheStrategyService) OptimizeCache(ctx context.Context) (*OptimizationResult, error) {
 	// TODO: Implement cache optimization
 	// TODO: Analyze usage patterns, hit rates, storage efficiency
-	
+
 	return &OptimizationResult{
-		Strategy:         "optimization",
-		ItemsOptimized:   0,
-		SpaceSaved:       0,
+		Strategy:           "optimization",
+		ItemsOptimized:     0,
+		SpaceSaved:         0,
 		HitRateImprovement: 0.0,
 	}, nil
 }
@@ -356,7 +357,7 @@ type OptimizationResult struct {
 func (cs *CacheStrategyService) AnalyzeUsage(ctx context.Context, req *UsageAnalysisRequest) (*UsageAnalysisResponse, error) {
 	// TODO: Implement usage analysis
 	// TODO: Analyze access patterns, hot/cold data, seasonal patterns
-	
+
 	return &UsageAnalysisResponse{
 		Period:      req.Period,
 		HotPatterns: []string{},
@@ -373,13 +374,13 @@ type UsageAnalysisRequest struct {
 
 // UsageAnalysisResponse represents usage analysis response
 type UsageAnalysisResponse struct {
-	Period         time.Duration     `json:"period"`
-	TotalRequests  int64             `json:"total_requests"`
-	HitRate        float64           `json:"hit_rate"`
-	HotPatterns    []string          `json:"hot_patterns"`
-	ColdItems      []string          `json:"cold_items"`
-	Recommendations []string         `json:"recommendations"`
-	PackageStats   map[string]*PackageStats `json:"package_stats"`
+	Period          time.Duration            `json:"period"`
+	TotalRequests   int64                    `json:"total_requests"`
+	HitRate         float64                  `json:"hit_rate"`
+	HotPatterns     []string                 `json:"hot_patterns"`
+	ColdItems       []string                 `json:"cold_items"`
+	Recommendations []string                 `json:"recommendations"`
+	PackageStats    map[string]*PackageStats `json:"package_stats"`
 }
 
 // PackageStats represents statistics for a package type
@@ -425,20 +426,20 @@ func (cs *CacheStrategyService) GetCacheStats(ctx context.Context) (*CacheStats,
 
 // CacheStats represents cache statistics
 type CacheStats struct {
-	TotalSize      int64             `json:"total_size_bytes"`
-	ItemCount      int64             `json:"item_count"`
-	HitRate        float64           `json:"hit_rate"`
-	MissRate       float64           `json:"miss_rate"`
-	EvictionRate   float64           `json:"eviction_rate"`
-	BackendStats   map[string]interface{} `json:"backend_stats"`
-	StrategyStats  map[string]interface{} `json:"strategy_stats"`
+	TotalSize     int64                  `json:"total_size_bytes"`
+	ItemCount     int64                  `json:"item_count"`
+	HitRate       float64                `json:"hit_rate"`
+	MissRate      float64                `json:"miss_rate"`
+	EvictionRate  float64                `json:"eviction_rate"`
+	BackendStats  map[string]interface{} `json:"backend_stats"`
+	StrategyStats map[string]interface{} `json:"strategy_stats"`
 }
 
 // generateCacheKey generates a cache key for the request
 func (cs *CacheStrategyService) generateCacheKey(req *CacheRequest) string {
 	// Create a hierarchical cache key
 	parts := []string{req.PackageType, req.Repository}
-	
+
 	if req.Name != "" {
 		parts = append(parts, req.Name)
 	}
@@ -452,7 +453,7 @@ func (cs *CacheStrategyService) generateCacheKey(req *CacheRequest) string {
 			parts = append(parts, cleanPath)
 		}
 	}
-	
+
 	return strings.Join(parts, ":")
 }
 
@@ -468,21 +469,21 @@ func (cs *CacheStrategyService) getDefaultTTL(packageType string) time.Duration 
 func (cs *CacheStrategyService) registerDefaultStrategies() {
 	// Read-through strategy (default)
 	cs.RegisterStrategy("default", NewReadThroughStrategy())
-	
+
 	// Maven strategy - stable artifacts, long TTL
 	cs.RegisterStrategy("maven", NewWriteThroughStrategy(time.Hour*24, "filesystem"))
-	
+
 	// NPM strategy - frequent updates, shorter TTL
 	cs.RegisterStrategy("npm", NewStaleWhileRevalidateStrategy(time.Hour*12, time.Hour*1))
-	
+
 	// Docker strategy - large files, long TTL, prefer S3
 	cs.RegisterStrategy("docker", NewWriteThroughStrategy(time.Hour*48, "s3"))
-	
+
 	// APT/YUM/APK strategies - frequent updates
 	cs.RegisterStrategy("apt", NewStaleWhileRevalidateStrategy(time.Hour*6, time.Hour*1))
 	cs.RegisterStrategy("yum", NewStaleWhileRevalidateStrategy(time.Hour*6, time.Hour*1))
 	cs.RegisterStrategy("apk", NewStaleWhileRevalidateStrategy(time.Hour*6, time.Hour*1))
-	
+
 	// PyPI strategy - stable packages
 	cs.RegisterStrategy("pypi", NewReadThroughStrategy())
 }
@@ -511,11 +512,11 @@ func (cs *CacheStrategyService) MonitorCacheHealth(ctx context.Context) (*CacheH
 
 // CacheHealthReport represents cache health report
 type CacheHealthReport struct {
-	Status       string                      `json:"status"`
-	Backends     map[string]*BackendHealth   `json:"backends"`
-	Strategies   map[string]*StrategyHealth  `json:"strategies"`
-	Alerts       []string                    `json:"alerts"`
-	Recommendations []string                `json:"recommendations"`
+	Status          string                     `json:"status"`
+	Backends        map[string]*BackendHealth  `json:"backends"`
+	Strategies      map[string]*StrategyHealth `json:"strategies"`
+	Alerts          []string                   `json:"alerts"`
+	Recommendations []string                   `json:"recommendations"`
 }
 
 // BackendHealth represents backend health status

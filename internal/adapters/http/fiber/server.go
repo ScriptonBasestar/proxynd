@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"time"
-	
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/compress"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -12,35 +12,35 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
-	
+
+	"proxynd/internal/adapters/http/fiber/handlers"
 	"proxynd/internal/ports"
 	"proxynd/internal/usecase"
-	"proxynd/internal/adapters/http/fiber/handlers"
 )
 
 // Server implements HTTP server using Fiber framework
 // TODO: Migrate from internal/app/app.go and routers/
 type Server struct {
-	app            *fiber.App
-	proxyService   *usecase.ProxyService
-	cacheService   *usecase.CacheStrategyService
-	healthService  *usecase.HealthService
-	logger         ports.Logger
-	metrics        ports.MetricsCollector
-	config         *ServerConfig
+	app           *fiber.App
+	proxyService  *usecase.ProxyService
+	cacheService  *usecase.CacheStrategyService
+	healthService *usecase.HealthService
+	logger        ports.Logger
+	metrics       ports.MetricsCollector
+	config        *ServerConfig
 }
 
 // ServerConfig represents server configuration
 type ServerConfig struct {
-	Port            string        `json:"port"`
-	ReadTimeout     time.Duration `json:"read_timeout"`
-	WriteTimeout    time.Duration `json:"write_timeout"`
-	IdleTimeout     time.Duration `json:"idle_timeout"`
-	EnableCORS      bool          `json:"enable_cors"`
-	EnableCompress  bool          `json:"enable_compress"`
-	EnableSecurity  bool          `json:"enable_security"`
-	EnableLimiter   bool          `json:"enable_limiter"`
-	TrustedProxies  []string      `json:"trusted_proxies"`
+	Port           string        `json:"port"`
+	ReadTimeout    time.Duration `json:"read_timeout"`
+	WriteTimeout   time.Duration `json:"write_timeout"`
+	IdleTimeout    time.Duration `json:"idle_timeout"`
+	EnableCORS     bool          `json:"enable_cors"`
+	EnableCompress bool          `json:"enable_compress"`
+	EnableSecurity bool          `json:"enable_security"`
+	EnableLimiter  bool          `json:"enable_limiter"`
+	TrustedProxies []string      `json:"trusted_proxies"`
 }
 
 // NewServer creates a new Fiber HTTP server
@@ -81,12 +81,12 @@ func (s *Server) Start(ctx context.Context, addr string) error {
 	if addr == "" {
 		addr = fmt.Sprintf(":%s", s.config.Port)
 	}
-	
-	s.logger.Info(ctx, "Starting HTTP server", 
+
+	s.logger.Info(ctx, "Starting HTTP server",
 		NewField("address", addr),
 		NewField("config", s.config),
 	)
-	
+
 	return s.app.Listen(addr)
 }
 
@@ -124,27 +124,27 @@ func (s *Server) Use(middleware ports.HTTPMiddleware) {
 func (s *Server) setupMiddleware() {
 	// Recovery middleware
 	s.app.Use(recover.New())
-	
+
 	// Logger middleware
 	if s.logger != nil {
 		s.app.Use(logger.New())
 	}
-	
+
 	// Security middleware
 	if s.config.EnableSecurity {
 		s.app.Use(helmet.New())
 	}
-	
+
 	// CORS middleware
 	if s.config.EnableCORS {
 		s.app.Use(cors.New())
 	}
-	
+
 	// Compression middleware
 	if s.config.EnableCompress {
 		s.app.Use(compress.New())
 	}
-	
+
 	// Rate limiting middleware
 	if s.config.EnableLimiter {
 		s.app.Use(limiter.New(limiter.Config{
@@ -152,7 +152,7 @@ func (s *Server) setupMiddleware() {
 			Expiration: time.Minute,
 		}))
 	}
-	
+
 	// Custom metrics middleware
 	s.app.Use(s.metricsMiddleware())
 }
@@ -165,20 +165,20 @@ func (s *Server) setupRoutes() {
 	health.Get("/", s.handleHealth)
 	health.Get("/ready", s.handleReadiness)
 	health.Get("/live", s.handleLiveness)
-	
+
 	// API routes
 	api := s.app.Group("/api")
 	v1 := api.Group("/v1")
-	
+
 	// Proxy routes - TODO: Migrate from routers/proxy_router.go
 	proxy := v1.Group("/proxy")
 	proxy.All("/*", s.handleProxy)
-	
+
 	// Cache routes
 	cache := v1.Group("/cache")
 	cache.Get("/stats", s.handleCacheStats)
 	cache.Delete("/", s.handleCacheInvalidate)
-	
+
 	// Admin routes
 	admin := v1.Group("/admin")
 	admin.Get("/metrics", s.handleMetrics)
@@ -188,7 +188,7 @@ func (s *Server) setupRoutes() {
 // handleHealth handles health check requests
 func (s *Server) handleHealth(c *fiber.Ctx) error {
 	ctx := &FiberContext{ctx: c}
-	
+
 	// Use the health handler from new architecture
 	handler := handlers.NewHealthHandler(handlers.NewBaseHandler(
 		s.proxyService,
@@ -197,7 +197,7 @@ func (s *Server) handleHealth(c *fiber.Ctx) error {
 		s.logger,
 		s.metrics,
 	))
-	
+
 	return handler.CheckHealth(ctx)
 }
 
@@ -205,7 +205,7 @@ func (s *Server) handleHealth(c *fiber.Ctx) error {
 func (s *Server) handleReadiness(c *fiber.Ctx) error {
 	// TODO: Implement readiness check handler
 	return c.JSON(fiber.Map{
-		"ready": true,
+		"ready":     true,
 		"timestamp": time.Now(),
 	})
 }
@@ -214,7 +214,7 @@ func (s *Server) handleReadiness(c *fiber.Ctx) error {
 func (s *Server) handleLiveness(c *fiber.Ctx) error {
 	// TODO: Implement liveness check handler
 	return c.JSON(fiber.Map{
-		"alive": true,
+		"alive":     true,
 		"timestamp": time.Now(),
 	})
 }
@@ -255,7 +255,7 @@ func (s *Server) handleMetrics(c *fiber.Ctx) error {
 func (s *Server) handleStatus(c *fiber.Ctx) error {
 	// TODO: Implement status handler
 	return c.JSON(fiber.Map{
-		"status": "running",
+		"status":  "running",
 		"version": "dev",
 	})
 }
@@ -281,10 +281,10 @@ func (s *Server) adaptMiddleware(middleware ports.HTTPMiddleware) fiber.Handler 
 func (s *Server) metricsMiddleware() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		start := time.Now()
-		
+
 		// Process request
 		err := c.Next()
-		
+
 		// Record metrics
 		if s.metrics != nil {
 			duration := time.Since(start)
@@ -293,11 +293,11 @@ func (s *Server) metricsMiddleware() fiber.Handler {
 				"path":   c.Path(),
 				"status": fmt.Sprintf("%d", c.Response().StatusCode()),
 			}
-			
+
 			s.metrics.IncCounter("http_requests_total", labels)
 			s.metrics.ObserveHistogram("http_request_duration_seconds", duration.Seconds(), labels)
 		}
-		
+
 		return err
 	}
 }
@@ -337,6 +337,21 @@ func (fc *FiberContext) Header(key string) string {
 	return fc.ctx.Get(key)
 }
 
+// SetHeader sets response header
+func (fc *FiberContext) SetHeader(key, value string) {
+	fc.ctx.Set(key, value)
+}
+
+// ClientIP returns client IP address
+func (fc *FiberContext) ClientIP() string {
+	return fc.ctx.IP()
+}
+
+// UserAgent returns user agent header
+func (fc *FiberContext) UserAgent() string {
+	return fc.ctx.Get("User-Agent")
+}
+
 // Status sets response status code
 func (fc *FiberContext) Status(code int) ports.HTTPContext {
 	fc.ctx.Status(code)
@@ -346,6 +361,11 @@ func (fc *FiberContext) Status(code int) ports.HTTPContext {
 // JSON sends JSON response
 func (fc *FiberContext) JSON(obj interface{}) error {
 	return fc.ctx.JSON(obj)
+}
+
+// SendJSON sends JSON response with status
+func (fc *FiberContext) SendJSON(status int, obj interface{}) error {
+	return fc.ctx.Status(status).JSON(obj)
 }
 
 // Send sends byte response
@@ -370,6 +390,16 @@ func (fc *FiberContext) Locals(key string, value ...interface{}) interface{} {
 		return value[0]
 	}
 	return fc.ctx.Locals(key)
+}
+
+// Get gets value from context locals
+func (fc *FiberContext) Get(key string) interface{} {
+	return fc.ctx.Locals(key)
+}
+
+// Set sets value in context locals
+func (fc *FiberContext) Set(key string, value interface{}) {
+	fc.ctx.Locals(key, value)
 }
 
 // NewField creates a new log field

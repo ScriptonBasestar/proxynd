@@ -11,19 +11,19 @@ import (
 type CacheBackend interface {
 	// Get retrieves data from cache
 	Get(ctx context.Context, key string) ([]byte, error)
-	
+
 	// Set stores data in cache
 	Set(ctx context.Context, key string, data []byte, ttl time.Duration) error
-	
+
 	// Delete removes data from cache
 	Delete(ctx context.Context, key string) error
-	
+
 	// Exists checks if key exists in cache
 	Exists(ctx context.Context, key string) (bool, error)
-	
+
 	// Clear clears all cache data
 	Clear(ctx context.Context) error
-	
+
 	// GetStats returns cache statistics
 	GetStats(ctx context.Context) (*CacheStats, error)
 }
@@ -32,13 +32,13 @@ type CacheBackend interface {
 // TODO: Migrate from cache/filesystem.go and cache/s3.go
 type StreamCacheBackend interface {
 	CacheBackend
-	
+
 	// GetStream retrieves data as stream
 	GetStream(ctx context.Context, key string) (io.ReadCloser, error)
-	
+
 	// SetStream stores data from stream
 	SetStream(ctx context.Context, key string, data io.Reader, ttl time.Duration) error
-	
+
 	// GetSize returns cached item size
 	GetSize(ctx context.Context, key string) (int64, error)
 }
@@ -48,19 +48,19 @@ type StreamCacheBackend interface {
 type CacheManager interface {
 	// Get retrieves from cache with fallback strategy
 	Get(ctx context.Context, req *CacheRequest) (*CacheResponse, error)
-	
+
 	// Set stores in cache with strategy
 	Set(ctx context.Context, req *CacheSetRequest) error
-	
+
 	// Invalidate removes from cache
 	Invalidate(ctx context.Context, pattern string) error
-	
+
 	// GetBackend returns specific backend
 	GetBackend(name string) (CacheBackend, error)
-	
+
 	// ListBackends returns available backends
 	ListBackends() []string
-	
+
 	// GetStrategy returns caching strategy for type
 	GetStrategy(packageType string) CacheStrategy
 }
@@ -98,15 +98,15 @@ type CacheSetRequest struct {
 
 // CacheMetadata represents cache metadata
 type CacheMetadata struct {
-	ContentType   string            `json:"content_type"`
-	Size          int64             `json:"size"`
-	Checksum      string            `json:"checksum"`
-	Headers       map[string]string `json:"headers"`
-	Source        string            `json:"source"`
-	CachedAt      time.Time         `json:"cached_at"`
-	LastAccessed  time.Time         `json:"last_accessed"`
-	AccessCount   int64             `json:"access_count"`
-	Tags          []string          `json:"tags"`
+	ContentType  string            `json:"content_type"`
+	Size         int64             `json:"size"`
+	Checksum     string            `json:"checksum"`
+	Headers      map[string]string `json:"headers"`
+	Source       string            `json:"source"`
+	CachedAt     time.Time         `json:"cached_at"`
+	LastAccessed time.Time         `json:"last_accessed"`
+	AccessCount  int64             `json:"access_count"`
+	Tags         []string          `json:"tags"`
 }
 
 // CacheStats represents cache statistics
@@ -126,16 +126,16 @@ type CacheStats struct {
 type CacheStrategy interface {
 	// ShouldCache determines if item should be cached
 	ShouldCache(req *CacheRequest) bool
-	
+
 	// GetTTL returns TTL for item
 	GetTTL(req *CacheRequest) time.Duration
-	
+
 	// GetBackend returns preferred backend
 	GetBackend(req *CacheRequest) string
-	
+
 	// GenerateKey generates cache key
 	GenerateKey(req *CacheRequest) string
-	
+
 	// GetEvictionPolicy returns eviction policy
 	GetEvictionPolicy() EvictionPolicy
 }
@@ -144,7 +144,7 @@ type CacheStrategy interface {
 type EvictionPolicy interface {
 	// ShouldEvict determines if item should be evicted
 	ShouldEvict(metadata CacheMetadata, stats CacheStats) bool
-	
+
 	// GetPriority returns eviction priority (higher = evict first)
 	GetPriority(metadata CacheMetadata) int
 }
@@ -154,10 +154,10 @@ type EvictionPolicy interface {
 type CacheKeyBuilder interface {
 	// BuildKey builds cache key for request
 	BuildKey(packageType, repository, name, version, path string) string
-	
+
 	// ParseKey parses cache key components
 	ParseKey(key string) (*KeyComponents, error)
-	
+
 	// BuildPattern builds key pattern for invalidation
 	BuildPattern(packageType, repository string) string
 }
@@ -176,13 +176,13 @@ type KeyComponents struct {
 type CacheEviction interface {
 	// StartEviction starts eviction process
 	StartEviction(ctx context.Context) error
-	
+
 	// StopEviction stops eviction process
 	StopEviction(ctx context.Context) error
-	
+
 	// RunEviction runs single eviction cycle
 	RunEviction(ctx context.Context) (*EvictionResult, error)
-	
+
 	// GetEvictionStats returns eviction statistics
 	GetEvictionStats() *EvictionStats
 }
@@ -208,7 +208,7 @@ type EvictionStats struct {
 type CacheHealth interface {
 	// CheckHealth checks cache backend health
 	CheckHealth(ctx context.Context, backend string) (*HealthStatus, error)
-	
+
 	// GetOverallHealth returns overall cache health
 	GetOverallHealth(ctx context.Context) (*OverallHealth, error)
 }

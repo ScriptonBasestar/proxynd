@@ -30,8 +30,8 @@ type PermissionConfig struct {
 	DefaultPermission Permission            // 기본 권한 (인증되지 않은 사용자)
 }
 
-// PermissionMiddleware 사용자별 권한 체크 미들웨어
-func PermissionMiddleware(config PermissionConfig) fiber.Handler {
+// LegacyPermissionMiddleware 사용자별 권한 체크 미들웨어 (legacy)
+func LegacyPermissionMiddleware(config PermissionConfig) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		// HTTP 메서드에 따른 필요 권한 결정
 		requiredPermission := getRequiredPermission(c.Method())

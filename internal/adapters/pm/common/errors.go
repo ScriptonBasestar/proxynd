@@ -41,37 +41,37 @@ func (e *ProxyError) Unwrap() error {
 // Standard error codes
 const (
 	// Network errors
-	ErrCodeNetworkTimeout    = "NETWORK_TIMEOUT"
-	ErrCodeConnectionFailed  = "CONNECTION_FAILED"
-	ErrCodeDNSResolution     = "DNS_RESOLUTION_FAILED"
-	
+	ErrCodeNetworkTimeout   = "NETWORK_TIMEOUT"
+	ErrCodeConnectionFailed = "CONNECTION_FAILED"
+	ErrCodeDNSResolution    = "DNS_RESOLUTION_FAILED"
+
 	// Authentication errors
-	ErrCodeUnauthorized      = "UNAUTHORIZED"
-	ErrCodeForbidden         = "FORBIDDEN"
+	ErrCodeUnauthorized       = "UNAUTHORIZED"
+	ErrCodeForbidden          = "FORBIDDEN"
 	ErrCodeInvalidCredentials = "INVALID_CREDENTIALS"
-	
+
 	// Resource errors
-	ErrCodeNotFound          = "NOT_FOUND"
-	ErrCodeAlreadyExists     = "ALREADY_EXISTS"
-	ErrCodeInvalidFormat     = "INVALID_FORMAT"
-	
+	ErrCodeNotFound      = "NOT_FOUND"
+	ErrCodeAlreadyExists = "ALREADY_EXISTS"
+	ErrCodeInvalidFormat = "INVALID_FORMAT"
+
 	// Validation errors
-	ErrCodeInvalidPath       = "INVALID_PATH"
-	ErrCodeInvalidVersion    = "INVALID_VERSION"
-	ErrCodeInvalidChecksum   = "INVALID_CHECKSUM"
-	
+	ErrCodeInvalidPath     = "INVALID_PATH"
+	ErrCodeInvalidVersion  = "INVALID_VERSION"
+	ErrCodeInvalidChecksum = "INVALID_CHECKSUM"
+
 	// Service errors
 	ErrCodeServiceUnavailable = "SERVICE_UNAVAILABLE"
-	ErrCodeRateLimited       = "RATE_LIMITED"
-	ErrCodeUpstreamError     = "UPSTREAM_ERROR"
-	
+	ErrCodeRateLimited        = "RATE_LIMITED"
+	ErrCodeUpstreamError      = "UPSTREAM_ERROR"
+
 	// Configuration errors
 	ErrCodeConfigurationError = "CONFIGURATION_ERROR"
 	ErrCodeRepositoryNotFound = "REPOSITORY_NOT_FOUND"
-	
+
 	// Cache errors
-	ErrCodeCacheError        = "CACHE_ERROR"
-	ErrCodeCacheMiss         = "CACHE_MISS"
+	ErrCodeCacheError = "CACHE_ERROR"
+	ErrCodeCacheMiss  = "CACHE_MISS"
 )
 
 // MapError maps driver-specific errors to standard proxy errors
@@ -79,18 +79,18 @@ func (m *ErrorMapper) MapError(pmType string, err error) error {
 	if err == nil {
 		return nil
 	}
-	
+
 	// If it's already a ProxyError, return as-is
 	var proxyErr *ProxyError
 	if errors.As(err, &proxyErr) {
 		return err
 	}
-	
+
 	// Map common HTTP errors first
 	if httpErr := m.mapHTTPError(pmType, err); httpErr != nil {
 		return httpErr
 	}
-	
+
 	// Map package manager specific errors
 	switch pmType {
 	case "maven":
@@ -118,7 +118,7 @@ func (m *ErrorMapper) IsRetryableError(err error) bool {
 	if errors.As(err, &proxyErr) {
 		return proxyErr.Retryable
 	}
-	
+
 	// Check error message for retryable conditions
 	errMsg := strings.ToLower(err.Error())
 	retryableKeywords := []string{
@@ -133,13 +133,13 @@ func (m *ErrorMapper) IsRetryableError(err error) bool {
 		"503",
 		"504",
 	}
-	
+
 	for _, keyword := range retryableKeywords {
 		if strings.Contains(errMsg, keyword) {
 			return true
 		}
 	}
-	
+
 	return false
 }
 
@@ -149,7 +149,7 @@ func (m *ErrorMapper) IsNotFoundError(err error) bool {
 	if errors.As(err, &proxyErr) {
 		return proxyErr.Code == ErrCodeNotFound
 	}
-	
+
 	errMsg := strings.ToLower(err.Error())
 	notFoundKeywords := []string{
 		"not found",
@@ -158,13 +158,13 @@ func (m *ErrorMapper) IsNotFoundError(err error) bool {
 		"does not exist",
 		"missing",
 	}
-	
+
 	for _, keyword := range notFoundKeywords {
 		if strings.Contains(errMsg, keyword) {
 			return true
 		}
 	}
-	
+
 	return false
 }
 
@@ -174,7 +174,7 @@ func (m *ErrorMapper) IsForbiddenError(err error) bool {
 	if errors.As(err, &proxyErr) {
 		return proxyErr.Code == ErrCodeForbidden || proxyErr.Code == ErrCodeUnauthorized
 	}
-	
+
 	errMsg := strings.ToLower(err.Error())
 	forbiddenKeywords := []string{
 		"forbidden",
@@ -184,20 +184,20 @@ func (m *ErrorMapper) IsForbiddenError(err error) bool {
 		"403",
 		"permission denied",
 	}
-	
+
 	for _, keyword := range forbiddenKeywords {
 		if strings.Contains(errMsg, keyword) {
 			return true
 		}
 	}
-	
+
 	return false
 }
 
 // HTTP error mapping
 func (m *ErrorMapper) mapHTTPError(pmType string, err error) error {
 	errMsg := strings.ToLower(err.Error())
-	
+
 	// Check for HTTP status codes in error message
 	if strings.Contains(errMsg, "401") || strings.Contains(errMsg, "unauthorized") {
 		return &ProxyError{
@@ -209,7 +209,7 @@ func (m *ErrorMapper) mapHTTPError(pmType string, err error) error {
 			Cause:      err,
 		}
 	}
-	
+
 	if strings.Contains(errMsg, "403") || strings.Contains(errMsg, "forbidden") {
 		return &ProxyError{
 			Code:       ErrCodeForbidden,
@@ -220,7 +220,7 @@ func (m *ErrorMapper) mapHTTPError(pmType string, err error) error {
 			Cause:      err,
 		}
 	}
-	
+
 	if strings.Contains(errMsg, "404") || strings.Contains(errMsg, "not found") {
 		return &ProxyError{
 			Code:       ErrCodeNotFound,
@@ -231,7 +231,7 @@ func (m *ErrorMapper) mapHTTPError(pmType string, err error) error {
 			Cause:      err,
 		}
 	}
-	
+
 	if strings.Contains(errMsg, "429") || strings.Contains(errMsg, "rate limit") {
 		return &ProxyError{
 			Code:       ErrCodeRateLimited,
@@ -242,9 +242,9 @@ func (m *ErrorMapper) mapHTTPError(pmType string, err error) error {
 			Cause:      err,
 		}
 	}
-	
-	if strings.Contains(errMsg, "502") || strings.Contains(errMsg, "503") || 
-	   strings.Contains(errMsg, "504") || strings.Contains(errMsg, "unavailable") {
+
+	if strings.Contains(errMsg, "502") || strings.Contains(errMsg, "503") ||
+		strings.Contains(errMsg, "504") || strings.Contains(errMsg, "unavailable") {
 		return &ProxyError{
 			Code:       ErrCodeServiceUnavailable,
 			Message:    "Service temporarily unavailable",
@@ -254,7 +254,7 @@ func (m *ErrorMapper) mapHTTPError(pmType string, err error) error {
 			Cause:      err,
 		}
 	}
-	
+
 	if strings.Contains(errMsg, "timeout") {
 		return &ProxyError{
 			Code:       ErrCodeNetworkTimeout,
@@ -265,14 +265,14 @@ func (m *ErrorMapper) mapHTTPError(pmType string, err error) error {
 			Cause:      err,
 		}
 	}
-	
+
 	return nil
 }
 
 // Maven-specific error mapping
 func (m *ErrorMapper) mapMavenError(err error) error {
 	errMsg := strings.ToLower(err.Error())
-	
+
 	if strings.Contains(errMsg, "invalid pom") || strings.Contains(errMsg, "malformed") {
 		return &ProxyError{
 			Code:       ErrCodeInvalidFormat,
@@ -283,7 +283,7 @@ func (m *ErrorMapper) mapMavenError(err error) error {
 			Cause:      err,
 		}
 	}
-	
+
 	if strings.Contains(errMsg, "repository") && strings.Contains(errMsg, "not configured") {
 		return &ProxyError{
 			Code:       ErrCodeRepositoryNotFound,
@@ -294,14 +294,14 @@ func (m *ErrorMapper) mapMavenError(err error) error {
 			Cause:      err,
 		}
 	}
-	
+
 	return m.mapGenericError(err)
 }
 
 // NPM-specific error mapping
 func (m *ErrorMapper) mapNpmError(err error) error {
 	errMsg := strings.ToLower(err.Error())
-	
+
 	if strings.Contains(errMsg, "package.json") && strings.Contains(errMsg, "invalid") {
 		return &ProxyError{
 			Code:       ErrCodeInvalidFormat,
@@ -312,7 +312,7 @@ func (m *ErrorMapper) mapNpmError(err error) error {
 			Cause:      err,
 		}
 	}
-	
+
 	if strings.Contains(errMsg, "registry") && strings.Contains(errMsg, "not configured") {
 		return &ProxyError{
 			Code:       ErrCodeRepositoryNotFound,
@@ -323,14 +323,14 @@ func (m *ErrorMapper) mapNpmError(err error) error {
 			Cause:      err,
 		}
 	}
-	
+
 	return m.mapGenericError(err)
 }
 
 // APT-specific error mapping
 func (m *ErrorMapper) mapAptError(err error) error {
 	errMsg := strings.ToLower(err.Error())
-	
+
 	if strings.Contains(errMsg, "release") && strings.Contains(errMsg, "invalid") {
 		return &ProxyError{
 			Code:       ErrCodeInvalidFormat,
@@ -341,7 +341,7 @@ func (m *ErrorMapper) mapAptError(err error) error {
 			Cause:      err,
 		}
 	}
-	
+
 	return m.mapGenericError(err)
 }
 
@@ -363,7 +363,7 @@ func (m *ErrorMapper) mapApkError(err error) error {
 // Docker registry-specific error mapping
 func (m *ErrorMapper) mapRegistryError(err error) error {
 	errMsg := strings.ToLower(err.Error())
-	
+
 	if strings.Contains(errMsg, "manifest") && strings.Contains(errMsg, "invalid") {
 		return &ProxyError{
 			Code:       ErrCodeInvalidFormat,
@@ -374,14 +374,14 @@ func (m *ErrorMapper) mapRegistryError(err error) error {
 			Cause:      err,
 		}
 	}
-	
+
 	return m.mapGenericError(err)
 }
 
 // Generic error mapping
 func (m *ErrorMapper) mapGenericError(err error) error {
 	errMsg := strings.ToLower(err.Error())
-	
+
 	// Connection errors
 	if strings.Contains(errMsg, "connection refused") || strings.Contains(errMsg, "connection failed") {
 		return &ProxyError{
@@ -393,7 +393,7 @@ func (m *ErrorMapper) mapGenericError(err error) error {
 			Cause:      err,
 		}
 	}
-	
+
 	// DNS errors
 	if strings.Contains(errMsg, "no such host") || strings.Contains(errMsg, "dns") {
 		return &ProxyError{
@@ -405,7 +405,7 @@ func (m *ErrorMapper) mapGenericError(err error) error {
 			Cause:      err,
 		}
 	}
-	
+
 	// Generic upstream error
 	return &ProxyError{
 		Code:       ErrCodeUpstreamError,

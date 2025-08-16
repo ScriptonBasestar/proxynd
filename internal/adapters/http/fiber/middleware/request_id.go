@@ -3,11 +3,15 @@ package middlewares
 import (
 	"crypto/rand"
 	"encoding/hex"
-	"fmt"
 
 	"github.com/google/uuid"
 
 	"proxynd/internal/ports"
+)
+
+// Header constants
+const (
+	HeaderXRequestID = "X-Request-ID"
 )
 
 // RequestIDMiddleware implements ports.HTTPMiddleware for request ID generation
@@ -38,15 +42,15 @@ func NewRequestIDMiddleware(
 	if config == nil {
 		config = &ports.RequestIDConfig{
 			Enabled:    true,
-			HeaderName: "X-Request-ID",
+			HeaderName: HeaderXRequestID,
 			Generator:  "uuid",
 		}
 	}
-	
+
 	if generator == nil {
 		generator = NewUUIDRequestIDGenerator(config.HeaderName)
 	}
-	
+
 	return &RequestIDMiddleware{
 		config:    config,
 		generator: generator,
@@ -91,16 +95,16 @@ type RequestIDHandler struct {
 func (h *RequestIDHandler) Handle(ctx ports.HTTPContext) error {
 	// Try to extract existing request ID from headers
 	requestID := h.generator.Extract(ctx)
-	
+
 	// Generate new request ID if not present
 	if requestID == "" {
 		requestID = h.generator.Generate()
 	}
-	
+
 	// Set request ID in context and response headers
 	h.generator.SetRequestID(ctx, requestID)
 	ctx.SetHeader(h.config.HeaderName, requestID)
-	
+
 	// Log request ID if logger is available
 	if h.logger != nil {
 		h.logger.Debug(ctx.Context(), "Request ID generated",
@@ -109,7 +113,7 @@ func (h *RequestIDHandler) Handle(ctx ports.HTTPContext) error {
 			ports.Field(&RequestIDField{key: "path", value: ctx.Path()}),
 		)
 	}
-	
+
 	return h.next.Handle(ctx)
 }
 
@@ -132,9 +136,9 @@ func (f *RequestIDField) Value() interface{} {
 // NewUUIDRequestIDGenerator creates a new UUID-based request ID generator
 func NewUUIDRequestIDGenerator(headerName string) ports.RequestIDGenerator {
 	if headerName == "" {
-		headerName = "X-Request-ID"
+		headerName = HeaderXRequestID
 	}
-	
+
 	return &UUIDRequestIDGenerator{
 		headerName: headerName,
 	}
@@ -151,12 +155,12 @@ func (g *UUIDRequestIDGenerator) Extract(ctx ports.HTTPContext) string {
 	if requestID := ctx.Header(g.headerName); requestID != "" {
 		return requestID
 	}
-	
+
 	// Try to get from context locals
 	if requestID, ok := ctx.Get("request_id").(string); ok && requestID != "" {
 		return requestID
 	}
-	
+
 	return ""
 }
 
@@ -169,17 +173,17 @@ func (g *UUIDRequestIDGenerator) SetRequestID(ctx ports.HTTPContext, id string) 
 // NewNanoIDRequestIDGenerator creates a new NanoID-based request ID generator
 func NewNanoIDRequestIDGenerator(headerName string, alphabet string, size int) ports.RequestIDGenerator {
 	if headerName == "" {
-		headerName = "X-Request-ID"
+		headerName = HeaderXRequestID
 	}
-	
+
 	if alphabet == "" {
 		alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 	}
-	
+
 	if size <= 0 {
 		size = 21 // Default NanoID size
 	}
-	
+
 	return &NanoIDRequestIDGenerator{
 		headerName: headerName,
 		alphabet:   alphabet,
@@ -198,12 +202,12 @@ func (g *NanoIDRequestIDGenerator) Extract(ctx ports.HTTPContext) string {
 	if requestID := ctx.Header(g.headerName); requestID != "" {
 		return requestID
 	}
-	
+
 	// Try to get from context locals
 	if requestID, ok := ctx.Get("request_id").(string); ok && requestID != "" {
 		return requestID
 	}
-	
+
 	return ""
 }
 
@@ -220,12 +224,12 @@ func (g *NanoIDRequestIDGenerator) generateNanoID() string {
 		// Fallback to UUID if random generation fails
 		return uuid.New().String()
 	}
-	
+
 	alphabetLen := len(g.alphabet)
 	for i := 0; i < g.size; i++ {
 		bytes[i] = g.alphabet[int(bytes[i])%alphabetLen]
 	}
-	
+
 	return string(bytes)
 }
 
@@ -238,16 +242,16 @@ type CustomRequestIDGenerator struct {
 // NewCustomRequestIDGenerator creates a new custom request ID generator
 func NewCustomRequestIDGenerator(headerName string, generator func() string) ports.RequestIDGenerator {
 	if headerName == "" {
-		headerName = "X-Request-ID"
+		headerName = HeaderXRequestID
 	}
-	
+
 	if generator == nil {
 		// Fallback to UUID generator
 		generator = func() string {
 			return uuid.New().String()
 		}
 	}
-	
+
 	return &CustomRequestIDGenerator{
 		headerName: headerName,
 		generator:  generator,
@@ -265,12 +269,12 @@ func (g *CustomRequestIDGenerator) Extract(ctx ports.HTTPContext) string {
 	if requestID := ctx.Header(g.headerName); requestID != "" {
 		return requestID
 	}
-	
+
 	// Try to get from context locals
 	if requestID, ok := ctx.Get("request_id").(string); ok && requestID != "" {
 		return requestID
 	}
-	
+
 	return ""
 }
 
@@ -289,13 +293,13 @@ type HexRequestIDGenerator struct {
 // NewHexRequestIDGenerator creates a new hex-based request ID generator
 func NewHexRequestIDGenerator(headerName string, length int) ports.RequestIDGenerator {
 	if headerName == "" {
-		headerName = "X-Request-ID"
+		headerName = HeaderXRequestID
 	}
-	
+
 	if length <= 0 {
 		length = 16 // Default hex length (32 characters)
 	}
-	
+
 	return &HexRequestIDGenerator{
 		headerName: headerName,
 		length:     length,
@@ -309,7 +313,7 @@ func (g *HexRequestIDGenerator) Generate() string {
 		// Fallback to UUID if random generation fails
 		return uuid.New().String()
 	}
-	
+
 	return hex.EncodeToString(bytes)
 }
 
@@ -319,12 +323,12 @@ func (g *HexRequestIDGenerator) Extract(ctx ports.HTTPContext) string {
 	if requestID := ctx.Header(g.headerName); requestID != "" {
 		return requestID
 	}
-	
+
 	// Try to get from context locals
 	if requestID, ok := ctx.Get("request_id").(string); ok && requestID != "" {
 		return requestID
 	}
-	
+
 	return ""
 }
 
@@ -339,7 +343,7 @@ func CreateRequestIDGenerator(config *ports.RequestIDConfig) ports.RequestIDGene
 	if config == nil {
 		return NewUUIDRequestIDGenerator("")
 	}
-	
+
 	switch config.Generator {
 	case "uuid":
 		return NewUUIDRequestIDGenerator(config.HeaderName)

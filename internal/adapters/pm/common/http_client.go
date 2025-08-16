@@ -18,19 +18,19 @@ type HTTPClient struct {
 
 // HTTPClientConfig represents HTTP client configuration
 type HTTPClientConfig struct {
-	Timeout             time.Duration `json:"timeout" yaml:"timeout"`
-	MaxIdleConns        int           `json:"max_idle_conns" yaml:"max_idle_conns"`
-	MaxIdleConnsPerHost int           `json:"max_idle_conns_per_host" yaml:"max_idle_conns_per_host"`
-	MaxConnsPerHost     int           `json:"max_conns_per_host" yaml:"max_conns_per_host"`
-	IdleConnTimeout     time.Duration `json:"idle_conn_timeout" yaml:"idle_conn_timeout"`
-	TLSHandshakeTimeout time.Duration `json:"tls_handshake_timeout" yaml:"tls_handshake_timeout"`
+	Timeout               time.Duration `json:"timeout" yaml:"timeout"`
+	MaxIdleConns          int           `json:"max_idle_conns" yaml:"max_idle_conns"`
+	MaxIdleConnsPerHost   int           `json:"max_idle_conns_per_host" yaml:"max_idle_conns_per_host"`
+	MaxConnsPerHost       int           `json:"max_conns_per_host" yaml:"max_conns_per_host"`
+	IdleConnTimeout       time.Duration `json:"idle_conn_timeout" yaml:"idle_conn_timeout"`
+	TLSHandshakeTimeout   time.Duration `json:"tls_handshake_timeout" yaml:"tls_handshake_timeout"`
 	ResponseHeaderTimeout time.Duration `json:"response_header_timeout" yaml:"response_header_timeout"`
 	ExpectContinueTimeout time.Duration `json:"expect_continue_timeout" yaml:"expect_continue_timeout"`
-	DialTimeout         time.Duration `json:"dial_timeout" yaml:"dial_timeout"`
-	KeepAlive           time.Duration `json:"keep_alive" yaml:"keep_alive"`
-	DisableCompression  bool          `json:"disable_compression" yaml:"disable_compression"`
-	DisableKeepAlives   bool          `json:"disable_keep_alives" yaml:"disable_keep_alives"`
-	UserAgent           string        `json:"user_agent" yaml:"user_agent"`
+	DialTimeout           time.Duration `json:"dial_timeout" yaml:"dial_timeout"`
+	KeepAlive             time.Duration `json:"keep_alive" yaml:"keep_alive"`
+	DisableCompression    bool          `json:"disable_compression" yaml:"disable_compression"`
+	DisableKeepAlives     bool          `json:"disable_keep_alives" yaml:"disable_keep_alives"`
+	UserAgent             string        `json:"user_agent" yaml:"user_agent"`
 }
 
 // DefaultHTTPClientConfig returns default HTTP client configuration
@@ -57,7 +57,7 @@ func NewHTTPClient(config *HTTPClientConfig) ports.HTTPClient {
 	if config == nil {
 		config = DefaultHTTPClientConfig()
 	}
-	
+
 	transport := &http.Transport{
 		MaxIdleConns:          config.MaxIdleConns,
 		MaxIdleConnsPerHost:   config.MaxIdleConnsPerHost,
@@ -70,12 +70,12 @@ func NewHTTPClient(config *HTTPClientConfig) ports.HTTPClient {
 		DisableKeepAlives:     config.DisableKeepAlives,
 		ForceAttemptHTTP2:     true,
 	}
-	
+
 	client := &http.Client{
 		Transport: transport,
 		Timeout:   config.Timeout,
 	}
-	
+
 	return &HTTPClient{
 		client: client,
 		config: config,
@@ -88,7 +88,7 @@ func (c *HTTPClient) Get(ctx context.Context, url string, headers map[string]str
 	if err != nil {
 		return nil, fmt.Errorf("failed to create GET request: %w", err)
 	}
-	
+
 	return c.doRequest(req, headers)
 }
 
@@ -98,7 +98,7 @@ func (c *HTTPClient) Post(ctx context.Context, url string, body io.Reader, heade
 	if err != nil {
 		return nil, fmt.Errorf("failed to create POST request: %w", err)
 	}
-	
+
 	return c.doRequest(req, headers)
 }
 
@@ -108,7 +108,7 @@ func (c *HTTPClient) Put(ctx context.Context, url string, body io.Reader, header
 	if err != nil {
 		return nil, fmt.Errorf("failed to create PUT request: %w", err)
 	}
-	
+
 	return c.doRequest(req, headers)
 }
 
@@ -118,7 +118,7 @@ func (c *HTTPClient) Delete(ctx context.Context, url string, headers map[string]
 	if err != nil {
 		return nil, fmt.Errorf("failed to create DELETE request: %w", err)
 	}
-	
+
 	return c.doRequest(req, headers)
 }
 
@@ -128,7 +128,7 @@ func (c *HTTPClient) Head(ctx context.Context, url string, headers map[string]st
 	if err != nil {
 		return nil, fmt.Errorf("failed to create HEAD request: %w", err)
 	}
-	
+
 	return c.doRequest(req, headers)
 }
 
@@ -138,28 +138,28 @@ func (c *HTTPClient) doRequest(req *http.Request, headers map[string]string) (*p
 	for key, value := range headers {
 		req.Header.Set(key, value)
 	}
-	
+
 	// Set default User-Agent if not provided
 	if req.Header.Get("User-Agent") == "" {
 		req.Header.Set("User-Agent", c.config.UserAgent)
 	}
-	
+
 	// Set common headers for proxy requests
 	if req.Header.Get("Accept") == "" {
 		req.Header.Set("Accept", "*/*")
 	}
-	
+
 	// Add compression support if not disabled
 	if !c.config.DisableCompression && req.Header.Get("Accept-Encoding") == "" {
 		req.Header.Set("Accept-Encoding", "gzip, deflate")
 	}
-	
+
 	// Execute request
-	resp, err := c.client.Do(req)
+	resp, err := c.client.Do(req) //nolint:bodyclose // Body is returned to caller for processing
 	if err != nil {
 		return nil, fmt.Errorf("http request failed: %w", err)
 	}
-	
+
 	// Convert response headers to map
 	responseHeaders := make(map[string]string)
 	for key, values := range resp.Header {
@@ -167,13 +167,13 @@ func (c *HTTPClient) doRequest(req *http.Request, headers map[string]string) (*p
 			responseHeaders[key] = values[0]
 		}
 	}
-	
+
 	// Get content length
 	var size int64
 	if resp.ContentLength > 0 {
 		size = resp.ContentLength
 	}
-	
+
 	return &ports.ProxyHTTPResponse{
 		Body:       resp.Body,
 		StatusCode: resp.StatusCode,
@@ -198,7 +198,7 @@ func (c *HTTPClient) GetConfig() *HTTPClientConfig {
 // GetStats returns HTTP client statistics
 func (c *HTTPClient) GetStats() map[string]interface{} {
 	stats := make(map[string]interface{})
-	
+
 	if transport, ok := c.client.Transport.(*http.Transport); ok {
 		stats["max_idle_conns"] = transport.MaxIdleConns
 		stats["max_idle_conns_per_host"] = transport.MaxIdleConnsPerHost
@@ -207,10 +207,10 @@ func (c *HTTPClient) GetStats() map[string]interface{} {
 		stats["tls_handshake_timeout"] = transport.TLSHandshakeTimeout
 		stats["response_header_timeout"] = transport.ResponseHeaderTimeout
 	}
-	
+
 	stats["timeout"] = c.client.Timeout
 	stats["user_agent"] = c.config.UserAgent
-	
+
 	return stats
 }
 

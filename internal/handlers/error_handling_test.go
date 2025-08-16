@@ -11,7 +11,7 @@ import (
 	"github.com/valyala/fasthttp"
 
 	"proxynd/cache"
-	"proxynd/cache/mocks"
+	cacheMocks "proxynd/internal/services/proxy/mocks"
 	proxyerrors "proxynd/internal/errors"
 )
 
@@ -80,7 +80,7 @@ func TestBaseProxyHandlerImpl_ErrorHandling(t *testing.T) {
 		// Mock 설정
 		mockHandler := &MockErrorHandler{}
 		mockContainer := &MockErrorContainer{}
-		mockCache := &mocks.MockCache{}
+		mockCache := &cacheMocks.MockCacheService{}
 
 		mockContainer.On("Cache").Return(mockCache)
 		mockHandler.On("IsEnabled").Return(false)
@@ -114,7 +114,7 @@ func TestBaseProxyHandlerImpl_ErrorHandling(t *testing.T) {
 		// Mock 설정
 		mockHandler := &MockErrorHandler{}
 		mockContainer := &MockErrorContainer{}
-		mockCache := &mocks.MockCache{}
+		mockCache := &cacheMocks.MockCacheService{}
 
 		mockContainer.On("Cache").Return(mockCache)
 		mockHandler.On("IsEnabled").Return(true)
@@ -159,7 +159,7 @@ func TestBaseProxyHandlerImpl_ErrorHandling(t *testing.T) {
 		// Mock 설정
 		mockHandler := &MockErrorHandler{}
 		mockContainer := &MockErrorContainer{}
-		mockCache := &mocks.MockCache{}
+		mockCache := &cacheMocks.MockCacheService{}
 
 		mockContainer.On("Cache").Return(mockCache)
 		mockHandler.On("IsEnabled").Return(true)
@@ -200,7 +200,7 @@ func TestBaseProxyHandlerImpl_ErrorHandling(t *testing.T) {
 		// Mock 설정
 		mockHandler := &MockErrorHandler{}
 		mockContainer := &MockErrorContainer{}
-		mockCache := &mocks.MockCache{}
+		mockCache := &cacheMocks.MockCacheService{}
 
 		mockContainer.On("Cache").Return(mockCache)
 		mockHandler.On("IsEnabled").Return(true)
@@ -240,7 +240,7 @@ func TestBaseProxyHandlerImpl_CacheErrors(t *testing.T) {
 		// Mock 설정
 		mockHandler := &MockErrorHandler{}
 		mockContainer := &MockErrorContainer{}
-		mockCache := &mocks.MockCache{}
+		mockCache := &cacheMocks.MockCacheService{}
 
 		mockContainer.On("Cache").Return(mockCache)
 
@@ -261,7 +261,7 @@ func TestBaseProxyHandlerImpl_ErrorRecovery(t *testing.T) {
 		// Mock 설정
 		mockHandler := &MockErrorHandler{}
 		mockContainer := &MockErrorContainer{}
-		mockCache := &mocks.MockCache{}
+		mockCache := &cacheMocks.MockCacheService{}
 
 		mockContainer.On("Cache").Return(mockCache)
 		mockHandler.On("IsEnabled").Return(true)
@@ -302,7 +302,7 @@ func TestBaseProxyHandlerImpl_ErrorRecovery(t *testing.T) {
 		// Mock 설정
 		mockHandler := &MockErrorHandler{}
 		mockContainer := &MockErrorContainer{}
-		mockCache := &mocks.MockCache{}
+		mockCache := &cacheMocks.MockCacheService{}
 
 		mockContainer.On("Cache").Return(mockCache)
 		mockHandler.On("IsEnabled").Return(true)
@@ -351,7 +351,7 @@ func BenchmarkBaseProxyHandlerImpl_ErrorHandling(b *testing.B) {
 	// Mock 설정
 	mockHandler := &MockErrorHandler{}
 	mockContainer := &MockErrorContainer{}
-	mockCache := &mocks.MockCache{}
+	mockCache := &cacheMocks.MockCacheService{}
 
 	mockContainer.On("Cache").Return(mockCache)
 	mockHandler.On("IsEnabled").Return(false)

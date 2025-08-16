@@ -10,19 +10,19 @@ import (
 type AuthService interface {
 	// Authenticate validates credentials and returns user info
 	Authenticate(ctx context.Context, req *AuthRequest) (*AuthResponse, error)
-	
+
 	// Authorize checks if user has permission for resource/action
 	Authorize(ctx context.Context, req *AuthorizeRequest) (*AuthorizeResponse, error)
-	
+
 	// RefreshToken refreshes access token using refresh token
 	RefreshToken(ctx context.Context, refreshToken string) (*TokenPair, error)
-	
+
 	// RevokeToken revokes a token
 	RevokeToken(ctx context.Context, token string) error
-	
+
 	// ValidateToken validates token and returns claims
 	ValidateToken(ctx context.Context, token string) (*TokenClaims, error)
-	
+
 	// GetUser retrieves user information
 	GetUser(ctx context.Context, userID string) (*User, error)
 }
@@ -32,19 +32,19 @@ type AuthService interface {
 type JWTService interface {
 	// GenerateTokenPair generates access and refresh tokens
 	GenerateTokenPair(req *TokenGenerateRequest) (*TokenPair, error)
-	
+
 	// ValidateAccessToken validates access token
 	ValidateAccessToken(token string) (*TokenClaims, error)
-	
+
 	// ValidateRefreshToken validates refresh token
 	ValidateRefreshToken(token string) (*TokenClaims, error)
-	
+
 	// ExtractClaims extracts claims without validation
 	ExtractClaims(token string) (*TokenClaims, error)
-	
+
 	// RevokeToken adds token to revocation list
 	RevokeToken(token string) error
-	
+
 	// IsTokenRevoked checks if token is revoked
 	IsTokenRevoked(token string) (bool, error)
 }
@@ -54,16 +54,16 @@ type JWTService interface {
 type OAuth2Service interface {
 	// GetAuthURL returns OAuth2 authorization URL
 	GetAuthURL(state string, scopes []string) string
-	
+
 	// ExchangeCode exchanges authorization code for tokens
 	ExchangeCode(ctx context.Context, code, state string) (*OAuth2Token, error)
-	
+
 	// GetUserInfo gets user info from OAuth2 provider
 	GetUserInfo(ctx context.Context, token *OAuth2Token) (*OAuth2UserInfo, error)
-	
+
 	// RefreshToken refreshes OAuth2 token
 	RefreshToken(ctx context.Context, refreshToken string) (*OAuth2Token, error)
-	
+
 	// GetProviderName returns provider name (github, gitlab, google)
 	GetProviderName() string
 }
@@ -73,19 +73,19 @@ type OAuth2Service interface {
 type MFAService interface {
 	// GenerateSecret generates MFA secret for user
 	GenerateSecret(userID string) (*MFASecret, error)
-	
+
 	// VerifyCode verifies MFA code
 	VerifyCode(userID, code string) (bool, error)
-	
+
 	// EnableMFA enables MFA for user
 	EnableMFA(ctx context.Context, userID, code string) error
-	
+
 	// DisableMFA disables MFA for user
 	DisableMFA(ctx context.Context, userID string) error
-	
+
 	// IsMFAEnabled checks if MFA is enabled for user
 	IsMFAEnabled(ctx context.Context, userID string) (bool, error)
-	
+
 	// GenerateBackupCodes generates backup codes
 	GenerateBackupCodes(userID string) ([]string, error)
 }
@@ -95,22 +95,22 @@ type MFAService interface {
 type UserService interface {
 	// CreateUser creates new user
 	CreateUser(ctx context.Context, req *CreateUserRequest) (*User, error)
-	
+
 	// UpdateUser updates user information
 	UpdateUser(ctx context.Context, userID string, req *UpdateUserRequest) (*User, error)
-	
+
 	// GetUser retrieves user by ID
 	GetUser(ctx context.Context, userID string) (*User, error)
-	
+
 	// GetUserByEmail retrieves user by email
 	GetUserByEmail(ctx context.Context, email string) (*User, error)
-	
+
 	// ListUsers lists users with pagination
 	ListUsers(ctx context.Context, req *ListUsersRequest) (*ListUsersResponse, error)
-	
+
 	// DeleteUser deletes user
 	DeleteUser(ctx context.Context, userID string) error
-	
+
 	// SetUserRole sets user role
 	SetUserRole(ctx context.Context, userID, role string) error
 }
@@ -256,8 +256,8 @@ type OAuth2UserInfo struct {
 
 // MFASecret represents MFA secret information
 type MFASecret struct {
-	Secret    string `json:"secret"`
-	QRCodeURL string `json:"qr_code_url"`
+	Secret      string   `json:"secret"`
+	QRCodeURL   string   `json:"qr_code_url"`
 	BackupCodes []string `json:"backup_codes"`
 }
 

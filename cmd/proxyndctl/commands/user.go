@@ -156,7 +156,7 @@ func runUserList(showDetails bool) error {
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf(errAPIRequest, resp.StatusCode)
+		return fmt.Errorf(errAPIRequestStatus, resp.StatusCode)
 	}
 
 	// 응답 파싱
@@ -353,7 +353,7 @@ func runUserInfo(username string) error {
 		if resp.StatusCode == http.StatusNotFound {
 			return fmt.Errorf("사용자 '%s'를 찾을 수 없습니다", username)
 		}
-		return fmt.Errorf(errAPIRequest, resp.StatusCode)
+		return fmt.Errorf(errAPIRequestStatus, resp.StatusCode)
 	}
 
 	// 응답 파싱

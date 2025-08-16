@@ -6,8 +6,9 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/service/ssm"
+	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	// "github.com/aws/aws-sdk-go-v2/service/ssm" // TODO: Add SSM dependency
 )
 
 // ClientConfig holds AWS client configuration
@@ -21,7 +22,7 @@ type ClientConfig struct {
 // AWSClient provides AWS service clients
 type AWSClient struct {
 	config    aws.Config
-	ssmClient *ssm.Client
+	// ssmClient *ssm.Client // TODO: Add SSM dependency
 	s3Client  *s3.Client
 }
 
@@ -36,7 +37,7 @@ func NewAWSClient(ctx context.Context, cfg ClientConfig) (*AWSClient, error) {
 		awsConfig, err = config.LoadDefaultConfig(ctx,
 			config.WithRegion(cfg.Region),
 			config.WithCredentialsProvider(aws.NewCredentialsCache(
-				aws.NewStaticCredentialsProvider(
+				credentials.NewStaticCredentialsProvider(
 					cfg.AccessKeyID,
 					cfg.SecretAccessKey,
 					cfg.SessionToken,
@@ -56,7 +57,7 @@ func NewAWSClient(ctx context.Context, cfg ClientConfig) (*AWSClient, error) {
 
 	client := &AWSClient{
 		config:    awsConfig,
-		ssmClient: ssm.NewFromConfig(awsConfig),
+		// ssmClient: ssm.NewFromConfig(awsConfig), // TODO: Add SSM dependency
 		s3Client:  s3.NewFromConfig(awsConfig),
 	}
 
@@ -64,9 +65,12 @@ func NewAWSClient(ctx context.Context, cfg ClientConfig) (*AWSClient, error) {
 }
 
 // GetSSMClient returns the SSM client for parameter store operations
+// TODO: Add SSM dependency
+/*
 func (c *AWSClient) GetSSMClient() *ssm.Client {
 	return c.ssmClient
 }
+*/
 
 // GetS3Client returns the S3 client for storage operations
 func (c *AWSClient) GetS3Client() *s3.Client {
@@ -74,6 +78,8 @@ func (c *AWSClient) GetS3Client() *s3.Client {
 }
 
 // GetParameter retrieves a parameter from AWS SSM Parameter Store
+// TODO: Add SSM dependency
+/*
 func (c *AWSClient) GetParameter(ctx context.Context, name string, withDecryption bool) (string, error) {
 	input := &ssm.GetParameterInput{
 		Name:           aws.String(name),
@@ -91,8 +97,11 @@ func (c *AWSClient) GetParameter(ctx context.Context, name string, withDecryptio
 
 	return *result.Parameter.Value, nil
 }
+*/
 
 // GetParameters retrieves multiple parameters from AWS SSM Parameter Store
+// TODO: Add SSM dependency
+/*
 func (c *AWSClient) GetParameters(ctx context.Context, names []string, withDecryption bool) (map[string]string, error) {
 	if len(names) == 0 {
 		return make(map[string]string), nil
@@ -129,8 +138,11 @@ func (c *AWSClient) GetParameters(ctx context.Context, names []string, withDecry
 
 	return params, nil
 }
+*/
 
 // HealthCheck verifies that the AWS client can connect to AWS services
+// TODO: Add SSM dependency
+/*
 func (c *AWSClient) HealthCheck(ctx context.Context) error {
 	// Try to get caller identity to verify connectivity
 	_, err := c.ssmClient.DescribeParameters(ctx, &ssm.DescribeParametersInput{
@@ -142,3 +154,4 @@ func (c *AWSClient) HealthCheck(ctx context.Context) error {
 
 	return nil
 }
+*/

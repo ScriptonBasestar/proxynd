@@ -6,12 +6,12 @@ import (
 	// Import new adapter structure
 	fiberHandlers "proxynd/internal/adapters/http/fiber/handlers"
 	fiberRouters "proxynd/internal/adapters/http/fiber/routers"
-	
+
 	// TODO: HEXAGONAL_MIGRATION - Remove legacy imports after full migration
 	"proxynd/handlers"
 	"proxynd/middlewares"
 	"proxynd/routers"
-	
+
 	"proxynd/internal/config"
 	"proxynd/logging"
 )
@@ -30,7 +30,7 @@ func SetupRoutes(app *fiber.App, config *RouteConfig) {
 		logger = logging.GetLogger()
 	}
 
-	logger.Info("Setting up routes", 
+	logger.Info("Setting up routes",
 		logging.Bool("new_architecture", config.UseNewArchitecture))
 
 	// TODO: HEXAGONAL_MIGRATION - Phase out legacy routes gradually
@@ -58,8 +58,8 @@ func setupNewArchitectureRoutes(app *fiber.App, config *RouteConfig) {
 
 	// Proxy routes using hybrid approach
 	logger.Info("Setting up proxy routes (hybrid architecture)")
-	fiberRouters.ProxyRouter(app)         // New structure
-	fiberRouters.ProxyRouterV3(app)       // V3 routes are added to main app
+	fiberRouters.ProxyRouter(app)   // New structure
+	fiberRouters.ProxyRouterV3(app) // V3 routes are added to main app
 
 	// Search routes
 	logger.Info("Setting up search routes")
@@ -88,10 +88,10 @@ func setupLegacyRoutes(app *fiber.App, config *RouteConfig) {
 	// Legacy routers - maintain existing behavior
 	routers.HealthRouterWithConfig(app, config.UnifiedConfig)
 	routers.ProxyRouter(app)
-	routers.ProxyRouterV3(app)  // V3 routes use main app
-	
+	routers.ProxyRouterV3(app) // V3 routes use main app
+
 	app.Get("/api/v1/search", handlers.SearchHandler)
-	
+
 	routers.PoolRouter(app)
 	routers.CacheRouter(app)
 	routers.ConfigRouter(app)
@@ -129,11 +129,11 @@ func setupLegacyMiddlewares(app *fiber.App, config *RouteConfig) {
 	// Basic middlewares
 	app.Use(middlewares.ErrorRecovery())
 	app.Use(middlewares.DefaultAccessLogMiddleware())
-	
-	// Security middlewares  
+
+	// Security middlewares
 	app.Use(middlewares.SecurityHeaders())
 	app.Use(middlewares.RateLimit())
-	
+
 	// Authentication middleware (conditional)
 	// TODO: HEXAGONAL_MIGRATION - Add auth config support
 	// if config.UnifiedConfig != nil && config.UnifiedConfig.Auth.Enabled {

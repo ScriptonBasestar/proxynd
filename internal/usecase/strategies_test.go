@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+
 	"proxynd/internal/ports"
 )
 
@@ -128,7 +129,7 @@ func TestLRUEvictionPolicy(t *testing.T) {
 	// Test GetPriority - old item with low access count
 	metadata = ports.CacheMetadata{
 		LastAccessed: time.Now().Add(-time.Hour * 24 * 3), // 3 days old
-		AccessCount:  2,                                    // Low access
+		AccessCount:  2,                                   // Low access
 	}
 	priority := policy.GetPriority(metadata)
 	assert.Greater(t, priority, 0)
@@ -137,7 +138,7 @@ func TestLRUEvictionPolicy(t *testing.T) {
 	// Test GetPriority - recent item with high access count
 	metadata = ports.CacheMetadata{
 		LastAccessed: time.Now().Add(-time.Hour * 2), // Recent
-		AccessCount:  100,                             // High access
+		AccessCount:  100,                            // High access
 	}
 	priority = policy.GetPriority(metadata)
 	assert.Greater(t, priority, 0)
@@ -194,19 +195,19 @@ func TestEvictionPolicyIntegration(t *testing.T) {
 	// Test that strategies use eviction policies correctly
 	lruStrategy := NewReadThroughStrategy()
 	policy := lruStrategy.GetEvictionPolicy()
-	
+
 	// Should be LRU policy
 	assert.IsType(t, &LRUEvictionPolicy{}, policy)
-	
+
 	// Test with sample data
 	metadata := ports.CacheMetadata{
 		LastAccessed: time.Now().Add(-time.Hour * 24 * 10), // 10 days old
-		AccessCount:  1,                                     // Rarely accessed
+		AccessCount:  1,                                    // Rarely accessed
 	}
 	stats := ports.CacheStats{
 		Size: 512 * 1024 * 1024, // Under capacity
 	}
-	
+
 	assert.True(t, policy.ShouldEvict(metadata, stats))
 	priority := policy.GetPriority(metadata)
 	assert.Greater(t, priority, 150) // High priority due to age and low access
@@ -229,19 +230,19 @@ func TestStrategyDefaults(t *testing.T) {
 		t.Run(fmt.Sprintf("strategy_%d", i), func(t *testing.T) {
 			// All strategies should cache by default
 			assert.True(t, strategy.ShouldCache(req))
-			
+
 			// All should have positive TTL
 			ttl := strategy.GetTTL(req)
 			assert.Greater(t, ttl, time.Duration(0))
-			
+
 			// All should have a backend
 			backend := strategy.GetBackend(req)
 			assert.NotEmpty(t, backend)
-			
+
 			// All should generate keys
 			key := strategy.GenerateKey(req)
 			assert.Equal(t, "test-key", key)
-			
+
 			// All should have eviction policies
 			policy := strategy.GetEvictionPolicy()
 			assert.NotNil(t, policy)

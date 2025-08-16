@@ -11,27 +11,27 @@ import (
 type PackageManager interface {
 	// GetPackage retrieves a package from repository
 	GetPackage(ctx context.Context, req *PackageRequest) (*PackageResponse, error)
-	
+
 	// ListPackages lists available packages in repository
 	ListPackages(ctx context.Context, repo string) (*PackageListResponse, error)
-	
+
 	// GetMetadata retrieves package metadata
 	GetMetadata(ctx context.Context, req *MetadataRequest) (*MetadataResponse, error)
-	
+
 	// UploadPackage uploads a package to repository
 	UploadPackage(ctx context.Context, req *UploadRequest) error
-	
+
 	// DeletePackage removes a package from repository
 	DeletePackage(ctx context.Context, req *DeleteRequest) error
 }
 
 // PackageRequest represents a package retrieval request
 type PackageRequest struct {
-	Repository string            `json:"repository"`
-	Name       string            `json:"name"`
-	Version    string            `json:"version"`
-	Path       string            `json:"path"`
-	Headers    map[string]string `json:"headers"`
+	Repository  string            `json:"repository"`
+	Name        string            `json:"name"`
+	Version     string            `json:"version"`
+	Path        string            `json:"path"`
+	Headers     map[string]string `json:"headers"`
 	QueryParams map[string]string `json:"query_params"`
 }
 
@@ -105,10 +105,10 @@ type DeleteRequest struct {
 type TypedPackageManager interface {
 	// GetType returns the package manager type
 	GetType() string
-	
+
 	// ProcessRequest processes type-specific request
 	ProcessRequest(ctx context.Context, req *TypedRequest) (*TypedResponse, error)
-	
+
 	// ValidateRequest validates type-specific request
 	ValidateRequest(req *TypedRequest) error
 }
@@ -137,10 +137,10 @@ type TypedResponse struct {
 type PackageManagerFactory interface {
 	// CreateManager creates a package manager for given type
 	CreateManager(pmType string) (TypedPackageManager, error)
-	
+
 	// GetSupportedTypes returns supported package manager types
 	GetSupportedTypes() []string
-	
+
 	// RegisterManager registers a new package manager type
 	RegisterManager(pmType string, creator func() TypedPackageManager) error
 }
@@ -150,16 +150,16 @@ type PackageManagerFactory interface {
 type RepositoryManager interface {
 	// GetRepository gets repository configuration
 	GetRepository(ctx context.Context, name string) (*RepositoryConfig, error)
-	
+
 	// ListRepositories lists all repositories
 	ListRepositories(ctx context.Context) ([]*RepositoryConfig, error)
-	
+
 	// CreateRepository creates new repository
 	CreateRepository(ctx context.Context, config *RepositoryConfig) error
-	
+
 	// UpdateRepository updates repository configuration
 	UpdateRepository(ctx context.Context, name string, config *RepositoryConfig) error
-	
+
 	// DeleteRepository removes repository
 	DeleteRepository(ctx context.Context, name string) error
 }
@@ -190,16 +190,16 @@ type AuthConfig struct {
 type ProxyService interface {
 	// HandleRequest processes a high-level proxy request
 	HandleRequest(ctx context.Context, req *ProxyRequest) (*ProxyResponse, error)
-	
+
 	// GetDriver returns the underlying package manager driver
 	GetDriver() PackageManagerDriver
-	
+
 	// GetCache returns the cache service
 	GetCache() CacheService
-	
+
 	// GetType returns the proxy service type
 	GetType() string
-	
+
 	// IsEnabled returns if the service is enabled
 	IsEnabled() bool
 }
@@ -210,21 +210,21 @@ type PackageManagerDriver interface {
 	// Basic information
 	Type() string
 	IsSupported(path string) bool
-	
+
 	// Request processing
 	NormalizePath(path string) (string, error)
 	BuildUpstreamURL(req *DriverRequest) (string, error)
 	FetchPackage(ctx context.Context, req *DriverRequest) (*DriverResponse, error)
-	
+
 	// Metadata handling
 	ParseMetadata(content []byte) (*PackageMetadata, error)
 	ValidateSignature(content []byte, signature []byte) error
-	
+
 	// Caching behavior
 	GetCacheKey(req *DriverRequest) string
 	ShouldCache(resp *DriverResponse) bool
 	GetCacheTTL(resp *DriverResponse) time.Duration
-	
+
 	// Configuration
 	LoadConfig() error
 	ValidateConfig() error
@@ -271,14 +271,14 @@ type PackageMetadata struct {
 
 // ProxyRequest represents a high-level proxy request
 type ProxyRequest struct {
-	Type        string            `json:"type"`        // maven, npm, apt, etc.
-	Path        string            `json:"path"`        // request path
-	Method      string            `json:"method"`      // HTTP method
-	Headers     map[string]string `json:"headers"`     // HTTP headers
+	Type        string            `json:"type"`         // maven, npm, apt, etc.
+	Path        string            `json:"path"`         // request path
+	Method      string            `json:"method"`       // HTTP method
+	Headers     map[string]string `json:"headers"`      // HTTP headers
 	QueryParams map[string]string `json:"query_params"` // query parameters
-	RemoteAddr  string            `json:"remote_addr"` // client IP
-	UserAgent   string            `json:"user_agent"`  // user agent
-	Repository  string            `json:"repository"`  // target repository
+	RemoteAddr  string            `json:"remote_addr"`  // client IP
+	UserAgent   string            `json:"user_agent"`   // user agent
+	Repository  string            `json:"repository"`   // target repository
 }
 
 // ProxyResponse represents a high-level proxy response
@@ -298,16 +298,16 @@ type ProxyResponse struct {
 type CacheService interface {
 	// Get retrieves content from cache
 	Get(ctx context.Context, key string) (io.ReadCloser, *ProxyCacheMetadata, error)
-	
+
 	// Put stores content in cache with TTL
 	Put(ctx context.Context, key string, content io.Reader, ttl time.Duration) error
-	
+
 	// Exists checks if a key exists in cache
 	Exists(ctx context.Context, key string) (bool, error)
-	
+
 	// Delete removes content from cache
 	Delete(ctx context.Context, key string) error
-	
+
 	// GetMetadata returns cache metadata without content
 	GetMetadata(ctx context.Context, key string) (*ProxyCacheMetadata, error)
 }
@@ -327,16 +327,16 @@ type ProxyCacheMetadata struct {
 type HTTPClient interface {
 	// Get performs a GET request
 	Get(ctx context.Context, url string, headers map[string]string) (*ProxyHTTPResponse, error)
-	
+
 	// Post performs a POST request
 	Post(ctx context.Context, url string, body io.Reader, headers map[string]string) (*ProxyHTTPResponse, error)
-	
+
 	// Put performs a PUT request
 	Put(ctx context.Context, url string, body io.Reader, headers map[string]string) (*ProxyHTTPResponse, error)
-	
+
 	// Delete performs a DELETE request
 	Delete(ctx context.Context, url string, headers map[string]string) (*ProxyHTTPResponse, error)
-	
+
 	// Head performs a HEAD request
 	Head(ctx context.Context, url string, headers map[string]string) (*ProxyHTTPResponse, error)
 }
@@ -354,10 +354,10 @@ type ProxyHTTPResponse struct {
 type PackageNormalizer interface {
 	// NormalizePath normalizes package path for the specific package manager
 	NormalizePath(pmType, path string) (string, error)
-	
+
 	// ValidatePath validates if the path is valid for the package manager
 	ValidatePath(pmType, path string) error
-	
+
 	// ExtractComponents extracts package components from path
 	ExtractComponents(pmType, path string) (*PathComponents, error)
 }
@@ -377,10 +377,10 @@ type PathComponents struct {
 type SignatureVerifier interface {
 	// VerifySignature verifies package signature
 	VerifySignature(pmType string, content []byte, signature []byte) error
-	
+
 	// GenerateSignature generates signature for content
 	GenerateSignature(pmType string, content []byte) ([]byte, error)
-	
+
 	// SupportedSignatureTypes returns supported signature types
 	SupportedSignatureTypes(pmType string) []string
 }
@@ -390,13 +390,13 @@ type SignatureVerifier interface {
 type ErrorMapper interface {
 	// MapError maps driver-specific errors to standard proxy errors
 	MapError(pmType string, err error) error
-	
+
 	// IsRetryableError checks if error is retryable
 	IsRetryableError(err error) bool
-	
+
 	// IsNotFoundError checks if error represents "not found"
 	IsNotFoundError(err error) bool
-	
+
 	// IsForbiddenError checks if error represents "forbidden"
 	IsForbiddenError(err error) bool
 }

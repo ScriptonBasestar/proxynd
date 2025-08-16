@@ -165,7 +165,7 @@ func runConfigValidate(detailed, _ bool) error {
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf(errAPIRequest, resp.StatusCode)
+		return fmt.Errorf(errAPIRequestStatus, resp.StatusCode)
 	}
 
 	// 응답 파싱
@@ -199,7 +199,7 @@ func runConfigShow(proxyType string, showSources, showEnv bool) error {
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf(errAPIRequest, resp.StatusCode)
+		return fmt.Errorf(errAPIRequestStatus, resp.StatusCode)
 	}
 
 	// 응답 파싱

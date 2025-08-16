@@ -44,7 +44,7 @@ func NewField(key string, value interface{}) ports.Field {
 // NewLogger creates a new Zap logger adapter
 func NewLogger(config *LoggerConfig) (ports.Logger, error) {
 	zapConfig := zap.NewProductionConfig()
-	
+
 	if config != nil {
 		// Apply configuration
 		if config.Level != "" {
@@ -54,32 +54,32 @@ func NewLogger(config *LoggerConfig) (ports.Logger, error) {
 			}
 			zapConfig.Level = zap.NewAtomicLevelAt(level)
 		}
-		
+
 		if config.Format == "console" {
 			zapConfig.Encoding = "console"
 		} else {
 			zapConfig.Encoding = "json"
 		}
-		
+
 		if len(config.OutputPaths) > 0 {
 			zapConfig.OutputPaths = config.OutputPaths
 		}
-		
+
 		if len(config.ErrorOutputPaths) > 0 {
 			zapConfig.ErrorOutputPaths = config.ErrorOutputPaths
 		}
-		
+
 		// Add caller info if enabled
 		if config.EnableCaller {
 			zapConfig.Development = true
 		}
 	}
-	
+
 	logger, err := zapConfig.Build()
 	if err != nil {
 		return nil, fmt.Errorf("failed to build zap logger: %w", err)
 	}
-	
+
 	return &Logger{
 		logger: logger,
 		sugar:  logger.Sugar(),
@@ -122,7 +122,7 @@ func (l *Logger) With(fields ...ports.Field) ports.Logger {
 	for i, field := range fields {
 		zapFields[i] = l.convertField(field)
 	}
-	
+
 	return &Logger{
 		logger: l.logger.With(zapFields...),
 		sugar:  l.logger.With(zapFields...).Sugar(),
@@ -142,17 +142,17 @@ func (l *Logger) WithContext(ctx context.Context) ports.Logger {
 func (l *Logger) convertFields(ctx context.Context, fields ...ports.Field) []zap.Field {
 	// Extract context fields first
 	contextFields := l.extractContextFields(ctx)
-	
+
 	// Combine context fields with provided fields
 	allFields := make([]ports.Field, len(contextFields)+len(fields))
 	copy(allFields, contextFields)
 	copy(allFields[len(contextFields):], fields)
-	
+
 	zapFields := make([]zap.Field, len(allFields))
 	for i, field := range allFields {
 		zapFields[i] = l.convertField(field)
 	}
-	
+
 	return zapFields
 }
 
@@ -183,27 +183,27 @@ func (l *Logger) convertField(field ports.Field) zap.Field {
 // extractContextFields extracts logging fields from context
 func (l *Logger) extractContextFields(ctx context.Context) []ports.Field {
 	var fields []ports.Field
-	
+
 	// Extract trace ID
 	if traceID := l.getTraceIDFromContext(ctx); traceID != "" {
 		fields = append(fields, NewField("trace_id", traceID))
 	}
-	
+
 	// Extract request ID
 	if requestID := l.getRequestIDFromContext(ctx); requestID != "" {
 		fields = append(fields, NewField("request_id", requestID))
 	}
-	
+
 	// Extract user ID
 	if userID := l.getUserIDFromContext(ctx); userID != "" {
 		fields = append(fields, NewField("user_id", userID))
 	}
-	
+
 	// Extract session ID
 	if sessionID := l.getSessionIDFromContext(ctx); sessionID != "" {
 		fields = append(fields, NewField("session_id", sessionID))
 	}
-	
+
 	return fields
 }
 

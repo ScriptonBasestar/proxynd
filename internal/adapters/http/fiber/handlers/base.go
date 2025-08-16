@@ -97,18 +97,18 @@ func (h *HealthHandler) CheckHealth(ctx ports.HTTPContext) error {
 		Detailed:  ctx.Query("format") != "simple",
 		Timeout:   30, // default 30 seconds
 	}
-	
+
 	// Call use case
 	response, err := h.healthService.CheckHealth(ctx.Context(), req)
 	if err != nil {
-		h.logger.Error(ctx.Context(), "Health check failed", 
+		h.logger.Error(ctx.Context(), "Health check failed",
 			NewField("error", err.Error()),
 		)
 		return ctx.Status(500).JSON(map[string]string{
 			"error": "Health check failed",
 		})
 	}
-	
+
 	// Return appropriate status code based on health status
 	statusCode := 200
 	switch response.Status {
@@ -117,7 +117,7 @@ func (h *HealthHandler) CheckHealth(ctx ports.HTTPContext) error {
 	case "unhealthy":
 		statusCode = 503 // Service unavailable
 	}
-	
+
 	// Simple format for load balancers
 	if !req.Detailed {
 		return ctx.Status(statusCode).JSON(map[string]interface{}{
@@ -125,7 +125,7 @@ func (h *HealthHandler) CheckHealth(ctx ports.HTTPContext) error {
 			"timestamp": response.Timestamp.Unix(),
 		})
 	}
-	
+
 	// Detailed format for monitoring
 	return ctx.Status(statusCode).JSON(response)
 }

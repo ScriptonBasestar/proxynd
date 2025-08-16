@@ -13,26 +13,26 @@ import (
 
 // ZapAdapter implements the Logger interface using zap instead of zerolog
 type ZapAdapter struct {
-	logger      *zap.Logger
-	sugar       *zap.SugaredLogger
-	fields      []zap.Field
-	component   string
+	logger    *zap.Logger
+	sugar     *zap.SugaredLogger
+	fields    []zap.Field
+	component string
 }
 
 // ZapMigrationConfig contains configuration for zap migration
 type ZapMigrationConfig struct {
-	Level      string            `json:"level" yaml:"level"`
-	Format     string            `json:"format" yaml:"format"` // json, console
-	Output     []OutputConfig    `json:"output" yaml:"output"`
-	Fields     map[string]interface{} `json:"fields" yaml:"fields"`
-	Sampling   *SamplingConfig   `json:"sampling" yaml:"sampling"`
-	Correlation bool             `json:"correlation" yaml:"correlation"`
-	Caller     bool              `json:"caller" yaml:"caller"`
+	Level       string                 `json:"level" yaml:"level"`
+	Format      string                 `json:"format" yaml:"format"` // json, console
+	Output      []OutputConfig         `json:"output" yaml:"output"`
+	Fields      map[string]interface{} `json:"fields" yaml:"fields"`
+	Sampling    *SamplingConfig        `json:"sampling" yaml:"sampling"`
+	Correlation bool                   `json:"correlation" yaml:"correlation"`
+	Caller      bool                   `json:"caller" yaml:"caller"`
 }
 
 // OutputConfig defines output configuration for zap
 type OutputConfig struct {
-	Type       string `json:"type" yaml:"type"`           // stdout, stderr, file, syslog
+	Type       string `json:"type" yaml:"type"` // stdout, stderr, file, syslog
 	Path       string `json:"path,omitempty" yaml:"path,omitempty"`
 	MaxSize    int    `json:"max_size,omitempty" yaml:"max_size,omitempty"`
 	MaxAge     int    `json:"max_age,omitempty" yaml:"max_age,omitempty"`
@@ -85,7 +85,7 @@ var StandardizedFields = struct {
 func NewZapAdapter(config ZapMigrationConfig) (Logger, error) {
 	// Parse log level
 	level := parseZapLevel(config.Level)
-	
+
 	// Create encoder config with standardized fields
 	encoderConfig := zapcore.EncoderConfig{
 		TimeKey:        "timestamp",
@@ -207,12 +207,12 @@ func (z *ZapAdapter) Panic(msg string, fields ...Field) {
 // WithContext creates a logger with context information
 func (z *ZapAdapter) WithContext(ctx context.Context) Logger {
 	fields := make([]zap.Field, 0, 4)
-	
+
 	// Extract standardized context values
 	if reqID := ctx.Value(StandardizedFields.RequestID); reqID != nil {
 		fields = append(fields, zap.String(StandardizedFields.RequestID, fmt.Sprintf("%v", reqID)))
 	}
-	
+
 	if userID := ctx.Value(StandardizedFields.UserID); userID != nil {
 		fields = append(fields, zap.String(StandardizedFields.UserID, fmt.Sprintf("%v", userID)))
 	}
@@ -343,7 +343,7 @@ func createZapWriteSyncerFromConfig(outputs []OutputConfig) (zapcore.WriteSyncer
 			if output.Path == "" {
 				return nil, fmt.Errorf("file path is required for file output")
 			}
-			
+
 			lumberjackLogger := &lumberjack.Logger{
 				Filename:   output.Path,
 				MaxSize:    output.MaxSize,
@@ -352,7 +352,7 @@ func createZapWriteSyncerFromConfig(outputs []OutputConfig) (zapcore.WriteSyncer
 				Compress:   output.Compress,
 				LocalTime:  true,
 			}
-			
+
 			writers = append(writers, zapcore.AddSync(lumberjackLogger))
 		default:
 			return nil, fmt.Errorf("unsupported output type: %s", output.Type)
@@ -362,7 +362,7 @@ func createZapWriteSyncerFromConfig(outputs []OutputConfig) (zapcore.WriteSyncer
 	if len(writers) == 1 {
 		return writers[0], nil
 	}
-	
+
 	return zapcore.NewMultiWriteSyncer(writers...), nil
 }
 
@@ -464,7 +464,7 @@ func MigrateToZap(config ZapMigrationConfig) error {
 
 	// Replace global logger
 	globalLogger = zapLogger
-	
+
 	return nil
 }
 
@@ -473,14 +473,14 @@ func GetStandardizedLogger() *StandardizedZapLogger {
 	if adapter, ok := globalLogger.(*ZapAdapter); ok {
 		return &StandardizedZapLogger{ZapAdapter: adapter}
 	}
-	
+
 	// Fallback to creating a new standardized logger
 	config := ZapMigrationConfig{
 		Level:  "info",
 		Format: "json",
 		Output: []OutputConfig{{Type: "stdout"}},
 	}
-	
+
 	logger, err := NewStandardizedZapLogger(config)
 	if err != nil {
 		// Return a basic adapter if creation fails
@@ -488,6 +488,6 @@ func GetStandardizedLogger() *StandardizedZapLogger {
 			ZapAdapter: &ZapAdapter{},
 		}
 	}
-	
+
 	return logger
 }

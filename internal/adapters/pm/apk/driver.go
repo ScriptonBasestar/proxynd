@@ -30,13 +30,13 @@ type Config struct {
 
 // RepositoryConfig represents APK repository configuration
 type RepositoryConfig struct {
-	Name        string           `json:"name" yaml:"name"`
-	URL         string           `json:"url" yaml:"url"`
-	Enabled     bool             `json:"enabled" yaml:"enabled"`
-	Auth        *ports.AuthConfig `json:"auth,omitempty" yaml:"auth,omitempty"`
-	Branch      string           `json:"branch" yaml:"branch"`       // main, community, testing
-	Architecture string          `json:"architecture" yaml:"architecture"` // x86_64, aarch64, etc.
-	SigningKey  string           `json:"signing_key" yaml:"signing_key"`
+	Name         string            `json:"name" yaml:"name"`
+	URL          string            `json:"url" yaml:"url"`
+	Enabled      bool              `json:"enabled" yaml:"enabled"`
+	Auth         *ports.AuthConfig `json:"auth,omitempty" yaml:"auth,omitempty"`
+	Branch       string            `json:"branch" yaml:"branch"`             // main, community, testing
+	Architecture string            `json:"architecture" yaml:"architecture"` // x86_64, aarch64, etc.
+	SigningKey   string            `json:"signing_key" yaml:"signing_key"`
 }
 
 // NewDriver creates a new APK driver
@@ -54,7 +54,7 @@ func NewDriver(
 			Timeout:  30 * time.Second,
 		}
 	}
-	
+
 	return &Driver{
 		config:      config,
 		httpClient:  httpClient,
@@ -75,22 +75,22 @@ func (d *Driver) IsSupported(path string) bool {
 	// /alpine/v3.16/main/x86_64/APKINDEX.tar.gz
 	// /alpine/v3.16/main/x86_64/package-1.0-r0.apk
 	// /alpine/edge/testing/x86_64/APKINDEX.tar.gz
-	
+
 	patterns := []string{
-		`^/alpine/v[\d.]+/[^/]+/[^/]+/APKINDEX\.tar\.gz$`,    // Index files
-		`^/alpine/v[\d.]+/[^/]+/[^/]+/.*\.apk$`,             // Package files
-		`^/alpine/edge/[^/]+/[^/]+/APKINDEX\.tar\.gz$`,      // Edge index files
-		`^/alpine/edge/[^/]+/[^/]+/.*\.apk$`,                // Edge package files
-		`^/[^/]+/[^/]+/[^/]+/APKINDEX\.tar\.gz$`,            // Alternative layout
-		`^/[^/]+/[^/]+/[^/]+/.*\.apk$`,                      // Alternative layout
+		`^/alpine/v[\d.]+/[^/]+/[^/]+/APKINDEX\.tar\.gz$`, // Index files
+		`^/alpine/v[\d.]+/[^/]+/[^/]+/.*\.apk$`,           // Package files
+		`^/alpine/edge/[^/]+/[^/]+/APKINDEX\.tar\.gz$`,    // Edge index files
+		`^/alpine/edge/[^/]+/[^/]+/.*\.apk$`,              // Edge package files
+		`^/[^/]+/[^/]+/[^/]+/APKINDEX\.tar\.gz$`,          // Alternative layout
+		`^/[^/]+/[^/]+/[^/]+/.*\.apk$`,                    // Alternative layout
 	}
-	
+
 	for _, pattern := range patterns {
 		if matched, _ := regexp.MatchString(pattern, path); matched {
 			return true
 		}
 	}
-	
+
 	return false
 }
 
@@ -99,13 +99,13 @@ func (d *Driver) NormalizePath(path string) (string, error) {
 	if d.normalizer != nil {
 		return d.normalizer.NormalizePath(d.Type(), path)
 	}
-	
+
 	// Basic normalization
 	normalized := filepath.Clean(path)
 	if !strings.HasPrefix(normalized, "/") {
 		normalized = "/" + normalized
 	}
-	
+
 	return normalized, nil
 }
 
@@ -115,19 +115,19 @@ func (d *Driver) BuildUpstreamURL(req *ports.DriverRequest) (string, error) {
 	if repository == "" {
 		repository = "alpine" // Default repository
 	}
-	
+
 	repoConfig, exists := d.config.Repositories[repository]
 	if !exists {
 		return "", fmt.Errorf("repository '%s' not configured", repository)
 	}
-	
+
 	if !repoConfig.Enabled {
 		return "", fmt.Errorf("repository '%s' is disabled", repository)
 	}
-	
+
 	baseURL := strings.TrimRight(repoConfig.URL, "/")
 	cleanPath := strings.TrimLeft(req.Path, "/")
-	
+
 	return fmt.Sprintf("%s/%s", baseURL, cleanPath), nil
 }
 
@@ -137,40 +137,40 @@ func (d *Driver) FetchPackage(ctx context.Context, req *ports.DriverRequest) (*p
 	if err != nil {
 		return nil, d.mapError(err)
 	}
-	
+
 	// Prepare headers
 	headers := make(map[string]string)
 	for k, v := range req.Headers {
 		headers[k] = v
 	}
-	
+
 	// Add APK-specific headers
 	headers["User-Agent"] = "ProxyND/1.0 APK-Proxy"
-	
+
 	// Accept appropriate content types
 	if strings.Contains(req.Path, "APKINDEX") {
 		headers["Accept"] = "application/gzip, application/x-tar"
 	} else if strings.Contains(req.Path, ".apk") {
 		headers["Accept"] = "application/vnd.alpine.apk"
 	}
-	
+
 	// Add authentication if configured
 	repository := req.Repository
 	if repository == "" {
 		repository = "alpine"
 	}
-	
+
 	if repoConfig, exists := d.config.Repositories[repository]; exists && repoConfig.Auth != nil {
 		// TODO: Implement authentication headers
 		// This will be handled by the unified HTTP client
 	}
-	
+
 	// Fetch from upstream
 	httpResp, err := d.httpClient.Get(ctx, upstreamURL, headers)
 	if err != nil {
 		return nil, d.mapError(err)
 	}
-	
+
 	// Convert to driver response
 	response := &ports.DriverResponse{
 		Content:      httpResp.Body,
@@ -180,7 +180,7 @@ func (d *Driver) FetchPackage(ctx context.Context, req *ports.DriverRequest) (*p
 		StatusCode:   httpResp.StatusCode,
 		LastModified: time.Now(), // TODO: Parse from headers
 	}
-	
+
 	return response, nil
 }
 
@@ -201,7 +201,7 @@ func (d *Driver) ValidateSignature(content []byte, signature []byte) error {
 	if d.verifier != nil {
 		return d.verifier.VerifySignature(d.Type(), content, signature)
 	}
-	
+
 	// TODO: Implement APK-specific signature validation
 	// APK uses RSA signatures embedded in the packages
 	return nil
@@ -213,7 +213,7 @@ func (d *Driver) GetCacheKey(req *ports.DriverRequest) string {
 	if repository == "" {
 		repository = "alpine"
 	}
-	
+
 	normalizedPath, _ := d.NormalizePath(req.Path)
 	return fmt.Sprintf("apk:%s:%s", repository, strings.ReplaceAll(normalizedPath, "/", "_"))
 }
@@ -224,7 +224,7 @@ func (d *Driver) ShouldCache(resp *ports.DriverResponse) bool {
 	if resp.StatusCode >= 400 {
 		return false
 	}
-	
+
 	return true
 }
 
@@ -234,12 +234,12 @@ func (d *Driver) GetCacheTTL(resp *ports.DriverResponse) time.Duration {
 	if strings.Contains(resp.ContentType, "application/vnd.alpine.apk") {
 		return 7 * 24 * time.Hour // 1 week
 	}
-	
+
 	// Index files expire faster
 	if strings.Contains(resp.ContentType, "application/gzip") {
 		return 6 * time.Hour
 	}
-	
+
 	return d.config.CacheTTL
 }
 
@@ -254,22 +254,22 @@ func (d *Driver) ValidateConfig() error {
 	if d.config == nil {
 		return fmt.Errorf("apk config is nil")
 	}
-	
+
 	if !d.config.Enabled {
 		return fmt.Errorf("apk driver is disabled")
 	}
-	
+
 	if len(d.config.Repositories) == 0 {
 		return fmt.Errorf("no apk repositories configured")
 	}
-	
+
 	// Validate each repository
 	for name, repo := range d.config.Repositories {
 		if repo.URL == "" {
 			return fmt.Errorf("repository '%s' has empty URL", name)
 		}
 	}
-	
+
 	return nil
 }
 
@@ -286,7 +286,7 @@ func getContentType(path string) string {
 	if strings.Contains(path, "APKINDEX.tar.gz") {
 		return "application/gzip"
 	}
-	
+
 	ext := strings.ToLower(filepath.Ext(path))
 	switch ext {
 	case ".apk":

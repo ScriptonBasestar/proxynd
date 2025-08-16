@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"time"
+
 	"proxynd/internal/ports"
 )
 
@@ -45,22 +46,22 @@ type HealthCheckRequest struct {
 
 // HealthCheckResponse represents health check response
 type HealthCheckResponse struct {
-	Status    string                   `json:"status"`
-	Timestamp time.Time                `json:"timestamp"`
-	Duration  time.Duration            `json:"duration"`
-	Version   string                   `json:"version"`
+	Status     string                      `json:"status"`
+	Timestamp  time.Time                   `json:"timestamp"`
+	Duration   time.Duration               `json:"duration"`
+	Version    string                      `json:"version"`
 	Components map[string]*ComponentHealth `json:"components"`
-	Summary   *HealthSummary           `json:"summary"`
+	Summary    *HealthSummary              `json:"summary"`
 }
 
 // ComponentHealth represents individual component health
 type ComponentHealth struct {
-	Name      string                 `json:"name"`
-	Status    string                 `json:"status"`
-	Message   string                 `json:"message"`
-	Details   map[string]interface{} `json:"details"`
-	Duration  time.Duration          `json:"duration"`
-	Error     string                 `json:"error,omitempty"`
+	Name     string                 `json:"name"`
+	Status   string                 `json:"status"`
+	Message  string                 `json:"message"`
+	Details  map[string]interface{} `json:"details"`
+	Duration time.Duration          `json:"duration"`
+	Error    string                 `json:"error,omitempty"`
 }
 
 // HealthSummary provides overall health summary
@@ -74,7 +75,7 @@ type HealthSummary struct {
 // CheckHealth performs comprehensive health check
 func (hs *HealthService) CheckHealth(ctx context.Context, req *HealthCheckRequest) (*HealthCheckResponse, error) {
 	start := time.Now()
-	
+
 	response := &HealthCheckResponse{
 		Status:     "healthy",
 		Timestamp:  start,
@@ -84,7 +85,7 @@ func (hs *HealthService) CheckHealth(ctx context.Context, req *HealthCheckReques
 			Healthy: 0,
 		},
 	}
-	
+
 	// Check specific component if requested
 	if req.Component != "" {
 		if checker, exists := hs.checkers[req.Component]; exists {
@@ -106,21 +107,21 @@ func (hs *HealthService) CheckHealth(ctx context.Context, req *HealthCheckReques
 		// Check all registered components
 		for name, checker := range hs.checkers {
 			result := checker.Check(ctx)
-			
+
 			component := &ComponentHealth{
 				Name:     result.Name,
 				Status:   string(result.Status),
 				Message:  result.Message,
 				Duration: result.Duration,
 			}
-			
+
 			if result.Error != nil {
 				component.Error = result.Error.Error()
 			}
-			
+
 			response.Components[name] = component
 			response.Summary.Total++
-			
+
 			switch result.Status {
 			case ports.ObservabilityHealthStatusHealthy:
 				response.Summary.Healthy++
@@ -131,7 +132,7 @@ func (hs *HealthService) CheckHealth(ctx context.Context, req *HealthCheckReques
 			}
 		}
 	}
-	
+
 	// Determine overall status
 	if response.Summary.Unhealthy > 0 {
 		response.Status = string(ports.ObservabilityHealthStatusUnhealthy)
@@ -140,16 +141,16 @@ func (hs *HealthService) CheckHealth(ctx context.Context, req *HealthCheckReques
 	} else {
 		response.Status = string(ports.ObservabilityHealthStatusHealthy)
 	}
-	
+
 	response.Duration = time.Since(start)
-	
+
 	// Record metrics
 	if hs.metrics != nil {
 		labels := map[string]string{"status": response.Status}
 		hs.metrics.IncCounter("health_checks_total", labels)
 		hs.metrics.ObserveHistogram("health_check_duration_seconds", response.Duration.Seconds(), labels)
 	}
-	
+
 	// Log health check
 	if hs.logger != nil {
 		hs.logger.Info(ctx, "Health check completed",
@@ -159,7 +160,7 @@ func (hs *HealthService) CheckHealth(ctx context.Context, req *HealthCheckReques
 			NewField("components_healthy", response.Summary.Healthy),
 		)
 	}
-	
+
 	return response, nil
 }
 
@@ -198,11 +199,11 @@ func (hs *HealthService) GetSystemInfo(ctx context.Context) (*SystemInfo, error)
 
 // SystemInfo represents system information
 type SystemInfo struct {
-	Version    string            `json:"version"`
-	BuildTime  string            `json:"build_time"`
-	CommitSHA  string            `json:"commit_sha"`
-	StartTime  time.Time         `json:"start_time"`
-	Uptime     time.Duration     `json:"uptime"`
+	Version     string            `json:"version"`
+	BuildTime   string            `json:"build_time"`
+	CommitSHA   string            `json:"commit_sha"`
+	StartTime   time.Time         `json:"start_time"`
+	Uptime      time.Duration     `json:"uptime"`
 	Environment map[string]string `json:"environment"`
 	Resources   *ResourceInfo     `json:"resources"`
 }
@@ -224,18 +225,18 @@ type CPUInfo struct {
 
 // MemoryInfo represents memory information
 type MemoryInfo struct {
-	Total     int64   `json:"total_bytes"`
-	Used      int64   `json:"used_bytes"`
-	Free      int64   `json:"free_bytes"`
-	Usage     float64 `json:"usage_percent"`
+	Total int64   `json:"total_bytes"`
+	Used  int64   `json:"used_bytes"`
+	Free  int64   `json:"free_bytes"`
+	Usage float64 `json:"usage_percent"`
 }
 
 // DiskInfo represents disk information
 type DiskInfo struct {
-	Total     int64   `json:"total_bytes"`
-	Used      int64   `json:"used_bytes"`
-	Free      int64   `json:"free_bytes"`
-	Usage     float64 `json:"usage_percent"`
+	Total int64   `json:"total_bytes"`
+	Used  int64   `json:"used_bytes"`
+	Free  int64   `json:"free_bytes"`
+	Usage float64 `json:"usage_percent"`
 }
 
 // NetworkInfo represents network information
@@ -245,11 +246,11 @@ type NetworkInfo struct {
 
 // NetworkInterface represents network interface information
 type NetworkInterface struct {
-	Name      string `json:"name"`
-	BytesIn   int64  `json:"bytes_in"`
-	BytesOut  int64  `json:"bytes_out"`
-	PacketsIn int64  `json:"packets_in"`
-	PacketsOut int64 `json:"packets_out"`
+	Name       string `json:"name"`
+	BytesIn    int64  `json:"bytes_in"`
+	BytesOut   int64  `json:"bytes_out"`
+	PacketsIn  int64  `json:"packets_in"`
+	PacketsOut int64  `json:"packets_out"`
 }
 
 // GetReadiness checks if application is ready to serve requests
@@ -264,9 +265,9 @@ func (hs *HealthService) GetReadiness(ctx context.Context) (*ReadinessResponse, 
 
 // ReadinessResponse represents readiness check response
 type ReadinessResponse struct {
-	Ready     bool      `json:"ready"`
-	Message   string    `json:"message"`
-	Timestamp time.Time `json:"timestamp"`
+	Ready      bool            `json:"ready"`
+	Message    string          `json:"message"`
+	Timestamp  time.Time       `json:"timestamp"`
 	Components map[string]bool `json:"components"`
 }
 
@@ -282,9 +283,9 @@ func (hs *HealthService) GetLiveness(ctx context.Context) (*LivenessResponse, er
 
 // LivenessResponse represents liveness check response
 type LivenessResponse struct {
-	Alive     bool      `json:"alive"`
-	Message   string    `json:"message"`
-	Timestamp time.Time `json:"timestamp"`
+	Alive     bool          `json:"alive"`
+	Message   string        `json:"message"`
+	Timestamp time.Time     `json:"timestamp"`
 	Uptime    time.Duration `json:"uptime"`
 }
 
@@ -323,21 +324,21 @@ type HealthHistoryResponse struct {
 
 // HealthRecord represents a health check record
 type HealthRecord struct {
-	Timestamp time.Time   `json:"timestamp"`
-	Status    string      `json:"status"`
-	Duration  time.Duration `json:"duration"`
-	Component string      `json:"component"`
-	Message   string      `json:"message"`
+	Timestamp time.Time              `json:"timestamp"`
+	Status    string                 `json:"status"`
+	Duration  time.Duration          `json:"duration"`
+	Component string                 `json:"component"`
+	Message   string                 `json:"message"`
 	Details   map[string]interface{} `json:"details"`
 }
 
 // HistorySummary provides health history summary
 type HistorySummary struct {
-	TotalChecks     int     `json:"total_checks"`
-	HealthyPercent  float64 `json:"healthy_percent"`
-	DegradedPercent float64 `json:"degraded_percent"`
-	UnhealthyPercent float64 `json:"unhealthy_percent"`
-	AvgDuration     time.Duration `json:"avg_duration"`
+	TotalChecks      int           `json:"total_checks"`
+	HealthyPercent   float64       `json:"healthy_percent"`
+	DegradedPercent  float64       `json:"degraded_percent"`
+	UnhealthyPercent float64       `json:"unhealthy_percent"`
+	AvgDuration      time.Duration `json:"avg_duration"`
 }
 
 // TriggerAlert triggers health alert
@@ -362,20 +363,20 @@ type HealthAlert struct {
 func (hs *HealthService) GetHealthMetrics(ctx context.Context) (*HealthMetrics, error) {
 	// TODO: Gather health metrics
 	return &HealthMetrics{
-		CheckCount:      0,
-		AvgCheckTime:    0,
-		HealthyPercent:  100.0,
+		CheckCount:     0,
+		AvgCheckTime:   0,
+		HealthyPercent: 100.0,
 	}, nil
 }
 
 // HealthMetrics represents health metrics
 type HealthMetrics struct {
-	CheckCount      int64         `json:"check_count"`
-	AvgCheckTime    time.Duration `json:"avg_check_time"`
-	HealthyPercent  float64       `json:"healthy_percent"`
-	DegradedPercent float64       `json:"degraded_percent"`
-	UnhealthyPercent float64      `json:"unhealthy_percent"`
-	ErrorRate       float64       `json:"error_rate"`
+	CheckCount       int64                        `json:"check_count"`
+	AvgCheckTime     time.Duration                `json:"avg_check_time"`
+	HealthyPercent   float64                      `json:"healthy_percent"`
+	DegradedPercent  float64                      `json:"degraded_percent"`
+	UnhealthyPercent float64                      `json:"unhealthy_percent"`
+	ErrorRate        float64                      `json:"error_rate"`
 	ComponentMetrics map[string]*ComponentMetrics `json:"component_metrics"`
 }
 

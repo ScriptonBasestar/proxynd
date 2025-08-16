@@ -1,8 +1,6 @@
 package middlewares
 
 import (
-	"strings"
-
 	"proxynd/internal/ports"
 )
 
@@ -27,7 +25,7 @@ func NewRateLimitMiddleware(
 			TrustedProxies:    []string{"127.0.0.1", "::1"},
 		}
 	}
-	
+
 	return &RateLimitMiddleware{
 		config:      config,
 		rateLimiter: rateLimiter,
@@ -74,7 +72,7 @@ func (h *RateLimitHandler) Handle(ctx ports.HTTPContext) error {
 	if h.rateLimiter == nil {
 		return h.next.Handle(ctx)
 	}
-	
+
 	// TODO: Implement actual rate limiting logic
 	// For now, just pass through
 	return h.next.Handle(ctx)

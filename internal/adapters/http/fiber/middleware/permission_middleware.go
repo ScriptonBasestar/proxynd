@@ -25,7 +25,7 @@ func NewPermissionMiddleware(
 			SkipPaths: []string{"/health", "/metrics", "/api/auth/login"},
 		}
 	}
-	
+
 	return &PermissionMiddleware{
 		config:      config,
 		permService: permService,
@@ -72,12 +72,12 @@ func (h *PermissionHandler) Handle(ctx ports.HTTPContext) error {
 	if h.shouldSkipPath(ctx.Path()) {
 		return h.next.Handle(ctx)
 	}
-	
+
 	// Skip if authorization is not enabled
 	if !h.config.Enabled || h.permService == nil || !h.permService.IsEnabled() {
 		return h.next.Handle(ctx)
 	}
-	
+
 	// TODO: Implement actual authorization logic
 	// For now, just pass through
 	return h.next.Handle(ctx)

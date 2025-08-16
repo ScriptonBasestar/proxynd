@@ -1,7 +1,6 @@
 package middlewares
 
 import (
-	"fmt"
 	"runtime"
 	"runtime/debug"
 
@@ -25,7 +24,7 @@ func NewRecoveryMiddleware(
 			EnableStackTrace: true,
 		}
 	}
-	
+
 	return &RecoveryMiddleware{
 		config: config,
 		logger: logger,
@@ -68,27 +67,24 @@ func (h *RecoveryHandler) Handle(ctx ports.HTTPContext) error {
 	if !h.config.Enabled {
 		return h.next.Handle(ctx)
 	}
-	
+
 	defer func() {
 		if r := recover(); r != nil {
 			h.handlePanic(ctx, r)
 		}
 	}()
-	
+
 	return h.next.Handle(ctx)
 }
 
 // handlePanic handles recovered panics
 func (h *RecoveryHandler) handlePanic(ctx ports.HTTPContext, recovered interface{}) {
-	// Create error message
-	errMsg := fmt.Sprintf("Panic recovered: %v", recovered)
-	
 	// Get stack trace if enabled
 	var stackTrace string
 	if h.config.EnableStackTrace {
 		stackTrace = string(debug.Stack())
 	}
-	
+
 	// Log the panic
 	if h.logger != nil {
 		fields := []ports.Field{
@@ -98,25 +94,25 @@ func (h *RecoveryHandler) handlePanic(ctx ports.HTTPContext, recovered interface
 			&RecoveryField{key: "client_ip", value: ctx.ClientIP()},
 			&RecoveryField{key: "user_agent", value: ctx.UserAgent()},
 		}
-		
+
 		if h.config.EnableStackTrace && stackTrace != "" {
 			fields = append(fields, &RecoveryField{key: "stack_trace", value: stackTrace})
 		}
-		
+
 		// Add request ID if available
 		if requestID := ctx.Get("request_id"); requestID != nil {
 			fields = append(fields, &RecoveryField{key: "request_id", value: requestID})
 		}
-		
+
 		h.logger.Error(ctx.Context(), "Panic recovered in HTTP handler", fields...)
 	}
-	
+
 	// Send error response
 	errorResponse := map[string]interface{}{
 		"error":   "Internal Server Error",
 		"message": "An unexpected error occurred",
 	}
-	
+
 	// Add debug info in development
 	if h.config.EnableStackTrace {
 		errorResponse["debug"] = map[string]interface{}{
@@ -124,11 +120,12 @@ func (h *RecoveryHandler) handlePanic(ctx ports.HTTPContext, recovered interface
 			"stack": stackTrace,
 		}
 	}
-	
+
 	// Set status and send JSON response
 	if err := ctx.SendJSON(500, errorResponse); err != nil {
 		// If JSON response fails, try string response
-		ctx.SendString(500, "Internal Server Error")
+		ctx.Status(500)
+		_ = ctx.SendString("Internal Server Error") // Error ignored as fallback response
 	}
 }
 

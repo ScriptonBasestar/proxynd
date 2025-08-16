@@ -45,7 +45,7 @@ func (n *PackageNormalizer) ValidatePath(pmType, path string) error {
 	if err != nil {
 		return err
 	}
-	
+
 	switch pmType {
 	case "maven":
 		return n.validateMavenPath(normalized)
@@ -72,7 +72,7 @@ func (n *PackageNormalizer) ExtractComponents(pmType, path string) (*ports.PathC
 	if err != nil {
 		return nil, err
 	}
-	
+
 	switch pmType {
 	case "maven":
 		return n.extractMavenComponents(normalized)
@@ -100,10 +100,10 @@ func (n *PackageNormalizer) normalizeMavenPath(path string) (string, error) {
 	if !strings.HasPrefix(normalized, "/") {
 		normalized = "/" + normalized
 	}
-	
+
 	// Remove duplicate slashes
 	normalized = regexp.MustCompile(`/+`).ReplaceAllString(normalized, "/")
-	
+
 	return normalized, nil
 }
 
@@ -122,17 +122,17 @@ func (n *PackageNormalizer) extractMavenComponents(path string) (*ports.PathComp
 	if len(parts) < 3 {
 		return nil, fmt.Errorf("invalid maven path: %s", path)
 	}
-	
+
 	// Extract version and filename
 	version := parts[len(parts)-2]
 	filename := parts[len(parts)-1]
-	
+
 	// Extract artifact ID from filename
 	artifactId := parts[len(parts)-3]
-	
+
 	// Group ID is everything before artifact ID
 	groupId := strings.Join(parts[:len(parts)-3], ".")
-	
+
 	return &ports.PathComponents{
 		PackageName: fmt.Sprintf("%s:%s", groupId, artifactId),
 		Version:     version,
@@ -151,11 +151,11 @@ func (n *PackageNormalizer) normalizeNpmPath(path string) (string, error) {
 	if !strings.HasPrefix(normalized, "/") {
 		normalized = "/" + normalized
 	}
-	
+
 	// Handle double encoding of scoped packages
 	normalized = strings.ReplaceAll(normalized, "%40", "@")
 	normalized = strings.ReplaceAll(normalized, "%2F", "/")
-	
+
 	// Convert package names to lowercase
 	if strings.HasPrefix(normalized, "/@") {
 		// Scoped package
@@ -173,24 +173,24 @@ func (n *PackageNormalizer) normalizeNpmPath(path string) (string, error) {
 			normalized = strings.Join(parts, "/")
 		}
 	}
-	
+
 	return normalized, nil
 }
 
 func (n *PackageNormalizer) validateNpmPath(path string) error {
 	patterns := []string{
-		`^/@[^/]+/[^/]+$`,                     // scoped package
-		`^/[^@][^/]*$`,                        // regular package
+		`^/@[^/]+/[^/]+$`,                    // scoped package
+		`^/[^@][^/]*$`,                       // regular package
 		`^/[^/]+/-/[^/]+-[^/]+\.tgz$`,        // tarball
 		`^/@[^/]+/[^/]+/-/[^/]+-[^/]+\.tgz$`, // scoped tarball
 	}
-	
+
 	for _, pattern := range patterns {
 		if matched, _ := regexp.MatchString(pattern, path); matched {
 			return nil
 		}
 	}
-	
+
 	return fmt.Errorf("invalid npm path format: %s", path)
 }
 
@@ -222,7 +222,7 @@ func (n *PackageNormalizer) extractNpmComponents(path string) (*ports.PathCompon
 			}, nil
 		}
 	}
-	
+
 	return nil, fmt.Errorf("invalid npm path: %s", path)
 }
 
@@ -249,7 +249,7 @@ func (n *PackageNormalizer) normalizePypiPath(path string) (string, error) {
 	if !strings.HasPrefix(normalized, "/") {
 		normalized = "/" + normalized
 	}
-	
+
 	// PyPI package names normalize _ to - and are case-insensitive
 	if strings.HasPrefix(normalized, "/simple/") {
 		parts := strings.Split(normalized, "/")
@@ -261,7 +261,7 @@ func (n *PackageNormalizer) normalizePypiPath(path string) (string, error) {
 			normalized = strings.Join(parts, "/")
 		}
 	}
-	
+
 	return normalized, nil
 }
 
@@ -271,13 +271,13 @@ func (n *PackageNormalizer) validatePypiPath(path string) error {
 		`^/pypi/[^/]+/?$`,
 		`^/packages/.*\.(tar\.gz|zip|whl|egg)$`,
 	}
-	
+
 	for _, pattern := range patterns {
 		if matched, _ := regexp.MatchString(pattern, path); matched {
 			return nil
 		}
 	}
-	
+
 	return fmt.Errorf("invalid pypi path format: %s", path)
 }
 
@@ -317,12 +317,12 @@ func (n *PackageNormalizer) normalizeRegistryPath(path string) (string, error) {
 	if !strings.HasPrefix(normalized, "/") {
 		normalized = "/" + normalized
 	}
-	
+
 	// Ensure v2 API prefix
 	if normalized == "/" {
 		normalized = "/v2/"
 	}
-	
+
 	return normalized, nil
 }
 
@@ -334,13 +334,13 @@ func (n *PackageNormalizer) validateRegistryPath(path string) error {
 		`^/v2/[^/]+/[^/]+/tags/list$`,
 		`^/v2/_catalog$`,
 	}
-	
+
 	for _, pattern := range patterns {
 		if matched, _ := regexp.MatchString(pattern, path); matched {
 			return nil
 		}
 	}
-	
+
 	return fmt.Errorf("invalid registry path format: %s", path)
 }
 
@@ -355,9 +355,9 @@ func (n *PackageNormalizer) normalizeGenericPath(path string) (string, error) {
 	if !strings.HasPrefix(normalized, "/") {
 		normalized = "/" + normalized
 	}
-	
+
 	// Remove duplicate slashes
 	normalized = regexp.MustCompile(`/+`).ReplaceAllString(normalized, "/")
-	
+
 	return normalized, nil
 }

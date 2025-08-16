@@ -11,6 +11,8 @@ import (
 )
 
 // getSystemLoad returns system load averages (macOS implementation)
+//
+//nolint:unused // Reserved for future macOS system monitoring implementation
 func getSystemLoad() (float64, float64, float64, error) {
 	// TODO: Implement macOS-specific load average retrieval
 	// For now, return zero values to avoid build failures
@@ -19,11 +21,11 @@ func getSystemLoad() (float64, float64, float64, error) {
 
 // SystemResourceHealthChecker provides macOS-compatible system health checking
 type SystemResourceHealthChecker struct {
-	name               string
-	cpuThreshold       float64
-	memoryThreshold    float64
-	diskThreshold      float64
-	checkPaths         []string
+	name            string
+	cpuThreshold    float64
+	memoryThreshold float64
+	diskThreshold   float64
+	checkPaths      []string
 }
 
 // NewSystemResourceHealthChecker creates a new system health checker for macOS
@@ -83,11 +85,11 @@ func (s *SystemResourceHealthChecker) GetHistoryData(hours int) map[string]inter
 // PredictResourceExhaustion predicts when resources might be exhausted (macOS stub)
 func (s *SystemResourceHealthChecker) PredictResourceExhaustion() map[string]interface{} {
 	return map[string]interface{}{
-		"platform":    "darwin",
-		"prediction":  "Not available",
-		"cpu_hours":   -1,
+		"platform":     "darwin",
+		"prediction":   "Not available",
+		"cpu_hours":    -1,
 		"memory_hours": -1,
-		"disk_hours":  -1,
-		"note":        "Prediction not implemented for macOS",
+		"disk_hours":   -1,
+		"note":         "Prediction not implemented for macOS",
 	}
 }

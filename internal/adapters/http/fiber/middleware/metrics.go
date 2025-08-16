@@ -30,7 +30,7 @@ func NewMetricsMiddleware(
 			Subsystem: "http",
 		}
 	}
-	
+
 	return &MetricsMiddleware{
 		config:  config,
 		metrics: metrics,
@@ -77,31 +77,31 @@ func (h *MetricsHandler) Handle(ctx ports.HTTPContext) error {
 	if h.shouldSkipPath(ctx.Path()) {
 		return h.next.Handle(ctx)
 	}
-	
+
 	// Skip if metrics collection is not enabled or collector is not available
 	if !h.config.Enabled || h.metrics == nil {
 		return h.next.Handle(ctx)
 	}
-	
+
 	startTime := time.Now()
-	
+
 	// Start timer for request duration
 	timer := h.metrics.StartTimer("http_request_duration_seconds", h.getLabels(ctx, 0))
 	defer timer.Stop()
-	
+
 	// Increment in-flight requests
 	h.metrics.IncCounter("http_requests_in_flight", h.getLabels(ctx, 0))
 	defer h.metrics.AddCounter("http_requests_in_flight", -1, h.getLabels(ctx, 0))
-	
+
 	// Process request
 	err := h.next.Handle(ctx)
-	
+
 	// Get status code from context or error
 	statusCode := h.getStatusCode(ctx, err)
-	
+
 	// Record metrics
 	h.recordMetrics(ctx, statusCode, time.Since(startTime), err)
-	
+
 	return err
 }
 
@@ -118,37 +118,37 @@ func (h *MetricsHandler) shouldSkipPath(path string) bool {
 // recordMetrics records various HTTP metrics
 func (h *MetricsHandler) recordMetrics(ctx ports.HTTPContext, statusCode int, duration time.Duration, err error) {
 	labels := h.getLabels(ctx, statusCode)
-	
+
 	// Request count
 	h.metrics.IncCounter("http_requests_total", labels)
-	
+
 	// Request duration
 	h.metrics.ObserveHistogram("http_request_duration_seconds", duration.Seconds(), labels)
-	
+
 	// Request size
 	if body := ctx.Body(); len(body) > 0 {
 		h.metrics.ObserveHistogram("http_request_size_bytes", float64(len(body)), labels)
 	}
-	
+
 	// Response size (if available from context)
 	if responseSize := ctx.Get("response_size"); responseSize != nil {
 		if size, ok := responseSize.(int64); ok {
 			h.metrics.ObserveHistogram("http_response_size_bytes", float64(size), labels)
 		}
 	}
-	
+
 	// Error count
 	if err != nil {
 		errorLabels := h.getErrorLabels(ctx, err)
 		h.metrics.IncCounter("http_errors_total", errorLabels)
 	}
-	
+
 	// Status code specific metrics
 	h.recordStatusCodeMetrics(ctx, statusCode)
-	
+
 	// Cache metrics (if available)
 	h.recordCacheMetrics(ctx)
-	
+
 	// Custom business metrics
 	h.recordBusinessMetrics(ctx)
 }
@@ -159,19 +159,19 @@ func (h *MetricsHandler) getLabels(ctx ports.HTTPContext, statusCode int) map[st
 		"method": strings.ToLower(ctx.Method()),
 		"path":   h.normalizePath(ctx.Path()),
 	}
-	
+
 	if statusCode > 0 {
 		labels["status_code"] = strconv.Itoa(statusCode)
 		labels["status_class"] = h.getStatusClass(statusCode)
 	}
-	
+
 	// Add handler name if available
 	if handler := ctx.Get("handler_name"); handler != nil {
 		if name, ok := handler.(string); ok {
 			labels["handler"] = name
 		}
 	}
-	
+
 	return labels
 }
 
@@ -182,7 +182,7 @@ func (h *MetricsHandler) getErrorLabels(ctx ports.HTTPContext, err error) map[st
 		"path":       h.normalizePath(ctx.Path()),
 		"error_type": h.getErrorType(err),
 	}
-	
+
 	return labels
 }
 
@@ -194,12 +194,12 @@ func (h *MetricsHandler) getStatusCode(ctx ports.HTTPContext, err error) int {
 			return code
 		}
 	}
-	
+
 	// Determine from error
 	if err != nil {
 		return 500 // Internal Server Error
 	}
-	
+
 	return 200 // OK
 }
 
@@ -223,10 +223,10 @@ func (h *MetricsHandler) getStatusClass(statusCode int) string {
 func (h *MetricsHandler) normalizePath(path string) string {
 	// Simple path normalization - replace dynamic segments
 	// This is a basic implementation; a more sophisticated one would use route patterns
-	
+
 	parts := strings.Split(path, "/")
 	normalized := make([]string, len(parts))
-	
+
 	for i, part := range parts {
 		// Replace numeric IDs
 		if h.isNumeric(part) {
@@ -237,7 +237,7 @@ func (h *MetricsHandler) normalizePath(path string) string {
 			normalized[i] = part
 		}
 	}
-	
+
 	return strings.Join(normalized, "/")
 }
 
@@ -246,13 +246,13 @@ func (h *MetricsHandler) isNumeric(s string) bool {
 	if s == "" {
 		return false
 	}
-	
+
 	for _, r := range s {
 		if r < '0' || r > '9' {
 			return false
 		}
 	}
-	
+
 	return true
 }
 
@@ -262,21 +262,21 @@ func (h *MetricsHandler) isUUID(s string) bool {
 	if len(s) != 36 {
 		return false
 	}
-	
+
 	parts := strings.Split(s, "-")
 	if len(parts) != 5 {
 		return false
 	}
-	
-	return len(parts[0]) == 8 && len(parts[1]) == 4 && len(parts[2]) == 4 && 
-		   len(parts[3]) == 4 && len(parts[4]) == 12
+
+	return len(parts[0]) == 8 && len(parts[1]) == 4 && len(parts[2]) == 4 &&
+		len(parts[3]) == 4 && len(parts[4]) == 12
 }
 
 // getErrorType determines the error type for metrics
 func (h *MetricsHandler) getErrorType(err error) string {
 	// Simple error classification
 	errStr := strings.ToLower(err.Error())
-	
+
 	switch {
 	case strings.Contains(errStr, "timeout"):
 		return "timeout"
@@ -301,7 +301,7 @@ func (h *MetricsHandler) recordStatusCodeMetrics(ctx ports.HTTPContext, statusCo
 		"method": strings.ToLower(ctx.Method()),
 		"path":   h.normalizePath(ctx.Path()),
 	}
-	
+
 	// Count by status class
 	statusClass := h.getStatusClass(statusCode)
 	statusLabels := make(map[string]string)
@@ -309,9 +309,9 @@ func (h *MetricsHandler) recordStatusCodeMetrics(ctx ports.HTTPContext, statusCo
 		statusLabels[k] = v
 	}
 	statusLabels["status_class"] = statusClass
-	
+
 	h.metrics.IncCounter("http_responses_by_status_class_total", statusLabels)
-	
+
 	// Special metrics for error responses
 	if statusCode >= 400 {
 		errorLabels := make(map[string]string)
@@ -319,7 +319,7 @@ func (h *MetricsHandler) recordStatusCodeMetrics(ctx ports.HTTPContext, statusCo
 			errorLabels[k] = v
 		}
 		errorLabels["status_code"] = strconv.Itoa(statusCode)
-		
+
 		h.metrics.IncCounter("http_error_responses_total", errorLabels)
 	}
 }
@@ -330,20 +330,20 @@ func (h *MetricsHandler) recordCacheMetrics(ctx ports.HTTPContext) {
 	if cacheStatus == nil {
 		return
 	}
-	
+
 	status, ok := cacheStatus.(string)
 	if !ok {
 		return
 	}
-	
+
 	labels := map[string]string{
 		"method":       strings.ToLower(ctx.Method()),
 		"path":         h.normalizePath(ctx.Path()),
 		"cache_status": status,
 	}
-	
+
 	h.metrics.IncCounter("http_cache_requests_total", labels)
-	
+
 	// Cache hit/miss counters
 	switch status {
 	case "hit":
@@ -356,7 +356,7 @@ func (h *MetricsHandler) recordCacheMetrics(ctx ports.HTTPContext) {
 // recordBusinessMetrics records application-specific business metrics
 func (h *MetricsHandler) recordBusinessMetrics(ctx ports.HTTPContext) {
 	// Add business-specific metrics based on context
-	
+
 	// Package type metrics (for proxy requests)
 	if packageType := ctx.Get("package_type"); packageType != nil {
 		if pkgType, ok := packageType.(string); ok {
@@ -367,19 +367,19 @@ func (h *MetricsHandler) recordBusinessMetrics(ctx ports.HTTPContext) {
 			h.metrics.IncCounter("proxy_package_requests_total", labels)
 		}
 	}
-	
+
 	// User type metrics (authenticated vs anonymous)
 	userType := "anonymous"
 	if userID := ctx.Get("user_id"); userID != nil {
 		userType = "authenticated"
 	}
-	
+
 	labels := map[string]string{
 		"user_type": userType,
 		"method":    strings.ToLower(ctx.Method()),
 		"path":      h.normalizePath(ctx.Path()),
 	}
-	
+
 	h.metrics.IncCounter("http_requests_by_user_type_total", labels)
 }
 
@@ -401,19 +401,19 @@ func (f *MetricsField) Value() interface{} {
 
 // HTTPMetrics represents HTTP request metrics
 type HTTPMetrics struct {
-	RequestsTotal           uint64            `json:"requests_total"`
-	RequestDurationSeconds  map[string]float64 `json:"request_duration_seconds"`
-	RequestSizeBytes        map[string]float64 `json:"request_size_bytes"`
-	ResponseSizeBytes       map[string]float64 `json:"response_size_bytes"`
-	ErrorsTotal             uint64            `json:"errors_total"`
-	ResponsesByStatusClass  map[string]uint64 `json:"responses_by_status_class"`
-	CacheMetrics            *CacheMetrics     `json:"cache_metrics,omitempty"`
+	RequestsTotal          uint64             `json:"requests_total"`
+	RequestDurationSeconds map[string]float64 `json:"request_duration_seconds"`
+	RequestSizeBytes       map[string]float64 `json:"request_size_bytes"`
+	ResponseSizeBytes      map[string]float64 `json:"response_size_bytes"`
+	ErrorsTotal            uint64             `json:"errors_total"`
+	ResponsesByStatusClass map[string]uint64  `json:"responses_by_status_class"`
+	CacheMetrics           *CacheMetrics      `json:"cache_metrics,omitempty"`
 }
 
 // CacheMetrics represents cache-related metrics
 type CacheMetrics struct {
-	HitsTotal   uint64 `json:"hits_total"`
-	MissesTotal uint64 `json:"misses_total"`
+	HitsTotal   uint64  `json:"hits_total"`
+	MissesTotal uint64  `json:"misses_total"`
 	HitRate     float64 `json:"hit_rate"`
 }
 
@@ -422,19 +422,19 @@ func GetHTTPMetrics(collector ports.MetricsCollector) (*HTTPMetrics, error) {
 	if collector == nil {
 		return &HTTPMetrics{}, nil
 	}
-	
+
 	snapshot, err := collector.GetMetrics()
 	if err != nil {
 		return nil, err
 	}
-	
+
 	metrics := &HTTPMetrics{
 		RequestDurationSeconds: make(map[string]float64),
 		RequestSizeBytes:       make(map[string]float64),
 		ResponseSizeBytes:      make(map[string]float64),
 		ResponsesByStatusClass: make(map[string]uint64),
 	}
-	
+
 	// Extract relevant metrics from snapshot
 	for name, value := range snapshot.Counters {
 		switch {
@@ -444,6 +444,6 @@ func GetHTTPMetrics(collector ports.MetricsCollector) (*HTTPMetrics, error) {
 			metrics.ErrorsTotal += uint64(value)
 		}
 	}
-	
+
 	return metrics, nil
 }
