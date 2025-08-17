@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"proxynd/internal/adapters/pm/common"
 	"proxynd/internal/ports"
 )
 
@@ -167,9 +168,9 @@ func (d *Driver) FetchPackage(ctx context.Context, req *ports.DriverRequest) (*p
 
 	// APT expects specific Accept headers for different content types
 	if strings.Contains(req.Path, "Packages") {
-		headers["Accept"] = "text/plain, application/x-gzip"
+		headers["Accept"] = common.MimeTextPlain + ", " + common.MimeApplicationXGzip
 	} else if strings.Contains(req.Path, "Release") {
-		headers["Accept"] = "text/plain"
+		headers["Accept"] = common.MimeTextPlain
 	}
 
 	// Add authentication if configured

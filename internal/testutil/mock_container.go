@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/mock"
 
+	"proxynd/internal/adapters/pm/common"
 	"proxynd/internal/config"
 	"proxynd/internal/container"
 )
@@ -349,15 +350,15 @@ func (m *MockContainerProvider) WithError(method string, err error) *MockContain
 // WithConfig 특정 설정을 지정하여 MockContainer를 구성
 func (m *MockContainerProvider) WithConfig(proxyType string, cfg interface{}) *MockContainerProvider {
 	switch proxyType {
-	case "apt":
+	case common.PMTypeApt:
 		if aptCfg, ok := cfg.(*config.AptProxyConfig); ok {
 			m.SetAptConfig(aptCfg)
 		}
-	case "maven":
+	case common.PMTypeMaven:
 		if mavenCfg, ok := cfg.(*config.MavenProxySettings); ok {
 			m.SetMavenConfig(mavenCfg)
 		}
-	case "npm":
+	case common.PMTypeNpm:
 		if npmCfg, ok := cfg.(*config.NpmProxySettings); ok {
 			m.SetNpmConfig(npmCfg)
 		}
@@ -369,11 +370,11 @@ func (m *MockContainerProvider) WithConfig(proxyType string, cfg interface{}) *M
 		if pipCfg, ok := cfg.(*config.PipProxySettings); ok {
 			m.SetPipConfig(pipCfg)
 		}
-	case "yum":
+	case common.PMTypeYum:
 		if yumCfg, ok := cfg.(*config.YumProxySettings); ok {
 			m.SetYumConfig(yumCfg)
 		}
-	case "apk":
+	case common.PMTypeApk:
 		if apkCfg, ok := cfg.(*config.ApkProxySettings); ok {
 			m.SetApkConfig(apkCfg)
 		}
@@ -409,7 +410,7 @@ func (m *MockContainerProvider) Reset() {
 // CreateWorkingConfig 실제로 동작하는 설정으로 초기화 (통합 테스트용)
 func (m *MockContainerProvider) CreateWorkingConfig(proxyType string) error {
 	switch proxyType {
-	case "apt":
+	case common.PMTypeApt:
 		m.aptConfig = &config.AptProxyConfig{
 			Path:     "apt-test",
 			UseCache: true,
@@ -422,7 +423,7 @@ func (m *MockContainerProvider) CreateWorkingConfig(proxyType string) error {
 				},
 			},
 		}
-	case "maven":
+	case common.PMTypeMaven:
 		m.mavenConfig = &config.MavenProxySettings{
 			Path:     "maven-test",
 			UseCache: true,
@@ -433,7 +434,7 @@ func (m *MockContainerProvider) CreateWorkingConfig(proxyType string) error {
 				},
 			},
 		}
-	case "npm":
+	case common.PMTypeNpm:
 		m.npmConfig = &config.NpmProxySettings{
 			Path:     "npm-test",
 			UseCache: true,
@@ -468,7 +469,7 @@ func (m *MockContainerProvider) CreateWorkingConfig(proxyType string) error {
 				},
 			},
 		}
-	case "yum":
+	case common.PMTypeYum:
 		m.yumConfig = &config.YumProxySettings{
 			Path:     "yum-test",
 			UseCache: true,
@@ -479,7 +480,7 @@ func (m *MockContainerProvider) CreateWorkingConfig(proxyType string) error {
 				},
 			},
 		}
-	case "apk":
+	case common.PMTypeApk:
 		m.apkConfig = &config.ApkProxySettings{
 			Path:     "apk-test",
 			UseCache: true,

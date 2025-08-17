@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"proxynd/internal/adapters/pm/common"
 	"proxynd/internal/ports"
 )
 
@@ -132,7 +133,7 @@ func (d *Driver) NormalizePath(path string) (string, error) {
 func (d *Driver) BuildUpstreamURL(req *ports.DriverRequest) (string, error) {
 	registry := req.Repository
 	if registry == "" {
-		registry = "dockerhub" // Default to Docker Hub
+		registry = common.DefaultRepoDockerHub // Default to Docker Hub
 	}
 
 	registryConfig, exists := d.config.Registries[registry]
@@ -172,7 +173,7 @@ func (d *Driver) FetchPackage(ctx context.Context, req *ports.DriverRequest) (*p
 	} else if strings.Contains(req.Path, "/blobs/") {
 		headers["Accept"] = "application/octet-stream"
 	} else {
-		headers["Accept"] = "application/json"
+		headers["Accept"] = common.MimeApplicationJSON
 	}
 
 	// Add authentication if configured

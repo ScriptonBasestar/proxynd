@@ -24,6 +24,26 @@ const (
 	PMTypeRegistry = "registry"
 )
 
+// Default repository constants
+const (
+	DefaultRepoAlpine    = "alpine"
+	DefaultRepoCentral   = "central"
+	DefaultRepoCentos    = "centos"
+	DefaultRepoDockerHub = "dockerhub"
+	DefaultRepoPyPI      = "pypi"
+)
+
+// Common MIME type constants
+const (
+	MimeTextPlain           = "text/plain"
+	MimeApplicationJSON     = "application/json"
+	MimeApplicationXML      = "application/xml"
+	MimeApplicationXGzip    = "application/x-gzip"
+	MimeApplicationZip      = "application/zip"
+	MimeApplicationJavaArchive = "application/java-archive"
+	MimeApplicationXRpm     = "application/x-rpm"
+)
+
 // SignatureVerifier implements ports.SignatureVerifier for all package managers
 type SignatureVerifier struct{}
 

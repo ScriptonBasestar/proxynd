@@ -11,6 +11,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
+	"proxynd/internal/adapters/pm/common"
 	"proxynd/logging"
 )
 
@@ -540,15 +541,15 @@ func getUpstream(c *fiber.Ctx, registryType string) string {
 
 	// 레지스트리 타입별 기본 업스트림
 	switch registryType {
-	case "npm":
+	case common.PMTypeNpm:
 		return "registry.npmjs.org"
 	case "pypi":
 		return "pypi.org"
 	case "docker":
 		return "registry-1.docker.io"
-	case "maven":
+	case common.PMTypeMaven:
 		return "repo1.maven.org"
-	case "apt":
+	case common.PMTypeApt:
 		return "archive.ubuntu.com"
 	default:
 		return statusUnknown

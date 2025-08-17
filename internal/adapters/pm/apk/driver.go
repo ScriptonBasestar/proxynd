@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"proxynd/internal/adapters/pm/common"
 	"proxynd/internal/ports"
 )
 
@@ -113,7 +114,7 @@ func (d *Driver) NormalizePath(path string) (string, error) {
 func (d *Driver) BuildUpstreamURL(req *ports.DriverRequest) (string, error) {
 	repository := req.Repository
 	if repository == "" {
-		repository = "alpine" // Default repository
+		repository = common.DefaultRepoAlpine // Default repository
 	}
 
 	repoConfig, exists := d.config.Repositories[repository]

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"proxynd/internal/adapters/pm/common"
 	"proxynd/internal/ports"
 )
 
@@ -114,7 +115,7 @@ func (d *Driver) NormalizePath(path string) (string, error) {
 func (d *Driver) BuildUpstreamURL(req *ports.DriverRequest) (string, error) {
 	repository := req.Repository
 	if repository == "" {
-		repository = "centos" // Default repository
+		repository = common.DefaultRepoCentos // Default repository
 	}
 
 	repoConfig, exists := d.config.Repositories[repository]
@@ -162,7 +163,7 @@ func (d *Driver) FetchPackage(ctx context.Context, req *ports.DriverRequest) (*p
 	if strings.Contains(req.Path, ".xml") {
 		headers["Accept"] = "application/xml, text/xml"
 	} else if strings.Contains(req.Path, ".rpm") {
-		headers["Accept"] = "application/x-rpm"
+		headers["Accept"] = common.MimeApplicationXRpm
 	}
 
 	// Add authentication if configured

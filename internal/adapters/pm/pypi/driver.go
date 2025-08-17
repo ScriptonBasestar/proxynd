@@ -122,7 +122,7 @@ func (d *Driver) NormalizePath(path string) (string, error) {
 func (d *Driver) BuildUpstreamURL(req *ports.DriverRequest) (string, error) {
 	index := req.Repository
 	if index == "" {
-		index = "pypi" // Default to PyPI
+		index = common.DefaultRepoPyPI // Default to PyPI
 	}
 
 	indexConfig, exists := d.config.Indexes[index]
@@ -292,13 +292,13 @@ func getContentType(path string) string {
 
 	switch ext {
 	case ".whl":
-		return "application/zip"
+		return common.MimeApplicationZip
 	case ".gz":
 		return "application/gzip"
 	case ".zip":
-		return "application/zip"
+		return common.MimeApplicationZip
 	case ".egg":
-		return "application/zip"
+		return common.MimeApplicationZip
 	default:
 		if strings.Contains(path, "/simple/") {
 			return "text/html"

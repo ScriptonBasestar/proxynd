@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -304,7 +305,7 @@ func (sl *SpanLogger) LogInfo(message string, fields map[string]interface{}) {
 		for key, value := range fields {
 			logFields = append(logFields, &TracingField{key: key, value: value})
 		}
-		sl.logger.Info(nil, message, logFields...)
+		sl.logger.Info(context.TODO(), message, logFields...)
 	}
 }
 
@@ -333,7 +334,7 @@ func (sl *SpanLogger) LogError(message string, err error, fields map[string]inte
 			logFields = append(logFields, &TracingField{key: key, value: value})
 		}
 
-		sl.logger.Error(nil, message, logFields...)
+		sl.logger.Error(context.TODO(), message, logFields...)
 	}
 }
 

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"proxynd/internal/adapters/pm/common"
 	"proxynd/internal/ports"
 )
 
@@ -101,7 +102,7 @@ func (d *Driver) NormalizePath(path string) (string, error) {
 func (d *Driver) BuildUpstreamURL(req *ports.DriverRequest) (string, error) {
 	repository := req.Repository
 	if repository == "" {
-		repository = "central" // Default to Maven Central
+		repository = common.DefaultRepoCentral // Default to Maven Central
 	}
 
 	repoConfig, exists := d.config.Repositories[repository]
@@ -273,21 +274,21 @@ func getContentType(path string) string {
 	case ".pom":
 		return "application/xml"
 	case ".jar":
-		return "application/java-archive"
+		return common.MimeApplicationJavaArchive
 	case ".war":
-		return "application/java-archive"
+		return common.MimeApplicationJavaArchive
 	case ".ear":
-		return "application/java-archive"
+		return common.MimeApplicationJavaArchive
 	case ".xml":
 		return "application/xml"
 	case ".md5":
-		return "text/plain"
+		return common.MimeTextPlain
 	case ".sha1":
-		return "text/plain"
+		return common.MimeTextPlain
 	case ".sha256":
-		return "text/plain"
+		return common.MimeTextPlain
 	case ".sha512":
-		return "text/plain"
+		return common.MimeTextPlain
 	case ".asc":
 		return "application/pgp-signature"
 	default:

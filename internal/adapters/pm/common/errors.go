@@ -93,19 +93,19 @@ func (m *ErrorMapper) MapError(pmType string, err error) error {
 
 	// Map package manager specific errors
 	switch pmType {
-	case "maven":
+	case PMTypeMaven:
 		return m.mapMavenError(err)
-	case "npm":
+	case PMTypeNpm:
 		return m.mapNpmError(err)
-	case "apt":
+	case PMTypeApt:
 		return m.mapAptError(err)
-	case "pypi":
+	case PMTypePypi:
 		return m.mapPypiError(err)
-	case "yum":
+	case PMTypeYum:
 		return m.mapYumError(err)
-	case "apk":
+	case PMTypeApk:
 		return m.mapApkError(err)
-	case "registry":
+	case PMTypeRegistry:
 		return m.mapRegistryError(err)
 	default:
 		return m.mapGenericError(err)

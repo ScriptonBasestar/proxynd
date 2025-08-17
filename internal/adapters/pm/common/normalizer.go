@@ -20,19 +20,19 @@ func NewPackageNormalizer() ports.PackageNormalizer {
 // NormalizePath normalizes package path for the specific package manager
 func (n *PackageNormalizer) NormalizePath(pmType, path string) (string, error) {
 	switch pmType {
-	case "maven":
+	case PMTypeMaven:
 		return n.normalizeMavenPath(path)
-	case "npm":
+	case PMTypeNpm:
 		return n.normalizeNpmPath(path)
-	case "apt":
+	case PMTypeApt:
 		return n.normalizeAptPath(path)
-	case "pypi":
+	case PMTypePypi:
 		return n.normalizePypiPath(path)
-	case "yum":
+	case PMTypeYum:
 		return n.normalizeYumPath(path)
-	case "apk":
+	case PMTypeApk:
 		return n.normalizeApkPath(path)
-	case "registry":
+	case PMTypeRegistry:
 		return n.normalizeRegistryPath(path)
 	default:
 		return n.normalizeGenericPath(path)
@@ -47,19 +47,19 @@ func (n *PackageNormalizer) ValidatePath(pmType, path string) error {
 	}
 
 	switch pmType {
-	case "maven":
+	case PMTypeMaven:
 		return n.validateMavenPath(normalized)
-	case "npm":
+	case PMTypeNpm:
 		return n.validateNpmPath(normalized)
-	case "apt":
+	case PMTypeApt:
 		return n.validateAptPath(normalized)
-	case "pypi":
+	case PMTypePypi:
 		return n.validatePypiPath(normalized)
-	case "yum":
+	case PMTypeYum:
 		return n.validateYumPath(normalized)
-	case "apk":
+	case PMTypeApk:
 		return n.validateApkPath(normalized)
-	case "registry":
+	case PMTypeRegistry:
 		return n.validateRegistryPath(normalized)
 	default:
 		return nil
@@ -74,19 +74,19 @@ func (n *PackageNormalizer) ExtractComponents(pmType, path string) (*ports.PathC
 	}
 
 	switch pmType {
-	case "maven":
+	case PMTypeMaven:
 		return n.extractMavenComponents(normalized)
-	case "npm":
+	case PMTypeNpm:
 		return n.extractNpmComponents(normalized)
-	case "apt":
+	case PMTypeApt:
 		return n.extractAptComponents(normalized)
-	case "pypi":
+	case PMTypePypi:
 		return n.extractPypiComponents(normalized)
-	case "yum":
+	case PMTypeYum:
 		return n.extractYumComponents(normalized)
-	case "apk":
+	case PMTypeApk:
 		return n.extractApkComponents(normalized)
-	case "registry":
+	case PMTypeRegistry:
 		return n.extractRegistryComponents(normalized)
 	default:
 		return &ports.PathComponents{}, nil
