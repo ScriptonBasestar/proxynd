@@ -16,7 +16,7 @@ import (
 
 	"proxynd/internal/app"
 	"proxynd/internal/config"
-	"proxynd/routers"
+	"proxynd/internal/routers"
 )
 
 // IntegrationTestEnvironment 통합 테스트 환경

@@ -6,10 +6,10 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"proxynd/alerts"
-	authHandlers "proxynd/handlers/auth"
-	proxynd "proxynd/handlers/proxy"
 	"proxynd/internal/config"
-	"proxynd/middlewares"
+	authHandlers "proxynd/internal/handlers-legacy/auth"
+	proxynd "proxynd/internal/handlers-legacy/proxy"
+	"proxynd/internal/middleware-legacy"
 )
 
 // ProxyRouter is exported

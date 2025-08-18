@@ -8,9 +8,9 @@ import (
 	fiberRouters "proxynd/internal/adapters/http/fiber/routers"
 
 	// TODO: HEXAGONAL_MIGRATION - Remove legacy imports after full migration
-	"proxynd/handlers"
-	"proxynd/middlewares"
-	"proxynd/routers"
+	"proxynd/internal/handlers-legacy"
+	"proxynd/internal/middleware-legacy"
+	"proxynd/internal/routers"
 
 	"proxynd/internal/config"
 	"proxynd/logging"

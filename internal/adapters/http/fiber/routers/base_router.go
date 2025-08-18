@@ -7,8 +7,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/template/html/v2"
 
-	"proxynd/handlers"
 	"proxynd/internal/config"
+	"proxynd/internal/handlers-legacy"
 	"proxynd/logging"
 )
 

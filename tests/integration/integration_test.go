@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"proxynd/routers"
+	"proxynd/internal/routers"
 )
 
 // IntegrationTestSuite 통합 테스트 스위트

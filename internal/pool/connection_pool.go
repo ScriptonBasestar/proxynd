@@ -348,13 +348,11 @@ func InitializeGlobalPool(config *ConnectionPoolConfig) {
 	})
 }
 
-
 // NewConnectionPoolConfigFromSettings creates pool config from ConnectionPoolSettings fields
 func NewConnectionPoolConfigFromSettings(
 	maxTotal, maxPerHost, idleTimeoutMin, keepAliveTimeoutSec, connectionTimeoutSec,
 	tlsTimeoutSec, responseHeaderTimeoutSec, expectContinueTimeoutSec, maxRedirects,
 	dnsCacheTTLMin int, insecureSkipVerify bool) *ConnectionPoolConfig {
-	
 	return &ConnectionPoolConfig{
 		MaxTotalConnections:   maxTotal,
 		MaxConnectionsPerHost: maxPerHost,

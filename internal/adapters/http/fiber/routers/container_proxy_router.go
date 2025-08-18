@@ -6,13 +6,13 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"proxynd/alerts"
-	authHandlers "proxynd/handlers/auth"
-	proxyHandlers "proxynd/handlers/proxy"
 	"proxynd/internal/config"
 	"proxynd/internal/container"
 	"proxynd/internal/handlers"
+	authHandlers "proxynd/internal/handlers-legacy/auth"
+	proxyHandlers "proxynd/internal/handlers-legacy/proxy"
+	"proxynd/internal/middleware-legacy"
 	"proxynd/logging"
-	"proxynd/middlewares"
 )
 
 // ContainerProxyRouter Container 기반 프록시 라우터
