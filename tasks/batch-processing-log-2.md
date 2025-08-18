@@ -19,14 +19,14 @@ This batch focused on **module consolidation and structural reorganization** to 
 
 **What was done**:
 - Moved `logging/` → `internal/logging/` (7 files)
-- Moved `metrics/` → `internal/metrics/` (17 files) 
+- Moved `metrics/` → `internal/metrics/` (17 files)
 - Updated 200+ import paths across codebase
 - Fixed type compatibility issues in `logging_config.go`
 - Resolved conflicts between zerolog (root) vs logrus (internal)
 
 **Validation**:
 - ✅ All builds pass
-- ✅ Import paths updated correctly 
+- ✅ Import paths updated correctly
 - ✅ Type compatibility resolved
 - ✅ Git history preserved
 
