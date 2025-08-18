@@ -7,7 +7,7 @@ import (
 
 	"proxynd/alerts"
 	"proxynd/internal/config"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // Additional webhook type constants not in constants.go

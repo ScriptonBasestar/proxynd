@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"proxynd/internal/domain/pip"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // metricsCollectorImpl PIP 메트릭 수집 서비스 구현

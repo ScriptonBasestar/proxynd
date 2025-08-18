@@ -10,7 +10,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // HealthDashboard 헬스 대시보드

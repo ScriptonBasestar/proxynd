@@ -13,7 +13,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"gopkg.in/yaml.v3"
 
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // UserInfo 사용자 정보 구조체

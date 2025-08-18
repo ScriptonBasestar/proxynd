@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"proxynd/internal/factory"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // mockAdapterHealthChecker는 테스트용 어댑터 헬스체크 모의 객체

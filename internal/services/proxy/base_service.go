@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"proxynd/internal/logging"
 	"proxynd/internal/security"
-	"proxynd/logging"
 )
 
 // BaseProxyService provides common functionality for all proxy services

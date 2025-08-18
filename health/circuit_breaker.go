@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // CircuitBreakerState 서킷 브레이커 상태

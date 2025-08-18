@@ -1,301 +1,351 @@
 package logging
 
 import (
-	"context"
+	"fmt"
+	"runtime/debug"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 )
 
-// MiddlewareConfig represents the configuration for middleware settings
+// MiddlewareConfig 로깅 미들웨어 설정
 type MiddlewareConfig struct {
-	Logger          Logger
-	SkipPaths       []string
-	SkipSuccessLogs bool
-	LogRequestBody  bool
-	LogResponseBody bool
-	MaxBodySize     int
-	TimeFormat      string
-	CustomFields    func(*fiber.Ctx) map[string]interface{}
+	// Logger 사용할 로거
+	Logger Logger
+
+	// SkipPaths 로깅을 건너뛸 경로
+	SkipPaths []string
+
+	// SkipStatuses 로깅을 건너뛸 상태 코드
+	SkipStatuses []int
+
+	// IncludeBody 요청/응답 본문 포함 여부
+	IncludeBody bool
+
+	// IncludeHeaders 헤더 포함 여부
+	IncludeHeaders bool
+
+	// HeadersToLog 로깅할 헤더 목록 (비어있으면 모든 헤더)
+	HeadersToLog []string
+
+	// CustomFields 추가 필드 함수
+	CustomFields func(*fiber.Ctx) []Field
 }
 
-// DefaultMiddlewareConfig provides the default middleware configuration
+// DefaultMiddlewareConfig 기본 미들웨어 설정
 var DefaultMiddlewareConfig = MiddlewareConfig{
-	SkipPaths:       []string{"/health", "/metrics"},
-	SkipSuccessLogs: false,
-	LogRequestBody:  false,
-	LogResponseBody: false,
-	MaxBodySize:     1024, // 1KB
-	TimeFormat:      time.RFC3339Nano,
+	SkipPaths: []string{
+		"/healthz",
+		"/health/live",
+		"/metrics",
+	},
+	SkipStatuses: []int{},
 }
 
-// New creates a new logging middleware
+// New 구조화된 로깅 미들웨어 생성
 func New(config ...MiddlewareConfig) fiber.Handler {
 	cfg := DefaultMiddlewareConfig
 	if len(config) > 0 {
 		cfg = config[0]
 	}
 
-	// Skip paths map for faster lookup
-	skipPaths := make(map[string]bool)
-	for _, path := range cfg.SkipPaths {
-		skipPaths[path] = true
+	if cfg.Logger == nil {
+		cfg.Logger = GetLogger()
 	}
 
 	return func(c *fiber.Ctx) error {
-		// Skip logging for certain paths
-		if skipPaths[c.Path()] {
+		// 요청 ID 생성
+		requestID := c.Get(headerRequestID)
+		if requestID == "" {
+			requestID = uuid.New().String()
+			c.Set(headerRequestID, requestID)
+		}
+
+		// 컨텍스트에 요청 ID 저장
+		c.Locals(fieldRequestID, requestID)
+
+		// 경로 확인
+		if shouldSkipPath(c.Path(), cfg.SkipPaths) {
 			return c.Next()
 		}
 
-		// Initialize request context
-		requestData := initializeRequestContext(c)
-
-		// Process request and capture response
+		// 시작 시간 기록
 		start := time.Now()
+
+		// 요청 로거 생성
+		logger := cfg.Logger.WithFields(
+			F(fieldRequestID, requestID),
+			F("method", c.Method()),
+			F("path", c.Path()),
+			F("ip", c.IP()),
+			F("user_agent", c.Get("User-Agent")),
+		)
+
+		// 사용자 정보 추가
+		if username := c.Locals("username"); username != nil {
+			logger = logger.WithField("username", username)
+		}
+
+		// 프록시 타입 추가
+		if proxyType := c.Params("type"); proxyType != "" {
+			logger = logger.WithField("proxy_type", proxyType)
+		}
+
+		// 요청 헤더 로깅
+		if cfg.IncludeHeaders {
+			headers := extractHeaders(c, cfg.HeadersToLog, true)
+			if len(headers) > 0 {
+				logger = logger.WithField("request_headers", headers)
+			}
+		}
+
+		// 요청 본문 크기
+		if c.Request().Header.ContentLength() > 0 {
+			logger = logger.WithField("request_size", c.Request().Header.ContentLength())
+		}
+
+		// 요청 로깅
+		logger.Info("Request started")
+
+		// 다음 핸들러 실행
 		err := c.Next()
+
+		// 응답 시간 계산
 		duration := time.Since(start)
 
-		// Log the request
-		logRequest(cfg, c, requestData, duration, err)
+		// 응답 로거 생성
+		respLogger := logger.WithFields(
+			F(fieldStatus, c.Response().StatusCode()),
+			F("duration_ms", duration.Milliseconds()),
+			F("duration", duration.String()),
+		)
+
+		// 응답 크기
+		if size := len(c.Response().Body()); size > 0 {
+			respLogger = respLogger.WithField("response_size", size)
+		}
+
+		// 캐시 상태
+		if cacheHit := c.Locals("cache_hit"); cacheHit != nil {
+			respLogger = respLogger.WithField("cache_hit", cacheHit)
+		}
+
+		// 응답 헤더 로깅
+		if cfg.IncludeHeaders {
+			headers := extractResponseHeaders(c, cfg.HeadersToLog)
+			if len(headers) > 0 {
+				respLogger = respLogger.WithField("response_headers", headers)
+			}
+		}
+
+		// 커스텀 필드 추가
+		if cfg.CustomFields != nil {
+			fields := cfg.CustomFields(c)
+			if len(fields) > 0 {
+				respLogger = respLogger.WithFields(fields...)
+			}
+		}
+
+		// 오류 처리
+		if err != nil {
+			respLogger = respLogger.WithField(fieldError, err.Error())
+		}
+
+		// 상태 코드 확인
+		statusCode := c.Response().StatusCode()
+		if shouldSkipStatus(statusCode, cfg.SkipStatuses) {
+			return err
+		}
+
+		// 로그 레벨 결정 및 로깅
+		message := fmt.Sprintf("%s %s", c.Method(), c.Path())
+
+		switch {
+		case statusCode >= 500:
+			respLogger.Error(message, F("error_type", "server_error"))
+		case statusCode >= 400:
+			respLogger.Warn(message, F("error_type", "client_error"))
+		case statusCode >= 300:
+			respLogger.Info(message, F("redirect", true))
+		default:
+			respLogger.Info(message)
+		}
 
 		return err
 	}
 }
 
-// requestData holds the request-specific data for logging
-type requestData struct {
-	requestID     string
-	correlationID string
-	userID        string
-	sessionID     string
-	ctx           context.Context
+// RequestLogger 요청별 로거를 컨텍스트에 저장하는 미들웨어
+func RequestLogger() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		// 요청 ID 생성
+		requestID := c.Get(headerRequestID)
+		if requestID == "" {
+			requestID = uuid.New().String()
+			c.Set(headerRequestID, requestID)
+		}
+
+		// 요청별 로거 생성
+		logger := GetLogger().WithFields(
+			F(fieldRequestID, requestID),
+			F("method", c.Method()),
+			F("path", c.Path()),
+			F("ip", c.IP()),
+		)
+
+		// 컨텍스트에 로거 저장
+		c.Locals("logger", logger)
+
+		return c.Next()
+	}
 }
 
-// initializeRequestContext sets up request context and IDs
-func initializeRequestContext(c *fiber.Ctx) *requestData {
-	data := &requestData{}
-
-	// Generate or get request ID
-	data.requestID = getOrGenerateID(c, "X-Request-ID")
-
-	// Generate or get correlation ID
-	data.correlationID = getOrGenerateID(c, "X-Correlation-ID")
-
-	// Build context with IDs
-	ctx := WithRequestID(c.Context(), data.requestID)
-	ctx = WithCorrelationID(ctx, data.correlationID)
-
-	// Extract optional IDs
-	data.userID = c.Get("X-User-ID")
-	if data.userID != "" {
-		ctx = WithUserID(ctx, data.userID)
-	}
-
-	data.sessionID = c.Get("X-Session-ID")
-	if data.sessionID != "" {
-		ctx = WithSessionID(ctx, data.sessionID)
-	}
-
-	// Store context
-	c.SetUserContext(ctx)
-	data.ctx = ctx
-
-	return data
-}
-
-// getOrGenerateID gets existing ID from header or generates new one
-func getOrGenerateID(c *fiber.Ctx, headerName string) string {
-	id := c.Get(headerName)
-	if id == "" {
-		id = uuid.New().String()
-		c.Set(headerName, id)
-	}
-	return id
-}
-
-// captureRequestBody captures request body if enabled
-func captureRequestBody(cfg MiddlewareConfig, c *fiber.Ctx) []byte {
-	if !cfg.LogRequestBody || len(c.Body()) == 0 || len(c.Body()) > cfg.MaxBodySize {
-		return nil
-	}
-
-	body := make([]byte, len(c.Body()))
-	copy(body, c.Body())
-	return body
-}
-
-// captureResponseBody captures response body if enabled
-func captureResponseBody(cfg MiddlewareConfig, c *fiber.Ctx) []byte {
-	if !cfg.LogResponseBody || len(c.Response().Body()) == 0 || len(c.Response().Body()) > cfg.MaxBodySize {
-		return nil
-	}
-
-	body := make([]byte, len(c.Response().Body()))
-	copy(body, c.Response().Body())
-	return body
-}
-
-// logRequest performs the actual logging
-func logRequest(cfg MiddlewareConfig, c *fiber.Ctx, data *requestData, duration time.Duration, err error) {
-	status := c.Response().StatusCode()
-
-	// Skip success logs if configured
-	if cfg.SkipSuccessLogs && status >= 200 && status < 300 {
-		return
-	}
-
-	// Build log fields
-	fields := buildBaseFields(c, data, duration, status)
-
-	// Add optional fields
-	fields = addOptionalFields(fields, c, data)
-
-	// Capture and add bodies if enabled
-	if requestBody := captureRequestBody(cfg, c); len(requestBody) > 0 {
-		fields = append(fields, String("request_body", string(requestBody)))
-	}
-
-	if responseBody := captureResponseBody(cfg, c); len(responseBody) > 0 {
-		fields = append(fields, String("response_body", string(responseBody)))
-	}
-
-	// Add custom fields
-	if cfg.CustomFields != nil {
-		addCustomFields(&fields, cfg.CustomFields(c))
-	}
-
-	// Add error information
-	if err != nil {
-		fields = append(fields, Error(err))
-		if status >= 500 {
-			fields = append(fields, StackTrace(err))
+// GetRequestLogger 요청 컨텍스트에서 로거 추출
+func GetRequestLogger(c *fiber.Ctx) Logger {
+	if logger := c.Locals("logger"); logger != nil {
+		if l, ok := logger.(Logger); ok {
+			return l
 		}
 	}
-
-	// Log with appropriate level
-	logWithLevel(cfg.Logger.WithContext(data.ctx).WithComponent("http.middleware"), status, err, fields)
+	// 기본 로거 반환
+	return GetLogger().WithField("fallback", true)
 }
 
-// buildBaseFields creates the base set of log fields
-func buildBaseFields(c *fiber.Ctx, data *requestData, duration time.Duration, status int) []Field {
-	return []Field{
-		String("method", c.Method()),
-		String("path", c.Path()),
-		String("route", c.Route().Path),
-		Int("status", status),
-		Duration("duration", duration),
-		String("ip", c.IP()),
-		String("user_agent", c.Get("User-Agent")),
-		String("referer", c.Get("Referer")),
-		Int("request_size", len(c.Body())),
-		Int("response_size", len(c.Response().Body())),
-		String("request_id", data.requestID),
-		String("correlation_id", data.correlationID),
+// ErrorLogger 오류 로깅 미들웨어
+func ErrorLogger() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		err := c.Next()
+		if err != nil {
+			logger := GetRequestLogger(c)
+
+			// Fiber 오류 타입 확인
+			if e, ok := err.(*fiber.Error); ok {
+				logger.Error("Request failed",
+					F(fieldError, e.Error()),
+					F("code", e.Code),
+					F(fieldStatus, c.Response().StatusCode()),
+				)
+			} else {
+				logger.Error("Request failed",
+					F(fieldError, err.Error()),
+					F(fieldStatus, c.Response().StatusCode()),
+				)
+			}
+		}
+
+		return err
 	}
 }
 
-// addOptionalFields adds optional fields to the log
-func addOptionalFields(fields []Field, c *fiber.Ctx, data *requestData) []Field {
-	// Add user and session IDs if available
-	if data.userID != "" {
-		fields = append(fields, String("user_id", data.userID))
-	}
-	if data.sessionID != "" {
-		fields = append(fields, String("session_id", data.sessionID))
-	}
+// RecoveryLogger 패닉 복구 및 로깅 미들웨어
+func RecoveryLogger() fiber.Handler {
+	return func(c *fiber.Ctx) (err error) {
+		defer func() {
+			if r := recover(); r != nil {
+				logger := GetRequestLogger(c)
 
-	// Add query parameters
-	if len(c.Queries()) > 0 {
-		fields = append(fields, NewField("query", c.Queries()))
-	}
+				// 오류 메시지 추출
+				var msg string
+				switch v := r.(type) {
+				case error:
+					msg = v.Error()
+				case string:
+					msg = v
+				default:
+					msg = fmt.Sprintf("%v", v)
+				}
 
-	// Add safe headers
-	if headers := collectSafeHeaders(c); len(headers) > 0 {
-		fields = append(fields, NewField("headers", headers))
-	}
+				// 스택 트레이스 포함 로깅
+				logger.Error("Panic recovered",
+					F("panic", msg),
+					F("stack", string(debug.Stack())),
+				)
 
-	return fields
+				// 500 오류 반환
+				err = c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+					fieldError:     "Internal Server Error",
+					fieldRequestID: c.Locals(fieldRequestID),
+				})
+			}
+		}()
+
+		return c.Next()
+	}
 }
 
-// collectSafeHeaders collects headers that are safe to log
-func collectSafeHeaders(c *fiber.Ctx) map[string]string {
+// shouldSkipPath 경로 스킵 여부 확인
+func shouldSkipPath(path string, skipPaths []string) bool {
+	for _, skip := range skipPaths {
+		if path == skip || strings.HasPrefix(path, skip) {
+			return true
+		}
+	}
+	return false
+}
+
+// shouldSkipStatus 상태 코드 스킵 여부 확인
+func shouldSkipStatus(status int, skipStatuses []int) bool {
+	for _, skip := range skipStatuses {
+		if status == skip {
+			return true
+		}
+	}
+	return false
+}
+
+// extractHeaders 요청 헤더 추출
+func extractHeaders(c *fiber.Ctx, headersToLog []string, _ bool) map[string]string {
 	headers := make(map[string]string)
-	for key, value := range c.Request().Header.All() {
-		headerKey := string(key)
-		if isSafeHeader(headerKey) {
-			headers[headerKey] = string(value)
+
+	// 민감한 헤더 목록
+	sensitiveHeaders := map[string]bool{
+		"authorization": true,
+		"cookie":        true,
+		"set-cookie":    true,
+		"x-auth-token":  true,
+	}
+
+	if len(headersToLog) > 0 {
+		// 특정 헤더만 로깅
+		for _, header := range headersToLog {
+			value := c.Get(header)
+			if value != "" {
+				if sensitiveHeaders[strings.ToLower(header)] {
+					headers[header] = "***MASKED***"
+				} else {
+					headers[header] = value
+				}
+			}
+		}
+	} else {
+		// 모든 헤더 로깅 (민감한 정보 제외)
+		for key, value := range c.Request().Header.All() {
+			k := string(key)
+			if !sensitiveHeaders[strings.ToLower(k)] {
+				headers[k] = string(value)
+			}
 		}
 	}
+
 	return headers
 }
 
-// addCustomFields adds custom fields to the log fields
-func addCustomFields(fields *[]Field, customFields map[string]interface{}) {
-	for key, value := range customFields {
-		*fields = append(*fields, NewField(key, value))
-	}
-}
+// extractResponseHeaders 응답 헤더 추출
+func extractResponseHeaders(c *fiber.Ctx, headersToLog []string) map[string]string {
+	headers := make(map[string]string)
 
-// logWithLevel logs the message with the appropriate level based on status
-func logWithLevel(logger Logger, status int, err error, fields []Field) {
-	message := "HTTP request processed"
-	if err != nil {
-		message = "HTTP request failed"
-	}
-
-	switch {
-	case status >= 500:
-		logger.Error(message, fields...)
-	case status >= 400:
-		logger.Warn(message, fields...)
-	default:
-		logger.Info(message, fields...)
-	}
-}
-
-// isSafeHeader checks if a header is safe to log
-func isSafeHeader(header string) bool {
-	// List of headers that are safe to log
-	safeHeaders := map[string]bool{
-		"Content-Type":     true,
-		"Content-Length":   true,
-		"Accept":           true,
-		"Accept-Encoding":  true,
-		"Accept-Language":  true,
-		"Cache-Control":    true,
-		"Connection":       true,
-		"Host":             true,
-		"Origin":           true,
-		"Referer":          true,
-		"User-Agent":       true,
-		"X-Forwarded-For":  true,
-		"X-Real-IP":        true,
-		"X-Request-ID":     true,
-		"X-Correlation-ID": true,
-		"X-User-ID":        true,
-		"X-Session-ID":     true,
+	if len(headersToLog) > 0 {
+		// 특정 헤더만 로깅
+		for _, header := range headersToLog {
+			for key, value := range c.Response().Header.All() {
+				if string(key) == header {
+					headers[header] = string(value)
+				}
+			}
+		}
 	}
 
-	// Don't log sensitive headers
-	sensitiveHeaders := map[string]bool{
-		"Authorization":  true,
-		"Cookie":         true,
-		"Set-Cookie":     true,
-		"X-API-Key":      true,
-		"X-Auth-Token":   true,
-		"Authentication": true,
-	}
-
-	if sensitiveHeaders[header] {
-		return false
-	}
-
-	return safeHeaders[header]
-}
-
-// RequestLoggerFromContext gets the logger with request context
-func RequestLoggerFromContext(c *fiber.Ctx, baseLogger Logger) Logger {
-	return baseLogger.WithContext(c.UserContext())
+	return headers
 }

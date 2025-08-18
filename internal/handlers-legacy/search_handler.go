@@ -7,7 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"proxynd/internal/config"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // SearchResult represents a search result item

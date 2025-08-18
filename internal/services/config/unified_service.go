@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"proxynd/internal/config"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // unifiedService implements the Service interface using UnifiedConfigLoader

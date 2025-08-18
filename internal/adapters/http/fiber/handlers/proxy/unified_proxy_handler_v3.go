@@ -3,7 +3,7 @@ package proxy
 import (
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // UnifiedProxyHandlerV3 V3 팩토리를 사용한 새로운 통합 프록시 핸들러

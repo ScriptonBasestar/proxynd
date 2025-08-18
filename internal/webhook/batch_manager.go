@@ -12,7 +12,7 @@ import (
 
 	"proxynd/alerts"
 	"proxynd/internal/config"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // Compression format constants

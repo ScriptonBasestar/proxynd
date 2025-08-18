@@ -120,7 +120,7 @@
 
 ## 관련 파일
 - `routers/` (이동 대상)
-- `handlers/` (이동 대상) 
+- `handlers/` (이동 대상)
 - `middlewares/` (이동 대상)
 - `internal/routers/` (생성될 디렉토리)
 - `internal/handlers/` (병합 대상)

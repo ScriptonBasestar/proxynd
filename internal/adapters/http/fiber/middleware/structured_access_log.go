@@ -6,7 +6,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // HTTP method constants

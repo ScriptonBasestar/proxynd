@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"proxynd/internal/domain/docker"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 const (

@@ -12,7 +12,7 @@ import (
 	"proxynd/internal/auth/jwt"
 	"proxynd/internal/auth/oauth2"
 	"proxynd/internal/config"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // OAuth2State 세션 상태 관리

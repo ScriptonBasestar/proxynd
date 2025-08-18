@@ -11,7 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // AdvancedCollector provides enhanced metrics collection capabilities

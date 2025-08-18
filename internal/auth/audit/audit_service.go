@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // AuditLevel 감사 로그 레벨

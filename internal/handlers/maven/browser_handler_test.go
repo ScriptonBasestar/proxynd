@@ -14,7 +14,7 @@ import (
 
 	"proxynd/internal/config"
 	"proxynd/internal/domain/maven"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // MockDirectoryCollector DirectoryCollector 모의 객체

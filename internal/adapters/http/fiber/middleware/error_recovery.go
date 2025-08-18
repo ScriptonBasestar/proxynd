@@ -8,7 +8,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"proxynd/internal/errors"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // ErrorRecoveryMiddleware 패닉 복구 미들웨어

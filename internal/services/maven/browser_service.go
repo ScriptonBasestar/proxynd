@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"proxynd/internal/domain/maven"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // BrowserService Fiber 독립적인 Maven 브라우저 서비스 (도메인 로직 구현)

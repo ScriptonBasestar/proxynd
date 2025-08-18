@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"proxynd/internal/domain/yum"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 const (

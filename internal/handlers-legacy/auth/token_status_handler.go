@@ -8,7 +8,7 @@ import (
 
 	"proxynd/internal/auth/jwt"
 	"proxynd/internal/config"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // TokenStatusResponse 토큰 상태 응답

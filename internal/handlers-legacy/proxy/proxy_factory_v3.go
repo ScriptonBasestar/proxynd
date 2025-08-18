@@ -6,7 +6,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // ProxyHandlerV3Interface V3 프록시 핸들러 공통 인터페이스

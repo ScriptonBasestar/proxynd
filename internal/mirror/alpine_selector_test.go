@@ -8,7 +8,7 @@ import (
 	"github.com/go-playground/assert/v2"
 
 	"proxynd/internal/config"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // TestNewAlpineMirrorSelector 미러 선택기 생성 테스트

@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"proxynd/internal/domain/docker"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // registryManagerImpl Docker 레지스트리 서버 관리 구현

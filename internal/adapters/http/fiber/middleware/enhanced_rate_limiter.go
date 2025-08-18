@@ -10,7 +10,7 @@ import (
 	"github.com/ulule/limiter/v3"
 	"github.com/ulule/limiter/v3/drivers/store/memory"
 
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // EnhancedRateLimitConfig 개선된 Rate Limit 설정

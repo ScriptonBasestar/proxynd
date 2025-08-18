@@ -7,7 +7,7 @@ import (
 
 	"proxynd/internal/container"
 	"proxynd/internal/handlers"
-	"proxynd/metrics"
+	"proxynd/internal/metrics"
 )
 
 // ContainerMetricsMiddleware Container 기반 핸들러용 메트릭 미들웨어

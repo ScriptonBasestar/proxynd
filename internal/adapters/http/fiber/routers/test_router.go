@@ -10,7 +10,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"proxynd/internal/adapters/pm/common"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // ProxyTestRequest 프록시 테스트 요청 구조체

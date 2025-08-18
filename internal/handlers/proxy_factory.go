@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"proxynd/internal/container"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // ProxyHandlerFactoryImpl 프록시 핸들러 팩토리 구현체

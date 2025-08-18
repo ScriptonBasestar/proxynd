@@ -12,8 +12,8 @@ import (
 	"proxynd/helpers"
 	"proxynd/internal/config"
 	"proxynd/internal/domain/docker"
+	"proxynd/internal/logging"
 	dockerServices "proxynd/internal/services/docker"
-	"proxynd/logging"
 )
 
 const (

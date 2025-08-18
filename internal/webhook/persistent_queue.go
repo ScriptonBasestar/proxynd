@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"proxynd/alerts"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // PersistentFailureQueue 실패한 웹훅 이벤트의 영속성 저장소

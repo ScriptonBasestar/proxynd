@@ -8,7 +8,7 @@ import (
 
 	"proxynd/internal/auth/jwt"
 	"proxynd/internal/config"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // TokenRefreshRequest 토큰 갱신 요청 추적

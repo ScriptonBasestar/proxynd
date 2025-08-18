@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"proxynd/alerts"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // EventQueue 이벤트 큐 인터페이스

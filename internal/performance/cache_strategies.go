@@ -6,7 +6,7 @@ import (
 	"sort"
 	"time"
 
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // TTLOptimizationStrategy represents a TTL optimization strategy

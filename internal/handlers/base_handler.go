@@ -9,7 +9,7 @@ import (
 
 	"proxynd/internal/config"
 	"proxynd/internal/container"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // Log level constants

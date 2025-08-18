@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"proxynd/metrics"
+	"proxynd/internal/metrics"
 )
 
 // TestAPKProxyBasicFlow 기본 APK 프록시 동작 테스트

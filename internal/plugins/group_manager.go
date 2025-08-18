@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // DefaultGroupManager 기본 그룹 매니저 구현

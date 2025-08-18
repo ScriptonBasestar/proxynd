@@ -16,7 +16,7 @@ import (
 
 	"proxynd/internal/config"
 	"proxynd/internal/domain/maven"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // 도메인 모델로 이동됨 - internal/domain/maven/models.go 참조

@@ -11,8 +11,8 @@ import (
 	"github.com/valyala/fasthttp/fasthttpadaptor"
 
 	"proxynd/internal/config"
-	"proxynd/logging"
-	"proxynd/metrics"
+	"proxynd/internal/logging"
+	"proxynd/internal/metrics"
 )
 
 // MetricsRouter 메트릭 라우터 설정

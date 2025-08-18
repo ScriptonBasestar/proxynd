@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"proxynd/internal/config"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // Region constants

@@ -8,7 +8,7 @@ import (
 
 	"proxynd/cache"
 	"proxynd/internal/errors"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // BaseProxyHandlerImpl Template Method 패턴 구현체

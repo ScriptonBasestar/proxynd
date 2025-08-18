@@ -9,7 +9,7 @@ import (
 
 	"proxynd/helpers"
 	"proxynd/internal/config"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 	"proxynd/verification/apk"
 )
 

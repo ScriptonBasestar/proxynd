@@ -7,8 +7,8 @@ import (
 
 	"proxynd/alerts"
 	"proxynd/internal/config"
+	"proxynd/internal/logging"
 	"proxynd/internal/webhook/retry"
-	"proxynd/logging"
 )
 
 // Worker 웹훅 워커

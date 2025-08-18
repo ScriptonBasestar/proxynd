@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"proxynd/internal/domain/docker"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // metricsCollectorImpl Docker 프록시 메트릭 수집 구현

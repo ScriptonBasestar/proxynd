@@ -14,7 +14,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // SignatureVerifier APK 서명 검증기

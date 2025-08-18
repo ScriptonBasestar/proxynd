@@ -7,7 +7,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // RateLimiter 요청 속도 제한기

@@ -11,8 +11,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"proxynd/internal/config"
+	"proxynd/internal/logging"
 	"proxynd/internal/security"
-	"proxynd/logging"
 )
 
 // Constants for cache router

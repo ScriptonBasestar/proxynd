@@ -12,8 +12,8 @@ import (
 
 	"proxynd/helpers"
 	"proxynd/internal/config"
+	"proxynd/internal/logging"
 	"proxynd/internal/security"
-	"proxynd/logging"
 )
 
 // ConfigValidationResponse 설정 검증 응답 구조체

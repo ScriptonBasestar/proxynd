@@ -8,7 +8,7 @@ import (
 
 	"proxynd/internal/errors"
 	"proxynd/internal/handlers"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // UnifiedProxyHandler Template Method 패턴을 사용하는 통합 프록시 핸들러

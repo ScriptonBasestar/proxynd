@@ -12,7 +12,7 @@ import (
 	"proxynd/helpers"
 	"proxynd/internal/config"
 	"proxynd/internal/errors"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // DockerHandlerV3 Base Handler 패턴을 사용하는 새로운 Docker 핸들러

@@ -10,8 +10,8 @@ import (
 	"proxynd/helpers"
 	"proxynd/internal/config"
 	"proxynd/internal/domain/pip"
+	"proxynd/internal/logging"
 	pipServices "proxynd/internal/services/pip"
-	"proxynd/logging"
 )
 
 // PIPHandlerAdapter Fiber HTTP 요청을 PIP 도메인 서비스로 연결하는 어댑터

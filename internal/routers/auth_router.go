@@ -6,8 +6,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"proxynd/internal/handlers-legacy/auth"
-	"proxynd/internal/middleware-legacy"
-	"proxynd/logging"
+	"proxynd/internal/logging"
+	middlewares "proxynd/internal/middleware-legacy"
 )
 
 // AuthRouter OAuth2 인증 관련 라우터

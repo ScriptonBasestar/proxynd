@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"proxynd/internal/domain/apk"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 const (

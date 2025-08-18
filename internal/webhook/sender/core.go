@@ -8,9 +8,9 @@ import (
 
 	"proxynd/alerts"
 	"proxynd/internal/config"
+	"proxynd/internal/logging"
 	"proxynd/internal/webhook/retry"
 	"proxynd/internal/webhook/types"
-	"proxynd/logging"
 )
 
 // Core 웹훅 전송 핵심 엔진

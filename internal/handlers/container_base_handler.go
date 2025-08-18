@@ -6,7 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"proxynd/internal/container"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // ContainerBaseHandler Container 기반 핸들러의 기본 구현체

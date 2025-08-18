@@ -12,7 +12,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"proxynd/internal/adapters/pm/common"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // Constants for metrics middleware

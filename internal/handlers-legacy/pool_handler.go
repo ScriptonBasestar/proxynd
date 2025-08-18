@@ -4,8 +4,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"proxynd/internal/config"
+	"proxynd/internal/logging"
 	"proxynd/internal/pool"
-	"proxynd/logging"
 )
 
 // PoolHandler Connection Pool 관리 핸들러

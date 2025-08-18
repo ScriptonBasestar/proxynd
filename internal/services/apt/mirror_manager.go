@@ -10,7 +10,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"proxynd/internal/domain/apt"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // mirrorManagerImpl 미러 관리 서비스 구현

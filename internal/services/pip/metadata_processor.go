@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"proxynd/internal/domain/pip"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // metadataProcessorImpl PIP 메타데이터 처리 서비스 구현

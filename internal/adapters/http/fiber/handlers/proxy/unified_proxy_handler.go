@@ -9,8 +9,8 @@ import (
 	"proxynd/internal/adapters/http"
 	"proxynd/internal/config"
 	"proxynd/internal/factory"
+	"proxynd/internal/logging"
 	"proxynd/internal/usecase"
-	"proxynd/logging"
 )
 
 // 전역 팩토리 인스턴스

@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // CacheOptimizer provides intelligent cache optimization strategies

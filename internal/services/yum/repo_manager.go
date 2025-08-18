@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"proxynd/internal/domain/yum"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // repoManagerImpl YUM 리포지토리 관리 서비스 구현

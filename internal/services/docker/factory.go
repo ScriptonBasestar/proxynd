@@ -2,7 +2,7 @@ package docker
 
 import (
 	"proxynd/internal/domain/docker"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // ServiceFactory Docker 서비스 팩토리

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // TestHandlerFactory 테스트용 핸들러 팩토리

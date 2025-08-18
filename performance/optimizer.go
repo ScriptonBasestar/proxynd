@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"proxynd/logging"
-	"proxynd/metrics"
+	"proxynd/internal/logging"
+	"proxynd/internal/metrics"
 )
 
 // Manager 성능 관리자 (임시 정의)

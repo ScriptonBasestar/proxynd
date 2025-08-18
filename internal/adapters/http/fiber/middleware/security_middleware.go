@@ -5,7 +5,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/helmet"
 
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // SecurityMiddlewareConfig 보안 미들웨어 통합 설정

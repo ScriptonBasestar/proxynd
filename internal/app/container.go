@@ -14,12 +14,12 @@ import (
 	"proxynd/internal/containerhandlers"
 	"proxynd/internal/factory"
 	"proxynd/internal/handlers"
+	"proxynd/internal/logging"
+	"proxynd/internal/metrics"
 	"proxynd/internal/repositories/cache"
 	configRepo "proxynd/internal/repositories/config"
 	"proxynd/internal/services/adapters"
 	"proxynd/internal/services/proxy"
-	"proxynd/logging"
-	"proxynd/metrics"
 	"proxynd/pkg/types"
 )
 

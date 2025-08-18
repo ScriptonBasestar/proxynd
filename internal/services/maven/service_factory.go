@@ -2,7 +2,7 @@ package maven
 
 import (
 	"proxynd/internal/domain/maven"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // ServiceFactory Maven 서비스 팩토리

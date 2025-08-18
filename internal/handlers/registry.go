@@ -8,7 +8,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"proxynd/internal/container"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // HandlerRegistry 핸들러 레지스트리

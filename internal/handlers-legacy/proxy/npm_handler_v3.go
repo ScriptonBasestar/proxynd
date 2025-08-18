@@ -10,7 +10,7 @@ import (
 
 	"proxynd/internal/config"
 	"proxynd/internal/errors"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // NPMHandlerV3 Base Handler 패턴을 사용하는 새로운 NPM 핸들러

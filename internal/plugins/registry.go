@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 var (

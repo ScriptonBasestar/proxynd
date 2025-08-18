@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"proxynd/internal/domain/yum"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // metadataProcessorImpl YUM 메타데이터 처리 서비스 구현

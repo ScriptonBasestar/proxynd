@@ -3,7 +3,7 @@ package app
 import (
 	"sync"
 
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // ConfigChangeNotifier 설정 변경 알림 시스템

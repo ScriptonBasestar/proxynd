@@ -5,8 +5,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"proxynd/internal/config"
+	"proxynd/internal/logging"
 	"proxynd/internal/mirror"
-	"proxynd/logging"
 )
 
 // APKMirrorRouter APK 미러 선택 관련 API 라우터

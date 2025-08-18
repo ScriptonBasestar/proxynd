@@ -13,8 +13,8 @@ import (
 	"proxynd/internal/config"
 	"proxynd/internal/container"
 	"proxynd/internal/errors"
+	"proxynd/internal/logging"
 	"proxynd/internal/security"
-	"proxynd/logging"
 )
 
 const (

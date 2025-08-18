@@ -301,27 +301,47 @@ func validateOutputConfig(config logging.OutputConfig) error {
 }
 
 // ToLoggingConfig converts to internal logging config
-func (c *LoggingConfig) ToLoggingConfig() *logging.Config {
-	return &logging.Config{
-		Level:       c.Level,
-		Format:      c.Format,
-		Output:      c.Output,
-		Sampling:    c.Sampling,
-		Correlation: c.Correlation != nil && c.Correlation.Enabled,
-		Caller:      c.Caller,
-		Fields:      c.Fields,
+func (c *LoggingConfig) ToLoggingConfig() *logging.LogConfig {
+	config := &logging.LogConfig{
+		Level:  logging.LogLevel(c.Level),
+		Format: c.Format,
+		Output: "stdout", // Default output, TODO: handle multiple outputs
 	}
+
+	if c.Fields != nil {
+		config.DefaultFields = c.Fields
+	} else {
+		config.DefaultFields = make(map[string]interface{})
+	}
+
+	// Handle first output config for file settings
+	if len(c.Output) > 0 {
+		firstOutput := c.Output[0]
+		if firstOutput.Type == "file" {
+			config.Output = "file"
+			config.File.Path = firstOutput.Path
+			config.File.MaxSize = firstOutput.MaxSize
+			config.File.MaxBackups = firstOutput.MaxBackups
+			config.File.Compress = firstOutput.Compress
+		} else {
+			config.Output = firstOutput.Type
+		}
+	}
+
+	return config
 }
 
 // ToAggregatorConfig converts to aggregator config
-func (c *AggregationConfig) ToAggregatorConfig() *logging.AggregatorConfig {
-	return &logging.AggregatorConfig{
-		LogPaths:        c.LogPaths,
-		OutputPath:      c.OutputPath,
-		AnalysisWindow:  c.AnalysisWindow,
-		Patterns:        c.Patterns,
-		MaxFileSize:     c.MaxFileSize,
-		RetentionPeriod: c.RetentionPeriod,
+// NOTE: AggregatorConfig is not available in the current logging package
+// This method is preserved for potential future use
+func (c *AggregationConfig) ToAggregatorConfig() map[string]interface{} {
+	return map[string]interface{}{
+		"log_paths":        c.LogPaths,
+		"output_path":      c.OutputPath,
+		"analysis_window":  c.AnalysisWindow,
+		"patterns":         c.Patterns,
+		"max_file_size":    c.MaxFileSize,
+		"retention_period": c.RetentionPeriod,
 	}
 }
 

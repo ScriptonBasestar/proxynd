@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"time"
 
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // Enhanced collector 메서드 구현

@@ -18,8 +18,8 @@ import (
 	"proxynd/internal/adapters/pm/common"
 	"proxynd/internal/config"
 	"proxynd/internal/container"
+	"proxynd/internal/logging"
 	"proxynd/internal/security"
-	"proxynd/logging"
 	"proxynd/pkg/httpclient"
 )
 

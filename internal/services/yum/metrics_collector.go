@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"proxynd/internal/domain/yum"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // metricsCollectorImpl YUM 메트릭 수집 서비스 구현

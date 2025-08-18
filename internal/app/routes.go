@@ -9,11 +9,11 @@ import (
 
 	// TODO: HEXAGONAL_MIGRATION - Remove legacy imports after full migration
 	"proxynd/internal/handlers-legacy"
-	"proxynd/internal/middleware-legacy"
+	middlewares "proxynd/internal/middleware-legacy"
 	"proxynd/internal/routers"
 
 	"proxynd/internal/config"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // RouteConfig holds configuration for route setup

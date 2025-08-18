@@ -12,8 +12,8 @@ import (
 	"proxynd/helpers"
 	"proxynd/internal/config"
 	"proxynd/internal/errors"
+	"proxynd/internal/logging"
 	"proxynd/internal/mirror"
-	"proxynd/logging"
 	"proxynd/pkg/httpclient"
 	"proxynd/verification/apk"
 )

@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"proxynd/internal/domain/npm"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // metricsCollectorImpl 메트릭 수집 서비스 구현

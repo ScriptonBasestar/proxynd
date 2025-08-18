@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"proxynd/internal/domain/apk"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 type metricsCollectorImpl struct {

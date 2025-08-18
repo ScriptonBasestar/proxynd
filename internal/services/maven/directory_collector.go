@@ -13,7 +13,7 @@ import (
 
 	"proxynd/internal/config"
 	"proxynd/internal/domain/maven"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // directoryCollectorImpl DirectoryCollector 인터페이스 구현

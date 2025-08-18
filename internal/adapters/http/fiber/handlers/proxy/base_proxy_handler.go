@@ -11,8 +11,8 @@ import (
 
 	"proxynd/helpers"
 	"proxynd/internal/errors"
+	"proxynd/internal/logging"
 	"proxynd/internal/security"
-	"proxynd/logging"
 )
 
 // ProxyHandlerInterface 프록시 핸들러 공통 인터페이스

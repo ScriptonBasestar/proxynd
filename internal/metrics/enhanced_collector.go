@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // EnhancedMetricsCollector 강화된 메트릭 수집기

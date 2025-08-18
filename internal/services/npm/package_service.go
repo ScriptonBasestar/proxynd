@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"proxynd/internal/domain/npm"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 	"proxynd/pkg/httpclient"
 )
 

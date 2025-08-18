@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // WebhookHistoryItem 웹훅 전송 이력 항목

@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"proxynd/internal/domain/maven"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // pathAnalyzerImpl PathAnalyzer 인터페이스 구현

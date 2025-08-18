@@ -6,7 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"proxynd/internal/container"
-	"proxynd/metrics"
+	"proxynd/internal/metrics"
 )
 
 // BaseContainerHandler Container 기반 핸들러의 공통 기능을 제공하는 베이스 구조체

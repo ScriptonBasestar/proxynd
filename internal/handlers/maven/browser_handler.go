@@ -11,8 +11,8 @@ import (
 
 	"proxynd/internal/config"
 	"proxynd/internal/domain/maven"
+	"proxynd/internal/logging"
 	mavenServices "proxynd/internal/services/maven"
-	"proxynd/logging"
 )
 
 // BrowserHandler 새로운 Maven 브라우저 핸들러 (200라인 목표)

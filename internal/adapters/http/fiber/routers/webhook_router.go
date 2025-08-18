@@ -10,8 +10,8 @@ import (
 
 	"proxynd/dtos"
 	"proxynd/internal/config"
+	"proxynd/internal/logging"
 	"proxynd/internal/webhook"
-	"proxynd/logging"
 )
 
 // WebhookRouter 웹훅 관련 라우트 설정

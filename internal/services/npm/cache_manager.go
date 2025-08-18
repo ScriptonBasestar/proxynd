@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"proxynd/internal/domain/npm"
+	"proxynd/internal/logging"
 	"proxynd/internal/security"
-	"proxynd/logging"
 )
 
 const (

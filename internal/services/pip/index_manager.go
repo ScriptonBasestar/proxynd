@@ -10,7 +10,7 @@ import (
 
 	"proxynd/helpers"
 	"proxynd/internal/domain/pip"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 	"proxynd/pkg/httpclient"
 )
 

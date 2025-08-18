@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"proxynd/alerts"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // Worker represents a webhook worker (placeholder implementation)

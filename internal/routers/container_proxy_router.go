@@ -12,8 +12,8 @@ import (
 	"proxynd/internal/handlers"
 	authHandlers "proxynd/internal/handlers-legacy/auth"
 	proxyHandlers "proxynd/internal/handlers-legacy/proxy"
-	"proxynd/internal/middleware-legacy"
-	"proxynd/logging"
+	"proxynd/internal/logging"
+	middlewares "proxynd/internal/middleware-legacy"
 )
 
 // ContainerProxyRouter Container 기반 프록시 라우터

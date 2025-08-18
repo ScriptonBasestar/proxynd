@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // testLogger is a simple logger implementation for testing

@@ -6,7 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"proxynd/internal/errors"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // Constants for repeated strings

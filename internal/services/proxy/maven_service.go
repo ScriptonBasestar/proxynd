@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"proxynd/internal/config"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // MavenService handles Maven repository proxy requests

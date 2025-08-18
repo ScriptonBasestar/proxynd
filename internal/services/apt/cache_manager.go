@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"proxynd/internal/domain/apt"
+	"proxynd/internal/logging"
 	"proxynd/internal/security"
-	"proxynd/logging"
 )
 
 const (

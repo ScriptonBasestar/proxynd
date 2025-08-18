@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"proxynd/internal/domain/apk"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 	apkVerification "proxynd/verification/apk"
 )
 

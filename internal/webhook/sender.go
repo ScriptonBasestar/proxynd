@@ -8,11 +8,11 @@ import (
 
 	"proxynd/alerts"
 	"proxynd/internal/config"
+	"proxynd/internal/logging"
 	"proxynd/internal/webhook/filtering"
 	"proxynd/internal/webhook/retry"
 	"proxynd/internal/webhook/sender"
 	"proxynd/internal/webhook/types"
-	"proxynd/logging"
 )
 
 // WebhookSender 웹훅 전송기 (리팩토링된 버전)

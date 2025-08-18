@@ -13,7 +13,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	internalconfig "proxynd/internal/config"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // Config type constants

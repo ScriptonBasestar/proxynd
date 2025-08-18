@@ -12,7 +12,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 
 	"proxynd/internal/config"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // Claims JWT 클레임 구조체

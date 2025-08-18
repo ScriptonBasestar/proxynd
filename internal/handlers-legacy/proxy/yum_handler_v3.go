@@ -11,7 +11,7 @@ import (
 	"proxynd/helpers"
 	"proxynd/internal/config"
 	"proxynd/internal/errors"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 	"proxynd/pkg/httpclient"
 )
 

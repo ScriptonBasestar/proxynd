@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // FileRepository implements cache storage using the file system

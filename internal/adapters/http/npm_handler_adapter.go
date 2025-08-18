@@ -11,8 +11,8 @@ import (
 	"proxynd/helpers"
 	"proxynd/internal/config"
 	"proxynd/internal/domain/npm"
+	"proxynd/internal/logging"
 	npmServices "proxynd/internal/services/npm"
-	"proxynd/logging"
 )
 
 // NPMHandlerAdapter Fiber HTTP 요청을 NPM 도메인 서비스로 연결하는 어댑터

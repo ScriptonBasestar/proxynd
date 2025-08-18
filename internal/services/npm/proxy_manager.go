@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"proxynd/internal/domain/npm"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // proxyManagerImpl 프록시 서버 관리 서비스 구현

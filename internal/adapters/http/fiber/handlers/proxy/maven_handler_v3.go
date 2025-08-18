@@ -13,8 +13,8 @@ import (
 
 	"proxynd/internal/config"
 	"proxynd/internal/errors"
+	"proxynd/internal/logging"
 	"proxynd/internal/pool"
-	"proxynd/logging"
 )
 
 // MavenHandlerV3 Base Handler 패턴을 사용하는 새로운 Maven 핸들러

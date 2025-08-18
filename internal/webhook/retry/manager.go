@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"proxynd/alerts"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // Policy 재시도 정책

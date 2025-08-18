@@ -9,8 +9,8 @@ import (
 	"proxynd/helpers"
 	"proxynd/internal/config"
 	yumDomain "proxynd/internal/domain/yum"
+	"proxynd/internal/logging"
 	yumServices "proxynd/internal/services/yum"
-	"proxynd/logging"
 )
 
 // YumHandlerAdapter YUM HTTP 어댑터

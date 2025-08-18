@@ -9,7 +9,7 @@ import (
 
 	"proxynd/internal/config"
 	"proxynd/internal/handlers-legacy"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // BaseRouter function will perform all route operations

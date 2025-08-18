@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"proxynd/internal/domain/docker"
+	"proxynd/internal/logging"
 	"proxynd/internal/security"
-	"proxynd/logging"
 )
 
 const (

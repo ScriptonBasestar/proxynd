@@ -16,8 +16,8 @@ import (
 	"proxynd/internal/config"
 	"proxynd/internal/container"
 	"proxynd/internal/errors"
+	"proxynd/internal/logging"
 	"proxynd/internal/security"
-	"proxynd/logging"
 )
 
 // NPMContainerHandler Container 기반 NPM 핸들러

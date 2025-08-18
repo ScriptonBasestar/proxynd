@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"proxynd/internal/logging"
 	"proxynd/internal/services/proxy"
-	"proxynd/logging"
 )
 
 // ProxyClientFactory 프록시별 HTTP 클라이언트 팩토리

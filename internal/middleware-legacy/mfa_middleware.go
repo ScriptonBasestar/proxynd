@@ -9,7 +9,7 @@ import (
 
 	"proxynd/internal/auth/jwt"
 	"proxynd/internal/auth/mfa"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // MFARequiredResponse MFA 필요 응답

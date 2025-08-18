@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"proxynd/internal/domain/maven"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // IndexStorage 인덱스 저장소 인터페이스

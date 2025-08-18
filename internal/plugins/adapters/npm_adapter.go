@@ -10,8 +10,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"proxynd/internal/config"
+	"proxynd/internal/logging"
 	"proxynd/internal/plugins"
-	"proxynd/logging"
 )
 
 // NPMHandlerAdapter NPM 핸들러를 플러그인 인터페이스로 어댑팅

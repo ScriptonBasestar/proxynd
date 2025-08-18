@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
+	"proxynd/internal/logging"
 	"proxynd/internal/pool"
 	"proxynd/internal/services/proxy"
-	"proxynd/logging"
 )
 
 // HTTPUpstreamClient implements the UpstreamClient interface using HTTP

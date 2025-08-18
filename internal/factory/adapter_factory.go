@@ -8,7 +8,7 @@ import (
 
 	"proxynd/internal/adapters/http"
 	"proxynd/internal/config"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // HandlerAdapterFactory HTTP 어댑터 기반 핸들러 팩토리

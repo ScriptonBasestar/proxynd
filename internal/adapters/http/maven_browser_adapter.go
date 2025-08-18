@@ -7,8 +7,8 @@ import (
 
 	"proxynd/internal/config"
 	"proxynd/internal/domain/maven"
+	"proxynd/internal/logging"
 	mavenServices "proxynd/internal/services/maven"
-	"proxynd/logging"
 )
 
 // MavenBrowserAdapter Fiber HTTP 요청을 도메인 서비스로 연결하는 어댑터

@@ -2,8 +2,8 @@ package app
 
 import (
 	"proxynd/internal/config"
+	"proxynd/internal/logging"
 	"proxynd/internal/pool"
-	"proxynd/logging"
 )
 
 // ConnectionPoolInitializer Connection Pool 초기화 관리자

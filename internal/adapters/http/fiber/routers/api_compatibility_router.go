@@ -3,7 +3,7 @@ package routers
 import (
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // APICompatibilityRouter CLI API 호환성을 위한 라우터

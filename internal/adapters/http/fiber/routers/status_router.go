@@ -7,7 +7,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"proxynd/health"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // ServerStatusResponse 서버 상태 응답 구조체

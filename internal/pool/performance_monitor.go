@@ -6,7 +6,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // PerformanceMetrics Connection Pool 성능 메트릭

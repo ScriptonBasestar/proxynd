@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"proxynd/metrics"
+	"proxynd/internal/metrics"
 )
 
 func TestNewContainerMetrics(t *testing.T) {

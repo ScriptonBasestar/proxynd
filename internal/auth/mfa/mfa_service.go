@@ -18,7 +18,7 @@ import (
 	"github.com/pquerna/otp/totp"
 	"github.com/skip2/go-qrcode"
 
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // MFAMethod MFA 인증 방법 타입

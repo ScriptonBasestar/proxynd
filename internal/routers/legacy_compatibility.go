@@ -5,7 +5,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // LegacyCompatibilityRouter 기존 엔드포인트의 호환성을 유지하는 라우터

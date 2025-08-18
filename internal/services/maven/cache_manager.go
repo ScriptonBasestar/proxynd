@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"proxynd/internal/domain/maven"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // cacheManagerImpl CacheManager 인터페이스 구현

@@ -14,7 +14,7 @@ import (
 
 	"proxynd/internal/auth/jwt"
 	"proxynd/internal/config"
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // RequireAuth 인증 필수 미들웨어 (세션 기반)

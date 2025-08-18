@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // RecoveryStrategy 복구 전략 타입

@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // BackupMetadata 백업 메타데이터

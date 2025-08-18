@@ -12,8 +12,8 @@ import (
 
 	"proxynd/helpers"
 	"proxynd/internal/domain/yum"
+	"proxynd/internal/logging"
 	"proxynd/internal/security"
-	"proxynd/logging"
 	"proxynd/pkg/httpclient"
 )
 

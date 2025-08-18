@@ -9,7 +9,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"proxynd/logging"
+	"proxynd/internal/logging"
 )
 
 // ConnectionPool manages HTTP connections with intelligent pooling

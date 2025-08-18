@@ -14,13 +14,13 @@ import (
 
 	"proxynd/cache"
 	configTypes "proxynd/internal/config"
+	"proxynd/internal/logging"
 	cacheRepo "proxynd/internal/repositories/cache"
 	"proxynd/internal/repositories/config"
 	"proxynd/internal/routers"
 	"proxynd/internal/services/adapters"
 	configService "proxynd/internal/services/config"
 	"proxynd/internal/services/proxy"
-	"proxynd/logging"
 )
 
 // Application represents the main application
