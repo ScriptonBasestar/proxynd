@@ -325,7 +325,6 @@ func (f *FiberHTTPContext) Status(code int) ports.HTTPContext {
 	return f
 }
 
-
 // Get gets value from context locals
 func (f *FiberHTTPContext) Get(key string) interface{} {
 	return f.ctx.Locals(key)
@@ -356,7 +355,7 @@ func (f *FiberHTTPContext) Send(data []byte) error {
 	return f.ctx.Send(data)
 }
 
-// SendText sends string data without status  
+// SendText sends string data without status
 func (f *FiberHTTPContext) SendText(data string) error {
 	return f.ctx.SendString(data)
 }
@@ -369,7 +368,6 @@ func (f *FiberHTTPContext) Locals(key string, value ...interface{}) interface{} 
 	}
 	return f.ctx.Locals(key)
 }
-
 
 // FiberNextHandler calls fiber's Next() method
 type FiberNextHandler struct{}

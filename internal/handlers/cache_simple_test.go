@@ -147,7 +147,7 @@ func TestBaseProxyHandlerImpl_SimpleCacheTest(t *testing.T) {
 		err := mockCache.Put(context.Background(), cacheKey, bytes.NewReader(data))
 		assert.NoError(t, err)
 
-		// 캐시 조회 성공  
+		// 캐시 조회 성공
 		dataReader := bytes.NewReader(data)
 		mockCache.On("Get", mock.Anything, cacheKey).Return(dataReader, true, nil).Once()
 		retrievedReader, found, err := mockCache.Get(context.Background(), cacheKey)

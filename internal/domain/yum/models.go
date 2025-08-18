@@ -8,12 +8,12 @@ import (
 
 // YUM metadata types
 const (
-	MetadataTypePrimary   = "primary"
-	MetadataTypeFilelists = "filelists"
-	MetadataTypeOther     = "other"
-	MetadataTypeRepomd    = "repomd"
+	MetadataTypePrimary    = "primary"
+	MetadataTypeFilelists  = "filelists"
+	MetadataTypeOther      = "other"
+	MetadataTypeRepomd     = "repomd"
 	MetadataTypeUpdateinfo = "updateinfo"
-	MetadataTypeModules   = "modules"
+	MetadataTypeModules    = "modules"
 )
 
 // PackageRequest YUM 패키지 요청

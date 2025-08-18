@@ -51,7 +51,7 @@ type HTTPContext interface {
 	// Response operations
 	Status(code int) HTTPContext
 	JSON(obj interface{}) error
-	SendJSON(status int, obj interface{}) error  
+	SendJSON(status int, obj interface{}) error
 	Send(data []byte) error
 	SendString(data string) error
 

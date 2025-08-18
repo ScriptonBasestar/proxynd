@@ -309,4 +309,3 @@ func (f *LoggingField) Key() string {
 func (f *LoggingField) Value() interface{} {
 	return f.value
 }
-

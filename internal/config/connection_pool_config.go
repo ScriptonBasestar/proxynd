@@ -1,10 +1,8 @@
-package configs
+package config
 
 import (
 	"fmt"
 	"time"
-
-	"proxynd/internal/pool"
 )
 
 // ConnectionPoolSettings Connection Pool 설정
@@ -72,22 +70,8 @@ func DefaultConnectionPoolSettings() *ConnectionPoolSettings {
 	}
 }
 
-// ToPoolConfig Connection Pool 내부 설정으로 변환
-func (s *ConnectionPoolSettings) ToPoolConfig() *pool.ConnectionPoolConfig {
-	return &pool.ConnectionPoolConfig{
-		MaxTotalConnections:   s.MaxTotalConnections,
-		MaxConnectionsPerHost: s.MaxConnectionsPerHost,
-		IdleConnectionTimeout: time.Duration(s.IdleConnectionTimeoutMinutes) * time.Minute,
-		KeepAliveTimeout:      time.Duration(s.KeepAliveTimeoutSeconds) * time.Second,
-		ConnectionTimeout:     time.Duration(s.ConnectionTimeoutSeconds) * time.Second,
-		TLSHandshakeTimeout:   time.Duration(s.TLSHandshakeTimeoutSeconds) * time.Second,
-		ResponseHeaderTimeout: time.Duration(s.ResponseHeaderTimeoutSeconds) * time.Second,
-		ExpectContinueTimeout: time.Duration(s.ExpectContinueTimeoutSeconds) * time.Second,
-		MaxRedirects:          s.MaxRedirects,
-		InsecureSkipVerify:    s.InsecureSkipVerify,
-		DNSCacheTTL:           time.Duration(s.DNSCacheTTLMinutes) * time.Minute,
-	}
-}
+// Note: Connection Pool 변환 함수는 circular import 방지를 위해
+// pool.NewConnectionPoolConfigFromSettings() 함수를 사용합니다.
 
 // GetProxyTimeout 특정 프록시 타입의 타임아웃 반환
 func (s *ConnectionPoolSettings) GetProxyTimeout(proxyType string) time.Duration {
@@ -163,29 +147,29 @@ func (s *ConnectionPoolSettings) GetStatistics() map[string]interface{} {
 	}
 }
 
-// ConnectionPoolConfig Connection Pool 설정 관리자
-type ConnectionPoolConfig struct {
+// ConnectionPoolManager Connection Pool 설정 관리자
+type ConnectionPoolManager struct {
 	settings   *ConnectionPoolSettings
 	configPath string
 }
 
 // NewConnectionPoolConfig 연결 풀 설정 관리자 생성
-func NewConnectionPoolConfig() *ConnectionPoolConfig {
-	return &ConnectionPoolConfig{
+func NewConnectionPoolConfig() *ConnectionPoolManager {
+	return &ConnectionPoolManager{
 		settings:   DefaultConnectionPoolSettings(),
 		configPath: "connection-pool",
 	}
 }
 
 // ConfigExists 설정 파일 존재 여부 확인
-func (c *ConnectionPoolConfig) ConfigExists() bool {
+func (c *ConnectionPoolManager) ConfigExists() bool {
 	// 간단한 구현: 파일 존재 여부만 확인
 	// 실제로는 ConfigLoader를 통해 확인해야 함
 	return false // 현재는 항상 기본값 사용
 }
 
 // ReadConfig 설정 파일 읽기
-func (c *ConnectionPoolConfig) ReadConfig() error {
+func (c *ConnectionPoolManager) ReadConfig() error {
 	if !c.ConfigExists() {
 		// 설정 파일이 없으면 기본값 사용
 		c.settings = DefaultConnectionPoolSettings()
@@ -205,7 +189,7 @@ func (c *ConnectionPoolConfig) ReadConfig() error {
 }
 
 // WriteConfig 설정 파일 쓰기
-func (c *ConnectionPoolConfig) WriteConfig() error {
+func (c *ConnectionPoolManager) WriteConfig() error {
 	if err := c.settings.Validate(); err != nil {
 		return fmt.Errorf("connection Pool 설정 검증 실패: %w", err)
 	}
@@ -216,7 +200,7 @@ func (c *ConnectionPoolConfig) WriteConfig() error {
 }
 
 // GetSettings 현재 설정 반환
-func (c *ConnectionPoolConfig) GetSettings() *ConnectionPoolSettings {
+func (c *ConnectionPoolManager) GetSettings() *ConnectionPoolSettings {
 	if c.settings == nil {
 		c.settings = DefaultConnectionPoolSettings()
 	}
@@ -224,7 +208,7 @@ func (c *ConnectionPoolConfig) GetSettings() *ConnectionPoolSettings {
 }
 
 // UpdateSettings 설정 업데이트
-func (c *ConnectionPoolConfig) UpdateSettings(newSettings *ConnectionPoolSettings) error {
+func (c *ConnectionPoolManager) UpdateSettings(newSettings *ConnectionPoolSettings) error {
 	if newSettings == nil {
 		return fmt.Errorf("설정이 nil입니다")
 	}
@@ -238,6 +222,6 @@ func (c *ConnectionPoolConfig) UpdateSettings(newSettings *ConnectionPoolSetting
 }
 
 // ReloadConfig 설정 다시 로드
-func (c *ConnectionPoolConfig) ReloadConfig() error {
+func (c *ConnectionPoolManager) ReloadConfig() error {
 	return c.ReadConfig()
 }

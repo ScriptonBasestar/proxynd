@@ -3,7 +3,7 @@ package handlers
 import (
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/internal/pool"
 	"proxynd/logging"
 )
@@ -11,7 +11,7 @@ import (
 // PoolHandler Connection Pool 관리 핸들러
 type PoolHandler struct {
 	logger        logging.Logger
-	poolConfig    *configs.ConnectionPoolConfig
+	poolConfig    *config.ConnectionPoolManager
 	clientFactory *pool.ProxyClientFactory
 }
 
@@ -19,7 +19,7 @@ type PoolHandler struct {
 func NewPoolHandler() *PoolHandler {
 	return &PoolHandler{
 		logger:        logging.GetLogger(),
-		poolConfig:    configs.NewConnectionPoolConfig(),
+		poolConfig:    config.NewConnectionPoolConfig(),
 		clientFactory: pool.GetGlobalClientFactory(),
 	}
 }
@@ -53,7 +53,7 @@ func (h *PoolHandler) GetPoolConfiguration(c *fiber.Ctx) error {
 
 // UpdatePoolConfiguration Connection Pool 설정 업데이트
 func (h *PoolHandler) UpdatePoolConfiguration(c *fiber.Ctx) error {
-	var newSettings configs.ConnectionPoolSettings
+	var newSettings config.ConnectionPoolSettings
 
 	if err := c.BodyParser(&newSettings); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
@@ -79,7 +79,19 @@ func (h *PoolHandler) UpdatePoolConfiguration(c *fiber.Ctx) error {
 	}
 
 	// 실제 Connection Pool에 설정 적용
-	poolConfig := newSettings.ToPoolConfig()
+	poolConfig := pool.NewConnectionPoolConfigFromSettings(
+		newSettings.MaxTotalConnections,
+		newSettings.MaxConnectionsPerHost,
+		newSettings.IdleConnectionTimeoutMinutes,
+		newSettings.KeepAliveTimeoutSeconds,
+		newSettings.ConnectionTimeoutSeconds,
+		newSettings.TLSHandshakeTimeoutSeconds,
+		newSettings.ResponseHeaderTimeoutSeconds,
+		newSettings.ExpectContinueTimeoutSeconds,
+		newSettings.MaxRedirects,
+		newSettings.DNSCacheTTLMinutes,
+		newSettings.InsecureSkipVerify,
+	)
 	globalPool := pool.GetGlobalPool()
 	if err := globalPool.UpdateConfig(poolConfig); err != nil {
 		h.logger.Error("Connection Pool 설정 적용 실패",
@@ -172,7 +184,7 @@ func (h *PoolHandler) GetProxyTimeouts(c *fiber.Ctx) error {
 
 // ResetPoolConfiguration Connection Pool 설정을 기본값으로 리셋
 func (h *PoolHandler) ResetPoolConfiguration(c *fiber.Ctx) error {
-	defaultSettings := configs.DefaultConnectionPoolSettings()
+	defaultSettings := config.DefaultConnectionPoolSettings()
 
 	// 설정 업데이트
 	if err := h.poolConfig.UpdateSettings(defaultSettings); err != nil {
@@ -183,7 +195,19 @@ func (h *PoolHandler) ResetPoolConfiguration(c *fiber.Ctx) error {
 	}
 
 	// Connection Pool에 기본 설정 적용
-	poolConfig := defaultSettings.ToPoolConfig()
+	poolConfig := pool.NewConnectionPoolConfigFromSettings(
+		defaultSettings.MaxTotalConnections,
+		defaultSettings.MaxConnectionsPerHost,
+		defaultSettings.IdleConnectionTimeoutMinutes,
+		defaultSettings.KeepAliveTimeoutSeconds,
+		defaultSettings.ConnectionTimeoutSeconds,
+		defaultSettings.TLSHandshakeTimeoutSeconds,
+		defaultSettings.ResponseHeaderTimeoutSeconds,
+		defaultSettings.ExpectContinueTimeoutSeconds,
+		defaultSettings.MaxRedirects,
+		defaultSettings.DNSCacheTTLMinutes,
+		defaultSettings.InsecureSkipVerify,
+	)
 	globalPool := pool.GetGlobalPool()
 	if err := globalPool.UpdateConfig(poolConfig); err != nil {
 		h.logger.Error("Connection Pool 기본 설정 적용 실패",

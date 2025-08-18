@@ -322,9 +322,9 @@ func TestProxyService_HandleProxyRequest_Success(t *testing.T) {
 
 	// Metrics
 	mockMetrics.On("IncCounter", mock.AnythingOfType("string"), mock.AnythingOfType("map[string]string")).Return()
-	mockMetrics.On("RecordDuration", 
-		mock.AnythingOfType("string"), 
-		mock.AnythingOfType("time.Duration"), 
+	mockMetrics.On("RecordDuration",
+		mock.AnythingOfType("string"),
+		mock.AnythingOfType("time.Duration"),
 		mock.AnythingOfType("map[string]string")).Return()
 
 	// Logger calls
@@ -399,9 +399,9 @@ func TestProxyService_HandleProxyRequest_CacheHit(t *testing.T) {
 
 	// Metrics
 	mockMetrics.On("IncCounter", mock.AnythingOfType("string"), mock.AnythingOfType("map[string]string")).Return()
-	mockMetrics.On("RecordDuration", 
-		mock.AnythingOfType("string"), 
-		mock.AnythingOfType("time.Duration"), 
+	mockMetrics.On("RecordDuration",
+		mock.AnythingOfType("string"),
+		mock.AnythingOfType("time.Duration"),
 		mock.AnythingOfType("map[string]string")).Return()
 
 	// Logger calls
@@ -450,8 +450,8 @@ func TestProxyService_HandleProxyRequest_AuthFailure(t *testing.T) {
 	)
 
 	// Auth failure
-	mockAuth.On("Authenticate", 
-		mock.Anything, 
+	mockAuth.On("Authenticate",
+		mock.Anything,
 		mock.AnythingOfType("*ports.AuthRequest")).Return(nil, fmt.Errorf("invalid token"))
 
 	// Metrics and logging
@@ -504,7 +504,7 @@ func TestProxyService_HandleProxyRequest_RateLimitExceeded(t *testing.T) {
 	mockAuth.On("Authorize", mock.Anything, mock.AnythingOfType("*ports.AuthorizeRequest")).Return(nil)
 
 	// Rate limit exceeded
-	mockRateLimit.On("CheckLimit", 
+	mockRateLimit.On("CheckLimit",
 		mock.Anything, mock.AnythingOfType("*ports.RateLimitRequest")).Return(fmt.Errorf("rate limit exceeded"))
 
 	// Metrics and logging

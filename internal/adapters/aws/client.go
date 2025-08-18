@@ -21,9 +21,9 @@ type ClientConfig struct {
 
 // AWSClient provides AWS service clients
 type AWSClient struct {
-	config    aws.Config
+	config aws.Config
 	// ssmClient *ssm.Client // TODO: Add SSM dependency
-	s3Client  *s3.Client
+	s3Client *s3.Client
 }
 
 // NewAWSClient creates a new AWS client with the provided configuration
@@ -56,9 +56,9 @@ func NewAWSClient(ctx context.Context, cfg ClientConfig) (*AWSClient, error) {
 	}
 
 	client := &AWSClient{
-		config:    awsConfig,
+		config: awsConfig,
 		// ssmClient: ssm.NewFromConfig(awsConfig), // TODO: Add SSM dependency
-		s3Client:  s3.NewFromConfig(awsConfig),
+		s3Client: s3.NewFromConfig(awsConfig),
 	}
 
 	return client, nil

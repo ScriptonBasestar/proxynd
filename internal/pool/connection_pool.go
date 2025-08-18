@@ -347,3 +347,25 @@ func InitializeGlobalPool(config *ConnectionPoolConfig) {
 		globalPool = NewConnectionPool(config)
 	})
 }
+
+
+// NewConnectionPoolConfigFromSettings creates pool config from ConnectionPoolSettings fields
+func NewConnectionPoolConfigFromSettings(
+	maxTotal, maxPerHost, idleTimeoutMin, keepAliveTimeoutSec, connectionTimeoutSec,
+	tlsTimeoutSec, responseHeaderTimeoutSec, expectContinueTimeoutSec, maxRedirects,
+	dnsCacheTTLMin int, insecureSkipVerify bool) *ConnectionPoolConfig {
+	
+	return &ConnectionPoolConfig{
+		MaxTotalConnections:   maxTotal,
+		MaxConnectionsPerHost: maxPerHost,
+		IdleConnectionTimeout: time.Duration(idleTimeoutMin) * time.Minute,
+		KeepAliveTimeout:      time.Duration(keepAliveTimeoutSec) * time.Second,
+		ConnectionTimeout:     time.Duration(connectionTimeoutSec) * time.Second,
+		TLSHandshakeTimeout:   time.Duration(tlsTimeoutSec) * time.Second,
+		ResponseHeaderTimeout: time.Duration(responseHeaderTimeoutSec) * time.Second,
+		ExpectContinueTimeout: time.Duration(expectContinueTimeoutSec) * time.Second,
+		MaxRedirects:          maxRedirects,
+		InsecureSkipVerify:    insecureSkipVerify,
+		DNSCacheTTL:           time.Duration(dnsCacheTTLMin) * time.Minute,
+	}
+}

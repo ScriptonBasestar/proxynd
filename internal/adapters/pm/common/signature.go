@@ -38,14 +38,14 @@ const (
 
 // Common MIME type constants
 const (
-	MimeTextPlain                = "text/plain"
-	MimeApplicationJSON          = "application/json"
-	MimeApplicationXML           = "application/xml"
-	MimeApplicationXGzip         = "application/x-gzip"
-	MimeApplicationZip           = "application/zip"
-	MimeApplicationJavaArchive   = "application/java-archive"
-	MimeApplicationXRpm          = "application/x-rpm"
-	MimeApplicationOctetStream   = "application/octet-stream"
+	MimeTextPlain              = "text/plain"
+	MimeApplicationJSON        = "application/json"
+	MimeApplicationXML         = "application/xml"
+	MimeApplicationXGzip       = "application/x-gzip"
+	MimeApplicationZip         = "application/zip"
+	MimeApplicationJavaArchive = "application/java-archive"
+	MimeApplicationXRpm        = "application/x-rpm"
+	MimeApplicationOctetStream = "application/octet-stream"
 )
 
 // Common URLs and endpoints

@@ -171,7 +171,7 @@ func (s *StandardizedMetrics) RecordCacheOperation(
 
 // RecordProxyOperation records proxy operation metrics with standardized labels
 func (s *StandardizedMetrics) RecordProxyOperation(
-	ctx MetricsContext, upstreamLatencySeconds float64, 
+	ctx MetricsContext, upstreamLatencySeconds float64,
 	bytesTransferred int64, direction string, err error,
 ) {
 	// Record proxy requests

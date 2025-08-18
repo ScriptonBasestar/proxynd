@@ -1,7 +1,7 @@
 package app
 
 import (
-	"proxynd/configs"
+	"proxynd/internal/config"
 	"proxynd/internal/pool"
 	"proxynd/logging"
 )
@@ -9,14 +9,14 @@ import (
 // ConnectionPoolInitializer Connection Pool 초기화 관리자
 type ConnectionPoolInitializer struct {
 	logger     logging.Logger
-	poolConfig *configs.ConnectionPoolConfig
+	poolConfig *config.ConnectionPoolManager
 }
 
 // NewConnectionPoolInitializer 새로운 Connection Pool 초기화 관리자 생성
 func NewConnectionPoolInitializer() *ConnectionPoolInitializer {
 	return &ConnectionPoolInitializer{
 		logger:     logging.GetLogger(),
-		poolConfig: configs.NewConnectionPoolConfig(),
+		poolConfig: config.NewConnectionPoolConfig(),
 	}
 }
 
@@ -32,7 +32,19 @@ func (c *ConnectionPoolInitializer) Initialize() error {
 	}
 
 	settings := c.poolConfig.GetSettings()
-	poolConfig := settings.ToPoolConfig()
+	poolConfig := pool.NewConnectionPoolConfigFromSettings(
+		settings.MaxTotalConnections,
+		settings.MaxConnectionsPerHost,
+		settings.IdleConnectionTimeoutMinutes,
+		settings.KeepAliveTimeoutSeconds,
+		settings.ConnectionTimeoutSeconds,
+		settings.TLSHandshakeTimeoutSeconds,
+		settings.ResponseHeaderTimeoutSeconds,
+		settings.ExpectContinueTimeoutSeconds,
+		settings.MaxRedirects,
+		settings.DNSCacheTTLMinutes,
+		settings.InsecureSkipVerify,
+	)
 
 	c.logger.Info("Connection Pool 설정 로드 완료",
 		logging.F("max_total_connections", settings.MaxTotalConnections),
@@ -67,7 +79,7 @@ func (c *ConnectionPoolInitializer) Initialize() error {
 }
 
 // GetPoolConfig Connection Pool 설정 반환 (다른 컴포넌트에서 사용)
-func (c *ConnectionPoolInitializer) GetPoolConfig() *configs.ConnectionPoolConfig {
+func (c *ConnectionPoolInitializer) GetPoolConfig() *config.ConnectionPoolManager {
 	return c.poolConfig
 }
 
@@ -93,7 +105,19 @@ func (c *ConnectionPoolInitializer) ReloadConfig() error {
 	}
 
 	settings := c.poolConfig.GetSettings()
-	poolConfig := settings.ToPoolConfig()
+	poolConfig := pool.NewConnectionPoolConfigFromSettings(
+		settings.MaxTotalConnections,
+		settings.MaxConnectionsPerHost,
+		settings.IdleConnectionTimeoutMinutes,
+		settings.KeepAliveTimeoutSeconds,
+		settings.ConnectionTimeoutSeconds,
+		settings.TLSHandshakeTimeoutSeconds,
+		settings.ResponseHeaderTimeoutSeconds,
+		settings.ExpectContinueTimeoutSeconds,
+		settings.MaxRedirects,
+		settings.DNSCacheTTLMinutes,
+		settings.InsecureSkipVerify,
+	)
 
 	// 기존 Connection Pool에 새 설정 적용
 	globalPool := pool.GetGlobalPool()

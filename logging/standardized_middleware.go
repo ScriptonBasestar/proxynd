@@ -15,9 +15,9 @@ import (
 type contextKey string
 
 const (
-	contextKeyRequestID  contextKey = "request_id"
-	contextKeyPrincipal  contextKey = "principal" 
-	contextKeyManager    contextKey = "manager"
+	contextKeyRequestID contextKey = "request_id"
+	contextKeyPrincipal contextKey = "principal"
+	contextKeyManager   contextKey = "manager"
 )
 
 // StandardizedMiddlewareConfig defines configuration for standardized logging middleware

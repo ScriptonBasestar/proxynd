@@ -11,8 +11,8 @@ import (
 	"github.com/valyala/fasthttp"
 
 	"proxynd/cache"
-	cacheMocks "proxynd/internal/services/proxy/mocks"
 	proxyerrors "proxynd/internal/errors"
+	cacheMocks "proxynd/internal/services/proxy/mocks"
 )
 
 // MockErrorHandler 에러 처리 테스트용 Mock 핸들러
