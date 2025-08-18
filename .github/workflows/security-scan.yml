@@ -77,7 +77,7 @@ jobs:
         language: [ 'go' ]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
@@ -101,7 +101,7 @@ jobs:
     if: github.event.inputs.scan_type == 'all' || github.event.inputs.scan_type == 'code' || github.event_name != 'workflow_dispatch'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -128,7 +128,7 @@ jobs:
     if: github.event.inputs.scan_type == 'all' || github.event.inputs.scan_type == 'dependencies' || github.event_name != 'workflow_dispatch'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -161,7 +161,7 @@ jobs:
     if: github.event.inputs.scan_type == 'all' || github.event.inputs.scan_type == 'secrets' || github.event_name != 'workflow_dispatch'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -187,7 +187,7 @@ jobs:
     if: github.event.inputs.scan_type == 'all' || github.event.inputs.scan_type == 'container' || github.event_name != 'workflow_dispatch'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Build Docker image for scanning
         run: |
@@ -219,7 +219,7 @@ jobs:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -247,7 +247,7 @@ jobs:
     if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Go
         uses: actions/setup-go@v5
