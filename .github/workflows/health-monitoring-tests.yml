@@ -45,7 +45,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Set up Go
       uses: actions/setup-go@v5
@@ -53,7 +53,7 @@ jobs:
         go-version: ${{ env.GO_VERSION }}
 
     - name: Cache Go modules
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/go/pkg/mod
         key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
@@ -81,7 +81,7 @@ jobs:
         echo "✅ Health system test coverage meets requirement: ${COVERAGE}%"
 
     - name: Upload coverage reports
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v5
       with:
         file: ./health-coverage.out
         flags: health-system
@@ -105,7 +105,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Set up Go
       uses: actions/setup-go@v5
@@ -118,7 +118,7 @@ jobs:
         sudo apt-get install -y jq curl
 
     - name: Cache Go modules
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/go/pkg/mod
         key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
@@ -340,7 +340,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Set up Go
       uses: actions/setup-go@v5
@@ -416,7 +416,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Set up Go
       uses: actions/setup-go@v5
@@ -442,7 +442,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Check health documentation
       run: |

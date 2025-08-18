@@ -36,7 +36,7 @@ jobs:
     if: github.event.inputs.benchmark_type == 'all' || github.event.inputs.benchmark_type == 'cpu' || github.event_name == 'schedule'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -73,7 +73,7 @@ jobs:
     if: github.event.inputs.benchmark_type == 'all' || github.event.inputs.benchmark_type == 'memory' || github.event_name == 'schedule'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -112,7 +112,7 @@ jobs:
     if: github.event.inputs.benchmark_type == 'all' || github.event.inputs.benchmark_type == 'load' || github.event_name == 'schedule'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -228,7 +228,7 @@ jobs:
     if: always()
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
 
       - name: Generate comprehensive report
         run: |

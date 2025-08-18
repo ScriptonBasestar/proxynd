@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -121,7 +121,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -167,7 +167,7 @@ jobs:
     if: github.event.inputs.load_test_enabled == 'true' || github.event_name == 'schedule'
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -315,7 +315,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Monitor build resource usage
         run: |
@@ -379,7 +379,7 @@ jobs:
     if: always()
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
 
       - name: Generate comprehensive report
         run: |

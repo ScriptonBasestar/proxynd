@@ -40,10 +40,10 @@ jobs:
       core: ${{ steps.filter.outputs.core }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Check changed files
-        uses: dorny/paths-filter@v2
+        uses: dorny/paths-filter@v3
         id: filter
         with:
           filters: |
@@ -93,7 +93,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -115,7 +115,7 @@ jobs:
 
       - name: Lint
         if: matrix.test-type == 'lint'
-        uses: golangci/golangci-lint-action@v3
+        uses: golangci/golangci-lint-action@v8
         with:
           version: latest
           args: --timeout=5m
@@ -136,7 +136,7 @@ jobs:
 
       - name: Upload coverage
         if: matrix.test-type == 'unit'
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5
         with:
           files: ./coverage.out
 
@@ -149,7 +149,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -183,7 +183,7 @@ jobs:
       digest: ${{ steps.build.outputs.digest }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -208,7 +208,7 @@ jobs:
 
       - name: Build and push
         id: build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile.multiarch
@@ -265,7 +265,7 @@ jobs:
           --health-retries 5
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -369,7 +369,7 @@ jobs:
       fail-fast: false
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup test environment
         run: |
@@ -437,10 +437,10 @@ jobs:
       url: https://staging.proxynd.example.com
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup kubectl
-        uses: azure/setup-kubectl@v3
+        uses: azure/setup-kubectl@v4
         with:
           version: 'v1.28.0'
 

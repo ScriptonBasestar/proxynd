@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -53,7 +53,7 @@ jobs:
       version: ${{ steps.version.outputs.version }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -75,7 +75,7 @@ jobs:
           echo "🏷️ Version: $VERSION"
 
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v5
+        uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser
           version: latest
@@ -93,7 +93,7 @@ jobs:
       packages: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup QEMU
         uses: docker/setup-qemu-action@v3
@@ -129,7 +129,7 @@ jobs:
             type=raw,value=latest
 
       - name: Build and push
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile.multiarch
@@ -149,7 +149,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Helm
         uses: azure/setup-helm@v4
@@ -185,10 +185,10 @@ jobs:
       url: https://proxynd.example.com
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup kubectl
-        uses: azure/setup-kubectl@v3
+        uses: azure/setup-kubectl@v4
 
       - name: Setup Helm
         uses: azure/setup-helm@v4
