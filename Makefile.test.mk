@@ -47,8 +47,8 @@ test-coverage: ## generate comprehensive coverage report
 	@echo "Running comprehensive coverage analysis..."
 	@./scripts/test-coverage.sh
 
-test-integration: ## run integration tests
-	@echo "Running integration tests..."
+test-integration-scripts: ## run integration tests via scripts
+	@echo "Running integration tests via scripts..."
 	./scripts/run_integration_tests.sh
 
 test-integration-bench: ## run integration tests with benchmarks
@@ -61,6 +61,9 @@ test-all: test-unit test-contract test-integration ## run all layer tests (exclu
 
 test-full: test-unit test-contract test-integration test-e2e ## run complete test suite including E2E
 	@echo "✅ Full test suite completed!"
+
+test-all-scripts: test-unit test-contract test-integration-scripts ## run all layer tests via scripts (excluding E2E)
+	@echo "✅ All layer tests via scripts completed!"
 
 test-legacy: test-unit-legacy test-race test-services ## run legacy test suite
 	@echo "All legacy tests completed!"
