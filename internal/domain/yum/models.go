@@ -6,6 +6,16 @@ import (
 	"proxynd/internal/config"
 )
 
+// YUM metadata types
+const (
+	MetadataTypePrimary   = "primary"
+	MetadataTypeFilelists = "filelists"
+	MetadataTypeOther     = "other"
+	MetadataTypeRepomd    = "repomd"
+	MetadataTypeUpdateinfo = "updateinfo"
+	MetadataTypeModules   = "modules"
+)
+
 // PackageRequest YUM 패키지 요청
 type PackageRequest struct {
 	PackagePath string            `json:"packagePath"` // 패키지 경로 (repository/package.rpm 등)

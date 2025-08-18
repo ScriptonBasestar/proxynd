@@ -513,9 +513,9 @@ func (ec *EnhancedMetricsCollector) RecordHTTPStatus(registryType string, status
 
 // RecordRetryAttempt 재시도 기록
 func (ec *EnhancedMetricsCollector) RecordRetryAttempt(registryType, reason string, attemptNum int, success bool) {
-	outcome := "success"
+	outcome := resultSuccess
 	if !success {
-		outcome = "failure"
+		outcome = resultFailure
 	}
 
 	ec.metrics.RetryAttempts.WithLabelValues(registryType, reason, getAttemptString(attemptNum), outcome).Inc()

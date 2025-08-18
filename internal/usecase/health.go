@@ -299,7 +299,9 @@ func (hs *HealthService) MonitorHealth(ctx context.Context, interval time.Durati
 
 // GetHealthHistory returns health check history
 // TODO: Implement health history tracking
-func (hs *HealthService) GetHealthHistory(ctx context.Context, req *HealthHistoryRequest) (*HealthHistoryResponse, error) {
+func (hs *HealthService) GetHealthHistory(
+	ctx context.Context, req *HealthHistoryRequest,
+) (*HealthHistoryResponse, error) {
 	// TODO: Implement health history retrieval
 	return &HealthHistoryResponse{
 		Period:  req.Period,

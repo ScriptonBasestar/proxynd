@@ -12,6 +12,8 @@ import (
 )
 
 const (
+	// MethodGET HTTP GET method
+	MethodGET = "GET"
 	// MethodPOST HTTP POST method
 	MethodPOST = "POST"
 	// MethodPUT HTTP PUT method

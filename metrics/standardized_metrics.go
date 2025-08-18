@@ -2,6 +2,8 @@ package metrics
 
 import (
 	"strconv"
+
+	"proxynd/internal/adapters/pm/common"
 )
 
 // StandardizedMetrics provides helper methods for recording metrics with standardized labels
@@ -79,7 +81,9 @@ func GetStandardizedMetrics() *StandardizedMetrics {
 }
 
 // RecordHTTPRequest records an HTTP request with standardized labels
-func (s *StandardizedMetrics) RecordHTTPRequest(ctx MetricsContext, latencySeconds float64, requestSizeBytes, responseSizeBytes int64) {
+func (s *StandardizedMetrics) RecordHTTPRequest(
+	ctx MetricsContext, latencySeconds float64, requestSizeBytes, responseSizeBytes int64,
+) {
 	statusStr := strconv.Itoa(ctx.StatusCode)
 
 	// Record basic HTTP metrics
@@ -143,7 +147,9 @@ func (s *StandardizedMetrics) RecordHTTPRequest(ctx MetricsContext, latencySecon
 }
 
 // RecordCacheOperation records cache operation metrics with standardized labels
-func (s *StandardizedMetrics) RecordCacheOperation(ctx MetricsContext, operation string, hit bool, backend string, bandwidthSavedBytes int64) {
+func (s *StandardizedMetrics) RecordCacheOperation(
+	ctx MetricsContext, operation string, hit bool, backend string, bandwidthSavedBytes int64,
+) {
 	if hit {
 		s.CacheHitsTotal.WithLabelValues(
 			ctx.RegistryType,
@@ -164,7 +170,10 @@ func (s *StandardizedMetrics) RecordCacheOperation(ctx MetricsContext, operation
 }
 
 // RecordProxyOperation records proxy operation metrics with standardized labels
-func (s *StandardizedMetrics) RecordProxyOperation(ctx MetricsContext, upstreamLatencySeconds float64, bytesTransferred int64, direction string, err error) {
+func (s *StandardizedMetrics) RecordProxyOperation(
+	ctx MetricsContext, upstreamLatencySeconds float64, 
+	bytesTransferred int64, direction string, err error,
+) {
 	// Record proxy requests
 	s.ProxyRequestsTotal.WithLabelValues(
 		ctx.RegistryType,
@@ -262,7 +271,9 @@ func (s *StandardizedMetrics) RecordTTLOperation(ctx MetricsContext, source stri
 }
 
 // RecordVerificationOperation records package verification metrics
-func (s *StandardizedMetrics) RecordVerificationOperation(ctx MetricsContext, result string, latencySeconds float64, err error) {
+func (s *StandardizedMetrics) RecordVerificationOperation(
+	ctx MetricsContext, result string, latencySeconds float64, err error,
+) {
 	s.PackageVerifications.WithLabelValues(
 		ctx.RegistryType,
 		result,
@@ -284,7 +295,9 @@ func (s *StandardizedMetrics) RecordVerificationOperation(ctx MetricsContext, re
 }
 
 // RecordRetryOperation records retry metrics
-func (s *StandardizedMetrics) RecordRetryOperation(ctx MetricsContext, reason string, attemptNumber int, outcome string) {
+func (s *StandardizedMetrics) RecordRetryOperation(
+	ctx MetricsContext, reason string, attemptNumber int, outcome string,
+) {
 	s.RetryAttempts.WithLabelValues(
 		ctx.RegistryType,
 		reason,
@@ -351,7 +364,7 @@ func categorizeUserAgent(userAgent string) string {
 	case contains(userAgent, "pip"):
 		return "pip"
 	case contains(userAgent, "docker"):
-		return "docker"
+		return common.UserAgentDocker
 	case contains(userAgent, "curl"):
 		return "curl"
 	case contains(userAgent, "wget"):
@@ -359,7 +372,7 @@ func categorizeUserAgent(userAgent string) string {
 	case contains(userAgent, "browser"), contains(userAgent, "Mozilla"):
 		return "browser"
 	default:
-		return "unknown"
+		return common.UserAgentUnknown
 	}
 }
 
@@ -375,11 +388,11 @@ func categorizeError(err error) string {
 	case contains(errStr, "unauthorized"), contains(errStr, "401"):
 		return "unauthorized"
 	case contains(errStr, "forbidden"), contains(errStr, "403"):
-		return "forbidden"
+		return common.UserAgentForbidden
 	case contains(errStr, "internal"), contains(errStr, "500"):
 		return "internal"
 	default:
-		return "unknown"
+		return statusUnknown
 	}
 }
 
@@ -413,7 +426,7 @@ func getFileType(path string) string {
 	case contains(path, ".rpm"):
 		return "rpm"
 	case contains(path, ".apk"):
-		return "apk"
+		return common.UserAgentApk
 	case contains(path, ".whl"):
 		return "wheel"
 	case contains(path, ".tar.gz"):

@@ -21,7 +21,10 @@ const (
 	PMTypePypi     = "pypi"
 	PMTypeYum      = "yum"
 	PMTypeApk      = "apk"
+	PMTypeDocker   = "docker"
+	PMTypePip      = "pip"
 	PMTypeRegistry = "registry"
+	PMTypeAll      = "all"
 )
 
 // Default repository constants
@@ -35,13 +38,27 @@ const (
 
 // Common MIME type constants
 const (
-	MimeTextPlain           = "text/plain"
-	MimeApplicationJSON     = "application/json"
-	MimeApplicationXML      = "application/xml"
-	MimeApplicationXGzip    = "application/x-gzip"
-	MimeApplicationZip      = "application/zip"
-	MimeApplicationJavaArchive = "application/java-archive"
-	MimeApplicationXRpm     = "application/x-rpm"
+	MimeTextPlain                = "text/plain"
+	MimeApplicationJSON          = "application/json"
+	MimeApplicationXML           = "application/xml"
+	MimeApplicationXGzip         = "application/x-gzip"
+	MimeApplicationZip           = "application/zip"
+	MimeApplicationJavaArchive   = "application/java-archive"
+	MimeApplicationXRpm          = "application/x-rpm"
+	MimeApplicationOctetStream   = "application/octet-stream"
+)
+
+// Common URLs and endpoints
+const (
+	DefaultLocalhostBaseURL = "http://localhost:8080"
+)
+
+// User agent categories
+const (
+	UserAgentDocker    = "docker"
+	UserAgentUnknown   = "unknown"
+	UserAgentForbidden = "forbidden"
+	UserAgentApk       = "apk"
 )
 
 // SignatureVerifier implements ports.SignatureVerifier for all package managers

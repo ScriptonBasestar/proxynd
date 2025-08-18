@@ -93,7 +93,9 @@ func (c *HTTPClient) Get(ctx context.Context, url string, headers map[string]str
 }
 
 // Post performs a POST request
-func (c *HTTPClient) Post(ctx context.Context, url string, body io.Reader, headers map[string]string) (*ports.ProxyHTTPResponse, error) {
+func (c *HTTPClient) Post(
+	ctx context.Context, url string, body io.Reader, headers map[string]string,
+) (*ports.ProxyHTTPResponse, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create POST request: %w", err)
@@ -103,7 +105,9 @@ func (c *HTTPClient) Post(ctx context.Context, url string, body io.Reader, heade
 }
 
 // Put performs a PUT request
-func (c *HTTPClient) Put(ctx context.Context, url string, body io.Reader, headers map[string]string) (*ports.ProxyHTTPResponse, error) {
+func (c *HTTPClient) Put(
+	ctx context.Context, url string, body io.Reader, headers map[string]string,
+) (*ports.ProxyHTTPResponse, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPut, url, body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create PUT request: %w", err)
@@ -113,7 +117,9 @@ func (c *HTTPClient) Put(ctx context.Context, url string, body io.Reader, header
 }
 
 // Delete performs a DELETE request
-func (c *HTTPClient) Delete(ctx context.Context, url string, headers map[string]string) (*ports.ProxyHTTPResponse, error) {
+func (c *HTTPClient) Delete(
+	ctx context.Context, url string, headers map[string]string,
+) (*ports.ProxyHTTPResponse, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create DELETE request: %w", err)
@@ -123,7 +129,9 @@ func (c *HTTPClient) Delete(ctx context.Context, url string, headers map[string]
 }
 
 // Head performs a HEAD request
-func (c *HTTPClient) Head(ctx context.Context, url string, headers map[string]string) (*ports.ProxyHTTPResponse, error) {
+func (c *HTTPClient) Head(
+	ctx context.Context, url string, headers map[string]string,
+) (*ports.ProxyHTTPResponse, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodHead, url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create HEAD request: %w", err)

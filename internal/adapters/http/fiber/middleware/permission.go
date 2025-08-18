@@ -67,11 +67,11 @@ func LegacyPermissionMiddleware(config PermissionConfig) fiber.Handler {
 // getRequiredPermission HTTP 메서드에 따른 필요 권한 반환
 func getRequiredPermission(method string) Permission {
 	switch strings.ToUpper(method) {
-	case "GET", "HEAD":
+	case HTTPMethodGET, HTTPMethodHEAD:
 		return PermissionRead
-	case "POST", "PUT", "PATCH":
+	case HTTPMethodPOST, HTTPMethodPUT, HTTPMethodPATCH:
 		return PermissionWrite
-	case "DELETE":
+	case HTTPMethodDELETE:
 		return PermissionDelete
 	default:
 		return PermissionRead // 기본값

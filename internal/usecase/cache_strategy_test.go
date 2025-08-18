@@ -45,7 +45,8 @@ func TestCacheStrategyService_DetermineStrategy(t *testing.T) {
 	css := NewCacheStrategyService(mockCache, mockLogger, mockMetrics, mockKeyBuilder)
 
 	// Mock key builder
-	mockKeyBuilder.On("BuildKey", "maven", "central", "com.example", "1.0.0", "/test.jar").Return("maven:central:com.example:1.0.0:/test.jar")
+	mockKeyBuilder.On("BuildKey", 
+		"maven", "central", "com.example", "1.0.0", "/test.jar").Return("maven:central:com.example:1.0.0:/test.jar")
 
 	// Mock logger
 	mockLogger.On("Debug", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return()

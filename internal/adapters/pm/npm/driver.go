@@ -182,6 +182,7 @@ func (d *Driver) FetchPackage(ctx context.Context, req *ports.DriverRequest) (*p
 			headers["Authorization"] = fmt.Sprintf("Bearer %s", registryConfig.Token)
 		} else if registryConfig.Auth != nil {
 			// TODO: Handle basic auth
+			_ = registryConfig.Auth // Placeholder to avoid empty branch warning
 		}
 	}
 

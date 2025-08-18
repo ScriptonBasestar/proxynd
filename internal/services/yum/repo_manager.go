@@ -162,7 +162,7 @@ func (r *repoManagerImpl) getMetadataPath(repository, metadataType string) strin
 	switch metadataType {
 	case "repomd":
 		return filepath.Join(baseDir, repository, "repodata", "repomd.xml")
-	case "primary":
+	case yum.MetadataTypePrimary:
 		return filepath.Join(baseDir, repository, "repodata", "primary.xml.gz")
 	case "filelists":
 		return filepath.Join(baseDir, repository, "repodata", "filelists.xml.gz")
@@ -174,7 +174,7 @@ func (r *repoManagerImpl) getMetadataPath(repository, metadataType string) strin
 }
 
 func (r *repoManagerImpl) isValidMetadataType(metadataType string) bool {
-	validTypes := []string{"repomd", "primary", "filelists", "other", "updateinfo", "modules"}
+	validTypes := []string{"repomd", yum.MetadataTypePrimary, "filelists", "other", "updateinfo", "modules"}
 	for _, validType := range validTypes {
 		if metadataType == validType {
 			return true

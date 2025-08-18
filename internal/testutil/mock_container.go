@@ -362,11 +362,11 @@ func (m *MockContainerProvider) WithConfig(proxyType string, cfg interface{}) *M
 		if npmCfg, ok := cfg.(*config.NpmProxySettings); ok {
 			m.SetNpmConfig(npmCfg)
 		}
-	case "docker":
+	case common.PMTypeDocker:
 		if dockerCfg, ok := cfg.(*config.DockerProxySettings); ok {
 			m.SetDockerConfig(dockerCfg)
 		}
-	case "pip":
+	case common.PMTypePip:
 		if pipCfg, ok := cfg.(*config.PipProxySettings); ok {
 			m.SetPipConfig(pipCfg)
 		}

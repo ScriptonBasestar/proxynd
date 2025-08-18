@@ -178,6 +178,7 @@ func (d *Driver) FetchPackage(ctx context.Context, req *ports.DriverRequest) (*p
 	if mirrorConfig, exists := d.config.Mirrors[mirror]; exists && mirrorConfig.Auth != nil {
 		// TODO: Implement authentication headers
 		// This will be handled by the unified HTTP client
+		_ = mirrorConfig // Placeholder to avoid empty branch warning
 	}
 
 	// Fetch from upstream

@@ -72,9 +72,9 @@ func (s *registryServiceImpl) Handle(ctx context.Context, request *docker.Regist
 
 	// 작업 타입별 라우팅
 	switch request.Operation {
-	case "manifest":
+	case dockerResourceManifest:
 		response, err = s.handleManifestRequest(ctx, request)
-	case "blob":
+	case dockerResourceBlob:
 		response, err = s.handleBlobRequest(ctx, request)
 	case "tags":
 		response, err = s.handleTagsRequest(ctx, request)
@@ -144,7 +144,7 @@ func (s *registryServiceImpl) ValidateRequest(ctx context.Context, request *dock
 	}
 
 	// 필수 헤더 검증 (매니페스트 요청의 경우)
-	if request.Operation == "manifest" && request.Method == "GET" {
+	if request.Operation == dockerResourceManifest && request.Method == "GET" {
 		if accept := request.Headers["Accept"]; accept == "" {
 			s.logger.Warn("Missing Accept header in manifest request", logging.F("path", request.Path))
 		}
@@ -207,7 +207,7 @@ func (s *registryServiceImpl) handleTagsRequest(ctx context.Context, request *do
 
 	// 인증 설정
 	if auth, err := s.authManager.GetAuthToken(ctx, registry.URL, request.Repository); err == nil {
-		if auth.Type == "bearer" && auth.Token != "" {
+		if auth.Type == authTypeBearer && auth.Token != "" {
 			_ = s.authManager.SetBearerAuth(req, auth.Token)
 		} else if auth.Type == "basic" && auth.Username != "" {
 			_ = s.authManager.SetBasicAuth(req, auth.Username, auth.Password)
@@ -278,7 +278,7 @@ func (s *registryServiceImpl) handleCatalogRequest(ctx context.Context, request 
 
 	// 인증이 필요한 경우 설정
 	if auth, err := s.authManager.GetAuthToken(ctx, registry.URL, ""); err == nil {
-		if auth.Type == "bearer" && auth.Token != "" {
+		if auth.Type == authTypeBearer && auth.Token != "" {
 			_ = s.authManager.SetBearerAuth(req, auth.Token)
 		}
 	}

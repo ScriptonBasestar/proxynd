@@ -9,6 +9,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
+	"proxynd/internal/adapters/pm/common"
 	"proxynd/logging"
 )
 
@@ -194,9 +195,9 @@ func performProxyTest(proxyType string, req ProxyTestRequest) ProxyTestResult {
 
 	// 프록시 타입별 테스트 수행
 	switch proxyType {
-	case "apt":
+	case common.PMTypeApt:
 		result = testAptProxy(req)
-	case "npm":
+	case common.PMTypeNpm:
 		result = testNpmProxy(req)
 	case "maven":
 		result = testMavenProxy(req)

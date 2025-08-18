@@ -384,7 +384,9 @@ func NewStandardizedZapLogger(config ZapMigrationConfig) (*StandardizedZapLogger
 }
 
 // LogHTTPRequest logs an HTTP request with standardized fields
-func (s *StandardizedZapLogger) LogHTTPRequest(ctx context.Context, method, path string, statusCode int, latencyMs int64, cacheHit bool) {
+func (s *StandardizedZapLogger) LogHTTPRequest(
+	ctx context.Context, method, path string, statusCode int, latencyMs int64, cacheHit bool,
+) {
 	fields := []Field{
 		{Key: StandardizedFields.Method, Value: method},
 		{Key: StandardizedFields.Path, Value: path},
@@ -402,7 +404,10 @@ func (s *StandardizedZapLogger) LogHTTPRequest(ctx context.Context, method, path
 }
 
 // LogProxyOperation logs a proxy operation with standardized fields
-func (s *StandardizedZapLogger) LogProxyOperation(ctx context.Context, manager, upstream, packageName, version string, bytesIn, bytesOut int64, err error) {
+func (s *StandardizedZapLogger) LogProxyOperation(
+	ctx context.Context, manager, upstream, packageName, version string,
+	bytesIn, bytesOut int64, err error,
+) {
 	fields := []Field{
 		{Key: StandardizedFields.Manager, Value: manager},
 		{Key: StandardizedFields.Upstream, Value: upstream},
@@ -425,7 +430,9 @@ func (s *StandardizedZapLogger) LogProxyOperation(ctx context.Context, manager, 
 }
 
 // LogCacheOperation logs a cache operation with standardized fields
-func (s *StandardizedZapLogger) LogCacheOperation(ctx context.Context, operation string, cacheHit bool, manager, key string) {
+func (s *StandardizedZapLogger) LogCacheOperation(
+	ctx context.Context, operation string, cacheHit bool, manager, key string,
+) {
 	fields := []Field{
 		{Key: "operation", Value: operation},
 		{Key: StandardizedFields.CacheHit, Value: cacheHit},

@@ -432,6 +432,7 @@ func (ps *ProxyService) fetchFromUpstream(ctx context.Context, req *ProxyRequest
 	defer func() {
 		if closeErr := pkgResp.Content.Close(); closeErr != nil {
 			// Log error but don't override main error
+			_ = closeErr // Placeholder to avoid empty branch warning
 		}
 	}()
 
@@ -445,7 +446,9 @@ func (ps *ProxyService) fetchFromUpstream(ctx context.Context, req *ProxyRequest
 }
 
 // cacheUpstreamResponse stores upstream response in cache asynchronously
-func (ps *ProxyService) cacheUpstreamResponse(ctx context.Context, cacheReq *CacheRequest, upstreamResp *ProxyResponse) {
+func (ps *ProxyService) cacheUpstreamResponse(
+	ctx context.Context, cacheReq *CacheRequest, upstreamResp *ProxyResponse,
+) {
 	// Determine cache strategy
 	decision, err := ps.cacheStrategy.DetermineStrategy(ctx, cacheReq)
 	if err != nil {

@@ -110,7 +110,7 @@ func (m *metadataProcessorImpl) ProcessRepomd(ctx context.Context, data []byte) 
 
 	// primary 메타데이터 정보 추출
 	for _, dataItem := range repomd.Data {
-		if dataItem.Type == "primary" { //nolint:goconst
+		if dataItem.Type == yum.MetadataTypePrimary {
 			metadata := &yum.RepoMetadata{
 				Repository:   "unknown", // 호출자에서 설정
 				MetadataType: "repomd",
@@ -252,7 +252,7 @@ func (m *metadataProcessorImpl) ValidateMetadata(ctx context.Context, metadataTy
 			return fmt.Errorf("repomd.xml contains no data entries")
 		}
 
-	case "primary":
+	case yum.MetadataTypePrimary:
 		var primary PrimaryXML
 		if err := xml.Unmarshal(data, &primary); err != nil {
 			return fmt.Errorf("invalid primary.xml format: %w", err)

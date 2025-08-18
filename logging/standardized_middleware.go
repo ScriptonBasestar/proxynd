@@ -11,6 +11,15 @@ import (
 	"github.com/google/uuid"
 )
 
+// Context key types to avoid collisions
+type contextKey string
+
+const (
+	contextKeyRequestID  contextKey = "request_id"
+	contextKeyPrincipal  contextKey = "principal" 
+	contextKeyManager    contextKey = "manager"
+)
+
 // StandardizedMiddlewareConfig defines configuration for standardized logging middleware
 type StandardizedMiddlewareConfig struct {
 	// Logger to use (can be either zerolog or zap adapter)
@@ -58,6 +67,240 @@ var DefaultStandardizedMiddlewareConfig = StandardizedMiddlewareConfig{
 	LogProxyOperations:    true,
 }
 
+// extractRequestContext extracts and sets up request context information
+func extractRequestContext(c *fiber.Ctx) (requestID, principal, manager string) {
+	// Generate or extract request ID
+	requestID = c.Get("X-Request-ID")
+	if requestID == "" {
+		requestID = c.Get("X-Correlation-ID")
+	}
+	if requestID == "" {
+		requestID = uuid.New().String()
+		c.Set("X-Request-ID", requestID)
+	}
+
+	// Store request ID in context and locals
+	ctx := context.WithValue(c.Context(), contextKeyRequestID, requestID)
+	c.SetUserContext(ctx)
+	c.Locals(StandardizedFields.RequestID, requestID)
+
+	// Extract user/principal information
+	principal = extractPrincipal(c)
+	ctx = context.WithValue(ctx, contextKeyPrincipal, principal)
+	c.SetUserContext(ctx)
+	c.Locals(StandardizedFields.Principal, principal)
+
+	// Extract manager (proxy type)
+	manager = extractManager(c)
+	ctx = context.WithValue(ctx, contextKeyManager, manager)
+	c.SetUserContext(ctx)
+	c.Locals(StandardizedFields.Manager, manager)
+
+	return requestID, principal, manager
+}
+
+// extractPrincipal extracts principal information from request
+func extractPrincipal(c *fiber.Ctx) string {
+	if username := c.Locals("username"); username != nil {
+		return fmt.Sprintf("%v", username)
+	}
+	if userID := c.Locals("user_id"); userID != nil {
+		return fmt.Sprintf("user:%v", userID)
+	}
+	if authHeader := c.Get("Authorization"); authHeader != "" {
+		return "authenticated"
+	}
+	return "anonymous"
+}
+
+// extractManager extracts manager (proxy type) from request
+func extractManager(c *fiber.Ctx) string {
+	manager := c.Params("type")
+	if manager != "" {
+		return manager
+	}
+
+	// Try to infer from path
+	path := c.Path()
+	switch {
+	case strings.Contains(path, "/maven"):
+		return "maven"
+	case strings.Contains(path, "/npm"):
+		return "npm"
+	case strings.Contains(path, "/apt"):
+		return "apt"
+	case strings.Contains(path, "/docker"):
+		return "docker"
+	case strings.Contains(path, "/pip"):
+		return "pip"
+	case strings.Contains(path, "/yum"):
+		return "yum"
+	case strings.Contains(path, "/apk"):
+		return "apk"
+	default:
+		return "unknown"
+	}
+}
+
+// createRequestLogger creates a logger with request context
+func createRequestLogger(cfg StandardizedMiddlewareConfig, c *fiber.Ctx, requestID, principal, manager string) Logger {
+	var logger Logger
+	if cfg.UseStandardizedFields {
+		logger = cfg.Logger.WithFields(
+			F(StandardizedFields.RequestID, requestID),
+			F(StandardizedFields.Principal, principal),
+			F(StandardizedFields.Manager, manager),
+			F(StandardizedFields.Path, c.Path()),
+			F(StandardizedFields.Method, c.Method()),
+			F("ip", c.IP()),
+			F("user_agent", c.Get("User-Agent")),
+		)
+	} else {
+		// Legacy field names for backward compatibility
+		logger = cfg.Logger.WithFields(
+			F("request_id", requestID),
+			F("method", c.Method()),
+			F("path", c.Path()),
+			F("ip", c.IP()),
+			F("user_agent", c.Get("User-Agent")),
+		)
+	}
+
+	// Add request headers if enabled
+	if cfg.IncludeHeaders {
+		headers := extractHeaders(c, cfg.HeadersToLog, true)
+		if len(headers) > 0 {
+			logger = logger.WithField("request_headers", headers)
+		}
+	}
+
+	// Add request size
+	if c.Request().Header.ContentLength() > 0 {
+		logger = logger.WithField(StandardizedFields.BytesIn, c.Request().Header.ContentLength())
+	}
+
+	return logger
+}
+
+// processResponse processes and logs the response
+func processResponse(cfg StandardizedMiddlewareConfig, c *fiber.Ctx, logger Logger, start time.Time, err error) error {
+	// Calculate response time
+	duration := time.Since(start)
+	latencyMs := duration.Milliseconds()
+
+	// Extract cache hit information
+	cacheHit := extractCacheHit(c)
+
+	// Create response logger with standardized fields
+	respLogger := createResponseLogger(cfg, logger, c, latencyMs, duration, cacheHit)
+
+	// Add additional response information
+	respLogger = addResponseMetadata(cfg, respLogger, c, err)
+
+	// Skip logging if status should be skipped
+	statusCode := c.Response().StatusCode()
+	if shouldSkipStatus(statusCode, cfg.SkipStatuses) {
+		return err
+	}
+
+	// Log with appropriate level
+	logResponse(respLogger, c, statusCode)
+
+	return err
+}
+
+// extractCacheHit extracts cache hit information
+func extractCacheHit(c *fiber.Ctx) bool {
+	if hit := c.Locals("cache_hit"); hit != nil {
+		if h, ok := hit.(bool); ok {
+			return h
+		}
+	}
+	return false
+}
+
+// createResponseLogger creates response logger with standardized fields
+func createResponseLogger(
+	cfg StandardizedMiddlewareConfig, logger Logger, c *fiber.Ctx,
+	latencyMs int64, duration time.Duration, cacheHit bool,
+) Logger {
+	if cfg.UseStandardizedFields {
+		return logger.WithFields(
+			F(StandardizedFields.StatusCode, c.Response().StatusCode()),
+			F(StandardizedFields.LatencyMs, latencyMs),
+			F(StandardizedFields.CacheHit, cacheHit),
+			F("duration", duration.String()),
+		)
+	}
+	return logger.WithFields(
+		F("status", c.Response().StatusCode()),
+		F("duration_ms", latencyMs),
+		F("cache_hit", cacheHit),
+		F("duration", duration.String()),
+	)
+}
+
+// addResponseMetadata adds additional response metadata to logger
+func addResponseMetadata(cfg StandardizedMiddlewareConfig, respLogger Logger, c *fiber.Ctx, err error) Logger {
+	// Add response size
+	responseSize := len(c.Response().Body())
+	if responseSize > 0 {
+		respLogger = respLogger.WithField(StandardizedFields.BytesOut, responseSize)
+	}
+
+	// Add upstream information if available
+	if upstream := c.Locals("upstream"); upstream != nil {
+		respLogger = respLogger.WithField(StandardizedFields.Upstream, upstream)
+	}
+
+	// Add package information if available
+	if packageName := c.Locals("package_name"); packageName != nil {
+		respLogger = respLogger.WithField(StandardizedFields.PackageName, packageName)
+	}
+	if version := c.Locals("version"); version != nil {
+		respLogger = respLogger.WithField(StandardizedFields.Version, version)
+	}
+
+	// Add response headers if enabled
+	if cfg.IncludeHeaders {
+		headers := extractResponseHeaders(c, cfg.HeadersToLog)
+		if len(headers) > 0 {
+			respLogger = respLogger.WithField("response_headers", headers)
+		}
+	}
+
+	// Add custom fields
+	if cfg.CustomFields != nil {
+		fields := cfg.CustomFields(c)
+		if len(fields) > 0 {
+			respLogger = respLogger.WithFields(fields...)
+		}
+	}
+
+	// Handle errors
+	if err != nil {
+		respLogger = respLogger.WithField(StandardizedFields.Error, err.Error())
+	}
+
+	return respLogger
+}
+
+// logResponse logs the response with appropriate level based on status code
+func logResponse(respLogger Logger, c *fiber.Ctx, statusCode int) {
+	message := fmt.Sprintf("%s %s", c.Method(), c.Path())
+
+	switch {
+	case statusCode >= 500:
+		respLogger.Error(message, F("error_type", "server_error"))
+	case statusCode >= 400:
+		respLogger.Warn(message, F("error_type", "client_error"))
+	case statusCode >= 300:
+		respLogger.Info(message, F("redirect", true))
+	default:
+		respLogger.Info(message)
+	}
+}
+
 // NewStandardized creates a new standardized logging middleware
 func NewStandardized(config ...StandardizedMiddlewareConfig) fiber.Handler {
 	cfg := DefaultStandardizedMiddlewareConfig
@@ -70,207 +313,24 @@ func NewStandardized(config ...StandardizedMiddlewareConfig) fiber.Handler {
 	}
 
 	return func(c *fiber.Ctx) error {
-		// Generate or extract request ID
-		requestID := c.Get("X-Request-ID")
-		if requestID == "" {
-			requestID = c.Get("X-Correlation-ID")
-		}
-		if requestID == "" {
-			requestID = uuid.New().String()
-			c.Set("X-Request-ID", requestID)
-		}
-
-		// Store request ID in context and locals
-		ctx := context.WithValue(c.Context(), StandardizedFields.RequestID, requestID)
-		c.SetUserContext(ctx)
-		c.Locals(StandardizedFields.RequestID, requestID)
-
-		// Extract user/principal information
-		var principal string
-		if username := c.Locals("username"); username != nil {
-			principal = fmt.Sprintf("%v", username)
-		} else if userID := c.Locals("user_id"); userID != nil {
-			principal = fmt.Sprintf("user:%v", userID)
-		} else if authHeader := c.Get("Authorization"); authHeader != "" {
-			principal = "authenticated"
-		} else {
-			principal = "anonymous"
-		}
-
-		ctx = context.WithValue(ctx, StandardizedFields.Principal, principal)
-		c.SetUserContext(ctx)
-		c.Locals(StandardizedFields.Principal, principal)
-
-		// Extract manager (proxy type)
-		manager := c.Params("type")
-		if manager == "" {
-			// Try to infer from path
-			path := c.Path()
-			switch {
-			case strings.Contains(path, "/maven"):
-				manager = "maven"
-			case strings.Contains(path, "/npm"):
-				manager = "npm"
-			case strings.Contains(path, "/apt"):
-				manager = "apt"
-			case strings.Contains(path, "/docker"):
-				manager = "docker"
-			case strings.Contains(path, "/pip"):
-				manager = "pip"
-			case strings.Contains(path, "/yum"):
-				manager = "yum"
-			case strings.Contains(path, "/apk"):
-				manager = "apk"
-			default:
-				manager = "unknown"
-			}
-		}
-
-		ctx = context.WithValue(ctx, StandardizedFields.Manager, manager)
-		c.SetUserContext(ctx)
-		c.Locals(StandardizedFields.Manager, manager)
+		// Extract and setup request context
+		requestID, principal, manager := extractRequestContext(c)
 
 		// Skip logging if path should be skipped
 		if shouldSkipPath(c.Path(), cfg.SkipPaths) {
 			return c.Next()
 		}
 
-		// Record start time
+		// Create request logger and log start
 		start := time.Now()
-
-		// Create request logger with standardized fields
-		var logger Logger
-		if cfg.UseStandardizedFields {
-			logger = cfg.Logger.WithFields(
-				F(StandardizedFields.RequestID, requestID),
-				F(StandardizedFields.Principal, principal),
-				F(StandardizedFields.Manager, manager),
-				F(StandardizedFields.Path, c.Path()),
-				F(StandardizedFields.Method, c.Method()),
-				F("ip", c.IP()),
-				F("user_agent", c.Get("User-Agent")),
-			)
-		} else {
-			// Legacy field names for backward compatibility
-			logger = cfg.Logger.WithFields(
-				F("request_id", requestID),
-				F("method", c.Method()),
-				F("path", c.Path()),
-				F("ip", c.IP()),
-				F("user_agent", c.Get("User-Agent")),
-			)
-		}
-
-		// Add request headers if enabled
-		if cfg.IncludeHeaders {
-			headers := extractHeaders(c, cfg.HeadersToLog, true)
-			if len(headers) > 0 {
-				logger = logger.WithField("request_headers", headers)
-			}
-		}
-
-		// Add request size
-		if c.Request().Header.ContentLength() > 0 {
-			logger = logger.WithField(StandardizedFields.BytesIn, c.Request().Header.ContentLength())
-		}
-
-		// Log request start
+		logger := createRequestLogger(cfg, c, requestID, principal, manager)
 		logger.Info("Request started")
 
 		// Execute next handler
 		err := c.Next()
 
-		// Calculate response time
-		duration := time.Since(start)
-		latencyMs := duration.Milliseconds()
-
-		// Extract cache hit information
-		cacheHit := false
-		if hit := c.Locals("cache_hit"); hit != nil {
-			if h, ok := hit.(bool); ok {
-				cacheHit = h
-			}
-		}
-
-		// Create response logger with standardized fields
-		var respLogger Logger
-		if cfg.UseStandardizedFields {
-			respLogger = logger.WithFields(
-				F(StandardizedFields.StatusCode, c.Response().StatusCode()),
-				F(StandardizedFields.LatencyMs, latencyMs),
-				F(StandardizedFields.CacheHit, cacheHit),
-				F("duration", duration.String()),
-			)
-		} else {
-			respLogger = logger.WithFields(
-				F("status", c.Response().StatusCode()),
-				F("duration_ms", latencyMs),
-				F("cache_hit", cacheHit),
-				F("duration", duration.String()),
-			)
-		}
-
-		// Add response size
-		responseSize := len(c.Response().Body())
-		if responseSize > 0 {
-			respLogger = respLogger.WithField(StandardizedFields.BytesOut, responseSize)
-		}
-
-		// Add upstream information if available
-		if upstream := c.Locals("upstream"); upstream != nil {
-			respLogger = respLogger.WithField(StandardizedFields.Upstream, upstream)
-		}
-
-		// Add package information if available
-		if packageName := c.Locals("package_name"); packageName != nil {
-			respLogger = respLogger.WithField(StandardizedFields.PackageName, packageName)
-		}
-		if version := c.Locals("version"); version != nil {
-			respLogger = respLogger.WithField(StandardizedFields.Version, version)
-		}
-
-		// Add response headers if enabled
-		if cfg.IncludeHeaders {
-			headers := extractResponseHeaders(c, cfg.HeadersToLog)
-			if len(headers) > 0 {
-				respLogger = respLogger.WithField("response_headers", headers)
-			}
-		}
-
-		// Add custom fields
-		if cfg.CustomFields != nil {
-			fields := cfg.CustomFields(c)
-			if len(fields) > 0 {
-				respLogger = respLogger.WithFields(fields...)
-			}
-		}
-
-		// Handle errors
-		if err != nil {
-			respLogger = respLogger.WithField(StandardizedFields.Error, err.Error())
-		}
-
-		// Skip logging if status should be skipped
-		statusCode := c.Response().StatusCode()
-		if shouldSkipStatus(statusCode, cfg.SkipStatuses) {
-			return err
-		}
-
-		// Determine log level and log message
-		message := fmt.Sprintf("%s %s", c.Method(), c.Path())
-
-		switch {
-		case statusCode >= 500:
-			respLogger.Error(message, F("error_type", "server_error"))
-		case statusCode >= 400:
-			respLogger.Warn(message, F("error_type", "client_error"))
-		case statusCode >= 300:
-			respLogger.Info(message, F("redirect", true))
-		default:
-			respLogger.Info(message)
-		}
-
-		return err
+		// Process and log response
+		return processResponse(cfg, c, logger, start, err)
 	}
 }
 
@@ -285,21 +345,21 @@ func StandardizedRequestLogger() fiber.Handler {
 		}
 
 		// Create context with standardized fields
-		ctx := context.WithValue(c.Context(), StandardizedFields.RequestID, requestID)
+		ctx := context.WithValue(c.Context(), contextKeyRequestID, requestID)
 
 		// Extract principal
 		principal := "anonymous"
 		if username := c.Locals("username"); username != nil {
 			principal = fmt.Sprintf("%v", username)
 		}
-		ctx = context.WithValue(ctx, StandardizedFields.Principal, principal)
+		ctx = context.WithValue(ctx, contextKeyPrincipal, principal)
 
 		// Extract manager
 		manager := c.Params("type")
 		if manager == "" {
 			manager = "unknown"
 		}
-		ctx = context.WithValue(ctx, StandardizedFields.Manager, manager)
+		ctx = context.WithValue(ctx, contextKeyManager, manager)
 
 		c.SetUserContext(ctx)
 
@@ -407,7 +467,10 @@ func LogStandardizedCacheOperation(ctx context.Context, operation string, cacheH
 }
 
 // LogStandardizedProxyOperation logs proxy operations with standardized fields
-func LogStandardizedProxyOperation(ctx context.Context, manager, upstream, packageName, version string, bytesIn, bytesOut int64, err error) {
+func LogStandardizedProxyOperation(
+	ctx context.Context, manager, upstream, packageName, version string,
+	bytesIn, bytesOut int64, err error,
+) {
 	logger := GetLogger().WithContext(ctx)
 
 	fields := []Field{
@@ -428,7 +491,9 @@ func LogStandardizedProxyOperation(ctx context.Context, manager, upstream, packa
 }
 
 // LogStandardizedHTTPRequest logs HTTP requests with standardized fields
-func LogStandardizedHTTPRequest(ctx context.Context, method, path string, statusCode int, latencyMs int64, cacheHit bool) {
+func LogStandardizedHTTPRequest(
+	ctx context.Context, method, path string, statusCode int, latencyMs int64, cacheHit bool,
+) {
 	logger := GetLogger().WithContext(ctx)
 
 	fields := []Field{

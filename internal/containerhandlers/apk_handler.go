@@ -29,6 +29,7 @@ const (
 	mimeApplicationGzip        = "application/gzip"
 	mimeTextPlain              = "text/plain"
 	mimeApplicationOctetStream = "application/octet-stream"
+	mimeApplicationJSON        = "application/json"
 )
 
 // APKContainerHandler Container 기반 APK 프록시 핸들러

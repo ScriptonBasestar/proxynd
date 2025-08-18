@@ -20,6 +20,7 @@ import (
 	"proxynd/logging"
 )
 
+
 // NPMContainerHandler Container 기반 NPM 핸들러
 type NPMContainerHandler struct {
 	logger            logging.Logger
@@ -408,10 +409,10 @@ func (h *NPMContainerHandler) isNpmMetadataRequest(path string) bool {
 
 func (h *NPMContainerHandler) getNpmContentType(path string) string {
 	if strings.HasSuffix(path, ".tgz") || strings.HasSuffix(path, ".tar.gz") {
-		return "application/octet-stream"
+		return mimeApplicationOctetStream
 	}
 	if h.isNpmMetadataRequest(path) {
-		return "application/json"
+		return mimeApplicationJSON
 	}
-	return "application/octet-stream"
+	return mimeApplicationOctetStream
 }

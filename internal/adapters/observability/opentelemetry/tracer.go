@@ -58,7 +58,9 @@ func (t *TraceService) StartSpan(ctx context.Context, operationName string) (por
 }
 
 // StartChildSpan starts a child span
-func (t *TraceService) StartChildSpan(ctx context.Context, parent ports.TraceSpan, operationName string) (ports.TraceSpan, context.Context) {
+func (t *TraceService) StartChildSpan(
+	ctx context.Context, parent ports.TraceSpan, operationName string,
+) (ports.TraceSpan, context.Context) {
 	if !t.enabled {
 		return &TraceSpan{span: trace.SpanFromContext(ctx)}, ctx
 	}

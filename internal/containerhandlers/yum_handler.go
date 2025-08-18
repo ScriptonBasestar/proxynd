@@ -15,6 +15,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"proxynd/helpers"
+	"proxynd/internal/adapters/pm/common"
 	"proxynd/internal/config"
 	"proxynd/internal/container"
 	"proxynd/internal/security"
@@ -388,15 +389,15 @@ func (h *YUMContainerHandler) getYumContentType(filename string) string {
 	case strings.HasSuffix(filename, ".xml.bz2") || strings.HasSuffix(filename, ".xml.xz"):
 		return "application/xml"
 	case strings.HasSuffix(filename, ".sqlite") || strings.HasSuffix(filename, ".sqlite.bz2"):
-		return "application/octet-stream"
+		return common.MimeApplicationOctetStream
 	case strings.HasSuffix(filename, ".sqlite.gz") || strings.HasSuffix(filename, ".sqlite.xz"):
-		return "application/octet-stream"
+		return common.MimeApplicationOctetStream
 	case strings.HasSuffix(filename, ".asc") || strings.HasSuffix(filename, ".gpg"):
 		return "application/pgp-signature"
 	case strings.Contains(filename, "repomd.xml"):
 		return "text/xml"
 	default:
-		return "application/octet-stream"
+		return common.MimeApplicationOctetStream
 	}
 }
 

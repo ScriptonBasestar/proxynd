@@ -354,7 +354,9 @@ type OptimizationResult struct {
 
 // AnalyzeUsage analyzes cache usage patterns
 // TODO: Implement usage pattern analysis
-func (cs *CacheStrategyService) AnalyzeUsage(ctx context.Context, req *UsageAnalysisRequest) (*UsageAnalysisResponse, error) {
+func (cs *CacheStrategyService) AnalyzeUsage(
+	ctx context.Context, req *UsageAnalysisRequest,
+) (*UsageAnalysisResponse, error) {
 	// TODO: Implement usage analysis
 	// TODO: Analyze access patterns, hot/cold data, seasonal patterns
 

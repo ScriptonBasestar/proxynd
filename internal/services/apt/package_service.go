@@ -232,7 +232,7 @@ func (s *packageServiceImpl) extractFileType(packagePath string) string {
 	switch ext {
 	case ".deb":
 		return "deb"
-	case ".gz":
+	case extGz:
 		if filepath.Base(packagePath) == "Packages.gz" || filepath.Base(packagePath) == "Release.gz" {
 			return "metadata"
 		}

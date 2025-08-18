@@ -974,7 +974,7 @@ func (c *RootConfig) ApplyDefaults() {
 
 	// 캐시 기본값
 	if c.Cache.Backend == "" {
-		c.Cache.Backend = "file"
+		c.Cache.Backend = backendFile
 	}
 	if c.Cache.TTL == 0 {
 		c.Cache.TTL = 3600 * time.Second

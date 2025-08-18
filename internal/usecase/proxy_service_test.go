@@ -21,7 +21,9 @@ type MockPackageManager struct {
 	mock.Mock
 }
 
-func (m *MockPackageManager) GetPackage(ctx context.Context, req *ports.PackageRequest) (*ports.PackageResponse, error) {
+func (m *MockPackageManager) GetPackage(
+	ctx context.Context, req *ports.PackageRequest,
+) (*ports.PackageResponse, error) {
 	args := m.Called(ctx, req)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -37,7 +39,9 @@ func (m *MockPackageManager) ListPackages(ctx context.Context, repo string) (*po
 	return args.Get(0).(*ports.PackageListResponse), args.Error(1)
 }
 
-func (m *MockPackageManager) GetMetadata(ctx context.Context, req *ports.MetadataRequest) (*ports.MetadataResponse, error) {
+func (m *MockPackageManager) GetMetadata(
+	ctx context.Context, req *ports.MetadataRequest,
+) (*ports.MetadataResponse, error) {
 	args := m.Called(ctx, req)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
@@ -110,7 +114,9 @@ func (m *MockAuthService) Authenticate(ctx context.Context, req *ports.AuthReque
 	return args.Get(0).(*ports.AuthResponse), args.Error(1)
 }
 
-func (m *MockAuthService) Authorize(ctx context.Context, req *ports.AuthorizeRequest) (*ports.AuthorizeResponse, error) {
+func (m *MockAuthService) Authorize(
+	ctx context.Context, req *ports.AuthorizeRequest,
+) (*ports.AuthorizeResponse, error) {
 	args := m.Called(ctx, req)
 	return args.Get(0).(*ports.AuthorizeResponse), args.Error(1)
 }
@@ -316,7 +322,10 @@ func TestProxyService_HandleProxyRequest_Success(t *testing.T) {
 
 	// Metrics
 	mockMetrics.On("IncCounter", mock.AnythingOfType("string"), mock.AnythingOfType("map[string]string")).Return()
-	mockMetrics.On("RecordDuration", mock.AnythingOfType("string"), mock.AnythingOfType("time.Duration"), mock.AnythingOfType("map[string]string")).Return()
+	mockMetrics.On("RecordDuration", 
+		mock.AnythingOfType("string"), 
+		mock.AnythingOfType("time.Duration"), 
+		mock.AnythingOfType("map[string]string")).Return()
 
 	// Logger calls
 	mockLogger.On("Debug", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return()
@@ -390,7 +399,10 @@ func TestProxyService_HandleProxyRequest_CacheHit(t *testing.T) {
 
 	// Metrics
 	mockMetrics.On("IncCounter", mock.AnythingOfType("string"), mock.AnythingOfType("map[string]string")).Return()
-	mockMetrics.On("RecordDuration", mock.AnythingOfType("string"), mock.AnythingOfType("time.Duration"), mock.AnythingOfType("map[string]string")).Return()
+	mockMetrics.On("RecordDuration", 
+		mock.AnythingOfType("string"), 
+		mock.AnythingOfType("time.Duration"), 
+		mock.AnythingOfType("map[string]string")).Return()
 
 	// Logger calls
 	mockLogger.On("Debug", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return()
@@ -438,7 +450,9 @@ func TestProxyService_HandleProxyRequest_AuthFailure(t *testing.T) {
 	)
 
 	// Auth failure
-	mockAuth.On("Authenticate", mock.Anything, mock.AnythingOfType("*ports.AuthRequest")).Return(nil, fmt.Errorf("invalid token"))
+	mockAuth.On("Authenticate", 
+		mock.Anything, 
+		mock.AnythingOfType("*ports.AuthRequest")).Return(nil, fmt.Errorf("invalid token"))
 
 	// Metrics and logging
 	mockMetrics.On("IncCounter", "proxy_auth_failures", mock.AnythingOfType("map[string]string")).Return()
@@ -490,7 +504,8 @@ func TestProxyService_HandleProxyRequest_RateLimitExceeded(t *testing.T) {
 	mockAuth.On("Authorize", mock.Anything, mock.AnythingOfType("*ports.AuthorizeRequest")).Return(nil)
 
 	// Rate limit exceeded
-	mockRateLimit.On("CheckLimit", mock.Anything, mock.AnythingOfType("*ports.RateLimitRequest")).Return(fmt.Errorf("rate limit exceeded"))
+	mockRateLimit.On("CheckLimit", 
+		mock.Anything, mock.AnythingOfType("*ports.RateLimitRequest")).Return(fmt.Errorf("rate limit exceeded"))
 
 	// Metrics and logging
 	mockMetrics.On("IncCounter", "proxy_rate_limit_exceeded", mock.AnythingOfType("map[string]string")).Return()

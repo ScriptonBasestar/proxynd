@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"proxynd/internal/adapters/pm/common"
 	"proxynd/internal/config"
 	"proxynd/internal/ports"
 )
@@ -113,7 +114,7 @@ func (s *SearchService) Search(ctx context.Context, req *SearchRequest) (*Search
 	var groupedResults []GroupedSearchResult
 
 	// Maven 검색
-	if req.Type == "all" || req.Type == "maven" {
+	if req.Type == common.PMTypeAll || req.Type == common.PMTypeMaven {
 		mavenResults, err := s.searchMavenContent(ctx, req.Query, req.Limit)
 		if err != nil {
 			if s.logger != nil {
@@ -179,14 +180,16 @@ func (s *SearchService) Search(ctx context.Context, req *SearchRequest) (*Search
 }
 
 // searchMavenContent searches Maven repositories
-func (s *SearchService) searchMavenContent(ctx context.Context, query string, limit int) ([]GroupedSearchResult, error) {
+func (s *SearchService) searchMavenContent(
+	ctx context.Context, query string, limit int,
+) ([]GroupedSearchResult, error) {
 	// Maven 설정 로드
 	mavenConfig := config.MavenProxySettings{}
 	if err := mavenConfig.ReadConfig(); err != nil {
 		return nil, fmt.Errorf("maven 설정 로드 실패: %w", err)
 	}
 
-	baseURL := "http://localhost:8080"
+	baseURL := common.DefaultLocalhostBaseURL
 
 	// Mock 데이터 정의 (실제 구현에서는 Maven Central API 또는 로컬 인덱스 사용)
 	mockArtifacts := []struct {
@@ -253,7 +256,7 @@ func (s *SearchService) searchAptContent(ctx context.Context, query string, limi
 	}
 
 	var results []SearchResult
-	baseURL := "http://localhost:8080"
+	baseURL := common.DefaultLocalhostBaseURL
 
 	// Mock 패키지 데이터 (실제 구현에서는 APT 패키지 인덱스 사용)
 	mockPackages := []struct {
@@ -304,7 +307,7 @@ func (s *SearchService) searchNpmContent(ctx context.Context, query string, limi
 	}
 
 	var results []SearchResult
-	baseURL := "http://localhost:8080"
+	baseURL := common.DefaultLocalhostBaseURL
 
 	// Mock NPM 패키지 데이터 (실제 구현에서는 NPM Registry API 사용)
 	mockPackages := []struct {

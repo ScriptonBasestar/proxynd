@@ -204,7 +204,9 @@ func (h *TracingHandler) setSpanTags(span ports.TraceSpan, ctx ports.HTTPContext
 }
 
 // setResponseTags sets response-related span tags
-func (h *TracingHandler) setResponseTags(span ports.TraceSpan, ctx ports.HTTPContext, err error, duration time.Duration) {
+func (h *TracingHandler) setResponseTags(
+	span ports.TraceSpan, ctx ports.HTTPContext, err error, duration time.Duration,
+) {
 	span.SetTag("http.duration_ms", duration.Milliseconds())
 
 	// Set status code if available from context

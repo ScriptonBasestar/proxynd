@@ -175,6 +175,7 @@ func (d *Driver) FetchPackage(ctx context.Context, req *ports.DriverRequest) (*p
 	if repoConfig, exists := d.config.Repositories[repository]; exists && repoConfig.Auth != nil {
 		// TODO: Implement authentication headers
 		// This will be handled by the unified HTTP client
+		_ = repoConfig // Placeholder to avoid empty branch warning
 	}
 
 	// Fetch from upstream

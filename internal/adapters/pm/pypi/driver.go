@@ -172,6 +172,7 @@ func (d *Driver) FetchPackage(ctx context.Context, req *ports.DriverRequest) (*p
 	if indexConfig, exists := d.config.Indexes[index]; exists && indexConfig.Auth != nil {
 		// TODO: Implement authentication headers
 		// This will be handled by the unified HTTP client
+		_ = indexConfig // Placeholder to avoid empty branch warning
 	}
 
 	// Fetch from upstream

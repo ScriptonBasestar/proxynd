@@ -36,13 +36,13 @@ func ErrorRecovery() fiber.Handler {
 				// 추적 ID 가져오기
 				traceID := c.Locals("requestID")
 				if traceID == nil {
-					traceID = "unknown"
+					traceID = unknownTraceID
 				}
 
 				// TraceID 안전 변환
 				traceIDStr, ok := traceID.(string)
 				if !ok {
-					traceIDStr = "unknown"
+					traceIDStr = unknownTraceID
 				}
 
 				// 패닉 정보 로깅
@@ -117,7 +117,7 @@ func RecoveryWithConfig(config RecoveryConfig) fiber.Handler {
 			if r := recover(); r != nil {
 				traceID := c.Locals("requestID")
 				if traceID == nil {
-					traceID = "unknown"
+					traceID = unknownTraceID
 				}
 
 				// 커스텀 스택 트레이스 핸들러 실행
@@ -128,7 +128,7 @@ func RecoveryWithConfig(config RecoveryConfig) fiber.Handler {
 				// TraceID 안전 변환
 				traceIDStr, ok := traceID.(string)
 				if !ok {
-					traceIDStr = "unknown"
+					traceIDStr = unknownTraceID
 				}
 
 				// 기본 패닉 로깅

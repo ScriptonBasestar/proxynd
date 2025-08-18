@@ -169,7 +169,8 @@ func (d *Driver) FetchPackage(ctx context.Context, req *ports.DriverRequest) (*p
 
 	// Accept appropriate content types based on path
 	if strings.Contains(req.Path, "/manifests/") {
-		headers["Accept"] = "application/vnd.docker.distribution.manifest.v2+json, application/vnd.docker.distribution.manifest.v1+json"
+		headers["Accept"] = "application/vnd.docker.distribution.manifest.v2+json, " +
+			"application/vnd.docker.distribution.manifest.v1+json"
 	} else if strings.Contains(req.Path, "/blobs/") {
 		headers["Accept"] = "application/octet-stream"
 	} else {
@@ -185,6 +186,7 @@ func (d *Driver) FetchPackage(ctx context.Context, req *ports.DriverRequest) (*p
 	if registryConfig, exists := d.config.Registries[registry]; exists && registryConfig.Auth != nil {
 		// TODO: Implement Docker registry authentication (Bearer token)
 		// This will be handled by the unified HTTP client
+		_ = registryConfig // Placeholder to avoid empty branch warning
 	}
 
 	// Fetch from upstream

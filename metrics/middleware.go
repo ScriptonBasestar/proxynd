@@ -18,6 +18,7 @@ import (
 // Constants for metrics middleware
 const (
 	metricsPath            = "/metrics"
+	resultSuccess          = "success"
 	resultFailure          = "failure"
 	statusUnknown          = "unknown"
 	statusLocal            = "local"

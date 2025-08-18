@@ -11,9 +11,12 @@ import (
 
 // HTTP method constants
 const (
-	HTTPMethodGET  = "GET"
-	HTTPMethodHEAD = "HEAD"
-	HTTPMethodPOST = "POST"
+	HTTPMethodGET    = "GET"
+	HTTPMethodHEAD   = "HEAD"
+	HTTPMethodPOST   = "POST"
+	HTTPMethodPUT    = "PUT"
+	HTTPMethodPATCH  = "PATCH"
+	HTTPMethodDELETE = "DELETE"
 )
 
 // StructuredAccessLogConfig 구조화된 액세스 로그 설정

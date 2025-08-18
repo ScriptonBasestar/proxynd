@@ -8,6 +8,7 @@ import (
 	"proxynd/alerts"
 	authHandlers "proxynd/handlers/auth"
 	proxyHandlers "proxynd/handlers/proxy"
+	"proxynd/internal/adapters/pm/common"
 	"proxynd/internal/config"
 	"proxynd/internal/container"
 	"proxynd/internal/handlers"
@@ -99,7 +100,7 @@ func (r *ContainerProxyRouter) createHandlerByType(
 	switch proxyType {
 	case "apt":
 		return r.createAPTHandler(provider)
-	case "maven":
+	case common.PMTypeMaven:
 		return r.createMavenHandler(provider)
 	case "npm":
 		return r.createNPMHandler(provider)

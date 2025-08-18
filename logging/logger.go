@@ -133,7 +133,7 @@ func InitLogger(config LogConfig) error {
 	switch config.Output {
 	case "stderr":
 		writers = append(writers, os.Stderr)
-	case "file":
+	case fieldFile:
 		if config.File.Path == "" {
 			return fmt.Errorf("file path is required for file output")
 		}
