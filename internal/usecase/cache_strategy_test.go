@@ -45,11 +45,13 @@ func TestCacheStrategyService_DetermineStrategy(t *testing.T) {
 	css := NewCacheStrategyService(mockCache, mockLogger, mockMetrics, mockKeyBuilder)
 
 	// Mock key builder
-	mockKeyBuilder.On("BuildKey", 
+	mockKeyBuilder.On("BuildKey",
 		"maven", "central", "com.example", "1.0.0", "/test.jar").Return("maven:central:com.example:1.0.0:/test.jar")
 
-	// Mock logger
+	// Mock logger - use MatchedBy for variadic arguments
 	mockLogger.On("Debug", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return()
+	mockLogger.On("Info", mock.Anything, mock.AnythingOfType("string"),
+		mock.MatchedBy(func([]ports.Field) bool { return true })).Return()
 
 	// Test request
 	req := &CacheRequest{
@@ -85,8 +87,10 @@ func TestCacheStrategyService_DetermineStrategy_FallbackToDefault(t *testing.T) 
 	// Create service without key builder (fallback)
 	css := NewCacheStrategyService(mockCache, mockLogger, mockMetrics, nil)
 
-	// Mock logger
+	// Mock logger - use MatchedBy for variadic arguments
 	mockLogger.On("Debug", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return()
+	mockLogger.On("Info", mock.Anything, mock.AnythingOfType("string"),
+		mock.MatchedBy(func([]ports.Field) bool { return true })).Return()
 
 	// Test request for unknown package type
 	req := &CacheRequest{
