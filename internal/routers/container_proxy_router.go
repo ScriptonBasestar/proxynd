@@ -5,8 +5,8 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/alerts"
 	"proxynd/internal/adapters/pm/common"
+	"proxynd/internal/alerts"
 	"proxynd/internal/config"
 	"proxynd/internal/container"
 	"proxynd/internal/handlers"

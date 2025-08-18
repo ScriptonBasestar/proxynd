@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"proxynd/alerts"
+	"proxynd/internal/alerts"
 	"proxynd/internal/logging"
 )
 

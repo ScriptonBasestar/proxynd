@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-playground/assert/v2"
 
-	"proxynd/alerts"
+	"proxynd/internal/alerts"
 )
 
 // TestMemoryEventQueue 메모리 이벤트 큐 테스트

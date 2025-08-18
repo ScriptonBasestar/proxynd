@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"sync"
 
-	"proxynd/alerts"
+	"proxynd/internal/alerts"
 )
 
 // MemoryEventQueue 메모리 기반 이벤트 큐

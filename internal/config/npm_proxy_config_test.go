@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 
-	"proxynd/helpers"
+	"proxynd/internal/helpers"
 )
 
 func TestNpmConfig_NpmProxy(t *testing.T) {

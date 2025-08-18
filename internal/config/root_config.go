@@ -11,8 +11,8 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"proxynd/alerts"
-	"proxynd/verification"
+	"proxynd/internal/alerts"
+	"proxynd/internal/verification"
 )
 
 // RootConfig 프로젝트의 최상위 설정 구조체

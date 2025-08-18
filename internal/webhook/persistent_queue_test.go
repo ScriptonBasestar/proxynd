@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"proxynd/alerts"
+	"proxynd/internal/alerts"
 )
 
 func TestPersistentFailureQueue_AddAndRetrieve(t *testing.T) {

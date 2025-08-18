@@ -6,9 +6,9 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/helpers"
 	"proxynd/internal/config"
 	"proxynd/internal/domain/apt"
+	"proxynd/internal/helpers"
 	"proxynd/internal/logging"
 	aptServices "proxynd/internal/services/apt"
 )

@@ -3,7 +3,7 @@ package config
 import (
 	"path"
 
-	"proxynd/helpers"
+	"proxynd/internal/helpers"
 )
 
 // ApkProxy APK 프록시 서버 정보

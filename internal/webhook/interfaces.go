@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"proxynd/alerts"
+	"proxynd/internal/alerts"
 	"proxynd/internal/webhook/retry"
 	"proxynd/internal/webhook/types"
 )

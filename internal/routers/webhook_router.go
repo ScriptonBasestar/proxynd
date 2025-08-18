@@ -8,8 +8,8 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/dtos"
 	"proxynd/internal/config"
+	dtos "proxynd/internal/dto"
 	"proxynd/internal/logging"
 	"proxynd/internal/webhook"
 )

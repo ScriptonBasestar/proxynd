@@ -8,7 +8,7 @@ import (
 
 	"github.com/go-playground/assert/v2"
 
-	"proxynd/alerts"
+	"proxynd/internal/alerts"
 	configpkg "proxynd/internal/config"
 	"proxynd/internal/webhook/retry"
 )

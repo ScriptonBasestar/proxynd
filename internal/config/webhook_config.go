@@ -3,7 +3,7 @@ package config
 import (
 	"path"
 
-	"proxynd/helpers"
+	"proxynd/internal/helpers"
 )
 
 // WebhookConfig 웹훅 알림 시스템 전체 설정

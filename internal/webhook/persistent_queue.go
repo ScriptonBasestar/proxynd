@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"proxynd/alerts"
+	"proxynd/internal/alerts"
 	"proxynd/internal/logging"
 )
 

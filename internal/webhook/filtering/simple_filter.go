@@ -1,7 +1,7 @@
 package filtering
 
 import (
-	"proxynd/alerts"
+	"proxynd/internal/alerts"
 	"proxynd/internal/config"
 )
 

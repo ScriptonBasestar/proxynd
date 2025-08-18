@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"proxynd/alerts"
+	"proxynd/internal/alerts"
 	"proxynd/internal/config"
 	"proxynd/internal/logging"
 	"proxynd/internal/webhook/retry"

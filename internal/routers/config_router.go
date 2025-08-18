@@ -10,8 +10,8 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/helpers"
 	"proxynd/internal/config"
+	"proxynd/internal/helpers"
 	"proxynd/internal/logging"
 	"proxynd/internal/security"
 )

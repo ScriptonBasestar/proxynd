@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"proxynd/helpers"
+	"proxynd/internal/helpers"
 )
 
 // Cache represents the caching configuration for ProxyND.

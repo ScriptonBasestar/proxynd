@@ -8,9 +8,9 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/helpers"
 	"proxynd/internal/config"
 	"proxynd/internal/domain/npm"
+	"proxynd/internal/helpers"
 	"proxynd/internal/logging"
 	npmServices "proxynd/internal/services/npm"
 )

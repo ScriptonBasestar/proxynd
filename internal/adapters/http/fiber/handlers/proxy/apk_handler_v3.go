@@ -9,13 +9,13 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/helpers"
 	"proxynd/internal/config"
 	"proxynd/internal/errors"
+	"proxynd/internal/helpers"
 	"proxynd/internal/logging"
 	"proxynd/internal/mirror"
+	"proxynd/internal/verification/apk"
 	"proxynd/pkg/httpclient"
-	"proxynd/verification/apk"
 )
 
 var (

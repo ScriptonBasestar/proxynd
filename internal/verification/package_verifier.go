@@ -13,7 +13,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/alerts"
+	"proxynd/internal/alerts"
 )
 
 // HashType 해시 타입

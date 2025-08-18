@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"proxynd/alerts"
+	"proxynd/internal/alerts"
 	"proxynd/internal/config"
 )
 

@@ -8,7 +8,7 @@ import (
 	"github.com/go-playground/assert/v2"
 	"github.com/stretchr/testify/require"
 
-	"proxynd/helpers"
+	"proxynd/internal/helpers"
 )
 
 func TestAptProxyConfig_ReadConfig(t *testing.T) {

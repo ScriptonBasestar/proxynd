@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"proxynd/helpers"
 	"proxynd/internal/domain/pip"
+	"proxynd/internal/helpers"
 	"proxynd/internal/logging"
 	"proxynd/pkg/httpclient"
 )

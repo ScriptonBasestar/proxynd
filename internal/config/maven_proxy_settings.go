@@ -5,7 +5,7 @@ import (
 	"path"
 	"strings"
 
-	"proxynd/helpers"
+	"proxynd/internal/helpers"
 )
 
 // MavenProxyServer is exported

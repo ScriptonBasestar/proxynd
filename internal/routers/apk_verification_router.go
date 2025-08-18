@@ -7,10 +7,10 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/helpers"
 	"proxynd/internal/config"
+	"proxynd/internal/helpers"
 	"proxynd/internal/logging"
-	"proxynd/verification/apk"
+	"proxynd/internal/verification/apk"
 )
 
 // APKVerificationRouter APK 서명 검증 관련 API 라우터

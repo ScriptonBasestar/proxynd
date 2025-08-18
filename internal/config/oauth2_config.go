@@ -4,7 +4,7 @@ import (
 	"path"
 	"path/filepath"
 
-	"proxynd/helpers"
+	"proxynd/internal/helpers"
 )
 
 // OAuth2Config OAuth2 설정 구조체

@@ -7,9 +7,9 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/helpers"
 	"proxynd/internal/config"
 	"proxynd/internal/domain/pip"
+	"proxynd/internal/helpers"
 	"proxynd/internal/logging"
 	pipServices "proxynd/internal/services/pip"
 )

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"proxynd/alerts"
+	"proxynd/internal/alerts"
 	"proxynd/internal/config"
 	"proxynd/internal/logging"
 )

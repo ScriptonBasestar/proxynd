@@ -8,9 +8,9 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/alerts"
+	"proxynd/internal/alerts"
 	"proxynd/internal/config"
-	"proxynd/verification"
+	"proxynd/internal/verification"
 )
 
 // VerificationHandler 검증 핸들러

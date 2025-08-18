@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"sync"
 
-	"proxynd/helpers"
 	"proxynd/internal/config"
+	"proxynd/internal/helpers"
 )
 
 // service implements the Service interface

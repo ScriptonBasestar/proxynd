@@ -3,7 +3,7 @@ package config
 import (
 	"path"
 
-	"proxynd/helpers"
+	"proxynd/internal/helpers"
 )
 
 // MavenMirrorServer is exported

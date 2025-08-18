@@ -6,9 +6,9 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/helpers"
 	"proxynd/internal/config"
 	apkDomain "proxynd/internal/domain/apk"
+	"proxynd/internal/helpers"
 	"proxynd/internal/logging"
 	apkServices "proxynd/internal/services/apk"
 )

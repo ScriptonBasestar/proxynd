@@ -3,7 +3,7 @@ package interfaces
 import (
 	"context"
 
-	"proxynd/alerts"
+	"proxynd/internal/alerts"
 	"proxynd/internal/config"
 )
 

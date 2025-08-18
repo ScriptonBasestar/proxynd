@@ -8,7 +8,7 @@ import (
 
 	"proxynd/internal/domain/apk"
 	"proxynd/internal/logging"
-	apkVerification "proxynd/verification/apk"
+	apkVerification "proxynd/internal/verification/apk"
 )
 
 type signatureVerifierImpl struct {

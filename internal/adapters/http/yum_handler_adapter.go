@@ -6,9 +6,9 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/helpers"
 	"proxynd/internal/config"
 	yumDomain "proxynd/internal/domain/yum"
+	"proxynd/internal/helpers"
 	"proxynd/internal/logging"
 	yumServices "proxynd/internal/services/yum"
 )

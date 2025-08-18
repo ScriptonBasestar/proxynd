@@ -5,7 +5,7 @@ import (
 	"path"
 	"strings"
 
-	"proxynd/helpers"
+	"proxynd/internal/helpers"
 )
 
 // AptProxy는 APT 미러 정보를 나타냅니다
