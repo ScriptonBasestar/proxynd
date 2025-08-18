@@ -133,7 +133,7 @@ services:
       - "${PROMETHEUS_PORT:-9090}:9090"
     volumes:
       - prometheus_data:/prometheus
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./deployments/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     networks:
       - proxynd-network
     depends_on:
@@ -150,8 +150,8 @@ services:
       - "${GRAFANA_PORT:-3000}:3000"
     volumes:
       - grafana_data:/var/lib/grafana
-      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
-      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./deployments/monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./deployments/monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin123}
       - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource

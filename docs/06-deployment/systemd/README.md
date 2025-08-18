@@ -18,7 +18,7 @@ ProxyND를 systemd 서비스로 실행하기 위한 템플릿과 설치 스크�
 go build -o proxynd main.go
 
 # 서비스 설치
-sudo ./systemd/install.sh -b ./proxynd -c ./examples
+sudo ./deployments/systemd/install.sh -b ./proxynd -c ./examples
 
 # 서비스 확인
 sudo systemctl status proxynd
@@ -30,10 +30,10 @@ sudo systemctl status proxynd
 
 ```bash
 # 첫 번째 인스턴스 (포트 8081)
-sudo ./systemd/install.sh -b ./proxynd -i prod -p 8081
+sudo ./deployments/systemd/install.sh -b ./proxynd -i prod -p 8081
 
 # 두 번째 인스턴스 (포트 8082)
-sudo ./systemd/install.sh -b ./proxynd -i dev -p 8082
+sudo ./deployments/systemd/install.sh -b ./proxynd -i dev -p 8082
 
 # 서비스 확인
 sudo systemctl status proxynd@prod
@@ -80,14 +80,14 @@ sudo chmod 755 /opt/proxynd/proxynd
 sudo cp -r examples/* /etc/proxynd/
 
 # 환경 변수 파일
-sudo cp systemd/proxynd.env /etc/default/proxynd
+sudo cp deployments/systemd/proxynd.env /etc/default/proxynd
 ```
 
 ### 5. Systemd 서비스 설치
 
 ```bash
 # 서비스 파일 복사
-sudo cp systemd/proxynd.service /etc/systemd/system/
+sudo cp deployments/systemd/proxynd.service /etc/systemd/system/
 
 # systemd 리로드
 sudo systemctl daemon-reload
@@ -240,7 +240,7 @@ sudo systemctl start proxynd
 
 ```bash
 # 자동 제거
-sudo ./systemd/install.sh -u
+sudo ./deployments/systemd/install.sh -u
 
 # 수동 제거
 sudo systemctl stop proxynd

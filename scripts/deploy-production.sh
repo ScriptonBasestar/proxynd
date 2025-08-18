@@ -58,8 +58,8 @@ check_prerequisites() {
     fi
 
     # Helm 차트 확인
-    if [[ ! -f "$PROJECT_ROOT/helm/Chart.yaml" ]]; then
-        error "Helm 차트를 찾을 수 없습니다: $PROJECT_ROOT/helm/Chart.yaml"
+    if [[ ! -f "$PROJECT_ROOT/deployments/helm/Chart.yaml" ]]; then
+        error "Helm 차트를 찾을 수 없습니다: $PROJECT_ROOT/deployments/helm/Chart.yaml"
         exit 1
     fi
 
@@ -131,7 +131,7 @@ deploy_blue_green() {
 
     # Green 슬롯에 새 버전 배포
     log "Green 슬롯에 새 버전 배포 중..."
-    helm upgrade --install "$green_release" "$PROJECT_ROOT/helm" \
+    helm upgrade --install "$green_release" "$PROJECT_ROOT/deployments/helm" \
         --namespace "$NAMESPACE" \
         --create-namespace \
         --set image.repository="$REGISTRY/proxynd" \
@@ -170,7 +170,7 @@ deploy_blue_green() {
 
     # Green을 새로운 Blue로 이름 변경
     log "Green 슬롯을 기본 배포로 승격 중..."
-    helm upgrade --install "$RELEASE_NAME" "$PROJECT_ROOT/helm" \
+    helm upgrade --install "$RELEASE_NAME" "$PROJECT_ROOT/deployments/helm" \
         --namespace "$NAMESPACE" \
         --set image.repository="$REGISTRY/proxynd" \
         --set image.tag="$IMAGE_TAG" \
@@ -186,7 +186,7 @@ deploy_blue_green() {
 deploy_rolling() {
     log "롤링 배포 시작..."
 
-    helm upgrade --install "$RELEASE_NAME" "$PROJECT_ROOT/helm" \
+    helm upgrade --install "$RELEASE_NAME" "$PROJECT_ROOT/deployments/helm" \
         --namespace "$NAMESPACE" \
         --create-namespace \
         --set image.repository="$REGISTRY/proxynd" \

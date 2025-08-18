@@ -97,7 +97,7 @@ benchmark-*.txt
 .env
 .env.*
 !.env.example
-!systemd/*.env
+!deployments/systemd/*.env
 
 # Local configuration overrides
 config.yaml

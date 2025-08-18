@@ -169,7 +169,7 @@ nfpms:
       - src: ./sample-conf
         dst: /etc/proxynd
         type: config
-      - src: ./scripts/proxynd.service
+      - src: ./deployments/systemd/proxynd.service
         dst: /lib/systemd/system/proxynd.service
         type: config
     scripts:
