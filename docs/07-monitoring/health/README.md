@@ -6,9 +6,9 @@ ProxyND provides comprehensive health check endpoints for monitoring service hea
 
 ### Main Health Check
 
-**GET /healthz**
+**GET /health**
 
-Returns detailed health status of all components.
+Returns detailed health status of all components with format options.
 
 **Query Parameters:**
 - `format=simple` - Returns simplified response
@@ -65,7 +65,7 @@ Returns detailed health status of all components.
 
 **GET /health/live**
 
-Indicates whether the application is running.
+Indicates whether the application is running. Fast response (<10ms).
 
 **Response (200 OK):**
 ```json
@@ -78,7 +78,7 @@ Indicates whether the application is running.
 
 **GET /health/ready**
 
-Indicates whether the application is ready to serve requests.
+Indicates whether the application is ready to serve requests. Fast response (<100ms).
 
 **Response (200 OK or 503 Service Unavailable):**
 ```json
@@ -88,6 +88,247 @@ Indicates whether the application is ready to serve requests.
     "environment": true,
     "disk_space": true
   }
+}
+```
+
+### Enhanced Monitoring Endpoints
+
+#### Comprehensive Health Analysis
+
+**GET /health/comprehensive**
+
+Complete system health analysis including all proxy types, cache systems, and resource monitoring.
+Response time target: <500ms.
+
+**Response:**
+```json
+{
+  "status": "healthy|degraded|unhealthy",
+  "timestamp": "2024-01-20T10:30:00Z",
+  "categories": {
+    "infrastructure": "healthy",
+    "performance": "healthy", 
+    "security": "healthy",
+    "connectivity": "healthy"
+  },
+  "checkers": {
+    "proxy_health": {
+      "status": "healthy",
+      "upstreams": {
+        "npm": "healthy",
+        "pip": "healthy",
+        "docker": "healthy"
+      }
+    },
+    "cache_health": {
+      "status": "healthy",
+      "backends": {
+        "filesystem": "healthy"
+      }
+    },
+    "system_health": {
+      "status": "healthy",
+      "resources": {
+        "cpu_usage": 15.2,
+        "memory_usage": 45.8,
+        "disk_usage": 34.1
+      }
+    }
+  }
+}
+```
+
+#### Fast Health Check
+
+**GET /health/fast**
+
+Core health checks only for sub-100ms responses.
+
+**Response:**
+```json
+{
+  "status": "healthy",
+  "timestamp": "2024-01-20T10:30:00Z",
+  "core_checks": {
+    "environment": "healthy",
+    "disk_space": "healthy",
+    "process": "healthy"
+  }
+}
+```
+
+#### Available Health Checkers
+
+**GET /health/checkers**
+
+Returns list of available health checkers.
+
+**Response:**
+```json
+{
+  "checkers": [
+    "proxy_health_checker",
+    "cache_health_checker", 
+    "security_health_checker",
+    "system_health_checker"
+  ]
+}
+```
+
+#### Health Metrics
+
+**GET /health/metrics**
+
+Health metrics and trends for monitoring dashboard integration.
+
+**Response:**
+```json
+{
+  "metrics": {
+    "check_count": 1247,
+    "success_rate": 99.2,
+    "avg_response_time": 45.3,
+    "last_failure": "2024-01-19T14:22:00Z"
+  },
+  "trends": {
+    "response_times": [42.1, 43.2, 45.3],
+    "success_rates": [99.1, 99.0, 99.2]
+  }
+}
+```
+
+### Proxy-Specific Health Endpoints
+
+#### All Proxy Upstream Status
+
+**GET /health/proxy/upstreams**
+
+Status of all proxy upstream connections.
+
+**Response:**
+```json
+{
+  "upstreams": {
+    "npm": {
+      "url": "https://registry.npmjs.org",
+      "status": "healthy",
+      "response_time": 85.3,
+      "last_checked": "2024-01-20T10:30:00Z"
+    },
+    "pip": {
+      "url": "https://pypi.org/simple",
+      "status": "healthy", 
+      "response_time": 120.1,
+      "last_checked": "2024-01-20T10:30:00Z"
+    }
+  }
+}
+```
+
+#### Specific Proxy Upstream Status
+
+**GET /health/proxy/upstreams/:type**
+
+Status of specific proxy upstream (npm, pip, docker, maven, apt, yum, apk).
+
+**Response:**
+```json
+{
+  "type": "npm",
+  "url": "https://registry.npmjs.org",
+  "status": "healthy",
+  "response_time": 85.3,
+  "circuit_breaker": "closed",
+  "last_checked": "2024-01-20T10:30:00Z"
+}
+```
+
+#### Circuit Breaker States
+
+**GET /health/proxy/circuit-breakers**
+
+Current state of all circuit breakers.
+
+**Response:**
+```json
+{
+  "circuit_breakers": {
+    "npm": "closed",
+    "pip": "closed", 
+    "docker": "half-open",
+    "maven": "closed"
+  }
+}
+```
+
+### System Resource Endpoints
+
+#### Resource Summary
+
+**GET /health/system/resources**
+
+System resource usage summary.
+
+**Response:**
+```json
+{
+  "cpu": {
+    "usage_percent": 15.2,
+    "goroutines": 42
+  },
+  "memory": {
+    "usage_percent": 45.8,
+    "alloc_mb": 234,
+    "sys_mb": 512
+  },
+  "disk": {
+    "usage_percent": 34.1,
+    "free_gb": 45.2,
+    "total_gb": 100.0
+  }
+}
+```
+
+#### Resource Usage History
+
+**GET /health/system/resources/history**
+
+Historical resource usage trends.
+
+**Response:**
+```json
+{
+  "history": {
+    "cpu": [12.1, 14.2, 15.2],
+    "memory": [43.1, 44.5, 45.8],
+    "disk": [33.8, 34.0, 34.1]
+  },
+  "timestamps": [
+    "2024-01-20T10:28:00Z",
+    "2024-01-20T10:29:00Z", 
+    "2024-01-20T10:30:00Z"
+  ]
+}
+```
+
+#### Resource Predictions
+
+**GET /health/system/resources/predictions**
+
+Predictive analysis for resource exhaustion.
+
+**Response:**
+```json
+{
+  "predictions": {
+    "disk_full_eta": "2024-02-15T00:00:00Z",
+    "memory_pressure_risk": "low",
+    "cpu_saturation_risk": "low"
+  },
+  "recommendations": [
+    "Monitor disk usage trend",
+    "Consider cache cleanup policies"
+  ]
 }
 ```
 
@@ -181,19 +422,82 @@ Returns detailed debug information (disabled in production).
    - Ensures directories are writable
    - Checks: storage directory, cache directory
 
-4. **HTTP Endpoint Checker**
-   - Monitors upstream registry availability
-   - Checks: NPM registry, PyPI registry (when enabled)
+4. **Proxy Health Checker**
+   - NPM registry connectivity (`https://registry.npmjs.org/-/ping`)
+   - PyPI index validation (`https://pypi.org/simple/`)
+   - APT mirror availability (Release file checks)
+   - Docker registry v2 API validation
+   - Maven repository metadata validation
+   - Circuit breaker integration for fault tolerance
 
-5. **Cache Backend Checker**
-   - Verifies cache backend connectivity
-   - Supports: file, S3, Redis backends
+5. **Cache Health Checker**
+   - Backend connectivity (File/S3/Redis)
+   - Performance testing (1KB data operations)
+   - Capacity monitoring (disk space, file counts)
+   - Consistency verification (TTL validation)
+   - Cache efficiency metrics
+
+6. **Security Health Checker**
+   - TLS certificate validation and expiry
+   - Authentication system status (Basic Auth, OAuth2, JWT)
+   - Access control rules validation
+   - IP whitelist configuration
+   - Package filter rule validation
+   - Hash verification settings
+
+7. **System Health Checker**
+   - CPU usage estimation (goroutine-to-CPU ratio)
+   - Memory usage analysis with GC metrics
+   - Disk space monitoring with trend analysis
+   - File descriptor counting (Linux)
+   - System load average tracking
+   - Resource exhaustion prediction
 
 ## Health Status Types
 
 - **healthy**: All checks passing
 - **degraded**: Some non-critical issues detected
 - **unhealthy**: Critical issues detected
+
+## Performance Optimizations
+
+### Fast Response Mode
+- Core health checks only for sub-100ms responses
+- Cached results for frequent queries
+- Parallel check execution
+- Selective checker activation based on configuration
+
+### Circuit Breaker Pattern
+- Per-proxy-type circuit breakers
+- Configurable failure thresholds (default: 3 failures)
+- Automatic recovery with timeout (default: 30s)
+- Graceful degradation to "degraded" status
+
+### Resource Trend Analysis
+- Historical data tracking (last 100 measurements)
+- Predictive analysis using linear regression
+- Early warning system for resource exhaustion
+- Configurable thresholds per resource type
+
+## Performance Metrics
+
+### Response Time Targets (Validated in CI)
+- **Fast Health Check**: <100ms (P95)
+- **Basic Health Check**: <200ms (P95)
+- **Comprehensive Health Check**: <500ms (P95)
+- **System Resource Check**: <300ms (P95)
+
+### Reliability Targets
+- **Health Check Availability**: >99.5%
+- **False Positive Rate**: <1%
+- **Alert Accuracy**: >95%
+- **Recovery Time**: <30s for transient issues
+
+### Scalability Characteristics
+- **Concurrent Requests**: 100+ simultaneous health checks
+- **Memory Overhead**: <50MB for health system
+- **CPU Impact**: <5% during health checks
+- **Network Bandwidth**: <1MB/s during checks
 
 ## Configuration
 

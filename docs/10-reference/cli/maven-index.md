@@ -262,5 +262,5 @@ du -h /storage/maven-index/maven-search-index.json
 ## 관련 문서
 
 - [Maven 프록시 설정](../proxy-types/maven/README.md)
-- [CLI 전체 참조](./PROXYNDCTL_REFERENCE.md)
+- [CLI 전체 참조](./10-proxyndctl-reference.md)
 - [성능 최적화 가이드](../performance-optimization.md)

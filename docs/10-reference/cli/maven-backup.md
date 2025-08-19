@@ -365,5 +365,5 @@ done
 
 - [Maven 프록시 설정](../../04-proxy-types/maven/README.md)
 - [캐시 관리](./cache.md)
-- [CLI 전체 참조](./PROXYNDCTL_REFERENCE.md)
+- [CLI 전체 참조](./10-proxyndctl-reference.md)
 - [운영 가이드](../../06-deployment/README.md)

@@ -117,7 +117,7 @@ ProxyND 프로젝트의 전체 문서를 체계적으로 탐색할 수 있는 �
 ### 🛠️ 고급 사용자 (최적화 및 커스터마이징)
 1. [ADR 문서들](02-architecture/adr/README.md) ⏱️ 2시간
 2. [성능 최적화](10-reference/performance-optimization.md) ⏱️ 1시간
-3. [CLI 도구 고급 사용법](10-reference/cli/PROXYNDCTL_REFERENCE.md) ⏱️ 1시간
+3. [CLI 도구 고급 사용법](10-reference/cli/10-proxyndctl-reference.md) ⏱️ 1시간
 4. [확장 개발](05-development/README.md) ⏱️ 시간 가변
 
 ## 🔍 빠른 검색

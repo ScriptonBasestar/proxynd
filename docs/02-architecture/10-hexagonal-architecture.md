@@ -243,6 +243,114 @@ internal/usecase → internal/adapters   // 유스케이스가 어댑터에 의�
 internal/domain → 모든 다른 internal 패키지  // 도메인은 가장 안쪽 계층
 ```
 
+## 🛡️ 아키텍처 가드레일
+
+### 의존성 방향 강제 규칙
+```
+Allowed Flow:
+adapters → ports → usecase → domain
+
+Forbidden Patterns:
+❌ domain → usecase/ports/adapters
+❌ usecase → adapters  
+❌ ports → adapters
+❌ Any circular dependencies
+```
+
+### 보호 구역 (절대 수정 금지)
+```
+✋ NEVER MODIFY:
+├── scripts/verify-api-endpoints.sh    # API 회귀 테스트 기준선
+├── docker-compose.e2e.yml            # E2E 테스트 환경  
+├── Makefile, Makefile.*.mk           # 빌드 시스템
+├── .github/workflows/ci.yml          # CI/CD 파이프라인
+├── README.md (workflow sections)     # 개발 워크플로우
+└── .env, go.mod, go.sum              # 환경 및 의존성
+```
+
+### 3단계 리팩토링 프로토콜
+```
+Phase 1: File Movement Only
+├── Move files to target locations
+├── NO logic changes
+└── Commit: "refactor(claude-opus): move files - {description}"
+
+Phase 2: Import Path Updates  
+├── Fix import statements
+├── Update references
+└── Commit: "refactor(claude-opus): update imports - {description}"
+
+Phase 3: Architecture Implementation
+├── Extract interfaces to ports/
+├── Implement clean boundaries
+└── Commit: "refactor(claude-opus): implement clean architecture - {description}"
+```
+
+## ✅ 아키텍처 검증
+
+### 자동화된 검증 항목
+```bash
+Directory Structure: ✓ Required directories exist
+Dependency Direction: ✓ Unidirectional flow enforced
+Circular Dependencies: ✓ Zero tolerance policy  
+Naming Conventions: ✓ Go best practices
+Interface Definitions: ✓ Proper port abstractions
+Package Balance: ✓ Layer size distribution
+Migration Markers: ✓ TODO/FIXME tracking
+```
+
+### 품질 게이트
+```bash
+1. 🎨 Code Formatting (gofmt)
+2. 🔨 Build Verification (make build)
+3. 🏛️ Architecture Rules (validate-architecture.sh)
+4. 🧪 Unit Tests (make test-unit)
+5. 🌐 API Compatibility (make verify-api) [CRITICAL]
+6. 🔒 Security Scan (basic patterns)
+7. 📁 Large File Check
+8. 📝 TODO/FIXME Review
+```
+
+### 커버리지 목표
+| Layer | Target Coverage | Validation Method |
+|-------|----------------|-------------------|
+| Domain | 95%+ | Unit tests (no mocks) |
+| Usecase | 90%+ | Unit tests (mock ports) |
+| Ports | 85%+ | Contract tests |
+| Adapters | 75%+ | Integration tests |
+
+## 🚨 위험 완화 전략
+
+### 롤백 절차
+```bash
+# Complete Rollback
+git reset --hard backup/before-hexagonal-migration
+
+# Phase-Specific Rollback  
+git revert <architecture-commit-hash>  # Phase 3 only
+git revert <import-commit-hash>        # Phase 2 only  
+git revert <movement-commit-hash>      # Phase 1 only
+
+# Validation After Rollback
+make clean && make build && make verify-api
+```
+
+### 고위험 영역 보호
+1. **External API Contracts**
+   - Protection: verify-api-endpoints.sh validation
+   - Enforcement: Pre-commit hooks + CI pipeline
+   - Rollback: Automatic on regression detection
+
+2. **Build System Stability**
+   - Protection: Makefile.*.mk in protected zone
+   - Validation: Build success required for commits
+   - Recovery: Git reset procedures documented
+
+3. **Configuration Management**
+   - Protection: Environment variable compatibility
+   - Migration: Viper → Config struct (gradual)
+   - Fallback: Legacy config support maintained
+
 ### 인터페이스 위치 규칙
 - **Inbound Ports**: 유스케이스가 외부로 노출하는 인터페이스 (`internal/ports/`)
 - **Outbound Ports**: 유스케이스가 외부 시스템에 의존하는 인터페이스 (`internal/ports/`)

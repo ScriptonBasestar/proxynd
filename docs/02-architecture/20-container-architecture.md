@@ -1,10 +1,22 @@
-# Container 기반 의존성 주입 아키텍처 문서
+# Container 기반 의존성 주입 아키텍처
 
-> **📋 참고**: 이 시스템은 [BaseProxyHandler 계획](archive/planning/03-code-deduplication.md)을 대체하여 구현되었으며, 원래 계획의 목표를 초과 달성했습니다.
+## 📋 개요
 
-## Architecture Overview
+ProxyND의 Container 기반 의존성 주입 시스템은 고성능, 확장 가능하며 테스트하기 쉬운 프록시 핸들러 아키텍처를 제공합니다. 이 시스템은 기존의 매 요청마다 설정을 읽는 방식을 개선하여 성능을 크게 향상시켰습니다.
 
-ProxyND의 Container 기반 의존성 주입 시스템은 고성능, 확장 가능하며 테스트하기 쉬운 프록시 핸들러 아키텍처를 제공합니다.
+### 📊 개선 효과
+
+**Before (기존 방식)**:
+- 매 요청마다 53+ 파일 읽기 작업
+- 핸들러 인스턴스 중복 생성
+- 직접적인 설정 파일 의존성
+
+**After (Container 방식)**:
+- 애플리케이션 시작 시 1회 설정 로딩
+- 99.9% 파일 I/O 작업 제거
+- 핸들러 인스턴스 재사용으로 메모리 절약
+
+## 🏗️ 아키텍처 개요
 
 ```mermaid
 graph TB
@@ -33,7 +45,7 @@ graph TB
     K --> N[Prometheus Metrics]
 ```
 
-## Core Components
+## 🔧 핵심 컴포넌트
 
 ### 1. Container Provider (`/internal/app/container.go`)
 
@@ -64,11 +76,6 @@ type ContainerProvider interface {
 }
 ```
 
-**Performance Characteristics**:
-- **설정 로딩**: O(1) - 캐시된 설정 즉시 반환
-- **메모리 사용**: 설정당 단일 인스턴스만 유지
-- **동시성**: 읽기 작업 병렬 처리, 쓰기 작업 직렬화
-
 ### 2. Handler Interface Hierarchy
 
 ```go
@@ -95,9 +102,7 @@ Handler
 ContainerProxyHandler = ContainerAwareHandler + BaseProxyHandler
 ```
 
-### 3. Handler Factory Pattern (`/internal/handlers/proxy_handler_factory.go`)
-
-**역할**: 프록시 타입별 핸들러 인스턴스 생성 및 등록
+### 3. Handler Factory Pattern
 
 **Factory Registration**:
 ```go
@@ -109,48 +114,106 @@ factory.RegisterHandler("apt", func(provider ContainerProvider) (ContainerProxyH
 })
 ```
 
-**Supported Proxy Types**:
+**지원하는 프록시 타입**:
 - `apt`: Debian/Ubuntu 패키지 프록시
 - `maven`: Java 패키지 프록시  
 - `npm`: Node.js 패키지 프록시
 - `docker`: Container 이미지 프록시
 - `pip`: Python 패키지 프록시
-- `yum`: Red Hat 패키지 프록시 ✅
-- `apk`: Alpine 패키지 프록시 ✅
+- `yum`: Red Hat 패키지 프록시
+- `apk`: Alpine 패키지 프록시
 
-### 4. Base Container Handler (`/internal/containerhandlers/container_base_handler.go`)
+## 🔄 핵심 디자인 패턴
 
-**역할**: 공통 Container 기능 및 메트릭 수집
+### 1. Dependency Injection Pattern
 
-**핵심 기능**:
+**Inversion of Control (IoC)**:
 ```go
-type BaseContainerHandler struct {
-    containerProvider container.ContainerProvider
-    containerMetrics  *metrics.ContainerMetrics
-    handlerType       string
-    handlerName       string
+// ❌ Bad: 직접적인 의존성
+type Handler struct {
+    configPath string
 }
 
-// 메트릭 통합 헬퍼
-func (h *BaseContainerHandler) WithMetrics(c *fiber.Ctx, handler func() error) error {
-    start := time.Now()
-    err := handler()
+func (h *Handler) process() error {
+    config := &Config{}
+    config.ReadFromFile(h.configPath)  // 직접 의존
+    // ...
+}
 
-    duration := time.Since(start)
-    statusCode := c.Response().StatusCode()
+// ✅ Good: 의존성 주입
+type Handler struct {
+    provider ContainerProvider
+}
 
-    h.RecordHandlerRequest(c.Method(), statusCode)
-    h.RecordHandlerDuration(c.Method(), duration)
-
-    if statusCode >= 400 {
-        h.RecordHandlerError(getErrorTypeFromStatusCode(statusCode))
+func (h *Handler) process() error {
+    config, err := h.provider.GetConfig()  // 주입된 의존성
+    if err != nil {
+        return err
     }
-
-    return err
+    // ...
 }
 ```
 
-## Configuration Management
+### 2. Thread-Safe Singleton Pattern
+
+**Double-Checked Locking 구현**:
+```go
+func (c *Container) GetMavenProxyConfig() (*config.MavenProxySettings, error) {
+    // Fast path: 읽기 락으로 캐시 확인
+    c.mu.RLock()
+    if cached, exists := c.singletons["maven-proxy-config"]; exists {
+        c.mu.RUnlock()
+        return cached.(*config.MavenProxySettings), nil
+    }
+    c.mu.RUnlock()
+
+    // Slow path: 쓰기 락으로 설정 로딩
+    c.mu.Lock()
+    defer c.mu.Unlock()
+
+    // Double-check: 락 획득 중 다른 고루틴이 로딩했을 수 있음
+    if cached, exists := c.singletons["maven-proxy-config"]; exists {
+        return cached.(*config.MavenProxySettings), nil
+    }
+
+    // 실제 설정 로딩 및 캐싱
+    cfg, err := c.configLoader.LoadMavenProxyConfig(context.Background())
+    if err != nil {
+        return nil, err
+    }
+
+    c.singletons["maven-proxy-config"] = cfg
+    return cfg, nil
+}
+```
+
+### 3. Factory Pattern with Registry
+
+**Handler Instance Reuse**:
+```go
+var handlerInstances = make(map[string]ContainerProxyHandler)
+
+func (f *StandardProxyHandlerFactory) CreateHandler(proxyType string, provider ContainerProvider) (ContainerProxyHandler, error) {
+    if handler, exists := handlerInstances[proxyType]; exists {
+        return handler, nil
+    }
+
+    createFn, exists := f.creators[proxyType]
+    if !exists {
+        return nil, fmt.Errorf("unsupported proxy type: %s", proxyType)
+    }
+
+    handler, err := createFn(provider)
+    if err != nil {
+        return nil, err
+    }
+
+    handlerInstances[proxyType] = handler
+    return handler, nil
+}
+```
+
+## ⚙️ 설정 관리
 
 ### Hot Reload System
 
@@ -183,12 +246,12 @@ func (c *Container) startConfigWatcher() {
 }
 ```
 
-**Configuration Hierarchy**:
+**설정 계층구조**:
 ```
 기본값 → YAML 파일 → 환경 변수
 ```
 
-**Environment Variable Expansion**:
+**환경 변수 확장**:
 ```yaml
 # maven-proxy.yaml
 proxies:
@@ -196,88 +259,16 @@ proxies:
     url: ${MAVEN_CENTRAL_URL:https://repo1.maven.org/maven2}
 ```
 
-### Thread-Safe Configuration Access
-
-**Read-Write Lock Pattern**:
-```go
-func (c *Container) GetMavenProxyConfig() (*config.MavenProxySettings, error) {
-    // Fast path: 읽기 락으로 캐시 확인
-    c.mu.RLock()
-    if cached, exists := c.singletons["maven-proxy-config"]; exists {
-        c.mu.RUnlock()
-        return cached.(*config.MavenProxySettings), nil
-    }
-    c.mu.RUnlock()
-
-    // Slow path: 쓰기 락으로 설정 로딩
-    c.mu.Lock()
-    defer c.mu.Unlock()
-
-    // Double-check: 락 획득 중 다른 고루틴이 로딩했을 수 있음
-    if cached, exists := c.singletons["maven-proxy-config"]; exists {
-        return cached.(*config.MavenProxySettings), nil
-    }
-
-    // 실제 설정 로딩 및 캐싱
-    cfg, err := c.configLoader.LoadMavenProxyConfig(context.Background())
-    if err != nil {
-        return nil, err
-    }
-
-    c.singletons["maven-proxy-config"] = cfg
-    return cfg, nil
-}
-```
-
-## Performance Optimization Strategies
+## 📊 성능 최적화
 
 ### 1. Configuration Caching
-
-**Before (기존 방식)**:
-```
-요청 → ReadConfig() → 파일 I/O → 파싱 → 사용
-매 요청마다 53+ 파일 읽기 작업
-```
-
-**After (Container 방식)**:
-```
-애플리케이션 시작 → LoadConfig() → 메모리 캐시
-요청 → 캐시에서 즉시 반환 → 사용
-```
 
 **성능 개선**:
 - **I/O 감소**: 99.9% 파일 읽기 작업 제거
 - **CPU 사용량**: YAML 파싱 오버헤드 제거
 - **메모리 효율성**: 설정당 단일 인스턴스 유지
 
-### 2. Handler Instance Reuse
-
-**Singleton Pattern with Factory**:
-```go
-// Handler 인스턴스 재사용
-var handlerInstances = make(map[string]ContainerProxyHandler)
-
-func (f *StandardProxyHandlerFactory) CreateHandler(proxyType string, provider ContainerProvider) (ContainerProxyHandler, error) {
-    if handler, exists := handlerInstances[proxyType]; exists {
-        return handler, nil
-    }
-
-    createFn, exists := f.creators[proxyType]
-    if !exists {
-        return nil, fmt.Errorf("unsupported proxy type: %s", proxyType)
-    }
-
-    handler, err := createFn(provider)
-    if err != nil {
-        return nil, err
-    }
-
-    handlerInstances[proxyType] = handler
-    return handler, nil
-}
-```
-
-### 3. Round-Robin Server Selection
+### 2. Round-Robin Load Balancing
 
 **Atomic Counter 기반 부하 분산**:
 ```go
@@ -296,7 +287,7 @@ func (h *PIPContainerHandler) selectUpstreamServer() config.PipProxyServer {
 }
 ```
 
-## Metrics and Monitoring
+## 📈 메트릭 및 모니터링
 
 ### Container-Specific Metrics
 
@@ -315,46 +306,33 @@ proxynd_container_handler_duration_seconds{handler_type="maven", method="GET"}
 // 설정 로딩 효율성 (목표: 감소)
 proxynd_config_load_operations_total{handler_type="maven", operation="initial", result="success"}
 
-// 캐지 히트율 (목표: 95%+)
+// 캐시 히트율 (목표: 95%+)
 proxynd_config_cache_hits_total{handler_type="maven", config_type="maven-config"}
 proxynd_config_cache_misses_total{handler_type="maven", config_type="maven-config"}
 ```
 
-**Dependency Injection Metrics**:
+### Automatic Metrics Collection
+
 ```go
-// Container Provider 호출 추적
-proxynd_container_provider_calls_total{method="GetMavenProxyConfig", handler_type="maven", result="success"}
+func (h *BaseContainerHandler) WithMetrics(c *fiber.Ctx, handler func() error) error {
+    start := time.Now()
+    err := handler()
 
-// Handler Factory 작업
-proxynd_handler_factory_operations_total{operation="create", handler_type="maven", result="success"}
+    duration := time.Since(start)
+    statusCode := c.Response().StatusCode()
 
-// 활성 인스턴스 수 (목표: 최소화)
-proxynd_handler_instances_active{handler_type="maven"} 1
-```
+    h.RecordHandlerRequest(c.Method(), statusCode)
+    h.RecordHandlerDuration(c.Method(), duration)
 
-### Metrics Middleware Integration
-
-**Automatic Request Metrics Collection**:
-```go
-func ContainerMetricsMiddleware() fiber.Handler {
-    return func(c *fiber.Ctx) error {
-        start := time.Now()
-        err := c.Next()
-
-        duration := time.Since(start).Seconds()
-        handlerType := extractHandlerTypeFromPath(c.Path())
-
-        if handlerType != "" {
-            containerMetrics.RecordHandlerRequest(handlerType, c.Method(), c.Response().StatusCode())
-            containerMetrics.RecordHandlerDuration(handlerType, c.Method(), duration)
-        }
-
-        return err
+    if statusCode >= 400 {
+        h.RecordHandlerError(getErrorTypeFromStatusCode(statusCode))
     }
+
+    return err
 }
 ```
 
-## Testing Architecture
+## 🧪 테스트 아키텍처
 
 ### MockContainer System
 
@@ -368,7 +346,6 @@ type MockContainerProvider struct {
     // 캐시된 설정들
     aptConfig    *config.AptProxyConfig
     mavenConfig  *config.MavenProxySettings
-    // ... 기타 설정
 }
 
 // Builder Pattern for Test Setup
@@ -388,7 +365,6 @@ mockContainer := testutil.NewMockContainerProvider(t).
 
 ### Integration Test Suite
 
-**ContainerHandlerTestSuite**:
 ```go
 type ContainerHandlerTestSuite struct {
     t             *testing.T
@@ -411,7 +387,7 @@ func (s *ContainerHandlerTestSuite) TestAllHandlersBasicFunctionality() {
 }
 ```
 
-## Routing Integration
+## 🔗 라우팅 통합
 
 ### Unified Proxy Router
 
@@ -449,7 +425,7 @@ func (r *ContainerProxyRouter) createHandlerFunc(handlerType string) fiber.Handl
 }
 ```
 
-## Security Considerations
+## 🔒 보안 고려사항
 
 ### Configuration Access Control
 
@@ -474,54 +450,79 @@ func (c *Container) loadConfigSafely(configPath string, target interface{}) erro
 
 ### Container Isolation
 
-**Provider Interface Boundary**:
 - Container 내부 구현 세부사항 은닉
 - 핸들러는 인터페이스를 통해서만 접근
 - Mock 가능한 테스트 경계 제공
 
-## Deployment Considerations
+## 🚀 마이그레이션 가이드
 
-### Environment Configuration
+### 기존 핸들러에서 Container 핸들러로 전환
 
-**Container Provider Setup**:
+**1단계: 기존 핸들러 분석**
 ```go
-// 환경별 설정 주입
-container := app.NewContainer(&app.Config{
-    StorageDir: os.Getenv("STORAGE_DIR"),
-    ConfigDir:  os.Getenv("CONFIG_DIR"),
-    CacheMaxAge: parseDuration(os.Getenv("CACHE_MAX_AGE")),
-})
-```
+// Before (기존 패턴)
+type OldHandler struct {
+    configPath string
+}
 
-**Health Check Integration**:
-```go
-func (c *Container) HealthCheck() error {
-    // 모든 등록된 핸들러 헬스체크
-    for handlerType := range c.handlerTypes {
-        handler, err := c.GetHandler(handlerType)
-        if err != nil {
-            return fmt.Errorf("handler %s unavailable: %w", handlerType, err)
-        }
-
-        if err := handler.HealthCheck(); err != nil {
-            return fmt.Errorf("handler %s unhealthy: %w", handlerType, err)
-        }
+func (h *OldHandler) Handle(c *fiber.Ctx) error {
+    config := &SomeProxyConfig{}
+    if err := config.ReadConfig(); err != nil {  // 매번 파일 읽기
+        return err
     }
-
+    // 비즈니스 로직
     return nil
 }
 ```
 
-### Production Monitoring
+**2단계: Container 기반 핸들러 생성**
+```go
+// After (Container 패턴)
+type NewContainerHandler struct {
+    *containerhandlers.BaseContainerHandler
+    provider ContainerProvider
+}
 
-**Key Performance Indicators**:
+func NewContainerHandler(provider ContainerProvider) *NewContainerHandler {
+    return &NewContainerHandler{
+        BaseContainerHandler: containerhandlers.NewBaseContainerHandler(
+            provider, "new-handler", "NewHandler",
+        ),
+        provider: provider,
+    }
+}
+
+func (h *NewContainerHandler) Handle(c *fiber.Ctx) error {
+    return h.WithMetrics(c, func() error {
+        config, err := h.provider.GetConfig()  // 캐시된 설정 사용
+        if err != nil {
+            return err
+        }
+        // 비즈니스 로직
+        return nil
+    })
+}
+```
+
+**3단계: Factory에 등록**
+```go
+factory.RegisterHandler("new", func(provider ContainerProvider) (ContainerProxyHandler, error) {
+    return NewContainerHandler(provider), nil
+})
+```
+
+## 📊 운영 모니터링
+
+### Key Performance Indicators
+
 1. **Configuration Load Reduction**: 95%+ 감소 목표
 2. **Cache Hit Ratio**: 90%+ 유지 목표  
 3. **Response Time**: 50%+ 개선 목표
 4. **Memory Usage**: 안정적인 메모리 사용 패턴
 5. **Error Rate**: Container 관련 에러 0.1% 미만
 
-**Alerting Rules**:
+### Alerting Rules
+
 ```yaml
 # Prometheus 알림 규칙
 - alert: ContainerConfigCacheHitRateLow
@@ -541,4 +542,14 @@ func (c *Container) HealthCheck() error {
     summary: "Container handler error rate is above 1%"
 ```
 
-이 아키텍처는 확장성, 성능, 테스트 용이성을 모두 고려한 현대적인 의존성 주입 패턴을 구현하여 ProxyND의 안정성과 성능을 크게 향상시킵니다.
+## 🎯 이점 요약
+
+1. **성능 향상**: 99.9% I/O 작업 감소로 응답 시간 단축
+2. **메모리 효율성**: 설정 캐싱과 핸들러 인스턴스 재사용
+3. **테스트 용이성**: MockContainer를 통한 간단하고 reliable한 테스트
+4. **확장성**: 새로운 프록시 타입 추가 용이
+5. **유지보수성**: 명확한 책임 분리와 의존성 주입
+6. **안정성**: Thread-safe 구현과 에러 처리
+7. **모니터링**: 상세한 메트릭과 성능 추적
+
+이 Container 기반 아키텍처는 ProxyND의 안정성, 성능, 확장성을 크게 향상시키는 현대적인 의존성 주입 패턴을 구현합니다.
