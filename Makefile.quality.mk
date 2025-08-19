@@ -60,6 +60,18 @@ format-diff: ## show formatting differences
 		echo -e "$(GREEN)✅ No formatting differences found!$(RESET)"; \
 	fi
 
+format-check: ## verify formatting without modifying files
+	@echo -e "$(CYAN)🔎 Checking formatting...$(RESET)"
+	@FILES=$$(gofumpt -l .); \
+	if [ -n "$$FILES" ]; then \
+		echo -e "$(RED)❌ Unformatted files found:$(RESET)"; \
+		echo "$$FILES" | while read file; do echo "  $(YELLOW)$$file$(RESET)"; done; \
+		echo -e "$(YELLOW)Run 'make format-quick' to fix$(RESET)"; \
+		exit 1; \
+	else \
+		echo -e "$(GREEN)✅ Formatting OK$(RESET)"; \
+	fi
+
 fmt-diff: ## format only changed files (fast, for pre-commit)
 	@echo -e "$(CYAN)🚀 Quick format changed files only...$(RESET)"
 	@CHANGED_FILES=$$(git diff --cached --name-only --diff-filter=ACM | grep '\.go$$' || true); \
@@ -431,8 +443,8 @@ pre-commit: lint-diff fmt-diff ## fast pre-commit checks (changed files only, <3
 
 pre-commit-make: lint-vet lint-golangci-fix ## legacy pre-commit using make commands
 
-pre-push: lint-strict-fast format-strict ## fast pre-push checks (no gosec)
-pre-push-full: lint-strict format-strict ## comprehensive pre-push checks (includes gosec)
+pre-push: lint-strict-fast format-check ## fast pre-push checks (no gosec, non-modifying)
+pre-push-full: lint-strict format-check ## comprehensive pre-push checks (includes gosec, non-modifying)
 	@echo -e "$(GREEN)✅ Pre-push checks completed!$(RESET)"
 
 quality: fmt lint test-coverage ## run all quality checks
