@@ -6,14 +6,13 @@ import (
 	// Import new adapter structure
 	fiberHandlers "proxynd/internal/adapters/http/fiber/handlers"
 	fiberRouters "proxynd/internal/adapters/http/fiber/routers"
+	"proxynd/internal/config"
 
 	// TODO: HEXAGONAL_MIGRATION - Remove legacy imports after full migration
 	"proxynd/internal/handlers-legacy"
+	"proxynd/internal/logging"
 	middlewares "proxynd/internal/middleware-legacy"
 	"proxynd/internal/routers"
-
-	"proxynd/internal/config"
-	"proxynd/internal/logging"
 )
 
 // RouteConfig holds configuration for route setup

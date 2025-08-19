@@ -171,7 +171,7 @@ func (g *UUIDRequestIDGenerator) SetRequestID(ctx ports.HTTPContext, id string) 
 }
 
 // NewNanoIDRequestIDGenerator creates a new NanoID-based request ID generator
-func NewNanoIDRequestIDGenerator(headerName string, alphabet string, size int) ports.RequestIDGenerator {
+func NewNanoIDRequestIDGenerator(headerName, alphabet string, size int) ports.RequestIDGenerator {
 	if headerName == "" {
 		headerName = HeaderXRequestID
 	}

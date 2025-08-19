@@ -218,7 +218,7 @@ type PackageManagerDriver interface {
 
 	// Metadata handling
 	ParseMetadata(content []byte) (*PackageMetadata, error)
-	ValidateSignature(content []byte, signature []byte) error
+	ValidateSignature(content, signature []byte) error
 
 	// Caching behavior
 	GetCacheKey(req *DriverRequest) string
@@ -376,7 +376,7 @@ type PathComponents struct {
 // TODO: Implement in internal/adapters/pm/common/signature.go
 type SignatureVerifier interface {
 	// VerifySignature verifies package signature
-	VerifySignature(pmType string, content []byte, signature []byte) error
+	VerifySignature(pmType string, content, signature []byte) error
 
 	// GenerateSignature generates signature for content
 	GenerateSignature(pmType string, content []byte) ([]byte, error)

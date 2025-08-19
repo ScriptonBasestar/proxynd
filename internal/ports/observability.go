@@ -277,7 +277,7 @@ type PerformanceMonitor interface {
 	RecordThroughput(operation string, count int64, labels map[string]string)
 
 	// RecordError records error occurrence
-	RecordError(operation string, error string, labels map[string]string)
+	RecordError(operation, error string, labels map[string]string)
 
 	// GetPerformanceReport generates performance report
 	GetPerformanceReport(ctx context.Context, req *PerformanceReportRequest) (*PerformanceReport, error)

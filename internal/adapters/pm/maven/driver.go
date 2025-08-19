@@ -181,7 +181,7 @@ func (d *Driver) ParseMetadata(content []byte) (*ports.PackageMetadata, error) {
 }
 
 // ValidateSignature validates Maven package signatures
-func (d *Driver) ValidateSignature(content []byte, signature []byte) error {
+func (d *Driver) ValidateSignature(content, signature []byte) error {
 	if d.verifier != nil {
 		return d.verifier.VerifySignature(d.Type(), content, signature)
 	}

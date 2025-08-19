@@ -70,7 +70,7 @@ func NewSignatureVerifier() ports.SignatureVerifier {
 }
 
 // VerifySignature verifies package signature
-func (v *SignatureVerifier) VerifySignature(pmType string, content []byte, signature []byte) error {
+func (v *SignatureVerifier) VerifySignature(pmType string, content, signature []byte) error {
 	switch pmType {
 	case PMTypeMaven:
 		return v.verifyMavenSignature(content, signature)
@@ -136,7 +136,7 @@ func (v *SignatureVerifier) SupportedSignatureTypes(pmType string) []string {
 }
 
 // Maven signature verification
-func (v *SignatureVerifier) verifyMavenSignature(content []byte, signature []byte) error {
+func (v *SignatureVerifier) verifyMavenSignature(content, signature []byte) error {
 	signatureStr := strings.TrimSpace(string(signature))
 
 	// Try different hash algorithms based on signature length
@@ -164,7 +164,7 @@ func (v *SignatureVerifier) generateMavenSignature(content []byte) ([]byte, erro
 }
 
 // NPM signature verification
-func (v *SignatureVerifier) verifyNpmSignature(content []byte, signature []byte) error {
+func (v *SignatureVerifier) verifyNpmSignature(content, signature []byte) error {
 	signatureStr := strings.TrimSpace(string(signature))
 
 	// NPM integrity format: "sha512-base64hash" or "sha1-hexhash"
@@ -189,7 +189,7 @@ func (v *SignatureVerifier) generateNpmSignature(content []byte) ([]byte, error)
 }
 
 // APT signature verification
-func (v *SignatureVerifier) verifyAptSignature(content []byte, signature []byte) error {
+func (v *SignatureVerifier) verifyAptSignature(content, signature []byte) error {
 	// APT uses GPG signatures
 	return v.verifyPGPSignature(content, signature)
 }
@@ -203,7 +203,7 @@ func (v *SignatureVerifier) generateAptSignature(content []byte) ([]byte, error)
 }
 
 // PyPI signature verification
-func (v *SignatureVerifier) verifyPypiSignature(content []byte, signature []byte) error {
+func (v *SignatureVerifier) verifyPypiSignature(content, signature []byte) error {
 	signatureStr := strings.TrimSpace(string(signature))
 
 	switch len(signatureStr) {
@@ -226,7 +226,7 @@ func (v *SignatureVerifier) generatePypiSignature(content []byte) ([]byte, error
 }
 
 // YUM signature verification
-func (v *SignatureVerifier) verifyYumSignature(content []byte, signature []byte) error {
+func (v *SignatureVerifier) verifyYumSignature(content, signature []byte) error {
 	// YUM uses GPG signatures
 	return v.verifyPGPSignature(content, signature)
 }
@@ -240,7 +240,7 @@ func (v *SignatureVerifier) generateYumSignature(content []byte) ([]byte, error)
 }
 
 // APK signature verification
-func (v *SignatureVerifier) verifyApkSignature(content []byte, signature []byte) error {
+func (v *SignatureVerifier) verifyApkSignature(content, signature []byte) error {
 	// APK uses RSA signatures embedded in packages
 	// TODO: Implement APK-specific RSA verification
 	return fmt.Errorf("apk signature verification not implemented")
@@ -255,7 +255,7 @@ func (v *SignatureVerifier) generateApkSignature(content []byte) ([]byte, error)
 }
 
 // Docker registry signature verification
-func (v *SignatureVerifier) verifyRegistrySignature(content []byte, signature []byte) error {
+func (v *SignatureVerifier) verifyRegistrySignature(content, signature []byte) error {
 	// Docker uses content trust and notary
 	// TODO: Implement Docker content trust verification
 	return fmt.Errorf("docker signature verification not implemented")
@@ -270,7 +270,7 @@ func (v *SignatureVerifier) generateRegistrySignature(content []byte) ([]byte, e
 }
 
 // Generic signature verification
-func (v *SignatureVerifier) verifyGenericSignature(content []byte, signature []byte) error {
+func (v *SignatureVerifier) verifyGenericSignature(content, signature []byte) error {
 	signatureStr := strings.TrimSpace(string(signature))
 
 	// Try to detect hash type by length
@@ -334,7 +334,7 @@ func (v *SignatureVerifier) verifyHashSignature(content []byte, expectedHash str
 	return nil
 }
 
-func (v *SignatureVerifier) verifyPGPSignature(content []byte, signature []byte) error {
+func (v *SignatureVerifier) verifyPGPSignature(content, signature []byte) error {
 	// TODO: Implement PGP signature verification
 	// This would require integrating with a PGP library like golang.org/x/crypto/openpgp
 	return fmt.Errorf("pgp signature verification not implemented")

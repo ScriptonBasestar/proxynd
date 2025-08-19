@@ -143,10 +143,10 @@ type MiddlewareAuthService interface {
 // PermissionService defines authorization service interface
 type PermissionService interface {
 	// CheckPermission checks if a user has permission for a resource
-	CheckPermission(ctx context.Context, userID string, resource string, action string) (bool, error)
+	CheckPermission(ctx context.Context, userID, resource, action string) (bool, error)
 
 	// CheckRole checks if a user has a specific role
-	CheckRole(ctx context.Context, userID string, role string) (bool, error)
+	CheckRole(ctx context.Context, userID, role string) (bool, error)
 
 	// GetUserPermissions returns all permissions for a user
 	GetUserPermissions(ctx context.Context, userID string) ([]MiddlewarePermission, error)
