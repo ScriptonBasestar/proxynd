@@ -5,7 +5,7 @@ import (
 
 	"proxynd/internal/handlers-legacy"
 	authHandlers "proxynd/internal/handlers-legacy/auth"
-	"proxynd/internal/middleware-legacy"
+	middlewares "proxynd/internal/middleware-legacy"
 )
 
 // PoolRouter Connection Pool 관리 라우터

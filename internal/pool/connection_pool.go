@@ -352,7 +352,8 @@ func InitializeGlobalPool(config *ConnectionPoolConfig) {
 func NewConnectionPoolConfigFromSettings(
 	maxTotal, maxPerHost, idleTimeoutMin, keepAliveTimeoutSec, connectionTimeoutSec,
 	tlsTimeoutSec, responseHeaderTimeoutSec, expectContinueTimeoutSec, maxRedirects,
-	dnsCacheTTLMin int, insecureSkipVerify bool) *ConnectionPoolConfig {
+	dnsCacheTTLMin int, insecureSkipVerify bool,
+) *ConnectionPoolConfig {
 	return &ConnectionPoolConfig{
 		MaxTotalConnections:   maxTotal,
 		MaxConnectionsPerHost: maxPerHost,

@@ -221,7 +221,7 @@ func (loader *UnifiedConfigLoader) setDefaults() error {
 
 	// Cache defaults
 	if config.Cache.Backend == "" {
-		config.Cache.Backend = "file"
+		config.Cache.Backend = backendFile
 	}
 	if config.Cache.TTL == 0 {
 		config.Cache.TTL = 3600 * time.Second // Use time.Duration properly

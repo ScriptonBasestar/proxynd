@@ -447,31 +447,3 @@ func outputYAML(data interface{}) error {
 	// YAML 출력은 간단히 JSON으로 대체 (실제로는 yaml 라이브러리 사용)
 	return outputJSON(data)
 }
-
-// NewMavenIndexCmd creates a new maven index command
-func NewMavenIndexCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "maven-index",
-		Short: "Maven 인덱스 관리",
-		Long:  "Maven 패키지 인덱스를 관리합니다.",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			// TODO: Implement maven index management
-			fmt.Println("Maven 인덱스 관리 기능은 구현 중입니다.")
-			return nil
-		},
-	}
-}
-
-// NewMavenBackupCmd creates a new maven backup command
-func NewMavenBackupCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "maven-backup",
-		Short: "Maven 백업 관리",
-		Long:  "Maven 패키지 백업을 관리합니다.",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			// TODO: Implement maven backup management
-			fmt.Println("Maven 백업 관리 기능은 구현 중입니다.")
-			return nil
-		},
-	}
-}

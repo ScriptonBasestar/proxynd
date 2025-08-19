@@ -317,8 +317,8 @@ func (c *LoggingConfig) ToLoggingConfig() *logging.LogConfig {
 	// Handle first output config for file settings
 	if len(c.Output) > 0 {
 		firstOutput := c.Output[0]
-		if firstOutput.Type == "file" {
-			config.Output = "file"
+		if firstOutput.Type == backendFile {
+			config.Output = backendFile
 			config.File.Path = firstOutput.Path
 			config.File.MaxSize = firstOutput.MaxSize
 			config.File.MaxBackups = firstOutput.MaxBackups

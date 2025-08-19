@@ -79,20 +79,6 @@ func NewTestCmd() *cobra.Command {
 	return cmd
 }
 
-// newTestAllCmd 전체 프록시 테스트 명령어
-func newTestParallelCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "parallel",
-		Short: "병렬 테스트 실행",
-		Long:  "모든 패키지 매니저를 병렬로 테스트합니다.",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			// TODO: Implement parallel testing
-			fmt.Println("병렬 테스트 기능은 구현 중입니다.")
-			return nil
-		},
-	}
-}
-
 func newTestAllCmd() *cobra.Command {
 	var (
 		timeout     int

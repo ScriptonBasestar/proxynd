@@ -5,7 +5,7 @@ import (
 
 	authHandlers "proxynd/internal/handlers-legacy/auth"
 	proxyHandlers "proxynd/internal/handlers-legacy/proxy"
-	"proxynd/internal/middleware-legacy"
+	middlewares "proxynd/internal/middleware-legacy"
 )
 
 // ProxyRouterV3 새로운 V3 프록시 라우터 - 단순화된 Factory 패턴 사용
