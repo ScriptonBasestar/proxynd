@@ -10,9 +10,9 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/health"
 	"proxynd/internal/config"
 	"proxynd/internal/factory"
+	"proxynd/internal/health"
 )
 
 // AdapterHealthChecker 어댑터 헬스체크 인터페이스

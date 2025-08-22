@@ -6,7 +6,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/health"
+	"proxynd/internal/health"
 	"proxynd/internal/logging"
 )
 
