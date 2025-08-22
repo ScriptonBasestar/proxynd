@@ -7,16 +7,16 @@ ProxyND는 Go 1.23+ 기반의 고성능 멀티 패키지 매니저 프록시/미
 ### 📱 새로운 사용자
 - 📖 **[빠른 시작](00-overview/quick-start.md)** - 5분 설치 가이드
 - 🏗️ **[아키텍처 개요](10-architecture/hexagonal-architecture.md)** - 시스템 구조 이해
-- 🔧 **[지원 패키지 매니저](00-overview/supported-package-managers.md)** - 전체 지원 목록
+- 🔧 **[지원 패키지 매니저](30-proxy-types/README.md)** - 전체 지원 목록
 
 ### 👨‍💻 개발자
-- 💻 **[개발 환경 설정](90-development/development-environment.md)** - 로컬 개발 환경 구축
+- 💻 **[개발 환경 설정](90-development/README.md)** - 로컬 개발 환경 구축
 - 🧪 **[종합 테스트 가이드](40-testing/testing-guide.md)** - 4계층 테스트 전략
 - 🏗️ **[Container 아키텍처](10-architecture/container-dependency-injection.md)** - 의존성 주입 패턴
 
 ### 🔧 운영자
 - 🚀 **[배포 가이드](60-deployment/deployment-checklist.md)** - 프로덕션 배포
-- 📊 **[운영 가이드](70-operations/monitoring-guide.md)** - 모니터링 및 운영
+- 📊 **[운영 가이드](70-operations/README.md)** - 모니터링 및 운영
 - 🔒 **[보안 설정](50-security/oauth2-authentication.md)** - 인증 및 보안
 
 ## 📋 문서 구조
@@ -51,15 +51,15 @@ ProxyND는 Go 1.23+ 기반의 고성능 멀티 패키지 매니저 프록시/미
 #### 📊 기술 사양
 - **[기술 스택](80-reference/tech-stack.md)** - 전체 기술 스택 및 의존성
 - **[API 엔드포인트](80-reference/api-endpoints.md)** - REST API 참조
-- **[CLI 도구](80-reference/cli-tools/proxyndctl-reference.md)** - proxyndctl 명령어 참조
+- **[CLI 도구](80-reference/cli-tools/cli/proxyndctl-reference.md)** - proxyndctl 명령어 참조
 
 ## 🔍 빠른 검색
 
 ### 사용 목적별
 - **설치하기**: [빠른 시작](00-overview/quick-start.md) → [배포 가이드](60-deployment/deployment-checklist.md)
 - **설정하기**: [설정 참조](20-configuration/configuration-reference.md) → [프록시 타입별 가이드](30-proxy-types/)
-- **개발하기**: [개발 환경](90-development/development-environment.md) → [테스트 가이드](40-testing/testing-guide.md)
-- **운영하기**: [배포](60-deployment/) → [모니터링](70-operations/monitoring-guide.md) → [문제 해결](70-operations/troubleshooting.md)
+- **개발하기**: [개발 환경](90-development/README.md) → [테스트 가이드](40-testing/testing-guide.md)
+- **운영하기**: [배포](60-deployment/) → [모니터링](70-operations/README.md) → [문제 해결](70-operations/troubleshooting.md)
 - **최적화하기**: [성능 가이드](80-reference/performance-benchmarks.md) → [아키텍처](10-architecture/)
 
 ### 패키지 매니저별
@@ -76,27 +76,27 @@ ProxyND는 Go 1.23+ 기반의 고성능 멀티 패키지 매니저 프록시/미
 ### 🆕 신규 사용자 (처음 사용)
 1. [빠른 시작](00-overview/quick-start.md) ⏱️ 30분
 2. [프록시 타입 선택](30-proxy-types/README.md) ⏱️ 15분
-3. [클라이언트 설정](30-proxy-types/*/client-setup.md) ⏱️ 15분
-4. [기본 모니터링](70-operations/monitoring-guide.md) ⏱️ 15분
+3. [클라이언트 설정](30-proxy-types/README.md) ⏱️ 15분
+4. [기본 모니터링](70-operations/README.md) ⏱️ 15분
 
 ### 👨‍💻 개발자 (기여 희망)
 1. [아키텍처 이해](10-architecture/hexagonal-architecture.md) ⏱️ 1시간
-2. [개발 환경 구축](90-development/development-environment.md) ⏱️ 30분
+2. [개발 환경 구축](90-development/README.md) ⏱️ 30분
 3. [테스트 실행](40-testing/testing-guide.md) ⏱️ 30분
 4. [기여 가이드](90-development/contributing-guide.md) ⏱️ 15분
 
 ### 🔧 운영자 (프로덕션 배포)
 1. [배포 체크리스트](60-deployment/deployment-checklist.md) ⏱️ 1시간
 2. [설정 참조](20-configuration/configuration-reference.md) ⏱️ 45분
-3. [모니터링 설정](70-operations/monitoring-guide.md) ⏱️ 45분
+3. [모니터링 설정](70-operations/README.md) ⏱️ 45분
 4. [보안 설정](50-security/oauth2-authentication.md) ⏱️ 30분
 5. [문제 해결](70-operations/troubleshooting.md) ⏱️ 30분
 
 ### 🛠️ 고급 사용자 (최적화 및 커스터마이징)
 1. [ADR 문서들](10-architecture/adr/README.md) ⏱️ 2시간
 2. [성능 벤치마크](80-reference/performance-benchmarks.md) ⏱️ 1시간
-3. [CLI 도구 고급 사용법](80-reference/cli-tools/proxyndctl-reference.md) ⏱️ 1시간
-4. [확장 개발](90-development/development-environment.md) ⏱️ 시간 가변
+3. [CLI 도구 고급 사용법](80-reference/cli-tools/cli/proxyndctl-reference.md) ⏱️ 1시간
+4. [확장 개발](90-development/README.md) ⏱️ 시간 가변
 
 ## 🚨 주요 특징
 
@@ -133,7 +133,7 @@ ProxyND는 Go 1.23+ 기반의 고성능 멀티 패키지 매니저 프록시/미
 
 ProxyND 프로젝트 개선에 참여하고 싶다면:
 1. [기여 가이드](90-development/contributing-guide.md) 확인
-2. [개발 환경 설정](90-development/development-environment.md) 준비
+2. [개발 환경 설정](90-development/README.md) 준비
 3. [테스트 가이드](40-testing/testing-guide.md) 숙지
 4. Pull Request 제출
 
