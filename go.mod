@@ -26,7 +26,7 @@ require (
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.20.1
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.0
 	github.com/ulule/limiter/v3 v3.11.2
 	github.com/valyala/fasthttp v1.65.0
 	go.opentelemetry.io/otel v1.37.0
