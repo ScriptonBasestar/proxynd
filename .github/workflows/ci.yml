@@ -177,7 +177,7 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
-    needs: [test, security]
+    needs: [quick-tests, security]
     outputs:
       image: ${{ steps.meta.outputs.tags }}
       digest: ${{ steps.build.outputs.digest }}
@@ -473,7 +473,7 @@ jobs:
   summary:
     name: Summary
     runs-on: ubuntu-latest
-    needs: [test, security, build, integration, e2e, deploy-staging]
+    needs: [quick-tests, security, build, integration, e2e, deploy-staging]
     if: always()
     steps:
       - name: Generate summary
@@ -482,7 +482,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Job | Status | Duration |" >> $GITHUB_STEP_SUMMARY
           echo "|-----|--------|----------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Test & Lint | ${{ needs.test.result }} | - |" >> $GITHUB_STEP_SUMMARY
+          echo "| Test & Lint | ${{ needs.quick-tests.result }} | - |" >> $GITHUB_STEP_SUMMARY
           echo "| Security | ${{ needs.security.result }} | - |" >> $GITHUB_STEP_SUMMARY
           echo "| Build | ${{ needs.build.result }} | - |" >> $GITHUB_STEP_SUMMARY
           echo "| Integration Matrix | ${{ needs.integration.result }} | - |" >> $GITHUB_STEP_SUMMARY
@@ -490,7 +490,7 @@ jobs:
           echo "| Deploy Staging | ${{ needs.deploy-staging.result }} | - |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          if [[ "${{ needs.test.result }}" == "success" && "${{ needs.security.result }}" == "success" && "${{ needs.build.result }}" == "success" && "${{ needs.integration.result }}" == "success" && "${{ needs.e2e.result }}" == "success" ]]; then
+          if [[ "${{ needs.quick-tests.result }}" == "success" && "${{ needs.security.result }}" == "success" && "${{ needs.build.result }}" == "success" && "${{ needs.integration.result }}" == "success" && "${{ needs.e2e.result }}" == "success" ]]; then
             echo "✅ **All checks passed!**" >> $GITHUB_STEP_SUMMARY
           else
             echo "❌ **Some checks failed**" >> $GITHUB_STEP_SUMMARY
