@@ -1,6 +1,6 @@
 # 프로덕션용 멀티스테이지 Dockerfile
 # Build arguments
-ARG GO_VERSION=1.23
+ARG GO_VERSION=1.24
 ARG ALPINE_VERSION=3.19
 ARG BUILD_DATE
 ARG VCS_REF

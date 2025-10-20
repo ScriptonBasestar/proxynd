@@ -16,7 +16,7 @@ on:
       - 'docker-compose*.yml'
 
 env:
-  GO_VERSION: '1.23'
+  GO_VERSION: '1.24'
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
@@ -237,7 +237,7 @@ jobs:
     strategy:
       matrix:
         proxy-type: [maven, npm, apt, docker, pip, yum, apk]
-        go-version: ['1.21', '1.22']
+        go-version: ['1.23', '1.24']
         include:
           # 높은 우선순위 프록시는 두 Go 버전 모두 테스트
           - proxy-type: npm
@@ -249,9 +249,9 @@ jobs:
         exclude:
           # 낮은 우선순위 프록시는 최신 Go 버전만 테스트
           - proxy-type: apk
-            go-version: '1.21'
+            go-version: '1.23'
           - proxy-type: yum
-            go-version: '1.21'
+            go-version: '1.23'
       fail-fast: false
     services:
       redis:
