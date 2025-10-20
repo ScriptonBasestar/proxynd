@@ -309,7 +309,7 @@ jobs:
 
           # Run specific integration tests for the proxy type
           go test -tags=integration -v ./tests/integration/${{ matrix.proxy-type }}_integration_test.go || \
-          go test -tags=integration -v ./tests/integration/integration_test.go -run "Test.*${{ matrix.proxy-type | title }}" || \
+          go test -tags=integration -v ./tests/integration/integration_test.go -run "Test.*" || \
           echo "No integration tests found for ${{ matrix.proxy-type }}"
 
       # Step 4: 테스트 결과 수집 자동화
