@@ -147,8 +147,10 @@ jobs:
           sudo apt-get install k6
 
       - name: Create load test script
+        env:
+          TEST_DURATION: ${{ github.event.inputs.duration || '1m' }}
         run: |
-          cat > load-test.js << 'EOF'
+          cat > load-test.js << EOF
           import http from 'k6/http';
           import { check, sleep } from 'k6';
           import { Rate, Trend, Counter } from 'k6/metrics';
@@ -160,7 +162,7 @@ jobs:
           export let options = {
             stages: [
               { duration: '30s', target: 10 },
-              { duration: '${{ github.event.inputs.duration || ''1m'' }}', target: 50 },
+              { duration: '${TEST_DURATION}', target: 50 },
               { duration: '30s', target: 0 },
             ],
             thresholds: {
