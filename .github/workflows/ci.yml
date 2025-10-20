@@ -227,13 +227,13 @@ jobs:
     if: |
       github.ref == 'refs/heads/develop' ||
       needs.changes.outputs.core == 'true' ||
-      (matrix.proxy-type == 'npm' && needs.changes.outputs.npm == 'true') ||
-      (matrix.proxy-type == 'maven' && needs.changes.outputs.maven == 'true') ||
-      (matrix.proxy-type == 'docker' && needs.changes.outputs.docker == 'true') ||
-      (matrix.proxy-type == 'apt' && needs.changes.outputs.apt == 'true') ||
-      (matrix.proxy-type == 'pip' && needs.changes.outputs.pip == 'true') ||
-      (matrix.proxy-type == 'yum' && needs.changes.outputs.yum == 'true') ||
-      (matrix.proxy-type == 'apk' && needs.changes.outputs.apk == 'true')
+      needs.changes.outputs.npm == 'true' ||
+      needs.changes.outputs.maven == 'true' ||
+      needs.changes.outputs.docker == 'true' ||
+      needs.changes.outputs.apt == 'true' ||
+      needs.changes.outputs.pip == 'true' ||
+      needs.changes.outputs.yum == 'true' ||
+      needs.changes.outputs.apk == 'true'
     strategy:
       matrix:
         proxy-type: [maven, npm, apt, docker, pip, yum, apk]
