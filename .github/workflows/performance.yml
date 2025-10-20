@@ -160,7 +160,7 @@ jobs:
           export let options = {
             stages: [
               { duration: '30s', target: 10 },
-              { duration: '${{ github.event.inputs.duration || "1m" }}', target: 50 },
+              { duration: '${{ github.event.inputs.duration || ''1m'' }}', target: 50 },
               { duration: '30s', target: 0 },
             ],
             thresholds: {
