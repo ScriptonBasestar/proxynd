@@ -39,8 +39,6 @@ proxynd
 proxyndctl
 /proxynd
 /proxyndctl
-cmd/proxynd/proxynd
-cmd/proxyndctl/proxyndctl
 
 # Build outputs
 /dist/

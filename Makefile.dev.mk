@@ -6,7 +6,7 @@
 # ==============================================================================
 
 .PHONY: dev-prepare dev-setup dev-run dev-run-direct dev-teardown dev dev-test local-run
-.PHONY: setup
+.PHONY: setup dev-run-no-auth dev-prod
 
 # Override only for specific targets that need these paths
 PROD_STORAGE_DIR=~/tmp/storage/
@@ -34,6 +34,7 @@ dev-setup: ## setup development environment with tmp dirs and .env
 	@echo "CONFIG_DIR=./tmp/config" > .env
 	@echo "STORAGE_DIR=./tmp/storage" >> .env
 	@echo "SERVER_PORT=8080" >> .env
+	@echo "PROXYND_ENV=development" >> .env
 	@echo "Development environment ready!"
 	@echo "Config dir: ./tmp/config"
 	@echo "Storage dir: ./tmp/storage"
@@ -47,7 +48,17 @@ dev-run: dev-setup ## run with Air hot reload
 
 dev-run-direct: dev-setup ## run directly with go run (no hot reload)
 	@echo "Running directly with go run..."
-	CONFIG_DIR=./tmp/config STORAGE_DIR=./tmp/storage SERVER_PORT=8080 go run main.go
+	CONFIG_DIR=./tmp/config STORAGE_DIR=./tmp/storage SERVER_PORT=8080 PROXYND_ENV=development go run main.go
+
+dev-run-no-auth: dev-setup ## run with authentication explicitly disabled
+	@echo "🔓 Running in development mode WITHOUT authentication..."
+	@echo "⚠️  WARNING: All endpoints are publicly accessible!"
+	CONFIG_DIR=./tmp/config STORAGE_DIR=./tmp/storage SERVER_PORT=8080 PROXYND_ENV=development go run main.go
+
+dev-prod: dev-setup ## run in production mode (with authentication)
+	@echo "🔒 Running in production mode WITH authentication..."
+	@echo "✅ Authentication is enabled - check tmp/config/global.yaml for credentials"
+	CONFIG_DIR=./tmp/config STORAGE_DIR=./tmp/storage SERVER_PORT=8080 PROXYND_ENV=production go run main.go
 
 local-run: ## run the built binary locally
 	@echo "Running...?"

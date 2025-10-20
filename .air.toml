@@ -32,7 +32,7 @@ tmp_dir = "tmp"
   pre_cmd = ["mkdir -p tmp/storage"]
 
   # Set environment variables from .env file
-  envs = ["CONFIG_DIR=./tmp/config", "STORAGE_DIR=./tmp/storage", "SERVER_PORT=8080", "LOG_LEVEL=info", "LOG_FORMAT=json"]
+  envs = ["CONFIG_DIR=./tmp/config", "STORAGE_DIR=./tmp/storage", "SERVER_PORT=8080", "PROXYND_ENV=development", "LOG_LEVEL=info", "LOG_FORMAT=json"]
 
 [color]
   app = ""
