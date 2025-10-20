@@ -219,18 +219,18 @@ jobs:
 
       - name: Run health integration tests
         run: |
-          go test -v -tags=integration ./health/... -run "TestHealth.*Integration"
+          go test -v -tags=integration ./internal/health/... -run "TestHealth.*Integration"
         env:
           CONFIG_DIR: ./tmp/config
           STORAGE_DIR: ./tmp/storage
 
       - name: Run health benchmark tests
         run: |
-          go test -bench=BenchmarkHealth -benchmem ./health/...
+          go test -bench=BenchmarkHealth -benchmem ./internal/health/...
 
       - name: Generate health test coverage
         run: |
-          go test -coverprofile=health-coverage.out ./health/...
+          go test -coverprofile=health-coverage.out ./internal/health/...
           go tool cover -html=health-coverage.out -o health-coverage.html
 
       - name: Upload coverage

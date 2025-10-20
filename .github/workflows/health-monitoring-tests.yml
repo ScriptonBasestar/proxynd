@@ -66,7 +66,7 @@ jobs:
     - name: Run health system unit tests
       run: |
         echo "Running health system unit tests..."
-        go test -v -race -timeout=5m ./health/... \
+        go test -v -race -timeout=5m ./internal/health/... \
           -cover -coverprofile=health-coverage.out \
           -covermode=atomic
 
@@ -428,10 +428,10 @@ jobs:
         echo "Testing security-related health checks..."
 
         # TLS 설정 테스트
-        go test -v -timeout=5m ./health/ -run TestSecuritySystemHealthChecker
+        go test -v -timeout=5m ./internal/health/ -run TestSecuritySystemHealthChecker
 
         # 인증 시스템 테스트
-        go test -v -timeout=5m ./health/ -run TestSecurityHealthChecker
+        go test -v -timeout=5m ./internal/health/ -run TestSecurityHealthChecker
 
         echo "✅ Security health tests completed"
 
