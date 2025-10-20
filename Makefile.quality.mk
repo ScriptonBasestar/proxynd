@@ -192,7 +192,7 @@ format-all: format-quick format-non-go
 lint-install-tools: ## install all linting tools (golangci-lint + gosec)
 	@echo -e "$(CYAN)Installing linting tools...$(RESET)"
 	@echo "1. Installing golangci-lint..."
-	@which golangci-lint > /dev/null || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
+	@which golangci-lint > /dev/null || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin
 	@echo "2. Installing gosec..."
 	@which gosec > /dev/null || go install github.com/securego/gosec/v2/cmd/gosec@latest
 	@echo -e "$(GREEN)✅ All linting tools installed!$(RESET)"
