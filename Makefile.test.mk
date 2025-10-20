@@ -318,7 +318,6 @@ test-clean: test-teardown ## clean test artifacts
 
 test-deps: ## install test dependencies
 	@echo "📦 Installing test dependencies..."
-	@go install github.com/stretchr/testify@latest
 	@go install go.uber.org/mock/mockgen@latest
 	@go mod download
 	@go mod tidy
