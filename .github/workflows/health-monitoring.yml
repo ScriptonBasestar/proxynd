@@ -249,7 +249,7 @@ jobs:
 
       - name: Setup monitoring stack
         run: |
-          cd monitoring
+          cd deployments/monitoring
           docker-compose up -d
 
           # Wait for services to be ready
@@ -282,7 +282,7 @@ jobs:
       - name: Cleanup monitoring stack
         if: always()
         run: |
-          cd monitoring
+          cd deployments/monitoring
           docker-compose down -v
 
   health-performance-baseline:
