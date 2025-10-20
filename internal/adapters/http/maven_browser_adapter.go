@@ -72,15 +72,15 @@ func (a *MavenBrowserAdapter) fiberToDomainRequest(c *fiber.Ctx) *maven.BrowserR
 
 	// 쿼리 파라미터 추출
 	queryParams := make(map[string]string)
-	c.Request().URI().QueryArgs().VisitAll(func(key, value []byte) {
+	for key, value := range c.Request().URI().QueryArgs().All() {
 		queryParams[string(key)] = string(value)
-	})
+	}
 
 	// 헤더 추출
 	headers := make(map[string]string)
-	c.Request().Header.VisitAll(func(key, value []byte) {
+	for key, value := range c.Request().Header.All() {
 		headers[string(key)] = string(value)
-	})
+	}
 
 	return &maven.BrowserRequest{
 		Path:        path,

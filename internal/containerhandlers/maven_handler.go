@@ -391,12 +391,12 @@ func (h *MavenContainerHandler) transformRequest(c *fiber.Ctx, upstreamReq *fibe
 	upstreamReq.Set("Accept-Language", "en-US,en;q=0.5")
 
 	// 클라이언트 헤더 복사 (Host 제외)
-	c.Request().Header.VisitAll(func(key, value []byte) {
+	for key, value := range c.Request().Header.All() {
 		keyStr := string(key)
 		if keyStr != headerHost {
 			upstreamReq.Set(keyStr, string(value))
 		}
-	})
+	}
 }
 
 // 유틸리티 함수들

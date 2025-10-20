@@ -428,7 +428,7 @@ func updateAuthMetrics(c *fiber.Ctx, metrics *Metrics) {
 	// 인증 시도
 	if authAttempt := c.Locals("auth_attempt"); authAttempt != nil {
 		if method, ok := authAttempt.(string); ok {
-			authResult := "success"
+			authResult := resultSuccess
 			if c.Response().StatusCode() == 401 || c.Response().StatusCode() == 403 {
 				authResult = resultFailure
 			}
@@ -451,7 +451,7 @@ func updateAuthMetrics(c *fiber.Ctx, metrics *Metrics) {
 func updateVerificationMetrics(c *fiber.Ctx, metrics *Metrics, registryType string) {
 	// 패키지 검증 수행 여부
 	if verified := c.Locals("packageVerified"); verified != nil {
-		result := "success"
+		result := resultSuccess
 		if verifiedBool, ok := verified.(bool); ok && !verifiedBool {
 			result = resultFailure
 		}

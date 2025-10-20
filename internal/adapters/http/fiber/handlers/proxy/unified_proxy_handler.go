@@ -60,9 +60,9 @@ func UnifiedProxyHandlerWithFactory(c *fiber.Ctx) error {
 		}
 
 		// Copy query params
-		c.Context().QueryArgs().VisitAll(func(key, value []byte) {
+		for key, value := range c.Context().QueryArgs().All() {
 			req.QueryParams[string(key)] = string(value)
-		})
+		}
 
 		resp, err := globalProxyService.HandleProxyRequest(c.Context(), req)
 		if err != nil {

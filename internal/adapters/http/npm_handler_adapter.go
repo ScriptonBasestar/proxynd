@@ -88,9 +88,9 @@ func (a *NPMHandlerAdapter) Type() string {
 func (a *NPMHandlerAdapter) fiberToDomainRequest(c *fiber.Ctx) *npm.PackageRequest {
 	// 헤더 추출
 	headers := make(map[string]string)
-	c.Request().Header.VisitAll(func(key, value []byte) {
+	for key, value := range c.Request().Header.All() {
 		headers[string(key)] = string(value)
-	})
+	}
 
 	return &npm.PackageRequest{
 		PackagePath: c.Params("*"),

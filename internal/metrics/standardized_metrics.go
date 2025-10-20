@@ -236,7 +236,7 @@ func (s *StandardizedMetrics) RecordAuthentication(authMethod, eventType, outcom
 		failureReason,
 	).Inc()
 
-	if outcome == "failure" {
+	if outcome == resultFailure {
 		s.AuthFailuresTotal.WithLabelValues(
 			authMethod,
 			failureReason,

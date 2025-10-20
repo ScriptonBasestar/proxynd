@@ -90,15 +90,15 @@ func (a *PIPHandlerAdapter) Type() string {
 func (a *PIPHandlerAdapter) fiberToDomainRequest(c *fiber.Ctx) *pip.PackageRequest {
 	// 헤더 추출
 	headers := make(map[string]string)
-	c.Request().Header.VisitAll(func(key, value []byte) {
+	for key, value := range c.Request().Header.All() {
 		headers[string(key)] = string(value)
-	})
+	}
 
 	// 쿼리 파라미터 추출
 	queryParams := make(map[string]string)
-	c.Request().URI().QueryArgs().VisitAll(func(key, value []byte) {
+	for key, value := range c.Request().URI().QueryArgs().All() {
 		queryParams[string(key)] = string(value)
-	})
+	}
 
 	return &pip.PackageRequest{
 		PackagePath: c.Params("*"),

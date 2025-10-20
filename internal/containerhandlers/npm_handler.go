@@ -328,12 +328,12 @@ func (h *NPMContainerHandler) fetchFromUpstream(c *fiber.Ctx, requestPath string
 	req.Header.Set("Accept-Encoding", "gzip, deflate, br")
 
 	// 클라이언트 헤더 복사
-	c.Request().Header.VisitAll(func(key, value []byte) {
+	for key, value := range c.Request().Header.All() {
 		keyStr := string(key)
 		if keyStr != "Host" && keyStr != "Authorization" {
 			req.Header.Set(keyStr, string(value))
 		}
-	})
+	}
 
 	// 요청 실행
 	resp, err := h.httpClient.Do(req)

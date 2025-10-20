@@ -63,7 +63,8 @@ func NewTestCmd() *cobra.Command {
 	}
 
 	cmd.AddCommand(newTestAllCmd())
-	cmd.AddCommand(newTestParallelCmd())
+	// TODO: Implement newTestParallelCmd()
+	// cmd.AddCommand(newTestParallelCmd())
 	cmd.AddCommand(newTestConnectivityCmd())
 	cmd.AddCommand(newTestTypesCmd())
 
@@ -486,7 +487,6 @@ const (
 	iconPassed  = "✅"
 	iconFailed  = "❌"
 	iconSkipped = "⏭️"
-	iconUnknown = "❓"
 )
 
 // getStatusIcon 상태에 따른 아이콘 반환
