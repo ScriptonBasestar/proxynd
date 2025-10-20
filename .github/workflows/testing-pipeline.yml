@@ -311,7 +311,7 @@ jobs:
           echo "| Contract Tests | ${{ needs.contract-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Integration Tests | ${{ needs.integration-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Combined Integration | ${{ needs.integration-combined.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| E2E Tests | ${{ needs.e2e-tests.result == 'success' && '✅ Passed' || needs.e2e-tests.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| E2E Tests | ${{ (needs.e2e-tests.result == 'success' && '✅ Passed') || (needs.e2e-tests.result == 'skipped' && '⏭️ Skipped') || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
 
           # Determine overall status
           if [[ "${{ needs.quick-feedback.result }}" == "success" &&
