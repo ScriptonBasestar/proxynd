@@ -5,88 +5,33 @@
 # ================
 # Go Language
 # ================
-# Binaries for programs and plugins
+# Binaries
 *.exe
-*.exe~
 *.dll
 *.so
 *.dylib
 *.test
 *.out
 
-# Test binary, built with `go test -c`
-*.test
-
-# Output of the go coverage tool
+# Coverage
 *.cover
 coverage.out
 coverage.html
 coverage.txt
 profile.out
 
-# Go workspace files
+# Go workspace
 go.work
 go.work.sum
 
-# Go build cache
-.cache/go-build/
-
 # ================
-# Application Specific
+# Build Outputs
 # ================
-# ProxyND binaries
-proxynd
-proxyndctl
-/proxynd
-/proxyndctl
-
-# Build outputs
+# Distribution builds
 /dist/
-/bin/
-/tmp/main
-main
-main.exe
 
-# Application directories with preserved structure
+# All temporary files and binaries
 tmp/
-temp/
-cache/
-storage/
-logs/
-log/
-
-# Preserve directory structure with .gitkeep
-!/tmp/.gitkeep
-!/cache/.gitkeep
-!/storage/.gitkeep
-!/logs/.gitkeep
-
-# ================
-# Development & Testing
-# ================
-# Test artifacts
-test-results/
-test-reports/
-junit.xml
-.nyc_output/
-
-# Coverage reports
-coverage/
-*.cover
-*.coverprofile
-
-# Profiling & Performance
-*.prof
-*.trace
-*.heap
-*.cpu
-*.mem
-*.pprof
-*.profile
-
-# Benchmark results
-benchmark-*.txt
-*.bench
 
 # ================
 # Configuration & Environment
@@ -100,19 +45,15 @@ benchmark-*.txt
 # Local configuration overrides
 config.yaml
 config.yml
-config.local.yaml
-config.local.yml
-config.development.yaml
-config.development.yml
-config.production.yaml
-config.production.yml
-config.staging.yaml
-config.staging.yml
+config.*.yaml
+config.*.yml
+*.local.yaml
+*.local.yml
 
 # ================
 # Security & Secrets
 # ================
-# SSL/TLS certificates and keys
+# SSL/TLS certificates
 *.pem
 *.key
 *.crt
@@ -120,38 +61,28 @@ config.staging.yml
 *.p12
 *.pfx
 
-# Secret directories and files
+# Secret directories
 secrets/
 .secrets
 .secret
 
-# Authentication files
+# Authentication
 .auth
 auth.json
 credentials.json
 
-# License files (GitLab 모델이지만 실제 라이센스는 제외)
-license.json
-*.license
-license.key
-
 # ================
 # Analysis & Reports
 # ================
-# Security analysis reports
+# Security and lint reports
+*.sarif
+*-report.json
 gosec-report.json
-security-scan.json
-security-report.json
-vulnerability-report.json
 staticcheck-report.json
 golangci-lint-report.json
 
-# Dependency analysis
-deps-graph.png
-dependency-check-report.html
-
 # Code analysis
-*.sarif
+deps-graph.png
 
 # ================
 # Development Tools & IDEs
@@ -173,22 +104,20 @@ dependency-check-report.html
 *.swp
 *.swo
 *~
-.vimrc.local
-.nvimrc.local
 tags
 .tags
 
-# Sublime Text
+# Other editors
 *.sublime-*
+.fleet/
+.cursor/
 
 # Emacs
-*~
 \#*\#
 /.emacs.desktop
 /.emacs.desktop.lock
 *.elc
 auto-save-list
-tramp
 .\#*
 
 # ================
@@ -196,7 +125,6 @@ tramp
 # ================
 # macOS
 .DS_Store
-.DS_Store?
 ._*
 .Spotlight-V100
 .Trashes
@@ -204,9 +132,7 @@ tramp
 
 # Windows
 Thumbs.db
-Thumbs.db:encryptable
 ehthumbs.db
-ehthumbs_vista.db
 *.lnk
 [Dd]esktop.ini
 
@@ -220,6 +146,7 @@ ehthumbs_vista.db
 # ================
 # Go modules backup
 go.sum.backup
+go.mod.backup
 
 # Node.js (for frontend tools)
 node_modules/
@@ -228,9 +155,8 @@ yarn-debug.log*
 yarn-error.log*
 .npm
 .yarn-integrity
-*.tgz
 
-# Dependency directories
+# Vendor
 vendor/
 
 # ================
@@ -239,7 +165,6 @@ vendor/
 # Docker
 docker-compose.override.yml
 .docker/
-.dockerignore
 
 # Kubernetes
 *.kubeconfig
@@ -264,10 +189,8 @@ docker-compose.override.yml
 *.backup
 *.bak
 *.orig
-*.save
 
 # Runtime data
-pids
 *.pid
 *.seed
 *.pid.lock
@@ -279,57 +202,15 @@ pids
 .pnpm-store/
 
 # ================
-# Documentation & Build Artifacts
-# ================
-# Documentation builds
-docs/build/
-docs/_build/
-site/
-_site/
-
-# Archives & Packages
-*.zip
-*.tar
-*.tar.gz
-*.tgz
-*.rar
-*.7z
-*.deb
-*.rpm
-*.dmg
-*.pkg
-*.msi
-
-# ================
-# Local Development
-# ================
-# Local development directories
-.local/
-local/
-dev/
-development/
-
-# Editor workspace files
-*.code-workspace
-
-# Local scripts and notes
-local-*
-notes.md
-todo.md
-scratch.*
-
-# ================
-# Monitoring & Logs
+# Logs
 # ================
 # Application logs
 *.log
-application.log
-error.log
-access.log
-debug.log
+logs/
+log/
 
-# System monitoring
-*.monitoring
+# Build logs
+build-errors.log
 
 # ================
 # Database Files
@@ -343,149 +224,63 @@ debug.log
 *.sql.gz
 *.dump
 
-# claude
+# ================
+# Local Development
+# ================
+# Local directories
+.local/
+local/
+storage/
+cache/
+
+# Development files
+local-*
+notes.md
+scratch.*
+*.code-workspace
+
+# ================
+# Test & Profiling
+# ================
+# Test results
+test-results/
+test-reports/
+junit.xml
+
+# Coverage
+coverage/
+*.coverprofile
+
+# Profiling
+*.prof
+*.trace
+*.heap
+*.cpu
+*.mem
+*.pprof
+*.profile
+
+# ================
+# Documentation
+# ================
+# Documentation builds
+docs/build/
+docs/_build/
+site/
+_site/
+
+# ================
+# Archives
+# ================
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+
+# ================
+# Claude AI
+# ================
 .claude/
 CLAUDE.local.md
-CLAUDE.md
-data/
-
-# ================
-# 임시 개발 파일들 (ProxyND 프로젝트 정리용)
-# ================
-# 임시 스크립트 (프로젝트 루트)
-automated_*.sh
-fix_*.sh
-run_*.sh
-temp_*.sh
-test_*.sh
-delete_*.sh
-
-# 분석 보고서 (일회성)
-*_analysis.md
-*_fixes_summary.md
-*_ANALYSIS_*.md
-*_FIX_*.md
-lint_*.md
-complex_comments.txt
-gosec-report.json
-todo_items.json
-
-# 리팩터링 임시 파일
-REFACTORING*.md
-MAKEFILE_STRUCTURE.md
-
-# ================
-# 향후 오염 방지 패턴 (Ultra-clean 프로젝트 관리)
-# ================
-# 일회성 분석/정리 스크립트 방지
-analyze_*.sh
-extract_*.sh
-find_*.sh
-remove_*.sh
-cleanup_*.sh
-*_quality_check.sh
-
-# 임시 테스트 스크립트 방지
-test_*.sh
-run_test_*.sh
-quick_*.sh
-final_*.sh
-
-# 임시 빌드 스크립트 방지
-build_temp_*.sh
-temp_build_*.sh
-
-# Legacy 문서 방지
-*-legacy.md
-*_legacy.md
-
-# ================
-# 추가 Ignore 항목 (2025-07-31 분석 결과)
-# ================
-# 리포트 및 분석 결과 디렉토리
-reports/
-analysis/
-benchmark-results/
-profiling-results/
-
-# 임시 실행 바이너리 (프로젝트 루트)
-/proxynd
-/main
-
-# Air 빌드 로그
-build-errors.log
-
-# Makefile 임시 파일들
-.make.*
-make-*.log
-
-# 개발 중 생성되는 임시 설정
-config.*.yaml
-config.*.yml
-*.local.yaml
-*.local.yml
-
-# Go 모듈 캐시 백업
-go.sum.backup
-go.mod.backup
-
-# 테스트 출력 파일들
-test-output/
-test-artifacts/
-*.test.log
-
-# 메트릭 및 모니터링 임시 파일
-metrics-*.json
-monitoring-*.log
-prometheus-*.data
-
-# CLI 도구 임시 파일
-proxyndctl-*.log
-cli-output/
-
-# 백업 파일들 (에디터/도구 생성)
-*.backup
-*.bk
-*~
-
-# 런타임 생성 파일들
-*.sock
-*.socket
-*.fifo
-
-# 패키지 매니저별 캐시 디렉토리 (개발 중 생성 가능)
-.apt-cache/
-.maven-cache/
-.npm-cache/
-.pip-cache/
-.docker-cache/
-.yum-cache/
-.apk-cache/
-
-# 성능 분석 도구 출력
-*.pprof
-cpu.prof
-mem.prof
-block.prof
-mutex.prof
-trace.out
-
-# 코드 분석 도구 출력들
-*.checkstyle
-*.spotbugs
-golangci-lint.xml
-staticcheck.out
-
-# 문서 생성 도구 임시 파일
-.hugo/
-.jekyll-cache/
-_site/
-.sass-cache/
-
-# IDE/에디터 임시 파일들
-.fleet/
-.cursor/
-
-# 사용자 관리 파일
-/results/
-/refactoring/

@@ -10,8 +10,7 @@
 
 clean-build: ## clean build artifacts
 	@echo "🧹 Cleaning build artifacts..."
-	@rm -f proxynd proxyndctl bin/proxynd cmd/proxynd/proxynd cmd/proxyndctl/proxyndctl
-	@rm -f tmp/main
+	@rm -rf tmp/bin
 	@rm -f dist/*
 	@find . -name "*.exe" -o -name "*.out" -type f -delete 2>/dev/null || true
 	@find . -name "*.test" -type f -delete 2>/dev/null || true

@@ -16,8 +16,9 @@ VERSION?=latest
 
 build: ## build golang binary
 	@echo "Building proxynd..."
-	go build -v -o proxynd .
-	@echo "Build complete: ./proxynd"
+	@mkdir -p tmp/bin
+	go build -v -o tmp/bin/proxynd .
+	@echo "Build complete: ./tmp/bin/proxynd"
 
 build-all: ## build for all platforms
 	@echo "Building for all platforms..."

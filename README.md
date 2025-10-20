@@ -38,6 +38,26 @@ make docker-run
 - [📋 리팩토링 체크리스트](REFACTORING_CHECKLIST.md) - 단계별 마이그레이션 절차
 - [🧪 테스트 전략](TESTING.md) - 4계층 테스트 아키텍처
 
+## 🔨 빌드
+
+### 개발 빌드
+```bash
+make build                    # 빌드: ./tmp/bin/proxynd
+./tmp/bin/proxynd --version  # 버전 확인
+```
+
+### 멀티플랫폼 빌드
+```bash
+make build-all               # 빌드: ./dist/proxynd-{platform}-{arch}
+```
+
+### 빌드 출력 위치
+- **개발 빌드**: `tmp/bin/proxynd` (gitignored)
+- **릴리즈 빌드**: `dist/` (gitignored)
+- **Air 개발 서버**: `tmp/bin/proxynd` (hot reload)
+
+모든 빌드 출력은 자동으로 git에서 제외되므로 commit 걱정 없이 개발할 수 있습니다.
+
 ## ⚙️ Configuration
 
 1. Copy example configuration:
@@ -47,9 +67,10 @@ cp examples/config.minimal.yaml config.yaml
 
 2. Edit `config.yaml` for your needs
 
-3. Run ProxyND:
+3. Build and run ProxyND:
 ```bash
-./proxynd --config config.yaml
+make build
+./tmp/bin/proxynd --config config.yaml
 ```
 
 ### Configuration Files Location Priority:
@@ -76,7 +97,7 @@ Example:
 ```bash
 export CONFIG_DIR=/etc/proxynd
 export STORAGE_DIR=/var/lib/proxynd
-./proxynd
+./tmp/bin/proxynd
 ```
 
 Or use a `.env` file:
