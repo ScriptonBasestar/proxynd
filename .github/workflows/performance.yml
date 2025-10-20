@@ -1,4 +1,5 @@
-# ⚡ ProxyND Performance Benchmarks
+# ⚡ ProxyND Performance Monitoring
+# Integrated: Benchmarks + Memory Profiling + Load Testing + Resource Monitoring
 name: Performance
 
 on:
@@ -6,17 +7,18 @@ on:
     - cron: '0 2 * * 1'  # Weekly on Monday 2 AM UTC
   workflow_dispatch:
     inputs:
-      benchmark_type:
-        description: 'Benchmark type'
+      test_suite:
+        description: 'Performance test suite'
         type: choice
         options:
           - all
-          - cpu
+          - benchmarks
           - memory
           - load
+          - resources
         default: 'all'
       duration:
-        description: 'Test duration'
+        description: 'Load test duration'
         type: choice
         options:
           - '30s'
@@ -24,16 +26,34 @@ on:
           - '5m'
           - '10m'
         default: '1m'
+      load_intensity:
+        description: 'Load test intensity'
+        type: choice
+        options:
+          - low      # 10 → 20 → 50 users
+          - medium   # 20 → 50 → 100 users
+          - high     # 50 → 100 → 200 users
+        default: 'medium'
 
 env:
   GO_VERSION: '1.24'
+  DOCKER_REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+permissions:
+  contents: read
+  packages: read
 
 jobs:
   # 🧪 Go Benchmarks
   go-benchmarks:
     name: Go Benchmarks
     runs-on: ubuntu-latest
-    if: github.event.inputs.benchmark_type == 'all' || github.event.inputs.benchmark_type == 'cpu' || github.event_name == 'schedule'
+    timeout-minutes: 20
+    if: |
+      github.event_name == 'schedule' ||
+      github.event.inputs.test_suite == 'all' ||
+      github.event.inputs.test_suite == 'benchmarks'
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -44,33 +64,70 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
           cache: true
 
-      - name: Run benchmarks
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Run Go benchmarks
         run: |
           echo "🏃‍♂️ Running Go benchmarks..."
-          go test -bench=. -benchmem -count=3 -run=^$ ./... | tee benchmark_results.txt
+          go test -bench=. -benchmem -count=5 -run=^$ -timeout=20m ./... | tee benchmark_results.txt
 
-      - name: Analyze results
+      - name: Analyze benchmark results
         run: |
+          cat > analyze_benchmarks.sh << 'EOF'
+          #!/bin/bash
           echo "## 📊 Go Benchmark Results" > benchmark_summary.md
           echo "" >> benchmark_summary.md
-          echo "### Top CPU-intensive functions:" >> benchmark_summary.md
-          echo '```' >> benchmark_summary.md
-          grep -E "Benchmark.*-[0-9]+" benchmark_results.txt | sort -k3 -nr | head -10 >> benchmark_summary.md
-          echo '```' >> benchmark_summary.md
+          echo "**Generated:** $(date)" >> benchmark_summary.md
+          echo "" >> benchmark_summary.md
 
-      - name: Upload results
+          echo "| Benchmark | Iterations | ns/op | Status |" >> benchmark_summary.md
+          echo "|-----------|------------|-------|--------|" >> benchmark_summary.md
+
+          grep "Benchmark" benchmark_results.txt | while read -r line; do
+            name=$(echo "$line" | awk '{print $1}' | sed 's/Benchmark//')
+            iterations=$(echo "$line" | awk '{print $2}')
+            nsop=$(echo "$line" | awk '{print $3}')
+
+            status="✅ Good"
+            if (( $(echo "$nsop > 1000000" | bc -l 2>/dev/null || echo 0) )); then
+              status="⚠️ Slow"
+            fi
+            if (( $(echo "$nsop > 10000000" | bc -l 2>/dev/null || echo 0) )); then
+              status="❌ Critical"
+            fi
+
+            echo "| $name | $iterations | $nsop | $status |" >> benchmark_summary.md
+          done
+
+          echo "" >> benchmark_summary.md
+          echo "### Top 10 Slowest Operations:" >> benchmark_summary.md
+          echo '```' >> benchmark_summary.md
+          grep "Benchmark" benchmark_results.txt | sort -k3 -nr | head -10 >> benchmark_summary.md
+          echo '```' >> benchmark_summary.md
+          EOF
+
+          chmod +x analyze_benchmarks.sh
+          ./analyze_benchmarks.sh
+
+      - name: Upload benchmark results
         uses: actions/upload-artifact@v4
         with:
-          name: go-benchmarks
+          name: benchmark-results
           path: |
             benchmark_results.txt
             benchmark_summary.md
+          retention-days: 30
 
   # 🧠 Memory Profiling
   memory-profiling:
     name: Memory Profiling
     runs-on: ubuntu-latest
-    if: github.event.inputs.benchmark_type == 'all' || github.event.inputs.benchmark_type == 'memory' || github.event_name == 'schedule'
+    timeout-minutes: 20
+    if: |
+      github.event_name == 'schedule' ||
+      github.event.inputs.test_suite == 'all' ||
+      github.event.inputs.test_suite == 'memory'
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -81,22 +138,44 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
           cache: true
 
-      - name: Memory profiling
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Run memory profiling
         run: |
           echo "🧠 Running memory profiling..."
-          go test -memprofile=mem.prof -run=^$ -bench=. ./...
-          go tool pprof -text -alloc_space mem.prof > memory_analysis.txt
+          go test -memprofile=mem.prof -run=^$ -bench=. -timeout=20m ./...
+
+          # Memory allocation analysis
+          go tool pprof -text -alloc_space mem.prof > memory_alloc_space.txt
+          go tool pprof -text -alloc_objects mem.prof > memory_alloc_objects.txt
+          go tool pprof -text -inuse_space mem.prof > memory_inuse_space.txt
 
       - name: Generate memory report
         run: |
-          echo "## 🧠 Memory Profile Report" > memory_report.md
+          echo "## 🧠 Memory Profiling Report" > memory_report.md
           echo "" >> memory_report.md
-          echo "### Top memory allocations:" >> memory_report.md
+          echo "**Generated:** $(date)" >> memory_report.md
+          echo "" >> memory_report.md
+
+          echo "### Top Memory Allocations (by space):" >> memory_report.md
           echo '```' >> memory_report.md
-          head -20 memory_analysis.txt >> memory_report.md
+          head -20 memory_alloc_space.txt >> memory_report.md
+          echo '```' >> memory_report.md
+          echo "" >> memory_report.md
+
+          echo "### Top Memory Allocations (by objects):" >> memory_report.md
+          echo '```' >> memory_report.md
+          head -20 memory_alloc_objects.txt >> memory_report.md
+          echo '```' >> memory_report.md
+          echo "" >> memory_report.md
+
+          echo "### Current Memory Usage:" >> memory_report.md
+          echo '```' >> memory_report.md
+          head -20 memory_inuse_space.txt >> memory_report.md
           echo '```' >> memory_report.md
 
-      - name: Upload profiles
+      - name: Upload memory profiles
         uses: actions/upload-artifact@v4
         with:
           name: memory-profiles
@@ -104,12 +183,17 @@ jobs:
             mem.prof
             memory_*.txt
             memory_report.md
+          retention-days: 30
 
   # 🚀 Load Testing
   load-testing:
     name: Load Testing
     runs-on: ubuntu-latest
-    if: github.event.inputs.benchmark_type == 'all' || github.event.inputs.benchmark_type == 'load' || github.event_name == 'schedule'
+    timeout-minutes: 25
+    if: |
+      github.event_name == 'schedule' ||
+      github.event.inputs.test_suite == 'all' ||
+      github.event.inputs.test_suite == 'load'
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -120,21 +204,29 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
           cache: true
 
-      - name: Build and start server
+      - name: Build ProxyND
         run: |
           echo "🏗️ Building ProxyND..."
           go build -o proxynd main.go
+
+      - name: Start server
+        run: |
+          mkdir -p /tmp/load-test/{config,storage}
+          export CONFIG_DIR=/tmp/load-test/config
+          export STORAGE_DIR=/tmp/load-test/storage
+          export SERVER_PORT=8080
+
           ./proxynd &
           SERVER_PID=$!
-          echo "SERVER_PID=$SERVER_PID" >> $GITHUB_ENV
+          echo $SERVER_PID > server.pid
 
-          # Wait for server
+          echo "⏳ Waiting for server to start..."
           for i in {1..30}; do
-            if curl -s http://localhost:8080/health > /dev/null; then
+            if curl -s http://localhost:8080/health > /dev/null 2>&1; then
               echo "✅ Server is ready"
               break
             fi
-            echo "⏳ Waiting for server... ($i/30)"
+            echo "Waiting... ($i/30)"
             sleep 2
           done
 
@@ -146,11 +238,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install k6
 
-      - name: Create load test script
+      - name: Create k6 load test script
         env:
-          TEST_DURATION: ${{ github.event.inputs.duration || '1m' }}
+          DURATION: ${{ github.event.inputs.duration || '1m' }}
+          INTENSITY: ${{ github.event.inputs.load_intensity || 'medium' }}
         run: |
-          cat > load-test.js << EOF
+          cat > load-test.js << 'EOF'
           import http from 'k6/http';
           import { check, sleep } from 'k6';
           import { Rate, Trend, Counter } from 'k6/metrics';
@@ -159,60 +252,108 @@ jobs:
           export let responseTime = new Trend('response_time');
           export let requestCount = new Counter('requests');
 
+          // Load intensity configuration
+          const intensity = __ENV.INTENSITY || 'medium';
+          const durations = {
+            rampUp: '1m',
+            sustain: __ENV.DURATION || '1m',
+            rampDown: '30s'
+          };
+
+          const targets = {
+            low: { initial: 10, peak: 20, sustain: 50 },
+            medium: { initial: 20, peak: 50, sustain: 100 },
+            high: { initial: 50, peak: 100, sustain: 200 }
+          };
+
+          const config = targets[intensity] || targets.medium;
+
           export let options = {
             stages: [
-              { duration: '30s', target: 10 },
-              { duration: '${TEST_DURATION}', target: 50 },
-              { duration: '30s', target: 0 },
+              { duration: durations.rampUp, target: config.initial },
+              { duration: durations.rampUp, target: config.peak },
+              { duration: durations.sustain, target: config.sustain },
+              { duration: durations.rampDown, target: 0 },
             ],
             thresholds: {
-              http_req_duration: ['p(95)<500'],
+              http_req_duration: ['p(95)<500', 'p(99)<1000'],
               http_req_failed: ['rate<0.1'],
               errors: ['rate<0.1'],
             },
           };
 
           export default function() {
-            let response = http.get('http://localhost:8080/health');
-
-            let success = check(response, {
-              'status is 200': (r) => r.status === 200,
-              'response time < 500ms': (r) => r.timings.duration < 500,
+            // Health check endpoint
+            let healthResponse = http.get('http://localhost:8080/health');
+            let healthSuccess = check(healthResponse, {
+              'health status is 200': (r) => r.status === 200,
+              'health response time < 500ms': (r) => r.timings.duration < 500,
             });
 
-            if (!success) {
+            if (!healthSuccess) {
               errorRate.add(1);
             }
-
-            responseTime.add(response.timings.duration);
+            responseTime.add(healthResponse.timings.duration);
             requestCount.add(1);
 
-            sleep(0.1);
+            // Metrics endpoint
+            let metricsResponse = http.get('http://localhost:8080/metrics');
+            check(metricsResponse, {
+              'metrics status is 200': (r) => r.status === 200,
+            }) || errorRate.add(1);
+
+            sleep(0.5);
           }
           EOF
 
-      - name: Run load test
+      - name: Run k6 load test
         run: |
-          echo "🚀 Running load test..."
-          k6 run --out json=load-test-results.json load-test.js
+          echo "🚀 Running k6 load test..."
+          k6 run \
+            --out json=load-test-results.json \
+            -e INTENSITY=${{ github.event.inputs.load_intensity || 'medium' }} \
+            -e DURATION=${{ github.event.inputs.duration || '1m' }} \
+            load-test.js
 
-      - name: Generate load test report
+      - name: Analyze load test results
         run: |
+          cat > analyze_load_test.sh << 'EOF'
+          #!/bin/bash
+
           echo "## 🚀 Load Test Results" > load_test_report.md
           echo "" >> load_test_report.md
           echo "**Duration:** ${{ github.event.inputs.duration || '1m' }}" >> load_test_report.md
+          echo "**Intensity:** ${{ github.event.inputs.load_intensity || 'medium' }}" >> load_test_report.md
           echo "**Date:** $(date)" >> load_test_report.md
           echo "" >> load_test_report.md
 
-          # Parse results (simplified - you might want to use jq)
-          TOTAL_REQUESTS=$(grep -o '"http_reqs"' load-test-results.json | wc -l)
-          echo "**Total Requests:** $TOTAL_REQUESTS" >> load_test_report.md
+          # Extract summary metrics from k6 output
+          echo "### Summary Metrics" >> load_test_report.md
+          echo "| Metric | Value |" >> load_test_report.md
+          echo "|--------|-------|" >> load_test_report.md
+
+          # Parse JSON results (simplified - actual implementation may vary)
+          if command -v jq &> /dev/null; then
+            TOTAL_REQUESTS=$(jq -r 'select(.type=="Point" and .metric=="http_reqs") | .data.value' load-test-results.json 2>/dev/null | awk '{s+=$1} END {print s}' || echo "N/A")
+            echo "| Total Requests | $TOTAL_REQUESTS |" >> load_test_report.md
+          else
+            TOTAL_REQUESTS=$(grep -o '"http_reqs"' load-test-results.json | wc -l)
+            echo "| Total Requests | $TOTAL_REQUESTS |" >> load_test_report.md
+          fi
+
           echo "" >> load_test_report.md
           echo "📊 Detailed results available in artifacts" >> load_test_report.md
+          EOF
+
+          chmod +x analyze_load_test.sh
+          ./analyze_load_test.sh
 
       - name: Stop server
         if: always()
-        run: kill ${{ env.SERVER_PID }} || true
+        run: |
+          if [ -f server.pid ]; then
+            kill $(cat server.pid) 2>/dev/null || true
+          fi
 
       - name: Upload load test results
         uses: actions/upload-artifact@v4
@@ -221,60 +362,172 @@ jobs:
           path: |
             load-test-results.json
             load_test_report.md
+          retention-days: 30
 
-  # 📊 Performance Report
-  performance-report:
-    name: Performance Report
+  # 💻 Resource Monitoring
+  resource-monitoring:
+    name: Resource Monitoring
     runs-on: ubuntu-latest
-    needs: [go-benchmarks, memory-profiling, load-testing]
+    timeout-minutes: 15
+    if: |
+      github.event_name == 'schedule' ||
+      github.event.inputs.test_suite == 'all' ||
+      github.event.inputs.test_suite == 'resources'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Collect system information
+        run: |
+          echo "## 💻 System Information" > resource_report.md
+          echo "" >> resource_report.md
+          echo "**Generated:** $(date)" >> resource_report.md
+          echo "" >> resource_report.md
+
+          echo "### CPU Information:" >> resource_report.md
+          echo '```' >> resource_report.md
+          lscpu | head -15 >> resource_report.md
+          echo '```' >> resource_report.md
+          echo "" >> resource_report.md
+
+          echo "### Memory Information:" >> resource_report.md
+          echo '```' >> resource_report.md
+          free -h >> resource_report.md
+          echo '```' >> resource_report.md
+          echo "" >> resource_report.md
+
+          echo "### Disk Information:" >> resource_report.md
+          echo '```' >> resource_report.md
+          df -h >> resource_report.md
+          echo '```' >> resource_report.md
+
+      - name: Measure build performance
+        run: |
+          echo "" >> resource_report.md
+          echo "## ⚡ Build Performance" >> resource_report.md
+          echo "" >> resource_report.md
+          echo "| Target | Time | Size |" >> resource_report.md
+          echo "|--------|------|------|" >> resource_report.md
+
+          # ProxyND server build
+          start_time=$(date +%s%N)
+          go build -o proxynd main.go
+          end_time=$(date +%s%N)
+          build_time=$(echo "scale=3; ($end_time - $start_time) / 1000000000" | bc)
+          build_size=$(du -h proxynd | cut -f1)
+          echo "| ProxyND Server | ${build_time}s | $build_size |" >> resource_report.md
+
+          # ProxyND CLI build (if exists)
+          if [ -f "cmd/proxyndctl/main.go" ]; then
+            start_time=$(date +%s%N)
+            go build -o proxyndctl ./cmd/proxyndctl/main.go
+            end_time=$(date +%s%N)
+            build_time=$(echo "scale=3; ($end_time - $start_time) / 1000000000" | bc)
+            build_size=$(du -h proxyndctl | cut -f1)
+            echo "| ProxyND CLI | ${build_time}s | $build_size |" >> resource_report.md
+          fi
+
+      - name: Measure test execution time
+        run: |
+          echo "" >> resource_report.md
+          echo "## 🧪 Test Execution Performance" >> resource_report.md
+          echo "" >> resource_report.md
+
+          start_time=$(date +%s)
+          go test -v ./... -short > /dev/null 2>&1 || true
+          end_time=$(date +%s)
+          test_time=$((end_time - start_time))
+
+          echo "**Test Suite Duration:** ${test_time}s" >> resource_report.md
+
+      - name: Upload resource report
+        uses: actions/upload-artifact@v4
+        with:
+          name: resource-report
+          path: resource_report.md
+          retention-days: 30
+
+  # 📊 Comprehensive Performance Report
+  performance-report:
+    name: Generate Performance Report
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [go-benchmarks, memory-profiling, load-testing, resource-monitoring]
     if: always()
     steps:
-      - name: Download artifacts
+      - name: Download all artifacts
         uses: actions/download-artifact@v5
+        continue-on-error: true
 
       - name: Generate comprehensive report
         run: |
-          echo "# 📊 ProxyND Performance Report" > performance_report.md
-          echo "" >> performance_report.md
-          echo "**Generated:** $(date)" >> performance_report.md
-          echo "**Trigger:** ${{ github.event_name }}" >> performance_report.md
-          echo "" >> performance_report.md
+          echo "# 📊 ProxyND Performance Report" > comprehensive_report.md
+          echo "" >> comprehensive_report.md
+          echo "**Generated:** $(date)" >> comprehensive_report.md
+          echo "**Trigger:** ${{ github.event_name }}" >> comprehensive_report.md
+          echo "" >> comprehensive_report.md
 
-          echo "## 📈 Summary" >> performance_report.md
-          echo "| Test | Status | Report |" >> performance_report.md
-          echo "|------|--------|--------|" >> performance_report.md
-          echo "| Go Benchmarks | ${{ needs.go-benchmarks.result }} | [📊](./go-benchmarks/) |" >> performance_report.md
-          echo "| Memory Profiling | ${{ needs.memory-profiling.result }} | [🧠](./memory-profiles/) |" >> performance_report.md
-          echo "| Load Testing | ${{ needs.load-testing.result }} | [🚀](./load-test-results/) |" >> performance_report.md
-          echo "" >> performance_report.md
+          echo "## 📈 Test Summary" >> comprehensive_report.md
+          echo "| Test Suite | Status | Report Available |" >> comprehensive_report.md
+          echo "|------------|--------|------------------|" >> comprehensive_report.md
+          echo "| Go Benchmarks | ${{ needs.go-benchmarks.result }} | ${{ needs.go-benchmarks.result == 'success' && '✅' || '❌' }} |" >> comprehensive_report.md
+          echo "| Memory Profiling | ${{ needs.memory-profiling.result }} | ${{ needs.memory-profiling.result == 'success' && '✅' || '❌' }} |" >> comprehensive_report.md
+          echo "| Load Testing | ${{ needs.load-testing.result }} | ${{ needs.load-testing.result == 'success' && '✅' || '❌' }} |" >> comprehensive_report.md
+          echo "| Resource Monitoring | ${{ needs.resource-monitoring.result }} | ${{ needs.resource-monitoring.result == 'success' && '✅' || '❌' }} |" >> comprehensive_report.md
+          echo "" >> comprehensive_report.md
 
-          # Include individual reports if they exist
-          if [ -f "go-benchmarks/benchmark_summary.md" ]; then
-            cat go-benchmarks/benchmark_summary.md >> performance_report.md
-            echo "" >> performance_report.md
+          # Include individual reports
+          echo "---" >> comprehensive_report.md
+          echo "" >> comprehensive_report.md
+
+          if [ -f "benchmark-results/benchmark_summary.md" ]; then
+            cat benchmark-results/benchmark_summary.md >> comprehensive_report.md
+            echo "" >> comprehensive_report.md
+            echo "---" >> comprehensive_report.md
+            echo "" >> comprehensive_report.md
           fi
 
           if [ -f "memory-profiles/memory_report.md" ]; then
-            cat memory-profiles/memory_report.md >> performance_report.md
-            echo "" >> performance_report.md
+            cat memory-profiles/memory_report.md >> comprehensive_report.md
+            echo "" >> comprehensive_report.md
+            echo "---" >> comprehensive_report.md
+            echo "" >> comprehensive_report.md
           fi
 
           if [ -f "load-test-results/load_test_report.md" ]; then
-            cat load-test-results/load_test_report.md >> performance_report.md
-            echo "" >> performance_report.md
+            cat load-test-results/load_test_report.md >> comprehensive_report.md
+            echo "" >> comprehensive_report.md
+            echo "---" >> comprehensive_report.md
+            echo "" >> comprehensive_report.md
           fi
 
-          echo "## 🎯 Recommendations" >> performance_report.md
-          echo "- Monitor response times during peak load" >> performance_report.md
-          echo "- Consider memory optimization for high-allocation functions" >> performance_report.md
-          echo "- Review error rates and implement circuit breakers if needed" >> performance_report.md
+          if [ -f "resource-report/resource_report.md" ]; then
+            cat resource-report/resource_report.md >> comprehensive_report.md
+            echo "" >> comprehensive_report.md
+          fi
+
+          echo "## 🎯 Recommendations" >> comprehensive_report.md
+          echo "" >> comprehensive_report.md
+          echo "Based on the performance analysis:" >> comprehensive_report.md
+          echo "- Monitor response times regularly to detect regressions" >> comprehensive_report.md
+          echo "- Optimize memory allocations in hot paths if needed" >> comprehensive_report.md
+          echo "- Consider horizontal scaling for sustained high load" >> comprehensive_report.md
+          echo "- Review and tune garbage collection settings if memory pressure increases" >> comprehensive_report.md
+          echo "- Implement caching strategies for frequently accessed resources" >> comprehensive_report.md
 
       - name: Upload comprehensive report
         uses: actions/upload-artifact@v4
         with:
-          name: performance-report
-          path: performance_report.md
+          name: comprehensive-performance-report
+          path: comprehensive_report.md
+          retention-days: 90
 
-      - name: Update job summary
+      - name: Add summary to workflow
         run: |
-          cat performance_report.md >> $GITHUB_STEP_SUMMARY
+          cat comprehensive_report.md >> $GITHUB_STEP_SUMMARY

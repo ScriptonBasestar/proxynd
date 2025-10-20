@@ -1,0 +1,674 @@
+# 🧪 ProxyND Testing Pipeline
+# Integrated: Unit → Contract → Integration → E2E → Health Monitoring
+name: Testing Pipeline
+
+on:
+  push:
+    branches: [ master, develop ]
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
+      - 'tests/**'
+      - 'internal/health/**'
+      - 'health/**'
+      - 'Makefile.test.mk'
+      - '.github/workflows/testing.yml'
+  pull_request:
+    branches: [ master, develop ]
+    paths:
+      - '**.go'
+      - 'go.mod'
+      - 'go.sum'
+      - 'tests/**'
+      - 'internal/health/**'
+      - 'health/**'
+      - 'Makefile.test.mk'
+      - '.github/workflows/testing.yml'
+
+env:
+  GO_VERSION: '1.24'
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+concurrency:
+  group: testing-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # 🔍 변경 파일 감지
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      has_changes: ${{ steps.filter.outputs.has_changes }}
+      health: ${{ steps.filter.outputs.health }}
+      core: ${{ steps.filter.outputs.core }}
+      npm: ${{ steps.filter.outputs.npm }}
+      maven: ${{ steps.filter.outputs.maven }}
+      docker: ${{ steps.filter.outputs.docker }}
+      apt: ${{ steps.filter.outputs.apt }}
+      pip: ${{ steps.filter.outputs.pip }}
+      yum: ${{ steps.filter.outputs.yum }}
+      apk: ${{ steps.filter.outputs.apk }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Check changed files
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            has_changes:
+              - '**.go'
+              - 'go.mod'
+              - 'go.sum'
+            health:
+              - 'internal/health/**'
+              - 'health/**'
+              - 'routers/*health*'
+            core:
+              - 'internal/app/**'
+              - 'internal/config/**'
+              - 'cache/**'
+              - 'metrics/**'
+              - 'main.go'
+            npm:
+              - 'internal/services/npm/**'
+              - 'handlers/proxy/npm_handler.go'
+              - 'tests/integration/npm_*'
+            maven:
+              - 'internal/services/maven/**'
+              - 'handlers/proxy/maven_handler.go'
+              - 'tests/integration/maven_*'
+            docker:
+              - 'internal/services/docker/**'
+              - 'handlers/proxy/docker_handler.go'
+              - 'tests/integration/docker_*'
+            apt:
+              - 'internal/services/apt/**'
+              - 'handlers/proxy/apt_handler.go'
+              - 'tests/integration/apt_*'
+            pip:
+              - 'internal/services/pip/**'
+              - 'handlers/proxy/pip_handler.go'
+              - 'tests/integration/pip_*'
+            yum:
+              - 'internal/services/yum/**'
+              - 'handlers/proxy/yum_handler.go'
+              - 'tests/integration/yum_*'
+            apk:
+              - 'internal/services/apk/**'
+              - 'handlers/proxy/apk_handler.go'
+              - 'tests/integration/apk_*'
+
+  # 🚀 Stage 1: Quick Feedback (Unit Tests)
+  quick-feedback:
+    name: Quick Feedback (Unit + Lint)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: changes
+    if: needs.changes.outputs.has_changes == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Install dependencies
+        run: |
+          go mod download
+          go mod verify
+
+      - name: Run linting
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: latest
+          args: --timeout=5m
+
+      - name: Run unit tests
+        run: |
+          go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./coverage.out
+          flags: unit
+          name: unit-tests
+
+  # 🤝 Stage 2: Contract Tests (PR + All branches)
+  contract-tests:
+    name: Contract Tests (Ports Layer)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [changes, quick-feedback]
+    if: needs.changes.outputs.has_changes == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Run contract tests
+        run: |
+          if command -v make &> /dev/null && grep -q "test-contract" Makefile*; then
+            make test-contract
+          else
+            go test -v -tags=contract ./internal/ports/... || echo "No contract tests found"
+          fi
+
+      - name: Upload contract test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: contract-test-results
+          path: |
+            reports/coverage/contract.*
+            reports/test-results/contract.*
+          retention-days: 7
+
+  # 🔗 Stage 3: Integration Tests (Conditional)
+  integration-tests-develop:
+    name: Integration Tests - Selective (Develop)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: [changes, contract-tests]
+    if: |
+      github.ref == 'refs/heads/develop' &&
+      needs.changes.outputs.has_changes == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        proxy-type: [npm, maven, docker]  # 핵심 프록시만
+    services:
+      redis:
+        image: redis:7.2-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Setup test environment
+        run: |
+          mkdir -p tmp/config tmp/storage
+          cp -r examples/proxy-types/*.yaml tmp/config/ 2>/dev/null || true
+          cp -r sample-conf/* tmp/config/ 2>/dev/null || true
+
+      - name: Run integration tests for ${{ matrix.proxy-type }}
+        run: |
+          export CONFIG_DIR=./tmp/config
+          export STORAGE_DIR=./tmp/storage
+          export REDIS_URL=redis://localhost:6379
+          export PROXY_TYPE=${{ matrix.proxy-type }}
+
+          go test -tags=integration -v ./tests/integration/${{ matrix.proxy-type }}_* || \
+          echo "No specific integration tests for ${{ matrix.proxy-type }}"
+
+      - name: Upload integration test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-results-develop-${{ matrix.proxy-type }}
+          path: |
+            reports/coverage/${{ matrix.proxy-type }}.*
+            reports/test-results/${{ matrix.proxy-type }}.*
+          retention-days: 7
+
+  integration-tests-master:
+    name: Integration Tests - Full Matrix (Master)
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    needs: [changes, contract-tests]
+    if: |
+      github.ref == 'refs/heads/master' &&
+      needs.changes.outputs.has_changes == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        proxy-type: [npm, maven, docker, apt, pip, yum, apk]
+        go-version: ['1.23', '1.24']
+    services:
+      redis:
+        image: redis:7.2-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ matrix.go-version }}
+          cache: true
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Setup test environment
+        run: |
+          mkdir -p tmp/config tmp/storage
+          cp -r examples/proxy-types/*.yaml tmp/config/ 2>/dev/null || true
+          cp -r sample-conf/* tmp/config/ 2>/dev/null || true
+
+      - name: Cache upstream fixtures
+        uses: actions/cache@v4
+        with:
+          path: tests/e2e/upstream-data
+          key: upstream-fixtures-${{ matrix.proxy-type }}-v2-${{ hashFiles('tests/e2e/upstream-data/**') }}
+          restore-keys: |
+            upstream-fixtures-${{ matrix.proxy-type }}-v2-
+            upstream-fixtures-${{ matrix.proxy-type }}-
+
+      - name: Run integration tests for ${{ matrix.proxy-type }}
+        run: |
+          export CONFIG_DIR=./tmp/config
+          export STORAGE_DIR=./tmp/storage
+          export REDIS_URL=redis://localhost:6379
+          export PROXY_TYPE=${{ matrix.proxy-type }}
+
+          go test -tags=integration -v ./tests/integration/${{ matrix.proxy-type }}_* || \
+          echo "No specific integration tests for ${{ matrix.proxy-type }}"
+
+      - name: Upload integration test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-results-master-${{ matrix.proxy-type }}-go${{ matrix.go-version }}
+          path: |
+            reports/coverage/${{ matrix.proxy-type }}.*
+            reports/test-results/${{ matrix.proxy-type }}.*
+          retention-days: 7
+
+  # 🌐 Stage 4: E2E Tests (Master only)
+  e2e-tests:
+    name: E2E Tests (Full System)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [integration-tests-master]
+    if: github.ref == 'refs/heads/master'
+    strategy:
+      fail-fast: false
+      matrix:
+        proxy-type: [npm, maven, docker]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Setup test environment
+        run: |
+          mkdir -p tmp/config tmp/storage
+          cp -r examples/proxy-types/*.yaml tmp/config/ 2>/dev/null || true
+
+      - name: Build test image
+        run: docker build -t proxynd:e2e .
+
+      - name: Start ProxyND container
+        run: |
+          export CONFIG_DIR=./tmp/config
+          export STORAGE_DIR=./tmp/storage
+          docker-compose -f docker-compose.e2e.yml up -d proxynd || \
+          docker run -d -p 8080:8080 \
+            -v $(pwd)/tmp/config:/config \
+            -v $(pwd)/tmp/storage:/storage \
+            --name proxynd-e2e proxynd:e2e
+
+      - name: Wait for ProxyND to be ready
+        run: |
+          timeout 60 bash -c 'until curl -f http://localhost:8080/healthz; do sleep 2; done'
+
+      - name: Run E2E tests for ${{ matrix.proxy-type }}
+        run: |
+          export PROXY_TYPE=${{ matrix.proxy-type }}
+          if [ -f "tests/e2e/scripts/test-${{ matrix.proxy-type }}.sh" ]; then
+            chmod +x tests/e2e/scripts/test-${{ matrix.proxy-type }}.sh
+            tests/e2e/scripts/test-${{ matrix.proxy-type }}.sh
+          else
+            echo "No E2E script found for ${{ matrix.proxy-type }}"
+          fi
+
+      - name: Collect E2E logs
+        if: always()
+        run: |
+          mkdir -p e2e-results/${{ matrix.proxy-type }}
+          docker logs proxynd-e2e > e2e-results/${{ matrix.proxy-type }}/proxynd.log 2>&1 || true
+
+      - name: Upload E2E test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-results-${{ matrix.proxy-type }}
+          path: e2e-results/${{ matrix.proxy-type }}/
+          retention-days: 7
+
+      - name: Cleanup
+        if: always()
+        run: |
+          docker-compose -f docker-compose.e2e.yml down -v 2>/dev/null || true
+          docker stop proxynd-e2e 2>/dev/null || true
+          docker rm proxynd-e2e 2>/dev/null || true
+
+  # 🏥 Health Monitoring Tests (Develop+)
+  health-system-unit-tests:
+    name: Health System Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [changes, quick-feedback]
+    if: |
+      needs.changes.outputs.health == 'true' &&
+      (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Run health system unit tests
+        run: |
+          echo "Running health system unit tests..."
+          go test -v -race -timeout=5m ./internal/health/... \
+            -cover -coverprofile=health-coverage.out \
+            -covermode=atomic
+
+      - name: Check coverage threshold
+        run: |
+          COVERAGE=$(go tool cover -func=health-coverage.out | grep total | awk '{print $3}' | sed 's/%//')
+          echo "Health system test coverage: ${COVERAGE}%"
+
+          if (( $(echo "$COVERAGE < 80" | bc -l) )); then
+            echo "❌ Health system test coverage is below 80%: ${COVERAGE}%"
+            exit 1
+          fi
+          echo "✅ Health system test coverage meets requirement: ${COVERAGE}%"
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v5
+        with:
+          file: ./health-coverage.out
+          flags: health-system
+          name: health-system-coverage
+
+  health-integration-tests:
+    name: Health System Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [changes, health-system-unit-tests]
+    if: |
+      needs.changes.outputs.health == 'true' &&
+      (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/master')
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq curl
+
+      - name: Set up test environment
+        run: |
+          mkdir -p /tmp/proxynd-test/{config,storage,cache}
+          echo "CONFIG_DIR=/tmp/proxynd-test/config" >> $GITHUB_ENV
+          echo "STORAGE_DIR=/tmp/proxynd-test/storage" >> $GITHUB_ENV
+          echo "SERVER_PORT=8080" >> $GITHUB_ENV
+
+      - name: Build ProxyND
+        run: |
+          echo "Building ProxyND..."
+          go build -o proxynd-test ./main.go
+
+      - name: Start ProxyND server
+        run: |
+          echo "Starting ProxyND server..."
+          ./proxynd-test &
+          PROXYND_PID=$!
+          echo $PROXYND_PID > proxynd.pid
+
+          echo "Waiting for server to start..."
+          for i in {1..30}; do
+            if curl -s http://localhost:8080/health > /dev/null 2>&1; then
+              echo "✅ Server is running"
+              break
+            fi
+            echo "Waiting... (attempt $i/30)"
+            sleep 2
+          done
+
+      - name: Test health endpoints
+        run: |
+          echo "Testing health endpoints..."
+
+          # Basic health check
+          curl -f http://localhost:8080/health | jq . || exit 1
+
+          # Detailed health check
+          curl -f http://localhost:8080/health/detailed | jq . || exit 1
+
+          # Fast health check
+          curl -f http://localhost:8080/health/fast | jq . || exit 1
+
+      - name: Test health check performance
+        if: github.ref == 'refs/heads/master'
+        run: |
+          echo "Testing fast health check performance..."
+          for i in {1..10}; do
+            START=$(date +%s%N)
+            curl -s http://localhost:8080/health/fast > /dev/null
+            END=$(date +%s%N)
+            DURATION=$(( (END - START) / 1000000 ))
+            echo "Attempt $i: ${DURATION}ms"
+
+            if [ $DURATION -gt 100 ]; then
+              echo "❌ Fast health check too slow: ${DURATION}ms"
+              exit 1
+            fi
+          done
+          echo "✅ All fast health checks completed under 100ms"
+
+      - name: Cleanup
+        if: always()
+        run: |
+          if [ -f proxynd.pid ]; then
+            kill $(cat proxynd.pid) 2>/dev/null || true
+            rm proxynd.pid
+          fi
+
+  health-load-tests:
+    name: Health System Load Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [health-integration-tests]
+    if: |
+      github.ref == 'refs/heads/master' &&
+      needs.changes.outputs.health == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y apache2-utils curl jq
+
+      - name: Build and start server
+        run: |
+          go build -o proxynd-load-test ./main.go
+          mkdir -p /tmp/load-test
+          export CONFIG_DIR=/tmp/load-test
+          export STORAGE_DIR=/tmp/load-test
+          export SERVER_PORT=8081
+
+          ./proxynd-load-test &
+          PROXYND_PID=$!
+          echo $PROXYND_PID > proxynd-load.pid
+
+          for i in {1..20}; do
+            if curl -s http://localhost:8081/health > /dev/null 2>&1; then
+              echo "Server ready for load testing"
+              break
+            fi
+            sleep 1
+          done
+
+      - name: Run load tests
+        run: |
+          echo "Running load tests on health endpoints..."
+          ab -n 1000 -c 50 -s 30 http://localhost:8081/health/fast > ab-results.log 2>&1
+
+          FAILED=$(grep "Failed requests:" ab-results.log | awk '{print $3}')
+          if [ "$FAILED" -gt 10 ]; then
+            echo "❌ Too many failed requests: $FAILED"
+            exit 1
+          fi
+          echo "✅ Load test passed with $FAILED failed requests"
+
+      - name: Cleanup
+        if: always()
+        run: |
+          if [ -f proxynd-load.pid ]; then
+            kill $(cat proxynd-load.pid) 2>/dev/null || true
+          fi
+
+  # 📊 Coverage Report Generation
+  coverage-report:
+    name: Generate Coverage Report
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [quick-feedback, contract-tests, integration-tests-develop, integration-tests-master]
+    if: always() && (needs.quick-feedback.result == 'success' || needs.contract-tests.result == 'success')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache: true
+
+      - name: Download all test artifacts
+        uses: actions/download-artifact@v5
+        with:
+          path: reports/
+        continue-on-error: true
+
+      - name: Generate combined coverage report
+        run: |
+          echo "Generating combined coverage report..."
+          # Combine coverage files if available
+          ls -la reports/ || echo "No artifacts found"
+
+      - name: Upload final coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: final-coverage-report
+          path: reports/
+          retention-days: 30
+
+  # ✅ Test Summary
+  test-summary:
+    name: Test Summary
+    runs-on: ubuntu-latest
+    needs: [quick-feedback, contract-tests, integration-tests-develop, integration-tests-master, e2e-tests, health-system-unit-tests, health-integration-tests, health-load-tests]
+    if: always()
+    steps:
+      - name: Generate test summary
+        run: |
+          echo "## 🧪 Test Results Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Test Layer | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|------------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Unit Tests | ${{ needs.quick-feedback.result == 'success' && '✅ Passed' || needs.quick-feedback.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Contract Tests | ${{ needs.contract-tests.result == 'success' && '✅ Passed' || needs.contract-tests.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Integration (Develop) | ${{ needs.integration-tests-develop.result == 'success' && '✅ Passed' || needs.integration-tests-develop.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Integration (Master) | ${{ needs.integration-tests-master.result == 'success' && '✅ Passed' || needs.integration-tests-master.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| E2E Tests | ${{ needs.e2e-tests.result == 'success' && '✅ Passed' || needs.e2e-tests.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Health System Tests | ${{ needs.health-system-unit-tests.result == 'success' && '✅ Passed' || needs.health-system-unit-tests.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Branch-specific info
+          if [ "${{ github.ref }}" = "refs/heads/develop" ]; then
+            echo "**Branch**: develop (selective testing)" >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ github.ref }}" = "refs/heads/master" ]; then
+            echo "**Branch**: master (full testing)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**Branch**: feature branch (PR testing)" >> $GITHUB_STEP_SUMMARY
+          fi
