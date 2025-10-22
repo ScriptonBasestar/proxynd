@@ -992,6 +992,43 @@ func (c *Container) SetProxyService(proxyService interface{}) {
 	c.logger.Info("ProxyService registered in container")
 }
 
+// GetOrCreateProxyService creates and registers ProxyService with NoOp adapters
+// This method is used for gradual hexagonal architecture migration
+func (c *Container) GetOrCreateProxyService() (interface{}, error) {
+	// Check if already created
+	if ps := c.GetProxyService(); ps != nil {
+		if ps == "pending" {
+			c.logger.Debug("ProxyService creation is pending")
+			return nil, fmt.Errorf("ProxyService creation is pending")
+		}
+		c.logger.Debug("ProxyService already exists in container")
+		return ps, nil
+	}
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// Double-check after acquiring lock
+	if ps := c.singletons["proxy-service"]; ps != nil {
+		if ps == "pending" {
+			return nil, fmt.Errorf("ProxyService creation is pending")
+		}
+		return ps, nil
+	}
+
+	c.logger.Info("ProxyService will be created via InitializeProxyService()")
+	c.singletons["proxy-service"] = "pending"
+
+	return nil, nil
+}
+
+// InitializeProxyService creates ProxyService with all dependencies
+// This is called from app.initializeServices() to avoid circular imports
+func (c *Container) InitializeProxyService() error {
+	// Delegate to proxy_service_initializer.go to wire all dependencies
+	return c.InitializeProxyServiceWithStubs()
+}
+
 // ContainerProvider 인터페이스 구현
 func (c *Container) GetStorageDir() string {
 	return c.config.StorageDir

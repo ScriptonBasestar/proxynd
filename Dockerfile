@@ -36,10 +36,10 @@ RUN if [ "$SKIP_TESTS" != "true" ]; then \
 
 # 바이너리 빌드 (최적화된 설정)
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
-    -ldflags="-s -w -X main.version=${VERSION:-dev} -X main.buildDate=${BUILD_DATE} -X main.gitCommit=${VCS_REF}" \
+    -ldflags="-s -w -X main.Version=${VERSION:-dev} -X main.BuildTime=${BUILD_DATE} -X main.CommitSHA=${VCS_REF}" \
     -trimpath \
     -o proxynd \
-    ./cmd/proxynd
+    .
 
 # === Runtime Stage ===
 FROM alpine:${ALPINE_VERSION} AS runtime
@@ -70,10 +70,11 @@ RUN addgroup -g 1001 -S proxynd && \
 RUN mkdir -p /app /config /storage /var/log/proxynd && \
     chown -R proxynd:proxynd /app /config /storage /var/log/proxynd
 
-# 바이너리 및 템플릿 복사
+# 바이너리 복사
 COPY --from=builder --chown=proxynd:proxynd /build/proxynd /app/
-COPY --from=builder --chown=proxynd:proxynd /build/templates /app/templates/
-COPY --from=builder --chown=proxynd:proxynd /build/examples /app/examples/
+
+# 설정 예제 복사 (선택적)
+COPY --chown=proxynd:proxynd examples /app/examples/
 
 # 헬스체크 스크립트 추가
 COPY --chown=proxynd:proxynd <<EOF /app/healthcheck.sh

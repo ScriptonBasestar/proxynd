@@ -65,7 +65,7 @@ archives:
     files:
       - README.md
       - LICENSE
-      - sample-conf/**/*
+      - examples/**/*
 
 checksum:
   name_template: 'checksums.txt'
@@ -166,8 +166,8 @@ nfpms:
     recommends:
       - redis
     contents:
-      - src: ./sample-conf
-        dst: /etc/proxynd
+      - src: ./examples
+        dst: /etc/proxynd/examples
         type: config
       - src: ./deployments/systemd/proxynd.service
         dst: /lib/systemd/system/proxynd.service
@@ -192,8 +192,8 @@ brews:
       bin.install "proxynd"
       bin.install "proxyndctl"
 
-      # Install sample configuration
-      etc.install "sample-conf" => "proxynd"
+      # Install example configuration
+      etc.install "examples" => "proxynd"
 
 release:
   github:

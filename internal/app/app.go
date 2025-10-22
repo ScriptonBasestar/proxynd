@@ -192,7 +192,21 @@ func (app *Application) initializeServices() error {
 		upstreamClient,
 	)
 
+	// Initialize ProxyService with hexagonal architecture (using stub adapters)
+	if err := app.initializeProxyService(); err != nil {
+		app.logger.Warn("Failed to initialize ProxyService with hexagonal architecture",
+			logging.F("error", err))
+		// Non-fatal - fallback to legacy architecture
+	}
+
 	return nil
+}
+
+// initializeProxyService creates ProxyService with NoOp stub adapters
+func (app *Application) initializeProxyService() error {
+	// Dynamically import stub package to avoid circular dependency
+	// Using late binding pattern
+	return app.container.InitializeProxyService()
 }
 
 // initializeContainer Container 의존성 주입 컨테이너 초기화

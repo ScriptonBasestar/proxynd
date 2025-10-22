@@ -17,8 +17,8 @@ RUN mkdir -p /config /storage && \
 # Copy the binary from GoReleaser
 COPY proxynd /usr/local/bin/proxynd
 
-# Copy sample configuration
-COPY sample-conf /config/sample
+# Copy example configuration
+COPY examples /config/examples
 
 # Set permissions
 RUN chmod +x /usr/local/bin/proxynd
