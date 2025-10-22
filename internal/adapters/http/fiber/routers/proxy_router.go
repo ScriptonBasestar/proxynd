@@ -5,11 +5,15 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
+	"proxynd/internal/adapters/http/fiber/handlers/proxy"
 	"proxynd/internal/alerts"
 	"proxynd/internal/config"
+	"proxynd/internal/factory"
 	authHandlers "proxynd/internal/handlers-legacy/auth"
 	legacyProxy "proxynd/internal/handlers-legacy/proxy"
+	"proxynd/internal/logging"
 	middlewares "proxynd/internal/middleware-legacy"
+	"proxynd/internal/usecase"
 )
 
 // ContainerProvider interface for dependency injection
@@ -85,8 +89,8 @@ func ProxyRouter(app *fiber.App) {
 func ProxyRouterWithContainer(app *fiber.App, container ContainerProvider) {
 	log.Printf("Setting up proxy router with container-based dependency injection")
 
-	// Get logger from container (will be used when full DI is implemented)
-	_ = container.GetLogger()
+	// Get logger from container
+	logger := container.GetLogger()
 
 	// Get ProxyService from container (may be nil during gradual migration)
 	proxyServiceInterface := container.GetProxyService()
@@ -100,35 +104,36 @@ func ProxyRouterWithContainer(app *fiber.App, container ContainerProvider) {
 		return
 	}
 
-	// Type assertions with nil checks
-	var proxyService interface{}
-	if proxyServiceInterface != nil {
-		proxyService = proxyServiceInterface
+	// Check if we have both ProxyService and AdapterFactory
+	if proxyServiceInterface != nil && adapterFactoryInterface != nil {
+		// Type assertions
+		proxyService, psOk := proxyServiceInterface.(*usecase.ProxyService)
+		adapterFactory, afOk := adapterFactoryInterface.(*factory.HandlerAdapterFactory)
+		loggerTyped, logOk := logger.(logging.Logger)
+
+		if psOk && afOk && logOk {
+			// Create new architecture handler with DI
+			handler := proxy.NewUnifiedProxyHandler(proxyService, adapterFactory, loggerTyped)
+
+			log.Printf("Container-based proxy router initialized with ProxyService (hexagonal architecture)")
+
+			// Register unified proxy routes with new architecture
+			app.Get("/proxy/:type/*", handler.Handle)
+			app.Post("/proxy/:type/*", handler.Handle)
+			app.Put("/proxy/:type/*", handler.Handle)
+			app.Delete("/proxy/:type/*", handler.Handle)
+			app.Patch("/proxy/:type/*", handler.Handle)
+			app.Head("/proxy/:type/*", handler.Handle)
+
+			return
+		}
+
+		log.Printf("Warning: Type assertion failed (ProxyService: %v, Factory: %v, Logger: %v)", psOk, afOk, logOk)
 	}
 
-	var adapterFactory interface{}
-	if adapterFactoryInterface != nil {
-		adapterFactory = adapterFactoryInterface
-	}
-
-	// Create new architecture handler (will be implemented after import issues resolved)
-	// For now, use factory-based approach
-	log.Printf("Container-based proxy router initialized (ProxyService: %v, Factory: %v)",
-		proxyService != nil, adapterFactory != nil)
-
-	// Note: Actual handler setup will be completed after resolving circular import
-	// Temporary: Fall back to legacy for now
-	log.Printf("Note: Using legacy proxy handler temporarily until full DI integration")
+	// Fallback: Use legacy router if new architecture is not ready
+	log.Printf("Note: ProxyService not available, falling back to legacy proxy router")
 	ProxyRouter(app)
-
-	// TODO: Implement proper DI-based routing once circular imports are resolved
-	/*
-		logger := container.GetLogger()
-		handler := proxy.NewUnifiedProxyHandler(proxyService, adapterFactory, logger)
-		app.Get("/proxy/:type/*", handler.Handle)
-		app.Post("/proxy/:type/*", handler.Handle)
-		app.Put("/proxy/:type/*", handler.Handle)
-	*/
 }
 
 // createDeprecationMiddleware creates a middleware that adds deprecation headers
