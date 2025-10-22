@@ -56,6 +56,9 @@ type Container struct {
 	singletons map[string]interface{}
 }
 
+// Hexagonal Architecture usecase layer will be imported separately to avoid circular dependency
+// The ProxyService will be stored in singletons map with key "proxy-service"
+
 // NewContainer creates a new dependency injection container
 func NewContainer(cfg *Config) *Container {
 	container := &Container{
@@ -963,6 +966,30 @@ func (c *Container) GetUnifiedRouter() (interface{}, error) {
 		c.unifiedRouter = proxyHandlers.NewUnifiedProxyRouter(serviceFactory)
 	*/
 	return nil, fmt.Errorf("unified router not implemented yet")
+}
+
+// GetProxyService returns the hexagonal architecture ProxyService instance
+// Note: ProxyService is stored as interface{} in singletons to avoid circular import
+// Returns nil if ProxyService has not been initialized
+func (c *Container) GetProxyService() interface{} {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	if proxyService, exists := c.singletons["proxy-service"]; exists {
+		return proxyService
+	}
+
+	return nil
+}
+
+// SetProxyService stores the ProxyService instance in the container
+// This should be called during application initialization
+func (c *Container) SetProxyService(proxyService interface{}) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.singletons["proxy-service"] = proxyService
+	c.logger.Info("ProxyService registered in container")
 }
 
 // ContainerProvider 인터페이스 구현

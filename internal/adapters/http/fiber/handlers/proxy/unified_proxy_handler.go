@@ -13,33 +13,120 @@ import (
 	"proxynd/internal/usecase"
 )
 
-// 전역 팩토리 인스턴스
-var globalAdapterFactory *factory.HandlerAdapterFactory
+// UnifiedProxyHandler 통합 프록시 핸들러 (Hexagonal Architecture)
+type UnifiedProxyHandler struct {
+	proxyService   *usecase.ProxyService
+	adapterFactory *factory.HandlerAdapterFactory
+	logger         logging.Logger
+}
 
-// TODO: HEXAGONAL_MIGRATION - Replace with dependency injection
-// Global proxy service for migration - should be injected via DI container
+// NewUnifiedProxyHandler creates a new unified proxy handler with dependency injection
+func NewUnifiedProxyHandler(
+	proxyService *usecase.ProxyService,
+	adapterFactory *factory.HandlerAdapterFactory,
+	logger logging.Logger,
+) *UnifiedProxyHandler {
+	return &UnifiedProxyHandler{
+		proxyService:   proxyService,
+		adapterFactory: adapterFactory,
+		logger:         logger,
+	}
+}
+
+// Handle processes unified proxy requests using injected dependencies
+func (h *UnifiedProxyHandler) Handle(c *fiber.Ctx) error {
+	proxyType := c.Params("type")
+	path := c.Params("*")
+
+	h.logger.Info("Access unified proxy",
+		logging.F("type", proxyType),
+		logging.F("path", path),
+		logging.F("method", c.Method()))
+
+	// Try ProxyService first (new architecture)
+	if h.proxyService != nil {
+		req := &usecase.ProxyRequest{
+			PackageType: proxyType,
+			Path:        path,
+			Method:      c.Method(),
+			Headers:     make(map[string]string),
+			QueryParams: make(map[string]string),
+			Body:        c.Body(),
+		}
+
+		// Copy headers
+		for key, values := range c.GetReqHeaders() {
+			if len(values) > 0 {
+				req.Headers[key] = values[0]
+			}
+		}
+
+		// Copy query params
+		for key, value := range c.Context().QueryArgs().All() {
+			req.QueryParams[string(key)] = string(value)
+		}
+
+		resp, err := h.proxyService.HandleProxyRequest(c.Context(), req)
+		if err != nil {
+			h.logger.Error("ProxyService error",
+				logging.F("error", err),
+				logging.F("type", proxyType))
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": err.Error(),
+			})
+		}
+
+		// Set response headers
+		for key, value := range resp.Headers {
+			c.Set(key, value)
+		}
+
+		return c.Status(resp.StatusCode).Send(resp.Content)
+	}
+
+	// Fallback to adapter factory (legacy support during migration)
+	if h.adapterFactory != nil {
+		adapter, err := h.adapterFactory.GetAdapter(proxyType)
+		if err != nil {
+			h.logger.Error("Failed to get adapter",
+				logging.F("type", proxyType),
+				logging.F("error", err))
+			return c.Status(fiber.StatusBadRequest).SendString("Unknown proxy type: " + proxyType)
+		}
+		return adapter.Handle(c)
+	}
+
+	// No service available
+	h.logger.Error("No proxy service or adapter factory available")
+	return c.Status(fiber.StatusInternalServerError).SendString("Proxy service not initialized")
+}
+
+// Legacy global variables (deprecated - kept for backward compatibility)
+// TODO: Remove after full migration
+var globalAdapterFactory *factory.HandlerAdapterFactory
 var globalProxyService *usecase.ProxyService
 
-// InitializeGlobalFactory 전역 팩토리 초기화
+// InitializeGlobalFactory 전역 팩토리 초기화 (deprecated)
+// Deprecated: Use NewUnifiedProxyHandler with dependency injection instead
 func InitializeGlobalFactory() {
 	if globalAdapterFactory == nil {
 		globalAdapterFactory = factory.NewHandlerAdapterFactory()
-		log.Printf("Global handler adapter factory initialized")
+		log.Printf("Global handler adapter factory initialized (deprecated)")
 	}
 }
 
 // UnifiedProxyHandlerWithFactory 팩토리 기반 통합 프록시 핸들러
+// Deprecated: Use UnifiedProxyHandler.Handle method with dependency injection instead
 func UnifiedProxyHandlerWithFactory(c *fiber.Ctx) error {
-	// TODO: HEXAGONAL_MIGRATION - Replace factory logic with usecase calls
-	// Current implementation uses factory pattern for adapter selection
-	// Should be migrated to use usecase.ProxyService.HandleProxyRequest()
+	// Legacy implementation kept for backward compatibility
+	// Migrated to use NewUnifiedProxyHandler(proxyService, adapterFactory, logger).Handle()
 
 	proxyType := c.Params("type")
 	path := c.Params("*")
 
 	log.Printf("Access unified proxy (factory) - type: %s, path: %s\n", proxyType, path)
 
-	// TODO: HEXAGONAL_MIGRATION - Remove factory dependency, use injected ProxyService
+	// Try using global ProxyService if available (deprecated pattern)
 	if globalProxyService != nil {
 		// New architecture path
 		req := &usecase.ProxyRequest{

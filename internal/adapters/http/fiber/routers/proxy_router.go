@@ -8,11 +8,18 @@ import (
 	"proxynd/internal/alerts"
 	"proxynd/internal/config"
 	authHandlers "proxynd/internal/handlers-legacy/auth"
-	proxynd "proxynd/internal/handlers-legacy/proxy"
+	legacyProxy "proxynd/internal/handlers-legacy/proxy"
 	middlewares "proxynd/internal/middleware-legacy"
 )
 
-// ProxyRouter is exported
+// ContainerProvider interface for dependency injection
+type ContainerProvider interface {
+	GetLogger() interface{}
+	GetHandlerAdapterFactory() (interface{}, error)
+	GetProxyService() interface{}
+}
+
+// ProxyRouter is exported - Legacy version without DI
 // ProxyRouter performs an operation
 func ProxyRouter(app *fiber.App) {
 	// Read global configuration
@@ -35,9 +42,9 @@ func ProxyRouter(app *fiber.App) {
 	}
 
 	// Create verification handler
-	verificationHandler := proxynd.NewVerificationHandler(&globalConfig, alertManager)
+	verificationHandler := legacyProxy.NewVerificationHandler(&globalConfig, alertManager)
 
-	// Setup unified proxy router
+	// Setup unified proxy router (legacy mode)
 	// Handle all proxy requests with /proxy/:type/*path format
 	// Note: Using direct app registration instead of Group to ensure correct routing
 
@@ -49,7 +56,7 @@ func ProxyRouter(app *fiber.App) {
 		authHandlers.OptionalAuth(),      // Optional OAuth2/JWT authentication
 		authHandlers.BasicAuthFallback(), // BasicAuth fallback
 		verificationHandler.VerificationMiddleware(),
-		proxynd.UnifiedProxyHandler,
+		legacyProxy.UnifiedProxyHandler,
 	)
 	app.Post("/proxy/:type/*",
 		createDeprecationMiddleware("POST", "/proxy/:type/*", "/api/v1/proxy/:type/*"),
@@ -58,7 +65,7 @@ func ProxyRouter(app *fiber.App) {
 		authHandlers.OptionalAuth(),      // Optional OAuth2/JWT authentication
 		authHandlers.BasicAuthFallback(), // BasicAuth fallback
 		verificationHandler.VerificationMiddleware(),
-		proxynd.UnifiedProxyHandler,
+		legacyProxy.UnifiedProxyHandler,
 	)
 	app.Put("/proxy/:type/*",
 		createDeprecationMiddleware("PUT", "/proxy/:type/*", "/api/v1/proxy/:type/*"),
@@ -67,11 +74,61 @@ func ProxyRouter(app *fiber.App) {
 		authHandlers.OptionalAuth(),      // Optional OAuth2/JWT authentication
 		authHandlers.BasicAuthFallback(), // BasicAuth fallback
 		verificationHandler.VerificationMiddleware(),
-		proxynd.UnifiedProxyHandler,
+		legacyProxy.UnifiedProxyHandler,
 	)
 
 	// Keep existing individual routes for backward compatibility (optional)
 	// Can be removed in the future
+}
+
+// ProxyRouterWithContainer creates proxy routes using Container-based DI (Hexagonal Architecture)
+func ProxyRouterWithContainer(app *fiber.App, container ContainerProvider) {
+	log.Printf("Setting up proxy router with container-based dependency injection")
+
+	// Get logger from container (will be used when full DI is implemented)
+	_ = container.GetLogger()
+
+	// Get ProxyService from container (may be nil during gradual migration)
+	proxyServiceInterface := container.GetProxyService()
+
+	// Get adapter factory from container
+	adapterFactoryInterface, err := container.GetHandlerAdapterFactory()
+	if err != nil {
+		log.Printf("Warning: Failed to get adapter factory from container: %v", err)
+		// Fallback to legacy router
+		ProxyRouter(app)
+		return
+	}
+
+	// Type assertions with nil checks
+	var proxyService interface{}
+	if proxyServiceInterface != nil {
+		proxyService = proxyServiceInterface
+	}
+
+	var adapterFactory interface{}
+	if adapterFactoryInterface != nil {
+		adapterFactory = adapterFactoryInterface
+	}
+
+	// Create new architecture handler (will be implemented after import issues resolved)
+	// For now, use factory-based approach
+	log.Printf("Container-based proxy router initialized (ProxyService: %v, Factory: %v)",
+		proxyService != nil, adapterFactory != nil)
+
+	// Note: Actual handler setup will be completed after resolving circular import
+	// Temporary: Fall back to legacy for now
+	log.Printf("Note: Using legacy proxy handler temporarily until full DI integration")
+	ProxyRouter(app)
+
+	// TODO: Implement proper DI-based routing once circular imports are resolved
+	/*
+		logger := container.GetLogger()
+		handler := proxy.NewUnifiedProxyHandler(proxyService, adapterFactory, logger)
+		app.Get("/proxy/:type/*", handler.Handle)
+		app.Post("/proxy/:type/*", handler.Handle)
+		app.Put("/proxy/:type/*", handler.Handle)
+	*/
 }
 
 // createDeprecationMiddleware creates a middleware that adds deprecation headers
