@@ -13,6 +13,7 @@ import (
 	"github.com/joho/godotenv"
 
 	"proxynd/cache"
+	fiberRouters "proxynd/internal/adapters/http/fiber/routers"
 	configTypes "proxynd/internal/config"
 	"proxynd/internal/logging"
 	cacheRepo "proxynd/internal/repositories/cache"
@@ -259,7 +260,13 @@ func (app *Application) initializeFiberApp() {
 	routeConfig := InitializeRouteConfig(unifiedConfig, false) // Start with legacy mode
 	SetupRoutes(app.fiberApp, routeConfig)
 
-	// === Container 기반 프록시 라우터 (우선순위 최고) ===
+	// === Hexagonal Architecture Proxy Router (최우선순위) ===
+	// ProxyService 기반 새로운 아키텍처 라우터
+	app.logger.Info("Setting up Hexagonal Architecture proxy router")
+	containerAdapter := &containerAdapter{container: app.container}
+	fiberRouters.ProxyRouterWithContainer(app.fiberApp, containerAdapter)
+
+	// === Container 기반 프록시 라우터 (레거시 Container 시스템) ===
 	routers.ContainerProxyRouterSetup(app.fiberApp, app.container)
 
 	// === 새로운 v1 통합 API 등록 (우선순위 높음) ===
@@ -395,4 +402,21 @@ func validateAndSetEnvironmentDefaults(cfg *Config, logger logging.Logger) error
 		logging.F("cache_max_age", cfg.CacheMaxAge))
 
 	return nil
+}
+
+// containerAdapter adapts app.Container to fiberRouters.ContainerProvider interface
+type containerAdapter struct {
+	container *Container
+}
+
+func (ca *containerAdapter) GetLogger() interface{} {
+	return ca.container.GetLogger()
+}
+
+func (ca *containerAdapter) GetHandlerAdapterFactory() (interface{}, error) {
+	return ca.container.GetHandlerAdapterFactory()
+}
+
+func (ca *containerAdapter) GetProxyService() interface{} {
+	return ca.container.GetProxyService()
 }
