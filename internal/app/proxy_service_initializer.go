@@ -58,7 +58,7 @@ func (c *Container) GetProxyServiceTyped() (*usecase.ProxyService, error) {
 		return nil, fmt.Errorf("ProxyService not initialized")
 	}
 
-	if ps == "pending" {
+	if ps == serviceStatusPending {
 		return nil, fmt.Errorf("ProxyService initialization pending")
 	}
 

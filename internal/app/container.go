@@ -23,6 +23,11 @@ import (
 	"proxynd/pkg/types"
 )
 
+const (
+	// serviceStatusPending indicates a service is being initialized
+	serviceStatusPending = "pending"
+)
+
 // Container is the dependency injection container
 type Container struct {
 	mu     sync.RWMutex
@@ -997,7 +1002,7 @@ func (c *Container) SetProxyService(proxyService interface{}) {
 func (c *Container) GetOrCreateProxyService() (interface{}, error) {
 	// Check if already created
 	if ps := c.GetProxyService(); ps != nil {
-		if ps == "pending" {
+		if ps == serviceStatusPending {
 			c.logger.Debug("ProxyService creation is pending")
 			return nil, fmt.Errorf("ProxyService creation is pending")
 		}
@@ -1010,14 +1015,14 @@ func (c *Container) GetOrCreateProxyService() (interface{}, error) {
 
 	// Double-check after acquiring lock
 	if ps := c.singletons["proxy-service"]; ps != nil {
-		if ps == "pending" {
+		if ps == serviceStatusPending {
 			return nil, fmt.Errorf("ProxyService creation is pending")
 		}
 		return ps, nil
 	}
 
 	c.logger.Info("ProxyService will be created via InitializeProxyService()")
-	c.singletons["proxy-service"] = "pending"
+	c.singletons["proxy-service"] = serviceStatusPending
 
 	return nil, nil
 }
