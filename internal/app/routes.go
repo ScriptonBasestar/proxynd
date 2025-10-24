@@ -136,6 +136,10 @@ func setupNewArchitectureRoutes(app *fiber.App, config *RouteConfig) {
 	logger.Info("Setting up metrics routes")
 	routers.MetricsRouter(app, config.UnifiedConfig)
 
+	// Ansible routes (Galaxy v3 API)
+	logger.Info("Setting up Ansible routes")
+	setupAnsibleRoutes(app, config)
+
 	// TODO: HEXAGONAL_MIGRATION - Add other routers as they are migrated
 	logger.Info("New architecture routes setup completed")
 }
@@ -304,4 +308,18 @@ func loadEnterpriseFixtures(logger logging.Logger) {
 				logging.F("error", err))
 		}
 	}
+}
+
+// setupAnsibleRoutes configures Ansible Galaxy v3 API routes
+func setupAnsibleRoutes(app *fiber.App, config *RouteConfig) {
+	logger := config.Logger
+
+	// TODO: Initialize AnsibleHandler with proper dependencies
+	// For now, this is a placeholder that logs a warning
+	logger.Info("Ansible routes setup - handler initialization pending")
+
+	// Ansible handler will be initialized here once dependencies are ready
+	// Example:
+	// handler := ansible.NewAnsibleHandler(hostedDriver, cfg, logger)
+	// fiberRouters.RegisterAnsibleRoutes(app, handler)
 }
