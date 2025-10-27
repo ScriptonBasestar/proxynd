@@ -51,6 +51,10 @@ func (c *AnsibleRepositoryConfig) IsNamespaceAllowed(namespace string) bool {
 	}
 
 	for _, allowed := range c.AllowedNamespaces {
+		// Support wildcard "*" to allow all namespaces
+		if allowed == "*" {
+			return true
+		}
 		if allowed == namespace {
 			return true
 		}

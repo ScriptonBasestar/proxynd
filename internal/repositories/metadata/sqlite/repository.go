@@ -50,6 +50,24 @@ func NewRepository(dbPath string, logger ports.Logger) (*Repository, error) {
 	return repo, nil
 }
 
+// NewSQLiteMetadataRepository is a convenience wrapper for tests without logger
+func NewSQLiteMetadataRepository(dbPath string) (*Repository, error) {
+	// Use a no-op logger for testing
+	logger := &noOpLogger{}
+	return NewRepository(dbPath, logger)
+}
+
+// noOpLogger implements ports.Logger but does nothing (for testing)
+type noOpLogger struct{}
+
+func (n *noOpLogger) Debug(ctx context.Context, msg string, fields ...ports.Field)   {}
+func (n *noOpLogger) Info(ctx context.Context, msg string, fields ...ports.Field)    {}
+func (n *noOpLogger) Warn(ctx context.Context, msg string, fields ...ports.Field)    {}
+func (n *noOpLogger) Error(ctx context.Context, msg string, fields ...ports.Field)   {}
+func (n *noOpLogger) Fatal(ctx context.Context, msg string, fields ...ports.Field)   {}
+func (n *noOpLogger) With(fields ...ports.Field) ports.Logger                        { return n }
+func (n *noOpLogger) WithContext(ctx context.Context) ports.Logger                   { return n }
+
 // AnsibleMetadata returns Ansible-specific metadata repository
 func (r *Repository) AnsibleMetadata() ports.AnsibleMetadataRepository {
 	return r.ansible
@@ -157,6 +175,27 @@ func (r *Repository) DecrementRefCount(ctx context.Context, sha256 string) error
 	result, err := r.db.ExecContext(ctx, query, sha256)
 	if err != nil {
 		return fmt.Errorf("failed to decrement ref count: %w", err)
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get affected rows: %w", err)
+	}
+
+	if rows == 0 {
+		return fmt.Errorf("artifact not found: %s", sha256)
+	}
+
+	return nil
+}
+
+// DeleteArtifact deletes an artifact from the repository
+func (r *Repository) DeleteArtifact(ctx context.Context, sha256 string) error {
+	query := `DELETE FROM artifacts WHERE sha256 = ?`
+
+	result, err := r.db.ExecContext(ctx, query, sha256)
+	if err != nil {
+		return fmt.Errorf("failed to delete artifact: %w", err)
 	}
 
 	rows, err := result.RowsAffected()

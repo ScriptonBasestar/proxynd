@@ -29,6 +29,7 @@ type RouteConfig struct {
 	UseNewArchitecture bool // Feature flag for gradual migration
 	UnifiedConfig      *config.UnifiedConfig
 	Logger             logging.Logger
+	Container          *Container // Dependency injection container
 }
 
 // SetupRoutes configures all application routes with hybrid old/new architecture
@@ -211,11 +212,12 @@ func setupLegacyMiddlewares(app *fiber.App, config *RouteConfig) {
 }
 
 // InitializeRouteConfig creates a default route configuration
-func InitializeRouteConfig(unifiedConfig *config.UnifiedConfig, useNewArch bool) *RouteConfig {
+func InitializeRouteConfig(unifiedConfig *config.UnifiedConfig, useNewArch bool, container *Container) *RouteConfig {
 	return &RouteConfig{
 		UseNewArchitecture: useNewArch,
 		UnifiedConfig:      unifiedConfig,
 		Logger:             logging.GetLogger(),
+		Container:          container,
 	}
 }
 
@@ -314,12 +316,15 @@ func loadEnterpriseFixtures(logger logging.Logger) {
 func setupAnsibleRoutes(app *fiber.App, config *RouteConfig) {
 	logger := config.Logger
 
-	// TODO: Initialize AnsibleHandler with proper dependencies
-	// For now, this is a placeholder that logs a warning
-	logger.Info("Ansible routes setup - handler initialization pending")
+	// Initialize Ansible handler with dependencies from container
+	handler, err := config.Container.GetAnsibleHandler()
+	if err != nil {
+		logger.Error("Failed to initialize Ansible handler",
+			logging.F("error", err.Error()))
+		return
+	}
 
-	// Ansible handler will be initialized here once dependencies are ready
-	// Example:
-	// handler := ansible.NewAnsibleHandler(hostedDriver, cfg, logger)
-	// fiberRouters.RegisterAnsibleRoutes(app, handler)
+	// Register Ansible Galaxy v3 API routes
+	fiberRouters.RegisterAnsibleRoutes(app, handler)
+	logger.Info("Ansible Galaxy v3 API routes registered successfully")
 }
