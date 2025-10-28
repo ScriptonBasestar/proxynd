@@ -5,6 +5,7 @@ ARG ALPINE_VERSION=3.19
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION
+ARG GO_BUILD_TAGS=""
 
 # === Builder Stage ===
 FROM golang:${GO_VERSION}-alpine${ALPINE_VERSION} AS builder
@@ -36,6 +37,7 @@ RUN if [ "$SKIP_TESTS" != "true" ]; then \
 
 # 바이너리 빌드 (최적화된 설정)
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+    -tags="${GO_BUILD_TAGS}" \
     -ldflags="-s -w -X main.Version=${VERSION:-dev} -X main.BuildTime=${BUILD_DATE} -X main.CommitSHA=${VCS_REF}" \
     -trimpath \
     -o proxynd \

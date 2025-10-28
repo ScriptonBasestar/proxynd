@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -22,6 +23,7 @@ import (
 	"proxynd/internal/services/adapters"
 	configService "proxynd/internal/services/config"
 	"proxynd/internal/services/proxy"
+	"proxynd/plugins"
 )
 
 // Application represents the main application
@@ -34,6 +36,7 @@ type Application struct {
 	configService  configService.Service
 	configRepo     *config.FileRepository
 	cacheRepo      *cacheRepo.FileRepository
+	pluginContext  plugins.Context
 }
 
 // Config holds application configuration
@@ -142,18 +145,43 @@ func (app *Application) Run() error {
 		return err
 	}
 
+	if err := plugins.Shutdown(shutdownCtx); err != nil {
+		app.logger.Warn("Plugin shutdown encountered errors",
+			logging.F("error", err))
+	}
+
 	app.logger.Info("Server shutdown complete")
 	return nil
 }
 
 // Stop gracefully stops the application
 func (app *Application) Stop() error {
-	return app.fiberApp.Shutdown()
+	if err := app.fiberApp.Shutdown(); err != nil {
+		return err
+	}
+	return plugins.Shutdown(context.Background())
 }
 
 // GetFiberApp returns the underlying Fiber app
 func (app *Application) GetFiberApp() *fiber.App {
 	return app.fiberApp
+}
+
+func (app *Application) buildPluginContext() plugins.Context {
+	env := make(map[string]string)
+	for _, kv := range os.Environ() {
+		parts := strings.SplitN(kv, "=", 2)
+		if len(parts) == 2 {
+			env[parts[0]] = parts[1]
+		}
+	}
+
+	return plugins.Context{
+		Logger:      plugins.NewLoggerAdapter(app.logger),
+		ConfigDir:   app.config.ConfigDir,
+		DataDir:     app.config.StorageDir,
+		Environment: env,
+	}
 }
 
 // Private methods
@@ -337,6 +365,23 @@ func (app *Application) initializeFiberApp() {
 		c.Locals("routeConfig", routeConfig) // TODO: HEXAGONAL_MIGRATION - Add route config for runtime switching
 		return c.Next()
 	})
+
+	registeredPlugins := plugins.All()
+	if len(registeredPlugins) > 0 {
+		app.pluginContext = app.buildPluginContext()
+		if err := plugins.Initialize(app.fiberApp, app.pluginContext); err != nil {
+			app.logger.Error("Plugin initialization failed",
+				logging.F("error", err))
+		} else {
+			pluginNames := make([]string, 0, len(registeredPlugins))
+			for _, plugin := range registeredPlugins {
+				pluginNames = append(pluginNames, plugin.Name())
+			}
+			app.logger.Info("Plugins initialized",
+				logging.F("count", len(registeredPlugins)),
+				logging.F("plugins", pluginNames))
+		}
+	}
 
 	app.logger.Info("Container-based proxy router initialized",
 		logging.F("supported_handlers", []string{"apt", "maven", "npm"}),
