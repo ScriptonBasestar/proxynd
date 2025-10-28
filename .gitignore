@@ -1,11 +1,8 @@
 # ====================
-# ProxyND .gitignore
+# ProxyND Core .gitignore
 # ====================
 
-# ================
-# Go Language
-# ================
-# Binaries
+# Go build artifacts
 *.exe
 *.dll
 *.so
@@ -13,274 +10,101 @@
 *.test
 *.out
 
-# Coverage
+# Build outputs
+bin/
+build/
+dist/
+release/
+
+# Coverage and profiling
+coverage/
+coverage.*
 *.cover
+*.coverprofile
 coverage.out
-coverage.html
-coverage.txt
 profile.out
+*.prof
+*.pprof
+*.trace
+cpu.out
+mem.out
 
-# Go workspace
-go.work
-go.work.sum
-
-# ================
-# Build Outputs
-# ================
-# Distribution builds
-/dist/
-
-# All temporary files and binaries
+# Temporary files and caches
 tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+*.orig
+*.swp
+*.swo
+*~
+.gocache/
+.gotmp/
+.DS_Store
+Thumbs.db
 
-# ================
-# Configuration & Environment
-# ================
-# Environment files
+# Logs and runtime data
+logs/
+!logs/.gitkeep
+log/
+storage/
+!storage/.gitkeep
+*.log
+*.pid
+*.pid.lock
+
+# Configuration and secrets
 .env
 .env.*
 !.env.example
 !deployments/systemd/*.env
-
-# Local configuration overrides
-config.yaml
-config.yml
-config.*.yaml
-config.*.yml
-*.local.yaml
-*.local.yml
-
-# ================
-# Security & Secrets
-# ================
-# SSL/TLS certificates
-*.pem
+config.local.*
+config/*.local.*
+config/*.override.*
+config/*.secret.*
+secrets/
+.secret/
+.secrets/
 *.key
+*.pem
+*.pfx
+*.p12
 *.crt
 *.cert
-*.p12
-*.pfx
 
-# Secret directories
-secrets/
-.secrets
-.secret
+# Distribution archives
+artifacts/
+*.tar
+*.tar.gz
+*.tgz
+*.zip
 
-# Authentication
-.auth
-auth.json
-credentials.json
+# Dependency vendors
+vendor/
 
-# ================
-# Analysis & Reports
-# ================
-# Security and lint reports
-*.sarif
-*-report.json
-gosec-report.json
-staticcheck-report.json
-golangci-lint-report.json
+# Container and tooling overrides
+docker-compose.override.yml
+.docker/
+*.kubeconfig
 
-# Code analysis
-deps-graph.png
-
-# ================
-# Development Tools & IDEs
-# ================
-# Visual Studio Code
+# IDE and editor settings
 .vscode/
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
-
-# IntelliJ IDEA
 .idea/
 *.iml
 *.iws
 *.ipr
-
-# Vim/Neovim
-*.swp
-*.swo
-*~
-tags
-.tags
-
-# Other editors
 *.sublime-*
 .fleet/
 .cursor/
-
-# Emacs
-\#*\#
-/.emacs.desktop
-/.emacs.desktop.lock
-*.elc
-auto-save-list
-.\#*
-
-# ================
-# Operating Systems
-# ================
-# macOS
-.DS_Store
-._*
-.Spotlight-V100
-.Trashes
-.fuse_hidden*
-
-# Windows
-Thumbs.db
-ehthumbs.db
-*.lnk
-[Dd]esktop.ini
-
-# Linux
-.directory
-.Trash-*
-.nfs*
-
-# ================
-# Package Managers & Dependencies
-# ================
-# Go modules backup
-go.sum.backup
-go.mod.backup
-
-# Node.js (for frontend tools)
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.npm
-.yarn-integrity
-
-# Vendor
-vendor/
-
-# ================
-# Containers & Deployment
-# ================
-# Docker
-docker-compose.override.yml
-.docker/
-
-# Kubernetes
-*.kubeconfig
-
-# Terraform
-*.tfstate
-*.tfstate.*
-.terraform/
-.terraform.lock.hcl
-
-# Cloud providers
-.aws/
-.gcp/
-.azure/
-
-# ================
-# Temporary & Cache Files
-# ================
-# Temporary files
-*.tmp
-*.temp
-*.backup
-*.bak
-*.orig
-
-# Runtime data
-*.pid
-*.seed
-*.pid.lock
-
-# Cache directories
-.cache/
-.npm/
-.yarn/
-.pnpm-store/
-
-# ================
-# Logs
-# ================
-# Application logs
-*.log
-logs/
-log/
-
-# Build logs
-build-errors.log
-
-# ================
-# Database Files
-# ================
-# SQLite
-*.db
-*.sqlite
-*.sqlite3
-
-# Database dumps
-*.sql.gz
-*.dump
-
-# ================
-# Local Development
-# ================
-# Local directories
-.local/
-local/
-storage/
-cache/
-
-# Development files
-local-*
-notes.md
-scratch.*
 *.code-workspace
 
-# ================
-# Test & Profiling
-# ================
-# Test results
-test-results/
-test-reports/
-junit.xml
-
-# Coverage
-coverage/
-*.coverprofile
-
-# Profiling
-*.prof
-*.trace
-*.heap
-*.cpu
-*.mem
-*.pprof
-*.profile
-
-# ================
-# Documentation
-# ================
-# Documentation builds
-docs/build/
-docs/_build/
-site/
-_site/
-
-# ================
-# Archives
-# ================
-*.zip
-*.tar
-*.tar.gz
-*.tgz
-*.rar
-*.7z
-
-# ================
-# Claude AI
-# ================
+# Static analysis and local tooling artifacts
+*.sarif
+*.report.json
 .claude/
 CLAUDE.local.md
