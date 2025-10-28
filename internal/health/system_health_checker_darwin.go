@@ -73,10 +73,9 @@ func (s *SystemResourceHealthChecker) GetResourceSummary() map[string]interface{
 }
 
 // GetHistoryData returns historical resource usage data (macOS stub)
-func (s *SystemResourceHealthChecker) GetHistoryData(hours int) map[string]interface{} {
+func (s *SystemResourceHealthChecker) GetHistoryData() map[string]interface{} {
 	return map[string]interface{}{
 		"platform": "darwin",
-		"hours":    hours,
 		"history":  []interface{}{},
 		"note":     "History tracking not implemented for macOS",
 	}

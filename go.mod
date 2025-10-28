@@ -2,6 +2,8 @@ module proxynd
 
 go 1.24.0
 
+toolchain go1.24.9
+
 require (
 	github.com/aws/aws-sdk-go-v2 v1.38.3
 	github.com/aws/aws-sdk-go-v2/config v1.31.0

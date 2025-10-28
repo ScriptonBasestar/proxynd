@@ -1,14 +1,19 @@
 # 프로덕션용 멀티스테이지 Dockerfile
 # Build arguments
-ARG GO_VERSION=1.24
+ARG GO_VERSION=1.23
 ARG ALPINE_VERSION=3.19
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION
 ARG GO_BUILD_TAGS=""
+ARG SKIP_TESTS=false
 
 # === Builder Stage ===
 FROM golang:${GO_VERSION}-alpine${ALPINE_VERSION} AS builder
+
+ARG SKIP_TESTS
+
+ENV GOTOOLCHAIN=auto
 
 # 보안 패키지 및 빌드 도구 설치
 RUN apk add --no-cache \
