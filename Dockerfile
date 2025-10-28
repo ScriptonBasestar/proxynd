@@ -2,9 +2,9 @@
 # Build arguments
 ARG GO_VERSION=1.23
 ARG ALPINE_VERSION=3.19
-ARG BUILD_DATE
-ARG VCS_REF
-ARG VERSION
+ARG BUILD_DATE="unknown"
+ARG VCS_REF="unknown"
+ARG VERSION="dev"
 ARG GO_BUILD_TAGS=""
 ARG SKIP_TESTS=false
 
@@ -51,6 +51,10 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
 # === Runtime Stage ===
 FROM alpine:${ALPINE_VERSION} AS runtime
 
+ARG BUILD_DATE="unknown"
+ARG VCS_REF="unknown"
+ARG VERSION="dev"
+
 # 메타데이터 라벨
 LABEL maintainer="ProxyND Team" \
       org.opencontainers.image.title="ProxyND" \
@@ -84,7 +88,7 @@ COPY --from=builder --chown=proxynd:proxynd /build/proxynd /app/
 COPY --chown=proxynd:proxynd examples /app/examples/
 
 # 헬스체크 스크립트 추가
-COPY --chown=proxynd:proxynd <<EOF /app/healthcheck.sh
+RUN cat <<'EOF' >/tmp/healthcheck.sh
 #!/bin/sh
 # ProxyND 헬스체크 스크립트
 set -e
@@ -94,13 +98,13 @@ TIMEOUT=10
 
 # curl을 사용한 헬스체크
 if command -v curl >/dev/null 2>&1; then
-    curl -f --max-time $TIMEOUT "$HEALTH_URL" >/dev/null 2>&1
+    curl -f --max-time "$TIMEOUT" "$HEALTH_URL" >/dev/null 2>&1
     exit $?
 fi
 
 # wget fallback
 if command -v wget >/dev/null 2>&1; then
-    wget --timeout=$TIMEOUT --tries=1 "$HEALTH_URL" -O /dev/null >/dev/null 2>&1
+    wget --timeout="$TIMEOUT" --tries=1 "$HEALTH_URL" -O /dev/null >/dev/null 2>&1
     exit $?
 fi
 
@@ -108,7 +112,7 @@ echo "No HTTP client available for health check"
 exit 1
 EOF
 
-RUN chmod +x /app/healthcheck.sh
+RUN install -o proxynd -g proxynd -m 0755 /tmp/healthcheck.sh /app/healthcheck.sh && rm /tmp/healthcheck.sh
 
 # 환경 변수 설정
 ENV SERVER_PORT=8080 \
