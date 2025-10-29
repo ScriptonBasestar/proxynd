@@ -56,6 +56,16 @@ services:
       - DAC_OVERRIDE
       - SETUID
       - SETGID
+    ulimits:
+      memlock:
+        soft: 268435456
+        hard: 268435456
+      nofile:
+        soft: 65536
+        hard: 65536
+      nproc:
+        soft: 4096
+        hard: 4096
     deploy:
       resources:
         limits:

@@ -144,5 +144,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD /app/healthcheck.sh
 
 # dumb-init을 사용한 시그널 처리
+# ulimit -v: 가상 메모리 제한 (256MiB = 268435456 bytes)
+# exec: PID 1 유지를 위해 shell을 binary로 교체
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
-CMD ["/app/proxynd"]
+CMD ["/bin/sh", "-c", "ulimit -v 268435456 && exec /app/proxynd"]

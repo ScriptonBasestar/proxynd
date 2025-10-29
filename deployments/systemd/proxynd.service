@@ -37,6 +37,11 @@ ReadOnlyPaths=/etc/proxynd
 # 리소스 제한
 LimitNOFILE=65536
 LimitNPROC=4096
+# 메모리 제한 (256MiB = 268435456 bytes)
+LimitAS=268435456
+# cgroup 메모리 제한 (Docker와 일관성 유지)
+MemoryMax=512M
+MemoryHigh=384M
 
 # 로깅
 StandardOutput=journal

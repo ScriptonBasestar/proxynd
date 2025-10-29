@@ -28,6 +28,9 @@ ENV GOARCH=$TARGETARCH
 # 빌드 최적화 플래그와 함께 컴파일 (프로젝트 루트에서 빌드)
 RUN go build -ldflags="-w -s" -trimpath -o proxynd .
 
+# BusyBox 스테이지 - ulimit 지원을 위한 shell 제공
+FROM busybox:1.36-musl AS busybox
+
 # 실행 단계 - distroless 이미지 사용으로 보안 강화
 FROM gcr.io/distroless/static:nonroot
 
@@ -35,12 +38,19 @@ FROM gcr.io/distroless/static:nonroot
 WORKDIR /app
 
 # 환경 변수 설정
-ENV STORAGE_DIR=/storage
-ENV CONFIG_DIR=/config
-ENV SERVER_PORT=8080
+ENV STORAGE_DIR=/storage \
+    CONFIG_DIR=/config \
+    SERVER_PORT=8080 \
+    LOG_LEVEL=info \
+    LOG_FORMAT=json \
+    GOMAXPROCS=0 \
+    GOMEMLIMIT=256MiB
 
 # 빌더에서 바이너리 복사
 COPY --from=builder /build/proxynd /app/proxynd
+
+# BusyBox에서 shell 복사 (ulimit 지원용)
+COPY --from=busybox /bin/sh /bin/sh
 
 # 볼륨 설정
 VOLUME ["/storage", "/config"]
@@ -56,4 +66,6 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 USER nonroot:nonroot
 
 # 엔트리포인트
-ENTRYPOINT ["/app/proxynd"]
+# ulimit -v: 가상 메모리 제한 (256MiB = 268435456 bytes)
+# exec: PID 1 유지를 위해 shell을 binary로 교체
+ENTRYPOINT ["/bin/sh", "-c", "ulimit -v 268435456 && exec /app/proxynd \"$@\"", "--"]

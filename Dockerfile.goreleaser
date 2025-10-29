@@ -29,7 +29,11 @@ USER proxynd
 # Environment variables
 ENV CONFIG_DIR=/config \
     STORAGE_DIR=/storage \
-    SERVER_PORT=8080
+    SERVER_PORT=8080 \
+    LOG_LEVEL=info \
+    LOG_FORMAT=json \
+    GOMAXPROCS=0 \
+    GOMEMLIMIT=256MiB
 
 # Expose port
 EXPOSE 8080
@@ -39,4 +43,6 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:8080/healthz || exit 1
 
 # Entry point
-ENTRYPOINT ["/usr/local/bin/proxynd"]
+# ulimit -v: 가상 메모리 제한 (256MiB = 268435456 bytes)
+# exec: PID 1 유지를 위해 shell을 binary로 교체
+ENTRYPOINT ["/bin/sh", "-c", "ulimit -v 268435456 && exec /usr/local/bin/proxynd \"$@\"", "--"]
