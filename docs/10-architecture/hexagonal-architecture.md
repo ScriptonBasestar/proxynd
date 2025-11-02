@@ -1,5 +1,23 @@
 # Hexagonal Architecture Implementation
 
+> **📦 Note**: This document has been moved to the shared documentation repository.
+>
+> **New Location**: [`proxynd-docs/20-architecture/hexagonal-architecture.md`](../../proxynd-docs/20-architecture/hexagonal-architecture.md)
+>
+> This file is kept for backward compatibility. Please update your bookmarks.
+>
+> For Core-specific implementation details, see [container-di.md](./container-di.md)
+
+---
+
+<!-- REDIRECT NOTICE
+     Primary location: proxynd-docs/20-architecture/hexagonal-architecture.md
+     This is a legacy reference maintained for compatibility.
+     Last synced: 2025-10-31
+-->
+
+---
+
 ProxyND의 헥사고널 아키텍처 (Ports and Adapters) 구현에 대한 상세 문서입니다.
 
 ## 🎯 아키텍처 목표
