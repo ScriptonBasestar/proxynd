@@ -287,7 +287,7 @@ jobs:
           echo "- Repository maintenance completed" >> cleanup_report.md
 
       - name: Upload cleanup report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: cleanup-report
           path: cleanup_report.md
