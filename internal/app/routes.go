@@ -72,6 +72,14 @@ func setupNewArchitectureRoutes(app *fiber.App, config *RouteConfig) {
 	logger.Info("Setting up cache routes")
 	fiberRouters.CacheRouter(app)
 
+	// API v1 routes (for WebUI integration)
+
+	// WebUI static file serving (Enterprise/Cloud only)
+	logger.Info("Setting up WebUI routes")
+	fiberRouters.SetupWebUIRoutes(app, getEdition())
+	logger.Info("Setting up API v1 routes")
+	fiberRouters.SetupAPIv1Routes(app, config.UnifiedConfig)
+
 	// TODO: HEXAGONAL_MIGRATION - Add other routers as they are migrated
 	logger.Info("New architecture routes setup completed")
 }
