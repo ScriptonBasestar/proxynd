@@ -1,5 +1,4 @@
 # Minimal Plugin Configuration
 # All plugins enabled with default settings
 
-plugins:
-  enabled: true
+enabled: true

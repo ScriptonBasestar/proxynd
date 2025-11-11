@@ -1,71 +1,70 @@
 # Production Plugin Configuration
 # Strict mode with specific plugin priorities and timeouts
 
-plugins:
-  enabled: true
+enabled: true
 
-  lifecycle:
-    initTimeout: 60s
-    readyTimeout: 30s
-    shutdownTimeout: 60s
-    failurePolicy: "halt"  # Strict mode - stop on failures
+lifecycle:
+  initTimeout: 60s
+  readyTimeout: 30s
+  shutdownTimeout: 60s
+  failurePolicy: "halt"  # Strict mode - stop on failures
 
-  registry:
-    core:
-      - name: "proxy-policy"
-        enabled: true
-        priority: 100
+registry:
+  core:
+    - name: "proxy-policy"
+      enabled: true
+      priority: 100
+      config:
+        developmentMode: false
+
+    - name: "metrics"
+      enabled: true
+      priority: 200
+      config:
+        path: "/metrics"
+        interval: 60s
+        detailedMetrics: true
+
+  enterprise:
+    - name: "rbac"
+      enabled: true
+      priority: 50  # Higher priority than core
+      config:
+        policyFile: "/etc/proxynd/rbac-policy.yaml"
+        cacheSize: 1000
+
+    - name: "audit-log"
+      enabled: true
+      priority: 60
+      config:
+        destination: "s3"
+        bucket: "proxynd-prod-audit"
+        batchSize: 100
+
+  cloud:
+    - name: "multi-tenancy"
+      enabled: true
+      priority: 40  # Highest priority
+      config:
+        isolationMode: "namespace"
+        tenantHeader: "X-Tenant-ID"
+
+    - name: "billing"
+      enabled: true
+      priority: 300
+      config:
+        provider: "stripe"
+        testMode: false
+
+environments:
+  production:
+    overrides:
+      - plugin: "proxy-policy"
         config:
           developmentMode: false
+          strictMode: true
 
-      - name: "metrics"
-        enabled: true
-        priority: 200
+      - plugin: "metrics"
         config:
-          path: "/metrics"
-          interval: 60s
           detailedMetrics: true
-
-    enterprise:
-      - name: "rbac"
-        enabled: true
-        priority: 50  # Higher priority than core
-        config:
-          policyFile: "/etc/proxynd/rbac-policy.yaml"
-          cacheSize: 1000
-
-      - name: "audit-log"
-        enabled: true
-        priority: 60
-        config:
-          destination: "s3"
-          bucket: "proxynd-prod-audit"
-          batchSize: 100
-
-    cloud:
-      - name: "multi-tenancy"
-        enabled: true
-        priority: 40  # Highest priority
-        config:
-          isolationMode: "namespace"
-          tenantHeader: "X-Tenant-ID"
-
-      - name: "billing"
-        enabled: true
-        priority: 300
-        config:
-          provider: "stripe"
-          testMode: false
-
-  environments:
-    production:
-      overrides:
-        - plugin: "proxy-policy"
-          config:
-            developmentMode: false
-            strictMode: true
-
-        - plugin: "metrics"
-          config:
-            detailedMetrics: true
-            sensitiveDataRedaction: true
+          sensitiveDataRedaction: true
