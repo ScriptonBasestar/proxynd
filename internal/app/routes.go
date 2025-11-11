@@ -1,11 +1,14 @@
 package app
 
 import (
+	"time"
+
 	"github.com/gofiber/fiber/v2"
 
 	// Import new adapter structure
 	fiberHandlers "proxynd/internal/adapters/http/fiber/handlers"
 	fiberRouters "proxynd/internal/adapters/http/fiber/routers"
+	"proxynd/cache"
 	"proxynd/internal/config"
 
 	// TODO: HEXAGONAL_MIGRATION - Remove legacy imports after full migration
@@ -71,6 +74,9 @@ func setupNewArchitectureRoutes(app *fiber.App, config *RouteConfig) {
 	// Cache routes
 	logger.Info("Setting up cache routes")
 	fiberRouters.CacheRouter(app)
+
+	// Initialize cache manager for API v1 stats
+	setupCacheManagerForAPI(config, logger)
 
 	// API v1 routes (for WebUI integration)
 
@@ -180,4 +186,44 @@ func (rc *RouteConfig) GetMigrationStatus() map[string]interface{} {
 		"migration_phase":          "handlers_copied",
 		"legacy_fallback_active":   true,
 	}
+}
+
+// setupCacheManagerForAPI initializes and sets cache manager for API v1 stats
+func setupCacheManagerForAPI(config *RouteConfig, logger logging.Logger) {
+	if config == nil || config.UnifiedConfig == nil {
+		logger.Warn("Cannot initialize cache manager: config is nil")
+		return
+	}
+
+	// Determine storage directory
+	storageDir := "./storage"
+	if config.UnifiedConfig.Cache.Backend == "file" && config.UnifiedConfig.Cache.File.Directory != "" {
+		storageDir = config.UnifiedConfig.Cache.File.Directory
+	}
+
+	// Create filesystem backend
+	cacheBackend, err := cache.NewFileSystemBackend(storageDir)
+	if err != nil {
+		logger.Warn("Failed to create cache backend for API stats",
+			logging.F("error", err),
+			logging.F("storage_dir", storageDir))
+		return
+	}
+
+	// Create cache options
+	cacheOptions := cache.CacheOptions{
+		MaxSize:    1024 * 1024 * 1024, // 1GB default
+		DefaultTTL: time.Hour,
+		BasePath:   storageDir,
+	}
+
+	// Create cache manager
+	cacheManager := cache.NewManager(cacheBackend, cacheOptions)
+
+	// Set cache manager for API v1 routes
+	fiberRouters.SetCacheManager(cacheManager)
+
+	logger.Info("Cache manager initialized for API v1 stats",
+		logging.F("backend", "filesystem"),
+		logging.F("storage_dir", storageDir))
 }
