@@ -2,15 +2,15 @@ package routers
 
 import (
 	"os"
+
 	"github.com/gofiber/fiber/v2"
+
 	"proxynd/cache"
 	"proxynd/internal/config"
 )
 
-var (
-	// Global cache manager reference (set by main app)
-	globalCacheManager *cache.Manager
-)
+// Global cache manager reference (set by main app)
+var globalCacheManager *cache.Manager
 
 // SetCacheManager sets the global cache manager for API access
 func SetCacheManager(cm *cache.Manager) {

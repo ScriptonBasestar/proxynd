@@ -1,0 +1,33 @@
+# Development Plugin Configuration
+# Relaxed failure policy and some plugins disabled
+
+plugins:
+  enabled: true
+
+  lifecycle:
+    initTimeout: 30s
+    readyTimeout: 10s
+    shutdownTimeout: 30s
+    failurePolicy: "warn"  # Don't halt on plugin failures in dev
+
+  registry:
+    core:
+      - name: "proxy-policy"
+        enabled: true
+        priority: 100
+        config:
+          developmentMode: true
+
+      - name: "metrics"
+        enabled: true
+        priority: 200
+        config:
+          path: "/metrics"
+          interval: 30s
+
+  environments:
+    development:
+      overrides:
+        - plugin: "proxy-policy"
+          config:
+            developmentMode: true

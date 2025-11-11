@@ -37,6 +37,7 @@ type Application struct {
 	configRepo     *config.FileRepository
 	cacheRepo      *cacheRepo.FileRepository
 	pluginContext  plugins.Context
+	pluginManager  *plugins.Manager // New plugin manager
 }
 
 // Config holds application configuration
@@ -145,9 +146,12 @@ func (app *Application) Run() error {
 		return err
 	}
 
-	if err := plugins.Shutdown(shutdownCtx); err != nil {
-		app.logger.Warn("Plugin shutdown encountered errors",
-			logging.F("error", err))
+	// Shutdown plugins using manager
+	if app.pluginManager != nil {
+		if err := app.pluginManager.Shutdown(shutdownCtx); err != nil {
+			app.logger.Warn("Plugin shutdown encountered errors",
+				logging.F("error", err))
+		}
 	}
 
 	app.logger.Info("Server shutdown complete")
@@ -159,7 +163,13 @@ func (app *Application) Stop() error {
 	if err := app.fiberApp.Shutdown(); err != nil {
 		return err
 	}
-	return plugins.Shutdown(context.Background())
+
+	// Shutdown plugins using manager
+	if app.pluginManager != nil {
+		return app.pluginManager.Shutdown(context.Background())
+	}
+
+	return nil
 }
 
 // GetFiberApp returns the underlying Fiber app
@@ -366,20 +376,46 @@ func (app *Application) initializeFiberApp() {
 		return c.Next()
 	})
 
-	registeredPlugins := plugins.All()
-	if len(registeredPlugins) > 0 {
-		app.pluginContext = app.buildPluginContext()
-		if err := plugins.Initialize(app.fiberApp, app.pluginContext); err != nil {
-			app.logger.Error("Plugin initialization failed",
-				logging.F("error", err))
+	// Initialize plugin system with new manager
+	app.pluginContext = app.buildPluginContext()
+
+	// Load plugin configuration from YAML (falls back to defaults if not found)
+	pluginConfig, err := plugins.LoadConfig(app.config.ConfigDir)
+	if err != nil {
+		app.logger.Warn("Failed to load plugin config, using defaults",
+			logging.F("error", err))
+		pluginConfig = plugins.DefaultConfig()
+	} else {
+		app.logger.Info("Plugin configuration loaded",
+			logging.F("config_dir", app.config.ConfigDir),
+			logging.F("enabled", pluginConfig.Enabled))
+	}
+
+	// Create plugin manager
+	app.pluginManager = plugins.NewManager(pluginConfig, plugins.NewLoggerAdapter(app.logger))
+
+	// Discover and initialize plugins
+	if err := app.pluginManager.Discover(); err != nil {
+		app.logger.Error("Plugin discovery failed", logging.F("error", err))
+	} else {
+		// Initialize plugins
+		if err := app.pluginManager.Initialize(app.fiberApp, app.pluginContext); err != nil {
+			app.logger.Error("Plugin initialization failed", logging.F("error", err))
 		} else {
-			pluginNames := make([]string, 0, len(registeredPlugins))
-			for _, plugin := range registeredPlugins {
-				pluginNames = append(pluginNames, plugin.Name())
+			// Run ready hooks
+			if err := app.pluginManager.Ready(app.pluginContext); err != nil {
+				app.logger.Error("Plugin ready hooks failed", logging.F("error", err))
+			} else {
+				// Log summary
+				enabledPlugins := app.pluginManager.GetEnabledPlugins()
+				pluginNames := make([]string, 0, len(enabledPlugins))
+				for _, p := range enabledPlugins {
+					pluginNames = append(pluginNames, p.Name)
+				}
+				app.logger.Info("Plugins initialized and ready",
+					logging.F("count", len(enabledPlugins)),
+					logging.F("plugins", pluginNames))
 			}
-			app.logger.Info("Plugins initialized",
-				logging.F("count", len(registeredPlugins)),
-				logging.F("plugins", pluginNames))
 		}
 	}
 

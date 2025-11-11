@@ -6,9 +6,9 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	// Import new adapter structure
+	"proxynd/cache"
 	fiberHandlers "proxynd/internal/adapters/http/fiber/handlers"
 	fiberRouters "proxynd/internal/adapters/http/fiber/routers"
-	"proxynd/cache"
 	"proxynd/internal/config"
 
 	// TODO: HEXAGONAL_MIGRATION - Remove legacy imports after full migration
