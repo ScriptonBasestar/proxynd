@@ -1,3 +1,4 @@
+//go:build integration
 // +build integration
 
 package plugins_test
@@ -30,23 +31,21 @@ func TestPluginConfigLoading(t *testing.T) {
 	t.Run("Load from YAML file", func(t *testing.T) {
 		// Create test config file
 		configPath := tmpDir + "/plugins.yaml"
-		yamlContent := `
-plugins:
-  enabled: true
-  lifecycle:
-    initTimeout: 45s
-    readyTimeout: 20s
-    shutdownTimeout: 45s
-    failurePolicy: "halt"
-  registry:
-    core:
-      - name: "test-plugin"
-        enabled: true
-        priority: 100
-        config:
-          setting: "value"
+		yamlContent := `enabled: true
+lifecycle:
+  initTimeout: 45s
+  readyTimeout: 20s
+  shutdownTimeout: 45s
+  failurePolicy: "halt"
+registry:
+  core:
+    - name: "test-plugin"
+      enabled: true
+      priority: 100
+      config:
+        setting: "value"
 `
-		err := os.WriteFile(configPath, []byte(yamlContent), 0644)
+		err := os.WriteFile(configPath, []byte(yamlContent), 0o644)
 		require.NoError(t, err)
 
 		// Load config
@@ -72,31 +71,29 @@ plugins:
 	t.Run("Environment overrides", func(t *testing.T) {
 		// Create config with environment overrides
 		configPath := tmpDir + "/plugins.yaml"
-		yamlContent := `
-plugins:
-  enabled: true
-  registry:
-    core:
-      - name: "plugin-a"
-        enabled: true
-        priority: 50
+		yamlContent := `enabled: true
+registry:
+  core:
+    - name: "plugin-a"
+      enabled: true
+      priority: 50
+      config:
+        mode: "normal"
+environments:
+  development:
+    overrides:
+      - plugin: "plugin-a"
+        enabled: false
+      - plugin: "plugin-b"
         config:
-          mode: "normal"
-  environments:
-    development:
-      overrides:
-        - plugin: "plugin-a"
-          enabled: false
-        - plugin: "plugin-b"
-          config:
-            debugMode: true
-    production:
-      overrides:
-        - plugin: "plugin-a"
-          config:
-            mode: "strict"
+          debugMode: true
+  production:
+    overrides:
+      - plugin: "plugin-a"
+        config:
+          mode: "strict"
 `
-		err := os.WriteFile(configPath, []byte(yamlContent), 0644)
+		err := os.WriteFile(configPath, []byte(yamlContent), 0o644)
 		require.NoError(t, err)
 
 		// Load and verify
@@ -159,21 +156,19 @@ func TestEnvironmentVariableHandling(t *testing.T) {
 
 	// Create config with environment overrides
 	configPath := tmpDir + "/plugins.yaml"
-	yamlContent := `
-plugins:
-  enabled: true
-  registry:
-    core:
-      - name: "test-plugin"
-        enabled: true
-        priority: 100
-  environments:
-    testing:
-      overrides:
-        - plugin: "test-plugin"
-          enabled: false
+	yamlContent := `enabled: true
+registry:
+  core:
+    - name: "test-plugin"
+      enabled: true
+      priority: 100
+environments:
+  testing:
+    overrides:
+      - plugin: "test-plugin"
+        enabled: false
 `
-	err := os.WriteFile(configPath, []byte(yamlContent), 0644)
+	err := os.WriteFile(configPath, []byte(yamlContent), 0o644)
 	require.NoError(t, err)
 
 	// Set environment
