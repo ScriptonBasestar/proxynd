@@ -114,8 +114,25 @@ func (s *packageServiceImpl) HandleRequest(ctx context.Context, request *apk.Pac
 			logging.F("path", request.PackagePath),
 			logging.F("error", err.Error()))
 
+		// 업스트림 에러인 경우 원본 상태 코드 사용
+		statusCode := http.StatusInternalServerError
+		if upstreamErr, ok := err.(*UpstreamError); ok {
+			statusCode = upstreamErr.StatusCode
+		}
+
 		// 메트릭 기록
-		s.recordRequestMetrics(ctx, request, http.StatusInternalServerError, time.Since(startTime), false, proxyUsed, 0)
+		s.recordRequestMetrics(ctx, request, statusCode, time.Since(startTime), false, proxyUsed, 0)
+
+		// 에러 응답 생성
+		if statusCode == http.StatusNotFound {
+			return &apk.PackageResponse{
+				Data:        []byte("Not Found"),
+				ContentType: "text/plain",
+				StatusCode:  http.StatusNotFound,
+				FromCache:   false,
+			}, nil
+		}
+
 		return nil, fmt.Errorf("download failed: %w", err)
 	}
 
@@ -222,6 +239,16 @@ func (s *packageServiceImpl) generateCacheKey(packagePath string) string {
 	return fmt.Sprintf("apk:%s", packagePath)
 }
 
+// UpstreamError represents an error from upstream with HTTP status code
+type UpstreamError struct {
+	StatusCode int
+	Message    string
+}
+
+func (e *UpstreamError) Error() string {
+	return fmt.Sprintf("upstream error %d: %s", e.StatusCode, e.Message)
+}
+
 func (s *packageServiceImpl) downloadFromUpstream(ctx context.Context, packagePath, filePath string) ([]byte, string, error) { //nolint:lll
 	// 디렉토리 생성
 	if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
@@ -237,6 +264,7 @@ func (s *packageServiceImpl) downloadFromUpstream(ctx context.Context, packagePa
 		s.logger.Debug("APK 미러 선택 활성화됨", logging.F("path", packagePath))
 	}
 
+	var lastStatusCode int
 	for _, proxy := range proxies {
 		fullURL := helpers.JoinURL(proxy.URL, packagePath)
 		s.logger.Debug("APK 업스트림에서 다운로드 시도",
@@ -251,6 +279,8 @@ func (s *packageServiceImpl) downloadFromUpstream(ctx context.Context, packagePa
 			continue
 		}
 		defer func() { _ = resp.Body.Close() }()
+
+		lastStatusCode = resp.StatusCode
 
 		if resp.StatusCode == http.StatusOK {
 			// 파일로 저장
@@ -280,6 +310,22 @@ func (s *packageServiceImpl) downloadFromUpstream(ctx context.Context, packagePa
 		s.logger.Warn("APK 업스트림 오류 응답",
 			logging.F("proxy", proxy.Name),
 			logging.F("status", resp.StatusCode))
+
+		// If we got a 404, don't try other proxies - the resource doesn't exist
+		if resp.StatusCode == http.StatusNotFound {
+			return nil, proxy.Name, &UpstreamError{
+				StatusCode: http.StatusNotFound,
+				Message:    "resource not found",
+			}
+		}
+	}
+
+	// Return the last status code we received, or 500 if we never got a response
+	if lastStatusCode > 0 {
+		return nil, "", &UpstreamError{
+			StatusCode: lastStatusCode,
+			Message:    "all upstream servers failed",
+		}
 	}
 
 	return nil, "", fmt.Errorf("all upstream servers failed")
