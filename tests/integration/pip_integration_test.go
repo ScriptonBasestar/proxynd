@@ -62,7 +62,10 @@ func TestPIPProxyBasicFlow(t *testing.T) {
 		defer func() { _ = resp.Body.Close() }()
 
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		assert.Contains(t, resp.Header.Get("Content-Type"), "application/octet-stream")
+		// .whl files are ZIP format, so accept both application/zip and application/octet-stream
+		contentType := resp.Header.Get("Content-Type")
+		assert.True(t, strings.Contains(contentType, "application/zip") || strings.Contains(contentType, "application/octet-stream"),
+			"Content-Type should be application/zip or application/octet-stream, got: %s", contentType)
 
 		// 파일 내용 검증
 		body := make([]byte, 1024)
@@ -182,7 +185,15 @@ func TestPIPProxyContentTypes(t *testing.T) {
 			defer func() { _ = resp.Body.Close() }()
 
 			assert.Equal(t, http.StatusOK, resp.StatusCode)
-			assert.Contains(t, resp.Header.Get("Content-Type"), tc.expectedType)
+
+			// For .whl files, accept both application/zip and application/octet-stream
+			contentType := resp.Header.Get("Content-Type")
+			if strings.Contains(tc.path, ".whl") {
+				assert.True(t, strings.Contains(contentType, "application/zip") || strings.Contains(contentType, "application/octet-stream"),
+					"Content-Type should be application/zip or application/octet-stream for .whl files, got: %s", contentType)
+			} else {
+				assert.Contains(t, contentType, tc.expectedType)
+			}
 		})
 	}
 }
@@ -313,7 +324,7 @@ func TestPIPProxyPathVariations(t *testing.T) {
 		{
 			name:        "Path without trailing slash",
 			path:        "/proxy/pip/simple/requests",
-			expectValid: false, // 일반적으로 404 예상
+			expectValid: true, // trailing slash 정규화로 정상 처리됨
 		},
 		{
 			name:        "Invalid API path",
