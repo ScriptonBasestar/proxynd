@@ -42,6 +42,13 @@ func ProxyRouter(app *fiber.App) {
 	// Note: Using direct app registration instead of Group to ensure correct routing
 
 	// Handle all proxy types with unified proxy handler (with deprecation warning)
+	// HTTP method validator for read-only proxy
+	methodValidator := middlewares.ReadOnlyMethodValidator()
+
+	log.Printf("⭐ ProxyRouter: Setting up read-only proxy routes (GET, HEAD only)")
+	log.Printf("⭐ ProxyRouter: POST/PUT/DELETE/PATCH will return 405")
+
+	// Only allow GET and HEAD methods for read-only proxy
 	app.Get("/proxy/:type/*",
 		createDeprecationMiddleware("GET", "/proxy/:type/*", "/api/v1/proxy/:type/*"),
 		middlewares.ProxyPolicyMiddleware(),
@@ -51,8 +58,7 @@ func ProxyRouter(app *fiber.App) {
 		verificationHandler.VerificationMiddleware(),
 		proxynd.UnifiedProxyHandler,
 	)
-	app.Post("/proxy/:type/*",
-		createDeprecationMiddleware("POST", "/proxy/:type/*", "/api/v1/proxy/:type/*"),
+	app.Head("/proxy/:type/*",
 		middlewares.ProxyPolicyMiddleware(),
 		middlewares.DefaultAccessLogMiddleware(),
 		authHandlers.OptionalAuth(),      // Optional OAuth2/JWT authentication
@@ -60,15 +66,12 @@ func ProxyRouter(app *fiber.App) {
 		verificationHandler.VerificationMiddleware(),
 		proxynd.UnifiedProxyHandler,
 	)
-	app.Put("/proxy/:type/*",
-		createDeprecationMiddleware("PUT", "/proxy/:type/*", "/api/v1/proxy/:type/*"),
-		middlewares.ProxyPolicyMiddleware(),
-		middlewares.DefaultAccessLogMiddleware(),
-		authHandlers.OptionalAuth(),      // Optional OAuth2/JWT authentication
-		authHandlers.BasicAuthFallback(), // BasicAuth fallback
-		verificationHandler.VerificationMiddleware(),
-		proxynd.UnifiedProxyHandler,
-	)
+
+	// Reject all other HTTP methods with 405 Method Not Allowed
+	app.Post("/proxy/:type/*", methodValidator)
+	app.Put("/proxy/:type/*", methodValidator)
+	app.Delete("/proxy/:type/*", methodValidator)
+	app.Patch("/proxy/:type/*", methodValidator)
 
 	// Keep existing individual routes for backward compatibility (optional)
 	// Can be removed in the future
