@@ -26,6 +26,70 @@ type Cache struct {
 	StaleMaxAge          int            `yaml:"stale_max_age,omitempty" default:"3600" validate:"min=0,max=86400"`
 }
 
+// UnmarshalYAML implements custom YAML unmarshaling to support duration strings (e.g., "1h", "30m")
+func (c *Cache) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	// Create an auxiliary struct with string fields for duration values
+	type cacheAlias struct {
+		TTL                  interface{}    `yaml:"ttl,omitempty"`
+		PackageTTLs          map[string]int `yaml:"package_ttls,omitempty"`
+		PatternTTLs          map[string]int `yaml:"pattern_ttls,omitempty"`
+		MetadataTTLs         map[string]int `yaml:"metadata_ttls,omitempty"`
+		UseCacheHeaders      bool           `yaml:"use_cache_headers,omitempty"`
+		MaxCacheHeaderTTL    interface{}    `yaml:"max_cache_header_ttl,omitempty"`
+		MinCacheHeaderTTL    interface{}    `yaml:"min_cache_header_ttl,omitempty"`
+		StaleWhileRevalidate bool           `yaml:"stale_while_revalidate,omitempty"`
+		StaleMaxAge          interface{}    `yaml:"stale_max_age,omitempty"`
+	}
+
+	var aux cacheAlias
+	if err := unmarshal(&aux); err != nil {
+		return err
+	}
+
+	// Parse TTL (duration string or int)
+	c.TTL = parseDurationOrInt(aux.TTL, 3600)
+	c.MaxCacheHeaderTTL = parseDurationOrInt(aux.MaxCacheHeaderTTL, 86400)
+	c.MinCacheHeaderTTL = parseDurationOrInt(aux.MinCacheHeaderTTL, 300)
+	c.StaleMaxAge = parseDurationOrInt(aux.StaleMaxAge, 3600)
+
+	// Copy other fields
+	c.PackageTTLs = aux.PackageTTLs
+	c.PatternTTLs = aux.PatternTTLs
+	c.MetadataTTLs = aux.MetadataTTLs
+	c.UseCacheHeaders = aux.UseCacheHeaders
+	c.StaleWhileRevalidate = aux.StaleWhileRevalidate
+
+	return nil
+}
+
+// parseDurationOrInt parses a value that can be either a duration string (e.g., "1h") or an int
+func parseDurationOrInt(value interface{}, defaultValue int) int {
+	if value == nil {
+		return defaultValue
+	}
+
+	switch v := value.(type) {
+	case string:
+		// Parse duration string like "1h", "30m", "1h30m"
+		duration, err := time.ParseDuration(v)
+		if err != nil {
+			// If not a valid duration, try parsing as a number string
+			if intVal, err := strconv.Atoi(v); err == nil {
+				return intVal
+			}
+			return defaultValue
+		}
+		return int(duration.Seconds())
+	case int:
+		return v
+	case float64:
+		// YAML sometimes parses numbers as float64
+		return int(v)
+	default:
+		return defaultValue
+	}
+}
+
 // GetDefaultPackageTTLs returns default TTL values for each package type.
 // These values are used when specific TTLs are not configured.
 // Returns a map with package types as keys and TTL in seconds as values.

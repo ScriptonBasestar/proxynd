@@ -39,6 +39,9 @@ type CacheManager interface {
 	// Get 캐시에서 패키지 조회
 	Get(ctx context.Context, key string) (*CacheEntry, error)
 
+	// GetData 캐시에서 패키지 데이터 조회
+	GetData(ctx context.Context, key string) ([]byte, error)
+
 	// Set 패키지를 캐시에 저장
 	Set(ctx context.Context, key string, data []byte, contentType string, metadata *PackageMetadata) error
 

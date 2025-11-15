@@ -59,6 +59,7 @@ func (s *packageServiceImpl) Handle(ctx context.Context, request *npm.PackageReq
 		s.logger.Debug("Cache hit for NPM package",
 			logging.F("packagePath", request.PackagePath),
 			logging.F("cacheKey", cacheKey),
+			logging.F("cachePath", cacheEntry.Path),
 		)
 
 		// 메트릭 기록
@@ -71,6 +72,7 @@ func (s *packageServiceImpl) Handle(ctx context.Context, request *npm.PackageReq
 			StatusCode:  http.StatusOK,
 			FromCache:   true,
 			IsMetadata:  cacheEntry.IsMetadata,
+			CachePath:   cacheEntry.Path, // 캐시 파일 경로 전달
 		}, nil
 	}
 
@@ -107,10 +109,15 @@ func (s *packageServiceImpl) Handle(ctx context.Context, request *npm.PackageReq
 
 // fetchFromProxy 프록시에서 패키지 데이터 가져오기
 func (s *packageServiceImpl) fetchFromProxy(ctx context.Context, request *npm.PackageRequest) (*npm.PackageResponse, error) { //nolint:lll
+	s.logger.Info("Fetching from proxy", logging.F("packagePath", request.PackagePath))
+
 	proxy, err := s.proxyManager.GetNextProxy()
 	if err != nil {
+		s.logger.Error("No proxy available", logging.F("error", err))
 		return nil, fmt.Errorf("no available proxy: %w", err)
 	}
+
+	s.logger.Info("Got proxy", logging.F("proxyName", proxy.Name), logging.F("proxyURL", proxy.URL))
 
 	// HTTP 클라이언트 생성 (프록시 최적화 설정)
 	proxyClient := httpclient.NewProxyClient()

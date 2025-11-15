@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"bytes"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -86,6 +87,7 @@ func TestNPMProxy_PackageMetadata(t *testing.T) {
 			if tt.validateResponse != nil {
 				body, err := io.ReadAll(resp.Body)
 				require.NoError(t, err, "Should read response body")
+				t.Logf("[Metadata Test] Response body: %s", string(body))
 				tt.validateResponse(t, body)
 			}
 
@@ -163,6 +165,11 @@ func TestNPMProxy_TarballDownload(t *testing.T) {
 			resp, err := http.Get(url)
 			require.NoError(t, err, "Request should succeed")
 			defer func() { _ = resp.Body.Close() }()
+
+			// Debug: 응답 본문 출력
+			body, _ := io.ReadAll(resp.Body)
+			t.Logf("Response status: %d, body: %s", resp.StatusCode, string(body))
+			resp.Body = io.NopCloser(bytes.NewBuffer(body)) // 본문 재사용을 위해 복원
 
 			// Then
 			assert.Equal(t, tt.expectedStatus, resp.StatusCode, "Status code should match")

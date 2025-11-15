@@ -61,9 +61,11 @@ func (a *NPMHandlerAdapter) Handle(c *fiber.Ctx) error {
 		logging.F("packagePath", request.PackagePath),
 		logging.F("method", request.Method),
 		logging.F("remoteIP", c.IP()),
+		logging.F("fullPath", c.Path()),
 	)
 
 	// 도메인 서비스로 요청 전달
+	a.logger.Info("Calling package handler", logging.F("packagePath", request.PackagePath))
 	response, err := a.packageHandler.Handle(ctx, request)
 	if err != nil {
 		a.logger.Error("Package handler failed",
@@ -74,6 +76,11 @@ func (a *NPMHandlerAdapter) Handle(c *fiber.Ctx) error {
 			"error": "Failed to process NPM request",
 		})
 	}
+
+	a.logger.Info("Package handler returned",
+		logging.F("statusCode", response.StatusCode),
+		logging.F("fromCache", response.FromCache),
+	)
 
 	// 도메인 응답을 Fiber 응답으로 변환
 	return a.domainToFiberResponse(c, response, request.PackagePath)
@@ -130,7 +137,7 @@ func (a *NPMHandlerAdapter) domainToFiberResponse(c *fiber.Ctx, response *npm.Pa
 
 	// 캐시된 파일인 경우 파일로 직접 응답
 	if response.FromCache && len(response.Data) == 0 {
-		return a.serveCachedFile(c, packagePath)
+		return a.serveCachedFile(c, response.CachePath)
 	}
 
 	// 메모리의 데이터로 응답
@@ -138,16 +145,21 @@ func (a *NPMHandlerAdapter) domainToFiberResponse(c *fiber.Ctx, response *npm.Pa
 }
 
 // serveCachedFile 캐시된 파일을 직접 전송
-func (a *NPMHandlerAdapter) serveCachedFile(c *fiber.Ctx, packagePath string) error {
-	// 캐시 매니저를 통해 캐시 파일 경로 생성 (간단화)
-	storageDir := helpers.GetStorageDir()
-	cacheKey := generateCacheKey(packagePath)
-	cachePath := fmt.Sprintf("%s/npm/%s", storageDir, cacheKey)
+func (a *NPMHandlerAdapter) serveCachedFile(c *fiber.Ctx, cachePath string) error {
+	// CachePath가 비어있으면 에러
+	if cachePath == "" {
+		a.logger.Error("Cache path is empty")
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Invalid cache path",
+		})
+	}
 
 	// 파일 존재 확인 및 전송
 	if data, err := os.ReadFile(cachePath); err == nil {
 		return c.Send(data)
 	}
+
+	a.logger.Error("Failed to read cached file", logging.F("cachePath", cachePath))
 
 	// 파일이 없는 경우 404 반환
 	return c.Status(fiber.StatusNotFound).JSON(fiber.Map{

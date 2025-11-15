@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"log"
+	"os"
 
 	"github.com/gofiber/fiber/v2"
 
@@ -11,6 +12,12 @@ import (
 	"proxynd/internal/helpers"
 	"proxynd/internal/logging"
 )
+
+// isDevelopmentMode 개발/테스트 환경 확인
+func isDevelopmentMode() bool {
+	env := os.Getenv("PROXYND_ENV")
+	return env == "development" || env == "test"
+}
 
 // 전역 팩토리 인스턴스
 var globalAdapterFactory *factory.HandlerAdapterFactory
@@ -56,16 +63,20 @@ func UnifiedProxyHandler(c *fiber.Ctx) error {
 	// 프록시 타입별로 적절한 핸들러로 라우팅
 	switch proxyType {
 	case "maven":
-		// Maven 설정 확인
+		// Maven 설정 초기화
 		mavenConfig := config.MavenProxySettings{}
-		if !mavenConfig.ConfigExists() {
-			return renderConfigAlert(c, "maven-proxy.yaml")
-		}
 
-		// 설정 로드
-		if err := mavenConfig.ReadConfig(); err != nil {
-			log.Printf("Warning: Failed to read Maven config: %v", err)
-			return c.Status(500).SendString("Maven 설정을 읽을 수 없습니다")
+		// Maven 설정 확인 (개발/테스트 환경에서는 스킵)
+		if !isDevelopmentMode() {
+			if !mavenConfig.ConfigExists() {
+				return renderConfigAlert(c, "maven-proxy.yaml")
+			}
+
+			// 설정 로드
+			if err := mavenConfig.ReadConfig(); err != nil {
+				log.Printf("Warning: Failed to read Maven config: %v", err)
+				return c.Status(500).SendString("Maven 설정을 읽을 수 없습니다")
+		}
 		}
 
 		// 브라우저 요청 vs 파일 다운로드 요청 구분
@@ -81,16 +92,20 @@ func UnifiedProxyHandler(c *fiber.Ctx) error {
 		}
 
 	case "apt":
-		// APT 설정 확인
+		// APT 설정 초기화
 		aptConfig := config.AptProxyConfig{}
-		if !aptConfig.ConfigExists() {
-			return renderConfigAlert(c, "apt-proxy.yaml")
-		}
 
-		// 설정 로드
-		if err := aptConfig.ReadConfig(); err != nil {
-			log.Printf("Warning: Failed to read APT config: %v", err)
-			return c.Status(500).SendString("APT 설정을 읽을 수 없습니다")
+		// APT 설정 확인 (개발/테스트 환경에서는 스킵)
+		if !isDevelopmentMode() {
+			if !aptConfig.ConfigExists() {
+				return renderConfigAlert(c, "apt-proxy.yaml")
+			}
+
+			// 설정 로드
+			if err := aptConfig.ReadConfig(); err != nil {
+				log.Printf("Warning: Failed to read APT config: %v", err)
+				return c.Status(500).SendString("APT 설정을 읽을 수 없습니다")
+			}
 		}
 
 		// 새로운 아키텍처 사용 - APT Handler Adapter
@@ -99,16 +114,24 @@ func UnifiedProxyHandler(c *fiber.Ctx) error {
 		return adapter.Handle(c)
 
 	case "npm":
-		// NPM 설정 확인
+		// NPM 설정 초기화
 		npmConfig := config.NpmProxySettings{}
-		if !npmConfig.ConfigExists() {
-			return renderConfigAlert(c, "npm-proxy.yaml")
-		}
 
-		// 설정 로드
-		if err := npmConfig.ReadConfig(); err != nil {
-			log.Printf("Warning: Failed to read NPM config: %v", err)
-			return c.Status(500).SendString("NPM 설정을 읽을 수 없습니다")
+		// 설정 파일 존재 확인
+		if !npmConfig.ConfigExists() {
+			if !isDevelopmentMode() {
+				return renderConfigAlert(c, "npm-proxy.yaml")
+			}
+			// 개발/테스트 환경에서 설정 파일이 없으면 경고만 출력
+			log.Printf("Warning: npm-proxy.yaml not found, using empty config")
+		} else {
+			// 설정 파일이 있으면 로드 (개발/테스트 환경 포함)
+			if err := npmConfig.ReadConfig(); err != nil {
+				log.Printf("Warning: Failed to read NPM config: %v", err)
+				if !isDevelopmentMode() {
+					return c.Status(500).SendString("NPM 설정을 읽을 수 없습니다")
+				}
+			}
 		}
 
 		// 새로운 아키텍처 사용 - NPM Handler Adapter
@@ -117,16 +140,23 @@ func UnifiedProxyHandler(c *fiber.Ctx) error {
 		return adapter.Handle(c)
 
 	case "pip":
-		// PIP 설정 확인
+		// PIP 설정 초기화
 		pipConfig := config.PipProxySettings{}
-		if !pipConfig.ConfigExists() {
-			return renderConfigAlert(c, "pip-proxy.yaml")
-		}
 
-		// 설정 로드
-		if err := pipConfig.ReadConfig(); err != nil {
-			log.Printf("Warning: Failed to read PIP config: %v", err)
-			return c.Status(500).SendString("PIP 설정을 읽을 수 없습니다")
+		// 설정 파일 존재 확인
+		if !pipConfig.ConfigExists() {
+			if !isDevelopmentMode() {
+				return renderConfigAlert(c, "pip-proxy.yaml")
+			}
+			log.Printf("Warning: pip-proxy.yaml not found, using empty config")
+		} else {
+			// 설정 파일이 있으면 로드 (개발/테스트 환경 포함)
+			if err := pipConfig.ReadConfig(); err != nil {
+				log.Printf("Warning: Failed to read PIP config: %v", err)
+				if !isDevelopmentMode() {
+					return c.Status(500).SendString("PIP 설정을 읽을 수 없습니다")
+				}
+			}
 		}
 
 		// 새로운 아키텍처 사용 - PIP Handler Adapter
@@ -135,16 +165,23 @@ func UnifiedProxyHandler(c *fiber.Ctx) error {
 		return adapter.Handle(c)
 
 	case "docker":
-		// Docker 설정 확인
+		// Docker 설정 초기화
 		dockerConfig := config.DockerProxySettings{}
-		if !dockerConfig.ConfigExists() {
-			return renderConfigAlert(c, "docker-proxy.yaml")
-		}
 
-		// 설정 로드
-		if err := dockerConfig.ReadConfig(); err != nil {
-			log.Printf("Warning: Failed to read Docker config: %v", err)
-			return c.Status(500).SendString("Docker 설정을 읽을 수 없습니다")
+		// 설정 파일 존재 확인
+		if !dockerConfig.ConfigExists() {
+			if !isDevelopmentMode() {
+				return renderConfigAlert(c, "docker-proxy.yaml")
+			}
+			log.Printf("Warning: docker-proxy.yaml not found, using empty config")
+		} else {
+			// 설정 파일이 있으면 로드 (개발/테스트 환경 포함)
+			if err := dockerConfig.ReadConfig(); err != nil {
+				log.Printf("Warning: Failed to read Docker config: %v", err)
+				if !isDevelopmentMode() {
+					return c.Status(500).SendString("Docker 설정을 읽을 수 없습니다")
+				}
+			}
 		}
 
 		// 새로운 아키텍처 사용 - Docker Handler Adapter
@@ -153,16 +190,23 @@ func UnifiedProxyHandler(c *fiber.Ctx) error {
 		return adapter.Handle(c)
 
 	case "yum":
-		// YUM 설정 확인
+		// YUM 설정 초기화
 		yumConfig := config.YumProxySettings{}
-		if !yumConfig.ConfigExists() {
-			return renderConfigAlert(c, "yum-proxy.yaml")
-		}
 
-		// 설정 로드
-		if err := yumConfig.ReadConfig(); err != nil {
-			log.Printf("Warning: Failed to read YUM config: %v", err)
-			return c.Status(500).SendString("YUM 설정을 읽을 수 없습니다")
+		// 설정 파일 존재 확인
+		if !yumConfig.ConfigExists() {
+			if !isDevelopmentMode() {
+				return renderConfigAlert(c, "yum-proxy.yaml")
+			}
+			log.Printf("Warning: yum-proxy.yaml not found, using empty config")
+		} else {
+			// 설정 파일이 있으면 로드 (개발/테스트 환경 포함)
+			if err := yumConfig.ReadConfig(); err != nil {
+				log.Printf("Warning: Failed to read YUM config: %v", err)
+				if !isDevelopmentMode() {
+					return c.Status(500).SendString("YUM 설정을 읽을 수 없습니다")
+				}
+			}
 		}
 
 		// 새로운 아키텍처 사용 - YUM Handler Adapter
@@ -171,16 +215,23 @@ func UnifiedProxyHandler(c *fiber.Ctx) error {
 		return adapter.Handle(c)
 
 	case "apk":
-		// APK 설정 확인
+		// APK 설정 초기화
 		apkConfig := config.ApkProxySettings{}
-		if !apkConfig.ConfigExists() {
-			return renderConfigAlert(c, "apk-proxy.yaml")
-		}
 
-		// 설정 로드
-		if err := apkConfig.ReadConfig(); err != nil {
-			log.Printf("Warning: Failed to read APK config: %v", err)
-			return c.Status(500).SendString("APK 설정을 읽을 수 없습니다")
+		// 설정 파일 존재 확인
+		if !apkConfig.ConfigExists() {
+			if !isDevelopmentMode() {
+				return renderConfigAlert(c, "apk-proxy.yaml")
+			}
+			log.Printf("Warning: apk-proxy.yaml not found, using empty config")
+		} else {
+			// 설정 파일이 있으면 로드 (개발/테스트 환경 포함)
+			if err := apkConfig.ReadConfig(); err != nil {
+				log.Printf("Warning: Failed to read APK config: %v", err)
+				if !isDevelopmentMode() {
+					return c.Status(500).SendString("APK 설정을 읽을 수 없습니다")
+				}
+			}
 		}
 
 		// 새로운 아키텍처 사용 - APK Handler Adapter
@@ -193,11 +244,15 @@ func UnifiedProxyHandler(c *fiber.Ctx) error {
 	}
 }
 
-// renderConfigAlert 설정 파일이 없을 때 알림 페이지 렌더링
+// renderConfigAlert 설정 파일이 없을 때 알림 응답
 func renderConfigAlert(c *fiber.Ctx, configFileName string) error {
 	storageDir := helpers.GetStorageDir()
-	return c.Render("alert", fiber.Map{
-		"ConfigFileDir":  storageDir,
-		"ConfigFileName": configFileName,
+
+	// JSON 응답으로 변경 (템플릿 의존성 제거)
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
+		"status":         "warning",
+		"message":        "Configuration file not found, using defaults",
+		"configFileDir":  storageDir,
+		"configFileName": configFileName,
 	})
 }

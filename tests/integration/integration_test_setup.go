@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -85,6 +86,7 @@ func SetupIntegrationTest(t *testing.T) *IntegrationTestEnvironment {
 func (env *IntegrationTestEnvironment) setupMockUpstreams(_ *testing.T) {
 	// NPM Mock Server
 	npmServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("[NPM Mock] Request received: %s %s", r.Method, r.URL.Path)
 		switch r.URL.Path {
 		case "/express":
 			w.Header().Set("Content-Type", "application/json")
@@ -97,12 +99,14 @@ func (env *IntegrationTestEnvironment) setupMockUpstreams(_ *testing.T) {
 				log.Printf("Failed to write NPM response: %v", err)
 			}
 		case "/express/-/express-4.18.2.tgz":
+			log.Printf("[NPM Mock] Tarball request matched!")
 			w.Header().Set("Content-Type", "application/octet-stream")
 			w.WriteHeader(http.StatusOK)
 			if _, err := w.Write([]byte("mock express tarball content")); err != nil {
 				log.Printf("Failed to write tarball content: %v", err)
 			}
 		default:
+			log.Printf("[NPM Mock] Path not found: %s", r.URL.Path)
 			w.WriteHeader(http.StatusNotFound)
 			if _, err := w.Write([]byte(`{"error": "Not Found"}`)); err != nil {
 				log.Printf("Failed to write error response: %v", err)
@@ -177,8 +181,20 @@ Description: small, powerful, scalable web/proxy server`)); err != nil {
 
 	// PIP Mock Server
 	pipServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case "/simple/requests/":
+		// Only allow GET and HEAD methods
+		if r.Method != "GET" && r.Method != "HEAD" {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			if _, err := w.Write([]byte("Method Not Allowed")); err != nil {
+				log.Printf("Failed to write error response: %v", err)
+			}
+			return
+		}
+
+		// Normalize path by removing trailing slash for comparison
+		path := strings.TrimSuffix(r.URL.Path, "/")
+
+		switch path {
+		case "/simple/requests":
 			w.Header().Set("Content-Type", "text/html")
 			w.WriteHeader(http.StatusOK)
 			if _, err := w.Write([]byte(`<!DOCTYPE html>
@@ -242,15 +258,16 @@ Description: small, powerful, scalable web/proxy server`)); err != nil {
 				"layers": [
 					{
 						"mediaType": "application/vnd.docker.image.rootfs.diff.tar.gzip",
-						"size": 32654,
-						"digest": "sha256:mock-layer-digest"
+						"size": 25,
+						"digest": "sha256:4d8c5374677d80499161a0df308f361ecc2cb794ae6326e23931b6e4f66c4a10"
 					}
 				]
 			}`)); err != nil {
 				log.Printf("Failed to write Docker manifest: %v", err)
 			}
-		case "/v2/library/nginx/blobs/sha256:mock-layer-digest":
+		case "/v2/library/nginx/blobs/sha256:4d8c5374677d80499161a0df308f361ecc2cb794ae6326e23931b6e4f66c4a10":
 			w.Header().Set("Content-Type", "application/octet-stream")
+			w.Header().Set("Docker-Content-Digest", "sha256:4d8c5374677d80499161a0df308f361ecc2cb794ae6326e23931b6e4f66c4a10")
 			w.WriteHeader(http.StatusOK)
 			if _, err := w.Write([]byte("mock docker layer content")); err != nil {
 				log.Printf("Failed to write Docker blob: %v", err)
@@ -412,8 +429,9 @@ cache:
 path: "/npm"
 use_cache: true
 proxies:
-  - name: "npmjs"
-    url: "%s"
+  default:
+    - name: "npmjs"
+      url: "%s"
 `, env.MockUpstreams["npm"].URL)
 
 	err = os.WriteFile(filepath.Join(env.ConfigDir, "npm-proxy.yaml"), []byte(npmYAML), 0o644)
@@ -466,6 +484,30 @@ proxies:
 `, env.MockUpstreams["yum"].URL)
 
 	err = os.WriteFile(filepath.Join(env.ConfigDir, "yum-proxy.yaml"), []byte(yumYAML), 0o644)
+	require.NoError(t, err)
+
+	// docker-proxy.yaml 생성
+	dockerYAML := fmt.Sprintf(`
+path: "/docker"
+use_cache: true
+proxies:
+  - name: "dockerhub"
+    url: "%s"
+`, env.MockUpstreams["docker"].URL)
+
+	err = os.WriteFile(filepath.Join(env.ConfigDir, "docker-proxy.yaml"), []byte(dockerYAML), 0o644)
+	require.NoError(t, err)
+
+	// pip-proxy.yaml 생성
+	pipYAML := fmt.Sprintf(`
+path: "/pip"
+use_cache: true
+proxies:
+  - name: "pypi"
+    url: "%s"
+`, env.MockUpstreams["pip"].URL)
+
+	err = os.WriteFile(filepath.Join(env.ConfigDir, "pip-proxy.yaml"), []byte(pipYAML), 0o644)
 	require.NoError(t, err)
 }
 

@@ -42,6 +42,10 @@ func (m *proxyManagerImpl) loadProxies() {
 	configProxies := m.config.GetProxies()
 	m.proxies = make([]*npm.ProxyStatus, 0, len(configProxies))
 
+	m.logger.Info("Loading NPM proxies",
+		logging.F("proxyCount", len(configProxies)),
+	)
+
 	for _, proxy := range configProxies {
 		status := &npm.ProxyStatus{
 			Name:      proxy.Name,
@@ -51,7 +55,7 @@ func (m *proxyManagerImpl) loadProxies() {
 		}
 		m.proxies = append(m.proxies, status)
 
-		m.logger.Debug("Loaded NPM proxy",
+		m.logger.Info("Loaded NPM proxy",
 			logging.F("name", proxy.Name),
 			logging.F("url", proxy.URL),
 		)

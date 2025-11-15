@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -139,15 +140,18 @@ func (m *manifestManagerImpl) fetchManifestFromRegistry(ctx context.Context, rep
 	}
 
 	if resp.StatusCode != http.StatusOK {
+		// 에러 응답 본문 읽기 (Docker Registry v2 API 에러 형식 포함)
+		errorData, _ := io.ReadAll(resp.Body)
 		return &docker.ManifestResponse{
 			StatusCode: resp.StatusCode,
 			Headers:    make(map[string]string),
+			Data:       errorData,
 		}, nil
 	}
 
 	// 매니페스트 데이터 읽기
-	data := make([]byte, resp.ContentLength)
-	if _, err := resp.Body.Read(data); err != nil {
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
 		return nil, fmt.Errorf("failed to read manifest data: %w", err)
 	}
 

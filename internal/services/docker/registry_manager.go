@@ -40,6 +40,7 @@ func (r *registryManagerImpl) SelectRegistry(ctx context.Context, repository str
 	r.logger.Debug("Selecting registry", logging.F("repository", repository))
 
 	registries := r.config.GetRegistries()
+	r.logger.Info("Registries from config", logging.F("count", len(registries)))
 	if len(registries) == 0 {
 		return nil, fmt.Errorf("no registries configured")
 	}
@@ -47,18 +48,29 @@ func (r *registryManagerImpl) SelectRegistry(ctx context.Context, repository str
 	// 가용한 레지스트리 필터링
 	availableRegistries := make([]*docker.RegistryStatus, 0)
 
-	for _, registry := range registries {
+	for i, registry := range registries {
+		r.logger.Info("Checking registry",
+			logging.F("index", i),
+			logging.F("name", registry.Name),
+			logging.F("url", registry.URL))
+
 		status, err := r.GetRegistryStatus(ctx, registry.URL)
 		if err != nil {
 			r.logger.Warn("Failed to get registry status", logging.F("url", registry.URL), logging.F("error", err))
 			continue
 		}
 
+		r.logger.Info("Registry status check result",
+			logging.F("url", registry.URL),
+			logging.F("available", status.Available),
+			logging.F("error", status.Error))
+
 		if status.Available {
 			availableRegistries = append(availableRegistries, status)
 		}
 	}
 
+	r.logger.Info("Available registries after filtering", logging.F("count", len(availableRegistries)))
 	if len(availableRegistries) == 0 {
 		return nil, fmt.Errorf("no available registries for repository: %s", repository)
 	}

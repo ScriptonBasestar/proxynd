@@ -92,6 +92,47 @@ func (c *cacheManagerImpl) Get(ctx context.Context, key string) (*pip.CacheEntry
 	return entry, nil
 }
 
+// GetData 캐시에서 패키지 데이터 조회
+func (c *cacheManagerImpl) GetData(ctx context.Context, key string) ([]byte, error) {
+	if !c.cacheConfig.Enabled {
+		return nil, fmt.Errorf("cache is disabled")
+	}
+
+	filePath := c.getFilePath(key)
+
+	// 파일 존재 및 TTL 확인
+	fileInfo, err := os.Stat(filePath)
+	if os.IsNotExist(err) {
+		return nil, fmt.Errorf("cache miss: %s", key)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to stat cache file: %w", err)
+	}
+
+	// TTL 확인
+	if time.Since(fileInfo.ModTime()) > c.cacheConfig.TTL {
+		c.logger.Debug("Cache entry expired",
+			logging.F("key", key),
+			logging.F("age", time.Since(fileInfo.ModTime())),
+			logging.F("ttl", c.cacheConfig.TTL),
+		)
+		return nil, fmt.Errorf("cache entry expired: %s", key)
+	}
+
+	// 파일 데이터 읽기
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read cache file: %w", err)
+	}
+
+	c.logger.Debug("Cache data loaded",
+		logging.F("key", key),
+		logging.F("size", len(data)),
+	)
+
+	return data, nil
+}
+
 // Set 패키지를 캐시에 저장
 func (c *cacheManagerImpl) Set(ctx context.Context, key string, data []byte, contentType string, metadata *pip.PackageMetadata) error { //nolint:lll
 	if !c.cacheConfig.Enabled {

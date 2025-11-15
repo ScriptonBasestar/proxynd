@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -124,8 +125,8 @@ func (b *blobManagerImpl) fetchBlobFromRegistry(ctx context.Context, repository,
 	}
 
 	// blob 데이터 읽기
-	data := make([]byte, resp.ContentLength)
-	if _, err := resp.Body.Read(data); err != nil {
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
 		return nil, fmt.Errorf("failed to read blob data: %w", err)
 	}
 

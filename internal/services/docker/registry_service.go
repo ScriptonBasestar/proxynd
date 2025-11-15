@@ -3,6 +3,7 @@ package docker
 import (
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -53,7 +54,12 @@ func (s *registryServiceImpl) Handle(ctx context.Context, request *docker.Regist
 	// 요청 유효성 검증
 	if err := s.ValidateRequest(ctx, request); err != nil {
 		s.logger.Error("Invalid Docker registry request", logging.F("error", err), logging.F("path", request.Path))
-		return nil, fmt.Errorf("invalid request: %w", err)
+		// 잘못된 API 버전 등은 404로 응답
+		return &docker.ManifestResponse{
+			StatusCode: http.StatusNotFound,
+			Headers:    make(map[string]string),
+			Data:       []byte(`{"errors":[{"code":"UNSUPPORTED","message":"API version not supported"}]}`),
+		}, nil
 	}
 
 	// 메트릭 기록용 기본 정보 설정
@@ -110,8 +116,8 @@ func (s *registryServiceImpl) Handle(ctx context.Context, request *docker.Regist
 func (s *registryServiceImpl) HandleV2Base(ctx context.Context) (*docker.ManifestResponse, error) {
 	s.logger.Debug("Handling Docker Registry v2 base endpoint")
 
-	// Docker Registry v2 API 기본 응답
-	data := []byte(`{"errors":[]}`)
+	// Docker Registry v2 API 기본 응답 (빈 객체)
+	data := []byte(`{}`)
 
 	response := &docker.ManifestResponse{
 		Data:        data,
@@ -223,9 +229,12 @@ func (s *registryServiceImpl) handleTagsRequest(ctx context.Context, request *do
 	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
+		// 에러 응답 본문 읽기 (Docker Registry v2 API 에러 형식 포함)
+		errorData, _ := io.ReadAll(resp.Body)
 		return &docker.ManifestResponse{
 			StatusCode: resp.StatusCode,
 			Headers:    make(map[string]string),
+			Data:       errorData,
 		}, nil
 	}
 

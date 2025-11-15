@@ -36,6 +36,12 @@ func NewDockerHandlerAdapter(config config.DockerProxySettings, logger logging.L
 	storageDir := helpers.GetStorageDir()
 	proxyConfig := docker.NewDefaultProxyConfig(&config, storageDir)
 
+	// 설정된 레지스트리 수 로그
+	registries := proxyConfig.GetRegistries()
+	logger.Info("Docker handler adapter created",
+		logging.F("registries_count", len(registries)),
+		logging.F("use_cache", config.UseCache))
+
 	// 서비스 팩토리를 통한 의존성 생성
 	serviceFactory := dockerServices.NewServiceFactory(proxyConfig, logger)
 	registryHandler := serviceFactory.CreateRegistryService()
@@ -85,9 +91,11 @@ func (a *DockerHandlerAdapter) Handle(c *fiber.Ctx) error {
 	if err != nil {
 		a.logger.Error("Docker registry service error",
 			logging.F("error", err),
+			logging.F("error_msg", err.Error()),
+			logging.F("error_type", fmt.Sprintf("%T", err)),
 			logging.F("operation", request.Operation))
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Internal server error",
+			"error": fmt.Sprintf("Internal server error: %v", err),
 		})
 	}
 

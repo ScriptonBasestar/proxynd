@@ -175,6 +175,11 @@ func (m *indexManagerImpl) BuildPackageURL(baseURL, packagePath string) string {
 		return helpers.JoinURL(baseURL, packagePath)
 	}
 
+	// /pypi/ 경로 처리 (JSON API)
+	if strings.HasPrefix(packagePath, "pypi/") {
+		return helpers.JoinURL(baseURL, packagePath)
+	}
+
 	// 기본적으로 simple API 사용
 	return helpers.JoinURL(baseURL, "simple", packagePath)
 }

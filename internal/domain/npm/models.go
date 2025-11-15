@@ -23,6 +23,7 @@ type PackageResponse struct {
 	FromCache   bool              `json:"fromCache"`
 	ProxyUsed   string            `json:"proxyUsed,omitempty"`  // 사용된 프록시 서버
 	IsMetadata  bool              `json:"isMetadata,omitempty"` // 메타데이터 요청 여부
+	CachePath   string            `json:"cachePath,omitempty"`  // 캐시 파일 경로 (FromCache=true인 경우)
 }
 
 // ProxyStatus 프록시 서버 상태 정보

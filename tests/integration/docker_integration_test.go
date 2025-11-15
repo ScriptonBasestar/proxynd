@@ -38,7 +38,11 @@ func TestDockerProxyBasicFlow(t *testing.T) {
 
 	// 이미지 매니페스트 조회 테스트
 	t.Run("Image Manifest", func(t *testing.T) {
-		resp, err := env.MakeRequest("GET", "/proxy/docker/v2/library/nginx/manifests/latest", nil)
+		// Docker Registry API requires Accept header for manifest requests
+		headers := map[string]string{
+			"Accept": "application/vnd.docker.distribution.manifest.v2+json",
+		}
+		resp, err := env.MakeRequest("GET", "/proxy/docker/v2/library/nginx/manifests/latest", headers)
 		require.NoError(t, err)
 		defer func() { _ = resp.Body.Close() }()
 
@@ -52,12 +56,12 @@ func TestDockerProxyBasicFlow(t *testing.T) {
 		assert.Contains(t, responseBody, "\"schemaVersion\": 2")
 		assert.Contains(t, responseBody, "application/vnd.docker.distribution.manifest.v2+json")
 		assert.Contains(t, responseBody, "mock-config-digest")
-		assert.Contains(t, responseBody, "mock-layer-digest")
+		assert.Contains(t, responseBody, "4d8c5374677d80499161a0df308f361ecc2cb794ae6326e23931b6e4f66c4a10")
 	})
 
 	// 블롭 다운로드 테스트
 	t.Run("Blob Download", func(t *testing.T) {
-		resp, err := env.MakeRequest("GET", "/proxy/docker/v2/library/nginx/blobs/sha256:mock-layer-digest", nil)
+		resp, err := env.MakeRequest("GET", "/proxy/docker/v2/library/nginx/blobs/sha256:4d8c5374677d80499161a0df308f361ecc2cb794ae6326e23931b6e4f66c4a10", nil)
 		require.NoError(t, err)
 		defer func() { _ = resp.Body.Close() }()
 
@@ -134,7 +138,7 @@ func TestDockerProxyContentTypes(t *testing.T) {
 		},
 		{
 			name:         "Blob",
-			path:         "/proxy/docker/v2/library/nginx/blobs/sha256:mock-layer-digest",
+			path:         "/proxy/docker/v2/library/nginx/blobs/sha256:4d8c5374677d80499161a0df308f361ecc2cb794ae6326e23931b6e4f66c4a10",
 			expectedType: "application/octet-stream",
 		},
 	}
@@ -278,7 +282,7 @@ func TestDockerProxyBlobHandling(t *testing.T) {
 
 	// 블롭 존재 확인 (HEAD 요청)
 	t.Run("Blob Head Request", func(t *testing.T) {
-		resp, err := env.MakeRequest("HEAD", "/proxy/docker/v2/library/nginx/blobs/sha256:mock-layer-digest", nil)
+		resp, err := env.MakeRequest("HEAD", "/proxy/docker/v2/library/nginx/blobs/sha256:4d8c5374677d80499161a0df308f361ecc2cb794ae6326e23931b6e4f66c4a10", nil)
 		require.NoError(t, err)
 		defer func() { _ = resp.Body.Close() }()
 
@@ -293,7 +297,7 @@ func TestDockerProxyBlobHandling(t *testing.T) {
 			"Range": "bytes=0-1023",
 		}
 
-		resp, err := env.MakeRequest("GET", "/proxy/docker/v2/library/nginx/blobs/sha256:mock-layer-digest", headers)
+		resp, err := env.MakeRequest("GET", "/proxy/docker/v2/library/nginx/blobs/sha256:4d8c5374677d80499161a0df308f361ecc2cb794ae6326e23931b6e4f66c4a10", headers)
 		require.NoError(t, err)
 		defer func() { _ = resp.Body.Close() }()
 
@@ -384,7 +388,7 @@ func TestDockerProxyImagePaths(t *testing.T) {
 		},
 		{
 			name:        "Blob by digest",
-			path:        "/proxy/docker/v2/library/nginx/blobs/sha256:mock-layer-digest",
+			path:        "/proxy/docker/v2/library/nginx/blobs/sha256:4d8c5374677d80499161a0df308f361ecc2cb794ae6326e23931b6e4f66c4a10",
 			expectValid: true,
 		},
 		{
@@ -458,7 +462,7 @@ func TestDockerProxyUpstreamConnectivity(t *testing.T) {
 		// Mock upstream의 매니페스트 응답 검증
 		assert.Contains(t, responseBody, "\"schemaVersion\": 2")
 		assert.Contains(t, responseBody, "mock-config-digest")
-		assert.Contains(t, responseBody, "mock-layer-digest")
+		assert.Contains(t, responseBody, "4d8c5374677d80499161a0df308f361ecc2cb794ae6326e23931b6e4f66c4a10")
 	})
 }
 
@@ -492,7 +496,7 @@ func TestDockerProxyMetrics(t *testing.T) {
 		paths := []string{
 			"/proxy/docker/v2/",
 			"/proxy/docker/v2/library/nginx/manifests/latest",
-			"/proxy/docker/v2/library/nginx/blobs/sha256:mock-layer-digest",
+			"/proxy/docker/v2/library/nginx/blobs/sha256:4d8c5374677d80499161a0df308f361ecc2cb794ae6326e23931b6e4f66c4a10",
 		}
 
 		for _, path := range paths {

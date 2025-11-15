@@ -71,6 +71,11 @@ func (h *UnifiedProxyHandler) Handle(c *fiber.Ctx) error {
 			})
 		}
 
+		// Set Content-Type if provided
+		if resp.ContentType != "" {
+			c.Set("Content-Type", resp.ContentType)
+		}
+
 		// Set response headers
 		for key, value := range resp.Headers {
 			c.Set(key, value)

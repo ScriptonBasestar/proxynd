@@ -63,11 +63,22 @@ func (s *packageServiceImpl) Handle(ctx context.Context, request *pip.PackageReq
 				logging.F("cacheKey", cacheKey),
 			)
 
+			// 캐시된 파일에서 데이터 읽기
+			cachedData, err := s.cacheManager.GetData(ctx, cacheKey)
+			if err != nil {
+				s.logger.Warn("Failed to read cached data, fetching from index",
+					logging.F("error", err),
+					logging.F("packagePath", request.PackagePath),
+				)
+				// 캐시 읽기 실패 시 인덱스에서 가져오기
+				goto fetchFromUpstream
+			}
+
 			// 메트릭 기록
 			s.recordMetrics(ctx, request, http.StatusOK, time.Since(startTime), true, "", cacheEntry.Size)
 
 			return &pip.PackageResponse{
-				Data:          nil, // 캐시에서는 파일 경로만 반환
+				Data:          cachedData, // 캐시된 실제 데이터 반환
 				ContentType:   cacheEntry.ContentType,
 				Headers:       make(map[string]string),
 				StatusCode:    http.StatusOK,
@@ -77,6 +88,8 @@ func (s *packageServiceImpl) Handle(ctx context.Context, request *pip.PackageReq
 			}, nil
 		}
 	}
+
+fetchFromUpstream:
 
 	// 캐시 미스 - 인덱스에서 데이터 가져오기
 	response, err := s.fetchFromIndex(ctx, request)
@@ -147,9 +160,13 @@ func (s *packageServiceImpl) fetchFromIndex(ctx context.Context, request *pip.Pa
 		return nil, fmt.Errorf("failed to read response: %w", err)
 	}
 
-	// Content-Type 결정
-	fileName := s.extractFileName(request.PackagePath)
-	contentType := s.metadataProcessor.GetContentType(request.PackagePath, fileName)
+	// Content-Type 결정 (업스트림 서버의 Content-Type 우선 사용)
+	contentType := resp.Header.Get("Content-Type")
+	if contentType == "" {
+		// 업스트림에서 Content-Type을 제공하지 않으면 추론
+		fileName := s.extractFileName(request.PackagePath)
+		contentType = s.metadataProcessor.GetContentType(request.PackagePath, fileName)
+	}
 
 	// Simple API 요청인 경우 URL 재작성
 	isSimpleAPI := s.metadataProcessor.IsSimpleAPIRequest(request.PackagePath)

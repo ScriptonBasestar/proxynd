@@ -14,6 +14,7 @@ import (
 
 	"proxynd/internal/app"
 	"proxynd/internal/config"
+	proxyHandlers "proxynd/internal/handlers-legacy/proxy"
 )
 
 // TestServer 통합 테스트용 서버 구조체
@@ -25,7 +26,10 @@ type TestServer struct {
 }
 
 // SetupTestServer 테스트 서버 설정
-func SetupTestServer(_ *testing.T) *TestServer {
+func SetupTestServer(t *testing.T) *TestServer {
+	// 통합 테스트 환경 먼저 설정
+	_ = SetupIntegrationTest(t)
+
 	// 테스트용 통합 설정
 	testConfig := &config.UnifiedConfig{
 		Server: config.ServerConfig{
@@ -190,26 +194,8 @@ func setupRoutes(app *fiber.App, _ *app.Container) {
 		return c.Status(404).SendString("Not Found")
 	})
 
-	// NPM 프록시 라우트
-	proxy.All("/npm/*", func(c *fiber.Ctx) error {
-		path := c.Params("*")
-		c.Set("X-Proxy-Type", "npm")
-		c.Set("X-Cache-Status", "MISS")
-
-		// 간단한 모의 응답
-		if path == "express" {
-			c.Set("Content-Type", "application/json")
-			return c.JSON(fiber.Map{
-				"name":        "express",
-				"version":     "4.18.1",
-				"description": "Fast, unopinionated, minimalist web framework",
-			})
-		}
-
-		return c.Status(404).JSON(fiber.Map{
-			"error": "Package not found",
-		})
-	})
+	// 통합 프록시 라우트 - unified_proxy_handler 사용
+	proxy.All("/:type/*", proxyHandlers.UnifiedProxyHandler)
 
 	// APK 프록시 라우트
 	proxy.All("/apk/*", func(c *fiber.Ctx) error {
