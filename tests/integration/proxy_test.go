@@ -96,6 +96,10 @@ func (s *ProxyIntegrationTestSuite) setupTestCommon(tempDir string) {
 	// 테스트 설정 파일 생성
 	s.createTestConfigsCommon(configDir)
 
+	// 환경 변수 설정 (config.NewService가 요구)
+	_ = os.Setenv("CONFIG_DIR", configDir)
+	_ = os.Setenv("STORAGE_DIR", cacheDir)
+
 	// 설정 서비스 초기화
 	ctx := context.Background()
 	configService, err := config.NewService(ctx, configDir)
