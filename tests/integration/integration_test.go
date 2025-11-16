@@ -89,7 +89,10 @@ func (s *IntegrationTestSuite) TestHealthCheck() {
 	err = json.Unmarshal(body, &healthResp)
 	require.NoError(s.T(), err)
 
-	assert.Equal(s.T(), "ok", healthResp["status"])
+	// 시스템 상태는 "ok" 또는 "degraded" 가능 (일부 프록시가 비활성화된 경우)
+	status, ok := healthResp["status"].(string)
+	require.True(s.T(), ok, "status should be a string")
+	assert.Contains(s.T(), []string{"ok", "degraded"}, status, "시스템 상태는 ok 또는 degraded여야 함")
 }
 
 // TestNpmProxyScenario NPM 프록시 시나리오 테스트
