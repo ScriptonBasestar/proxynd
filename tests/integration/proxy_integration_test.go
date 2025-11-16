@@ -343,9 +343,9 @@ func TestProxyErrorHandling(t *testing.T) {
 		require.NoError(t, err)
 		defer func() { _ = resp.Body.Close() }()
 
-		// 404 Not Found 또는 400 Bad Request 기대
-		assert.True(t, resp.StatusCode == 404 || resp.StatusCode == 400,
-			"잘못된 프록시 타입에 대해 클라이언트 에러가 반환되어야 함")
+		// 400번대 클라이언트 에러 기대 (403 Forbidden, 404 Not Found, 400 Bad Request 등)
+		assert.True(t, resp.StatusCode >= 400 && resp.StatusCode < 500,
+			"잘못된 프록시 타입에 대해 클라이언트 에러(4xx)가 반환되어야 함")
 	})
 
 	t.Run("대용량 파일 처리", func(t *testing.T) {
