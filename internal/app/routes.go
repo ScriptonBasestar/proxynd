@@ -86,6 +86,10 @@ func setupNewArchitectureRoutes(app *fiber.App, config *RouteConfig) {
 	logger.Info("Setting up API v1 routes")
 	fiberRouters.SetupAPIv1Routes(app, config.UnifiedConfig)
 
+	// Metrics routes
+	logger.Info("Setting up metrics routes")
+	routers.MetricsRouter(app, config.UnifiedConfig)
+
 	// TODO: HEXAGONAL_MIGRATION - Add other routers as they are migrated
 	logger.Info("New architecture routes setup completed")
 }

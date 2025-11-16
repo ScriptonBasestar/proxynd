@@ -1,6 +1,8 @@
 package metrics
 
 import (
+	"sync"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
@@ -489,15 +491,18 @@ func NewMetrics() *Metrics {
 }
 
 // 전역 메트릭 인스턴스
-var globalMetrics *Metrics
+var (
+	globalMetrics *Metrics
+	metricsOnce   sync.Once
+)
 
-// InitMetrics 메트릭 초기화
+// InitMetrics 메트릭 초기화 (sync.Once로 중복 초기화 방지)
 func InitMetrics() {
-	if globalMetrics == nil {
+	metricsOnce.Do(func() {
 		globalMetrics = NewMetrics()
 		// Container 메트릭도 함께 초기화
 		InitContainerMetrics()
-	}
+	})
 }
 
 // GetMetrics 전역 메트릭 인스턴스 반환
@@ -508,7 +513,8 @@ func GetMetrics() *Metrics {
 	return globalMetrics
 }
 
-// ResetMetrics 테스트용 메트릭 리셋
+// ResetMetrics 테스트용 메트릭 리셋 (sync.Once도 함께 리셋)
 func ResetMetrics() {
 	globalMetrics = nil
+	metricsOnce = sync.Once{}
 }

@@ -3,6 +3,7 @@ package routers
 import (
 	"net/http"
 	"strconv"
+	"sync"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/basicauth"
@@ -15,18 +16,36 @@ import (
 	"proxynd/internal/metrics"
 )
 
-// MetricsRouter 메트릭 라우터 설정
+var (
+	customCollectorOnce        sync.Once
+	enhancedCollectorOnce      sync.Once
+	metricsMiddlewareApplied   bool
+	metricsMiddlewareMutex     sync.Mutex
+)
+
+// ResetMetricsRouter 테스트용 메트릭 라우터 리셋
+func ResetMetricsRouter() {
+	customCollectorOnce = sync.Once{}
+	enhancedCollectorOnce = sync.Once{}
+	metricsMiddlewareApplied = false
+}
+
+// MetricsRouter 메트릭 라우터 설정 (여러 번 호출 안전)
 func MetricsRouter(app *fiber.App, config *config.UnifiedConfig) {
-	// 메트릭 초기화
+	// 메트릭 초기화 (sync.Once로 보호됨)
 	metrics.InitMetrics()
 
-	// 강화된 메트릭 수집기 초기화
-	logger := logging.NewLogger("metrics")
-	enhancedConfig := metrics.DefaultEnhancedCollectorConfig()
-	metrics.InitEnhancedMetricsCollector(logger, enhancedConfig)
+	// 강화된 메트릭 수집기 초기화 (한 번만)
+	enhancedCollectorOnce.Do(func() {
+		logger := logging.NewLogger("metrics")
+		enhancedConfig := metrics.DefaultEnhancedCollectorConfig()
+		metrics.InitEnhancedMetricsCollector(logger, enhancedConfig)
+	})
 
-	// 커스텀 수집기 등록
-	prometheus.MustRegister(metrics.NewCustomCollector())
+	// 커스텀 수집기 등록 (한 번만)
+	customCollectorOnce.Do(func() {
+		prometheus.MustRegister(metrics.NewCustomCollector())
+	})
 
 	// 메트릭 미들웨어 적용 (전체 앱에 적용)
 	app.Use(metrics.PrometheusMiddleware())

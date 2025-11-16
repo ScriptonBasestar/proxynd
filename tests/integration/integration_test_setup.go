@@ -17,6 +17,7 @@ import (
 
 	"proxynd/internal/app"
 	"proxynd/internal/config"
+	"proxynd/internal/metrics"
 	"proxynd/internal/routers"
 )
 
@@ -539,6 +540,9 @@ func (env *IntegrationTestEnvironment) setupProxyServer(_ *testing.T) {
 	routers.UserRouter(fiberApp)
 	routers.TestRouter(fiberApp)
 	routers.WebhookRouter(fiberApp)
+	// MetricsRouter는 Prometheus 글로벌 레지스트리 중복 등록 문제로 인해
+	// 통합 테스트에서 비활성화 (메트릭 테스트는 별도 수행 필요)
+	// routers.MetricsRouter(fiberApp, env.Config)
 
 	// 컨테이너를 앱 로컬에 저장 (handlers가 사용할 수 있도록)
 	fiberApp.Use(func(c *fiber.Ctx) error {
@@ -554,6 +558,9 @@ func (env *IntegrationTestEnvironment) setupProxyServer(_ *testing.T) {
 		if container != nil {
 			_ = container.Close()
 		}
+		// Metrics 리셋하여 다음 테스트에서 재초기화 가능하게 함
+		metrics.ResetMetrics()
+		routers.ResetMetricsRouter()
 	})
 }
 
