@@ -1,0 +1,1213 @@
+openapi: 3.0.3
+info:
+  title: ProxyND Enterprise API
+  version: 1.0.0
+  description: |
+    **ProxyND Enterprise API** provides advanced features for enterprise package management,
+    including Role-Based Access Control (RBAC), comprehensive audit logging, analytics and reporting,
+    security scanning, alerting, and license management.
+
+    ## Features
+
+    - **RBAC**: Manage roles, permissions, and user assignments
+    - **Audit Logging**: Track all system events for compliance and security
+    - **Analytics**: Usage statistics, performance metrics, and custom reporting
+    - **Security**: Vulnerability scanning, license compliance, and malware detection
+    - **Alerts**: Configure notification rules and manage alerts
+    - **License Management**: Enterprise license validation and feature management
+
+    ## Authentication
+
+    All Enterprise API endpoints require a valid enterprise license. Include your license token
+    in the Authorization header:
+
+    ```
+    Authorization: Bearer <your-license-token>
+    ```
+
+  contact:
+    name: ProxyND Support
+    url: https://github.com/ScriptonBasestar/proxynd/issues
+    email: support@proxynd.io
+  license:
+    name: AGPL-3.0
+    url: https://www.gnu.org/licenses/agpl-3.0.html
+
+servers:
+  - url: http://localhost:8080
+    description: Development server
+  - url: https://api.proxynd.io
+    description: Production server
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: RBAC
+    description: Role-Based Access Control - manage roles, permissions, and user assignments
+  - name: Audit
+    description: Audit logging and compliance reporting
+  - name: Analytics
+    description: Usage statistics, performance metrics, and custom reporting
+  - name: Security
+    description: Vulnerability scanning, license compliance, and malware detection
+  - name: Alerts
+    description: Alert management and notification rules
+  - name: License
+    description: Enterprise license management and feature validation
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Enter your enterprise license token
+
+  schemas:
+    # Common Response Schemas
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+        metadata:
+          $ref: '#/components/schemas/ResponseMetadata'
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: "RESOURCE_NOT_FOUND"
+            message:
+              type: string
+              example: "The requested resource was not found"
+        metadata:
+          $ref: '#/components/schemas/ResponseMetadata'
+
+    ResponseMetadata:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        request_id:
+          type: string
+          example: "req_1234567890"
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        per_page:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 100
+        total_pages:
+          type: integer
+          example: 5
+
+    # RBAC Schemas
+    Role:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "role_123"
+        name:
+          type: string
+          example: "developer"
+        description:
+          type: string
+          example: "Developer role with read/write access"
+        permissions:
+          type: array
+          items:
+            type: string
+          example: ["read:packages", "write:packages"]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    RoleRequest:
+      type: object
+      required:
+        - name
+        - permissions
+      properties:
+        name:
+          type: string
+          minLength: 3
+          maxLength: 50
+        description:
+          type: string
+          maxLength: 500
+        permissions:
+          type: array
+          minItems: 1
+          items:
+            type: string
+
+    Permission:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        resource:
+          type: string
+        action:
+          type: string
+
+    # Audit Schemas
+    AuditEvent:
+      type: object
+      properties:
+        id:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        user_id:
+          type: string
+        user_email:
+          type: string
+        action:
+          type: string
+        resource_type:
+          type: string
+        resource_id:
+          type: string
+        ip_address:
+          type: string
+        user_agent:
+          type: string
+        status:
+          type: string
+          enum: [success, failure]
+        details:
+          type: object
+
+    # Analytics Schemas
+    DashboardOverview:
+      type: object
+      properties:
+        total_requests:
+          type: integer
+        cache_hit_rate:
+          type: number
+          format: float
+        avg_response_time:
+          type: number
+          format: float
+        bandwidth_used:
+          type: integer
+        active_users:
+          type: integer
+        top_packages:
+          type: array
+          items:
+            $ref: '#/components/schemas/PackageUsage'
+        requests_by_pm:
+          type: object
+          additionalProperties:
+            type: integer
+        error_rate:
+          type: number
+          format: float
+
+    PackageUsage:
+      type: object
+      properties:
+        package_manager:
+          type: string
+        package_name:
+          type: string
+        request_count:
+          type: integer
+        bytes_served:
+          type: integer
+
+    Report:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+        schedule:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    # Security Schemas
+    Vulnerability:
+      type: object
+      properties:
+        id:
+          type: string
+        cve_id:
+          type: string
+        severity:
+          type: string
+          enum: [critical, high, medium, low]
+        package_manager:
+          type: string
+        package_name:
+          type: string
+        affected_version:
+          type: string
+        fixed_version:
+          type: string
+        description:
+          type: string
+        published_date:
+          type: string
+          format: date-time
+
+    ScanJob:
+      type: object
+      properties:
+        job_id:
+          type: string
+        status:
+          type: string
+          enum: [pending, running, completed, failed]
+        progress:
+          type: integer
+          minimum: 0
+          maximum: 100
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+
+    # Alerts Schemas
+    Alert:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        severity:
+          type: string
+          enum: [critical, warning, info]
+        status:
+          type: string
+          enum: [active, acknowledged, resolved]
+        message:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        triggered_at:
+          type: string
+          format: date-time
+
+    AlertRule:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+        severity:
+          type: string
+        conditions:
+          type: object
+        actions:
+          type: array
+          items:
+            type: object
+
+    # License Schemas
+    LicenseInfo:
+      type: object
+      properties:
+        valid:
+          type: boolean
+        type:
+          type: string
+          enum: [community, professional, enterprise]
+        company:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+        features:
+          type: array
+          items:
+            type: string
+
+paths:
+  # RBAC Endpoints (12)
+  /api/v1/enterprise/rbac/roles:
+    get:
+      tags:
+        - RBAC
+      summary: List all roles
+      description: Get a paginated list of all roles in the RBAC system
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: Paginated list of roles
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Role'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+                  metadata:
+                    $ref: '#/components/schemas/ResponseMetadata'
+        '402':
+          description: Enterprise license required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags:
+        - RBAC
+      summary: Create a new role
+      description: Create a new role with specified permissions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleRequest'
+      responses:
+        '201':
+          description: Role created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/Role'
+                  metadata:
+                    $ref: '#/components/schemas/ResponseMetadata'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/enterprise/rbac/roles/{id}:
+    get:
+      tags:
+        - RBAC
+      summary: Get role details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Role details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/Role'
+                  metadata:
+                    $ref: '#/components/schemas/ResponseMetadata'
+        '404':
+          description: Role not found
+    put:
+      tags:
+        - RBAC
+      summary: Update role
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleRequest'
+      responses:
+        '200':
+          description: Role updated successfully
+    delete:
+      tags:
+        - RBAC
+      summary: Delete role
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Role deleted successfully
+
+  /api/v1/enterprise/rbac/permissions:
+    get:
+      tags:
+        - RBAC
+      summary: List all permissions
+      responses:
+        '200':
+          description: List of all available permissions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Permission'
+
+  /api/v1/enterprise/rbac/roles/{id}/permissions:
+    get:
+      tags:
+        - RBAC
+      summary: Get role permissions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Role permissions
+    post:
+      tags:
+        - RBAC
+      summary: Assign permissions to role
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                permissions:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Permissions assigned successfully
+
+  /api/v1/enterprise/rbac/roles/{id}/permissions/{permission}:
+    delete:
+      tags:
+        - RBAC
+      summary: Revoke permission from role
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: permission
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Permission revoked successfully
+
+  /api/v1/enterprise/rbac/users/{userId}/roles:
+    get:
+      tags:
+        - RBAC
+      summary: Get user's roles
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User's roles
+    post:
+      tags:
+        - RBAC
+      summary: Assign role to user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                role_id:
+                  type: string
+      responses:
+        '200':
+          description: Role assigned successfully
+
+  /api/v1/enterprise/rbac/users/{userId}/roles/{roleId}:
+    delete:
+      tags:
+        - RBAC
+      summary: Remove role from user
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: roleId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Role removed successfully
+
+  # Audit Endpoints (8)
+  /api/v1/enterprise/audit/events:
+    get:
+      tags:
+        - Audit
+      summary: List audit events
+      description: Get a paginated list of audit events
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Paginated list of audit events
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AuditEvent'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+  /api/v1/enterprise/audit/events/search:
+    get:
+      tags:
+        - Audit
+      summary: Advanced search for audit events
+      parameters:
+        - name: query
+          in: query
+          schema:
+            type: string
+        - name: user_id
+          in: query
+          schema:
+            type: string
+        - name: action
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Search results
+
+  /api/v1/enterprise/audit/events/{id}:
+    get:
+      tags:
+        - Audit
+      summary: Get audit event details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Audit event details
+        '404':
+          description: Event not found
+
+  /api/v1/enterprise/audit/users/{userId}/events:
+    get:
+      tags:
+        - Audit
+      summary: Get user's audit trail
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User's audit events
+
+  /api/v1/enterprise/audit/resources/{resourceType}/{resourceId}:
+    get:
+      tags:
+        - Audit
+      summary: Get resource audit history
+      parameters:
+        - name: resourceType
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: resourceId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Resource audit history
+
+  /api/v1/enterprise/audit/export:
+    post:
+      tags:
+        - Audit
+      summary: Export audit logs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                format:
+                  type: string
+                  enum: [json, csv, pdf]
+                start_date:
+                  type: string
+                  format: date-time
+                end_date:
+                  type: string
+                  format: date-time
+      responses:
+        '200':
+          description: Export file generated
+
+  /api/v1/enterprise/audit/stats:
+    get:
+      tags:
+        - Audit
+      summary: Get audit statistics
+      responses:
+        '200':
+          description: Audit statistics
+
+  /api/v1/enterprise/audit/compliance/report:
+    get:
+      tags:
+        - Audit
+      summary: Get compliance report
+      responses:
+        '200':
+          description: Compliance report
+
+  # Analytics Endpoints (10)
+  /api/v1/enterprise/analytics/overview:
+    get:
+      tags:
+        - Analytics
+      summary: Get analytics overview
+      description: Dashboard overview with key metrics
+      responses:
+        '200':
+          description: Dashboard overview
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/DashboardOverview'
+
+  /api/v1/enterprise/analytics/usage:
+    get:
+      tags:
+        - Analytics
+      summary: Get usage statistics
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [7d, 30d, 90d]
+            default: 30d
+      responses:
+        '200':
+          description: Usage statistics
+
+  /api/v1/enterprise/analytics/performance:
+    get:
+      tags:
+        - Analytics
+      summary: Get performance metrics
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [1h, 24h, 7d]
+            default: 24h
+      responses:
+        '200':
+          description: Performance metrics
+
+  /api/v1/enterprise/analytics/cache-efficiency:
+    get:
+      tags:
+        - Analytics
+      summary: Get cache efficiency metrics
+      responses:
+        '200':
+          description: Cache efficiency data
+
+  /api/v1/enterprise/analytics/reports:
+    get:
+      tags:
+        - Analytics
+      summary: List saved reports
+      responses:
+        '200':
+          description: List of reports
+    post:
+      tags:
+        - Analytics
+      summary: Create custom report
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                type:
+                  type: string
+                schedule:
+                  type: string
+      responses:
+        '201':
+          description: Report created
+
+  /api/v1/enterprise/analytics/reports/{id}:
+    get:
+      tags:
+        - Analytics
+      summary: Get report data
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Report data
+    delete:
+      tags:
+        - Analytics
+      summary: Delete report
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Report deleted
+
+  /api/v1/enterprise/analytics/costs:
+    get:
+      tags:
+        - Analytics
+      summary: Get cost analysis
+      responses:
+        '200':
+          description: Cost breakdown
+
+  /api/v1/enterprise/analytics/trends:
+    get:
+      tags:
+        - Analytics
+      summary: Get trend analysis
+      responses:
+        '200':
+          description: Trend data
+
+  # Security Endpoints (8)
+  /api/v1/enterprise/security/vulnerabilities:
+    get:
+      tags:
+        - Security
+      summary: List vulnerabilities
+      parameters:
+        - name: severity
+          in: query
+          schema:
+            type: string
+            enum: [critical, high, medium, low]
+      responses:
+        '200':
+          description: List of vulnerabilities
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Vulnerability'
+
+  /api/v1/enterprise/security/vulnerabilities/{id}:
+    get:
+      tags:
+        - Security
+      summary: Get vulnerability details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Vulnerability details
+
+  /api/v1/enterprise/security/scan:
+    post:
+      tags:
+        - Security
+      summary: Trigger security scan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                scope:
+                  type: string
+                  enum: [all, npm, maven, pypi]
+                priority:
+                  type: string
+      responses:
+        '202':
+          description: Scan started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScanJob'
+
+  /api/v1/enterprise/security/scan/{jobId}:
+    get:
+      tags:
+        - Security
+      summary: Get scan job status
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Scan job status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScanJob'
+
+  /api/v1/enterprise/security/licenses:
+    get:
+      tags:
+        - Security
+      summary: List detected licenses
+      responses:
+        '200':
+          description: List of licenses
+
+  /api/v1/enterprise/security/licenses/violations:
+    get:
+      tags:
+        - Security
+      summary: List license violations
+      responses:
+        '200':
+          description: License violations
+
+  /api/v1/enterprise/security/malware/alerts:
+    get:
+      tags:
+        - Security
+      summary: List malware alerts
+      responses:
+        '200':
+          description: Malware alerts
+
+  /api/v1/enterprise/security/malware/quarantine:
+    get:
+      tags:
+        - Security
+      summary: List quarantined packages
+      responses:
+        '200':
+          description: Quarantined packages
+
+  # Alerts Endpoints (5)
+  /api/v1/enterprise/alerts:
+    get:
+      tags:
+        - Alerts
+      summary: List active alerts
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, acknowledged, resolved]
+        - name: severity
+          in: query
+          schema:
+            type: string
+            enum: [critical, warning, info]
+      responses:
+        '200':
+          description: List of alerts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Alert'
+
+  /api/v1/enterprise/alerts/{id}:
+    get:
+      tags:
+        - Alerts
+      summary: Get alert details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Alert details
+
+  /api/v1/enterprise/alerts/rules:
+    post:
+      tags:
+        - Alerts
+      summary: Create alert rule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlertRule'
+      responses:
+        '201':
+          description: Alert rule created
+
+  /api/v1/enterprise/alerts/rules/{id}:
+    put:
+      tags:
+        - Alerts
+      summary: Update alert rule
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlertRule'
+      responses:
+        '200':
+          description: Alert rule updated
+    delete:
+      tags:
+        - Alerts
+      summary: Delete alert rule
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Alert rule deleted
+
+  # License Endpoints (4)
+  /api/v1/enterprise/license/info:
+    get:
+      tags:
+        - License
+      summary: Get license information
+      responses:
+        '200':
+          description: License information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/LicenseInfo'
+
+  /api/v1/enterprise/license/validate:
+    post:
+      tags:
+        - License
+      summary: Validate license key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                license_key:
+                  type: string
+      responses:
+        '200':
+          description: License validation result
+
+  /api/v1/enterprise/license/features:
+    get:
+      tags:
+        - License
+      summary: List available features
+      responses:
+        '200':
+          description: List of features
+
+  /api/v1/enterprise/license/usage:
+    get:
+      tags:
+        - License
+      summary: Get license usage metrics
+      responses:
+        '200':
+          description: Usage metrics
