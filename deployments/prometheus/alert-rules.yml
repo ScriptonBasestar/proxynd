@@ -1,0 +1,484 @@
+# ProxyND Enterprise API Alert Rules
+#
+# Prometheus alert rules for monitoring Enterprise API health and performance.
+# Place this file in your Prometheus configuration directory and reference it in prometheus.yml
+
+groups:
+  # ============================================================================
+  # Performance Alerts
+  # ============================================================================
+  - name: enterprise_api_performance
+    interval: 30s
+    rules:
+      # High P95 latency
+      - alert: EnterpriseAPIHighP95Latency
+        expr: |
+          histogram_quantile(0.95,
+            sum by (category, le) (
+              rate(proxynd_enterprise_api_request_duration_seconds_bucket[5m])
+            )
+          ) > 1.0
+        for: 5m
+        labels:
+          severity: warning
+          component: enterprise-api
+          category: performance
+        annotations:
+          summary: "High P95 latency on {{ $labels.category }} endpoints"
+          description: |
+            P95 latency is {{ $value | humanizeDuration }}, exceeding 1s threshold.
+            Current value: {{ $value | humanizeDuration }}
+            Threshold: 1s
+            Category: {{ $labels.category }}
+          runbook_url: https://docs.proxynd.io/runbooks/high-latency
+
+      # Critical P99 latency
+      - alert: EnterpriseAPICriticalP99Latency
+        expr: |
+          histogram_quantile(0.99,
+            sum by (category, le) (
+              rate(proxynd_enterprise_api_request_duration_seconds_bucket[5m])
+            )
+          ) > 2.0
+        for: 3m
+        labels:
+          severity: critical
+          component: enterprise-api
+          category: performance
+        annotations:
+          summary: "Critical P99 latency on {{ $labels.category }} endpoints"
+          description: |
+            P99 latency is {{ $value | humanizeDuration }}, exceeding 2s critical threshold.
+            Immediate investigation required.
+            Current value: {{ $value | humanizeDuration }}
+            Threshold: 2s
+            Category: {{ $labels.category }}
+          runbook_url: https://docs.proxynd.io/runbooks/critical-latency
+
+      # Low throughput
+      - alert: EnterpriseAPILowThroughput
+        expr: |
+          sum(rate(proxynd_enterprise_api_requests_total[5m])) < 100
+        for: 10m
+        labels:
+          severity: warning
+          component: enterprise-api
+          category: performance
+        annotations:
+          summary: "Low request throughput on Enterprise API"
+          description: |
+            Request rate is {{ $value | humanize }} rps, below expected 100 rps.
+            This may indicate:
+            - Service degradation
+            - Client connectivity issues
+            - Reduced user activity
+            Current rate: {{ $value | humanize }} rps
+            Expected: > 100 rps
+          runbook_url: https://docs.proxynd.io/runbooks/low-throughput
+
+  # ============================================================================
+  # Error Rate Alerts
+  # ============================================================================
+  - name: enterprise_api_errors
+    interval: 30s
+    rules:
+      # High overall error rate
+      - alert: EnterpriseAPIHighErrorRate
+        expr: |
+          (
+            sum(rate(proxynd_enterprise_api_errors_total[5m])) /
+            sum(rate(proxynd_enterprise_api_requests_total[5m]))
+          ) * 100 > 5
+        for: 5m
+        labels:
+          severity: critical
+          component: enterprise-api
+          category: reliability
+        annotations:
+          summary: "High error rate on Enterprise API"
+          description: |
+            Error rate is {{ $value | humanizePercentage }}, exceeding 5% threshold.
+            This indicates serious service degradation.
+            Current error rate: {{ $value | humanizePercentage }}
+            Threshold: 5%
+            Action required: Check logs and recent deployments
+          runbook_url: https://docs.proxynd.io/runbooks/high-error-rate
+
+      # Category-specific high error rate
+      - alert: EnterpriseAPICategoryHighErrorRate
+        expr: |
+          (
+            sum by (category) (rate(proxynd_enterprise_api_errors_total[5m])) /
+            sum by (category) (rate(proxynd_enterprise_api_requests_total[5m]))
+          ) * 100 > 10
+        for: 3m
+        labels:
+          severity: warning
+          component: enterprise-api
+          category: reliability
+        annotations:
+          summary: "High error rate on {{ $labels.category }} endpoints"
+          description: |
+            Error rate for {{ $labels.category }} is {{ $value | humanizePercentage }}.
+            Category: {{ $labels.category }}
+            Error rate: {{ $value | humanizePercentage }}
+            Threshold: 10%
+          runbook_url: https://docs.proxynd.io/runbooks/category-errors
+
+      # Spike in 5xx errors
+      - alert: EnterpriseAPIServerErrors
+        expr: |
+          sum(rate(proxynd_enterprise_api_errors_total{status=~"5.."}[5m])) > 10
+        for: 2m
+        labels:
+          severity: critical
+          component: enterprise-api
+          category: reliability
+        annotations:
+          summary: "Server errors detected on Enterprise API"
+          description: |
+            Receiving {{ $value | humanize }} server errors per second.
+            This indicates backend service issues.
+            Rate: {{ $value | humanize }}/s
+            Check: Database, cache, upstream services
+          runbook_url: https://docs.proxynd.io/runbooks/server-errors
+
+      # High 4xx client error rate
+      - alert: EnterpriseAPIClientErrors
+        expr: |
+          (
+            sum(rate(proxynd_enterprise_api_errors_total{status=~"4.."}[5m])) /
+            sum(rate(proxynd_enterprise_api_requests_total[5m]))
+          ) * 100 > 20
+        for: 10m
+        labels:
+          severity: warning
+          component: enterprise-api
+          category: client
+        annotations:
+          summary: "High client error rate on Enterprise API"
+          description: |
+            Client error rate is {{ $value | humanizePercentage }}.
+            Common causes:
+            - Invalid client requests
+            - Authentication issues
+            - API misuse
+            Rate: {{ $value | humanizePercentage }}
+            Threshold: 20%
+          runbook_url: https://docs.proxynd.io/runbooks/client-errors
+
+  # ============================================================================
+  # Cache Performance Alerts
+  # ============================================================================
+  - name: enterprise_api_cache
+    interval: 30s
+    rules:
+      # Low cache hit rate
+      - alert: EnterpriseAPILowCacheHitRate
+        expr: |
+          (
+            sum(rate(proxynd_enterprise_api_cache_hits_total[5m])) /
+            (
+              sum(rate(proxynd_enterprise_api_cache_hits_total[5m])) +
+              sum(rate(proxynd_enterprise_api_cache_misses_total[5m]))
+            )
+          ) * 100 < 70
+        for: 10m
+        labels:
+          severity: warning
+          component: enterprise-api
+          category: cache
+        annotations:
+          summary: "Low cache hit rate on Enterprise API"
+          description: |
+            Cache hit rate is {{ $value | humanizePercentage }}, below 70% threshold.
+            Impact: Increased database load and response times
+            Current rate: {{ $value | humanizePercentage }}
+            Target: > 85%
+            Action: Check cache configuration and TTL settings
+          runbook_url: https://docs.proxynd.io/runbooks/low-cache-hit-rate
+
+      # Cache miss spike
+      - alert: EnterpriseAPICacheMissSpike
+        expr: |
+          (
+            rate(proxynd_enterprise_api_cache_misses_total[5m]) /
+            rate(proxynd_enterprise_api_cache_misses_total[30m] offset 30m)
+          ) > 2
+        for: 5m
+        labels:
+          severity: warning
+          component: enterprise-api
+          category: cache
+        annotations:
+          summary: "Cache miss spike detected"
+          description: |
+            Cache misses increased by {{ $value | humanize }}x compared to 30m ago.
+            Possible causes:
+            - Cache cleared/restarted
+            - TTL expiration
+            - New query patterns
+            Spike factor: {{ $value | humanize }}x
+          runbook_url: https://docs.proxynd.io/runbooks/cache-miss-spike
+
+  # ============================================================================
+  # Security Alerts
+  # ============================================================================
+  - name: enterprise_api_security
+    interval: 30s
+    rules:
+      # Critical vulnerabilities found
+      - alert: EnterpriseAPICriticalVulnerabilities
+        expr: |
+          sum(proxynd_enterprise_api_security_vulnerabilities_found{severity="critical"}) > 0
+        for: 1m
+        labels:
+          severity: critical
+          component: enterprise-api
+          category: security
+        annotations:
+          summary: "Critical security vulnerabilities detected"
+          description: |
+            Found {{ $value | humanize }} critical vulnerabilities in scanned packages.
+            IMMEDIATE ACTION REQUIRED
+            Count: {{ $value | humanize }}
+            Severity: Critical
+            Action: Review and patch immediately
+          runbook_url: https://docs.proxynd.io/runbooks/critical-vulnerabilities
+
+      # High vulnerabilities accumulation
+      - alert: EnterpriseAPIHighVulnerabilities
+        expr: |
+          sum(proxynd_enterprise_api_security_vulnerabilities_found{severity=~"high|critical"}) > 10
+        for: 5m
+        labels:
+          severity: warning
+          component: enterprise-api
+          category: security
+        annotations:
+          summary: "High number of vulnerabilities detected"
+          description: |
+            Found {{ $value | humanize }} high/critical vulnerabilities.
+            Count: {{ $value | humanize }}
+            Threshold: 10
+            Action: Schedule remediation
+          runbook_url: https://docs.proxynd.io/runbooks/high-vulnerabilities
+
+      # Rate limit violations spike
+      - alert: EnterpriseAPIRateLimitViolations
+        expr: |
+          sum(rate(proxynd_enterprise_api_rate_limit_exceeded_total[5m])) > 50
+        for: 3m
+        labels:
+          severity: warning
+          component: enterprise-api
+          category: security
+        annotations:
+          summary: "High rate of rate limit violations"
+          description: |
+            Receiving {{ $value | humanize }} rate limit violations per second.
+            Possible causes:
+            - Aggressive client behavior
+            - DDoS attempt
+            - Misconfigured clients
+            Rate: {{ $value | humanize }}/s
+            Threshold: 50/s
+          runbook_url: https://docs.proxynd.io/runbooks/rate-limit-violations
+
+      # Unauthorized access attempts
+      - alert: EnterpriseAPIUnauthorizedAccess
+        expr: |
+          sum(rate(proxynd_enterprise_api_errors_total{status="401"}[5m])) > 20
+        for: 5m
+        labels:
+          severity: warning
+          component: enterprise-api
+          category: security
+        annotations:
+          summary: "High rate of unauthorized access attempts"
+          description: |
+            Receiving {{ $value | humanize }} unauthorized requests per second.
+            This may indicate:
+            - Brute force attacks
+            - Expired tokens
+            - Misconfigured authentication
+            Rate: {{ $value | humanize }}/s
+            Threshold: 20/s
+          runbook_url: https://docs.proxynd.io/runbooks/unauthorized-access
+
+  # ============================================================================
+  # License Alerts
+  # ============================================================================
+  - name: enterprise_api_license
+    interval: 60s
+    rules:
+      # License expiring soon
+      - alert: EnterpriseAPILicenseExpiringSoon
+        expr: |
+          (proxynd_enterprise_api_license_expiry_timestamp - time()) / 86400 < 30
+        for: 1h
+        labels:
+          severity: warning
+          component: enterprise-api
+          category: license
+        annotations:
+          summary: "Enterprise API license expiring soon"
+          description: |
+            License expires in {{ $value | humanize }} days.
+            Days remaining: {{ $value | humanize }}
+            Action: Renew license before expiration
+          runbook_url: https://docs.proxynd.io/runbooks/license-renewal
+
+      # License expired
+      - alert: EnterpriseAPILicenseExpired
+        expr: |
+          (proxynd_enterprise_api_license_expiry_timestamp - time()) < 0
+        for: 1m
+        labels:
+          severity: critical
+          component: enterprise-api
+          category: license
+        annotations:
+          summary: "Enterprise API license has expired"
+          description: |
+            License expired {{ $value | humanize }} seconds ago.
+            CRITICAL: Service may be degraded or disabled
+            Action: Renew license immediately
+          runbook_url: https://docs.proxynd.io/runbooks/license-expired
+
+      # License usage high
+      - alert: EnterpriseAPILicenseUsageHigh
+        expr: |
+          (
+            proxynd_enterprise_api_license_concurrent_users /
+            proxynd_enterprise_api_license_max_users
+          ) * 100 > 80
+        for: 10m
+        labels:
+          severity: warning
+          component: enterprise-api
+          category: license
+        annotations:
+          summary: "License usage above 80%"
+          description: |
+            Current usage: {{ $value | humanizePercentage }} of licensed users.
+            Usage: {{ $value | humanizePercentage }}
+            Threshold: 80%
+            Action: Consider license upgrade
+          runbook_url: https://docs.proxynd.io/runbooks/license-usage
+
+  # ============================================================================
+  # RBAC Alerts
+  # ============================================================================
+  - name: enterprise_api_rbac
+    interval: 60s
+    rules:
+      # Excessive permission changes
+      - alert: EnterpriseAPIExcessiveRBACChanges
+        expr: |
+          sum(rate(proxynd_enterprise_api_rbac_operations_total{operation=~"create|update|delete"}[15m])) > 10
+        for: 10m
+        labels:
+          severity: warning
+          component: enterprise-api
+          category: rbac
+        annotations:
+          summary: "Excessive RBAC changes detected"
+          description: |
+            Unusual rate of RBAC modifications: {{ $value | humanize }}/s
+            This may indicate:
+            - Bulk permission updates
+            - Automated system behavior
+            - Potential security incident
+            Rate: {{ $value | humanize }}/s
+            Threshold: 10/s
+          runbook_url: https://docs.proxynd.io/runbooks/excessive-rbac-changes
+
+  # ============================================================================
+  # Audit Alerts
+  # ============================================================================
+  - name: enterprise_api_audit
+    interval: 60s
+    rules:
+      # High rate of security events
+      - alert: EnterpriseAPISecurityEventsSpike
+        expr: |
+          sum(rate(proxynd_enterprise_api_audit_events_total{event_type=~".*security.*|.*violation.*"}[5m])) > 5
+        for: 5m
+        labels:
+          severity: warning
+          component: enterprise-api
+          category: security
+        annotations:
+          summary: "High rate of security audit events"
+          description: |
+            Receiving {{ $value | humanize }} security events per second.
+            Review audit logs for potential security issues.
+            Rate: {{ $value | humanize }}/s
+            Threshold: 5/s
+          runbook_url: https://docs.proxynd.io/runbooks/security-events-spike
+
+  # ============================================================================
+  # Service Health Alerts
+  # ============================================================================
+  - name: enterprise_api_health
+    interval: 30s
+    rules:
+      # Service down
+      - alert: EnterpriseAPIDown
+        expr: |
+          up{job="proxynd-enterprise-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: enterprise-api
+          category: availability
+        annotations:
+          summary: "Enterprise API service is down"
+          description: |
+            The Enterprise API service is not responding.
+            CRITICAL OUTAGE
+            Downtime: {{ $value | humanizeDuration }}
+            Action: Investigate immediately
+          runbook_url: https://docs.proxynd.io/runbooks/service-down
+
+      # No requests received
+      - alert: EnterpriseAPINoRequests
+        expr: |
+          sum(rate(proxynd_enterprise_api_requests_total[5m])) == 0
+        for: 5m
+        labels:
+          severity: critical
+          component: enterprise-api
+          category: availability
+        annotations:
+          summary: "No requests received by Enterprise API"
+          description: |
+            No requests in the last 5 minutes.
+            Possible causes:
+            - Service is down
+            - Load balancer issue
+            - Network partition
+            - All clients disconnected
+          runbook_url: https://docs.proxynd.io/runbooks/no-requests
+
+      # High active requests (potential deadlock)
+      - alert: EnterpriseAPIHighActiveRequests
+        expr: |
+          sum(proxynd_enterprise_api_active_requests) > 1000
+        for: 5m
+        labels:
+          severity: warning
+          component: enterprise-api
+          category: performance
+        annotations:
+          summary: "High number of active requests"
+          description: |
+            {{ $value | humanize }} requests in-flight, indicating potential bottleneck.
+            Current: {{ $value | humanize }}
+            Threshold: 1000
+            Possible causes:
+            - Slow downstream services
+            - Database connection exhaustion
+            - Deadlock condition
+          runbook_url: https://docs.proxynd.io/runbooks/high-active-requests
