@@ -16,7 +16,21 @@ func NewAuditHandler() *AuditHandler {
 	return &AuditHandler{}
 }
 
-// ListEvents handles GET /api/v1/enterprise/audit/events
+// ListEvents godoc
+// @Summary List audit events
+// @Description Get a paginated list of audit events with optional filtering
+// @Tags Audit
+// @Accept json
+// @Produce json
+// @Param page query int false "Page number" default(1) minimum(1)
+// @Param per_page query int false "Items per page" default(20) minimum(1) maximum(100)
+// @Param user_id query string false "Filter by user ID"
+// @Param action query string false "Filter by action type"
+// @Param resource_type query string false "Filter by resource type"
+// @Success 200 {object} map[string]interface{} "Paginated list of audit events"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/v1/enterprise/audit/events [get]
 func (h *AuditHandler) ListEvents(c *fiber.Ctx) error {
 	page, _ := strconv.Atoi(c.Query("page", "1"))
 	perPage, _ := strconv.Atoi(c.Query("per_page", "20"))
@@ -70,7 +84,17 @@ func (h *AuditHandler) ListEvents(c *fiber.Ctx) error {
 	})
 }
 
-// GetEvent handles GET /api/v1/enterprise/audit/events/:id
+// GetEvent godoc
+// @Summary Get audit event details
+// @Description Get detailed information about a specific audit event
+// @Tags Audit
+// @Accept json
+// @Produce json
+// @Param id path string true "Event ID"
+// @Success 200 {object} map[string]interface{} "Audit event details"
+// @Failure 404 {object} map[string]interface{} "Event not found"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Router /api/v1/enterprise/audit/events/{id} [get]
 func (h *AuditHandler) GetEvent(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -97,7 +121,19 @@ func (h *AuditHandler) GetEvent(c *fiber.Ctx) error {
 	})
 }
 
-// SearchEvents handles GET /api/v1/enterprise/audit/events/search
+// SearchEvents godoc
+// @Summary Search audit events
+// @Description Advanced search across audit events using query string
+// @Tags Audit
+// @Accept json
+// @Produce json
+// @Param q query string true "Search query"
+// @Param page query int false "Page number" default(1)
+// @Param per_page query int false "Items per page" default(20)
+// @Success 200 {object} map[string]interface{} "Paginated search results"
+// @Failure 400 {object} map[string]interface{} "Invalid search query"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Router /api/v1/enterprise/audit/events/search [get]
 func (h *AuditHandler) SearchEvents(c *fiber.Ctx) error {
 	// Parse search parameters
 	query := c.Query("q")
@@ -121,7 +157,19 @@ func (h *AuditHandler) SearchEvents(c *fiber.Ctx) error {
 	})
 }
 
-// GetUserEvents handles GET /api/v1/enterprise/audit/users/:userId/events
+// GetUserEvents godoc
+// @Summary Get user's audit trail
+// @Description Get all audit events for a specific user
+// @Tags Audit
+// @Accept json
+// @Produce json
+// @Param userId path string true "User ID"
+// @Param page query int false "Page number" default(1)
+// @Param per_page query int false "Items per page" default(20)
+// @Success 200 {object} map[string]interface{} "Paginated user audit events"
+// @Failure 404 {object} map[string]interface{} "User not found"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Router /api/v1/enterprise/audit/users/{userId}/events [get]
 func (h *AuditHandler) GetUserEvents(c *fiber.Ctx) error {
 	userID := c.Params("userId")
 	page, _ := strconv.Atoi(c.Query("page", "1"))
@@ -143,7 +191,20 @@ func (h *AuditHandler) GetUserEvents(c *fiber.Ctx) error {
 	})
 }
 
-// GetResourceEvents handles GET /api/v1/enterprise/audit/resources/:resourceType/:resourceId
+// GetResourceEvents godoc
+// @Summary Get resource audit history
+// @Description Get all audit events for a specific resource
+// @Tags Audit
+// @Accept json
+// @Produce json
+// @Param resourceType path string true "Resource type (e.g., role, user, config)"
+// @Param resourceId path string true "Resource ID"
+// @Param page query int false "Page number" default(1)
+// @Param per_page query int false "Items per page" default(20)
+// @Success 200 {object} map[string]interface{} "Paginated resource audit events"
+// @Failure 404 {object} map[string]interface{} "Resource not found"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Router /api/v1/enterprise/audit/resources/{resourceType}/{resourceId} [get]
 func (h *AuditHandler) GetResourceEvents(c *fiber.Ctx) error {
 	resourceType := c.Params("resourceType")
 	resourceID := c.Params("resourceId")
@@ -166,7 +227,17 @@ func (h *AuditHandler) GetResourceEvents(c *fiber.Ctx) error {
 	})
 }
 
-// ExportEvents handles POST /api/v1/enterprise/audit/export
+// ExportEvents godoc
+// @Summary Export audit logs
+// @Description Export audit events in various formats (CSV, JSON)
+// @Tags Audit
+// @Accept json
+// @Produce json
+// @Param export body object{format=string,start_date=string,end_date=string} true "Export request"
+// @Success 200 {object} map[string]interface{} "Export job created"
+// @Failure 400 {object} map[string]interface{} "Invalid export request"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Router /api/v1/enterprise/audit/export [post]
 func (h *AuditHandler) ExportEvents(c *fiber.Ctx) error {
 	var req struct {
 		Format    string    `json:"format"` // csv, json
@@ -201,7 +272,17 @@ func (h *AuditHandler) ExportEvents(c *fiber.Ctx) error {
 	})
 }
 
-// GetStats handles GET /api/v1/enterprise/audit/stats
+// GetStats godoc
+// @Summary Get audit statistics
+// @Description Get statistical summary of audit events
+// @Tags Audit
+// @Accept json
+// @Produce json
+// @Param start_date query string false "Start date (ISO 8601)"
+// @Param end_date query string false "End date (ISO 8601)"
+// @Success 200 {object} map[string]interface{} "Audit statistics"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Router /api/v1/enterprise/audit/stats [get]
 func (h *AuditHandler) GetStats(c *fiber.Ctx) error {
 	stats := &enterprise.AuditStats{
 		TotalEvents: 15420,
@@ -246,7 +327,18 @@ func (h *AuditHandler) GetStats(c *fiber.Ctx) error {
 	})
 }
 
-// GetComplianceReport handles GET /api/v1/enterprise/audit/compliance/report
+// GetComplianceReport godoc
+// @Summary Get compliance report
+// @Description Generate a compliance report from audit data
+// @Tags Audit
+// @Accept json
+// @Produce json
+// @Param start_date query string false "Report start date (ISO 8601)"
+// @Param end_date query string false "Report end date (ISO 8601)"
+// @Param compliance_framework query string false "Compliance framework (SOC2, ISO27001, etc.)"
+// @Success 200 {object} map[string]interface{} "Compliance report"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Router /api/v1/enterprise/audit/compliance/report [get]
 func (h *AuditHandler) GetComplianceReport(c *fiber.Ctx) error {
 	reportType := c.Query("type", "gdpr")
 
