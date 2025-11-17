@@ -16,7 +16,15 @@ func NewAnalyticsHandler() *AnalyticsHandler {
 	return &AnalyticsHandler{}
 }
 
-// GetOverview handles GET /api/v1/enterprise/analytics/overview
+// GetOverview godoc
+// @Summary Get analytics overview
+// @Description Get dashboard overview with key metrics and statistics
+// @Tags Analytics
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]interface{} "Dashboard overview with metrics"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Router /api/v1/enterprise/analytics/overview [get]
 func (h *AnalyticsHandler) GetOverview(c *fiber.Ctx) error {
 	overview := &enterprise.DashboardOverview{
 		TotalRequests:   125340,
@@ -50,7 +58,16 @@ func (h *AnalyticsHandler) GetOverview(c *fiber.Ctx) error {
 	})
 }
 
-// GetUsageStats handles GET /api/v1/enterprise/analytics/usage
+// GetUsageStats godoc
+// @Summary Get usage statistics
+// @Description Get detailed usage statistics broken down by package manager
+// @Tags Analytics
+// @Accept json
+// @Produce json
+// @Param period query string false "Time period (7d, 30d, 90d)" default(30d)
+// @Success 200 {object} map[string]interface{} "Usage statistics"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Router /api/v1/enterprise/analytics/usage [get]
 func (h *AnalyticsHandler) GetUsageStats(c *fiber.Ctx) error {
 	timeRange := c.Query("range", "last_7_days")
 
@@ -104,7 +121,16 @@ func (h *AnalyticsHandler) GetUsageStats(c *fiber.Ctx) error {
 	})
 }
 
-// GetPerformanceMetrics handles GET /api/v1/enterprise/analytics/performance
+// GetPerformanceMetrics godoc
+// @Summary Get performance metrics
+// @Description Get detailed performance metrics including response times and percentiles
+// @Tags Analytics
+// @Accept json
+// @Produce json
+// @Param period query string false "Time period (1h, 24h, 7d)" default(24h)
+// @Success 200 {object} map[string]interface{} "Performance metrics"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Router /api/v1/enterprise/analytics/performance [get]
 func (h *AnalyticsHandler) GetPerformanceMetrics(c *fiber.Ctx) error {
 	metrics := &enterprise.PerformanceMetrics{
 		TimeRange:     "last_24_hours",
@@ -145,7 +171,15 @@ func (h *AnalyticsHandler) GetPerformanceMetrics(c *fiber.Ctx) error {
 	})
 }
 
-// GetCacheEfficiency handles GET /api/v1/enterprise/analytics/cache-efficiency
+// GetCacheEfficiency godoc
+// @Summary Get cache efficiency metrics
+// @Description Get cache hit rates, bandwidth savings, and efficiency statistics
+// @Tags Analytics
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]interface{} "Cache efficiency metrics"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Router /api/v1/enterprise/analytics/cache-efficiency [get]
 func (h *AnalyticsHandler) GetCacheEfficiency(c *fiber.Ctx) error {
 	efficiency := &enterprise.CacheEfficiency{
 		TimeRange:      "last_7_days",
@@ -177,7 +211,18 @@ func (h *AnalyticsHandler) GetCacheEfficiency(c *fiber.Ctx) error {
 	})
 }
 
-// ListReports handles GET /api/v1/enterprise/analytics/reports
+// ListReports godoc
+// @Summary List saved reports
+// @Description Get a paginated list of saved analytics reports
+// @Tags Analytics
+// @Accept json
+// @Produce json
+// @Param page query int false "Page number" default(1)
+// @Param per_page query int false "Items per page" default(20)
+// @Param type query string false "Report type filter"
+// @Success 200 {object} map[string]interface{} "Paginated list of reports"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Router /api/v1/enterprise/analytics/reports [get]
 func (h *AnalyticsHandler) ListReports(c *fiber.Ctx) error {
 	page, _ := strconv.Atoi(c.Query("page", "1"))
 	perPage, _ := strconv.Atoi(c.Query("per_page", "20"))
@@ -219,7 +264,17 @@ func (h *AnalyticsHandler) ListReports(c *fiber.Ctx) error {
 	})
 }
 
-// CreateReport handles POST /api/v1/enterprise/analytics/reports
+// CreateReport godoc
+// @Summary Create custom report
+// @Description Create a new custom analytics report
+// @Tags Analytics
+// @Accept json
+// @Produce json
+// @Param report body object{name=string,type=string,parameters=object} true "Report creation request"
+// @Success 201 {object} map[string]interface{} "Created report"
+// @Failure 400 {object} map[string]interface{} "Invalid request"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Router /api/v1/enterprise/analytics/reports [post]
 func (h *AnalyticsHandler) CreateReport(c *fiber.Ctx) error {
 	var req enterprise.Report
 	if err := c.BodyParser(&req); err != nil {
@@ -254,7 +309,17 @@ func (h *AnalyticsHandler) CreateReport(c *fiber.Ctx) error {
 	})
 }
 
-// GetReport handles GET /api/v1/enterprise/analytics/reports/:id
+// GetReport godoc
+// @Summary Get report data
+// @Description Get the data for a specific saved report
+// @Tags Analytics
+// @Accept json
+// @Produce json
+// @Param id path string true "Report ID"
+// @Success 200 {object} map[string]interface{} "Report data"
+// @Failure 404 {object} map[string]interface{} "Report not found"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Router /api/v1/enterprise/analytics/reports/{id} [get]
 func (h *AnalyticsHandler) GetReport(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -281,7 +346,17 @@ func (h *AnalyticsHandler) GetReport(c *fiber.Ctx) error {
 	})
 }
 
-// DeleteReport handles DELETE /api/v1/enterprise/analytics/reports/:id
+// DeleteReport godoc
+// @Summary Delete report
+// @Description Delete a saved analytics report
+// @Tags Analytics
+// @Accept json
+// @Produce json
+// @Param id path string true "Report ID"
+// @Success 200 {object} map[string]interface{} "Deletion confirmation"
+// @Failure 404 {object} map[string]interface{} "Report not found"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Router /api/v1/enterprise/analytics/reports/{id} [delete]
 func (h *AnalyticsHandler) DeleteReport(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -298,7 +373,16 @@ func (h *AnalyticsHandler) DeleteReport(c *fiber.Ctx) error {
 	})
 }
 
-// GetCostAnalysis handles GET /api/v1/enterprise/analytics/costs
+// GetCostAnalysis godoc
+// @Summary Get cost analysis
+// @Description Get bandwidth cost breakdown and savings analysis
+// @Tags Analytics
+// @Accept json
+// @Produce json
+// @Param period query string false "Analysis period (30d, 90d, 1y)" default(30d)
+// @Success 200 {object} map[string]interface{} "Cost analysis"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Router /api/v1/enterprise/analytics/costs [get]
 func (h *AnalyticsHandler) GetCostAnalysis(c *fiber.Ctx) error {
 	analysis := &enterprise.CostAnalysis{
 		TimeRange:     "last_30_days",
@@ -330,7 +414,17 @@ func (h *AnalyticsHandler) GetCostAnalysis(c *fiber.Ctx) error {
 	})
 }
 
-// GetTrends handles GET /api/v1/enterprise/analytics/trends
+// GetTrends godoc
+// @Summary Get trend analysis
+// @Description Get trend analysis for requests, bandwidth, and performance
+// @Tags Analytics
+// @Accept json
+// @Produce json
+// @Param metric query string false "Metric to analyze (requests, bandwidth, latency)"
+// @Param period query string false "Period for analysis (7d, 30d, 90d)" default(30d)
+// @Success 200 {object} map[string]interface{} "Trend analysis"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Router /api/v1/enterprise/analytics/trends [get]
 func (h *AnalyticsHandler) GetTrends(c *fiber.Ctx) error {
 	metric := c.Query("metric", "requests")
 	days, _ := strconv.Atoi(c.Query("days", "30"))
