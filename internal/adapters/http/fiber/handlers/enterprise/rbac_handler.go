@@ -18,7 +18,18 @@ func NewRBACHandler() *RBACHandler {
 	return &RBACHandler{}
 }
 
-// ListRoles handles GET /api/v1/enterprise/rbac/roles
+// ListRoles godoc
+// @Summary List all roles
+// @Description Get a paginated list of all roles in the RBAC system
+// @Tags RBAC
+// @Accept json
+// @Produce json
+// @Param page query int false "Page number" default(1) minimum(1)
+// @Param per_page query int false "Items per page" default(20) minimum(1) maximum(100)
+// @Success 200 {object} map[string]interface{} "Paginated list of roles with metadata"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/v1/enterprise/rbac/roles [get]
 func (h *RBACHandler) ListRoles(c *fiber.Ctx) error {
 	page, _ := strconv.Atoi(c.Query("page", "1"))
 	perPage, _ := strconv.Atoi(c.Query("per_page", "20"))
@@ -44,7 +55,17 @@ func (h *RBACHandler) ListRoles(c *fiber.Ctx) error {
 	})
 }
 
-// GetRole handles GET /api/v1/enterprise/rbac/roles/:id
+// GetRole godoc
+// @Summary Get role details
+// @Description Get detailed information about a specific role by ID
+// @Tags RBAC
+// @Accept json
+// @Produce json
+// @Param id path string true "Role ID"
+// @Success 200 {object} map[string]interface{} "Role details"
+// @Failure 404 {object} map[string]interface{} "Role not found"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Router /api/v1/enterprise/rbac/roles/{id} [get]
 func (h *RBACHandler) GetRole(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -75,7 +96,17 @@ func (h *RBACHandler) GetRole(c *fiber.Ctx) error {
 	})
 }
 
-// CreateRole handles POST /api/v1/enterprise/rbac/roles
+// CreateRole godoc
+// @Summary Create a new role
+// @Description Create a new role with specified permissions
+// @Tags RBAC
+// @Accept json
+// @Produce json
+// @Param role body enterprise.RoleRequest true "Role creation request"
+// @Success 201 {object} map[string]interface{} "Created role"
+// @Failure 400 {object} map[string]interface{} "Invalid request"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Router /api/v1/enterprise/rbac/roles [post]
 func (h *RBACHandler) CreateRole(c *fiber.Ctx) error {
 	var req enterprise.RoleRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -109,7 +140,19 @@ func (h *RBACHandler) CreateRole(c *fiber.Ctx) error {
 	})
 }
 
-// UpdateRole handles PUT /api/v1/enterprise/rbac/roles/:id
+// UpdateRole godoc
+// @Summary Update role
+// @Description Update an existing role's name, description, or permissions
+// @Tags RBAC
+// @Accept json
+// @Produce json
+// @Param id path string true "Role ID"
+// @Param role body enterprise.RoleRequest true "Role update request"
+// @Success 200 {object} map[string]interface{} "Updated role"
+// @Failure 400 {object} map[string]interface{} "Invalid request"
+// @Failure 404 {object} map[string]interface{} "Role not found"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Router /api/v1/enterprise/rbac/roles/{id} [put]
 func (h *RBACHandler) UpdateRole(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -143,7 +186,17 @@ func (h *RBACHandler) UpdateRole(c *fiber.Ctx) error {
 	})
 }
 
-// DeleteRole handles DELETE /api/v1/enterprise/rbac/roles/:id
+// DeleteRole godoc
+// @Summary Delete role
+// @Description Delete a role from the system
+// @Tags RBAC
+// @Accept json
+// @Produce json
+// @Param id path string true "Role ID"
+// @Success 200 {object} map[string]interface{} "Deletion confirmation"
+// @Failure 404 {object} map[string]interface{} "Role not found"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Router /api/v1/enterprise/rbac/roles/{id} [delete]
 func (h *RBACHandler) DeleteRole(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -160,7 +213,15 @@ func (h *RBACHandler) DeleteRole(c *fiber.Ctx) error {
 	})
 }
 
-// ListPermissions handles GET /api/v1/enterprise/rbac/permissions
+// ListPermissions godoc
+// @Summary List all permissions
+// @Description Get a list of all available system permissions
+// @Tags RBAC
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]interface{} "List of available permissions"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Router /api/v1/enterprise/rbac/permissions [get]
 func (h *RBACHandler) ListPermissions(c *fiber.Ctx) error {
 	permissions := enterprise.PermissionCatalog()
 
@@ -174,7 +235,17 @@ func (h *RBACHandler) ListPermissions(c *fiber.Ctx) error {
 	})
 }
 
-// GetRolePermissions handles GET /api/v1/enterprise/rbac/roles/:id/permissions
+// GetRolePermissions godoc
+// @Summary Get role permissions
+// @Description Get the list of permissions assigned to a specific role
+// @Tags RBAC
+// @Accept json
+// @Produce json
+// @Param id path string true "Role ID"
+// @Success 200 {object} map[string]interface{} "List of role permissions"
+// @Failure 404 {object} map[string]interface{} "Role not found"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Router /api/v1/enterprise/rbac/roles/{id}/permissions [get]
 func (h *RBACHandler) GetRolePermissions(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -201,7 +272,19 @@ func (h *RBACHandler) GetRolePermissions(c *fiber.Ctx) error {
 	})
 }
 
-// AssignPermissions handles POST /api/v1/enterprise/rbac/roles/:id/permissions
+// AssignPermissions godoc
+// @Summary Assign permissions to role
+// @Description Assign a list of permissions to a specific role
+// @Tags RBAC
+// @Accept json
+// @Produce json
+// @Param id path string true "Role ID"
+// @Param permissions body object{permissions=[]string} true "Permissions to assign"
+// @Success 200 {object} map[string]interface{} "Updated permissions"
+// @Failure 400 {object} map[string]interface{} "Invalid request"
+// @Failure 404 {object} map[string]interface{} "Role not found"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Router /api/v1/enterprise/rbac/roles/{id}/permissions [post]
 func (h *RBACHandler) AssignPermissions(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -232,7 +315,18 @@ func (h *RBACHandler) AssignPermissions(c *fiber.Ctx) error {
 	})
 }
 
-// RevokePermission handles DELETE /api/v1/enterprise/rbac/roles/:id/permissions/:permission
+// RevokePermission godoc
+// @Summary Revoke permission from role
+// @Description Remove a specific permission from a role
+// @Tags RBAC
+// @Accept json
+// @Produce json
+// @Param id path string true "Role ID"
+// @Param permission path string true "Permission ID to revoke"
+// @Success 200 {object} map[string]interface{} "Revocation confirmation"
+// @Failure 404 {object} map[string]interface{} "Role or permission not found"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Router /api/v1/enterprise/rbac/roles/{id}/permissions/{permission} [delete]
 func (h *RBACHandler) RevokePermission(c *fiber.Ctx) error {
 	roleID := c.Params("id")
 	permission := c.Params("permission")
@@ -251,7 +345,17 @@ func (h *RBACHandler) RevokePermission(c *fiber.Ctx) error {
 	})
 }
 
-// GetUserRoles handles GET /api/v1/enterprise/rbac/users/:userId/roles
+// GetUserRoles godoc
+// @Summary Get user's roles
+// @Description Get all roles assigned to a specific user
+// @Tags RBAC
+// @Accept json
+// @Produce json
+// @Param userId path string true "User ID"
+// @Success 200 {object} map[string]interface{} "User's roles"
+// @Failure 404 {object} map[string]interface{} "User not found"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Router /api/v1/enterprise/rbac/users/{userId}/roles [get]
 func (h *RBACHandler) GetUserRoles(c *fiber.Ctx) error {
 	userID := c.Params("userId")
 
@@ -277,7 +381,19 @@ func (h *RBACHandler) GetUserRoles(c *fiber.Ctx) error {
 	})
 }
 
-// AssignUserRole handles POST /api/v1/enterprise/rbac/users/:userId/roles
+// AssignUserRole godoc
+// @Summary Assign role to user
+// @Description Assign a role to a specific user
+// @Tags RBAC
+// @Accept json
+// @Produce json
+// @Param userId path string true "User ID"
+// @Param role body object{role_id=string} true "Role assignment request"
+// @Success 200 {object} map[string]interface{} "Assignment confirmation"
+// @Failure 400 {object} map[string]interface{} "Invalid request"
+// @Failure 404 {object} map[string]interface{} "User or role not found"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Router /api/v1/enterprise/rbac/users/{userId}/roles [post]
 func (h *RBACHandler) AssignUserRole(c *fiber.Ctx) error {
 	userID := c.Params("userId")
 
@@ -309,7 +425,18 @@ func (h *RBACHandler) AssignUserRole(c *fiber.Ctx) error {
 	})
 }
 
-// RemoveUserRole handles DELETE /api/v1/enterprise/rbac/users/:userId/roles/:roleId
+// RemoveUserRole godoc
+// @Summary Remove role from user
+// @Description Remove a role assignment from a user
+// @Tags RBAC
+// @Accept json
+// @Produce json
+// @Param userId path string true "User ID"
+// @Param roleId path string true "Role ID"
+// @Success 200 {object} map[string]interface{} "Removal confirmation"
+// @Failure 404 {object} map[string]interface{} "User or role not found"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Router /api/v1/enterprise/rbac/users/{userId}/roles/{roleId} [delete]
 func (h *RBACHandler) RemoveUserRole(c *fiber.Ctx) error {
 	userID := c.Params("userId")
 	roleID := c.Params("roleId")
