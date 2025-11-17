@@ -277,15 +277,15 @@ test-benchmark-report: ## generate detailed benchmark report
 
 test-benchmark-enterprise: ## run enterprise API performance benchmarks (<500ms p95 target)
 	@echo "Running Enterprise API benchmarks..."
-	@./tmp/scripts/benchmark-enterprise-api.sh
+	@./scripts/benchmark-enterprise-api.sh
 
 test-benchmark-enterprise-quick: ## quick enterprise API benchmark (25 iterations)
 	@echo "Running quick Enterprise API benchmarks..."
-	@ITERATIONS=25 ./tmp/scripts/benchmark-enterprise-api.sh
+	@ITERATIONS=25 ./scripts/benchmark-enterprise-api.sh
 
 test-benchmark-enterprise-stress: ## stress test enterprise API (500 iterations)
 	@echo "Running Enterprise API stress test..."
-	@ITERATIONS=500 CONCURRENT=50 ./tmp/scripts/benchmark-enterprise-api.sh
+	@ITERATIONS=500 CONCURRENT=50 ./scripts/benchmark-enterprise-api.sh
 
 # ==============================================================================
 # Validation and Quality Checks
