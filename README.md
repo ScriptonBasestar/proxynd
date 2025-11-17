@@ -1140,6 +1140,28 @@ The Swagger documentation includes:
 - Example requests and responses
 - Complete parameter documentation
 
+### Postman Collection
+
+Complete Postman collection with all 47 endpoints for easy API testing:
+
+**Files** (in `postman/` directory):
+- `ProxyND-Enterprise-API.postman_collection.json` - Full API collection
+- `ProxyND-Dev.postman_environment.json` - Development environment
+- `README.md` - Detailed usage guide
+
+**Quick Import**:
+1. Open Postman → File → Import
+2. Select `postman/ProxyND-Enterprise-API.postman_collection.json`
+3. Select `postman/ProxyND-Dev.postman_environment.json`
+4. Choose "ProxyND Development" environment
+5. Start testing!
+
+The collection includes:
+- All 47 endpoints organized by category (RBAC, Audit, Analytics, Security, Alerts, License)
+- Pre-configured request examples with sample data
+- Environment variables for easy server switching
+- Complete request/response documentation
+
 **WebUI Integration Guide**: See `docs/enterprise/WEBUI_INTEGRATION.md` for complete TypeScript/React integration examples.
 
 **API Documentation**: See `tmp/plan/README.md` for detailed endpoint documentation (auto-generated in dev mode).

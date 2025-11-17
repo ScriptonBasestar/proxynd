@@ -1,0 +1,861 @@
+{
+	"info": {
+		"_postman_id": "proxynd-enterprise-api-v1",
+		"name": "ProxyND Enterprise API",
+		"description": "Complete collection for ProxyND Enterprise API with 47 endpoints covering RBAC, Audit, Analytics, Security, Alerts, and License management.\n\n## Categories\n- **RBAC** (12 endpoints): Role-based access control, permissions, user assignments\n- **Audit** (8 endpoints): Event logging, compliance reports, audit trail export\n- **Analytics** (10 endpoints): Usage stats, performance metrics, cost analysis\n- **Security** (8 endpoints): Vulnerability scanning, license compliance, malware detection\n- **Alerts** (5 endpoints): Alert management and notification rules\n- **License** (4 endpoints): License validation and feature management\n\n## Authentication\n- Development mode: No authentication required\n- Production mode: Bearer token required in Authorization header\n\n## Base URL\nUse the `{{baseUrl}}` variable configured in the environment.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "RBAC",
+			"item": [
+				{
+					"name": "Roles",
+					"item": [
+						{
+							"name": "List Roles",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/enterprise/rbac/roles?page=1&per_page=20",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "enterprise", "rbac", "roles"],
+									"query": [
+										{"key": "page", "value": "1", "description": "Page number"},
+										{"key": "per_page", "value": "20", "description": "Items per page (max 100)"}
+									]
+								},
+								"description": "Get a paginated list of all roles in the RBAC system"
+							}
+						},
+						{
+							"name": "Get Role",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/enterprise/rbac/roles/:roleId",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "enterprise", "rbac", "roles", ":roleId"],
+									"variable": [
+										{"key": "roleId", "value": "role_admin", "description": "Role ID"}
+									]
+								},
+								"description": "Get detailed information about a specific role"
+							}
+						},
+						{
+							"name": "Create Role",
+							"request": {
+								"method": "POST",
+								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"Developer\",\n  \"description\": \"Developer role with cache and config access\",\n  \"permissions\": [\"cache:read\", \"cache:write\", \"config:read\"]\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/enterprise/rbac/roles",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "enterprise", "rbac", "roles"]
+								},
+								"description": "Create a new role with specified permissions"
+							}
+						},
+						{
+							"name": "Update Role",
+							"request": {
+								"method": "PUT",
+								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"name\": \"Developer\",\n  \"description\": \"Updated description\",\n  \"permissions\": [\"cache:read\", \"cache:write\", \"config:read\", \"audit:read\"]\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/enterprise/rbac/roles/:roleId",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "enterprise", "rbac", "roles", ":roleId"],
+									"variable": [
+										{"key": "roleId", "value": "role_developer"}
+									]
+								},
+								"description": "Update an existing role's properties or permissions"
+							}
+						},
+						{
+							"name": "Delete Role",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/enterprise/rbac/roles/:roleId",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "enterprise", "rbac", "roles", ":roleId"],
+									"variable": [
+										{"key": "roleId", "value": "role_developer"}
+									]
+								},
+								"description": "Delete a role from the system"
+							}
+						}
+					],
+					"description": "Role management endpoints"
+				},
+				{
+					"name": "Permissions",
+					"item": [
+						{
+							"name": "List Permissions",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/enterprise/rbac/permissions",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "enterprise", "rbac", "permissions"]
+								},
+								"description": "Get a list of all available system permissions"
+							}
+						},
+						{
+							"name": "Get Role Permissions",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/enterprise/rbac/roles/:roleId/permissions",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "enterprise", "rbac", "roles", ":roleId", "permissions"],
+									"variable": [
+										{"key": "roleId", "value": "role_admin"}
+									]
+								},
+								"description": "Get permissions assigned to a specific role"
+							}
+						},
+						{
+							"name": "Assign Permissions",
+							"request": {
+								"method": "POST",
+								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"permissions\": [\"cache:read\", \"config:read\", \"audit:read\"]\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/enterprise/rbac/roles/:roleId/permissions",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "enterprise", "rbac", "roles", ":roleId", "permissions"],
+									"variable": [
+										{"key": "roleId", "value": "role_developer"}
+									]
+								},
+								"description": "Assign permissions to a role"
+							}
+						},
+						{
+							"name": "Revoke Permission",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/enterprise/rbac/roles/:roleId/permissions/:permission",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "enterprise", "rbac", "roles", ":roleId", "permissions", ":permission"],
+									"variable": [
+										{"key": "roleId", "value": "role_developer"},
+										{"key": "permission", "value": "audit:read"}
+									]
+								},
+								"description": "Revoke a specific permission from a role"
+							}
+						}
+					],
+					"description": "Permission management endpoints"
+				},
+				{
+					"name": "User Roles",
+					"item": [
+						{
+							"name": "Get User Roles",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/enterprise/rbac/users/:userId/roles",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "enterprise", "rbac", "users", ":userId", "roles"],
+									"variable": [
+										{"key": "userId", "value": "user123"}
+									]
+								},
+								"description": "Get all roles assigned to a user"
+							}
+						},
+						{
+							"name": "Assign Role to User",
+							"request": {
+								"method": "POST",
+								"header": [{"key": "Content-Type", "value": "application/json"}],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"role_id\": \"role_developer\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/enterprise/rbac/users/:userId/roles",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "enterprise", "rbac", "users", ":userId", "roles"],
+									"variable": [
+										{"key": "userId", "value": "user123"}
+									]
+								},
+								"description": "Assign a role to a user"
+							}
+						},
+						{
+							"name": "Remove Role from User",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/api/v1/enterprise/rbac/users/:userId/roles/:roleId",
+									"host": ["{{baseUrl}}"],
+									"path": ["api", "v1", "enterprise", "rbac", "users", ":userId", "roles", ":roleId"],
+									"variable": [
+										{"key": "userId", "value": "user123"},
+										{"key": "roleId", "value": "role_developer"}
+									]
+								},
+								"description": "Remove a role assignment from a user"
+							}
+						}
+					],
+					"description": "User-role assignment endpoints"
+				}
+			],
+			"description": "Role-Based Access Control endpoints (12 total)"
+		},
+		{
+			"name": "Audit",
+			"item": [
+				{
+					"name": "List Events",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/enterprise/audit/events?page=1&per_page=20&user_id=&action=&resource_type=",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "enterprise", "audit", "events"],
+							"query": [
+								{"key": "page", "value": "1"},
+								{"key": "per_page", "value": "20"},
+								{"key": "user_id", "value": "", "description": "Filter by user ID"},
+								{"key": "action", "value": "", "description": "Filter by action type"},
+								{"key": "resource_type", "value": "", "description": "Filter by resource type"}
+							]
+						},
+						"description": "Get paginated list of audit events with optional filters"
+					}
+				},
+				{
+					"name": "Get Event",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/enterprise/audit/events/:eventId",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "enterprise", "audit", "events", ":eventId"],
+							"variable": [
+								{"key": "eventId", "value": "event_123"}
+							]
+						},
+						"description": "Get detailed information about a specific audit event"
+					}
+				},
+				{
+					"name": "Search Events",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/enterprise/audit/events/search?q=cache&page=1&per_page=20",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "enterprise", "audit", "events", "search"],
+							"query": [
+								{"key": "q", "value": "cache", "description": "Search query"},
+								{"key": "page", "value": "1"},
+								{"key": "per_page", "value": "20"}
+							]
+						},
+						"description": "Advanced search across audit events"
+					}
+				},
+				{
+					"name": "Get User Events",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/enterprise/audit/users/:userId/events?page=1&per_page=20",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "enterprise", "audit", "users", ":userId", "events"],
+							"variable": [
+								{"key": "userId", "value": "user123"}
+							],
+							"query": [
+								{"key": "page", "value": "1"},
+								{"key": "per_page", "value": "20"}
+							]
+						},
+						"description": "Get audit trail for a specific user"
+					}
+				},
+				{
+					"name": "Get Resource Events",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/enterprise/audit/resources/:resourceType/:resourceId?page=1&per_page=20",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "enterprise", "audit", "resources", ":resourceType", ":resourceId"],
+							"variable": [
+								{"key": "resourceType", "value": "role"},
+								{"key": "resourceId", "value": "role_admin"}
+							],
+							"query": [
+								{"key": "page", "value": "1"},
+								{"key": "per_page", "value": "20"}
+							]
+						},
+						"description": "Get audit history for a specific resource"
+					}
+				},
+				{
+					"name": "Export Events",
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"format\": \"csv\",\n  \"start_date\": \"2025-01-01T00:00:00Z\",\n  \"end_date\": \"2025-01-17T23:59:59Z\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/enterprise/audit/export",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "enterprise", "audit", "export"]
+						},
+						"description": "Export audit logs in CSV or JSON format"
+					}
+				},
+				{
+					"name": "Get Stats",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/enterprise/audit/stats?start_date=&end_date=",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "enterprise", "audit", "stats"],
+							"query": [
+								{"key": "start_date", "value": "", "description": "Start date (ISO 8601)"},
+								{"key": "end_date", "value": "", "description": "End date (ISO 8601)"}
+							]
+						},
+						"description": "Get statistical summary of audit events"
+					}
+				},
+				{
+					"name": "Get Compliance Report",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/enterprise/audit/compliance/report?start_date=&end_date=&compliance_framework=SOC2",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "enterprise", "audit", "compliance", "report"],
+							"query": [
+								{"key": "start_date", "value": ""},
+								{"key": "end_date", "value": ""},
+								{"key": "compliance_framework", "value": "SOC2", "description": "SOC2, ISO27001, GDPR"}
+							]
+						},
+						"description": "Generate compliance report from audit data"
+					}
+				}
+			],
+			"description": "Audit logging and compliance endpoints (8 total)"
+		},
+		{
+			"name": "Analytics",
+			"item": [
+				{
+					"name": "Get Overview",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/enterprise/analytics/overview",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "enterprise", "analytics", "overview"]
+						},
+						"description": "Get dashboard overview with key metrics"
+					}
+				},
+				{
+					"name": "Get Usage Stats",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/enterprise/analytics/usage?period=30d",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "enterprise", "analytics", "usage"],
+							"query": [
+								{"key": "period", "value": "30d", "description": "7d, 30d, 90d"}
+							]
+						},
+						"description": "Get usage statistics by package manager"
+					}
+				},
+				{
+					"name": "Get Performance Metrics",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/enterprise/analytics/performance?period=24h",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "enterprise", "analytics", "performance"],
+							"query": [
+								{"key": "period", "value": "24h", "description": "1h, 24h, 7d"}
+							]
+						},
+						"description": "Get performance metrics including response times"
+					}
+				},
+				{
+					"name": "Get Cache Efficiency",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/enterprise/analytics/cache-efficiency",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "enterprise", "analytics", "cache-efficiency"]
+						},
+						"description": "Get cache hit rates and efficiency statistics"
+					}
+				},
+				{
+					"name": "List Reports",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/enterprise/analytics/reports?page=1&per_page=20&type=",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "enterprise", "analytics", "reports"],
+							"query": [
+								{"key": "page", "value": "1"},
+								{"key": "per_page", "value": "20"},
+								{"key": "type", "value": "", "description": "Report type filter"}
+							]
+						},
+						"description": "List saved analytics reports"
+					}
+				},
+				{
+					"name": "Create Report",
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Monthly Usage Report\",\n  \"type\": \"usage\",\n  \"parameters\": {\"period\": \"30d\"}\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/enterprise/analytics/reports",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "enterprise", "analytics", "reports"]
+						},
+						"description": "Create a new custom report"
+					}
+				},
+				{
+					"name": "Get Report",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/enterprise/analytics/reports/:reportId",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "enterprise", "analytics", "reports", ":reportId"],
+							"variable": [
+								{"key": "reportId", "value": "report_123"}
+							]
+						},
+						"description": "Get data for a specific report"
+					}
+				},
+				{
+					"name": "Delete Report",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/enterprise/analytics/reports/:reportId",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "enterprise", "analytics", "reports", ":reportId"],
+							"variable": [
+								{"key": "reportId", "value": "report_123"}
+							]
+						},
+						"description": "Delete a saved report"
+					}
+				},
+				{
+					"name": "Get Cost Analysis",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/enterprise/analytics/costs?period=30d",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "enterprise", "analytics", "costs"],
+							"query": [
+								{"key": "period", "value": "30d", "description": "30d, 90d, 1y"}
+							]
+						},
+						"description": "Get bandwidth cost breakdown and savings"
+					}
+				},
+				{
+					"name": "Get Trends",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/enterprise/analytics/trends?metric=requests&period=30d",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "enterprise", "analytics", "trends"],
+							"query": [
+								{"key": "metric", "value": "requests", "description": "requests, bandwidth, latency"},
+								{"key": "period", "value": "30d", "description": "7d, 30d, 90d"}
+							]
+						},
+						"description": "Get trend analysis for metrics"
+					}
+				}
+			],
+			"description": "Analytics and reporting endpoints (10 total)"
+		},
+		{
+			"name": "Security",
+			"item": [
+				{
+					"name": "List Vulnerabilities",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/enterprise/security/vulnerabilities?page=1&per_page=20&severity=",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "enterprise", "security", "vulnerabilities"],
+							"query": [
+								{"key": "page", "value": "1"},
+								{"key": "per_page", "value": "20"},
+								{"key": "severity", "value": "", "description": "critical, high, medium, low"}
+							]
+						},
+						"description": "List detected vulnerabilities with severity filter"
+					}
+				},
+				{
+					"name": "Get Vulnerability",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/enterprise/security/vulnerabilities/:vulnId",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "enterprise", "security", "vulnerabilities", ":vulnId"],
+							"variable": [
+								{"key": "vulnId", "value": "CVE-2024-12345"}
+							]
+						},
+						"description": "Get detailed information about a vulnerability"
+					}
+				},
+				{
+					"name": "Trigger Scan",
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"scope\": \"all\",\n  \"package_manager\": \"npm\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/enterprise/security/scan",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "enterprise", "security", "scan"]
+						},
+						"description": "Trigger a manual security scan"
+					}
+				},
+				{
+					"name": "Get Scan Job",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/enterprise/security/scan/:jobId",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "enterprise", "security", "scan", ":jobId"],
+							"variable": [
+								{"key": "jobId", "value": "job_123"}
+							]
+						},
+						"description": "Get status and results of a scan job"
+					}
+				},
+				{
+					"name": "List Licenses",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/enterprise/security/licenses?page=1&per_page=20",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "enterprise", "security", "licenses"],
+							"query": [
+								{"key": "page", "value": "1"},
+								{"key": "per_page", "value": "20"}
+							]
+						},
+						"description": "List detected package licenses"
+					}
+				},
+				{
+					"name": "List License Violations",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/enterprise/security/licenses/violations?page=1&per_page=20",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "enterprise", "security", "licenses", "violations"],
+							"query": [
+								{"key": "page", "value": "1"},
+								{"key": "per_page", "value": "20"}
+							]
+						},
+						"description": "List license policy violations"
+					}
+				},
+				{
+					"name": "List Malware Alerts",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/enterprise/security/malware/alerts?page=1&per_page=20",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "enterprise", "security", "malware", "alerts"],
+							"query": [
+								{"key": "page", "value": "1"},
+								{"key": "per_page", "value": "20"}
+							]
+						},
+						"description": "List malware detection alerts"
+					}
+				},
+				{
+					"name": "List Quarantined Packages",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/enterprise/security/malware/quarantine?page=1&per_page=20",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "enterprise", "security", "malware", "quarantine"],
+							"query": [
+								{"key": "page", "value": "1"},
+								{"key": "per_page", "value": "20"}
+							]
+						},
+						"description": "List packages in quarantine"
+					}
+				}
+			],
+			"description": "Security scanning endpoints (8 total)"
+		},
+		{
+			"name": "Alerts",
+			"item": [
+				{
+					"name": "List Alerts",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/enterprise/alerts?page=1&per_page=20&status=&severity=",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "enterprise", "alerts"],
+							"query": [
+								{"key": "page", "value": "1"},
+								{"key": "per_page", "value": "20"},
+								{"key": "status", "value": "", "description": "active, acknowledged, resolved"},
+								{"key": "severity", "value": "", "description": "critical, warning, info"}
+							]
+						},
+						"description": "List alerts with status and severity filters"
+					}
+				},
+				{
+					"name": "Get Alert",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/enterprise/alerts/:alertId",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "enterprise", "alerts", ":alertId"],
+							"variable": [
+								{"key": "alertId", "value": "alert_123"}
+							]
+						},
+						"description": "Get detailed information about an alert"
+					}
+				},
+				{
+					"name": "Create Alert Rule",
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"High CPU Alert\",\n  \"type\": \"performance\",\n  \"condition\": {\"metric\": \"cpu\", \"threshold\": 80},\n  \"actions\": [{\"type\": \"email\", \"config\": {\"to\": \"admin@example.com\"}}]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/enterprise/alerts/rules",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "enterprise", "alerts", "rules"]
+						},
+						"description": "Create a new alert rule"
+					}
+				},
+				{
+					"name": "Update Alert Rule",
+					"request": {
+						"method": "PUT",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"High CPU Alert\",\n  \"condition\": {\"metric\": \"cpu\", \"threshold\": 90},\n  \"enabled\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/enterprise/alerts/rules/:ruleId",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "enterprise", "alerts", "rules", ":ruleId"],
+							"variable": [
+								{"key": "ruleId", "value": "rule_123"}
+							]
+						},
+						"description": "Update an existing alert rule"
+					}
+				},
+				{
+					"name": "Delete Alert Rule",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/enterprise/alerts/rules/:ruleId",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "enterprise", "alerts", "rules", ":ruleId"],
+							"variable": [
+								{"key": "ruleId", "value": "rule_123"}
+							]
+						},
+						"description": "Delete an alert rule"
+					}
+				}
+			],
+			"description": "Alert management endpoints (5 total)"
+		},
+		{
+			"name": "License",
+			"item": [
+				{
+					"name": "Get License Info",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/enterprise/license/info",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "enterprise", "license", "info"]
+						},
+						"description": "Get current enterprise license information"
+					}
+				},
+				{
+					"name": "Validate License",
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"license_key\": \"PROXYND-ENT-XXXX-YYYY-ZZZZ\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/enterprise/license/validate",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "enterprise", "license", "validate"]
+						},
+						"description": "Validate and activate a license key"
+					}
+				},
+				{
+					"name": "List Features",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/enterprise/license/features",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "enterprise", "license", "features"]
+						},
+						"description": "List all available enterprise features and their status"
+					}
+				},
+				{
+					"name": "Get Usage Metrics",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/v1/enterprise/license/usage",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "v1", "enterprise", "license", "usage"]
+						},
+						"description": "Get current license usage metrics and limits"
+					}
+				}
+			],
+			"description": "License management endpoints (4 total)"
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080",
+			"type": "string",
+			"description": "Base URL for ProxyND server"
+		}
+	]
+}
