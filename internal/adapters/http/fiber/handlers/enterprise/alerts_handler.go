@@ -34,6 +34,10 @@ func (h *AlertsHandler) ListAlerts(c *fiber.Ctx) error {
 	status := c.Query("status")
 	severity := c.Query("severity")
 
+	if perPage > 100 {
+		perPage = 100
+	}
+
 	alerts := getMockAlerts()
 
 	// Apply filters
@@ -105,6 +109,10 @@ func (h *AlertsHandler) GetAlert(c *fiber.Ctx) error {
 			"code":    "ALERT_NOT_FOUND",
 			"message": "Alert not found",
 		},
+		"metadata": fiber.Map{
+			"timestamp":  time.Now().UTC(),
+			"request_id": c.Locals("requestid"),
+		},
 	})
 }
 
@@ -127,6 +135,10 @@ func (h *AlertsHandler) CreateAlertRule(c *fiber.Ctx) error {
 			"error": fiber.Map{
 				"code":    "INVALID_REQUEST",
 				"message": "Invalid request body",
+			},
+			"metadata": fiber.Map{
+				"timestamp":  time.Now().UTC(),
+				"request_id": c.Locals("requestid"),
 			},
 		})
 	}
@@ -178,6 +190,10 @@ func (h *AlertsHandler) UpdateAlertRule(c *fiber.Ctx) error {
 			"error": fiber.Map{
 				"code":    "INVALID_REQUEST",
 				"message": "Invalid request body",
+			},
+			"metadata": fiber.Map{
+				"timestamp":  time.Now().UTC(),
+				"request_id": c.Locals("requestid"),
 			},
 		})
 	}

@@ -227,6 +227,10 @@ func (h *AnalyticsHandler) ListReports(c *fiber.Ctx) error {
 	page, _ := strconv.Atoi(c.Query("page", "1"))
 	perPage, _ := strconv.Atoi(c.Query("per_page", "20"))
 
+	if perPage > 100 {
+		perPage = 100
+	}
+
 	reports := []enterprise.Report{
 		{
 			ID:          "report_001",

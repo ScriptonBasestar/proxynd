@@ -81,8 +81,8 @@ func setupAuditRoutes(api fiber.Router, h *enterprise.AuditHandler) {
 	audit := api.Group("/audit")
 
 	audit.Get("/events", h.ListEvents)                      // List audit events
+	audit.Get("/events/search", h.SearchEvents)             // Advanced search (must be before :id)
 	audit.Get("/events/:id", h.GetEvent)                    // Get audit event details
-	audit.Get("/events/search", h.SearchEvents)             // Advanced search
 	audit.Get("/users/:userId/events", h.GetUserEvents)     // Get user's audit trail
 	audit.Get("/resources/:resourceType/:resourceId", h.GetResourceEvents) // Get resource audit history
 	audit.Post("/export", h.ExportEvents)                   // Export audit logs

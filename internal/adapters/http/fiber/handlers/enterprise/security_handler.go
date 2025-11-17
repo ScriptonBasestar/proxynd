@@ -33,6 +33,10 @@ func (h *SecurityHandler) ListVulnerabilities(c *fiber.Ctx) error {
 	perPage, _ := strconv.Atoi(c.Query("per_page", "20"))
 	severity := c.Query("severity")
 
+	if perPage > 100 {
+		perPage = 100
+	}
+
 	vulns := getMockVulnerabilities()
 
 	// Filter by severity if provided

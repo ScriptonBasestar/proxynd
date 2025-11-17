@@ -118,6 +118,10 @@ func (h *AuditHandler) GetEvent(c *fiber.Ctx) error {
 			"code":    "EVENT_NOT_FOUND",
 			"message": "Audit event not found",
 		},
+		"metadata": fiber.Map{
+			"timestamp":  time.Now().UTC(),
+			"request_id": c.Locals("requestid"),
+		},
 	})
 }
 
@@ -208,6 +212,8 @@ func (h *AuditHandler) GetUserEvents(c *fiber.Ctx) error {
 func (h *AuditHandler) GetResourceEvents(c *fiber.Ctx) error {
 	resourceType := c.Params("resourceType")
 	resourceID := c.Params("resourceId")
+	page, _ := strconv.Atoi(c.Query("page", "1"))
+	perPage, _ := strconv.Atoi(c.Query("per_page", "20"))
 
 	events := getMockAuditEvents()
 	filtered := make([]*enterprise.AuditEvent, 0)
@@ -217,9 +223,24 @@ func (h *AuditHandler) GetResourceEvents(c *fiber.Ctx) error {
 		}
 	}
 
+	total := int64(len(filtered))
+	pagination := enterprise.NewPagination(page, perPage, total)
+
+	// Apply pagination
+	start := (page - 1) * perPage
+	end := start + perPage
+	if start >= len(filtered) {
+		filtered = []*enterprise.AuditEvent{}
+	} else if end > len(filtered) {
+		filtered = filtered[start:]
+	} else {
+		filtered = filtered[start:end]
+	}
+
 	return c.JSON(fiber.Map{
 		"success": true,
 		"data":    filtered,
+		"pagination": pagination,
 		"metadata": fiber.Map{
 			"timestamp":  time.Now().UTC(),
 			"request_id": c.Locals("requestid"),
@@ -250,6 +271,10 @@ func (h *AuditHandler) ExportEvents(c *fiber.Ctx) error {
 			"error": fiber.Map{
 				"code":    "INVALID_REQUEST",
 				"message": "Invalid request body",
+			},
+			"metadata": fiber.Map{
+				"timestamp":  time.Now().UTC(),
+				"request_id": c.Locals("requestid"),
 			},
 		})
 	}

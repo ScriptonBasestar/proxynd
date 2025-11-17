@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
@@ -250,6 +251,22 @@ func TestEnterpriseAPIContract(t *testing.T) {
 			expectedStatus: http.StatusOK,
 			validateSchema: validateSuccessResponse,
 		},
+
+		// Missing RBAC Endpoints (7)
+		{
+			name:           "Get User Events (Audit)",
+			method:         "GET",
+			path:           "/api/v1/enterprise/audit/users/user_001/events",
+			expectedStatus: http.StatusOK,
+			validateSchema: validatePaginatedListResponse,
+		},
+		{
+			name:           "Get Resource Events (Audit)",
+			method:         "GET",
+			path:           "/api/v1/enterprise/audit/resources/role/role_admin",
+			expectedStatus: http.StatusOK,
+			validateSchema: validatePaginatedListResponse,
+		},
 	}
 
 	for _, tt := range tests {
@@ -319,7 +336,7 @@ func validatePaginatedListResponse(t *testing.T, body map[string]interface{}) {
 // TestEnterpriseAPIPaginationBehavior validates pagination behavior
 func TestEnterpriseAPIPaginationBehavior(t *testing.T) {
 	app := fiber.New()
-	routers.SetupEnterpriseRoutes(app)
+	routers.SetupEnterpriseRoutes(app, nil) // nil = dev mode, no license check
 
 	endpoints := []string{
 		"/api/v1/enterprise/rbac/roles",
@@ -363,7 +380,7 @@ func TestEnterpriseAPIPaginationBehavior(t *testing.T) {
 // TestEnterpriseAPIErrorFormat validates error response format
 func TestEnterpriseAPIErrorFormat(t *testing.T) {
 	app := fiber.New()
-	routers.SetupEnterpriseRoutes(app)
+	routers.SetupEnterpriseRoutes(app, nil) // nil = dev mode, no license check
 
 	// Test 404 error
 	req := httptest.NewRequest("GET", "/api/v1/enterprise/rbac/roles/nonexistent_role", nil)
@@ -385,4 +402,157 @@ func TestEnterpriseAPIErrorFormat(t *testing.T) {
 	assert.True(t, ok, "'error' must be an object")
 	assert.Contains(t, errorObj, "code", "Error object must contain 'code'")
 	assert.Contains(t, errorObj, "message", "Error object must contain 'message'")
+}
+// TestEnterpriseAPIMutationEndpoints validates POST/PUT/DELETE endpoints
+func TestEnterpriseAPIMutationEndpoints(t *testing.T) {
+	app := fiber.New()
+	routers.SetupEnterpriseRoutes(app, nil) // nil = dev mode, no license check
+
+	tests := []struct {
+		name           string
+		method         string
+		path           string
+		body           string
+		expectedStatus int
+	}{
+		// RBAC Mutations
+		{
+			name:           "Create Role",
+			method:         "POST",
+			path:           "/api/v1/enterprise/rbac/roles",
+			body:           `{"name":"test_role","description":"Test role","permissions":["read:packages"]}`,
+			expectedStatus: http.StatusCreated,
+		},
+		{
+			name:           "Update Role",
+			method:         "PUT",
+			path:           "/api/v1/enterprise/rbac/roles/role_admin",
+			body:           `{"name":"updated_role","permissions":["read:packages","write:packages"]}`,
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "Delete Role",
+			method:         "DELETE",
+			path:           "/api/v1/enterprise/rbac/roles/role_test",
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "Assign Permissions to Role",
+			method:         "POST",
+			path:           "/api/v1/enterprise/rbac/roles/role_admin/permissions",
+			body:           `{"permissions":["read:analytics","write:analytics"]}`,
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "Revoke Permission from Role",
+			method:         "DELETE",
+			path:           "/api/v1/enterprise/rbac/roles/role_admin/permissions/write:packages",
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "Assign Role to User",
+			method:         "POST",
+			path:           "/api/v1/enterprise/rbac/users/user_001/roles",
+			body:           `{"role_id":"role_admin"}`,
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "Remove Role from User",
+			method:         "DELETE",
+			path:           "/api/v1/enterprise/rbac/users/user_001/roles/role_viewer",
+			expectedStatus: http.StatusOK,
+		},
+
+		// Audit Mutations
+		{
+			name:           "Export Audit Events",
+			method:         "POST",
+			path:           "/api/v1/enterprise/audit/export",
+			body:           `{"format":"json","start_date":"2025-01-01T00:00:00Z","end_date":"2025-01-31T23:59:59Z"}`,
+			expectedStatus: http.StatusOK,
+		},
+
+		// Analytics Mutations
+		{
+			name:           "Create Custom Report",
+			method:         "POST",
+			path:           "/api/v1/enterprise/analytics/reports",
+			body:           `{"name":"Monthly Usage","type":"usage","parameters":{"period":"30d"}}`,
+			expectedStatus: http.StatusCreated,
+		},
+		{
+			name:           "Delete Report",
+			method:         "DELETE",
+			path:           "/api/v1/enterprise/analytics/reports/report_001",
+			expectedStatus: http.StatusOK,
+		},
+
+		// Security Mutations
+		{
+			name:           "Trigger Security Scan",
+			method:         "POST",
+			path:           "/api/v1/enterprise/security/scan",
+			body:           `{"scope":"all","package_manager":"npm"}`,
+			expectedStatus: http.StatusAccepted,
+		},
+
+		// Alerts Mutations
+		{
+			name:           "Create Alert Rule",
+			method:         "POST",
+			path:           "/api/v1/enterprise/alerts/rules",
+			body:           `{"name":"High CPU Alert","type":"threshold","severity":"high","conditions":{"metric":"cpu","threshold":80},"actions":[{"type":"email","config":{"recipients":["ops@example.com"]}}]}`,
+			expectedStatus: http.StatusCreated,
+		},
+		{
+			name:           "Update Alert Rule",
+			method:         "PUT",
+			path:           "/api/v1/enterprise/alerts/rules/rule_001",
+			body:           `{"name":"Updated Alert","enabled":true}`,
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name:           "Delete Alert Rule",
+			method:         "DELETE",
+			path:           "/api/v1/enterprise/alerts/rules/rule_001",
+			expectedStatus: http.StatusOK,
+		},
+
+		// License Mutations
+		{
+			name:           "Validate License",
+			method:         "POST",
+			path:           "/api/v1/enterprise/license/validate",
+			body:           `{"license_key":"test-license-key-12345"}`,
+			expectedStatus: http.StatusOK,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var req *http.Request
+			if tt.body != "" {
+				req = httptest.NewRequest(tt.method, tt.path, strings.NewReader(tt.body))
+				req.Header.Set("Content-Type", "application/json")
+			} else {
+				req = httptest.NewRequest(tt.method, tt.path, nil)
+			}
+
+			resp, err := app.Test(req, -1)
+			require.NoError(t, err, "Failed to make request")
+			
+			assert.Equal(t, tt.expectedStatus, resp.StatusCode,
+				"Expected status %d but got %d for %s %s",
+				tt.expectedStatus, resp.StatusCode, tt.method, tt.path)
+
+			// Validate response has proper structure
+			var body map[string]interface{}
+			err = json.NewDecoder(resp.Body).Decode(&body)
+			require.NoError(t, err, "Failed to decode response body")
+			
+			// All responses should have success and metadata fields
+			assert.Contains(t, body, "success", "Response must contain 'success' field")
+			assert.Contains(t, body, "metadata", "Response must contain 'metadata' field")
+		})
+	}
 }
