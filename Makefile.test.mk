@@ -240,6 +240,7 @@ test-runner-coverage: ## run tests with coverage using test runner
 
 .PHONY: test-benchmark test-benchmark-all test-benchmark-proxy test-benchmark-cache
 .PHONY: test-benchmark-middleware test-benchmark-config test-benchmark-report
+.PHONY: test-benchmark-enterprise test-benchmark-enterprise-quick test-benchmark-enterprise-stress
 
 test-benchmark: ## run basic benchmarks
 	@echo "Running benchmarks..."
@@ -273,6 +274,18 @@ test-benchmark-report: ## generate detailed benchmark report
 	@mkdir -p ./reports/benchmarks
 	go test -bench=. -benchmem -benchtime=10s ./tests/benchmark/... > ./reports/benchmarks/benchmark_$(shell date +%Y%m%d_%H%M%S).txt
 	@echo "Benchmark report saved to ./reports/benchmarks/"
+
+test-benchmark-enterprise: ## run enterprise API performance benchmarks (<500ms p95 target)
+	@echo "Running Enterprise API benchmarks..."
+	@./tmp/scripts/benchmark-enterprise-api.sh
+
+test-benchmark-enterprise-quick: ## quick enterprise API benchmark (25 iterations)
+	@echo "Running quick Enterprise API benchmarks..."
+	@ITERATIONS=25 ./tmp/scripts/benchmark-enterprise-api.sh
+
+test-benchmark-enterprise-stress: ## stress test enterprise API (500 iterations)
+	@echo "Running Enterprise API stress test..."
+	@ITERATIONS=500 CONCURRENT=50 ./tmp/scripts/benchmark-enterprise-api.sh
 
 # ==============================================================================
 # Validation and Quality Checks

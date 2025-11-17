@@ -1162,6 +1162,38 @@ The collection includes:
 - Environment variables for easy server switching
 - Complete request/response documentation
 
+### Performance Benchmarks
+
+ProxyND Enterprise API is designed for high performance with strict targets:
+
+**Performance Targets:**
+- **P95 Response Time**: < 500ms (95% of requests)
+- **P99 Response Time**: < 1000ms (99% of requests)
+- **Page Load Time**: < 3s (complete WebUI page load)
+- **Throughput**: > 100 requests/second per endpoint
+
+**Run Benchmarks:**
+```bash
+# Standard benchmark (100 iterations)
+make test-benchmark-enterprise
+
+# Quick test (25 iterations)
+make test-benchmark-enterprise-quick
+
+# Stress test (500 iterations, 50 concurrent)
+make test-benchmark-enterprise-stress
+
+# Custom configuration
+ITERATIONS=200 CONCURRENT=30 ./scripts/benchmark-enterprise-api.sh
+```
+
+The benchmark suite tests 13 representative endpoints across all categories with:
+- Single endpoint response time tests
+- Pagination performance tests
+- Concurrent request handling tests
+
+**Detailed Guide**: See `docs/enterprise/PERFORMANCE_BENCHMARKS.md` for optimization strategies and troubleshooting.
+
 **WebUI Integration Guide**: See `docs/enterprise/WEBUI_INTEGRATION.md` for complete TypeScript/React integration examples.
 
 **API Documentation**: See `tmp/plan/README.md` for detailed endpoint documentation (auto-generated in dev mode).
