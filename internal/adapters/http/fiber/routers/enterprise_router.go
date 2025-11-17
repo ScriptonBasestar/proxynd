@@ -18,8 +18,14 @@ func SetupEnterpriseRoutes(app *fiber.App, enterpriseFeatures enterpriseMiddlewa
 	alertsHandler := enterprise.NewAlertsHandler()
 	licenseHandler := enterprise.NewLicenseHandler()
 
+	// Create Enterprise API metrics
+	enterpriseMetrics := enterpriseMiddleware.NewEnterpriseMetrics()
+
 	// Enterprise API group
 	api := app.Group("/api/v1/enterprise")
+
+	// Metrics middleware (must be first to capture all requests)
+	api.Use(enterpriseMiddleware.MetricsMiddleware(enterpriseMetrics))
 
 	// License validation middleware
 	// enterpriseFeatures is passed from app initialization
