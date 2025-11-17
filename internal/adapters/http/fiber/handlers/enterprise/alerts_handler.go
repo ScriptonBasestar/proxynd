@@ -15,7 +15,19 @@ func NewAlertsHandler() *AlertsHandler {
 	return &AlertsHandler{}
 }
 
-// ListAlerts handles GET /api/v1/enterprise/alerts
+// ListAlerts godoc
+// @Summary List active alerts
+// @Description Get a paginated list of alerts with optional status and severity filtering
+// @Tags Alerts
+// @Accept json
+// @Produce json
+// @Param page query int false "Page number" default(1)
+// @Param per_page query int false "Items per page" default(20)
+// @Param status query string false "Filter by status (active, acknowledged, resolved)"
+// @Param severity query string false "Filter by severity (critical, warning, info)"
+// @Success 200 {object} map[string]interface{} "Paginated list of alerts"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Router /api/v1/enterprise/alerts [get]
 func (h *AlertsHandler) ListAlerts(c *fiber.Ctx) error {
 	page, _ := strconv.Atoi(c.Query("page", "1"))
 	perPage, _ := strconv.Atoi(c.Query("per_page", "20"))
@@ -59,7 +71,17 @@ func (h *AlertsHandler) ListAlerts(c *fiber.Ctx) error {
 	})
 }
 
-// GetAlert handles GET /api/v1/enterprise/alerts/:id
+// GetAlert godoc
+// @Summary Get alert details
+// @Description Get detailed information about a specific alert
+// @Tags Alerts
+// @Accept json
+// @Produce json
+// @Param id path string true "Alert ID"
+// @Success 200 {object} map[string]interface{} "Alert details"
+// @Failure 404 {object} map[string]interface{} "Alert not found"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Router /api/v1/enterprise/alerts/{id} [get]
 func (h *AlertsHandler) GetAlert(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -86,7 +108,17 @@ func (h *AlertsHandler) GetAlert(c *fiber.Ctx) error {
 	})
 }
 
-// CreateAlertRule handles POST /api/v1/enterprise/alerts/rules
+// CreateAlertRule godoc
+// @Summary Create alert rule
+// @Description Create a new alert notification rule
+// @Tags Alerts
+// @Accept json
+// @Produce json
+// @Param rule body object{name=string,type=string,condition=object,actions=array} true "Alert rule"
+// @Success 201 {object} map[string]interface{} "Created alert rule"
+// @Failure 400 {object} map[string]interface{} "Invalid request"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Router /api/v1/enterprise/alerts/rules [post]
 func (h *AlertsHandler) CreateAlertRule(c *fiber.Ctx) error {
 	var req enterprise.AlertRuleRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -123,7 +155,19 @@ func (h *AlertsHandler) CreateAlertRule(c *fiber.Ctx) error {
 	})
 }
 
-// UpdateAlertRule handles PUT /api/v1/enterprise/alerts/rules/:id
+// UpdateAlertRule godoc
+// @Summary Update alert rule
+// @Description Update an existing alert rule
+// @Tags Alerts
+// @Accept json
+// @Produce json
+// @Param id path string true "Rule ID"
+// @Param rule body object{name=string,condition=object,actions=array,enabled=boolean} true "Rule updates"
+// @Success 200 {object} map[string]interface{} "Updated alert rule"
+// @Failure 400 {object} map[string]interface{} "Invalid request"
+// @Failure 404 {object} map[string]interface{} "Rule not found"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Router /api/v1/enterprise/alerts/rules/{id} [put]
 func (h *AlertsHandler) UpdateAlertRule(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -160,7 +204,17 @@ func (h *AlertsHandler) UpdateAlertRule(c *fiber.Ctx) error {
 	})
 }
 
-// DeleteAlertRule handles DELETE /api/v1/enterprise/alerts/rules/:id
+// DeleteAlertRule godoc
+// @Summary Delete alert rule
+// @Description Delete an alert notification rule
+// @Tags Alerts
+// @Accept json
+// @Produce json
+// @Param id path string true "Rule ID"
+// @Success 200 {object} map[string]interface{} "Deletion confirmation"
+// @Failure 404 {object} map[string]interface{} "Rule not found"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Router /api/v1/enterprise/alerts/rules/{id} [delete]
 func (h *AlertsHandler) DeleteAlertRule(c *fiber.Ctx) error {
 	id := c.Params("id")
 

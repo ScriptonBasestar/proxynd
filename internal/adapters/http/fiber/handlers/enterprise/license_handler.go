@@ -13,7 +13,15 @@ func NewLicenseHandler() *LicenseHandler {
 	return &LicenseHandler{}
 }
 
-// GetLicenseInfo handles GET /api/v1/enterprise/license/info
+// GetLicenseInfo godoc
+// @Summary Get license information
+// @Description Get detailed information about the current enterprise license
+// @Tags License
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]interface{} "License information"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Router /api/v1/enterprise/license/info [get]
 func (h *LicenseHandler) GetLicenseInfo(c *fiber.Ctx) error {
 	info := fiber.Map{
 		"license_type":    "enterprise",
@@ -45,7 +53,17 @@ func (h *LicenseHandler) GetLicenseInfo(c *fiber.Ctx) error {
 	})
 }
 
-// ValidateLicense handles POST /api/v1/enterprise/license/validate
+// ValidateLicense godoc
+// @Summary Validate license key
+// @Description Validate and activate a license key
+// @Tags License
+// @Accept json
+// @Produce json
+// @Param license body object{license_key=string} true "License key to validate"
+// @Success 200 {object} map[string]interface{} "Validation result"
+// @Failure 400 {object} map[string]interface{} "Invalid license key"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Router /api/v1/enterprise/license/validate [post]
 func (h *LicenseHandler) ValidateLicense(c *fiber.Ctx) error {
 	var req struct {
 		LicenseKey string `json:"license_key"`
@@ -82,7 +100,15 @@ func (h *LicenseHandler) ValidateLicense(c *fiber.Ctx) error {
 	})
 }
 
-// ListFeatures handles GET /api/v1/enterprise/license/features
+// ListFeatures godoc
+// @Summary List available features
+// @Description Get a list of all available enterprise features and their enablement status
+// @Tags License
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]interface{} "Feature list with enablement status"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Router /api/v1/enterprise/license/features [get]
 func (h *LicenseHandler) ListFeatures(c *fiber.Ctx) error {
 	features := []fiber.Map{
 		{
@@ -132,7 +158,15 @@ func (h *LicenseHandler) ListFeatures(c *fiber.Ctx) error {
 	})
 }
 
-// GetUsageMetrics handles GET /api/v1/enterprise/license/usage
+// GetUsageMetrics godoc
+// @Summary Get license usage metrics
+// @Description Get current license usage metrics and limits
+// @Tags License
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]interface{} "License usage metrics"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Router /api/v1/enterprise/license/usage [get]
 func (h *LicenseHandler) GetUsageMetrics(c *fiber.Ctx) error {
 	usage := fiber.Map{
 		"license_type":    "enterprise",
