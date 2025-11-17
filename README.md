@@ -1111,11 +1111,38 @@ Enterprise API endpoints require a valid enterprise license:
 # Run contract tests
 go test -tags=contract ./tests/contract/enterprise_api_test.go
 
+# Generate Swagger documentation
+make swagger
+
 # View API documentation
 cat tmp/plan/README.md
 ```
 
-For complete API documentation, see `tmp/plan/README.md` (auto-generated in dev mode).
+### Swagger/OpenAPI Documentation
+
+ProxyND provides interactive API documentation via Swagger UI:
+
+```bash
+# Generate Swagger documentation from code annotations
+make swagger
+
+# Start the server
+make dev-run
+
+# Access Swagger UI (interactive API explorer)
+open http://localhost:8080/swagger/index.html
+```
+
+The Swagger documentation includes:
+- All 47 enterprise endpoints with request/response schemas
+- Interactive API testing directly from the browser
+- Authentication configuration
+- Example requests and responses
+- Complete parameter documentation
+
+**WebUI Integration Guide**: See `docs/enterprise/WEBUI_INTEGRATION.md` for complete TypeScript/React integration examples.
+
+**API Documentation**: See `tmp/plan/README.md` for detailed endpoint documentation (auto-generated in dev mode).
 
 ---
 

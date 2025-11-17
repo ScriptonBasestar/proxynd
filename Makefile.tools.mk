@@ -88,7 +88,7 @@ pre-commit-update: ## update pre-commit hooks
 # Documentation Tools
 # ==============================================================================
 
-.PHONY: docs docs-generate docs-serve
+.PHONY: docs docs-generate docs-serve swagger swagger-install swagger-init swagger-validate
 
 docs: docs-generate docs-serve ## generate and serve documentation
 
@@ -100,6 +100,24 @@ docs-generate: ## generate go documentation
 docs-serve: ## serve documentation locally
 	@echo "Starting documentation server..."
 	godoc -http=:6060
+
+swagger-install: ## install swagger code generator (swag)
+	@echo "Installing swag..."
+	@which swag > /dev/null || go install github.com/swaggo/swag/cmd/swag@latest
+	@echo "✅ swag installed!"
+
+swagger-init: swagger-install ## generate swagger documentation from annotations
+	@echo "Generating Swagger documentation..."
+	@swag init -g main.go -o ./docs --parseDependency --parseInternal
+	@echo "✅ Swagger documentation generated at ./docs"
+	@echo "   View at http://localhost:8080/swagger/index.html when server is running"
+
+swagger-validate: ## validate swagger documentation
+	@echo "Validating Swagger documentation..."
+	@swag init -g main.go -o ./docs --parseDependency --parseInternal
+	@echo "✅ Swagger documentation is valid!"
+
+swagger: swagger-init ## alias for swagger-init
 
 # ==============================================================================
 # Dependency Management

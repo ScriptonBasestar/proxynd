@@ -1,6 +1,51 @@
 // Package main provides the entry point for the ProxyND server.
 // ProxyND is a high-performance package manager proxy/mirror server
 // supporting multiple package managers including APT, Maven, NPM, and others.
+//
+// @title ProxyND API
+// @version 1.0
+// @description High-performance package manager proxy/mirror server supporting Maven, NPM, APT, Docker Registry, PyPI, YUM, and APK
+// @description
+// @description ProxyND provides caching, authentication, and enterprise features for package management.
+// @description Enterprise features include RBAC, audit logging, analytics, security scanning, and alerting.
+//
+// @contact.name ProxyND Support
+// @contact.url https://github.com/ScriptonBasestar/proxynd/issues
+// @contact.email support@proxynd.io
+//
+// @license.name AGPL-3.0
+// @license.url https://www.gnu.org/licenses/agpl-3.0.html
+//
+// @host localhost:8080
+// @BasePath /
+//
+// @schemes http https
+//
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Enter your license token in the format: Bearer {token}
+//
+// @tag.name Health
+// @tag.description Health check and system status endpoints
+//
+// @tag.name RBAC
+// @tag.description Role-Based Access Control - manage roles, permissions, and user assignments
+//
+// @tag.name Audit
+// @tag.description Audit logging and compliance reporting
+//
+// @tag.name Analytics
+// @tag.description Usage statistics, performance metrics, and custom reporting
+//
+// @tag.name Security
+// @tag.description Vulnerability scanning, license compliance, and malware detection
+//
+// @tag.name Alerts
+// @tag.description Alert management and notification rules
+//
+// @tag.name License
+// @tag.description Enterprise license management and feature validation
 package main
 
 import (
