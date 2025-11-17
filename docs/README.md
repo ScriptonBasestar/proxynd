@@ -25,6 +25,7 @@ ProxyND는 Go 1.23+ 기반의 고성능 멀티 패키지 매니저 프록시/미
 | 섹션 | 설명 | 대상 사용자 |
 |------|------|-------------|
 | **[00-overview](00-overview/)** | 프로젝트 개요 및 빠른 시작 | 신규 사용자, 관리자 |
+| **[04-api-reference](04-api-reference/)** | Enterprise API 참조 및 사용 예제 | API 사용자, 개발자 |
 | **[10-architecture](10-architecture/)** | 헥사고날 아키텍처 및 설계 | 개발자, 아키텍트 |
 | **[20-configuration](20-configuration/)** | 설정 및 환경 관리 | 시스템 관리자 |
 | **[30-proxy-types](30-proxy-types/)** | 패키지 매니저별 가이드 | 모든 사용자 |
@@ -52,6 +53,13 @@ ProxyND는 Go 1.23+ 기반의 고성능 멀티 패키지 매니저 프록시/미
 - **[기술 스택](80-reference/tech-stack.md)** - 전체 기술 스택 및 의존성
 - **[API 엔드포인트](80-reference/api-endpoints.md)** - REST API 참조
 - **[CLI 도구](80-reference/cli-tools/cli/proxyndctl-reference.md)** - proxyndctl 명령어 참조
+
+#### 🔌 Enterprise API
+- **[OpenAPI 스펙](api/enterprise-api-spec.yaml)** - OpenAPI 3.0 표준 API 명세 (47 엔드포인트)
+- **[사용 예제](04-api-reference/enterprise-api-examples.md)** - 97개 코드 예제 (curl + HTTPie)
+- **[Prometheus 메트릭](api/METRICS.md)** - 15+ 메트릭 및 PromQL 쿼리
+- **[부하 테스트](../scripts/loadtest/README.md)** - 성능 테스트 도구 및 시나리오
+- **[CI/CD 통합](deployment/ci-cd-load-testing.md)** - GitHub Actions 자동화
 
 ## 🔍 빠른 검색
 
