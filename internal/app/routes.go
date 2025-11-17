@@ -1,6 +1,7 @@
 package app
 
 import (
+	"os"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -8,6 +9,7 @@ import (
 	// Import new adapter structure
 	"proxynd/cache"
 	fiberHandlers "proxynd/internal/adapters/http/fiber/handlers"
+	enterpriseHandlers "proxynd/internal/adapters/http/fiber/handlers/enterprise"
 	fiberRouters "proxynd/internal/adapters/http/fiber/routers"
 	"proxynd/internal/config"
 
@@ -89,6 +91,9 @@ func setupNewArchitectureRoutes(app *fiber.App, config *RouteConfig) {
 	// Enterprise API routes (47 endpoints for RBAC, Audit, Analytics, Security)
 	logger.Info("Setting up Enterprise API routes")
 	fiberRouters.SetupEnterpriseRoutes(app)
+
+	// Load development fixtures if available (in dev mode)
+	loadEnterpriseFixtures(logger)
 
 	// Metrics routes
 	logger.Info("Setting up metrics routes")
@@ -234,4 +239,32 @@ func setupCacheManagerForAPI(config *RouteConfig, logger logging.Logger) {
 	logger.Info("Cache manager initialized for API v1 stats",
 		logging.F("backend", "filesystem"),
 		logging.F("storage_dir", storageDir))
+}
+
+// loadEnterpriseFixtures loads development fixtures for enterprise API
+func loadEnterpriseFixtures(logger logging.Logger) {
+	// Only load in development mode
+	if os.Getenv("GO_ENV") == "production" {
+		return
+	}
+
+	fixturesDir := "./tmp/fixtures"
+	if _, err := os.Stat(fixturesDir); os.IsNotExist(err) {
+		logger.Debug("Enterprise fixtures directory not found, skipping",
+			logging.F("dir", fixturesDir))
+		return
+	}
+
+	logger.Info("Loading enterprise development fixtures",
+		logging.F("dir", fixturesDir))
+
+	// Fixture loading is best-effort in dev mode
+	// Failures are logged but don't stop the server
+	loader := enterpriseHandlers.NewFixtureLoader(fixturesDir, logger)
+	if loader.IsAvailable() {
+		if err := loader.LoadAll(); err != nil {
+			logger.Warn("Failed to load some enterprise fixtures",
+				logging.F("error", err))
+		}
+	}
 }
