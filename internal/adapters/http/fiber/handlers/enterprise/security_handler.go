@@ -16,7 +16,18 @@ func NewSecurityHandler() *SecurityHandler {
 	return &SecurityHandler{}
 }
 
-// ListVulnerabilities handles GET /api/v1/enterprise/security/vulnerabilities
+// ListVulnerabilities godoc
+// @Summary List vulnerabilities
+// @Description Get a paginated list of detected vulnerabilities
+// @Tags Security
+// @Accept json
+// @Produce json
+// @Param page query int false "Page number" default(1)
+// @Param per_page query int false "Items per page" default(20)
+// @Param severity query string false "Filter by severity (critical, high, medium, low)"
+// @Success 200 {object} map[string]interface{} "Paginated list of vulnerabilities"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Router /api/v1/enterprise/security/vulnerabilities [get]
 func (h *SecurityHandler) ListVulnerabilities(c *fiber.Ctx) error {
 	page, _ := strconv.Atoi(c.Query("page", "1"))
 	perPage, _ := strconv.Atoi(c.Query("per_page", "20"))
@@ -49,7 +60,17 @@ func (h *SecurityHandler) ListVulnerabilities(c *fiber.Ctx) error {
 	})
 }
 
-// GetVulnerability handles GET /api/v1/enterprise/security/vulnerabilities/:id
+// GetVulnerability godoc
+// @Summary Get vulnerability details
+// @Description Get detailed information about a specific vulnerability
+// @Tags Security
+// @Accept json
+// @Produce json
+// @Param id path string true "Vulnerability ID"
+// @Success 200 {object} map[string]interface{} "Vulnerability details"
+// @Failure 404 {object} map[string]interface{} "Vulnerability not found"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Router /api/v1/enterprise/security/vulnerabilities/{id} [get]
 func (h *SecurityHandler) GetVulnerability(c *fiber.Ctx) error {
 	id := c.Params("id")
 
@@ -76,7 +97,17 @@ func (h *SecurityHandler) GetVulnerability(c *fiber.Ctx) error {
 	})
 }
 
-// TriggerScan handles POST /api/v1/enterprise/security/scan
+// TriggerScan godoc
+// @Summary Trigger security scan
+// @Description Trigger a manual security vulnerability scan
+// @Tags Security
+// @Accept json
+// @Produce json
+// @Param scan body object{scope=string,package_manager=string} true "Scan request"
+// @Success 202 {object} map[string]interface{} "Scan job created"
+// @Failure 400 {object} map[string]interface{} "Invalid request"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Router /api/v1/enterprise/security/scan [post]
 func (h *SecurityHandler) TriggerScan(c *fiber.Ctx) error {
 	var req enterprise.ScanRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -108,7 +139,17 @@ func (h *SecurityHandler) TriggerScan(c *fiber.Ctx) error {
 	})
 }
 
-// GetScanJob handles GET /api/v1/enterprise/security/scan/:jobId
+// GetScanJob godoc
+// @Summary Get scan job status
+// @Description Get the status and results of a security scan job
+// @Tags Security
+// @Accept json
+// @Produce json
+// @Param jobId path string true "Scan job ID"
+// @Success 200 {object} map[string]interface{} "Scan job status and results"
+// @Failure 404 {object} map[string]interface{} "Job not found"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Router /api/v1/enterprise/security/scan/{jobId} [get]
 func (h *SecurityHandler) GetScanJob(c *fiber.Ctx) error {
 	jobID := c.Params("jobId")
 
@@ -133,7 +174,17 @@ func (h *SecurityHandler) GetScanJob(c *fiber.Ctx) error {
 	})
 }
 
-// ListLicenses handles GET /api/v1/enterprise/security/licenses
+// ListLicenses godoc
+// @Summary List detected licenses
+// @Description Get a paginated list of detected package licenses
+// @Tags Security
+// @Accept json
+// @Produce json
+// @Param page query int false "Page number" default(1)
+// @Param per_page query int false "Items per page" default(20)
+// @Success 200 {object} map[string]interface{} "Paginated list of licenses"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Router /api/v1/enterprise/security/licenses [get]
 func (h *SecurityHandler) ListLicenses(c *fiber.Ctx) error {
 	page, _ := strconv.Atoi(c.Query("page", "1"))
 	perPage, _ := strconv.Atoi(c.Query("per_page", "20"))
@@ -153,7 +204,17 @@ func (h *SecurityHandler) ListLicenses(c *fiber.Ctx) error {
 	})
 }
 
-// ListLicenseViolations handles GET /api/v1/enterprise/security/licenses/violations
+// ListLicenseViolations godoc
+// @Summary List license violations
+// @Description Get a paginated list of license policy violations
+// @Tags Security
+// @Accept json
+// @Produce json
+// @Param page query int false "Page number" default(1)
+// @Param per_page query int false "Items per page" default(20)
+// @Success 200 {object} map[string]interface{} "Paginated list of violations"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Router /api/v1/enterprise/security/licenses/violations [get]
 func (h *SecurityHandler) ListLicenseViolations(c *fiber.Ctx) error {
 	page, _ := strconv.Atoi(c.Query("page", "1"))
 	perPage, _ := strconv.Atoi(c.Query("per_page", "20"))
@@ -173,7 +234,17 @@ func (h *SecurityHandler) ListLicenseViolations(c *fiber.Ctx) error {
 	})
 }
 
-// ListMalwareAlerts handles GET /api/v1/enterprise/security/malware/alerts
+// ListMalwareAlerts godoc
+// @Summary List malware alerts
+// @Description Get a paginated list of malware detection alerts
+// @Tags Security
+// @Accept json
+// @Produce json
+// @Param page query int false "Page number" default(1)
+// @Param per_page query int false "Items per page" default(20)
+// @Success 200 {object} map[string]interface{} "Paginated list of malware alerts"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Router /api/v1/enterprise/security/malware/alerts [get]
 func (h *SecurityHandler) ListMalwareAlerts(c *fiber.Ctx) error {
 	page, _ := strconv.Atoi(c.Query("page", "1"))
 	perPage, _ := strconv.Atoi(c.Query("per_page", "20"))
@@ -193,7 +264,17 @@ func (h *SecurityHandler) ListMalwareAlerts(c *fiber.Ctx) error {
 	})
 }
 
-// ListQuarantinedPackages handles GET /api/v1/enterprise/security/malware/quarantine
+// ListQuarantinedPackages godoc
+// @Summary List quarantined packages
+// @Description Get a paginated list of packages in quarantine
+// @Tags Security
+// @Accept json
+// @Produce json
+// @Param page query int false "Page number" default(1)
+// @Param per_page query int false "Items per page" default(20)
+// @Success 200 {object} map[string]interface{} "Paginated list of quarantined packages"
+// @Failure 402 {object} map[string]interface{} "Enterprise license required"
+// @Router /api/v1/enterprise/security/malware/quarantine [get]
 func (h *SecurityHandler) ListQuarantinedPackages(c *fiber.Ctx) error {
 	page, _ := strconv.Atoi(c.Query("page", "1"))
 	perPage, _ := strconv.Atoi(c.Query("per_page", "20"))
