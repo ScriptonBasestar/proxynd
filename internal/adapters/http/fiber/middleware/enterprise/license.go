@@ -3,17 +3,22 @@ package enterprise
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"proxynd/internal/app"
 	"proxynd/internal/enterprise/license"
 )
 
+// EnterpriseFeatures interface defines methods for enterprise feature checking
+type EnterpriseFeatures interface {
+	IsEnabled() bool
+	HasFeature(feature string) bool
+}
+
 // LicenseMiddleware validates enterprise license for protected routes
 type LicenseMiddleware struct {
-	features *app.EnterpriseFeatures
+	features EnterpriseFeatures
 }
 
 // NewLicenseMiddleware creates a new license validation middleware
-func NewLicenseMiddleware(features *app.EnterpriseFeatures) *LicenseMiddleware {
+func NewLicenseMiddleware(features EnterpriseFeatures) *LicenseMiddleware {
 	return &LicenseMiddleware{
 		features: features,
 	}
@@ -107,28 +112,23 @@ func (m *LicenseMiddleware) SkipInDevelopment(handler fiber.Handler) fiber.Handl
 // NewDevModeLicenseMiddleware creates a license middleware that skips validation in dev mode
 // This is useful for local development and testing
 func NewDevModeLicenseMiddleware() *LicenseMiddleware {
-	// In dev mode, create a mock enterprise features instance
-	// that always returns true for license checks
+	// In dev mode, return middleware with nil features
+	// which will allow all requests to pass through
 	return &LicenseMiddleware{
-		features: newMockEnterpriseFeatures(),
+		features: &mockEnterpriseFeatures{},
 	}
 }
 
 // mockEnterpriseFeatures is a mock implementation for development
+// that always returns true for all feature checks
 type mockEnterpriseFeatures struct{}
 
-func newMockEnterpriseFeatures() *app.EnterpriseFeatures {
-	// This will be replaced with actual instance in production
-	// For now, we return nil to indicate dev mode
-	return nil
+func (m *mockEnterpriseFeatures) IsEnabled() bool {
+	return true
 }
 
-// NewProductionLicenseMiddleware creates a license middleware for production
-func NewProductionLicenseMiddleware(configDir string) *LicenseMiddleware {
-	features := app.InitEnterpriseFeatures(configDir)
-	return &LicenseMiddleware{
-		features: features,
-	}
+func (m *mockEnterpriseFeatures) HasFeature(feature string) bool {
+	return true
 }
 
 // FeatureMap returns a map of feature IDs to their enabled status

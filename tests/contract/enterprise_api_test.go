@@ -20,7 +20,7 @@ import (
 // This ensures API stability before WebUI integration work begins
 func TestEnterpriseAPIContract(t *testing.T) {
 	app := fiber.New()
-	routers.SetupEnterpriseRoutes(app)
+	routers.SetupEnterpriseRoutes(app, nil) // nil = dev mode, no license check
 
 	tests := []struct {
 		name           string

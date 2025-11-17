@@ -1,8 +1,6 @@
 package routers
 
 import (
-	"os"
-
 	"github.com/gofiber/fiber/v2"
 	"proxynd/internal/adapters/http/fiber/handlers/enterprise"
 	enterpriseMiddleware "proxynd/internal/adapters/http/fiber/middleware/enterprise"
@@ -10,7 +8,8 @@ import (
 
 // SetupEnterpriseRoutes sets up all enterprise API routes
 // All enterprise routes require valid enterprise license validation
-func SetupEnterpriseRoutes(app *fiber.App) {
+// enterpriseFeatures parameter can be nil in development mode
+func SetupEnterpriseRoutes(app *fiber.App, enterpriseFeatures enterpriseMiddleware.EnterpriseFeatures) {
 	// Create handlers
 	rbacHandler := enterprise.NewRBACHandler()
 	auditHandler := enterprise.NewAuditHandler()
@@ -22,18 +21,16 @@ func SetupEnterpriseRoutes(app *fiber.App) {
 	// Enterprise API group
 	api := app.Group("/api/v1/enterprise")
 
-	// License validation middleware (skipped in development mode)
-	if os.Getenv("GO_ENV") != "production" {
-		// Development mode: use dev middleware (always allows access)
+	// License validation middleware
+	// enterpriseFeatures is passed from app initialization
+	// In development mode, it will be a mock that allows all access
+	if enterpriseFeatures == nil {
+		// If nil, use dev mode middleware (always allows access)
 		licMw := enterpriseMiddleware.NewDevModeLicenseMiddleware()
 		api.Use(licMw.RequireEnterprise())
 	} else {
 		// Production mode: require valid enterprise license
-		configDir := os.Getenv("CONFIG_DIR")
-		if configDir == "" {
-			configDir = "./config"
-		}
-		licMw := enterpriseMiddleware.NewProductionLicenseMiddleware(configDir)
+		licMw := enterpriseMiddleware.NewLicenseMiddleware(enterpriseFeatures)
 		api.Use(licMw.RequireEnterprise())
 	}
 

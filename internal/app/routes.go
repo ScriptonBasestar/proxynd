@@ -94,7 +94,13 @@ func setupNewArchitectureRoutes(app *fiber.App, config *RouteConfig) {
 
 	// Enterprise API routes (47 endpoints for RBAC, Audit, Analytics, Security)
 	logger.Info("Setting up Enterprise API routes")
-	fiberRouters.SetupEnterpriseRoutes(app)
+	// Initialize enterprise features for license validation
+	configDir := os.Getenv("CONFIG_DIR")
+	if configDir == "" {
+		configDir = "./tmp/config"
+	}
+	enterpriseFeatures := InitEnterpriseFeatures(configDir)
+	fiberRouters.SetupEnterpriseRoutes(app, enterpriseFeatures)
 
 	// Load development fixtures if available (in dev mode)
 	loadEnterpriseFixtures(logger)

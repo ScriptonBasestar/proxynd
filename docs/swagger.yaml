@@ -1,0 +1,1650 @@
+basePath: /
+definitions:
+  enterprise.RoleRequest:
+    properties:
+      description:
+        maxLength: 500
+        type: string
+      name:
+        maxLength: 50
+        minLength: 3
+        type: string
+      permissions:
+        items:
+          type: string
+        minItems: 1
+        type: array
+    required:
+    - name
+    - permissions
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@proxynd.io
+    name: ProxyND Support
+    url: https://github.com/ScriptonBasestar/proxynd/issues
+  description: |-
+    High-performance package manager proxy/mirror server supporting Maven, NPM, APT, Docker Registry, PyPI, YUM, and APK
+
+    ProxyND provides caching, authentication, and enterprise features for package management.
+    Enterprise features include RBAC, audit logging, analytics, security scanning, and alerting.
+  license:
+    name: AGPL-3.0
+    url: https://www.gnu.org/licenses/agpl-3.0.html
+  title: ProxyND API
+  version: "1.0"
+paths:
+  /api/v1/enterprise/alerts:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of alerts with optional status and severity
+        filtering
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Items per page
+        in: query
+        name: per_page
+        type: integer
+      - description: Filter by status (active, acknowledged, resolved)
+        in: query
+        name: status
+        type: string
+      - description: Filter by severity (critical, warning, info)
+        in: query
+        name: severity
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Paginated list of alerts
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List active alerts
+      tags:
+      - Alerts
+  /api/v1/enterprise/alerts/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get detailed information about a specific alert
+      parameters:
+      - description: Alert ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Alert details
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Alert not found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get alert details
+      tags:
+      - Alerts
+  /api/v1/enterprise/alerts/rules:
+    post:
+      consumes:
+      - application/json
+      description: Create a new alert notification rule
+      parameters:
+      - description: Alert rule
+        in: body
+        name: rule
+        required: true
+        schema:
+          properties:
+            actions:
+              type: array
+            condition:
+              type: object
+            name:
+              type: string
+            type:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created alert rule
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Create alert rule
+      tags:
+      - Alerts
+  /api/v1/enterprise/alerts/rules/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an alert notification rule
+      parameters:
+      - description: Rule ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Deletion confirmation
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Rule not found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Delete alert rule
+      tags:
+      - Alerts
+    put:
+      consumes:
+      - application/json
+      description: Update an existing alert rule
+      parameters:
+      - description: Rule ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Rule updates
+        in: body
+        name: rule
+        required: true
+        schema:
+          properties:
+            actions:
+              type: array
+            condition:
+              type: object
+            enabled:
+              type: boolean
+            name:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated alert rule
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Rule not found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Update alert rule
+      tags:
+      - Alerts
+  /api/v1/enterprise/analytics/cache-efficiency:
+    get:
+      consumes:
+      - application/json
+      description: Get cache hit rates, bandwidth savings, and efficiency statistics
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Cache efficiency metrics
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get cache efficiency metrics
+      tags:
+      - Analytics
+  /api/v1/enterprise/analytics/costs:
+    get:
+      consumes:
+      - application/json
+      description: Get bandwidth cost breakdown and savings analysis
+      parameters:
+      - default: 30d
+        description: Analysis period (30d, 90d, 1y)
+        in: query
+        name: period
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Cost analysis
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get cost analysis
+      tags:
+      - Analytics
+  /api/v1/enterprise/analytics/overview:
+    get:
+      consumes:
+      - application/json
+      description: Get dashboard overview with key metrics and statistics
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Dashboard overview with metrics
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get analytics overview
+      tags:
+      - Analytics
+  /api/v1/enterprise/analytics/performance:
+    get:
+      consumes:
+      - application/json
+      description: Get detailed performance metrics including response times and percentiles
+      parameters:
+      - default: 24h
+        description: Time period (1h, 24h, 7d)
+        in: query
+        name: period
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Performance metrics
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get performance metrics
+      tags:
+      - Analytics
+  /api/v1/enterprise/analytics/reports:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of saved analytics reports
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Items per page
+        in: query
+        name: per_page
+        type: integer
+      - description: Report type filter
+        in: query
+        name: type
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Paginated list of reports
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List saved reports
+      tags:
+      - Analytics
+    post:
+      consumes:
+      - application/json
+      description: Create a new custom analytics report
+      parameters:
+      - description: Report creation request
+        in: body
+        name: report
+        required: true
+        schema:
+          properties:
+            name:
+              type: string
+            parameters:
+              type: object
+            type:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created report
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Create custom report
+      tags:
+      - Analytics
+  /api/v1/enterprise/analytics/reports/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a saved analytics report
+      parameters:
+      - description: Report ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Deletion confirmation
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Report not found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Delete report
+      tags:
+      - Analytics
+    get:
+      consumes:
+      - application/json
+      description: Get the data for a specific saved report
+      parameters:
+      - description: Report ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Report data
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Report not found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get report data
+      tags:
+      - Analytics
+  /api/v1/enterprise/analytics/trends:
+    get:
+      consumes:
+      - application/json
+      description: Get trend analysis for requests, bandwidth, and performance
+      parameters:
+      - description: Metric to analyze (requests, bandwidth, latency)
+        in: query
+        name: metric
+        type: string
+      - default: 30d
+        description: Period for analysis (7d, 30d, 90d)
+        in: query
+        name: period
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Trend analysis
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get trend analysis
+      tags:
+      - Analytics
+  /api/v1/enterprise/analytics/usage:
+    get:
+      consumes:
+      - application/json
+      description: Get detailed usage statistics broken down by package manager
+      parameters:
+      - default: 30d
+        description: Time period (7d, 30d, 90d)
+        in: query
+        name: period
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Usage statistics
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get usage statistics
+      tags:
+      - Analytics
+  /api/v1/enterprise/audit/compliance/report:
+    get:
+      consumes:
+      - application/json
+      description: Generate a compliance report from audit data
+      parameters:
+      - description: Report start date (ISO 8601)
+        in: query
+        name: start_date
+        type: string
+      - description: Report end date (ISO 8601)
+        in: query
+        name: end_date
+        type: string
+      - description: Compliance framework (SOC2, ISO27001, etc.)
+        in: query
+        name: compliance_framework
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Compliance report
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get compliance report
+      tags:
+      - Audit
+  /api/v1/enterprise/audit/events:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of audit events with optional filtering
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        minimum: 1
+        name: page
+        type: integer
+      - default: 20
+        description: Items per page
+        in: query
+        maximum: 100
+        minimum: 1
+        name: per_page
+        type: integer
+      - description: Filter by user ID
+        in: query
+        name: user_id
+        type: string
+      - description: Filter by action type
+        in: query
+        name: action
+        type: string
+      - description: Filter by resource type
+        in: query
+        name: resource_type
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Paginated list of audit events
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List audit events
+      tags:
+      - Audit
+  /api/v1/enterprise/audit/events/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get detailed information about a specific audit event
+      parameters:
+      - description: Event ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Audit event details
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Event not found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get audit event details
+      tags:
+      - Audit
+  /api/v1/enterprise/audit/events/search:
+    get:
+      consumes:
+      - application/json
+      description: Advanced search across audit events using query string
+      parameters:
+      - description: Search query
+        in: query
+        name: q
+        required: true
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Items per page
+        in: query
+        name: per_page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Paginated search results
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid search query
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Search audit events
+      tags:
+      - Audit
+  /api/v1/enterprise/audit/export:
+    post:
+      consumes:
+      - application/json
+      description: Export audit events in various formats (CSV, JSON)
+      parameters:
+      - description: Export request
+        in: body
+        name: export
+        required: true
+        schema:
+          properties:
+            end_date:
+              type: string
+            format:
+              type: string
+            start_date:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Export job created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid export request
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Export audit logs
+      tags:
+      - Audit
+  /api/v1/enterprise/audit/resources/{resourceType}/{resourceId}:
+    get:
+      consumes:
+      - application/json
+      description: Get all audit events for a specific resource
+      parameters:
+      - description: Resource type (e.g., role, user, config)
+        in: path
+        name: resourceType
+        required: true
+        type: string
+      - description: Resource ID
+        in: path
+        name: resourceId
+        required: true
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Items per page
+        in: query
+        name: per_page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Paginated resource audit events
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Resource not found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get resource audit history
+      tags:
+      - Audit
+  /api/v1/enterprise/audit/stats:
+    get:
+      consumes:
+      - application/json
+      description: Get statistical summary of audit events
+      parameters:
+      - description: Start date (ISO 8601)
+        in: query
+        name: start_date
+        type: string
+      - description: End date (ISO 8601)
+        in: query
+        name: end_date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Audit statistics
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get audit statistics
+      tags:
+      - Audit
+  /api/v1/enterprise/audit/users/{userId}/events:
+    get:
+      consumes:
+      - application/json
+      description: Get all audit events for a specific user
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Items per page
+        in: query
+        name: per_page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Paginated user audit events
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: User not found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get user's audit trail
+      tags:
+      - Audit
+  /api/v1/enterprise/license/features:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all available enterprise features and their enablement
+        status
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Feature list with enablement status
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List available features
+      tags:
+      - License
+  /api/v1/enterprise/license/info:
+    get:
+      consumes:
+      - application/json
+      description: Get detailed information about the current enterprise license
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: License information
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get license information
+      tags:
+      - License
+  /api/v1/enterprise/license/usage:
+    get:
+      consumes:
+      - application/json
+      description: Get current license usage metrics and limits
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: License usage metrics
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get license usage metrics
+      tags:
+      - License
+  /api/v1/enterprise/license/validate:
+    post:
+      consumes:
+      - application/json
+      description: Validate and activate a license key
+      parameters:
+      - description: License key to validate
+        in: body
+        name: license
+        required: true
+        schema:
+          properties:
+            license_key:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Validation result
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid license key
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Validate license key
+      tags:
+      - License
+  /api/v1/enterprise/rbac/permissions:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all available system permissions
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of available permissions
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List all permissions
+      tags:
+      - RBAC
+  /api/v1/enterprise/rbac/roles:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of all roles in the RBAC system
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        minimum: 1
+        name: page
+        type: integer
+      - default: 20
+        description: Items per page
+        in: query
+        maximum: 100
+        minimum: 1
+        name: per_page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Paginated list of roles with metadata
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List all roles
+      tags:
+      - RBAC
+    post:
+      consumes:
+      - application/json
+      description: Create a new role with specified permissions
+      parameters:
+      - description: Role creation request
+        in: body
+        name: role
+        required: true
+        schema:
+          $ref: '#/definitions/enterprise.RoleRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created role
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Create a new role
+      tags:
+      - RBAC
+  /api/v1/enterprise/rbac/roles/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a role from the system
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Deletion confirmation
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Role not found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Delete role
+      tags:
+      - RBAC
+    get:
+      consumes:
+      - application/json
+      description: Get detailed information about a specific role by ID
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Role details
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Role not found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get role details
+      tags:
+      - RBAC
+    put:
+      consumes:
+      - application/json
+      description: Update an existing role's name, description, or permissions
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Role update request
+        in: body
+        name: role
+        required: true
+        schema:
+          $ref: '#/definitions/enterprise.RoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated role
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Role not found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Update role
+      tags:
+      - RBAC
+  /api/v1/enterprise/rbac/roles/{id}/permissions:
+    get:
+      consumes:
+      - application/json
+      description: Get the list of permissions assigned to a specific role
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of role permissions
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Role not found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get role permissions
+      tags:
+      - RBAC
+    post:
+      consumes:
+      - application/json
+      description: Assign a list of permissions to a specific role
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Permissions to assign
+        in: body
+        name: permissions
+        required: true
+        schema:
+          properties:
+            permissions:
+              items:
+                type: string
+              type: array
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated permissions
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Role not found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Assign permissions to role
+      tags:
+      - RBAC
+  /api/v1/enterprise/rbac/roles/{id}/permissions/{permission}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove a specific permission from a role
+      parameters:
+      - description: Role ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Permission ID to revoke
+        in: path
+        name: permission
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Revocation confirmation
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Role or permission not found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Revoke permission from role
+      tags:
+      - RBAC
+  /api/v1/enterprise/rbac/users/{userId}/roles:
+    get:
+      consumes:
+      - application/json
+      description: Get all roles assigned to a specific user
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User's roles
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: User not found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get user's roles
+      tags:
+      - RBAC
+    post:
+      consumes:
+      - application/json
+      description: Assign a role to a specific user
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        type: string
+      - description: Role assignment request
+        in: body
+        name: role
+        required: true
+        schema:
+          properties:
+            role_id:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Assignment confirmation
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: User or role not found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Assign role to user
+      tags:
+      - RBAC
+  /api/v1/enterprise/rbac/users/{userId}/roles/{roleId}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove a role assignment from a user
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        type: string
+      - description: Role ID
+        in: path
+        name: roleId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Removal confirmation
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: User or role not found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Remove role from user
+      tags:
+      - RBAC
+  /api/v1/enterprise/security/licenses:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of detected package licenses
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Items per page
+        in: query
+        name: per_page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Paginated list of licenses
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List detected licenses
+      tags:
+      - Security
+  /api/v1/enterprise/security/licenses/violations:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of license policy violations
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Items per page
+        in: query
+        name: per_page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Paginated list of violations
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List license violations
+      tags:
+      - Security
+  /api/v1/enterprise/security/malware/alerts:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of malware detection alerts
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Items per page
+        in: query
+        name: per_page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Paginated list of malware alerts
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List malware alerts
+      tags:
+      - Security
+  /api/v1/enterprise/security/malware/quarantine:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of packages in quarantine
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Items per page
+        in: query
+        name: per_page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Paginated list of quarantined packages
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List quarantined packages
+      tags:
+      - Security
+  /api/v1/enterprise/security/scan:
+    post:
+      consumes:
+      - application/json
+      description: Trigger a manual security vulnerability scan
+      parameters:
+      - description: Scan request
+        in: body
+        name: scan
+        required: true
+        schema:
+          properties:
+            package_manager:
+              type: string
+            scope:
+              type: string
+          type: object
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Scan job created
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Trigger security scan
+      tags:
+      - Security
+  /api/v1/enterprise/security/scan/{jobId}:
+    get:
+      consumes:
+      - application/json
+      description: Get the status and results of a security scan job
+      parameters:
+      - description: Scan job ID
+        in: path
+        name: jobId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Scan job status and results
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Job not found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get scan job status
+      tags:
+      - Security
+  /api/v1/enterprise/security/vulnerabilities:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of detected vulnerabilities
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Items per page
+        in: query
+        name: per_page
+        type: integer
+      - description: Filter by severity (critical, high, medium, low)
+        in: query
+        name: severity
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Paginated list of vulnerabilities
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List vulnerabilities
+      tags:
+      - Security
+  /api/v1/enterprise/security/vulnerabilities/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get detailed information about a specific vulnerability
+      parameters:
+      - description: Vulnerability ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Vulnerability details
+          schema:
+            additionalProperties: true
+            type: object
+        "402":
+          description: Enterprise license required
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Vulnerability not found
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get vulnerability details
+      tags:
+      - Security
+schemes:
+- http
+- https
+securityDefinitions:
+  BearerAuth:
+    description: 'Enter your license token in the format: Bearer {token}'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
