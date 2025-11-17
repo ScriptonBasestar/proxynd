@@ -1,8 +1,11 @@
 package routers
 
 import (
+	"os"
+
 	"github.com/gofiber/fiber/v2"
 	"proxynd/internal/adapters/http/fiber/handlers/enterprise"
+	enterpriseMiddleware "proxynd/internal/adapters/http/fiber/middleware/enterprise"
 )
 
 // SetupEnterpriseRoutes sets up all enterprise API routes
@@ -19,8 +22,20 @@ func SetupEnterpriseRoutes(app *fiber.App) {
 	// Enterprise API group
 	api := app.Group("/api/v1/enterprise")
 
-	// TODO: Add license validation middleware here
-	// api.Use(RequireEnterpriseLicense())
+	// License validation middleware (skipped in development mode)
+	if os.Getenv("GO_ENV") != "production" {
+		// Development mode: use dev middleware (always allows access)
+		licMw := enterpriseMiddleware.NewDevModeLicenseMiddleware()
+		api.Use(licMw.RequireEnterprise())
+	} else {
+		// Production mode: require valid enterprise license
+		configDir := os.Getenv("CONFIG_DIR")
+		if configDir == "" {
+			configDir = "./config"
+		}
+		licMw := enterpriseMiddleware.NewProductionLicenseMiddleware(configDir)
+		api.Use(licMw.RequireEnterprise())
+	}
 
 	// RBAC Routes (12 endpoints)
 	setupRBACRoutes(api, rbacHandler)
