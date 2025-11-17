@@ -177,6 +177,48 @@ verify-api-verbose: ## verify API endpoints with verbose output
 	@./scripts/verify-api-endpoints.sh http://localhost:8080 --verbose
 
 # ==============================================================================
+# Enterprise API Testing Targets
+# ==============================================================================
+
+.PHONY: test-enterprise-integration test-enterprise-rbac test-enterprise-audit
+.PHONY: test-enterprise-analytics test-enterprise-security test-enterprise-all
+
+test-enterprise-integration: ## run all enterprise API integration tests (47 endpoints)
+	@echo "$(YELLOW)🏢 Running Enterprise API Integration Tests...$(RESET)"
+	@./tmp/scripts/test-webui-integration.sh all
+
+test-enterprise-rbac: ## test RBAC endpoints (12 endpoints)
+	@echo "$(YELLOW)🔐 Testing RBAC endpoints...$(RESET)"
+	@./tmp/scripts/test-webui-integration.sh rbac
+
+test-enterprise-audit: ## test Audit endpoints (8 endpoints)
+	@echo "$(YELLOW)📋 Testing Audit endpoints...$(RESET)"
+	@./tmp/scripts/test-webui-integration.sh audit
+
+test-enterprise-analytics: ## test Analytics endpoints (10 endpoints)
+	@echo "$(YELLOW)📊 Testing Analytics endpoints...$(RESET)"
+	@./tmp/scripts/test-webui-integration.sh analytics
+
+test-enterprise-security: ## test Security endpoints (8 endpoints)
+	@echo "$(YELLOW)🔒 Testing Security endpoints...$(RESET)"
+	@./tmp/scripts/test-webui-integration.sh security
+
+test-enterprise-alerts: ## test Alerts endpoints (5 endpoints)
+	@echo "$(YELLOW)🚨 Testing Alerts endpoints...$(RESET)"
+	@./tmp/scripts/test-webui-integration.sh alerts
+
+test-enterprise-license: ## test License endpoints (4 endpoints)
+	@echo "$(YELLOW)📜 Testing License endpoints...$(RESET)"
+	@./tmp/scripts/test-webui-integration.sh license
+
+test-enterprise-performance: ## test enterprise API performance (<500ms target)
+	@echo "$(YELLOW)⚡ Testing Enterprise API performance...$(RESET)"
+	@./tmp/scripts/test-webui-integration.sh performance
+
+test-enterprise-all: test-enterprise-integration test-enterprise-performance ## run all enterprise tests including performance
+	@echo "$(GREEN)✅ All enterprise API tests completed!$(RESET)"
+
+# ==============================================================================
 # Test Runner Targets
 # ==============================================================================
 

@@ -86,6 +86,10 @@ func setupNewArchitectureRoutes(app *fiber.App, config *RouteConfig) {
 	logger.Info("Setting up API v1 routes")
 	fiberRouters.SetupAPIv1Routes(app, config.UnifiedConfig)
 
+	// Enterprise API routes (47 endpoints for RBAC, Audit, Analytics, Security)
+	logger.Info("Setting up Enterprise API routes")
+	fiberRouters.SetupEnterpriseRoutes(app)
+
 	// Metrics routes
 	logger.Info("Setting up metrics routes")
 	routers.MetricsRouter(app, config.UnifiedConfig)
