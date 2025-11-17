@@ -108,7 +108,18 @@ func setupNewArchitectureRoutes(app *fiber.App, config *RouteConfig) {
 	// Swagger API documentation
 	logger.Info("Setting up Swagger API documentation")
 	app.Get("/swagger/*", fiberSwagger.WrapHandler)
-	logger.Info("Swagger UI available at /swagger/index.html")
+
+	// Alias /api/v1/docs to Swagger UI for better discoverability
+	app.Get("/api/v1/docs", func(c *fiber.Ctx) error {
+		return c.Redirect("/swagger/index.html", 301)
+	})
+	app.Get("/api/v1/docs/*", func(c *fiber.Ctx) error {
+		// Redirect /api/v1/docs/* to /swagger/*
+		path := c.Params("*")
+		return c.Redirect("/swagger/"+path, 301)
+	})
+
+	logger.Info("Swagger UI available at /swagger/index.html and /api/v1/docs")
 
 	// Metrics routes
 	logger.Info("Setting up metrics routes")
