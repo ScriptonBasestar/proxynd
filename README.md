@@ -1021,6 +1021,104 @@ module "proxynd" {
 
 ---
 
+## 🏢 Enterprise API
+
+ProxyND provides a comprehensive REST API for enterprise features including RBAC, audit logging, analytics, and security scanning.
+
+### Available Endpoints (47 Total)
+
+| Category | Endpoints | Description |
+|----------|-----------|-------------|
+| **RBAC** | 12 | Role-based access control, permissions, user assignments |
+| **Audit** | 8 | Event logging, compliance reports, audit trail export |
+| **Analytics** | 10 | Usage stats, performance metrics, cost analysis |
+| **Security** | 8 | Vulnerability scanning, license compliance, malware detection |
+| **Alerts** | 5 | Alert management and notification rules |
+| **License** | 4 | License validation and feature management |
+
+### Quick Start
+
+```bash
+# Start development server
+make dev-run
+
+# Test all enterprise endpoints
+make test-enterprise-integration
+
+# Test specific categories
+make test-enterprise-rbac
+make test-enterprise-audit
+make test-enterprise-analytics
+```
+
+### Example Requests
+
+**List Roles (RBAC)**
+```bash
+curl http://localhost:8080/api/v1/enterprise/rbac/roles
+```
+
+**Get Audit Events**
+```bash
+curl http://localhost:8080/api/v1/enterprise/audit/events?page=1&per_page=20
+```
+
+**Analytics Overview**
+```bash
+curl http://localhost:8080/api/v1/enterprise/analytics/overview
+```
+
+**List Vulnerabilities**
+```bash
+curl http://localhost:8080/api/v1/enterprise/security/vulnerabilities
+```
+
+### Response Format
+
+All endpoints follow a consistent response structure:
+
+```json
+{
+  "success": true,
+  "data": { ... },
+  "pagination": {
+    "page": 1,
+    "per_page": 20,
+    "total": 150,
+    "total_pages": 8
+  },
+  "metadata": {
+    "timestamp": "2025-01-17T10:30:00Z",
+    "request_id": "uuid"
+  }
+}
+```
+
+### License Validation
+
+Enterprise API endpoints require a valid enterprise license:
+
+- **Development Mode**: License check bypassed (set `GO_ENV != production`)
+- **Production Mode**: Valid license required in `CONFIG_DIR/license.json`
+- **Unauthorized Access**: Returns `HTTP 402 Payment Required`
+
+### Testing & Documentation
+
+```bash
+# Run integration tests
+./tmp/scripts/test-webui-integration.sh all
+
+# Run contract tests
+go test -tags=contract ./tests/contract/enterprise_api_test.go
+
+# View API documentation
+cat tmp/plan/README.md
+```
+
+For complete API documentation, see `tmp/plan/README.md` (auto-generated in dev mode).
+
+---
+
 ## 🔄 Edition Comparison
 
 | Feature | Core (Community) | Enterprise | Cloud |
