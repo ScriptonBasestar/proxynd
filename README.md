@@ -1131,6 +1131,9 @@ make dev-run
 
 # Access Swagger UI (interactive API explorer)
 open http://localhost:8080/swagger/index.html
+
+# Or via API endpoint alias
+open http://localhost:8080/api/v1/docs
 ```
 
 The Swagger documentation includes:
@@ -1139,6 +1142,13 @@ The Swagger documentation includes:
 - Authentication configuration
 - Example requests and responses
 - Complete parameter documentation
+
+**Documentation Files**:
+- **OpenAPI Spec**: [`docs/api/enterprise-api-spec.yaml`](docs/api/enterprise-api-spec.yaml) - Complete OpenAPI 3.0 specification
+- **Usage Examples**: [`docs/04-api-reference/enterprise-api-examples.md`](docs/04-api-reference/enterprise-api-examples.md) - 97 code examples (curl + HTTPie)
+- **Metrics Guide**: [`docs/api/METRICS.md`](docs/api/METRICS.md) - 15+ Prometheus metrics with PromQL queries
+- **Load Testing**: [`scripts/loadtest/README.md`](scripts/loadtest/README.md) - Performance testing tools and scenarios
+- **CI/CD Integration**: [`docs/deployment/ci-cd-load-testing.md`](docs/deployment/ci-cd-load-testing.md) - Automated load testing in GitHub Actions
 
 ### Postman Collection
 
@@ -1192,11 +1202,12 @@ The benchmark suite tests 13 representative endpoints across all categories with
 - Pagination performance tests
 - Concurrent request handling tests
 
-**Detailed Guide**: See `docs/enterprise/PERFORMANCE_BENCHMARKS.md` for optimization strategies and troubleshooting.
-
-**WebUI Integration Guide**: See `docs/enterprise/WEBUI_INTEGRATION.md` for complete TypeScript/React integration examples.
-
-**API Documentation**: See `tmp/plan/README.md` for detailed endpoint documentation (auto-generated in dev mode).
+**Additional Resources**:
+- **Load Testing Tool**: [`scripts/loadtest/load-test-enterprise.sh`](scripts/loadtest/README.md) - 5 scenarios (quick, standard, stress, ramp-up, sustained)
+- **Grafana Dashboard**: [`deployments/grafana/enterprise-api-dashboard.json`](deployments/grafana/README.md) - 13-panel monitoring dashboard
+- **Performance Benchmarks**: `docs/enterprise/PERFORMANCE_BENCHMARKS.md` - Optimization strategies
+- **WebUI Integration**: `docs/enterprise/WEBUI_INTEGRATION.md` - TypeScript/React examples
+- **Generated Docs**: `tmp/plan/README.md` - Auto-generated endpoint docs (dev mode)
 
 ---
 
