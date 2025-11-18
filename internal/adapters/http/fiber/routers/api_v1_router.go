@@ -1,6 +1,7 @@
 package routers
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/gofiber/fiber/v2"
@@ -60,13 +61,7 @@ func SetupAPIv1Routes(app *fiber.App, cfg interface{}) {
 	})
 
 	api.Post("/pm/:name/toggle", func(c *fiber.Ctx) error {
-		name := c.Params("name")
-		// TODO: Implement actual toggle logic with config service
-		return c.JSON(fiber.Map{
-			"name":    name,
-			"enabled": true,
-			"message": "Package manager toggled successfully",
-		})
+		return togglePackageManager(c, rootCfg)
 	})
 }
 
@@ -188,6 +183,100 @@ func getPackageManagers(cfg *config.RootConfig) []fiber.Map {
 	}
 
 	return pms
+}
+
+// togglePackageManager toggles the enabled state of a package manager
+func togglePackageManager(c *fiber.Ctx, cfg *config.RootConfig) error {
+	name := c.Params("name")
+
+	// Validate package manager name
+	validPMs := map[string]bool{
+		"maven":  true,
+		"npm":    true,
+		"docker": true,
+		"pypi":   true,
+		"apt":    true,
+		"yum":    true,
+		"apk":    true,
+	}
+
+	if !validPMs[name] {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":   "invalid_package_manager",
+			"message": fmt.Sprintf("Unknown package manager: %s", name),
+			"valid":   []string{"maven", "npm", "docker", "pypi", "apt", "yum", "apk"},
+		})
+	}
+
+	// If config not available, return error
+	if cfg == nil {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+			"error":   "config_unavailable",
+			"message": "Configuration service is not available",
+		})
+	}
+
+	// Parse request body for explicit enable/disable (optional)
+	type ToggleRequest struct {
+		Enabled *bool `json:"enabled"` // Optional: if nil, toggle current state
+	}
+
+	var req ToggleRequest
+	if err := c.BodyParser(&req); err != nil && len(c.Body()) > 0 {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error":   "invalid_request",
+			"message": "Invalid JSON body",
+		})
+	}
+
+	// Get current state and toggle
+	var currentState, newState bool
+	var registryPtr *bool
+
+	switch name {
+	case "maven":
+		registryPtr = &cfg.Registries.Maven.Enabled
+		currentState = cfg.Registries.Maven.Enabled
+	case "npm":
+		registryPtr = &cfg.Registries.NPM.Enabled
+		currentState = cfg.Registries.NPM.Enabled
+	case "docker":
+		registryPtr = &cfg.Registries.Docker.Enabled
+		currentState = cfg.Registries.Docker.Enabled
+	case "pypi":
+		registryPtr = &cfg.Registries.PyPI.Enabled
+		currentState = cfg.Registries.PyPI.Enabled
+	case "apt":
+		registryPtr = &cfg.Registries.APT.Enabled
+		currentState = cfg.Registries.APT.Enabled
+	case "yum", "apk":
+		// YUM and APK not yet in RootConfig, return not implemented
+		return c.Status(fiber.StatusNotImplemented).JSON(fiber.Map{
+			"error":   "not_implemented",
+			"message": fmt.Sprintf("Package manager '%s' configuration not yet implemented", name),
+		})
+	}
+
+	// Determine new state
+	if req.Enabled != nil {
+		newState = *req.Enabled
+	} else {
+		newState = !currentState
+	}
+
+	// Update the state
+	*registryPtr = newState
+
+	// Log the change
+	// TODO: Persist this change to the config file
+	// TODO: Notify plugin system about the state change
+
+	return c.JSON(fiber.Map{
+		"name":           name,
+		"enabled":        newState,
+		"previous_state": currentState,
+		"message":        fmt.Sprintf("Package manager '%s' %s successfully", name, map[bool]string{true: "enabled", false: "disabled"}[newState]),
+	})
 }
 
 // getSystemCacheStats returns system-wide cache statistics (real or mock)
