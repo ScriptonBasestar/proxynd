@@ -184,9 +184,93 @@ func LoadConfig(configDir string) (*Config, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to load config from %s: %w", configDir, err)
 		}
+
+		// Validate config before returning
+		if err := ValidateConfig(config); err != nil {
+			return nil, fmt.Errorf("config validation failed: %w", err)
+		}
+
 		return config, nil
 	}
 
 	// Fall back to defaults
 	return DefaultConfig(), nil
+}
+
+// ValidateConfig validates plugin configuration for common issues
+func ValidateConfig(cfg *Config) error {
+	if cfg == nil {
+		return fmt.Errorf("config cannot be nil")
+	}
+
+	// Collect all plugins across editions
+	allPlugins := append(cfg.Registry.Core,
+		append(cfg.Registry.Enterprise, cfg.Registry.Cloud...)...)
+
+	// Check for duplicate plugin names
+	seen := make(map[string]bool)
+	for _, plugin := range allPlugins {
+		if seen[plugin.Name] {
+			return fmt.Errorf("duplicate plugin name: %s", plugin.Name)
+		}
+		seen[plugin.Name] = true
+	}
+
+	// Check for conflicting priorities
+	priorityMap := make(map[int][]string)
+	for _, plugin := range allPlugins {
+		priorityMap[plugin.Priority] = append(priorityMap[plugin.Priority], plugin.Name)
+	}
+
+	// Warn about same priorities (not fatal, but should be noted)
+	for priority, plugins := range priorityMap {
+		if len(plugins) > 1 {
+			// This is a warning condition - multiple plugins with same priority
+			// The order is non-deterministic in this case
+			return fmt.Errorf("conflicting priority %d for plugins: %v (each plugin should have a unique priority)", priority, plugins)
+		}
+	}
+
+	// Validate priority ranges according to documented ranges
+	// Core: 100-199, Enterprise: 200-299, Cloud: 300-399
+	for _, plugin := range cfg.Registry.Core {
+		if plugin.Priority < 100 || plugin.Priority >= 200 {
+			return fmt.Errorf("core plugin %s has invalid priority %d (expected 100-199)", plugin.Name, plugin.Priority)
+		}
+	}
+
+	for _, plugin := range cfg.Registry.Enterprise {
+		if plugin.Priority < 200 || plugin.Priority >= 300 {
+			return fmt.Errorf("enterprise plugin %s has invalid priority %d (expected 200-299)", plugin.Name, plugin.Priority)
+		}
+	}
+
+	for _, plugin := range cfg.Registry.Cloud {
+		if plugin.Priority < 300 || plugin.Priority >= 400 {
+			return fmt.Errorf("cloud plugin %s has invalid priority %d (expected 300-399)", plugin.Name, plugin.Priority)
+		}
+	}
+
+	// Validate lifecycle timeouts
+	if cfg.Lifecycle.InitTimeout <= 0 {
+		return fmt.Errorf("lifecycle initTimeout must be positive, got %v", cfg.Lifecycle.InitTimeout)
+	}
+	if cfg.Lifecycle.ReadyTimeout <= 0 {
+		return fmt.Errorf("lifecycle readyTimeout must be positive, got %v", cfg.Lifecycle.ReadyTimeout)
+	}
+	if cfg.Lifecycle.ShutdownTimeout <= 0 {
+		return fmt.Errorf("lifecycle shutdownTimeout must be positive, got %v", cfg.Lifecycle.ShutdownTimeout)
+	}
+
+	// Validate failure policy
+	validPolicies := map[FailurePolicy]bool{
+		FailurePolicyContinue: true,
+		FailurePolicyHalt:     true,
+		FailurePolicyWarn:     true,
+	}
+	if !validPolicies[cfg.Lifecycle.FailurePolicy] {
+		return fmt.Errorf("invalid failure policy: %s (expected continue, halt, or warn)", cfg.Lifecycle.FailurePolicy)
+	}
+
+	return nil
 }
