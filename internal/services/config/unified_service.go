@@ -3,7 +3,10 @@ package config
 import (
 	"context"
 	"fmt"
+	"os"
 	"sync"
+
+	"gopkg.in/yaml.v3"
 
 	"proxynd/internal/config"
 	"proxynd/internal/logging"
@@ -332,4 +335,46 @@ func (s *unifiedService) GetUnifiedConfig() *config.RootConfig {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.unifiedConfig
+}
+
+// GetRootConfig returns the full RootConfig (interface implementation)
+func (s *unifiedService) GetRootConfig(ctx context.Context) (*config.RootConfig, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	if s.unifiedConfig == nil {
+		return nil, fmt.Errorf("unified configuration not loaded")
+	}
+
+	return s.unifiedConfig, nil
+}
+
+// SaveConfig saves the current configuration to disk
+func (s *unifiedService) SaveConfig(ctx context.Context) error {
+	s.mu.RLock()
+	cfg := s.unifiedConfig
+	configDir := s.configDir
+	s.mu.RUnlock()
+
+	if cfg == nil {
+		return fmt.Errorf("no configuration loaded to save")
+	}
+
+	// Save to config.yaml in the config directory
+	configPath := fmt.Sprintf("%s/config.yaml", configDir)
+
+	data, err := yaml.Marshal(cfg)
+	if err != nil {
+		return fmt.Errorf("failed to marshal configuration: %w", err)
+	}
+
+	// Write to file with appropriate permissions (0644)
+	if err := os.WriteFile(configPath, data, 0644); err != nil {
+		return fmt.Errorf("failed to write configuration file: %w", err)
+	}
+
+	s.logger.Info("Configuration saved successfully",
+		logging.F("path", configPath))
+
+	return nil
 }

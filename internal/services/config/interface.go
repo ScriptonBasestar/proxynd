@@ -42,6 +42,12 @@ type Service interface {
 
 	// Reload reloads all configurations
 	Reload(ctx context.Context) error
+
+	// SaveConfig saves the current configuration to disk
+	SaveConfig(ctx context.Context) error
+
+	// GetRootConfig returns the full RootConfig (for direct access)
+	GetRootConfig(ctx context.Context) (*config.RootConfig, error)
 }
 
 // Validator interface for configuration validation

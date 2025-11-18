@@ -1,13 +1,16 @@
 package routers
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 
 	"proxynd/cache"
 	"proxynd/internal/config"
+	configService "proxynd/internal/services/config"
 )
 
 // Global cache manager reference (set by main app)
@@ -208,11 +211,24 @@ func togglePackageManager(c *fiber.Ctx, cfg *config.RootConfig) error {
 		})
 	}
 
-	// If config not available, return error
-	if cfg == nil {
+	// Get config service from locals
+	configSvc, ok := c.Locals("configService").(configService.Service)
+	if !ok || configSvc == nil {
 		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
-			"error":   "config_unavailable",
+			"error":   "config_service_unavailable",
 			"message": "Configuration service is not available",
+		})
+	}
+
+	// Get RootConfig from config service
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	rootCfg, err := configSvc.GetRootConfig(ctx)
+	if err != nil {
+		return c.Status(fiber.StatusServiceUnavailable).JSON(fiber.Map{
+			"error":   "config_load_failed",
+			"message": fmt.Sprintf("Failed to load configuration: %v", err),
 		})
 	}
 
@@ -235,20 +251,20 @@ func togglePackageManager(c *fiber.Ctx, cfg *config.RootConfig) error {
 
 	switch name {
 	case "maven":
-		registryPtr = &cfg.Registries.Maven.Enabled
-		currentState = cfg.Registries.Maven.Enabled
+		registryPtr = &rootCfg.Registries.Maven.Enabled
+		currentState = rootCfg.Registries.Maven.Enabled
 	case "npm":
-		registryPtr = &cfg.Registries.NPM.Enabled
-		currentState = cfg.Registries.NPM.Enabled
+		registryPtr = &rootCfg.Registries.NPM.Enabled
+		currentState = rootCfg.Registries.NPM.Enabled
 	case "docker":
-		registryPtr = &cfg.Registries.Docker.Enabled
-		currentState = cfg.Registries.Docker.Enabled
+		registryPtr = &rootCfg.Registries.Docker.Enabled
+		currentState = rootCfg.Registries.Docker.Enabled
 	case "pypi":
-		registryPtr = &cfg.Registries.PyPI.Enabled
-		currentState = cfg.Registries.PyPI.Enabled
+		registryPtr = &rootCfg.Registries.PyPI.Enabled
+		currentState = rootCfg.Registries.PyPI.Enabled
 	case "apt":
-		registryPtr = &cfg.Registries.APT.Enabled
-		currentState = cfg.Registries.APT.Enabled
+		registryPtr = &rootCfg.Registries.APT.Enabled
+		currentState = rootCfg.Registries.APT.Enabled
 	case "yum", "apk":
 		// YUM and APK not yet in RootConfig, return not implemented
 		return c.Status(fiber.StatusNotImplemented).JSON(fiber.Map{
@@ -267,15 +283,29 @@ func togglePackageManager(c *fiber.Ctx, cfg *config.RootConfig) error {
 	// Update the state
 	*registryPtr = newState
 
-	// Log the change
-	// TODO: Persist this change to the config file
+	// Persist the change to disk
+	saveCtx, saveCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer saveCancel()
+
+	if err := configSvc.SaveConfig(saveCtx); err != nil {
+		// Rollback the change
+		*registryPtr = currentState
+
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error":   "save_failed",
+			"message": fmt.Sprintf("Failed to persist configuration: %v", err),
+		})
+	}
+
 	// TODO: Notify plugin system about the state change
+	// This will be implemented in the next step
 
 	return c.JSON(fiber.Map{
 		"name":           name,
 		"enabled":        newState,
 		"previous_state": currentState,
 		"message":        fmt.Sprintf("Package manager '%s' %s successfully", name, map[bool]string{true: "enabled", false: "disabled"}[newState]),
+		"persisted":      true,
 	})
 }
 

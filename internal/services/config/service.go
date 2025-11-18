@@ -174,6 +174,16 @@ func (s *service) GetApkConfig(_ context.Context) (*config.ApkProxySettings, err
 	return s.apkConfig, nil
 }
 
+// GetRootConfig returns the full RootConfig (not supported in legacy service)
+func (s *service) GetRootConfig(_ context.Context) (*config.RootConfig, error) {
+	return nil, fmt.Errorf("GetRootConfig not supported in legacy service, use unified service instead")
+}
+
+// SaveConfig saves the current configuration to disk (not supported in legacy service)
+func (s *service) SaveConfig(_ context.Context) error {
+	return fmt.Errorf("SaveConfig not supported in legacy service, use unified service instead")
+}
+
 // Reload reloads all configurations
 func (s *service) Reload(ctx context.Context) error {
 	s.mu.Lock()
