@@ -372,7 +372,8 @@ func (app *Application) initializeFiberApp() {
 	app.fiberApp.Use(func(c *fiber.Ctx) error {
 		c.Locals("serviceFactory", app.serviceFactory)
 		c.Locals("container", app.container)
-		c.Locals("routeConfig", routeConfig) // TODO: HEXAGONAL_MIGRATION - Add route config for runtime switching
+		c.Locals("routeConfig", routeConfig)         // TODO: HEXAGONAL_MIGRATION - Add route config for runtime switching
+		c.Locals("configService", app.configService) // Add config service for persistence
 		return c.Next()
 	})
 
