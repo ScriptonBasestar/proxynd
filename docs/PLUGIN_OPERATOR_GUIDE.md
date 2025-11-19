@@ -240,6 +240,232 @@ INFO  Initializing plugin name=audit priority=60
 
 ---
 
+## Event System
+
+The plugin event system enables plugins to react to runtime events without requiring application restart. Plugins can implement the `EventHandler` interface to receive notifications about system state changes.
+
+### Supported Event Types
+
+| Event Type | Description | Data Fields |
+|------------|-------------|-------------|
+| `package_manager_state_changed` | PM enabled/disabled via toggle API | `package_manager`, `previous_state`, `new_state`, `timestamp` |
+| `config_reloaded` | Configuration reloaded from disk | `timestamp`, `config_path` |
+| `cache_cleared` | Cache cleared for specific PM | `cache_type`, `timestamp` |
+
+### EventHandler Interface
+
+Plugins opt-in to event notifications by implementing the `EventHandler` interface:
+
+```go
+type EventHandler interface {
+    OnEvent(ctx context.Context, event Event) error
+}
+```
+
+**Event Structure**:
+
+```go
+type Event struct {
+    Type EventType              `json:"type"`
+    Data map[string]interface{} `json:"data"`
+}
+```
+
+### Example Implementation
+
+```go
+package myplugin
+
+import (
+    "context"
+    "proxynd/plugins"
+)
+
+type MyPlugin struct {
+    name string
+}
+
+func (p *MyPlugin) Name() string {
+    return p.name
+}
+
+func (p *MyPlugin) Init(ctx plugins.Context) error {
+    // Initialization logic
+    return nil
+}
+
+func (p *MyPlugin) OnReady(ctx plugins.Context) error {
+    // Ready logic
+    return nil
+}
+
+func (p *MyPlugin) OnShutdown(ctx context.Context) error {
+    // Cleanup logic
+    return nil
+}
+
+// Implement EventHandler interface
+func (p *MyPlugin) OnEvent(ctx context.Context, event plugins.Event) error {
+    switch event.Type {
+    case plugins.EventPackageManagerStateChanged:
+        pm := event.Data["package_manager"].(string)
+        newState := event.Data["new_state"].(bool)
+
+        // React to PM state change
+        if newState {
+            // PM was enabled
+            return p.enableCachingForPM(pm)
+        } else {
+            // PM was disabled
+            return p.disableCachingForPM(pm)
+        }
+
+    case plugins.EventConfigReloaded:
+        // Reload plugin-specific configuration
+        return p.reloadConfig()
+
+    case plugins.EventCacheCleared:
+        cacheType := event.Data["cache_type"].(string)
+        // React to cache clear
+        return p.invalidateCacheMetrics(cacheType)
+
+    default:
+        // Unknown event type, ignore
+        return nil
+    }
+}
+```
+
+### Event Dispatch Behavior
+
+**Timeout Protection**:
+- Each event handler has a 5-second timeout
+- Prevents slow handlers from blocking system
+
+**Error Handling**:
+- Continues to other handlers even if one fails
+- Only returns error if ALL handlers fail
+- Comprehensive logging for debugging
+
+**Selective Dispatch**:
+- Only enabled plugins receive events
+- Only plugins implementing `EventHandler` receive events
+- Non-implementing plugins are silently skipped
+
+### Event Notification Logs
+
+```
+DEBUG Dispatching event to plugins type=package_manager_state_changed data=map[package_manager:npm new_state:true previous_state:false timestamp:2025-11-19T00:00:00Z]
+DEBUG Plugin event handler completed plugin=cache-optimizer event=package_manager_state_changed duration_ms=12
+ERROR Plugin event handler failed plugin=metrics-collector event=package_manager_state_changed duration_ms=5001 error="context deadline exceeded"
+INFO  Event dispatched to plugins type=package_manager_state_changed handlers_notified=5 errors=1
+```
+
+### Triggering Events Programmatically
+
+Events are automatically triggered by system operations:
+
+**PM Toggle API** (`POST /api/v1/pm/:name/toggle`):
+- Automatically triggers `package_manager_state_changed` event
+- Event includes previous and new state
+
+**Config Reload**:
+- Automatically triggers `config_reloaded` event
+- Event includes configuration path
+
+**Cache Clear** (`DELETE /api/v1/cache/:type`):
+- Automatically triggers `cache_cleared` event
+- Event includes cache type
+
+### Best Practices
+
+**Keep Event Handlers Fast**:
+```go
+// Good: Quick processing
+func (p *MyPlugin) OnEvent(ctx context.Context, event Event) error {
+    // Update in-memory state
+    p.state.Update(event.Data)
+    return nil
+}
+
+// Bad: Slow processing (will timeout)
+func (p *MyPlugin) OnEvent(ctx context.Context, event Event) error {
+    // This will timeout after 5 seconds
+    time.Sleep(10 * time.Second)
+    return nil
+}
+```
+
+**Use Goroutines for Heavy Work**:
+```go
+func (p *MyPlugin) OnEvent(ctx context.Context, event Event) error {
+    // Quick acknowledgment
+    eventCopy := event
+
+    // Heavy processing in background
+    go func() {
+        p.processEvent(eventCopy)
+    }()
+
+    return nil
+}
+```
+
+**Handle Unknown Events Gracefully**:
+```go
+func (p *MyPlugin) OnEvent(ctx context.Context, event Event) error {
+    switch event.Type {
+    case plugins.EventPackageManagerStateChanged:
+        return p.handlePMChange(event)
+    default:
+        // Don't error on unknown events (forward compatibility)
+        return nil
+    }
+}
+```
+
+**Check Context Cancellation**:
+```go
+func (p *MyPlugin) OnEvent(ctx context.Context, event Event) error {
+    select {
+    case <-ctx.Done():
+        return ctx.Err()
+    default:
+    }
+
+    // Process event
+    return p.doWork(event)
+}
+```
+
+### Testing Event Handlers
+
+```go
+func TestMyPlugin_OnEvent(t *testing.T) {
+    plugin := &MyPlugin{name: "test-plugin"}
+
+    event := plugins.Event{
+        Type: plugins.EventPackageManagerStateChanged,
+        Data: map[string]interface{}{
+            "package_manager": "npm",
+            "previous_state":  false,
+            "new_state":       true,
+        },
+    }
+
+    ctx := context.Background()
+    err := plugin.OnEvent(ctx, event)
+
+    if err != nil {
+        t.Errorf("OnEvent failed: %v", err)
+    }
+
+    // Assert plugin state changed correctly
+}
+```
+
+---
+
 ## Environment Overrides
 
 ### Use Cases
