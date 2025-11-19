@@ -374,6 +374,7 @@ func (app *Application) initializeFiberApp() {
 		c.Locals("container", app.container)
 		c.Locals("routeConfig", routeConfig)         // TODO: HEXAGONAL_MIGRATION - Add route config for runtime switching
 		c.Locals("configService", app.configService) // Add config service for persistence
+		c.Locals("pluginManager", app.pluginManager) // Add plugin manager for event notifications
 		return c.Next()
 	})
 

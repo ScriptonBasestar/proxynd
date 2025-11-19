@@ -23,6 +23,24 @@ type Logger interface {
 	Error(msg string, args ...interface{})
 }
 
+// EventType represents the type of event being dispatched
+type EventType string
+
+const (
+	// EventPackageManagerStateChanged fires when a package manager is enabled or disabled
+	EventPackageManagerStateChanged EventType = "package_manager_state_changed"
+	// EventConfigReloaded fires when configuration is reloaded
+	EventConfigReloaded EventType = "config_reloaded"
+	// EventCacheCleared fires when cache is cleared
+	EventCacheCleared EventType = "cache_cleared"
+)
+
+// Event represents a system event that plugins can react to
+type Event struct {
+	Type EventType              `json:"type"`
+	Data map[string]interface{} `json:"data"`
+}
+
 // Initializer is implemented by plugins that require initialization.
 type Initializer interface {
 	Init(ctx Context) error
@@ -36,6 +54,11 @@ type ReadyHandler interface {
 // ShutdownHandler is invoked during graceful shutdown.
 type ShutdownHandler interface {
 	OnShutdown(ctx context.Context) error
+}
+
+// EventHandler is implemented by plugins that want to react to system events
+type EventHandler interface {
+	OnEvent(ctx context.Context, event Event) error
 }
 
 // MiddlewareProvider supplies a Fiber middleware that should be mounted globally.
@@ -53,3 +76,4 @@ type RoutesProvider interface {
 type MountPathProvider interface {
 	MountPath() string
 }
+

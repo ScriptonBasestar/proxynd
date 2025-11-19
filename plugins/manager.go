@@ -310,6 +310,79 @@ func (m *Manager) GetMetricsSummary() MetricsSummary {
 	return m.metrics.GetSummary()
 }
 
+// NotifyEvent dispatches an event to all enabled plugins that implement EventHandler
+func (m *Manager) NotifyEvent(ctx context.Context, event Event) error {
+	if !m.config.Enabled {
+		return nil
+	}
+
+	timeout := 5 * time.Second // Default timeout for event handlers
+	handlerCount := 0
+	errorCount := 0
+
+	m.logger.Debug("Dispatching event to plugins",
+		"type", event.Type,
+		"data", event.Data)
+
+	for _, pluginCfg := range m.plugins {
+		if !pluginCfg.Enabled {
+			continue
+		}
+
+		plugin := pluginCfg.instance
+		if plugin == nil {
+			continue
+		}
+
+		// Check if plugin implements EventHandler
+		eventHandler, ok := plugin.(EventHandler)
+		if !ok {
+			continue
+		}
+
+		handlerCount++
+
+		m.logger.Debug("Notifying plugin of event",
+			"plugin", plugin.Name(),
+			"event", event.Type)
+
+		start := time.Now()
+		err := m.runWithTimeout(timeout, func() error {
+			return eventHandler.OnEvent(ctx, event)
+		})
+		duration := time.Since(start)
+
+		if err != nil {
+			errorCount++
+			m.logger.Error("Plugin event handler failed",
+				"plugin", plugin.Name(),
+				"event", event.Type,
+				"duration_ms", duration.Milliseconds(),
+				"error", err.Error())
+
+			// Continue with other plugins even if one fails
+			continue
+		}
+
+		m.logger.Debug("Plugin event handler completed",
+			"plugin", plugin.Name(),
+			"event", event.Type,
+			"duration_ms", duration.Milliseconds())
+	}
+
+	m.logger.Info("Event dispatched to plugins",
+		"type", event.Type,
+		"handlers_notified", handlerCount,
+		"errors", errorCount)
+
+	// Return error only if all handlers failed
+	if handlerCount > 0 && errorCount == handlerCount {
+		return fmt.Errorf("all event handlers failed for event type: %s", event.Type)
+	}
+
+	return nil
+}
+
 // Private helpers
 
 func (m *Manager) mergePluginsWithConfig(registered []Plugin) []PluginConfig {
