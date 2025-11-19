@@ -320,6 +320,9 @@ func (m *Manager) NotifyEvent(ctx context.Context, event Event) error {
 	handlerCount := 0
 	errorCount := 0
 
+	// Record event dispatched (Prometheus metric)
+	RecordEventDispatched(string(event.Type))
+
 	m.logger.Debug("Dispatching event to plugins",
 		"type", event.Type,
 		"data", event.Data)
@@ -352,8 +355,21 @@ func (m *Manager) NotifyEvent(ctx context.Context, event Event) error {
 		})
 		duration := time.Since(start)
 
+		// Record processing duration (Prometheus metric)
+		RecordEventProcessing(string(event.Type), plugin.Name(), duration.Seconds())
+
 		if err != nil {
 			errorCount++
+
+			// Determine error type
+			errorType := "handler_error"
+			if err == ctx.Err() {
+				errorType = "context_timeout"
+			}
+
+			// Record error (Prometheus metric)
+			RecordEventError(string(event.Type), plugin.Name(), errorType)
+
 			m.logger.Error("Plugin event handler failed",
 				"plugin", plugin.Name(),
 				"event", event.Type,
@@ -369,6 +385,9 @@ func (m *Manager) NotifyEvent(ctx context.Context, event Event) error {
 			"event", event.Type,
 			"duration_ms", duration.Milliseconds())
 	}
+
+	// Update listener count gauge (Prometheus metric)
+	UpdateEventListeners(string(event.Type), float64(handlerCount))
 
 	m.logger.Info("Event dispatched to plugins",
 		"type", event.Type,
