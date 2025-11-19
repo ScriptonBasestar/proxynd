@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProxyND Admin Panel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .activity-log { max-height: 300px; overflow-y: auto; }
+        .status-indicator { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
+        .status-enabled { background-color: #10b981; }
+        .status-disabled { background-color: #ef4444; }
+        .status-unknown { background-color: #6b7280; }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- Login Section -->
+    <div id="loginSection" class="min-h-screen flex items-center justify-center">
+        <div class="bg-white p-8 rounded-lg shadow-md w-96">
+            <h1 class="text-2xl font-bold mb-6 text-center">ProxyND Admin</h1>
+            <div class="mb-4">
+                <label class="block text-gray-700 mb-2">Username</label>
+                <input type="text" id="username" class="w-full px-3 py-2 border rounded-lg" value="admin">
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-700 mb-2">Password</label>
+                <input type="password" id="password" class="w-full px-3 py-2 border rounded-lg" value="admin">
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-700 mb-2">ProxyND URL</label>
+                <input type="text" id="apiUrl" class="w-full px-3 py-2 border rounded-lg" value="http://localhost:8080">
+            </div>
+            <button onclick="login()" class="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600">
+                Login
+            </button>
+            <div id="loginError" class="mt-4 text-red-500 text-sm hidden"></div>
+            <div class="mt-4 text-sm text-gray-600">
+                <p><strong>Note:</strong> In development mode (no JWT_SECRET), you can skip login.</p>
+                <button onclick="skipLogin()" class="text-blue-500 hover:underline">Skip Login (Dev Mode)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="dashboard" class="hidden">
+        <!-- Header -->
+        <header class="bg-blue-600 text-white p-4">
+            <div class="container mx-auto flex justify-between items-center">
+                <h1 class="text-2xl font-bold">ProxyND Admin Panel</h1>
+                <div class="flex items-center space-x-4">
+                    <span id="userInfo" class="text-sm"></span>
+                    <button onclick="logout()" class="bg-blue-700 px-4 py-2 rounded hover:bg-blue-800">Logout</button>
+                </div>
+            </div>
+        </header>
+
+        <div class="container mx-auto p-6">
+            <!-- Toast Notification -->
+            <div id="toast" class="fixed top-4 right-4 hidden z-50">
+                <div class="bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg">
+                    <span id="toastMessage"></span>
+                </div>
+            </div>
+
+            <!-- System Info & Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <!-- System Info -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-xl font-bold mb-4">System Information</h2>
+                    <div id="systemInfo" class="space-y-2 text-sm">
+                        <p><strong>Version:</strong> <span id="version">Loading...</span></p>
+                        <p><strong>Edition:</strong> <span id="edition">Loading...</span></p>
+                        <p><strong>License:</strong> <span id="license">Loading...</span></p>
+                    </div>
+                </div>
+
+                <!-- Statistics -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-xl font-bold mb-4">Cache Statistics</h2>
+                    <div id="stats" class="space-y-2 text-sm">
+                        <p><strong>Hit Rate:</strong> <span id="hitRate">Loading...</span></p>
+                        <p><strong>Total Requests:</strong> <span id="totalRequests">Loading...</span></p>
+                        <p><strong>Cache Size:</strong> <span id="cacheSize">Loading...</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Package Managers -->
+            <div class="bg-white rounded-lg shadow p-6 mb-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold">Package Managers</h2>
+                    <button onclick="refreshPMs()" class="text-blue-500 hover:underline text-sm">Refresh</button>
+                </div>
+                <div id="packageManagers" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <!-- PM buttons will be inserted here -->
+                </div>
+                <p class="text-xs text-gray-500 mt-4">Last updated: <span id="pmLastUpdate">Never</span></p>
+            </div>
+
+            <!-- Configuration & Cache Management -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <!-- Configuration -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-xl font-bold mb-4">Configuration</h2>
+                    <button onclick="reloadConfig()" class="w-full bg-green-500 text-white py-2 rounded-lg hover:bg-green-600 mb-2">
+                        Reload Configuration
+                    </button>
+                    <p class="text-xs text-gray-500">Last reload: <span id="lastConfigReload">Never</span></p>
+                </div>
+
+                <!-- Cache Management -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-xl font-bold mb-4">Cache Management</h2>
+                    <button onclick="clearAllCache()" class="w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 mb-2">
+                        Clear All Cache
+                    </button>
+                    <div class="mb-2">
+                        <select id="cacheType" class="w-full px-3 py-2 border rounded-lg mb-2">
+                            <option value="">Select Type</option>
+                            <option value="maven">Maven</option>
+                            <option value="npm">NPM</option>
+                            <option value="docker">Docker</option>
+                            <option value="pypi">PyPI</option>
+                            <option value="apt">APT</option>
+                            <option value="yum">YUM</option>
+                            <option value="apk">APK</option>
+                        </select>
+                        <button onclick="clearCacheByType()" class="w-full bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600">
+                            Clear Selected Type
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Plugin Health -->
+            <div class="bg-white rounded-lg shadow p-6 mb-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold">Plugin Health</h2>
+                    <div class="flex items-center space-x-2">
+                        <label class="text-sm">
+                            <input type="checkbox" id="autoRefresh" checked onchange="toggleAutoRefresh()">
+                            Auto-refresh (5s)
+                        </label>
+                        <button onclick="refreshPluginHealth()" class="text-blue-500 hover:underline text-sm">Refresh</button>
+                    </div>
+                </div>
+                <div id="pluginHealth">
+                    <p class="text-gray-500">Loading...</p>
+                </div>
+            </div>
+
+            <!-- Activity Log -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold">Activity Log</h2>
+                    <button onclick="clearActivityLog()" class="text-red-500 hover:underline text-sm">Clear</button>
+                </div>
+                <div id="activityLog" class="activity-log bg-gray-50 p-4 rounded border text-sm font-mono">
+                    <p class="text-gray-500">No activity yet</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        let API_URL = 'http://localhost:8080';
+        let JWT_TOKEN = null;
+        let AUTO_REFRESH = true;
+        let REFRESH_INTERVAL = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedToken = localStorage.getItem('jwt_token');
+            const savedUrl = localStorage.getItem('api_url');
+
+            if (savedUrl) {
+                API_URL = savedUrl;
+                document.getElementById('apiUrl').value = savedUrl;
+            }
+
+            if (savedToken) {
+                JWT_TOKEN = savedToken;
+                showDashboard();
+            }
+        });
+
+        // Authentication
+        function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            API_URL = document.getElementById('apiUrl').value;
+
+            // Mock login - in production, call /auth/login endpoint
+            // For now, we'll just generate a mock token
+            JWT_TOKEN = 'mock-jwt-token-' + Date.now();
+
+            localStorage.setItem('jwt_token', JWT_TOKEN);
+            localStorage.setItem('api_url', API_URL);
+
+            showDashboard();
+        }
+
+        function skipLogin() {
+            API_URL = document.getElementById('apiUrl').value;
+            JWT_TOKEN = null; // No token in dev mode
+
+            localStorage.setItem('api_url', API_URL);
+            localStorage.removeItem('jwt_token');
+
+            showDashboard();
+        }
+
+        function logout() {
+            JWT_TOKEN = null;
+            localStorage.removeItem('jwt_token');
+
+            document.getElementById('dashboard').classList.add('hidden');
+            document.getElementById('loginSection').classList.remove('hidden');
+
+            if (REFRESH_INTERVAL) {
+                clearInterval(REFRESH_INTERVAL);
+            }
+        }
+
+        function showDashboard() {
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+
+            document.getElementById('userInfo').textContent = JWT_TOKEN ? 'Admin (JWT)' : 'Admin (Dev Mode)';
+
+            // Load initial data
+            loadSystemInfo();
+            loadStats();
+            loadPackageManagers();
+            refreshPluginHealth();
+
+            // Start auto-refresh
+            if (AUTO_REFRESH) {
+                REFRESH_INTERVAL = setInterval(refreshPluginHealth, 5000);
+            }
+        }
+
+        // API Helper
+        async function apiCall(method, endpoint, body = null) {
+            const url = `${API_URL}${endpoint}`;
+            const options = {
+                method,
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            };
+
+            if (JWT_TOKEN) {
+                options.headers['Authorization'] = `Bearer ${JWT_TOKEN}`;
+            }
+
+            if (body) {
+                options.body = JSON.stringify(body);
+            }
+
+            logActivity(`${method} ${endpoint}`);
+
+            try {
+                const response = await fetch(url, options);
+
+                if (response.status === 401) {
+                    showToast('Authentication required. Please login.', 'error');
+                    logout();
+                    return null;
+                }
+
+                if (response.status === 403) {
+                    showToast('Insufficient permissions', 'error');
+                    logActivity(`ERROR: 403 Forbidden`, true);
+                    return null;
+                }
+
+                if (response.status === 429) {
+                    showToast('Rate limit exceeded. Please wait...', 'warning');
+                    logActivity(`ERROR: 429 Rate Limit`, true);
+                    return null;
+                }
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    logActivity(`SUCCESS: ${response.status}`);
+                    return data;
+                } else {
+                    logActivity(`ERROR: ${response.status} - ${data.error || data.message}`, true);
+                    showToast(data.error || data.message || 'Request failed', 'error');
+                    return null;
+                }
+            } catch (error) {
+                logActivity(`ERROR: ${error.message}`, true);
+                showToast('Network error: ' + error.message, 'error');
+                return null;
+            }
+        }
+
+        // Load System Info
+        async function loadSystemInfo() {
+            const data = await apiCall('GET', '/api/v1/system/info');
+            if (data) {
+                document.getElementById('version').textContent = data.version || 'N/A';
+                document.getElementById('edition').textContent = data.edition || 'N/A';
+                document.getElementById('license').textContent = data.license?.type || 'N/A';
+            }
+        }
+
+        // Load Stats
+        async function loadStats() {
+            const data = await apiCall('GET', '/api/v1/stats');
+            if (data) {
+                document.getElementById('hitRate').textContent = (data.hit_rate || 0).toFixed(2) + '%';
+                document.getElementById('totalRequests').textContent = (data.total_requests || 0).toLocaleString();
+                document.getElementById('cacheSize').textContent = (data.cache_size_mb || 0).toFixed(2) + ' MB';
+            }
+        }
+
+        // Load Package Managers
+        async function loadPackageManagers() {
+            const data = await apiCall('GET', '/api/v1/pm');
+            if (data && Array.isArray(data)) {
+                renderPackageManagers(data);
+            }
+        }
+
+        function renderPackageManagers(pms) {
+            const container = document.getElementById('packageManagers');
+            container.innerHTML = '';
+
+            pms.forEach(pm => {
+                const button = document.createElement('button');
+                button.className = `p-4 rounded-lg border-2 ${pm.enabled ? 'bg-green-50 border-green-500' : 'bg-gray-50 border-gray-300'}`;
+                button.innerHTML = `
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="font-bold">${pm.name.toUpperCase()}</span>
+                        <span class="status-indicator ${pm.enabled ? 'status-enabled' : 'status-disabled'}"></span>
+                    </div>
+                    <div class="text-xs text-gray-600">${pm.enabled ? 'Enabled' : 'Disabled'}</div>
+                `;
+                button.onclick = () => togglePM(pm.name, !pm.enabled);
+                container.appendChild(button);
+            });
+
+            document.getElementById('pmLastUpdate').textContent = new Date().toLocaleTimeString();
+        }
+
+        async function togglePM(name, enabled) {
+            const data = await apiCall('POST', `/api/v1/pm/${name}/toggle`, { enabled });
+            if (data) {
+                showToast(`${name.toUpperCase()} ${enabled ? 'enabled' : 'disabled'} successfully`);
+                loadPackageManagers();
+            }
+        }
+
+        async function refreshPMs() {
+            await loadPackageManagers();
+            showToast('Package managers refreshed');
+        }
+
+        // Config Reload
+        async function reloadConfig() {
+            const data = await apiCall('POST', '/api/config/reload');
+            if (data) {
+                document.getElementById('lastConfigReload').textContent = new Date().toLocaleTimeString();
+                showToast('Configuration reloaded successfully');
+            }
+        }
+
+        // Cache Management
+        async function clearAllCache() {
+            if (!confirm('Are you sure you want to clear ALL cache? This cannot be undone.')) {
+                return;
+            }
+
+            const data = await apiCall('DELETE', '/api/cache/clear?confirm=true');
+            if (data) {
+                showToast('All cache cleared successfully');
+                loadStats();
+            }
+        }
+
+        async function clearCacheByType() {
+            const type = document.getElementById('cacheType').value;
+            if (!type) {
+                showToast('Please select a cache type', 'warning');
+                return;
+            }
+
+            if (!confirm(`Clear ${type.toUpperCase()} cache?`)) {
+                return;
+            }
+
+            const data = await apiCall('DELETE', `/api/cache/clear/${type}?confirm=true`);
+            if (data) {
+                showToast(`${type.toUpperCase()} cache cleared successfully`);
+                loadStats();
+            }
+        }
+
+        // Plugin Health
+        async function refreshPluginHealth() {
+            const data = await apiCall('GET', '/api/v1/plugins/health');
+            if (data) {
+                renderPluginHealth(data);
+            }
+        }
+
+        function renderPluginHealth(data) {
+            const container = document.getElementById('pluginHealth');
+
+            if (!data.enabled) {
+                container.innerHTML = '<p class="text-gray-500">Plugin system is disabled</p>';
+                return;
+            }
+
+            let html = `
+                <div class="mb-4 grid grid-cols-4 gap-4 text-sm">
+                    <div><strong>Total:</strong> ${data.total_plugins}</div>
+                    <div><strong>Enabled:</strong> ${data.enabled_plugins}</div>
+                    <div><strong>Ready:</strong> ${data.ready_plugins}</div>
+                    <div><strong>Failed:</strong> <span class="${data.failed_plugins > 0 ? 'text-red-500 font-bold' : ''}">${data.failed_plugins}</span></div>
+                </div>
+            `;
+
+            if (data.plugins && data.plugins.length > 0) {
+                html += '<table class="w-full text-sm"><thead><tr class="border-b"><th class="text-left py-2">Plugin</th><th class="text-left">Status</th><th class="text-right">Errors</th><th class="text-right">Init (ms)</th></tr></thead><tbody>';
+
+                data.plugins.forEach(plugin => {
+                    const statusClass = plugin.status === 'ready' ? 'text-green-600' :
+                                       plugin.status === 'failed' ? 'text-red-600' : 'text-gray-600';
+                    const rowClass = plugin.error_count > 0 ? 'bg-red-50' : '';
+
+                    html += `
+                        <tr class="border-b ${rowClass}">
+                            <td class="py-2">${plugin.name}</td>
+                            <td class="${statusClass}">${plugin.status}</td>
+                            <td class="text-right">${plugin.error_count}</td>
+                            <td class="text-right">${plugin.init_time_ms}</td>
+                        </tr>
+                    `;
+                });
+
+                html += '</tbody></table>';
+            }
+
+            container.innerHTML = html;
+        }
+
+        function toggleAutoRefresh() {
+            AUTO_REFRESH = document.getElementById('autoRefresh').checked;
+
+            if (REFRESH_INTERVAL) {
+                clearInterval(REFRESH_INTERVAL);
+                REFRESH_INTERVAL = null;
+            }
+
+            if (AUTO_REFRESH) {
+                REFRESH_INTERVAL = setInterval(refreshPluginHealth, 5000);
+                showToast('Auto-refresh enabled');
+            } else {
+                showToast('Auto-refresh disabled');
+            }
+        }
+
+        // Activity Log
+        function logActivity(message, isError = false) {
+            const log = document.getElementById('activityLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = isError ? 'text-red-600' : 'text-gray-700';
+            entry.textContent = `[${timestamp}] ${message}`;
+
+            if (log.children.length === 1 && log.children[0].classList.contains('text-gray-500')) {
+                log.innerHTML = '';
+            }
+
+            log.insertBefore(entry, log.firstChild);
+
+            // Keep only last 50 entries
+            while (log.children.length > 50) {
+                log.removeChild(log.lastChild);
+            }
+        }
+
+        function clearActivityLog() {
+            document.getElementById('activityLog').innerHTML = '<p class="text-gray-500">No activity yet</p>';
+        }
+
+        // Toast Notification
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+
+            const colors = {
+                success: 'bg-green-500',
+                error: 'bg-red-500',
+                warning: 'bg-orange-500',
+                info: 'bg-blue-500'
+            };
+
+            toast.firstElementChild.className = `${colors[type] || colors.success} text-white px-6 py-3 rounded-lg shadow-lg`;
+            toastMessage.textContent = message;
+
+            toast.classList.remove('hidden');
+
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
