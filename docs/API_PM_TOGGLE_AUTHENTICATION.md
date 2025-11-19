@@ -332,23 +332,106 @@ spec:
 
 ## Rate Limiting
 
-To prevent abuse, implement rate limiting on the toggle endpoint:
+The toggle endpoint includes built-in rate limiting to prevent abuse and excessive configuration changes that could impact system stability.
+
+### Configuration
+
+**Current Settings**:
+- **Rate**: 10 requests per minute
+- **Burst**: 3 requests (allows short bursts)
+- **Scope**: IP-based (per client IP)
+- **Log Level**: Warning (rate limit violations logged at WARN level)
+
+### Implementation
+
+The rate limiter is automatically applied to the toggle endpoint:
 
 ```go
-// Example rate limiter configuration
-import "proxynd/internal/adapters/http/fiber/middleware"
+// Rate limiter applied in SetupAPIv1Routes
+configRateLimiter := middlewares.NewEnhancedRateLimiter(middlewares.RateLimiterConfig{
+    Rate:        "10-M", // 10 requests per minute
+    BurstSize:   3,      // Allow burst of 3 requests
+    KeyFunc:     nil,    // Use default IP-based limiting
+    LogLevel:    "warn", // Log rate limit violations
+    ErrorPrefix: "PM Toggle",
+})
 
-rateLimiter := middlewares.EnhancedRateLimiter{
-    Max: 10,  // 10 requests
-    Window: 1 * time.Minute,
-    Message: "Too many toggle requests, please try again later",
-}
-
+// Middleware chain (production mode)
 api.Post("/pm/:name/toggle",
+    configRateLimiter,              // Applied first
     middlewares.JWTMiddleware(jwtConfig),
     middlewares.RequireRole("admin"),
-    rateLimiter,
     togglePackageManagerHandler)
+```
+
+### Response Format
+
+**Rate Limit Exceeded (429 Too Many Requests)**:
+```json
+{
+  "error": "rate_limit_exceeded",
+  "message": "Too many requests, please try again later"
+}
+```
+
+**Rate Limit Headers**:
+All responses include rate limit information in headers:
+
+```
+X-RateLimit-Limit: 10
+X-RateLimit-Remaining: 7
+X-RateLimit-Reset: 1700000060
+```
+
+### Behavior
+
+1. **Burst Allowance**: The first 3 requests can be sent immediately
+2. **Sustained Rate**: After burst, limited to 10 requests per minute
+3. **Per-IP Limiting**: Each client IP has independent rate limits
+4. **Reset Window**: Rate limits reset after 60 seconds
+
+### Customization
+
+To customize rate limiting, modify the configuration in `api_v1_router.go`:
+
+```go
+// More restrictive (5 requests per minute, no burst)
+configRateLimiter := middlewares.NewEnhancedRateLimiter(middlewares.RateLimiterConfig{
+    Rate:      "5-M",
+    BurstSize: 1,
+})
+
+// More permissive (20 requests per minute, burst of 5)
+configRateLimiter := middlewares.NewEnhancedRateLimiter(middlewares.RateLimiterConfig{
+    Rate:      "20-M",
+    BurstSize: 5,
+})
+```
+
+### IP Whitelisting
+
+To exempt specific IPs from rate limiting:
+
+```go
+configRateLimiter := middlewares.NewEnhancedRateLimiter(middlewares.RateLimiterConfig{
+    Rate:      "10-M",
+    BurstSize: 3,
+    Whitelist: []string{"10.0.0.0/8", "192.168.1.100"}, // Internal networks
+})
+```
+
+### Monitoring
+
+Rate limit violations are logged with details:
+
+```json
+{
+  "level": "warn",
+  "message": "PM Toggle rate limit exceeded",
+  "client_ip": "192.168.1.100",
+  "path": "/api/v1/pm/npm/toggle",
+  "timestamp": "2025-11-19T00:00:00Z"
+}
 ```
 
 ---
@@ -357,10 +440,20 @@ api.Post("/pm/:name/toggle",
 
 ### Unit Tests
 
-Tests are provided in `api_v1_router_auth_test.go`:
+Authentication tests are provided in `api_v1_router_auth_test.go`:
 
 ```bash
 go test ./internal/adapters/http/fiber/routers/ -run TestToggleEndpointAuthentication
+```
+
+Rate limiting tests are provided in `api_v1_router_ratelimit_test.go`:
+
+```bash
+# Run all rate limiting tests
+go test ./internal/adapters/http/fiber/routers/ -run TestToggleEndpointRateLimiting
+
+# Run specific rate limiting test
+go test ./internal/adapters/http/fiber/routers/ -run TestRateLimitConfiguration
 ```
 
 ### Integration Testing
@@ -441,6 +534,13 @@ tail -f logs/audit.log | jq 'select(.event_type == "config.changed")'
 ---
 
 ## Changelog
+
+**v1.1 (2025-11-19)**:
+- Added rate limiting to toggle endpoint
+- 10 requests per minute with burst of 3
+- IP-based rate limiting with whitelist support
+- Rate limit headers in responses
+- Comprehensive rate limiting tests
 
 **v1.0 (2025-11-19)**:
 - Initial implementation
