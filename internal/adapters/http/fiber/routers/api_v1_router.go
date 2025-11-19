@@ -76,16 +76,32 @@ func SetupAPIv1Routes(app *fiber.App, cfg interface{}) {
 		SkipPaths:     []string{}, // No skip paths for toggle endpoint
 	}
 
+	// Rate limiter for configuration changes: 10 requests per minute, burst of 3
+	// Prevents excessive configuration changes that could impact system stability
+	configRateLimiter := middlewares.NewEnhancedRateLimiter(middlewares.RateLimiterConfig{
+		Rate:        "10-M", // 10 requests per minute
+		BurstSize:   3,      // Allow burst of 3 requests
+		KeyFunc:     nil,    // Use default IP-based limiting
+		Whitelist:   []string{},
+		Blacklist:   []string{},
+		SkipPaths:   []string{},
+		LogLevel:    "warn", // Log rate limit violations at warn level
+		ErrorPrefix: "PM Toggle",
+	})
+
 	// If JWT_SECRET not set, use development key (should log warning)
 	if jwtConfig.SecretKey == "" {
 		// Development mode - authentication disabled for testing
 		// Production deployments MUST set JWT_SECRET environment variable
-		api.Post("/pm/:name/toggle", func(c *fiber.Ctx) error {
-			return togglePackageManager(c, rootCfg)
-		})
-	} else {
-		// Production mode - enforce authentication and authorization
 		api.Post("/pm/:name/toggle",
+			configRateLimiter,
+			func(c *fiber.Ctx) error {
+				return togglePackageManager(c, rootCfg)
+			})
+	} else {
+		// Production mode - enforce authentication, authorization, and rate limiting
+		api.Post("/pm/:name/toggle",
+			configRateLimiter,
 			middlewares.JWTMiddleware(jwtConfig),
 			middlewares.RequireRole("admin"),
 			func(c *fiber.Ctx) error {
