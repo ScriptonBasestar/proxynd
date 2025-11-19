@@ -11,6 +11,7 @@ import (
 	"proxynd/cache"
 	"proxynd/internal/config"
 	configService "proxynd/internal/services/config"
+	"proxynd/plugins"
 )
 
 // Global cache manager reference (set by main app)
@@ -297,8 +298,8 @@ func togglePackageManager(c *fiber.Ctx, cfg *config.RootConfig) error {
 		})
 	}
 
-	// TODO: Notify plugin system about the state change
-	// This will be implemented in the next step
+	// Notify plugin system about the state change
+	notifyPlugins(c, name, currentState, newState)
 
 	return c.JSON(fiber.Map{
 		"name":           name,
@@ -307,6 +308,33 @@ func togglePackageManager(c *fiber.Ctx, cfg *config.RootConfig) error {
 		"message":        fmt.Sprintf("Package manager '%s' %s successfully", name, map[bool]string{true: "enabled", false: "disabled"}[newState]),
 		"persisted":      true,
 	})
+}
+
+// notifyPlugins notifies the plugin system about package manager state changes
+func notifyPlugins(c *fiber.Ctx, name string, previousState, newState bool) {
+	pluginMgr, ok := c.Locals("pluginManager").(*plugins.Manager)
+	if !ok || pluginMgr == nil {
+		// Plugin manager not available, skip notification (non-critical)
+		return
+	}
+
+	event := plugins.Event{
+		Type: plugins.EventPackageManagerStateChanged,
+		Data: map[string]interface{}{
+			"package_manager": name,
+			"previous_state":  previousState,
+			"new_state":       newState,
+			"timestamp":       time.Now().UTC(),
+		},
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := pluginMgr.NotifyEvent(ctx, event); err != nil {
+		// Log but don't fail the request - notification is best-effort
+		// (logging will be handled by plugin manager internally)
+	}
 }
 
 // getSystemCacheStats returns system-wide cache statistics (real or mock)
