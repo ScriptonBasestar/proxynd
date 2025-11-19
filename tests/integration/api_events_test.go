@@ -16,7 +16,7 @@ func TestConfigReloadEventIntegration(t *testing.T) {
 	defer env.Cleanup()
 
 	t.Run("config reload triggers EventConfigReloaded", func(t *testing.T) {
-		resp, err := env.MakeRequest("POST", "/api/admin/config/reload", nil)
+		resp, err := env.MakeRequest("POST", "/api/config/reload", nil)
 		require.NoError(t, err)
 		defer func() { _ = resp.Body.Close() }()
 
@@ -38,7 +38,7 @@ func TestConfigReloadEventIntegration(t *testing.T) {
 	})
 
 	t.Run("config reload returns proper response", func(t *testing.T) {
-		resp, err := env.MakeRequest("POST", "/api/admin/config/reload", nil)
+		resp, err := env.MakeRequest("POST", "/api/config/reload", nil)
 		require.NoError(t, err)
 		defer func() { _ = resp.Body.Close() }()
 
@@ -61,7 +61,7 @@ func TestCacheClearEventIntegration(t *testing.T) {
 	defer env.Cleanup()
 
 	t.Run("clear all cache triggers EventCacheCleared", func(t *testing.T) {
-		resp, err := env.MakeRequest("DELETE", "/api/admin/cache/clear", nil)
+		resp, err := env.MakeRequest("DELETE", "/api/cache/clear", nil)
 		require.NoError(t, err)
 		defer func() { _ = resp.Body.Close() }()
 
@@ -81,7 +81,7 @@ func TestCacheClearEventIntegration(t *testing.T) {
 
 	t.Run("clear cache by type triggers EventCacheCleared", func(t *testing.T) {
 		// Test clearing npm cache
-		resp, err := env.MakeRequest("DELETE", "/api/admin/cache/clear/npm", nil)
+		resp, err := env.MakeRequest("DELETE", "/api/cache/clear/npm", nil)
 		require.NoError(t, err)
 		defer func() { _ = resp.Body.Close() }()
 
@@ -100,7 +100,7 @@ func TestCacheClearEventIntegration(t *testing.T) {
 	})
 
 	t.Run("clear maven cache", func(t *testing.T) {
-		resp, err := env.MakeRequest("DELETE", "/api/admin/cache/clear/maven", nil)
+		resp, err := env.MakeRequest("DELETE", "/api/cache/clear/maven", nil)
 		require.NoError(t, err)
 		defer func() { _ = resp.Body.Close() }()
 
@@ -109,7 +109,7 @@ func TestCacheClearEventIntegration(t *testing.T) {
 	})
 
 	t.Run("clear docker cache", func(t *testing.T) {
-		resp, err := env.MakeRequest("DELETE", "/api/admin/cache/clear/docker", nil)
+		resp, err := env.MakeRequest("DELETE", "/api/cache/clear/docker", nil)
 		require.NoError(t, err)
 		defer func() { _ = resp.Body.Close() }()
 
@@ -118,7 +118,7 @@ func TestCacheClearEventIntegration(t *testing.T) {
 	})
 
 	t.Run("clear invalid cache type", func(t *testing.T) {
-		resp, err := env.MakeRequest("DELETE", "/api/admin/cache/clear/invalid-type", nil)
+		resp, err := env.MakeRequest("DELETE", "/api/cache/clear/invalid-type", nil)
 		require.NoError(t, err)
 		defer func() { _ = resp.Body.Close() }()
 
@@ -179,14 +179,14 @@ func TestAllEventTypes(t *testing.T) {
 		assert.NotEqual(t, http.StatusInternalServerError, resp1.StatusCode)
 
 		// 2. EventConfigReloaded
-		resp2, err := env.MakeRequest("POST", "/api/admin/config/reload", nil)
+		resp2, err := env.MakeRequest("POST", "/api/config/reload", nil)
 		require.NoError(t, err)
 		resp2.Body.Close()
 
 		assert.Equal(t, http.StatusOK, resp2.StatusCode)
 
 		// 3. EventCacheCleared
-		resp3, err := env.MakeRequest("DELETE", "/api/admin/cache/clear", nil)
+		resp3, err := env.MakeRequest("DELETE", "/api/cache/clear", nil)
 		require.NoError(t, err)
 		resp3.Body.Close()
 
@@ -207,7 +207,7 @@ func TestEventNotificationNonBlocking(t *testing.T) {
 		// Even if plugins take time to process events, the HTTP response should be immediate
 
 		// Config reload should respond immediately
-		resp, err := env.MakeRequest("POST", "/api/admin/config/reload", nil)
+		resp, err := env.MakeRequest("POST", "/api/config/reload", nil)
 		require.NoError(t, err)
 		defer resp.Body.Close()
 
@@ -218,7 +218,7 @@ func TestEventNotificationNonBlocking(t *testing.T) {
 	})
 
 	t.Run("cache clear responds immediately", func(t *testing.T) {
-		resp, err := env.MakeRequest("DELETE", "/api/admin/cache/clear/npm", nil)
+		resp, err := env.MakeRequest("DELETE", "/api/cache/clear/npm", nil)
 		require.NoError(t, err)
 		defer resp.Body.Close()
 
@@ -234,7 +234,7 @@ func TestEventDataStructure(t *testing.T) {
 	defer env.Cleanup()
 
 	t.Run("config reload response contains timestamp", func(t *testing.T) {
-		resp, err := env.MakeRequest("POST", "/api/admin/config/reload", nil)
+		resp, err := env.MakeRequest("POST", "/api/config/reload", nil)
 		require.NoError(t, err)
 		defer resp.Body.Close()
 
@@ -279,7 +279,7 @@ func TestEventErrorHandling(t *testing.T) {
 		// Even if plugin manager is nil or plugins fail,
 		// the endpoint should still respond successfully
 
-		resp, err := env.MakeRequest("POST", "/api/admin/config/reload", nil)
+		resp, err := env.MakeRequest("POST", "/api/config/reload", nil)
 		require.NoError(t, err)
 		defer resp.Body.Close()
 
@@ -294,7 +294,7 @@ func TestEventErrorHandling(t *testing.T) {
 	})
 
 	t.Run("cache clear succeeds even with event errors", func(t *testing.T) {
-		resp, err := env.MakeRequest("DELETE", "/api/admin/cache/clear/pypi", nil)
+		resp, err := env.MakeRequest("DELETE", "/api/cache/clear/pypi", nil)
 		require.NoError(t, err)
 		defer resp.Body.Close()
 
