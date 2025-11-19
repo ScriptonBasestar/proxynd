@@ -37,6 +37,13 @@ type PluginHealthResponse struct {
 }
 
 // GetPluginHealth returns comprehensive health status of the plugin system
+// @Summary      Get plugin health status
+// @Description  Returns detailed health information for all plugins including status, errors, and timing metrics
+// @Tags         plugins
+// @Produce      json
+// @Success      200 {object} object{enabled=bool,initialized=bool,ready=bool,plugins=[]PluginHealthResponse,summary=object,event_metrics=object} "Plugin health status"
+// @Success      503 {object} object{enabled=bool,message=string} "Plugin system not available"
+// @Router       /api/v1/plugins/health [get]
 func (h *PluginHealthHandler) GetPluginHealth(c *fiber.Ctx) error {
 	// Get plugin manager from context
 	manager, ok := c.Locals("pluginManager").(*plugins.Manager)

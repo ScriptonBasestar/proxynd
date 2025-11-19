@@ -327,6 +327,22 @@ func getCacheSize(c *fiber.Ctx) error {
 }
 
 // clearAllCache 전체 캐시 정리 핸들러
+// clearAllCache clears all cached packages across all package managers
+// @Summary      Clear all cache
+// @Description  Clear all cached packages for all package managers (admin only, requires confirmation)
+// @Tags         cache
+// @Produce      json
+// @Param        confirm query string true "Confirmation flag (must be 'true')" default(true)
+// @Param        older_than query string false "Clear only items older than duration (e.g., '7d', '24h')"
+// @Param        size_limit query string false "Clear only if cache size exceeds limit (e.g., '1GB', '500MB')"
+// @Success      200 {object} object{success=bool,message=string,cleared_at=string,older_than=string,size_limit=string} "Cache cleared successfully"
+// @Failure      400 {object} object{error=string} "Confirmation required or invalid parameters"
+// @Failure      401 {object} object{error=string,message=string} "Unauthorized"
+// @Failure      403 {object} object{error=string,message=string} "Forbidden - admin role required"
+// @Failure      429 {object} object{error=string,message=string} "Rate limit exceeded"
+// @Failure      500 {object} object{error=string} "Configuration error"
+// @Router       /api/cache/clear [delete]
+// @Security     BearerAuth
 func clearAllCache(c *fiber.Ctx) error {
 	logger := logging.GetLogger()
 
@@ -390,6 +406,22 @@ func clearAllCache(c *fiber.Ctx) error {
 }
 
 // clearCacheByType 특정 타입 캐시 정리 핸들러
+// clearCacheByType clears cache for a specific package manager type
+// @Summary      Clear cache by type
+// @Description  Clear cached packages for a specific package manager (admin only, requires confirmation)
+// @Tags         cache
+// @Produce      json
+// @Param        type path string true "Package manager type" Enums(apt, npm, maven, pip, docker, yum, gem, apk)
+// @Param        confirm query string true "Confirmation flag (must be 'true')" default(true)
+// @Param        older_than query string false "Clear only items older than duration (e.g., '7d', '24h')"
+// @Param        size_limit query string false "Clear only if cache size exceeds limit (e.g., '1GB', '500MB')"
+// @Success      200 {object} object{success=bool,message=string,type=string,cleared_at=string,older_than=string,size_limit=string} "Cache cleared successfully"
+// @Failure      400 {object} object{error=string} "Invalid proxy type or confirmation required"
+// @Failure      401 {object} object{error=string,message=string} "Unauthorized"
+// @Failure      403 {object} object{error=string,message=string} "Forbidden - admin role required"
+// @Failure      429 {object} object{error=string,message=string} "Rate limit exceeded"
+// @Router       /api/cache/clear/{type} [delete]
+// @Security     BearerAuth
 func clearCacheByType(c *fiber.Ctx) error {
 	logger := logging.GetLogger()
 	proxyType := c.Params("type")

@@ -38,6 +38,12 @@ func SetupAPIv1Routes(app *fiber.App, cfg interface{}) {
 	}
 
 	// System information
+	// @Summary      Get system information
+	// @Description  Returns ProxyND version, edition, and license information
+	// @Tags         system
+	// @Produce      json
+	// @Success      200 {object} object{version=string,edition=string,license=object} "System information"
+	// @Router       /api/v1/system/info [get]
 	api.Get("/system/info", func(c *fiber.Ctx) error {
 		version := os.Getenv("PROXYND_VERSION")
 		if version == "" {
@@ -56,12 +62,24 @@ func SetupAPIv1Routes(app *fiber.App, cfg interface{}) {
 	})
 
 	// Statistics (real data if available, fallback to mock)
+	// @Summary      Get cache statistics
+	// @Description  Returns cache hit rate, total requests, and cache size
+	// @Tags         cache
+	// @Produce      json
+	// @Success      200 {object} object{hit_rate=number,total_requests=int,cache_size_mb=number,hits=int,misses=int} "Cache statistics"
+	// @Router       /api/v1/stats [get]
 	api.Get("/stats", func(c *fiber.Ctx) error {
 		stats := getSystemCacheStats()
 		return c.JSON(stats)
 	})
 
 	// Package Managers (from config if available)
+	// @Summary      List package managers
+	// @Description  Returns list of all package managers with their status
+	// @Tags         package-managers
+	// @Produce      json
+	// @Success      200 {array} object{name=string,enabled=bool,url=string,cache_enabled=bool} "List of package managers"
+	// @Router       /api/v1/pm [get]
 	api.Get("/pm", func(c *fiber.Ctx) error {
 		pms := getPackageManagers(rootCfg)
 		return c.JSON(pms)
@@ -236,6 +254,22 @@ func getPackageManagers(cfg *config.RootConfig) []fiber.Map {
 }
 
 // togglePackageManager toggles the enabled state of a package manager
+// @Summary      Toggle package manager
+// @Description  Enable or disable a specific package manager (admin only)
+// @Tags         package-managers
+// @Accept       json
+// @Produce      json
+// @Param        name path string true "Package manager name" Enums(maven, npm, docker, pypi, apt, yum, apk)
+// @Param        body body object false "Toggle request" SchemaExample({"enabled": true})
+// @Success      200 {object} object{name=string,enabled=bool,previous_state=bool,message=string,persisted=bool} "Success response"
+// @Failure      400 {object} object{error=string,message=string,valid=[]string} "Invalid package manager"
+// @Failure      401 {object} object{error=string,message=string} "Unauthorized"
+// @Failure      403 {object} object{error=string,message=string} "Forbidden - admin role required"
+// @Failure      429 {object} object{error=string,message=string} "Rate limit exceeded"
+// @Failure      500 {object} object{error=string,message=string} "Internal server error"
+// @Failure      503 {object} object{error=string,message=string} "Config service unavailable"
+// @Router       /api/v1/pm/{name}/toggle [post]
+// @Security     BearerAuth
 func togglePackageManager(c *fiber.Ctx, cfg *config.RootConfig) error {
 	name := c.Params("name")
 
