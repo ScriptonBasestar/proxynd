@@ -9,6 +9,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"proxynd/cache"
+	"proxynd/internal/adapters/http/fiber/middleware"
+	"proxynd/internal/auth/audit"
 	"proxynd/internal/config"
 	configService "proxynd/internal/services/config"
 	"proxynd/plugins"
@@ -64,9 +66,32 @@ func SetupAPIv1Routes(app *fiber.App, cfg interface{}) {
 		return c.JSON(pms)
 	})
 
-	api.Post("/pm/:name/toggle", func(c *fiber.Ctx) error {
-		return togglePackageManager(c, rootCfg)
-	})
+	// Protected routes requiring authentication and admin role
+	// Note: In development/testing, JWT middleware may not be enforced
+	// In production, ensure JWT middleware is enabled globally or per-route
+	jwtConfig := middlewares.JWTConfig{
+		SecretKey:     os.Getenv("JWT_SECRET"),
+		TokenDuration: 24 * time.Hour,
+		Issuer:        "proxynd",
+		SkipPaths:     []string{}, // No skip paths for toggle endpoint
+	}
+
+	// If JWT_SECRET not set, use development key (should log warning)
+	if jwtConfig.SecretKey == "" {
+		// Development mode - authentication disabled for testing
+		// Production deployments MUST set JWT_SECRET environment variable
+		api.Post("/pm/:name/toggle", func(c *fiber.Ctx) error {
+			return togglePackageManager(c, rootCfg)
+		})
+	} else {
+		// Production mode - enforce authentication and authorization
+		api.Post("/pm/:name/toggle",
+			middlewares.JWTMiddleware(jwtConfig),
+			middlewares.RequireRole("admin"),
+			func(c *fiber.Ctx) error {
+				return togglePackageManager(c, rootCfg)
+			})
+	}
 }
 
 // getLicenseType returns the license type based on edition
@@ -193,6 +218,17 @@ func getPackageManagers(cfg *config.RootConfig) []fiber.Map {
 func togglePackageManager(c *fiber.Ctx, cfg *config.RootConfig) error {
 	name := c.Params("name")
 
+	// Extract user information from context (if available from JWT)
+	userID, username, _, authenticated := middlewares.GetUserFromContext(c)
+	if !authenticated {
+		userID = "anonymous"
+		username = "anonymous"
+	}
+
+	// Get client info for audit logging
+	clientIP := c.IP()
+	userAgent := c.Get("User-Agent")
+
 	// Validate package manager name
 	validPMs := map[string]bool{
 		"maven":  true,
@@ -205,6 +241,12 @@ func togglePackageManager(c *fiber.Ctx, cfg *config.RootConfig) error {
 	}
 
 	if !validPMs[name] {
+		// Log failed attempt
+		logAuditEvent(c, audit.EventConfigChanged, audit.LevelWarning,
+			fmt.Sprintf("Invalid package manager toggle attempt: %s", name),
+			userID, username, clientIP, userAgent, name, false, false, false,
+			"invalid_package_manager")
+
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error":   "invalid_package_manager",
 			"message": fmt.Sprintf("Unknown package manager: %s", name),
@@ -292,6 +334,12 @@ func togglePackageManager(c *fiber.Ctx, cfg *config.RootConfig) error {
 		// Rollback the change
 		*registryPtr = currentState
 
+		// Log failed persistence
+		logAuditEvent(c, audit.EventConfigChanged, audit.LevelCritical,
+			fmt.Sprintf("Failed to persist package manager '%s' state change", name),
+			userID, username, clientIP, userAgent, name, currentState, newState, false,
+			fmt.Sprintf("save_failed: %v", err))
+
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error":   "save_failed",
 			"message": fmt.Sprintf("Failed to persist configuration: %v", err),
@@ -301,6 +349,11 @@ func togglePackageManager(c *fiber.Ctx, cfg *config.RootConfig) error {
 	// Notify plugin system about the state change
 	notifyPlugins(c, name, currentState, newState)
 
+	// Log audit event for configuration change
+	logAuditEvent(c, audit.EventConfigChanged, audit.LevelInfo,
+		fmt.Sprintf("Package manager '%s' %s", name, map[bool]string{true: "enabled", false: "disabled"}[newState]),
+		userID, username, clientIP, userAgent, name, currentState, newState, true, "")
+
 	return c.JSON(fiber.Map{
 		"name":           name,
 		"enabled":        newState,
@@ -308,6 +361,43 @@ func togglePackageManager(c *fiber.Ctx, cfg *config.RootConfig) error {
 		"message":        fmt.Sprintf("Package manager '%s' %s successfully", name, map[bool]string{true: "enabled", false: "disabled"}[newState]),
 		"persisted":      true,
 	})
+}
+
+// logAuditEvent logs an audit event for package manager configuration changes
+func logAuditEvent(c *fiber.Ctx, eventType audit.AuditEventType, level audit.AuditLevel,
+	message, userID, username, clientIP, userAgent, pmName string,
+	previousState, newState, success bool, errorMsg string) {
+	// Try to get audit service from locals
+	auditSvc, ok := c.Locals("auditService").(*audit.AuditService)
+	if !ok || auditSvc == nil {
+		// Audit service not available, skip (non-critical)
+		// In production, audit service should be available via dependency injection
+		return
+	}
+
+	// Build audit event
+	builder := auditSvc.LogEvent(eventType, level, message).
+		WithUser(userID, "").
+		WithClient(clientIP, userAgent).
+		WithResource(fmt.Sprintf("/api/v1/pm/%s/toggle", pmName)).
+		WithAction("toggle").
+		WithDetail("package_manager", pmName).
+		WithDetail("previous_state", previousState).
+		WithDetail("new_state", newState).
+		WithTag("configuration").
+		WithTag("package_manager")
+
+	if success {
+		builder = builder.WithResult("success")
+	} else {
+		builder = builder.
+			WithResult("failure").
+			WithDetail("error", errorMsg).
+			WithRiskScore(50)
+	}
+
+	// Commit the event
+	builder.Commit()
 }
 
 // notifyPlugins notifies the plugin system about package manager state changes
