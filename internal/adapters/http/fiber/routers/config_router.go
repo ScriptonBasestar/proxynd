@@ -11,6 +11,8 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
+	"proxynd/internal/adapters/http/fiber/middleware"
+	"proxynd/internal/auth/audit"
 	"proxynd/internal/config"
 	"proxynd/internal/helpers"
 	"proxynd/internal/logging"
@@ -126,8 +128,42 @@ func ConfigRouter(app *fiber.App) {
 	// 특정 설정 파일 내용
 	api.Get("/files/*", getConfigFile)
 
-	// 설정 리로드 (향후 구현)
-	api.Post("/reload", reloadConfig)
+	// JWT configuration for protected endpoints
+	jwtConfig := middlewares.JWTConfig{
+		SecretKey:     os.Getenv("JWT_SECRET"),
+		TokenDuration: 24 * time.Hour,
+		Issuer:        "proxynd",
+		SkipPaths:     []string{},
+	}
+
+	// Rate limiter for config operations: 10 requests per minute, burst of 3
+	// Prevents excessive config reloads that could impact system stability
+	configRateLimiter := middlewares.NewEnhancedRateLimiter(middlewares.RateLimiterConfig{
+		Rate:        "10-M", // 10 requests per minute
+		BurstSize:   3,      // Allow burst of 3 requests
+		KeyFunc:     nil,    // Use default IP-based limiting
+		Whitelist:   []string{},
+		Blacklist:   []string{},
+		SkipPaths:   []string{},
+		LogLevel:    "warn", // Log rate limit violations at warn level
+		ErrorPrefix: "Config Reload",
+	})
+
+	// Config reload endpoint with security
+	if jwtConfig.SecretKey == "" {
+		// Development mode - authentication disabled for testing
+		// Production deployments MUST set JWT_SECRET environment variable
+		api.Post("/reload",
+			configRateLimiter,
+			reloadConfig)
+	} else {
+		// Production mode - enforce authentication, authorization, and rate limiting
+		api.Post("/reload",
+			configRateLimiter,
+			middlewares.JWTMiddleware(jwtConfig),
+			middlewares.RequireRole("admin"),
+			reloadConfig)
+	}
 }
 
 // validateConfig 설정 검증 핸들러
@@ -555,13 +591,29 @@ func getConfigFile(c *fiber.Ctx) error {
 func reloadConfig(c *fiber.Ctx) error {
 	logger := logging.GetLogger()
 
+	// Extract user information from context (if available from JWT)
+	userID, username, _, authenticated := middlewares.GetUserFromContext(c)
+	if !authenticated {
+		userID = "anonymous"
+		username = "anonymous"
+	}
+
+	// Get client info for audit logging
+	clientIP := c.IP()
+	userAgent := c.Get("User-Agent")
+
 	// 실제로는 설정 리로드 로직 구현
-	logger.Info("Config reload requested")
+	logger.Info("Config reload requested", logging.F("user", username), logging.F("ip", clientIP))
 
 	reloadedAt := time.Now()
 
 	// Notify plugin system about config reload
 	notifyConfigReload(c, reloadedAt)
+
+	// Log audit event for config reload
+	logConfigReloadAudit(c, audit.EventConfigChanged, audit.LevelInfo,
+		"Configuration reloaded successfully",
+		userID, username, clientIP, userAgent, true, "")
 
 	return c.JSON(fiber.Map{
 		"success":     true,
@@ -599,6 +651,39 @@ func notifyConfigReload(c *fiber.Ctx, reloadedAt time.Time) {
 		// Log but don't fail the request - notification is best-effort
 		// (logging will be handled by plugin manager internally)
 	}
+}
+
+// logConfigReloadAudit logs an audit event for configuration reload operations
+func logConfigReloadAudit(c *fiber.Ctx, eventType audit.AuditEventType, level audit.AuditLevel,
+	message, userID, username, clientIP, userAgent string, success bool, errorMsg string) {
+	// Try to get audit service from locals
+	auditSvc, ok := c.Locals("auditService").(*audit.AuditService)
+	if !ok || auditSvc == nil {
+		// Audit service not available, skip (non-critical)
+		// In production, audit service should be available via dependency injection
+		return
+	}
+
+	// Build audit event
+	builder := auditSvc.LogEvent(eventType, level, message).
+		WithUser(userID, "").
+		WithClient(clientIP, userAgent).
+		WithResource("/api/config/reload").
+		WithAction("reload").
+		WithTag("configuration").
+		WithTag("config_reload")
+
+	if success {
+		builder = builder.WithResult("success")
+	} else {
+		builder = builder.
+			WithResult("failure").
+			WithDetail("error", errorMsg).
+			WithRiskScore(50)
+	}
+
+	// Commit the event
+	builder.Commit()
 }
 
 // 헬퍼 함수들

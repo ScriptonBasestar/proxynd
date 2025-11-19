@@ -11,6 +11,8 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
+	"proxynd/internal/adapters/http/fiber/middleware"
+	"proxynd/internal/auth/audit"
 	"proxynd/internal/config"
 	"proxynd/internal/logging"
 	"proxynd/internal/security"
@@ -97,26 +99,70 @@ type TTLCalculationExample struct {
 func CacheRouter(app *fiber.App) {
 	api := app.Group("/api/cache")
 
-	// 캐시 목록 조회
+	// 캐시 목록 조회 (public endpoints)
 	api.Get("/list", getCacheList)
 
 	// 캐시 크기 및 통계 조회
 	api.Get("/size", getCacheSize)
-
-	// 전체 캐시 정리
-	api.Delete("/clear", clearAllCache)
-
-	// 특정 타입 캐시 정리
-	api.Delete("/clear/:type", clearCacheByType)
-
-	// 특정 캐시 항목 삭제
-	api.Delete("/item/*", deleteCacheItem)
 
 	// 캐시 통계 조회
 	api.Get("/stats", getCacheStats)
 
 	// TTL 정책 조회
 	api.Get("/ttl", getTTLPolicy)
+
+	// JWT configuration for protected endpoints
+	jwtConfig := middlewares.JWTConfig{
+		SecretKey:     os.Getenv("JWT_SECRET"),
+		TokenDuration: 24 * time.Hour,
+		Issuer:        "proxynd",
+		SkipPaths:     []string{},
+	}
+
+	// Rate limiter for cache operations: 10 requests per minute, burst of 3
+	// Prevents excessive cache clears that could impact system performance
+	cacheRateLimiter := middlewares.NewEnhancedRateLimiter(middlewares.RateLimiterConfig{
+		Rate:        "10-M", // 10 requests per minute
+		BurstSize:   3,      // Allow burst of 3 requests
+		KeyFunc:     nil,    // Use default IP-based limiting
+		Whitelist:   []string{},
+		Blacklist:   []string{},
+		SkipPaths:   []string{},
+		LogLevel:    "warn", // Log rate limit violations at warn level
+		ErrorPrefix: "Cache Clear",
+	})
+
+	// Protected cache clear endpoints
+	if jwtConfig.SecretKey == "" {
+		// Development mode - authentication disabled for testing
+		// Production deployments MUST set JWT_SECRET environment variable
+		api.Delete("/clear",
+			cacheRateLimiter,
+			clearAllCache)
+		api.Delete("/clear/:type",
+			cacheRateLimiter,
+			clearCacheByType)
+		api.Delete("/item/*",
+			cacheRateLimiter,
+			deleteCacheItem)
+	} else {
+		// Production mode - enforce authentication, authorization, and rate limiting
+		api.Delete("/clear",
+			cacheRateLimiter,
+			middlewares.JWTMiddleware(jwtConfig),
+			middlewares.RequireRole("admin"),
+			clearAllCache)
+		api.Delete("/clear/:type",
+			cacheRateLimiter,
+			middlewares.JWTMiddleware(jwtConfig),
+			middlewares.RequireRole("admin"),
+			clearCacheByType)
+		api.Delete("/item/*",
+			cacheRateLimiter,
+			middlewares.JWTMiddleware(jwtConfig),
+			middlewares.RequireRole("admin"),
+			deleteCacheItem)
+	}
 }
 
 // getCacheList 캐시 목록 조회 핸들러
