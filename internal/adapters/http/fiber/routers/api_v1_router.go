@@ -9,6 +9,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"proxynd/cache"
+	"proxynd/internal/adapters/http/fiber/handlers"
 	"proxynd/internal/adapters/http/fiber/middleware"
 	"proxynd/internal/auth/audit"
 	"proxynd/internal/config"
@@ -65,6 +66,10 @@ func SetupAPIv1Routes(app *fiber.App, cfg interface{}) {
 		pms := getPackageManagers(rootCfg)
 		return c.JSON(pms)
 	})
+
+	// Plugin health check endpoint
+	pluginHealthHandler := handlers.NewPluginHealthHandler()
+	api.Get("/plugins/health", pluginHealthHandler.GetPluginHealth)
 
 	// Protected routes requiring authentication and admin role
 	// Note: In development/testing, JWT middleware may not be enforced
