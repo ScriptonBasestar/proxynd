@@ -565,17 +565,49 @@ func (env *IntegrationTestEnvironment) setupProxyServer(_ *testing.T) {
 }
 
 // MakeRequest 통합 테스트용 HTTP 요청 실행
+// body parameter can be:
+//   - nil (no body)
+//   - io.Reader (request body)
+//   - map[string]string (headers) - for backward compatibility
 func (env *IntegrationTestEnvironment) MakeRequest(method, path string,
-	headers map[string]string,
+	bodyOrHeaders interface{},
 ) (*http.Response, error) {
-	req, err := http.NewRequest(method, path, nil)
+	var body io.Reader
+	var headers map[string]string
+
+	// Determine parameter type
+	switch v := bodyOrHeaders.(type) {
+	case nil:
+		// No body, no headers
+		body = nil
+		headers = nil
+	case io.Reader:
+		// Request body provided
+		body = v
+		headers = nil
+	case map[string]string:
+		// Headers provided (backward compatibility)
+		body = nil
+		headers = v
+	default:
+		return nil, fmt.Errorf("unsupported parameter type: %T", bodyOrHeaders)
+	}
+
+	req, err := http.NewRequest(method, path, body)
 	if err != nil {
 		return nil, err
 	}
 
+	// Set default Content-Type for POST/PUT/PATCH with body
+	if body != nil && (method == "POST" || method == "PUT" || method == "PATCH") {
+		req.Header.Set("Content-Type", "application/json")
+	}
+
 	// 헤더 설정
-	for key, value := range headers {
-		req.Header.Set(key, value)
+	if headers != nil {
+		for key, value := range headers {
+			req.Header.Set(key, value)
+		}
 	}
 
 	// Fiber의 Test 메서드 사용
