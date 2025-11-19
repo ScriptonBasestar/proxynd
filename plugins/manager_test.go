@@ -59,6 +59,28 @@ func (m *mockPlugin) OnShutdown(ctx context.Context) error {
 	return nil
 }
 
+// Mock plugin with event handler for testing
+type mockEventHandlerPlugin struct {
+	mockPlugin
+	eventsReceived []Event
+	eventError     error
+	eventDelay     time.Duration
+}
+
+func (m *mockEventHandlerPlugin) OnEvent(ctx context.Context, event Event) error {
+	// Simulate delay if configured
+	if m.eventDelay > 0 {
+		select {
+		case <-time.After(m.eventDelay):
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
+
+	m.eventsReceived = append(m.eventsReceived, event)
+	return m.eventError
+}
+
 func TestNewManager(t *testing.T) {
 	logger := &mockLogger{}
 
@@ -458,6 +480,356 @@ func TestGetPlugins(t *testing.T) {
 
 		if enabled[0].Name != "plugin1" {
 			t.Errorf("Expected plugin1 to be enabled, got %s", enabled[0].Name)
+		}
+	})
+}
+
+func TestNotifyEvent(t *testing.T) {
+	logger := &mockLogger{}
+
+	t.Run("single plugin receives event", func(t *testing.T) {
+		plugin := &mockEventHandlerPlugin{
+			mockPlugin: mockPlugin{name: "event-plugin"},
+		}
+
+		oldRegistry := registry
+		defer func() { registry = oldRegistry }()
+		registry = []Plugin{&plugin.mockPlugin}
+
+		cfg := DefaultConfig()
+		cfg.Registry.Core = []PluginConfig{
+			{Name: "event-plugin", Enabled: true, Priority: 100},
+		}
+
+		manager := NewManager(cfg, logger)
+		err := manager.Discover()
+		if err != nil {
+			t.Fatalf("Discover failed: %v", err)
+		}
+
+		// Set the instance
+		manager.plugins[0].instance = &plugin.mockPlugin
+
+		event := Event{
+			Type: EventPackageManagerStateChanged,
+			Data: map[string]interface{}{
+				"package_manager": "npm",
+				"previous_state":  false,
+				"new_state":       true,
+			},
+		}
+
+		ctx := context.Background()
+		err = manager.NotifyEvent(ctx, event)
+		if err != nil {
+			t.Errorf("NotifyEvent failed: %v", err)
+		}
+
+		if len(plugin.eventsReceived) != 1 {
+			t.Errorf("Expected 1 event, got %d", len(plugin.eventsReceived))
+		}
+
+		if plugin.eventsReceived[0].Type != EventPackageManagerStateChanged {
+			t.Errorf("Expected event type %s, got %s", EventPackageManagerStateChanged, plugin.eventsReceived[0].Type)
+		}
+	})
+
+	t.Run("multiple plugins receive event", func(t *testing.T) {
+		plugin1 := &mockEventHandlerPlugin{
+			mockPlugin: mockPlugin{name: "plugin1"},
+		}
+		plugin2 := &mockEventHandlerPlugin{
+			mockPlugin: mockPlugin{name: "plugin2"},
+		}
+
+		oldRegistry := registry
+		defer func() { registry = oldRegistry }()
+		registry = []Plugin{&plugin1.mockPlugin, &plugin2.mockPlugin}
+
+		cfg := DefaultConfig()
+		cfg.Registry.Core = []PluginConfig{
+			{Name: "plugin1", Enabled: true, Priority: 100},
+			{Name: "plugin2", Enabled: true, Priority: 110},
+		}
+
+		manager := NewManager(cfg, logger)
+		err := manager.Discover()
+		if err != nil {
+			t.Fatalf("Discover failed: %v", err)
+		}
+
+		// Set instances
+		manager.plugins[0].instance = &plugin1.mockPlugin
+		manager.plugins[1].instance = &plugin2.mockPlugin
+
+		event := Event{
+			Type: EventConfigReloaded,
+			Data: map[string]interface{}{
+				"timestamp": time.Now().UTC(),
+			},
+		}
+
+		ctx := context.Background()
+		err = manager.NotifyEvent(ctx, event)
+		if err != nil {
+			t.Errorf("NotifyEvent failed: %v", err)
+		}
+
+		if len(plugin1.eventsReceived) != 1 {
+			t.Errorf("Plugin1 expected 1 event, got %d", len(plugin1.eventsReceived))
+		}
+
+		if len(plugin2.eventsReceived) != 1 {
+			t.Errorf("Plugin2 expected 1 event, got %d", len(plugin2.eventsReceived))
+		}
+	})
+
+	t.Run("non-event-handler plugin is skipped", func(t *testing.T) {
+		eventPlugin := &mockEventHandlerPlugin{
+			mockPlugin: mockPlugin{name: "event-plugin"},
+		}
+		normalPlugin := &mockPlugin{name: "normal-plugin"}
+
+		oldRegistry := registry
+		defer func() { registry = oldRegistry }()
+		registry = []Plugin{&eventPlugin.mockPlugin, normalPlugin}
+
+		cfg := DefaultConfig()
+		cfg.Registry.Core = []PluginConfig{
+			{Name: "event-plugin", Enabled: true, Priority: 100},
+			{Name: "normal-plugin", Enabled: true, Priority: 110},
+		}
+
+		manager := NewManager(cfg, logger)
+		err := manager.Discover()
+		if err != nil {
+			t.Fatalf("Discover failed: %v", err)
+		}
+
+		// Set instances
+		manager.plugins[0].instance = &eventPlugin.mockPlugin
+		manager.plugins[1].instance = normalPlugin
+
+		event := Event{
+			Type: EventCacheCleared,
+			Data: map[string]interface{}{
+				"cache_type": "npm",
+			},
+		}
+
+		ctx := context.Background()
+		err = manager.NotifyEvent(ctx, event)
+		if err != nil {
+			t.Errorf("NotifyEvent failed: %v", err)
+		}
+
+		// Only event plugin should receive the event
+		if len(eventPlugin.eventsReceived) != 1 {
+			t.Errorf("Event plugin expected 1 event, got %d", len(eventPlugin.eventsReceived))
+		}
+	})
+
+	t.Run("disabled plugin does not receive event", func(t *testing.T) {
+		plugin := &mockEventHandlerPlugin{
+			mockPlugin: mockPlugin{name: "disabled-plugin"},
+		}
+
+		oldRegistry := registry
+		defer func() { registry = oldRegistry }()
+		registry = []Plugin{&plugin.mockPlugin}
+
+		cfg := DefaultConfig()
+		cfg.Registry.Core = []PluginConfig{
+			{Name: "disabled-plugin", Enabled: false, Priority: 100},
+		}
+
+		manager := NewManager(cfg, logger)
+		err := manager.Discover()
+		if err != nil {
+			t.Fatalf("Discover failed: %v", err)
+		}
+
+		manager.plugins[0].instance = &plugin.mockPlugin
+
+		event := Event{
+			Type: EventPackageManagerStateChanged,
+			Data: map[string]interface{}{},
+		}
+
+		ctx := context.Background()
+		err = manager.NotifyEvent(ctx, event)
+		if err != nil {
+			t.Errorf("NotifyEvent failed: %v", err)
+		}
+
+		if len(plugin.eventsReceived) != 0 {
+			t.Errorf("Disabled plugin should not receive events, got %d", len(plugin.eventsReceived))
+		}
+	})
+
+	t.Run("event handler error continues to other handlers", func(t *testing.T) {
+		plugin1 := &mockEventHandlerPlugin{
+			mockPlugin: mockPlugin{name: "failing-plugin"},
+			eventError: context.DeadlineExceeded,
+		}
+		plugin2 := &mockEventHandlerPlugin{
+			mockPlugin: mockPlugin{name: "working-plugin"},
+		}
+
+		oldRegistry := registry
+		defer func() { registry = oldRegistry }()
+		registry = []Plugin{&plugin1.mockPlugin, &plugin2.mockPlugin}
+
+		cfg := DefaultConfig()
+		cfg.Registry.Core = []PluginConfig{
+			{Name: "failing-plugin", Enabled: true, Priority: 100},
+			{Name: "working-plugin", Enabled: true, Priority: 110},
+		}
+
+		manager := NewManager(cfg, logger)
+		err := manager.Discover()
+		if err != nil {
+			t.Fatalf("Discover failed: %v", err)
+		}
+
+		manager.plugins[0].instance = &plugin1.mockPlugin
+		manager.plugins[1].instance = &plugin2.mockPlugin
+
+		event := Event{
+			Type: EventPackageManagerStateChanged,
+			Data: map[string]interface{}{},
+		}
+
+		ctx := context.Background()
+		err = manager.NotifyEvent(ctx, event)
+		// Should not error since one handler succeeded
+		if err != nil {
+			t.Errorf("NotifyEvent should not fail when only some handlers fail: %v", err)
+		}
+
+		// Both should have received the event attempt
+		if len(plugin1.eventsReceived) != 1 {
+			t.Errorf("Failing plugin expected 1 event attempt, got %d", len(plugin1.eventsReceived))
+		}
+
+		if len(plugin2.eventsReceived) != 1 {
+			t.Errorf("Working plugin expected 1 event, got %d", len(plugin2.eventsReceived))
+		}
+	})
+
+	t.Run("all handlers fail returns error", func(t *testing.T) {
+		plugin1 := &mockEventHandlerPlugin{
+			mockPlugin: mockPlugin{name: "failing-plugin1"},
+			eventError: context.DeadlineExceeded,
+		}
+		plugin2 := &mockEventHandlerPlugin{
+			mockPlugin: mockPlugin{name: "failing-plugin2"},
+			eventError: context.Canceled,
+		}
+
+		oldRegistry := registry
+		defer func() { registry = oldRegistry }()
+		registry = []Plugin{&plugin1.mockPlugin, &plugin2.mockPlugin}
+
+		cfg := DefaultConfig()
+		cfg.Registry.Core = []PluginConfig{
+			{Name: "failing-plugin1", Enabled: true, Priority: 100},
+			{Name: "failing-plugin2", Enabled: true, Priority: 110},
+		}
+
+		manager := NewManager(cfg, logger)
+		err := manager.Discover()
+		if err != nil {
+			t.Fatalf("Discover failed: %v", err)
+		}
+
+		manager.plugins[0].instance = &plugin1.mockPlugin
+		manager.plugins[1].instance = &plugin2.mockPlugin
+
+		event := Event{
+			Type: EventPackageManagerStateChanged,
+			Data: map[string]interface{}{},
+		}
+
+		ctx := context.Background()
+		err = manager.NotifyEvent(ctx, event)
+		if err == nil {
+			t.Error("Expected error when all handlers fail")
+		}
+	})
+
+	t.Run("timeout on slow handler", func(t *testing.T) {
+		plugin := &mockEventHandlerPlugin{
+			mockPlugin: mockPlugin{name: "slow-plugin"},
+			eventDelay: 10 * time.Second, // Much longer than timeout
+		}
+
+		oldRegistry := registry
+		defer func() { registry = oldRegistry }()
+		registry = []Plugin{&plugin.mockPlugin}
+
+		cfg := DefaultConfig()
+		cfg.Registry.Core = []PluginConfig{
+			{Name: "slow-plugin", Enabled: true, Priority: 100},
+		}
+
+		manager := NewManager(cfg, logger)
+		err := manager.Discover()
+		if err != nil {
+			t.Fatalf("Discover failed: %v", err)
+		}
+
+		manager.plugins[0].instance = &plugin.mockPlugin
+
+		event := Event{
+			Type: EventPackageManagerStateChanged,
+			Data: map[string]interface{}{},
+		}
+
+		ctx := context.Background()
+		start := time.Now()
+		err = manager.NotifyEvent(ctx, event)
+		duration := time.Since(start)
+
+		// Should complete relatively quickly due to timeout (5 seconds in manager)
+		if duration > 7*time.Second {
+			t.Errorf("Expected timeout around 5s, took %v", duration)
+		}
+
+		// Should error since the handler timed out
+		if err == nil {
+			t.Error("Expected error due to timeout")
+		}
+	})
+
+	t.Run("when plugin system disabled", func(t *testing.T) {
+		plugin := &mockEventHandlerPlugin{
+			mockPlugin: mockPlugin{name: "event-plugin"},
+		}
+
+		oldRegistry := registry
+		defer func() { registry = oldRegistry }()
+		registry = []Plugin{&plugin.mockPlugin}
+
+		cfg := &Config{
+			Enabled: false, // Plugin system disabled
+		}
+
+		manager := NewManager(cfg, logger)
+
+		event := Event{
+			Type: EventPackageManagerStateChanged,
+			Data: map[string]interface{}{},
+		}
+
+		ctx := context.Background()
+		err := manager.NotifyEvent(ctx, event)
+		if err != nil {
+			t.Errorf("NotifyEvent should not error when disabled: %v", err)
+		}
+
+		if len(plugin.eventsReceived) != 0 {
+			t.Errorf("Disabled system should not send events, got %d", len(plugin.eventsReceived))
 		}
 	})
 }
