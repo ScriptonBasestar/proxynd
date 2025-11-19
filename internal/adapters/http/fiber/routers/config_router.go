@@ -1,6 +1,7 @@
 package routers
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -14,6 +15,7 @@ import (
 	"proxynd/internal/helpers"
 	"proxynd/internal/logging"
 	"proxynd/internal/security"
+	"proxynd/plugins"
 )
 
 // ConfigValidationResponse 설정 검증 응답 구조체
@@ -556,11 +558,47 @@ func reloadConfig(c *fiber.Ctx) error {
 	// 실제로는 설정 리로드 로직 구현
 	logger.Info("Config reload requested")
 
+	reloadedAt := time.Now()
+
+	// Notify plugin system about config reload
+	notifyConfigReload(c, reloadedAt)
+
 	return c.JSON(fiber.Map{
 		"success":     true,
 		"message":     "Configuration reloaded successfully",
-		"reloaded_at": time.Now(),
+		"reloaded_at": reloadedAt,
 	})
+}
+
+// notifyConfigReload notifies the plugin system about configuration reload
+func notifyConfigReload(c *fiber.Ctx, reloadedAt time.Time) {
+	pluginMgr, ok := c.Locals("pluginManager").(*plugins.Manager)
+	if !ok || pluginMgr == nil {
+		// Plugin manager not available, skip notification (non-critical)
+		return
+	}
+
+	// Get config directory for event data
+	configDir := helpers.GetConfigDir()
+	if configDir == "" {
+		configDir = "/etc/proxynd/config"
+	}
+
+	event := plugins.Event{
+		Type: plugins.EventConfigReloaded,
+		Data: map[string]interface{}{
+			"timestamp":   reloadedAt,
+			"config_path": configDir,
+		},
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := pluginMgr.NotifyEvent(ctx, event); err != nil {
+		// Log but don't fail the request - notification is best-effort
+		// (logging will be handled by plugin manager internally)
+	}
 }
 
 // 헬퍼 함수들
