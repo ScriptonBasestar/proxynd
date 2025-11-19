@@ -1,6 +1,7 @@
 package routers
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -13,6 +14,7 @@ import (
 	"proxynd/internal/config"
 	"proxynd/internal/logging"
 	"proxynd/internal/security"
+	"proxynd/plugins"
 )
 
 // Constants for cache router
@@ -319,10 +321,15 @@ func clearAllCache(c *fiber.Ctx) error {
 	// 실제 캐시 정리 로직 (여기서는 로깅만)
 	// 실제로는 cache.Manager의 Clear() 메서드 사용
 
+	clearedAt := time.Now()
+
+	// Notify plugin system about cache clear
+	notifyCacheCleared(c, "all", clearedAt)
+
 	response := fiber.Map{
 		"success":    true,
 		"message":    "All cache cleared successfully",
-		"cleared_at": time.Now(),
+		"cleared_at": clearedAt,
 	}
 
 	// 추가 정보 포함
@@ -376,11 +383,16 @@ func clearCacheByType(c *fiber.Ctx) error {
 
 	// 실제 캐시 정리 로직은 여기서 구현
 	// 현재는 로깅과 응답만 처리
+	clearedAt := time.Now()
+
+	// Notify plugin system about cache clear
+	notifyCacheCleared(c, proxyType, clearedAt)
+
 	response := fiber.Map{
 		"success":    true,
 		"message":    fmt.Sprintf("%s cache cleared successfully", proxyType),
 		"type":       proxyType,
-		"cleared_at": time.Now(),
+		"cleared_at": clearedAt,
 	}
 
 	// 추가 정보 포함
@@ -578,4 +590,29 @@ func getTTLPolicy(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(response)
+}
+
+// notifyCacheCleared notifies the plugin system about cache clear
+func notifyCacheCleared(c *fiber.Ctx, cacheType string, clearedAt time.Time) {
+	pluginMgr, ok := c.Locals("pluginManager").(*plugins.Manager)
+	if !ok || pluginMgr == nil {
+		// Plugin manager not available, skip notification (non-critical)
+		return
+	}
+
+	event := plugins.Event{
+		Type: plugins.EventCacheCleared,
+		Data: map[string]interface{}{
+			"cache_type": cacheType,
+			"timestamp":  clearedAt,
+		},
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := pluginMgr.NotifyEvent(ctx, event); err != nil {
+		// Log but don't fail the request - notification is best-effort
+		// (logging will be handled by plugin manager internally)
+	}
 }

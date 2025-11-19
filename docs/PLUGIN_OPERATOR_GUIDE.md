@@ -368,14 +368,21 @@ Events are automatically triggered by system operations:
 **PM Toggle API** (`POST /api/v1/pm/:name/toggle`):
 - Automatically triggers `package_manager_state_changed` event
 - Event includes previous and new state
+- Example: `{"package_manager": "npm", "previous_state": false, "new_state": true, "timestamp": "2025-11-19T00:00:00Z"}`
 
-**Config Reload**:
+**Config Reload** (`POST /api/config/reload`):
 - Automatically triggers `config_reloaded` event
-- Event includes configuration path
+- Event includes configuration path and timestamp
+- Example: `{"timestamp": "2025-11-19T00:00:00Z", "config_path": "/etc/proxynd/config"}`
 
-**Cache Clear** (`DELETE /api/v1/cache/:type`):
+**Cache Clear**:
+- `DELETE /api/cache/clear` - Clear all cache
+- `DELETE /api/cache/clear/:type` - Clear specific cache type
 - Automatically triggers `cache_cleared` event
-- Event includes cache type
+- Event includes cache type and timestamp
+- Examples:
+  - All cache: `{"cache_type": "all", "timestamp": "2025-11-19T00:00:00Z"}`
+  - Specific type: `{"cache_type": "npm", "timestamp": "2025-11-19T00:00:00Z"}`
 
 ### Best Practices
 
