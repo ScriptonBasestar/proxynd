@@ -46,6 +46,21 @@
 //
 // @tag.name License
 // @tag.description Enterprise license management and feature validation
+//
+// @tag.name system
+// @tag.description System information and status
+//
+// @tag.name package-managers
+// @tag.description Package manager management - list, toggle, and configure package managers
+//
+// @tag.name configuration
+// @tag.description Configuration management - reload and validate configuration
+//
+// @tag.name cache
+// @tag.description Cache management - statistics, TTL policies, and cache operations
+//
+// @tag.name plugins
+// @tag.description Plugin system health monitoring and status
 package main
 
 import (

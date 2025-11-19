@@ -588,6 +588,18 @@ func getConfigFile(c *fiber.Ctx) error {
 }
 
 // reloadConfig 설정 리로드 핸들러
+// reloadConfig handles configuration reload requests
+// @Summary      Reload configuration
+// @Description  Reload ProxyND configuration from disk without server restart (admin only)
+// @Tags         configuration
+// @Produce      json
+// @Success      200 {object} object{success=bool,message=string,reloaded_at=string} "Configuration reloaded successfully"
+// @Failure      401 {object} object{error=string,message=string} "Unauthorized"
+// @Failure      403 {object} object{error=string,message=string} "Forbidden - admin role required"
+// @Failure      429 {object} object{error=string,message=string} "Rate limit exceeded"
+// @Failure      500 {object} object{error=string,message=string} "Internal server error"
+// @Router       /api/config/reload [post]
+// @Security     BearerAuth
 func reloadConfig(c *fiber.Ctx) error {
 	logger := logging.GetLogger()
 
