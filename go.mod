@@ -2,7 +2,7 @@ module proxynd
 
 go 1.24.0
 
-toolchain go1.24.9
+toolchain go1.25.4
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.38.3
@@ -89,6 +89,7 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.19 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
+	github.com/onsi/gomega v1.27.10 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/philhofer/fwd v1.2.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect

@@ -138,15 +138,12 @@ func ConfigRouter(app *fiber.App) {
 
 	// Rate limiter for config operations: 10 requests per minute, burst of 3
 	// Prevents excessive config reloads that could impact system stability
-	configRateLimiter := middlewares.NewEnhancedRateLimiter(middlewares.RateLimiterConfig{
-		Rate:        "10-M", // 10 requests per minute
-		BurstSize:   3,      // Allow burst of 3 requests
-		KeyFunc:     nil,    // Use default IP-based limiting
-		Whitelist:   []string{},
-		Blacklist:   []string{},
-		SkipPaths:   []string{},
-		LogLevel:    "warn", // Log rate limit violations at warn level
-		ErrorPrefix: "Config Reload",
+	configRateLimiter := middlewares.NewEnhancedRateLimiter(middlewares.EnhancedRateLimitConfig{
+		Rate:           "10-M", // 10 requests per minute
+		Burst:          3,      // Allow burst of 3 requests
+		WhitelistIPs:   []string{},
+		BlacklistIPs:   []string{},
+		EnableLogging:  true,
 	})
 
 	// Config reload endpoint with security
@@ -694,8 +691,8 @@ func logConfigReloadAudit(c *fiber.Ctx, eventType audit.AuditEventType, level au
 			WithRiskScore(50)
 	}
 
-	// Commit the event
-	builder.Commit()
+	// Log the event
+	builder.Log()
 }
 
 // 헬퍼 함수들

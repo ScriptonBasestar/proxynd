@@ -12,7 +12,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"proxynd/internal/adapters/http/fiber/middleware"
-	"proxynd/internal/auth/audit"
 	"proxynd/internal/config"
 	"proxynd/internal/logging"
 	"proxynd/internal/security"
@@ -121,15 +120,12 @@ func CacheRouter(app *fiber.App) {
 
 	// Rate limiter for cache operations: 10 requests per minute, burst of 3
 	// Prevents excessive cache clears that could impact system performance
-	cacheRateLimiter := middlewares.NewEnhancedRateLimiter(middlewares.RateLimiterConfig{
-		Rate:        "10-M", // 10 requests per minute
-		BurstSize:   3,      // Allow burst of 3 requests
-		KeyFunc:     nil,    // Use default IP-based limiting
-		Whitelist:   []string{},
-		Blacklist:   []string{},
-		SkipPaths:   []string{},
-		LogLevel:    "warn", // Log rate limit violations at warn level
-		ErrorPrefix: "Cache Clear",
+	cacheRateLimiter := middlewares.NewEnhancedRateLimiter(middlewares.EnhancedRateLimitConfig{
+		Rate:           "10-M", // 10 requests per minute
+		Burst:          3,      // Allow burst of 3 requests
+		WhitelistIPs:   []string{},
+		BlacklistIPs:   []string{},
+		EnableLogging:  true,
 	})
 
 	// Protected cache clear endpoints
