@@ -88,7 +88,7 @@ pre-commit-update: ## update pre-commit hooks
 # Documentation Tools
 # ==============================================================================
 
-.PHONY: docs docs-generate docs-serve swagger swagger-install swagger-init swagger-validate
+.PHONY: docs docs-generate docs-serve swagger swagger-install swagger-init swagger-validate swagger-fmt swagger-clean
 
 docs: docs-generate docs-serve ## generate and serve documentation
 
@@ -110,14 +110,22 @@ swagger-init: swagger-install ## generate swagger documentation from annotations
 	@echo "Generating Swagger documentation..."
 	@swag init -g main.go -o ./docs --parseDependency --parseInternal
 	@echo "✅ Swagger documentation generated at ./docs"
-	@echo "   View at http://localhost:8080/swagger/index.html when server is running"
+	@echo "📖 View at http://localhost:8080/api/docs/index.html"
+	@echo "📖 Alternative: http://localhost:8080/swagger/index.html"
 
-swagger-validate: ## validate swagger documentation
-	@echo "Validating Swagger documentation..."
-	@swag init -g main.go -o ./docs --parseDependency --parseInternal
-	@echo "✅ Swagger documentation is valid!"
+swagger-validate: swagger-install ## validate swagger annotations format
+	@echo "Validating and formatting Swagger annotations..."
+	@swag fmt --dir ./
+	@echo "✅ Swagger annotations validated and formatted!"
 
-swagger: swagger-init ## alias for swagger-init
+swagger-fmt: swagger-validate ## alias for swagger-validate (format annotations)
+
+swagger-clean: ## clean generated swagger documentation
+	@echo "Cleaning Swagger documentation..."
+	@rm -f docs/docs.go docs/swagger.json docs/swagger.yaml
+	@echo "✅ Swagger documentation cleaned!"
+
+swagger: swagger-init ## generate swagger documentation (alias for swagger-init)
 
 # ==============================================================================
 # Dependency Management
