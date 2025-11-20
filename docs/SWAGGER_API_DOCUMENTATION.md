@@ -36,21 +36,47 @@ Once the server is running and Swagger documentation is generated, you can acces
 
 ## Generating Swagger Documentation
 
-### Prerequisites
+### Using Makefile (Recommended)
+
+The easiest way to generate Swagger documentation:
+
+```bash
+# Generate Swagger docs
+make swagger
+
+# Validate and format Swagger annotations
+make swagger-validate
+
+# Clean generated Swagger files
+make swagger-clean
+
+# Get help for all swagger commands
+make help-tools | grep swagger
+```
+
+### Manual Installation and Generation
+
+If you prefer to use swag CLI directly:
+
+#### Prerequisites
 
 Install swag CLI tool:
 
 ```bash
+# Using make (recommended - auto-installs if missing)
+make swagger-install
+
+# Or install manually
 go install github.com/swaggo/swag/cmd/swag@latest
 ```
 
-### Generate Documentation
+#### Generate Documentation
 
 From the project root directory:
 
 ```bash
 # Generate Swagger docs (parses all annotations)
-swag init --parseDependency --parseInternal
+swag init -g main.go -o ./docs --parseDependency --parseInternal
 
 # This creates:
 # - docs/swagger.json
@@ -58,7 +84,7 @@ swag init --parseDependency --parseInternal
 # - docs/docs.go
 ```
 
-### Verify Generation
+#### Verify Generation
 
 After running `swag init`, check that the following files were created:
 
@@ -211,38 +237,65 @@ Add Swagger generation to your build process:
 # .github/workflows/ci.yml
 - name: Generate Swagger docs
   run: |
-    go install github.com/swaggo/swag/cmd/swag@latest
-    swag init --parseDependency --parseInternal
+    make swagger
 
 - name: Verify Swagger docs
   run: |
     test -f docs/swagger.json
     test -f docs/docs.go
+
+- name: Validate Swagger annotations
+  run: |
+    make swagger-validate
 ```
 
 ## Makefile Integration
 
-Add to Makefile for convenience:
+ProxyND already includes Swagger targets in `Makefile.tools.mk`:
 
-```makefile
-.PHONY: swagger
-swagger: ## Generate Swagger documentation
-	@echo "Generating Swagger documentation..."
-	swag init --parseDependency --parseInternal
-	@echo "Swagger docs generated in docs/"
-	@echo "View at: http://localhost:8080/api/docs/index.html"
+### Available Commands
 
-.PHONY: swagger-validate
-swagger-validate: ## Validate Swagger annotations
-	@echo "Validating Swagger annotations..."
-	swag fmt --dir ./
-	@echo "Validation complete"
+```bash
+# Generate Swagger documentation
+make swagger
+
+# Validate and format Swagger annotations
+make swagger-validate
+
+# Format annotations (alias)
+make swagger-fmt
+
+# Clean generated documentation
+make swagger-clean
+
+# Install swag tool
+make swagger-install
+
+# View all swagger commands
+make help-tools | grep swagger
 ```
 
-Usage:
-```bash
-make swagger          # Generate docs
-make swagger-validate # Validate annotations
+### Implementation
+
+The Swagger targets are defined in `Makefile.tools.mk`:
+
+```makefile
+swagger: swagger-init ## generate swagger documentation (alias for swagger-init)
+
+swagger-init: swagger-install ## generate swagger documentation from annotations
+	@echo "Generating Swagger documentation..."
+	@swag init -g main.go -o ./docs --parseDependency --parseInternal
+	@echo "✅ Swagger documentation generated at ./docs"
+
+swagger-validate: swagger-install ## validate swagger annotations format
+	@echo "Validating and formatting Swagger annotations..."
+	@swag fmt --dir ./
+	@echo "✅ Swagger annotations validated and formatted!"
+
+swagger-clean: ## clean generated swagger documentation
+	@echo "Cleaning Swagger documentation..."
+	@rm -f docs/docs.go docs/swagger.json docs/swagger.yaml
+	@echo "✅ Swagger documentation cleaned!"
 ```
 
 ## Related Documentation
