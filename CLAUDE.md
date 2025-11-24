@@ -421,6 +421,14 @@ See `internal/adapters/http/fiber/middleware/` for all implementations
 ### Parent Context
 - [`../CLAUDE.md`](../CLAUDE.md) - Workspace-level coordination (multi-repo monorepo)
 - For workspace builds, edition differences (Core/Enterprise/Cloud), and Go workspace
+- **[`../docs/.claude-context/`](../docs/.claude-context/README.md)** - Deep-dive context documentation
+  - [architecture-deep-dive.md](../docs/.claude-context/architecture-deep-dive.md) - Hexagonal architecture details
+  - [build-system-guide.md](../docs/.claude-context/build-system-guide.md) - 8 Makefiles, all commands
+  - [testing-guide.md](../docs/.claude-context/testing-guide.md) - 4-layer testing strategy
+  - [common-tasks.md](../docs/.claude-context/common-tasks.md) - Step-by-step development guides
+  - [deployment-guide.md](../docs/.claude-context/deployment-guide.md) - Docker, K8s, monitoring
+  - [enterprise-plugins-detail.md](../docs/.claude-context/enterprise-plugins-detail.md) - Full plugin API
+  - [workspace-troubleshooting.md](../docs/.claude-context/workspace-troubleshooting.md) - Problem-solution guide
 
 ### Other Repositories
 - `../proxynd-enterprise/CLAUDE.md` - Enterprise plugin development
