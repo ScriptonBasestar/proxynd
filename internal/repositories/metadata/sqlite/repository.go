@@ -60,13 +60,13 @@ func NewSQLiteMetadataRepository(dbPath string) (*Repository, error) {
 // noOpLogger implements ports.Logger but does nothing (for testing)
 type noOpLogger struct{}
 
-func (n *noOpLogger) Debug(ctx context.Context, msg string, fields ...ports.Field)   {}
-func (n *noOpLogger) Info(ctx context.Context, msg string, fields ...ports.Field)    {}
-func (n *noOpLogger) Warn(ctx context.Context, msg string, fields ...ports.Field)    {}
-func (n *noOpLogger) Error(ctx context.Context, msg string, fields ...ports.Field)   {}
-func (n *noOpLogger) Fatal(ctx context.Context, msg string, fields ...ports.Field)   {}
-func (n *noOpLogger) With(fields ...ports.Field) ports.Logger                        { return n }
-func (n *noOpLogger) WithContext(ctx context.Context) ports.Logger                   { return n }
+func (n *noOpLogger) Debug(ctx context.Context, msg string, fields ...ports.Field) {}
+func (n *noOpLogger) Info(ctx context.Context, msg string, fields ...ports.Field)  {}
+func (n *noOpLogger) Warn(ctx context.Context, msg string, fields ...ports.Field)  {}
+func (n *noOpLogger) Error(ctx context.Context, msg string, fields ...ports.Field) {}
+func (n *noOpLogger) Fatal(ctx context.Context, msg string, fields ...ports.Field) {}
+func (n *noOpLogger) With(fields ...ports.Field) ports.Logger                      { return n }
+func (n *noOpLogger) WithContext(ctx context.Context) ports.Logger                 { return n }
 
 // AnsibleMetadata returns Ansible-specific metadata repository
 func (r *Repository) AnsibleMetadata() ports.AnsibleMetadataRepository {

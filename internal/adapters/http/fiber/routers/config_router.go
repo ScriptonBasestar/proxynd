@@ -139,11 +139,11 @@ func ConfigRouter(app *fiber.App) {
 	// Rate limiter for config operations: 10 requests per minute, burst of 3
 	// Prevents excessive config reloads that could impact system stability
 	configRateLimiter := middlewares.NewEnhancedRateLimiter(middlewares.EnhancedRateLimitConfig{
-		Rate:           "10-M", // 10 requests per minute
-		Burst:          3,      // Allow burst of 3 requests
-		WhitelistIPs:   []string{},
-		BlacklistIPs:   []string{},
-		EnableLogging:  true,
+		Rate:          "10-M", // 10 requests per minute
+		Burst:         3,      // Allow burst of 3 requests
+		WhitelistIPs:  []string{},
+		BlacklistIPs:  []string{},
+		EnableLogging: true,
 	})
 
 	// Config reload endpoint with security

@@ -150,9 +150,9 @@ func (h *AuditHandler) SearchEvents(c *fiber.Ctx) error {
 	pagination := enterprise.NewPagination(page, perPage, total)
 
 	return c.JSON(fiber.Map{
-		"success": true,
-		"data":    events[:min(len(events), perPage)],
-		"query":   query,
+		"success":    true,
+		"data":       events[:min(len(events), perPage)],
+		"query":      query,
 		"pagination": pagination,
 		"metadata": fiber.Map{
 			"timestamp":  time.Now().UTC(),
@@ -185,8 +185,8 @@ func (h *AuditHandler) GetUserEvents(c *fiber.Ctx) error {
 	pagination := enterprise.NewPagination(page, perPage, total)
 
 	return c.JSON(fiber.Map{
-		"success": true,
-		"data":    filtered[:min(len(filtered), perPage)],
+		"success":    true,
+		"data":       filtered[:min(len(filtered), perPage)],
 		"pagination": pagination,
 		"metadata": fiber.Map{
 			"timestamp":  time.Now().UTC(),
@@ -238,8 +238,8 @@ func (h *AuditHandler) GetResourceEvents(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{
-		"success": true,
-		"data":    filtered,
+		"success":    true,
+		"data":       filtered,
 		"pagination": pagination,
 		"metadata": fiber.Map{
 			"timestamp":  time.Now().UTC(),
@@ -312,11 +312,11 @@ func (h *AuditHandler) GetStats(c *fiber.Ctx) error {
 	stats := &enterprise.AuditStats{
 		TotalEvents: 15420,
 		EventsByAction: map[string]int64{
-			"cache.clear":     245,
-			"config.update":   89,
-			"role.create":     34,
-			"user.login":      8923,
-			"user.logout":     6129,
+			"cache.clear":   245,
+			"config.update": 89,
+			"role.create":   34,
+			"user.login":    8923,
+			"user.logout":   6129,
 		},
 		EventsByUser: map[string]int64{
 			"user_admin": 450,

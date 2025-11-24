@@ -64,21 +64,21 @@ func setupRBACRoutes(api fiber.Router, h *enterprise.RBACHandler) {
 	rbac := api.Group("/rbac")
 
 	// Roles Management
-	rbac.Get("/roles", h.ListRoles)                         // List all roles
-	rbac.Get("/roles/:id", h.GetRole)                       // Get role details
-	rbac.Post("/roles", h.CreateRole)                       // Create new role
-	rbac.Put("/roles/:id", h.UpdateRole)                    // Update role
-	rbac.Delete("/roles/:id", h.DeleteRole)                 // Delete role
+	rbac.Get("/roles", h.ListRoles)         // List all roles
+	rbac.Get("/roles/:id", h.GetRole)       // Get role details
+	rbac.Post("/roles", h.CreateRole)       // Create new role
+	rbac.Put("/roles/:id", h.UpdateRole)    // Update role
+	rbac.Delete("/roles/:id", h.DeleteRole) // Delete role
 
 	// Permissions Management
-	rbac.Get("/permissions", h.ListPermissions)             // List all permissions
-	rbac.Get("/roles/:id/permissions", h.GetRolePermissions) // Get role permissions
-	rbac.Post("/roles/:id/permissions", h.AssignPermissions) // Assign permissions
+	rbac.Get("/permissions", h.ListPermissions)                           // List all permissions
+	rbac.Get("/roles/:id/permissions", h.GetRolePermissions)              // Get role permissions
+	rbac.Post("/roles/:id/permissions", h.AssignPermissions)              // Assign permissions
 	rbac.Delete("/roles/:id/permissions/:permission", h.RevokePermission) // Revoke permission
 
 	// User-Role Assignments
-	rbac.Get("/users/:userId/roles", h.GetUserRoles)        // Get user's roles
-	rbac.Post("/users/:userId/roles", h.AssignUserRole)     // Assign role to user
+	rbac.Get("/users/:userId/roles", h.GetUserRoles)              // Get user's roles
+	rbac.Post("/users/:userId/roles", h.AssignUserRole)           // Assign role to user
 	rbac.Delete("/users/:userId/roles/:roleId", h.RemoveUserRole) // Remove role from user
 }
 
@@ -86,14 +86,14 @@ func setupRBACRoutes(api fiber.Router, h *enterprise.RBACHandler) {
 func setupAuditRoutes(api fiber.Router, h *enterprise.AuditHandler) {
 	audit := api.Group("/audit")
 
-	audit.Get("/events", h.ListEvents)                      // List audit events
-	audit.Get("/events/search", h.SearchEvents)             // Advanced search (must be before :id)
-	audit.Get("/events/:id", h.GetEvent)                    // Get audit event details
-	audit.Get("/users/:userId/events", h.GetUserEvents)     // Get user's audit trail
+	audit.Get("/events", h.ListEvents)                                     // List audit events
+	audit.Get("/events/search", h.SearchEvents)                            // Advanced search (must be before :id)
+	audit.Get("/events/:id", h.GetEvent)                                   // Get audit event details
+	audit.Get("/users/:userId/events", h.GetUserEvents)                    // Get user's audit trail
 	audit.Get("/resources/:resourceType/:resourceId", h.GetResourceEvents) // Get resource audit history
-	audit.Post("/export", h.ExportEvents)                   // Export audit logs
-	audit.Get("/stats", h.GetStats)                         // Audit statistics
-	audit.Get("/compliance/report", h.GetComplianceReport)  // Compliance report
+	audit.Post("/export", h.ExportEvents)                                  // Export audit logs
+	audit.Get("/stats", h.GetStats)                                        // Audit statistics
+	audit.Get("/compliance/report", h.GetComplianceReport)                 // Compliance report
 }
 
 // setupAnalyticsRoutes configures analytics and reporting endpoints
@@ -101,20 +101,20 @@ func setupAnalyticsRoutes(api fiber.Router, h *enterprise.AnalyticsHandler) {
 	analytics := api.Group("/analytics")
 
 	// Metrics & Statistics
-	analytics.Get("/overview", h.GetOverview)               // Dashboard overview
-	analytics.Get("/usage", h.GetUsageStats)                // Usage statistics
-	analytics.Get("/performance", h.GetPerformanceMetrics)  // Performance metrics
+	analytics.Get("/overview", h.GetOverview)                // Dashboard overview
+	analytics.Get("/usage", h.GetUsageStats)                 // Usage statistics
+	analytics.Get("/performance", h.GetPerformanceMetrics)   // Performance metrics
 	analytics.Get("/cache-efficiency", h.GetCacheEfficiency) // Cache efficiency
 
 	// Custom Reports
-	analytics.Get("/reports", h.ListReports)                // List saved reports
-	analytics.Post("/reports", h.CreateReport)              // Create custom report
-	analytics.Get("/reports/:id", h.GetReport)              // Get report data
-	analytics.Delete("/reports/:id", h.DeleteReport)        // Delete report
+	analytics.Get("/reports", h.ListReports)         // List saved reports
+	analytics.Post("/reports", h.CreateReport)       // Create custom report
+	analytics.Get("/reports/:id", h.GetReport)       // Get report data
+	analytics.Delete("/reports/:id", h.DeleteReport) // Delete report
 
 	// Cost Analysis
-	analytics.Get("/costs", h.GetCostAnalysis)              // Cost breakdown
-	analytics.Get("/trends", h.GetTrends)                   // Trend analysis
+	analytics.Get("/costs", h.GetCostAnalysis) // Cost breakdown
+	analytics.Get("/trends", h.GetTrends)      // Trend analysis
 }
 
 // setupSecurityRoutes configures security scanning endpoints
@@ -122,17 +122,17 @@ func setupSecurityRoutes(api fiber.Router, h *enterprise.SecurityHandler) {
 	security := api.Group("/security")
 
 	// Vulnerability Scanning
-	security.Get("/vulnerabilities", h.ListVulnerabilities) // List vulnerabilities
+	security.Get("/vulnerabilities", h.ListVulnerabilities)  // List vulnerabilities
 	security.Get("/vulnerabilities/:id", h.GetVulnerability) // Get vulnerability details
-	security.Post("/scan", h.TriggerScan)                   // Trigger manual scan
-	security.Get("/scan/:jobId", h.GetScanJob)              // Get scan job status
+	security.Post("/scan", h.TriggerScan)                    // Trigger manual scan
+	security.Get("/scan/:jobId", h.GetScanJob)               // Get scan job status
 
 	// License Scanning
-	security.Get("/licenses", h.ListLicenses)               // List detected licenses
+	security.Get("/licenses", h.ListLicenses)                     // List detected licenses
 	security.Get("/licenses/violations", h.ListLicenseViolations) // License violations
 
 	// Malware Detection
-	security.Get("/malware/alerts", h.ListMalwareAlerts)    // List malware alerts
+	security.Get("/malware/alerts", h.ListMalwareAlerts)           // List malware alerts
 	security.Get("/malware/quarantine", h.ListQuarantinedPackages) // Quarantined packages
 }
 
@@ -140,19 +140,19 @@ func setupSecurityRoutes(api fiber.Router, h *enterprise.SecurityHandler) {
 func setupAlertsRoutes(api fiber.Router, h *enterprise.AlertsHandler) {
 	alerts := api.Group("/alerts")
 
-	alerts.Get("", h.ListAlerts)                            // List active alerts
-	alerts.Get("/:id", h.GetAlert)                          // Get alert details
-	alerts.Post("/rules", h.CreateAlertRule)                // Create alert rule
-	alerts.Put("/rules/:id", h.UpdateAlertRule)             // Update alert rule
-	alerts.Delete("/rules/:id", h.DeleteAlertRule)          // Delete alert rule
+	alerts.Get("", h.ListAlerts)                   // List active alerts
+	alerts.Get("/:id", h.GetAlert)                 // Get alert details
+	alerts.Post("/rules", h.CreateAlertRule)       // Create alert rule
+	alerts.Put("/rules/:id", h.UpdateAlertRule)    // Update alert rule
+	alerts.Delete("/rules/:id", h.DeleteAlertRule) // Delete alert rule
 }
 
 // setupLicenseRoutes configures license management endpoints
 func setupLicenseRoutes(api fiber.Router, h *enterprise.LicenseHandler) {
 	license := api.Group("/license")
 
-	license.Get("/info", h.GetLicenseInfo)                  // Get license information
-	license.Post("/validate", h.ValidateLicense)            // Validate license key
-	license.Get("/features", h.ListFeatures)                // List available features
-	license.Get("/usage", h.GetUsageMetrics)                // License usage metrics
+	license.Get("/info", h.GetLicenseInfo)       // Get license information
+	license.Post("/validate", h.ValidateLicense) // Validate license key
+	license.Get("/features", h.ListFeatures)     // List available features
+	license.Get("/usage", h.GetUsageMetrics)     // License usage metrics
 }

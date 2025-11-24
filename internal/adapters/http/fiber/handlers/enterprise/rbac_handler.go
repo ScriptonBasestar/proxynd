@@ -45,8 +45,8 @@ func (h *RBACHandler) ListRoles(c *fiber.Ctx) error {
 	pagination := enterprise.NewPagination(page, perPage, total)
 
 	return c.JSON(fiber.Map{
-		"success": true,
-		"data":    roles,
+		"success":    true,
+		"data":       roles,
 		"pagination": pagination,
 		"metadata": fiber.Map{
 			"timestamp":  time.Now().UTC(),

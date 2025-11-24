@@ -76,4 +76,3 @@ type RoutesProvider interface {
 type MountPathProvider interface {
 	MountPath() string
 }
-

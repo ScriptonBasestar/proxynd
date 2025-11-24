@@ -189,17 +189,17 @@ func TestEnterpriseAPIIntegration_RateLimiting(t *testing.T) {
 // TestEnterpriseAPIIntegration_LicenseMiddleware tests license checking
 func TestEnterpriseAPIIntegration_LicenseMiddleware(t *testing.T) {
 	tests := []struct {
-		name           string
+		name            string
 		licenseFeatures enterprise.EnterpriseFeatures
 		expectedStatus  int
 	}{
 		{
-			name:           "Dev mode (nil license) - should allow",
+			name:            "Dev mode (nil license) - should allow",
 			licenseFeatures: nil,
 			expectedStatus:  200,
 		},
 		{
-			name: "Valid license - should allow",
+			name:            "Valid license - should allow",
 			licenseFeatures: &mockEnterpriseFeatures{},
 			expectedStatus:  200,
 		},

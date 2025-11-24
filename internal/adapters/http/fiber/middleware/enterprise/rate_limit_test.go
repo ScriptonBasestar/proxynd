@@ -154,7 +154,6 @@ func TestRateLimiter_Skip(t *testing.T) {
 	}
 }
 
-
 // TestDefaultEnterpriseRateLimiter tests default enterprise rate limiter
 func TestDefaultEnterpriseRateLimiter(t *testing.T) {
 	rl := DefaultEnterpriseRateLimiter()

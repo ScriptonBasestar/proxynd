@@ -121,11 +121,11 @@ func CacheRouter(app *fiber.App) {
 	// Rate limiter for cache operations: 10 requests per minute, burst of 3
 	// Prevents excessive cache clears that could impact system performance
 	cacheRateLimiter := middlewares.NewEnhancedRateLimiter(middlewares.EnhancedRateLimitConfig{
-		Rate:           "10-M", // 10 requests per minute
-		Burst:          3,      // Allow burst of 3 requests
-		WhitelistIPs:   []string{},
-		BlacklistIPs:   []string{},
-		EnableLogging:  true,
+		Rate:          "10-M", // 10 requests per minute
+		Burst:         3,      // Allow burst of 3 requests
+		WhitelistIPs:  []string{},
+		BlacklistIPs:  []string{},
+		EnableLogging: true,
 	})
 
 	// Protected cache clear endpoints

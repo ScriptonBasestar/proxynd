@@ -256,7 +256,7 @@ type DriverResponse struct {
 
 // PackageMetadata represents package metadata
 type PackageMetadata struct {
-	Namespace    string            `json:"namespace,omitempty"`    // For Ansible collections
+	Namespace    string            `json:"namespace,omitempty"` // For Ansible collections
 	Name         string            `json:"name"`
 	Version      string            `json:"version"`
 	Description  string            `json:"description"`
@@ -265,7 +265,7 @@ type PackageMetadata struct {
 	Homepage     string            `json:"homepage"`
 	Dependencies []string          `json:"dependencies"`
 	Keywords     []string          `json:"keywords"`
-	Deprecated   bool              `json:"deprecated,omitempty"`   // For Ansible collections
+	Deprecated   bool              `json:"deprecated,omitempty"` // For Ansible collections
 	Attributes   map[string]string `json:"attributes"`
 	CreatedAt    time.Time         `json:"created_at"`
 	UpdatedAt    time.Time         `json:"updated_at"`

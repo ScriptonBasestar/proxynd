@@ -76,7 +76,7 @@ func UnifiedProxyHandler(c *fiber.Ctx) error {
 			if err := mavenConfig.ReadConfig(); err != nil {
 				log.Printf("Warning: Failed to read Maven config: %v", err)
 				return c.Status(500).SendString("Maven 설정을 읽을 수 없습니다")
-		}
+			}
 		}
 
 		// 브라우저 요청 vs 파일 다운로드 요청 구분

@@ -133,13 +133,13 @@ func (h *AnalyticsHandler) GetUsageStats(c *fiber.Ctx) error {
 // @Router /api/v1/enterprise/analytics/performance [get]
 func (h *AnalyticsHandler) GetPerformanceMetrics(c *fiber.Ctx) error {
 	metrics := &enterprise.PerformanceMetrics{
-		TimeRange:     "last_24_hours",
-		AvgLatency:    145.2,
-		P50Latency:    98.5,
-		P95Latency:    320.8,
-		P99Latency:    567.2,
-		Throughput:    45.6,
-		ErrorRate:     0.45,
+		TimeRange:  "last_24_hours",
+		AvgLatency: 145.2,
+		P50Latency: 98.5,
+		P95Latency: 320.8,
+		P99Latency: 567.2,
+		Throughput: 45.6,
+		ErrorRate:  0.45,
 		ByEndpoint: map[string]enterprise.EndpointMetrics{
 			"/npm/*": {
 				Endpoint:   "/npm/*",
@@ -329,9 +329,9 @@ func (h *AnalyticsHandler) GetReport(c *fiber.Ctx) error {
 
 	// Mock report data
 	report := fiber.Map{
-		"id":          id,
-		"name":        "Weekly Usage Report",
-		"type":        "usage",
+		"id":           id,
+		"name":         "Weekly Usage Report",
+		"type":         "usage",
 		"generated_at": time.Now().UTC(),
 		"data": fiber.Map{
 			"total_requests": 125340,
@@ -401,9 +401,9 @@ func (h *AnalyticsHandler) GetCostAnalysis(c *fiber.Ctx) error {
 			"docker": 154.21,
 		},
 		ByUser: map[string]float64{
-			"team_frontend":  345.67,
-			"team_backend":   456.78,
-			"team_devops":    234.56,
+			"team_frontend": 345.67,
+			"team_backend":  456.78,
+			"team_devops":   234.56,
 		},
 		CostTrends: generateTrends(30),
 	}

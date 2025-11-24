@@ -321,4 +321,3 @@ func (cm *CacheMiddleware) CacheStats() map[string]interface{} {
 		"ttl":     cm.config.TTL.String(),
 	}
 }
-

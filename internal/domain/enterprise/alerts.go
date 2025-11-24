@@ -6,17 +6,17 @@ import (
 
 // Alert represents a system alert
 type Alert struct {
-	ID          string       `json:"id"`
-	Type        string       `json:"type"` // security, performance, capacity, compliance
-	Severity    AlertSeverity `json:"severity"`
-	Title       string       `json:"title"`
-	Description string       `json:"description"`
-	Source      string       `json:"source"` // vulnerability_scanner, performance_monitor, etc.
-	TriggeredAt time.Time    `json:"triggered_at"`
-	Status      AlertStatus  `json:"status"`
-	AckedBy     string       `json:"acked_by,omitempty"`
-	AckedAt     *time.Time   `json:"acked_at,omitempty"`
-	ResolvedAt  *time.Time   `json:"resolved_at,omitempty"`
+	ID          string                 `json:"id"`
+	Type        string                 `json:"type"` // security, performance, capacity, compliance
+	Severity    AlertSeverity          `json:"severity"`
+	Title       string                 `json:"title"`
+	Description string                 `json:"description"`
+	Source      string                 `json:"source"` // vulnerability_scanner, performance_monitor, etc.
+	TriggeredAt time.Time              `json:"triggered_at"`
+	Status      AlertStatus            `json:"status"`
+	AckedBy     string                 `json:"acked_by,omitempty"`
+	AckedAt     *time.Time             `json:"acked_at,omitempty"`
+	ResolvedAt  *time.Time             `json:"resolved_at,omitempty"`
 	Metadata    map[string]interface{} `json:"metadata,omitempty"`
 }
 
@@ -35,10 +35,10 @@ const (
 type AlertStatus string
 
 const (
-	AlertStatusActive     AlertStatus = "active"
+	AlertStatusActive       AlertStatus = "active"
 	AlertStatusAcknowledged AlertStatus = "acknowledged"
-	AlertStatusResolved   AlertStatus = "resolved"
-	AlertStatusIgnored    AlertStatus = "ignored"
+	AlertStatusResolved     AlertStatus = "resolved"
+	AlertStatusIgnored      AlertStatus = "ignored"
 )
 
 // AlertRule represents an alert rule configuration

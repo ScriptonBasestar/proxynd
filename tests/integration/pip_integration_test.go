@@ -27,7 +27,16 @@ func TestPIPProxyBasicFlow(t *testing.T) {
 		defer func() { _ = resp.Body.Close() }()
 
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		acceptableContentTypes := []string{"application/json", "application/octet-stream", "text/html"}; contentType := resp.Header.Get("Content-Type"); found := false; for _, ct := range acceptableContentTypes { if strings.Contains(contentType, ct) { found = true; break } }; assert.True(t, found, "Content-Type은 JSON, octet-stream 또는 HTML 가능")
+		acceptableContentTypes := []string{"application/json", "application/octet-stream", "text/html"}
+		contentType := resp.Header.Get("Content-Type")
+		found := false
+		for _, ct := range acceptableContentTypes {
+			if strings.Contains(contentType, ct) {
+				found = true
+				break
+			}
+		}
+		assert.True(t, found, "Content-Type은 JSON, octet-stream 또는 HTML 가능")
 
 		// 응답 본문 검증
 		body := make([]byte, 1024)
@@ -227,7 +236,16 @@ func TestPIPProxyHeaders(t *testing.T) {
 		defer func() { _ = resp.Body.Close() }()
 
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
-		acceptableContentTypes := []string{"application/json", "application/octet-stream", "text/html"}; contentType := resp.Header.Get("Content-Type"); found := false; for _, ct := range acceptableContentTypes { if strings.Contains(contentType, ct) { found = true; break } }; assert.True(t, found, "Content-Type은 JSON, octet-stream 또는 HTML 가능")
+		acceptableContentTypes := []string{"application/json", "application/octet-stream", "text/html"}
+		contentType := resp.Header.Get("Content-Type")
+		found := false
+		for _, ct := range acceptableContentTypes {
+			if strings.Contains(contentType, ct) {
+				found = true
+				break
+			}
+		}
+		assert.True(t, found, "Content-Type은 JSON, octet-stream 또는 HTML 가능")
 	})
 }
 

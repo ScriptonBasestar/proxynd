@@ -34,7 +34,7 @@ type ContentAddressableStorage interface {
 
 // PutBlobRequest represents a blob storage request
 type PutBlobRequest struct {
-	SHA256      string    `json:"sha256"`       // Optional: will be calculated if empty
+	SHA256      string    `json:"sha256"` // Optional: will be calculated if empty
 	Content     io.Reader `json:"-"`
 	Size        int64     `json:"size"`         // Optional: for validation
 	ContentType string    `json:"content_type"` // Optional: metadata
@@ -53,14 +53,14 @@ type BlobInfo struct {
 	SHA256      string    `json:"sha256"`
 	Size        int64     `json:"size"`
 	ContentType string    `json:"content_type"`
-	RefCount    int       `json:"ref_count"`    // Reference counting for GC
+	RefCount    int       `json:"ref_count"` // Reference counting for GC
 	CreatedAt   time.Time `json:"created_at"`
 	AccessedAt  time.Time `json:"accessed_at"`
 }
 
 // ListBlobsRequest represents blob listing request
 type ListBlobsRequest struct {
-	Prefix   string `json:"prefix"`   // SHA256 prefix filter
+	Prefix   string `json:"prefix"` // SHA256 prefix filter
 	Page     int    `json:"page"`
 	PageSize int    `json:"page_size"`
 }

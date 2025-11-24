@@ -165,13 +165,13 @@ func TestCompareVersions(t *testing.T) {
 			wantCmp: 1,
 		},
 		{
-			name:    "invalid v1",
-			v1:      "invalid", v2: "1.0.0",
+			name: "invalid v1",
+			v1:   "invalid", v2: "1.0.0",
 			wantErr: true,
 		},
 		{
-			name:    "invalid v2",
-			v1:      "1.0.0", v2: "invalid",
+			name: "invalid v2",
+			v1:   "1.0.0", v2: "invalid",
 			wantErr: true,
 		},
 	}
@@ -199,62 +199,62 @@ func TestMatchesVersionRange(t *testing.T) {
 		wantErr      bool
 	}{
 		{
-			name: "wildcard always matches",
+			name:    "wildcard always matches",
 			version: "1.2.3", versionRange: "*",
 			wantMatch: true,
 		},
 		{
-			name: "empty range always matches",
+			name:    "empty range always matches",
 			version: "1.2.3", versionRange: "",
 			wantMatch: true,
 		},
 		{
-			name: "exact match ==",
+			name:    "exact match ==",
 			version: "1.0.0", versionRange: "==1.0.0",
 			wantMatch: true,
 		},
 		{
-			name: "exact match implicit ==",
+			name:    "exact match implicit ==",
 			version: "1.0.0", versionRange: "1.0.0",
 			wantMatch: true,
 		},
 		{
-			name: "not equal !=",
+			name:    "not equal !=",
 			version: "1.0.1", versionRange: "!=1.0.0",
 			wantMatch: true,
 		},
 		{
-			name: "greater than >",
+			name:    "greater than >",
 			version: "2.0.0", versionRange: ">1.0.0",
 			wantMatch: true,
 		},
 		{
-			name: "greater than or equal >=",
+			name:    "greater than or equal >=",
 			version: "1.0.0", versionRange: ">=1.0.0",
 			wantMatch: true,
 		},
 		{
-			name: "less than <",
+			name:    "less than <",
 			version: "0.9.0", versionRange: "<1.0.0",
 			wantMatch: true,
 		},
 		{
-			name: "less than or equal <=",
+			name:    "less than or equal <=",
 			version: "1.0.0", versionRange: "<=1.0.0",
 			wantMatch: true,
 		},
 		{
-			name: "compatible release ~=",
+			name:    "compatible release ~=",
 			version: "1.2.5", versionRange: "~=1.2.0",
 			wantMatch: true, // 1.2.5 >= 1.2.0 and < 1.3.0
 		},
 		{
-			name: "compatible release mismatch minor",
+			name:    "compatible release mismatch minor",
 			version: "1.3.0", versionRange: "~=1.2.0",
 			wantMatch: false,
 		},
 		{
-			name: "compatible release mismatch major",
+			name:    "compatible release mismatch major",
 			version: "2.0.0", versionRange: "~=1.2.0",
 			wantMatch: false,
 		},
@@ -286,10 +286,10 @@ func TestMatchesVersionRange(t *testing.T) {
 
 func TestFindLatestVersion(t *testing.T) {
 	tests := []struct {
-		name        string
-		versions    []string
-		wantLatest  string
-		wantErr     bool
+		name       string
+		versions   []string
+		wantLatest string
+		wantErr    bool
 	}{
 		{
 			name:       "single version",
@@ -312,9 +312,9 @@ func TestFindLatestVersion(t *testing.T) {
 			wantLatest: "1.10.0",
 		},
 		{
-			name:    "empty list",
+			name:     "empty list",
 			versions: []string{},
-			wantErr: true,
+			wantErr:  true,
 		},
 		{
 			name:       "versions with invalid entries (skipped)",

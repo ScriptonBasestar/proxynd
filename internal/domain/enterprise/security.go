@@ -6,17 +6,17 @@ import (
 
 // Vulnerability represents a detected security vulnerability
 type Vulnerability struct {
-	ID           string         `json:"id"`
-	PackageName  string         `json:"package_name"`
+	ID             string       `json:"id"`
+	PackageName    string       `json:"package_name"`
 	PackageVersion string       `json:"package_version"`
 	PackageManager string       `json:"package_manager"`
-	CVE          string         `json:"cve"`
-	Severity     VulnSeverity   `json:"severity"`
-	Description  string         `json:"description"`
-	PublishedDate time.Time     `json:"published_date"`
-	FixedVersion string         `json:"fixed_version,omitempty"`
-	DetectedAt   time.Time      `json:"detected_at"`
-	Status       VulnStatus     `json:"status"`
+	CVE            string       `json:"cve"`
+	Severity       VulnSeverity `json:"severity"`
+	Description    string       `json:"description"`
+	PublishedDate  time.Time    `json:"published_date"`
+	FixedVersion   string       `json:"fixed_version,omitempty"`
+	DetectedAt     time.Time    `json:"detected_at"`
+	Status         VulnStatus   `json:"status"`
 }
 
 // VulnSeverity represents vulnerability severity levels
@@ -34,10 +34,10 @@ const (
 type VulnStatus string
 
 const (
-	VulnStatusOpen       VulnStatus = "open"
-	VulnStatusMitigated  VulnStatus = "mitigated"
-	VulnStatusFixed      VulnStatus = "fixed"
-	VulnStatusIgnored    VulnStatus = "ignored"
+	VulnStatusOpen      VulnStatus = "open"
+	VulnStatusMitigated VulnStatus = "mitigated"
+	VulnStatusFixed     VulnStatus = "fixed"
+	VulnStatusIgnored   VulnStatus = "ignored"
 )
 
 // PackageLicense represents detected license in a package
@@ -66,16 +66,16 @@ type LicenseViolation struct {
 
 // MalwareAlert represents a malware detection alert
 type MalwareAlert struct {
-	ID             string          `json:"id"`
-	PackageName    string          `json:"package_name"`
-	PackageVersion string          `json:"package_version"`
-	PackageManager string          `json:"package_manager"`
-	ThreatType     string          `json:"threat_type"` // trojan, backdoor, malicious_script
-	Severity       VulnSeverity    `json:"severity"`
-	Description    string          `json:"description"`
-	DetectedAt     time.Time       `json:"detected_at"`
-	Quarantined    bool            `json:"quarantined"`
-	ScanEngine     string          `json:"scan_engine"` // clamav, virustotal
+	ID             string       `json:"id"`
+	PackageName    string       `json:"package_name"`
+	PackageVersion string       `json:"package_version"`
+	PackageManager string       `json:"package_manager"`
+	ThreatType     string       `json:"threat_type"` // trojan, backdoor, malicious_script
+	Severity       VulnSeverity `json:"severity"`
+	Description    string       `json:"description"`
+	DetectedAt     time.Time    `json:"detected_at"`
+	Quarantined    bool         `json:"quarantined"`
+	ScanEngine     string       `json:"scan_engine"` // clamav, virustotal
 }
 
 // QuarantinedPackage represents a quarantined package
@@ -92,14 +92,14 @@ type QuarantinedPackage struct {
 
 // ScanJob represents a security scan job
 type ScanJob struct {
-	ID             string       `json:"id"`
-	Type           string       `json:"type"` // vulnerability, license, malware
-	Status         ScanStatus   `json:"status"`
-	StartedAt      time.Time    `json:"started_at"`
-	CompletedAt    *time.Time   `json:"completed_at,omitempty"`
-	PackagesScanned int         `json:"packages_scanned"`
-	IssuesFound    int          `json:"issues_found"`
-	Error          string       `json:"error,omitempty"`
+	ID              string     `json:"id"`
+	Type            string     `json:"type"` // vulnerability, license, malware
+	Status          ScanStatus `json:"status"`
+	StartedAt       time.Time  `json:"started_at"`
+	CompletedAt     *time.Time `json:"completed_at,omitempty"`
+	PackagesScanned int        `json:"packages_scanned"`
+	IssuesFound     int        `json:"issues_found"`
+	Error           string     `json:"error,omitempty"`
 }
 
 // ScanStatus represents scan job status
@@ -122,7 +122,7 @@ type ScanRequest struct {
 
 // Security errors
 var (
-	ErrVulnNotFound     = &DomainError{Code: "VULN_NOT_FOUND", Message: "Vulnerability not found"}
-	ErrInvalidScanType  = &DomainError{Code: "INVALID_SCAN_TYPE", Message: "Invalid scan type specified"}
-	ErrScanJobNotFound  = &DomainError{Code: "SCAN_JOB_NOT_FOUND", Message: "Scan job not found"}
+	ErrVulnNotFound    = &DomainError{Code: "VULN_NOT_FOUND", Message: "Vulnerability not found"}
+	ErrInvalidScanType = &DomainError{Code: "INVALID_SCAN_TYPE", Message: "Invalid scan type specified"}
+	ErrScanJobNotFound = &DomainError{Code: "SCAN_JOB_NOT_FOUND", Message: "Scan job not found"}
 )

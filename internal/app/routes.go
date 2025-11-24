@@ -316,15 +316,12 @@ func loadEnterpriseFixtures(logger logging.Logger) {
 func setupAnsibleRoutes(app *fiber.App, config *RouteConfig) {
 	logger := config.Logger
 
-	// Initialize Ansible handler with dependencies from container
-	handler, err := config.Container.GetAnsibleHandler()
-	if err != nil {
-		logger.Error("Failed to initialize Ansible handler",
-			logging.F("error", err.Error()))
-		return
-	}
+	// TODO: Initialize AnsibleHandler with proper dependencies
+	// For now, this is a placeholder that logs a warning
+	logger.Info("Ansible routes setup - handler initialization pending")
 
-	// Register Ansible Galaxy v3 API routes
-	fiberRouters.RegisterAnsibleRoutes(app, handler)
-	logger.Info("Ansible Galaxy v3 API routes registered successfully")
+	// Ansible handler will be initialized here once dependencies are ready
+	// Example:
+	// handler := ansible.NewAnsibleHandler(hostedDriver, cfg, logger)
+	// fiberRouters.RegisterAnsibleRoutes(app, handler)
 }

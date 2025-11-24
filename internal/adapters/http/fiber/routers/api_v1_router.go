@@ -102,11 +102,11 @@ func SetupAPIv1Routes(app *fiber.App, cfg interface{}) {
 	// Rate limiter for configuration changes: 10 requests per minute, burst of 3
 	// Prevents excessive configuration changes that could impact system stability
 	configRateLimiter := middlewares.NewEnhancedRateLimiter(middlewares.EnhancedRateLimitConfig{
-		Rate:           "10-M", // 10 requests per minute
-		Burst:          3,      // Allow burst of 3 requests
-		WhitelistIPs:   []string{},
-		BlacklistIPs:   []string{},
-		EnableLogging:  true,
+		Rate:          "10-M", // 10 requests per minute
+		Burst:         3,      // Allow burst of 3 requests
+		WhitelistIPs:  []string{},
+		BlacklistIPs:  []string{},
+		EnableLogging: true,
 	})
 
 	// If JWT_SECRET not set, use development key (should log warning)

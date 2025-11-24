@@ -41,10 +41,10 @@ type RateLimiter struct {
 
 // limitEntry tracks request counts for a specific key
 type limitEntry struct {
-	count      int
-	resetTime  time.Time
-	burstUsed  int
-	mu         sync.Mutex
+	count     int
+	resetTime time.Time
+	burstUsed int
+	mu        sync.Mutex
 }
 
 // NewRateLimiter creates a new rate limiter middleware
@@ -200,18 +200,18 @@ func (rl *RateLimiter) ResetAll() {
 // DefaultEnterpriseRateLimiter creates a rate limiter with sensible defaults for enterprise API
 func DefaultEnterpriseRateLimiter() *RateLimiter {
 	return NewRateLimiter(RateLimitConfig{
-		Max:    1000,              // 1000 requests
-		Window: 1 * time.Minute,   // per minute
-		Burst:  100,               // allow 100 extra burst requests
+		Max:    1000,            // 1000 requests
+		Window: 1 * time.Minute, // per minute
+		Burst:  100,             // allow 100 extra burst requests
 	})
 }
 
 // StrictEnterpriseRateLimiter creates a stricter rate limiter for sensitive endpoints
 func StrictEnterpriseRateLimiter() *RateLimiter {
 	return NewRateLimiter(RateLimitConfig{
-		Max:    100,               // 100 requests
-		Window: 1 * time.Minute,   // per minute
-		Burst:  10,                // allow 10 extra burst requests
+		Max:    100,             // 100 requests
+		Window: 1 * time.Minute, // per minute
+		Burst:  10,              // allow 10 extra burst requests
 	})
 }
 

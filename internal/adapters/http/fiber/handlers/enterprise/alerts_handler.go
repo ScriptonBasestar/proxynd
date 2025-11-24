@@ -261,8 +261,8 @@ func getMockAlerts() []*enterprise.Alert {
 			TriggeredAt: now.Add(-2 * time.Hour),
 			Status:      enterprise.AlertStatusActive,
 			Metadata: map[string]interface{}{
-				"cve":            "CVE-2021-22118",
-				"package":        "spring-core",
+				"cve":             "CVE-2021-22118",
+				"package":         "spring-core",
 				"package_version": "5.2.0",
 			},
 		},
@@ -291,9 +291,9 @@ func getMockAlerts() []*enterprise.Alert {
 			TriggeredAt: now.Add(-30 * time.Minute),
 			Status:      enterprise.AlertStatusActive,
 			Metadata: map[string]interface{}{
-				"current_usage": "8GB",
+				"current_usage":  "8GB",
 				"total_capacity": "10GB",
-				"percentage":    80,
+				"percentage":     80,
 			},
 		},
 	}

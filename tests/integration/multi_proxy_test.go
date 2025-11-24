@@ -143,11 +143,11 @@ func TestMultiProxyConcurrentAccess(t *testing.T) {
 
 		// 결과 수집 및 검증 - upstream failures are acceptable
 		acceptableCodes := map[int]bool{
-			http.StatusOK:                   true,
-			http.StatusNotFound:             true,
-			http.StatusInternalServerError:  true,
-			http.StatusBadGateway:           true,
-			http.StatusServiceUnavailable:   true,
+			http.StatusOK:                  true,
+			http.StatusNotFound:            true,
+			http.StatusInternalServerError: true,
+			http.StatusBadGateway:          true,
+			http.StatusServiceUnavailable:  true,
 		}
 		completedCount := 0
 		for result := range results {

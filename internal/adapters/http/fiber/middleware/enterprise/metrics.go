@@ -23,7 +23,7 @@ type EnterpriseMetrics struct {
 	errorsTotal *prometheus.CounterVec
 
 	// Rate limiting metrics
-	rateLimitExceeded *prometheus.CounterVec
+	rateLimitExceeded  *prometheus.CounterVec
 	rateLimitRemaining *prometheus.GaugeVec
 
 	// License metrics
@@ -31,11 +31,11 @@ type EnterpriseMetrics struct {
 	licenseCheckDuration *prometheus.HistogramVec
 
 	// Feature-specific metrics
-	rbacOperationsTotal        *prometheus.CounterVec
-	auditEventsTotal           *prometheus.CounterVec
-	securityScansTotal         *prometheus.CounterVec
+	rbacOperationsTotal          *prometheus.CounterVec
+	auditEventsTotal             *prometheus.CounterVec
+	securityScansTotal           *prometheus.CounterVec
 	securityVulnerabilitiesFound *prometheus.GaugeVec
-	alertsTriggeredTotal       *prometheus.CounterVec
+	alertsTriggeredTotal         *prometheus.CounterVec
 
 	// Cache metrics for Enterprise API
 	cacheHitsTotal   *prometheus.CounterVec

@@ -24,13 +24,13 @@ func NewLicenseHandler() *LicenseHandler {
 // @Router /api/v1/enterprise/license/info [get]
 func (h *LicenseHandler) GetLicenseInfo(c *fiber.Ctx) error {
 	info := fiber.Map{
-		"license_type":    "enterprise",
-		"company":         "Example Corp",
-		"issued_to":       "admin@example.com",
-		"issued_at":       time.Now().Add(-90 * 24 * time.Hour).UTC(),
-		"expires_at":      time.Now().Add(275 * 24 * time.Hour).UTC(),
-		"max_servers":     10,
-		"active_servers":  3,
+		"license_type":   "enterprise",
+		"company":        "Example Corp",
+		"issued_to":      "admin@example.com",
+		"issued_at":      time.Now().Add(-90 * 24 * time.Hour).UTC(),
+		"expires_at":     time.Now().Add(275 * 24 * time.Hour).UTC(),
+		"max_servers":    10,
+		"active_servers": 3,
 		"features_enabled": []string{
 			"rbac",
 			"audit_log",
@@ -38,9 +38,9 @@ func (h *LicenseHandler) GetLicenseInfo(c *fiber.Ctx) error {
 			"vulnerability_scanning",
 			"multi_datacenter",
 		},
-		"is_valid":        true,
-		"is_trial":        false,
-		"days_remaining":  275,
+		"is_valid":       true,
+		"is_trial":       false,
+		"days_remaining": 275,
 	}
 
 	return c.JSON(fiber.Map{
@@ -80,7 +80,7 @@ func (h *LicenseHandler) ValidateLicense(c *fiber.Ctx) error {
 
 	// Mock validation
 	result := fiber.Map{
-		"valid":       true,
+		"valid":        true,
 		"license_type": "enterprise",
 		"features": []string{
 			"rbac",
@@ -169,13 +169,13 @@ func (h *LicenseHandler) ListFeatures(c *fiber.Ctx) error {
 // @Router /api/v1/enterprise/license/usage [get]
 func (h *LicenseHandler) GetUsageMetrics(c *fiber.Ctx) error {
 	usage := fiber.Map{
-		"license_type":    "enterprise",
-		"max_servers":     10,
-		"active_servers":  3,
-		"max_users":       100,
-		"active_users":    47,
-		"storage_limit_gb": 1000,
-		"storage_used_gb": 234,
+		"license_type":             "enterprise",
+		"max_servers":              10,
+		"active_servers":           3,
+		"max_users":                100,
+		"active_users":             47,
+		"storage_limit_gb":         1000,
+		"storage_used_gb":          234,
 		"bandwidth_limit_gb_month": 10000,
 		"bandwidth_used_gb_month":  3456,
 		"features_in_use": []string{

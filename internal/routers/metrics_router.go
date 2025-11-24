@@ -17,10 +17,10 @@ import (
 )
 
 var (
-	customCollectorOnce        sync.Once
-	enhancedCollectorOnce      sync.Once
-	metricsMiddlewareApplied   bool
-	metricsMiddlewareMutex     sync.Mutex
+	customCollectorOnce      sync.Once
+	enhancedCollectorOnce    sync.Once
+	metricsMiddlewareApplied bool
+	metricsMiddlewareMutex   sync.Mutex
 )
 
 // ResetMetricsRouter 테스트용 메트릭 라우터 리셋

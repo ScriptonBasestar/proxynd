@@ -1,3 +1,4 @@
+//go:build integration
 // +build integration
 
 package ansible_test
@@ -306,9 +307,9 @@ Test collection for integration testing.
 
 ## Installation
 
-\`\`\`bash
+`+"```"+`bash
 ansible-galaxy collection install %s.%s
-\`\`\`
+`+"```"+`
 `, namespace, name, version, namespace, name)
 
 	addFileToTar(t, tw, filepath.Join(baseDir, "README.md"), readmeMD)

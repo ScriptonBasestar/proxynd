@@ -58,7 +58,8 @@ func TestNPMProxyIntegration(t *testing.T) {
 		require.NoError(t, err)
 		defer func() { _ = resp.Body.Close() }()
 
-		acceptableMavenCodes := []int{http.StatusNotFound, http.StatusInternalServerError}; assert.Contains(t, acceptableMavenCodes, resp.StatusCode, "프록시 비활성화 시 404 또는 500 반환")
+		acceptableMavenCodes := []int{http.StatusNotFound, http.StatusInternalServerError}
+		assert.Contains(t, acceptableMavenCodes, resp.StatusCode, "프록시 비활성화 시 404 또는 500 반환")
 
 		body, err := io.ReadAll(resp.Body)
 		require.NoError(t, err)
@@ -134,7 +135,8 @@ func TestMavenProxyIntegration(t *testing.T) {
 		require.NoError(t, err)
 		defer func() { _ = resp.Body.Close() }()
 
-		acceptableMavenCodes := []int{http.StatusNotFound, http.StatusInternalServerError}; assert.Contains(t, acceptableMavenCodes, resp.StatusCode, "프록시 비활성화 시 404 또는 500 반환")
+		acceptableMavenCodes := []int{http.StatusNotFound, http.StatusInternalServerError}
+		assert.Contains(t, acceptableMavenCodes, resp.StatusCode, "프록시 비활성화 시 404 또는 500 반환")
 	})
 
 	t.Run("Maven 메타데이터 요청", func(t *testing.T) {
@@ -144,7 +146,8 @@ func TestMavenProxyIntegration(t *testing.T) {
 		defer func() { _ = resp.Body.Close() }()
 
 		// Mock 서버에서 처리하지 않는 경우 404 반환
-		acceptableMavenCodes := []int{http.StatusNotFound, http.StatusInternalServerError}; assert.Contains(t, acceptableMavenCodes, resp.StatusCode, "프록시 비활성화 시 404 또는 500 반환")
+		acceptableMavenCodes := []int{http.StatusNotFound, http.StatusInternalServerError}
+		assert.Contains(t, acceptableMavenCodes, resp.StatusCode, "프록시 비활성화 시 404 또는 500 반환")
 	})
 }
 
@@ -208,7 +211,8 @@ func TestAPTProxyIntegration(t *testing.T) {
 		defer func() { _ = resp.Body.Close() }()
 
 		// Mock 서버에서 debian은 처리하지 않으므로 404
-		acceptableMavenCodes := []int{http.StatusNotFound, http.StatusInternalServerError}; assert.Contains(t, acceptableMavenCodes, resp.StatusCode, "프록시 비활성화 시 404 또는 500 반환")
+		acceptableMavenCodes := []int{http.StatusNotFound, http.StatusInternalServerError}
+		assert.Contains(t, acceptableMavenCodes, resp.StatusCode, "프록시 비활성화 시 404 또는 500 반환")
 	})
 
 	t.Run("APT 인증 헤더 처리", func(t *testing.T) {

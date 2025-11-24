@@ -19,8 +19,8 @@ type Role struct {
 type Permission struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
-	Resource    string `json:"resource"`    // e.g., "cache", "config", "audit"
-	Action      string `json:"action"`      // e.g., "read", "write", "delete"
+	Resource    string `json:"resource"` // e.g., "cache", "config", "audit"
+	Action      string `json:"action"`   // e.g., "read", "write", "delete"
 	Description string `json:"description"`
 }
 

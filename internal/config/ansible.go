@@ -14,15 +14,15 @@ type AnsibleRepositoryConfig struct {
 	Enabled bool           `yaml:"enabled" json:"enabled"`
 
 	// Proxy settings (for proxy type)
-	Upstream  string        `yaml:"upstream" json:"upstream"`
-	CacheTTL  time.Duration `yaml:"cache_ttl" json:"cache_ttl"`
-	CacheEnabled bool       `yaml:"cache_enabled" json:"cache_enabled"`
+	Upstream     string        `yaml:"upstream" json:"upstream"`
+	CacheTTL     time.Duration `yaml:"cache_ttl" json:"cache_ttl"`
+	CacheEnabled bool          `yaml:"cache_enabled" json:"cache_enabled"`
 
 	// Hosted settings (for hosted type)
-	MaxUploadSize      int64    `yaml:"max_upload_size" json:"max_upload_size"`           // in bytes
-	AllowedNamespaces  []string `yaml:"allowed_namespaces" json:"allowed_namespaces"`
-	RequireAuth        bool     `yaml:"require_auth" json:"require_auth"`
-	AdminUsers         []string `yaml:"admin_users" json:"admin_users"`
+	MaxUploadSize     int64    `yaml:"max_upload_size" json:"max_upload_size"` // in bytes
+	AllowedNamespaces []string `yaml:"allowed_namespaces" json:"allowed_namespaces"`
+	RequireAuth       bool     `yaml:"require_auth" json:"require_auth"`
+	AdminUsers        []string `yaml:"admin_users" json:"admin_users"`
 }
 
 // RepositoryType represents the type of repository

@@ -1,3 +1,4 @@
+//go:build integration
 // +build integration
 
 package sqlite_test
@@ -19,20 +20,20 @@ import (
 // mockLogger implements ports.Logger for testing
 type mockLogger struct{}
 
-func (m *mockLogger) Debug(ctx context.Context, msg string, fields ...ports.Field)       {}
-func (m *mockLogger) Info(ctx context.Context, msg string, fields ...ports.Field)        {}
-func (m *mockLogger) Warn(ctx context.Context, msg string, fields ...ports.Field)        {}
-func (m *mockLogger) Error(ctx context.Context, msg string, fields ...ports.Field)       {}
-func (m *mockLogger) Fatal(ctx context.Context, msg string, fields ...ports.Field)       {}
-func (m *mockLogger) With(fields ...ports.Field) ports.Logger                            { return m }
-func (m *mockLogger) WithContext(ctx context.Context) ports.Logger                       { return m }
-func (m *mockLogger) WithError(err error) ports.Logger                                   { return m }
-func (m *mockLogger) WithComponent(component string) ports.Logger                        { return m }
-func (m *mockLogger) WithRequestID(requestID string) ports.Logger                        { return m }
-func (m *mockLogger) SetLevel(level string) error                                        { return nil }
-func (m *mockLogger) GetLevel() string                                                   { return "info" }
-func (m *mockLogger) IsDebugEnabled() bool                                               { return false }
-func (m *mockLogger) Sync() error                                                        { return nil }
+func (m *mockLogger) Debug(ctx context.Context, msg string, fields ...ports.Field) {}
+func (m *mockLogger) Info(ctx context.Context, msg string, fields ...ports.Field)  {}
+func (m *mockLogger) Warn(ctx context.Context, msg string, fields ...ports.Field)  {}
+func (m *mockLogger) Error(ctx context.Context, msg string, fields ...ports.Field) {}
+func (m *mockLogger) Fatal(ctx context.Context, msg string, fields ...ports.Field) {}
+func (m *mockLogger) With(fields ...ports.Field) ports.Logger                      { return m }
+func (m *mockLogger) WithContext(ctx context.Context) ports.Logger                 { return m }
+func (m *mockLogger) WithError(err error) ports.Logger                             { return m }
+func (m *mockLogger) WithComponent(component string) ports.Logger                  { return m }
+func (m *mockLogger) WithRequestID(requestID string) ports.Logger                  { return m }
+func (m *mockLogger) SetLevel(level string) error                                  { return nil }
+func (m *mockLogger) GetLevel() string                                             { return "info" }
+func (m *mockLogger) IsDebugEnabled() bool                                         { return false }
+func (m *mockLogger) Sync() error                                                  { return nil }
 
 func setupTestDB(t *testing.T) (*sqlite.Repository, func()) {
 	tmpDir := t.TempDir()

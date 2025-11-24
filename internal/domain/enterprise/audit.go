@@ -43,14 +43,14 @@ type AuditFilter struct {
 
 // AuditStats represents audit statistics
 type AuditStats struct {
-	TotalEvents     int64                  `json:"total_events"`
-	EventsByAction  map[string]int64       `json:"events_by_action"`
-	EventsByUser    map[string]int64       `json:"events_by_user"`
-	EventsByResult  map[AuditResult]int64  `json:"events_by_result"`
-	RecentDenials   int64                  `json:"recent_denials"`
-	TimeRange       string                 `json:"time_range"`
-	TopUsers        []UserEventCount       `json:"top_users"`
-	TopActions      []ActionEventCount     `json:"top_actions"`
+	TotalEvents    int64                 `json:"total_events"`
+	EventsByAction map[string]int64      `json:"events_by_action"`
+	EventsByUser   map[string]int64      `json:"events_by_user"`
+	EventsByResult map[AuditResult]int64 `json:"events_by_result"`
+	RecentDenials  int64                 `json:"recent_denials"`
+	TimeRange      string                `json:"time_range"`
+	TopUsers       []UserEventCount      `json:"top_users"`
+	TopActions     []ActionEventCount    `json:"top_actions"`
 }
 
 // UserEventCount represents event count for a user
@@ -94,7 +94,7 @@ func NewAuditEvent(userID, action, resourceType, resourceID string, result Audit
 
 // Audit errors
 var (
-	ErrInvalidFilter   = &DomainError{Code: "INVALID_FILTER", Message: "Invalid audit filter criteria"}
-	ErrEventNotFound   = &DomainError{Code: "EVENT_NOT_FOUND", Message: "Audit event not found"}
-	ErrExportFailed    = &DomainError{Code: "EXPORT_FAILED", Message: "Failed to export audit logs"}
+	ErrInvalidFilter = &DomainError{Code: "INVALID_FILTER", Message: "Invalid audit filter criteria"}
+	ErrEventNotFound = &DomainError{Code: "EVENT_NOT_FOUND", Message: "Audit event not found"}
+	ErrExportFailed  = &DomainError{Code: "EXPORT_FAILED", Message: "Failed to export audit logs"}
 )

@@ -20,12 +20,12 @@ func (e *DomainError) Error() string {
 
 // Pagination represents pagination metadata
 type Pagination struct {
-	Page       int  `json:"page"`
-	PerPage    int  `json:"per_page"`
+	Page       int   `json:"page"`
+	PerPage    int   `json:"per_page"`
 	Total      int64 `json:"total"`
-	TotalPages int  `json:"total_pages"`
-	HasNext    bool `json:"has_next"`
-	HasPrev    bool `json:"has_prev"`
+	TotalPages int   `json:"total_pages"`
+	HasNext    bool  `json:"has_next"`
+	HasPrev    bool  `json:"has_prev"`
 }
 
 // NewPagination creates pagination metadata
