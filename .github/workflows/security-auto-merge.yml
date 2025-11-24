@@ -1,0 +1,116 @@
+name: Security Updates Auto-Merge
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: write
+  pull-requests: write
+  security-events: read
+
+jobs:
+  security-auto-merge:
+    runs-on: ubuntu-latest
+    # Only run for Dependabot PRs
+    if: github.actor == 'dependabot[bot]'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Check if security update
+        id: check_security
+        run: |
+          # Check PR labels for security
+          LABELS=$(gh pr view "${{ github.event.pull_request.number }}" --json labels --jq '.labels[].name' || echo "")
+
+          if echo "$LABELS" | grep -q "security"; then
+            echo "is_security=true" >> $GITHUB_OUTPUT
+            echo "✅ Security update detected"
+          else
+            echo "is_security=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ Not a security update"
+          fi
+
+          # Check PR title for security keywords
+          TITLE="${{ github.event.pull_request.title }}"
+          if echo "$TITLE" | grep -qiE "(security|cve|vulnerability|exploit)"; then
+            echo "is_security=true" >> $GITHUB_OUTPUT
+            echo "✅ Security keyword found in title"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Wait for CI checks (security updates only)
+        if: steps.check_security.outputs.is_security == 'true'
+        uses: lewagon/wait-on-check-action@v1.3.4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          check-regexp: '^(build|test|lint).*$'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 30
+          allowed-conclusions: success,skipped,neutral
+        continue-on-error: true
+
+      - name: Auto-approve security update
+        if: steps.check_security.outputs.is_security == 'true'
+        run: |
+          echo "🔒 Auto-approving security update PR #${{ github.event.pull_request.number }}"
+          gh pr review "${{ github.event.pull_request.number }}" \
+            --approve \
+            --body "🔒 **Security Update - Auto-approved**
+
+This is a security update and has been automatically approved.
+
+**Details:**
+- Update type: ${{ steps.metadata.outputs.update-type }}
+- Package: ${{ steps.metadata.outputs.dependency-names }}
+- Severity: Check security advisory for details
+
+**Next steps:**
+- CI checks will be monitored
+- Auto-merge with rebase will be attempted after checks pass"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Enable auto-merge for security updates
+        if: steps.check_security.outputs.is_security == 'true'
+        run: |
+          echo "🔒 Enabling auto-merge for security PR #${{ github.event.pull_request.number }}"
+          gh pr merge "${{ github.event.pull_request.number }}" --auto --rebase || {
+            echo "⚠️ Auto-merge failed, trying direct merge..."
+            gh pr merge "${{ github.event.pull_request.number }}" --rebase || {
+              echo "❌ Failed to merge. Manual intervention required."
+              gh pr comment "${{ github.event.pull_request.number }}" --body \
+                "⚠️ **Auto-merge failed**
+
+                This security update could not be automatically merged. Please review and merge manually.
+
+                Possible reasons:
+                - Merge conflicts
+                - Required checks not passing
+                - Branch protection rules"
+            }
+          }
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Comment on non-security updates
+        if: steps.check_security.outputs.is_security == 'false'
+        run: |
+          gh pr comment "${{ github.event.pull_request.number }}" --body \
+            "ℹ️ **Regular dependency update**
+
+            This is not flagged as a security update. Use the regular auto-merge workflow or manual review.
+
+            - Update type: ${{ steps.metadata.outputs.update-type }}
+            - Package: ${{ steps.metadata.outputs.dependency-names }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
