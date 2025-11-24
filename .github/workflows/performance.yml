@@ -56,7 +56,7 @@ jobs:
       github.event.inputs.test_suite == 'benchmarks'
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Setup Go
         uses: actions/setup-go@v6
@@ -130,7 +130,7 @@ jobs:
       github.event.inputs.test_suite == 'memory'
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Setup Go
         uses: actions/setup-go@v6
@@ -196,7 +196,7 @@ jobs:
       github.event.inputs.test_suite == 'load'
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Setup Go
         uses: actions/setup-go@v6
@@ -375,7 +375,7 @@ jobs:
       github.event.inputs.test_suite == 'resources'
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Setup Go
         uses: actions/setup-go@v6
