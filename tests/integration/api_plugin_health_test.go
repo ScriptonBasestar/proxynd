@@ -236,13 +236,7 @@ func TestPluginHealthEndpoint_Integration(t *testing.T) {
 	env := SetupIntegrationTest(t)
 	defer env.Cleanup()
 
-	// Note: The standard integration test environment doesn't include
-	// the API v1 router by default. We need to add it manually for this test.
-
-	// Add API v1 routes to the server
-	routers.SetupAPIv1Routes(env.ProxyServer, nil)
-
-	// Create and setup plugin manager
+	// Create and setup plugin manager BEFORE adding routes
 	cfg := plugins.DefaultConfig()
 	cfg.Enabled = true
 	manager := plugins.NewManager(cfg, &testPluginLogger{})
@@ -251,11 +245,15 @@ func TestPluginHealthEndpoint_Integration(t *testing.T) {
 	err := manager.Discover()
 	require.NoError(t, err)
 
-	// Add middleware to inject plugin manager into all requests
+	// Add middleware to inject plugin manager BEFORE registering routes
+	// Fiber middleware must be registered before routes to apply to those routes
 	env.ProxyServer.Use(func(c *fiber.Ctx) error {
 		c.Locals("pluginManager", manager)
 		return c.Next()
 	})
+
+	// Now add API v1 routes to the server (after middleware)
+	routers.SetupAPIv1Routes(env.ProxyServer, nil)
 
 	// Make request to health endpoint
 	resp, err := env.MakeRequest("GET", "/api/v1/plugins/health", nil)
