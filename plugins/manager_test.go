@@ -494,7 +494,7 @@ func TestNotifyEvent(t *testing.T) {
 
 		oldRegistry := registry
 		defer func() { registry = oldRegistry }()
-		registry = []Plugin{&plugin.mockPlugin}
+		registry = []Plugin{plugin} // Register the full struct with OnEvent method
 
 		cfg := DefaultConfig()
 		cfg.Registry.Core = []PluginConfig{
@@ -507,8 +507,8 @@ func TestNotifyEvent(t *testing.T) {
 			t.Fatalf("Discover failed: %v", err)
 		}
 
-		// Set the instance
-		manager.plugins[0].instance = &plugin.mockPlugin
+		// Set the instance to the full struct (not just mockPlugin)
+		manager.plugins[0].instance = plugin
 
 		event := Event{
 			Type: EventPackageManagerStateChanged,
@@ -544,7 +544,7 @@ func TestNotifyEvent(t *testing.T) {
 
 		oldRegistry := registry
 		defer func() { registry = oldRegistry }()
-		registry = []Plugin{&plugin1.mockPlugin, &plugin2.mockPlugin}
+		registry = []Plugin{plugin1, plugin2} // Register full structs with OnEvent method
 
 		cfg := DefaultConfig()
 		cfg.Registry.Core = []PluginConfig{
@@ -558,9 +558,9 @@ func TestNotifyEvent(t *testing.T) {
 			t.Fatalf("Discover failed: %v", err)
 		}
 
-		// Set instances
-		manager.plugins[0].instance = &plugin1.mockPlugin
-		manager.plugins[1].instance = &plugin2.mockPlugin
+		// Set instances to full structs (not just mockPlugin)
+		manager.plugins[0].instance = plugin1
+		manager.plugins[1].instance = plugin2
 
 		event := Event{
 			Type: EventConfigReloaded,
@@ -592,7 +592,7 @@ func TestNotifyEvent(t *testing.T) {
 
 		oldRegistry := registry
 		defer func() { registry = oldRegistry }()
-		registry = []Plugin{&eventPlugin.mockPlugin, normalPlugin}
+		registry = []Plugin{eventPlugin, normalPlugin} // eventPlugin has OnEvent, normalPlugin doesn't
 
 		cfg := DefaultConfig()
 		cfg.Registry.Core = []PluginConfig{
@@ -606,8 +606,8 @@ func TestNotifyEvent(t *testing.T) {
 			t.Fatalf("Discover failed: %v", err)
 		}
 
-		// Set instances
-		manager.plugins[0].instance = &eventPlugin.mockPlugin
+		// Set instances - eventPlugin gets full struct, normalPlugin as-is
+		manager.plugins[0].instance = eventPlugin
 		manager.plugins[1].instance = normalPlugin
 
 		event := Event{
@@ -636,7 +636,7 @@ func TestNotifyEvent(t *testing.T) {
 
 		oldRegistry := registry
 		defer func() { registry = oldRegistry }()
-		registry = []Plugin{&plugin.mockPlugin}
+		registry = []Plugin{plugin}
 
 		cfg := DefaultConfig()
 		cfg.Registry.Core = []PluginConfig{
@@ -649,7 +649,7 @@ func TestNotifyEvent(t *testing.T) {
 			t.Fatalf("Discover failed: %v", err)
 		}
 
-		manager.plugins[0].instance = &plugin.mockPlugin
+		manager.plugins[0].instance = plugin
 
 		event := Event{
 			Type: EventPackageManagerStateChanged,
@@ -678,7 +678,7 @@ func TestNotifyEvent(t *testing.T) {
 
 		oldRegistry := registry
 		defer func() { registry = oldRegistry }()
-		registry = []Plugin{&plugin1.mockPlugin, &plugin2.mockPlugin}
+		registry = []Plugin{plugin1, plugin2}
 
 		cfg := DefaultConfig()
 		cfg.Registry.Core = []PluginConfig{
@@ -692,8 +692,8 @@ func TestNotifyEvent(t *testing.T) {
 			t.Fatalf("Discover failed: %v", err)
 		}
 
-		manager.plugins[0].instance = &plugin1.mockPlugin
-		manager.plugins[1].instance = &plugin2.mockPlugin
+		manager.plugins[0].instance = plugin1
+		manager.plugins[1].instance = plugin2
 
 		event := Event{
 			Type: EventPackageManagerStateChanged,
@@ -729,7 +729,7 @@ func TestNotifyEvent(t *testing.T) {
 
 		oldRegistry := registry
 		defer func() { registry = oldRegistry }()
-		registry = []Plugin{&plugin1.mockPlugin, &plugin2.mockPlugin}
+		registry = []Plugin{plugin1, plugin2}
 
 		cfg := DefaultConfig()
 		cfg.Registry.Core = []PluginConfig{
@@ -743,8 +743,8 @@ func TestNotifyEvent(t *testing.T) {
 			t.Fatalf("Discover failed: %v", err)
 		}
 
-		manager.plugins[0].instance = &plugin1.mockPlugin
-		manager.plugins[1].instance = &plugin2.mockPlugin
+		manager.plugins[0].instance = plugin1
+		manager.plugins[1].instance = plugin2
 
 		event := Event{
 			Type: EventPackageManagerStateChanged,
@@ -766,7 +766,7 @@ func TestNotifyEvent(t *testing.T) {
 
 		oldRegistry := registry
 		defer func() { registry = oldRegistry }()
-		registry = []Plugin{&plugin.mockPlugin}
+		registry = []Plugin{plugin}
 
 		cfg := DefaultConfig()
 		cfg.Registry.Core = []PluginConfig{
@@ -779,7 +779,7 @@ func TestNotifyEvent(t *testing.T) {
 			t.Fatalf("Discover failed: %v", err)
 		}
 
-		manager.plugins[0].instance = &plugin.mockPlugin
+		manager.plugins[0].instance = plugin
 
 		event := Event{
 			Type: EventPackageManagerStateChanged,

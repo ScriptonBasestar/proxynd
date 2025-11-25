@@ -174,37 +174,37 @@ func TestPluginLifecycle_EndToEnd(t *testing.T) {
 	}
 }
 
+// orderTrackingPlugin tracks initialization order via a shared slice
+type orderTrackingPlugin struct {
+	name       string
+	initOrder  *[]string
+	orderMutex *sync.Mutex
+}
+
+func (o *orderTrackingPlugin) Name() string {
+	return o.name
+}
+
+func (o *orderTrackingPlugin) Init(ctx Context) error {
+	o.orderMutex.Lock()
+	defer o.orderMutex.Unlock()
+	*o.initOrder = append(*o.initOrder, o.name)
+	return nil
+}
+
 func TestPluginLifecycle_PriorityOrdering(t *testing.T) {
 	logger := &mockLogger{}
 	initOrder := []string{}
 	mu := sync.Mutex{}
 
 	// Create plugins that track initialization order
-	createOrderTrackingPlugin := func(name string) *struct {
-		mockPlugin
-		initFunc func(Context) error
-	} {
-		plugin := &struct {
-			mockPlugin
-			initFunc func(Context) error
-		}{}
-		plugin.name = name
-		plugin.initFunc = func(ctx Context) error {
-			mu.Lock()
-			defer mu.Unlock()
-			initOrder = append(initOrder, name)
-			return nil
-		}
-		return plugin
-	}
-
-	plugin1 := createOrderTrackingPlugin("high-priority")   // Priority 10
-	plugin2 := createOrderTrackingPlugin("medium-priority") // Priority 50
-	plugin3 := createOrderTrackingPlugin("low-priority")    // Priority 100
+	plugin1 := &orderTrackingPlugin{name: "high-priority", initOrder: &initOrder, orderMutex: &mu}
+	plugin2 := &orderTrackingPlugin{name: "medium-priority", initOrder: &initOrder, orderMutex: &mu}
+	plugin3 := &orderTrackingPlugin{name: "low-priority", initOrder: &initOrder, orderMutex: &mu}
 
 	oldRegistry := registry
 	defer func() { registry = oldRegistry }()
-	registry = []Plugin{&plugin1.mockPlugin, &plugin2.mockPlugin, &plugin3.mockPlugin}
+	registry = []Plugin{plugin1, plugin2, plugin3}
 
 	cfg := DefaultConfig()
 	cfg.Registry.Core = []PluginConfig{
@@ -219,13 +219,12 @@ func TestPluginLifecycle_PriorityOrdering(t *testing.T) {
 		t.Fatalf("Discover failed: %v", err)
 	}
 
-	// Manually call init in order to track
-	for _, p := range manager.GetEnabledPlugins() {
-		if init, ok := p.GetInstance().(interface {
-			Init(Context) error
-		}); ok {
-			_ = init.Init(Context{Logger: logger})
-		}
+	// Call Initialize to trigger Init in priority order
+	app := fiber.New(fiber.Config{DisableStartupMessage: true})
+	ctx := Context{Logger: logger}
+	err = manager.Initialize(app, ctx)
+	if err != nil {
+		t.Fatalf("Initialize failed: %v", err)
 	}
 
 	// Verify initialization order (should be based on priority)
@@ -328,20 +327,33 @@ func TestPluginLifecycle_FailureHandling(t *testing.T) {
 	}
 }
 
+// slowPlugin simulates a plugin that takes a long time to initialize
+type slowPlugin struct {
+	name  string
+	delay time.Duration
+}
+
+func (s *slowPlugin) Name() string {
+	return s.name
+}
+
+func (s *slowPlugin) Init(ctx Context) error {
+	time.Sleep(s.delay)
+	return nil
+}
+
 func TestPluginLifecycle_TimeoutHandling(t *testing.T) {
 	logger := &mockLogger{}
 
-	// Create a slow plugin
-	slowPlugin := &struct {
-		mockPlugin
-		delay time.Duration
-	}{}
-	slowPlugin.name = "slow-plugin"
-	slowPlugin.delay = 100 * time.Millisecond
+	// Create a slow plugin that takes longer than the timeout
+	plugin := &slowPlugin{
+		name:  "slow-plugin",
+		delay: 100 * time.Millisecond,
+	}
 
 	oldRegistry := registry
 	defer func() { registry = oldRegistry }()
-	registry = []Plugin{&slowPlugin.mockPlugin}
+	registry = []Plugin{plugin}
 
 	cfg := DefaultConfig()
 	cfg.Lifecycle.InitTimeout = 50 * time.Millisecond   // Timeout before plugin completes
