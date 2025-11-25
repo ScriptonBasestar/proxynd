@@ -196,6 +196,7 @@ func setupLegacyMiddlewares(app *fiber.App, config *RouteConfig) {
 
 	// Basic middlewares
 	app.Use(middlewares.ErrorRecovery())
+	app.Use(middlewares.ErrorHandler()) // Maps DomainError to proper HTTP status codes
 	app.Use(middlewares.DefaultAccessLogMiddleware())
 
 	// Security middlewares

@@ -66,9 +66,8 @@ func (h *UnifiedProxyHandler) Handle(c *fiber.Ctx) error {
 			h.logger.Error("ProxyService error",
 				logging.F("error", err),
 				logging.F("type", proxyType))
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": err.Error(),
-			})
+			// Return error to let ErrorHandler middleware handle HTTP status mapping
+			return err
 		}
 
 		// Set Content-Type if provided
