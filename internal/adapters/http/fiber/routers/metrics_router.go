@@ -8,6 +8,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/basicauth"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	dto "github.com/prometheus/client_model/go"
 	"github.com/valyala/fasthttp/fasthttpadaptor"
 
 	"proxynd/internal/config"
@@ -187,11 +188,11 @@ func setupAdditionalMetrics(app *fiber.App, _ *config.UnifiedConfig) {
 		m := metrics.GetMetrics()
 
 		stats := fiber.Map{
-			"total_requests": getMetricValue(m.ProxyRequestsTotal),
-			"total_errors":   getMetricValue(m.ProxyErrorsTotal),
+			"total_requests": getCounterVecTotal(m.ProxyRequestsTotal),
+			"total_errors":   getCounterVecTotal(m.ProxyErrorsTotal),
 			"bytes_transferred": fiber.Map{
-				"upload":   getMetricValueWithLabel(m.ProxyBytesTransferred, "direction", "upload"),
-				"download": getMetricValueWithLabel(m.ProxyBytesTransferred, "direction", "download"),
+				"upload":   getCounterVecValue(m.ProxyBytesTransferred, "upload"),
+				"download": getCounterVecValue(m.ProxyBytesTransferred, "download"),
 			},
 		}
 
@@ -242,11 +243,8 @@ func setupAdditionalMetrics(app *fiber.App, _ *config.UnifiedConfig) {
 
 // getCacheStatsForRegistry 특정 레지스트리의 캐시 통계 반환
 func getCacheStatsForRegistry(registryType string, m *metrics.Metrics) fiber.Map {
-	// TODO: 실제 메트릭에서 값 추출
-	// 현재는 예시 값
-
-	hits := getMetricValueWithLabel(m.CacheHitsTotal, "registry_type", registryType)
-	misses := getMetricValueWithLabel(m.CacheMissesTotal, "registry_type", registryType)
+	hits := getCounterVecValue(m.CacheHitsTotal, registryType)
+	misses := getCounterVecValue(m.CacheMissesTotal, registryType)
 	total := hits + misses
 
 	hitRate := 0.0
@@ -258,22 +256,84 @@ func getCacheStatsForRegistry(registryType string, m *metrics.Metrics) fiber.Map
 		"hits":                  hits,
 		"misses":                misses,
 		"hit_rate":              hitRate,
-		"size_bytes":            getMetricValueWithLabel(m.CacheSizeBytes, "registry_type", registryType),
-		"items_count":           getMetricValueWithLabel(m.CacheItemsCount, "registry_type", registryType),
-		"bandwidth_saved_bytes": getMetricValueWithLabel(m.CacheBandwidthSaved, "registry_type", registryType),
+		"size_bytes":            getGaugeVecValue(m.CacheSizeBytes, registryType),
+		"items_count":           getGaugeVecValue(m.CacheItemsCount, registryType),
+		"bandwidth_saved_bytes": getCounterVecValue(m.CacheBandwidthSaved, registryType),
 	}
 }
 
-// getMetricValue 메트릭 값 추출 (간단한 구현)
-func getMetricValue(_ interface{}) float64 {
-	// TODO: 실제 Prometheus 메트릭에서 값 추출
-	// prometheus.Metric 인터페이스를 통해 값 읽기
+// getMetricValue Counter 메트릭 값 추출
+func getMetricValue(metric prometheus.Counter) float64 {
+	if metric == nil {
+		return 0.0
+	}
+	var m dto.Metric
+	if err := metric.Write(&m); err != nil {
+		return 0.0
+	}
+	if m.Counter != nil {
+		return m.Counter.GetValue()
+	}
 	return 0.0
 }
 
-// getMetricValueWithLabel 레이블이 있는 메트릭 값 추출
-func getMetricValueWithLabel(_ interface{}, _, _ string) float64 {
-	// TODO: 실제 구현
+// getCounterVecValue CounterVec에서 첫 번째 레이블 값으로 추출
+func getCounterVecValue(vec *prometheus.CounterVec, labelValue string) float64 {
+	if vec == nil {
+		return 0.0
+	}
+	metric, err := vec.GetMetricWithLabelValues(labelValue)
+	if err != nil {
+		return 0.0
+	}
+	var m dto.Metric
+	if err := metric.Write(&m); err != nil {
+		return 0.0
+	}
+	if m.Counter != nil {
+		return m.Counter.GetValue()
+	}
+	return 0.0
+}
+
+// getCounterVecTotal CounterVec의 모든 메트릭 합계
+func getCounterVecTotal(vec *prometheus.CounterVec) float64 {
+	if vec == nil {
+		return 0.0
+	}
+	// Collect를 통해 모든 메트릭 수집
+	ch := make(chan prometheus.Metric, 100)
+	go func() {
+		vec.Collect(ch)
+		close(ch)
+	}()
+
+	var total float64
+	for metric := range ch {
+		var m dto.Metric
+		if err := metric.Write(&m); err == nil && m.Counter != nil {
+			total += m.Counter.GetValue()
+		}
+	}
+	return total
+}
+
+// getGaugeVecValue GaugeVec에서 첫 번째 레이블 값으로 추출
+func getGaugeVecValue(vec *prometheus.GaugeVec, labelValue string) float64 {
+	if vec == nil {
+		return 0.0
+	}
+	metric, err := vec.GetMetricWithLabelValues(labelValue)
+	if err != nil {
+		return 0.0
+	}
+	var m dto.Metric
+	if err := metric.Write(&m); err != nil {
+		return 0.0
+	}
+	if m.Gauge != nil {
+		return m.Gauge.GetValue()
+	}
 	return 0.0
 }
 
