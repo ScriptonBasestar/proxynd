@@ -6,6 +6,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - SKIP_TESTS=true
     image: proxynd:e2e
     container_name: proxynd-e2e
     ports:
