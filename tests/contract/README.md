@@ -2,7 +2,18 @@
 
 ## Overview
 
-Contract tests verify that **Ports** (interfaces) are correctly implemented by their **Adapters**, ensuring proper communication between layers in our Hexagonal + Clean Architecture.
+Contract tests verify that **Ports** (interfaces) and **API endpoints** are correctly implemented, ensuring proper communication between layers in our Hexagonal + Clean Architecture and API stability for external consumers.
+
+## Test Files
+
+| File | Test Count | Description | Build Tags |
+|------|------------|-------------|------------|
+| `core_proxy_test.go` | 3 tests, 21 cases | Core proxy API endpoints (health, system, cache stats, PM list) | `contract` |
+| `enterprise_api_test.go` | 4 tests, 43 cases | Enterprise API endpoints (RBAC, Audit, Analytics, Security, Alerts) | `contract` |
+| `cloud_api_test.go` | 2 tests, 20 cases | Cloud API endpoints (Multi-tenancy, Billing, Quotas) | `contract, cloud` |
+| `validation_helpers.go` | N/A | Shared validation functions for response schemas | `contract` |
+
+Total: **84 test cases** across **9 test functions** (~1,855 lines of test code)
 
 ## Test Scope
 
@@ -652,6 +663,82 @@ go test -tags=contract -cpuprofile=contract.prof
 
 ---
 
-**Last Updated**: 2025-08-15  
-**Version**: 1.0.0  
-**Authors**: Test Designer (claude-opus)
+## API Contract Tests
+
+### Running API Contract Tests
+
+```bash
+# Run all contract tests (ports + API)
+go test -tags=contract ./tests/contract/ -v
+
+# Run only core proxy API tests
+go test -tags=contract ./tests/contract/core_proxy_test.go -v
+
+# Run only enterprise API tests
+go test -tags=contract ./tests/contract/enterprise_api_test.go -v
+
+# Run only cloud API tests (requires cloud build tag)
+go test -tags="contract cloud" ./tests/contract/cloud_api_test.go -v
+
+# Run with coverage
+go test -tags=contract ./tests/contract/ -coverprofile=contract_coverage.out
+go tool cover -html=contract_coverage.out
+```
+
+### API Test Categories
+
+#### Core Proxy API Tests (`core_proxy_test.go`)
+- **Health Endpoints** (5 cases): `/healthz`, `/health/live`, `/health/ready`, `/health/adapters`
+- **System Endpoints** (3 cases): `/api/v1/system/info`, `/api/v1/stats`, `/api/v1/pm`
+- **Package Manager Endpoints** (12 cases): NPM, Maven, PyPI, APT, Docker, YUM, APK proxy paths
+- **Error Format** (1 case): Consistent error response validation
+
+#### Enterprise API Tests (`enterprise_api_test.go`)
+- **RBAC Endpoints** (12 cases): Roles, permissions, user role assignments
+- **Audit Endpoints** (8 cases): Event logging, compliance reports
+- **Analytics Endpoints** (10 cases): Usage stats, performance metrics, reports
+- **Security Endpoints** (8 cases): Vulnerability scans, license compliance, malware detection
+- **Alerts Endpoints** (5 cases): Alert rules, notifications
+
+#### Cloud API Tests (`cloud_api_test.go`)
+- **Multi-Tenancy Endpoints** (10 cases): Tenant management, usage tracking, quotas
+- **Billing Endpoints** (8 cases): Invoices, subscriptions, usage records, payments
+- **Quota Management** (2 cases): Quota status and usage tracking
+
+### Schema Validation
+
+All API tests validate response schemas using helper functions in `validation_helpers.go`:
+
+- `validateSuccessResponse()`: Standard success response structure (success, data, metadata)
+- `validatePaginatedListResponse()`: Paginated list responses with pagination metadata
+- `validateErrorResponse()`: Error responses with error code and message
+
+### Test Patterns
+
+**Table-Driven Tests**:
+```go
+tests := []struct {
+    name           string
+    method         string
+    path           string
+    expectedStatus int
+    validateSchema func(*testing.T, map[string]interface{})
+}{
+    {
+        name:           "Health Check",
+        method:         "GET",
+        path:           "/healthz",
+        expectedStatus: http.StatusOK,
+        validateSchema: validateHealthResponse,
+    },
+}
+```
+
+**Mock Handlers for Cloud Tests**:
+Cloud API tests use mock handlers to test response schemas without requiring full cloud infrastructure.
+
+---
+
+**Last Updated**: 2025-11-25
+**Version**: 2.0.0
+**Authors**: Test Designer (claude-opus, claude-sonnet-4-5)
