@@ -264,7 +264,8 @@ func defaultShouldCache(c *fiber.Ctx) bool {
 	}
 
 	// Don't cache if Content-Type is not JSON
-	contentType := c.Get("Content-Type")
+	// Note: c.Get() returns request headers, use c.Response().Header.Peek() for response headers
+	contentType := string(c.Response().Header.Peek("Content-Type"))
 	if contentType != "application/json" && contentType != "application/json; charset=utf-8" {
 		return false
 	}

@@ -15,7 +15,7 @@ import (
 func setupTestApp() *fiber.App {
 	app := fiber.New()
 
-	// Recovery middleware
+	// Recovery middleware - handles panic by sending response directly
 	app.Use(func(c *fiber.Ctx) error {
 		defer func() {
 			if r := recover(); r != nil {
@@ -27,8 +27,15 @@ func setupTestApp() *fiber.App {
 						"path":  c.Path(),
 					}).
 					Build()
-				c.Locals("error", err)
-				_ = c.Next()
+				// Send error response directly instead of calling c.Next()
+				_ = c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+					"error": fiber.Map{
+						"code":    err.Code,
+						"message": err.Message,
+						"domain":  err.Domain,
+						"details": err.Details,
+					},
+				})
 			}
 		}()
 		return c.Next()
@@ -396,6 +403,14 @@ func TestErrorIntegration_ConcurrentRequests(t *testing.T) {
 	types := []string{"auth", "cache", "panic", "normal"}
 	done := make(chan bool, len(types)*5)
 
+	// Expected status codes based on getHTTPStatusForError mapping
+	expectedStatus := map[string]int{
+		"auth":   fiber.StatusUnauthorized,      // AUTH_FAILED -> 401
+		"cache":  fiber.StatusInternalServerError, // CACHE errors -> 500
+		"panic":  fiber.StatusInternalServerError, // Panic -> 500
+		"normal": fiber.StatusOK,                  // No error -> 200
+	}
+
 	for i := 0; i < 5; i++ {
 		for _, errorType := range types {
 			go func(errType string) {
@@ -404,11 +419,7 @@ func TestErrorIntegration_ConcurrentRequests(t *testing.T) {
 				assert.NoError(t, err)
 				defer func() { _ = resp.Body.Close() }()
 
-				if errType == "normal" {
-					assert.Equal(t, fiber.StatusOK, resp.StatusCode)
-				} else {
-					assert.Equal(t, fiber.StatusInternalServerError, resp.StatusCode)
-				}
+				assert.Equal(t, expectedStatus[errType], resp.StatusCode)
 
 				done <- true
 			}(errorType)
