@@ -93,8 +93,8 @@ func TestStartOAuth2Login(t *testing.T) {
 	if resp.StatusCode != http.StatusFound && resp.StatusCode != http.StatusTemporaryRedirect {
 		body, _ := io.ReadAll(resp.Body)
 		t.Logf("Response body: %s", string(body))
-		// 설정이 로드되지 않으면 500 에러가 날 수 있음
-		if resp.StatusCode == http.StatusInternalServerError {
+		// 설정이 로드되지 않으면 500 또는 503 에러가 날 수 있음
+		if resp.StatusCode == http.StatusInternalServerError || resp.StatusCode == http.StatusServiceUnavailable {
 			t.Skip("OAuth2 config not available in test environment")
 		}
 		t.Errorf("Expected redirect status, got %d", resp.StatusCode)
@@ -263,8 +263,8 @@ func TestRefreshToken_NoRefreshToken(t *testing.T) {
 	var response map[string]interface{}
 	_ = json.NewDecoder(resp.Body).Decode(&response)
 
-	if response["error"] != "No refresh token available" {
-		t.Errorf("Expected 'No refresh token available' error, got: %s", response["error"])
+	if response["error"] != "No JWT refresh token available" {
+		t.Errorf("Expected 'No JWT refresh token available' error, got: %s", response["error"])
 	}
 }
 

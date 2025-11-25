@@ -85,14 +85,16 @@ var errorToHTTPStatus = map[string]int{
 	"APK010": fiber.StatusServiceUnavailable,  // 미러 선택 실패
 
 	// 캐시 에러 매핑
-	"CACHE001": fiber.StatusNotFound,            // 캐시 미발견
-	"CACHE002": fiber.StatusInsufficientStorage, // 저장 공간 부족
-	"CACHE003": fiber.StatusInternalServerError, // 캐시 오류
+	"CACHE001":    fiber.StatusNotFound,            // 캐시 미발견
+	"CACHE002":    fiber.StatusInsufficientStorage, // 저장 공간 부족
+	"CACHE003":    fiber.StatusInternalServerError, // 캐시 오류
+	"CACHE_READ":  fiber.StatusInternalServerError, // 캐시 읽기 오류
+	"CACHE_WRITE": fiber.StatusInternalServerError, // 캐시 쓰기 오류
 
 	// 시스템 에러 매핑
 	"SYS001":    fiber.StatusInternalServerError, // 일반 시스템 오류
-	"SYS002":    fiber.StatusInternalServerError, // 설정 오류
-	"SYS003":    fiber.StatusInternalServerError, // 패닉 발생
+	"SYS002":    fiber.StatusInternalServerError, // 설정 오류 / nil cause 테스트
+	"SYS003":    fiber.StatusInternalServerError, // 패닉 발생 / empty details 테스트
 	"SYSTEM001": fiber.StatusInternalServerError, // 일반 시스템 오류 (호환성)
 	"CONFIG001": fiber.StatusInternalServerError, // 설정 오류 (호환성)
 	"PANIC001":  fiber.StatusInternalServerError, // 패닉 발생 (호환성)

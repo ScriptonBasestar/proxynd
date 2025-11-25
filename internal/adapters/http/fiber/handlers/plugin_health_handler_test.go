@@ -221,15 +221,17 @@ func TestPluginHealthResponse_JSONSerialization(t *testing.T) {
 		data, err := json.Marshal(response)
 		require.NoError(t, err)
 
-		// Verify JSON doesn't include last_error and last_error_time
+		// Verify JSON doesn't include last_error and last_error_time (both have omitempty)
 		var jsonMap map[string]interface{}
 		err = json.Unmarshal(data, &jsonMap)
 		require.NoError(t, err)
 
-		// last_error should be empty string (not omitted due to no omitempty on LastError)
-		assert.Equal(t, "", jsonMap["last_error"])
+		// last_error should be omitted (omitempty on empty string)
+		_, hasLastError := jsonMap["last_error"]
+		assert.False(t, hasLastError, "last_error should be omitted when empty")
 
-		// last_error_time should be nil (omitted due to omitempty)
-		assert.Nil(t, jsonMap["last_error_time"])
+		// last_error_time should be omitted (omitempty on nil pointer)
+		_, hasLastErrorTime := jsonMap["last_error_time"]
+		assert.False(t, hasLastErrorTime, "last_error_time should be omitted when nil")
 	})
 }

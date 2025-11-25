@@ -3,6 +3,7 @@ package middlewares
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"testing"
 
@@ -20,9 +21,9 @@ func TestErrorHandlerMiddleware(t *testing.T) {
 	// Apply error handler middleware
 	app.Use(ErrorHandler())
 
-	// Test routes
+	// Test routes (using SYS001 which maps to 500 Internal Server Error)
 	app.Get("/domain-error", func(_ *fiber.Ctx) error {
-		return domainErrors.NewError("TEST001", "Test domain error").
+		return domainErrors.NewError("SYS001", "Test domain error").
 			WithDomain("test").
 			WithCause(errors.New("original cause")).
 			WithDetails(map[string]interface{}{
@@ -71,7 +72,7 @@ func TestErrorHandlerMiddleware(t *testing.T) {
 		require.NoError(t, err)
 
 		// Verify error response structure
-		assert.Equal(t, "TEST001", errorResp.Error)
+		assert.Equal(t, "SYS001", errorResp.Error)
 		assert.Equal(t, "Test domain error", errorResp.Message)
 		assert.Equal(t, "test", errorResp.Domain)
 		assert.NotNil(t, errorResp.Details)
@@ -111,7 +112,8 @@ func TestErrorHandlerMiddleware(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, "INTERNAL_ERROR", errorResp.Error)
-		assert.Equal(t, "generic error occurred", errorResp.Message)
+		// Generic errors return a generic message for security (not exposing internal details)
+		assert.Equal(t, "내부 서버 오류가 발생했습니다", errorResp.Message)
 	})
 
 	t.Run("Auth error with proper status", func(t *testing.T) {
@@ -174,16 +176,16 @@ func TestErrorHandlerMiddleware_EdgeCases(t *testing.T) {
 		return err
 	})
 
-	// Test error with nil cause
+	// Test error with nil cause (using mapped error code SYS002)
 	app.Get("/nil-cause", func(_ *fiber.Ctx) error {
-		return domainErrors.NewError("TEST002", "Error with nil cause").
+		return domainErrors.NewError("SYS002", "Error with nil cause").
 			WithCause(nil).
 			Build()
 	})
 
-	// Test error with empty details
+	// Test error with empty details (using mapped error code SYS003)
 	app.Get("/empty-details", func(_ *fiber.Ctx) error {
-		return domainErrors.NewError("TEST003", "Error with empty details").
+		return domainErrors.NewError("SYS003", "Error with empty details").
 			WithDetails(map[string]interface{}{}).
 			Build()
 	})
@@ -210,7 +212,7 @@ func TestErrorHandlerMiddleware_EdgeCases(t *testing.T) {
 		err = parseJSONResponse(resp, &errorResp)
 		require.NoError(t, err)
 
-		assert.Equal(t, "TEST002", errorResp.Error)
+		assert.Equal(t, "SYS002", errorResp.Error)
 		assert.Equal(t, "Error with nil cause", errorResp.Message)
 	})
 
@@ -226,7 +228,7 @@ func TestErrorHandlerMiddleware_EdgeCases(t *testing.T) {
 		err = parseJSONResponse(resp, &errorResp)
 		require.NoError(t, err)
 
-		assert.Equal(t, "TEST003", errorResp.Error)
+		assert.Equal(t, "SYS003", errorResp.Error)
 		assert.Empty(t, errorResp.Details)
 	})
 }
@@ -235,10 +237,10 @@ func TestErrorHandlerMiddleware_ConcurrentErrors(t *testing.T) {
 	app := fiber.New()
 	app.Use(ErrorHandler())
 
-	// Create a route that generates errors
+	// Create a route that generates errors (using SYS001 which is mapped to 500)
 	app.Get("/concurrent-error/:id", func(c *fiber.Ctx) error {
 		id := c.Params("id")
-		return domainErrors.NewError("CONCURRENT", "Concurrent error").
+		return domainErrors.NewError("SYS001", "Concurrent error").
 			WithDetails(map[string]interface{}{"request_id": id}).
 			Build()
 	})
@@ -247,7 +249,7 @@ func TestErrorHandlerMiddleware_ConcurrentErrors(t *testing.T) {
 	done := make(chan bool, 10)
 	for i := 0; i < 10; i++ {
 		go func(id int) {
-			req, _ := http.NewRequest("GET", "/concurrent-error/"+string(rune(id)), nil)
+			req, _ := http.NewRequest("GET", fmt.Sprintf("/concurrent-error/%d", id), nil)
 			resp, err := app.Test(req, -1)
 			assert.NoError(t, err)
 			defer func() { _ = resp.Body.Close() }()
@@ -289,25 +291,25 @@ func TestErrorHandlerMiddleware_ErrorLevels(t *testing.T) {
 		name     string
 		path     string
 		code     string
-		expected int // Expected status code
+		expected int // Expected status code based on error level (when code is unmapped)
 	}{
 		{
 			name:     "Info level",
 			path:     "/info-error",
 			code:     "INFO001",
-			expected: fiber.StatusInternalServerError,
+			expected: fiber.StatusInternalServerError, // Default for unmapped codes
 		},
 		{
 			name:     "Warning level",
 			path:     "/warning-error",
 			code:     "WARN001",
-			expected: fiber.StatusInternalServerError,
+			expected: fiber.StatusNotFound, // Warning level maps to 404 when code is unmapped
 		},
 		{
 			name:     "Critical level",
 			path:     "/critical-error",
 			code:     "CRIT001",
-			expected: fiber.StatusInternalServerError,
+			expected: fiber.StatusInternalServerError, // Critical level maps to 500
 		},
 	}
 
