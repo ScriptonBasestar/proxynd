@@ -17,6 +17,7 @@ func SetupEnterpriseRoutes(app *fiber.App, enterpriseFeatures enterpriseMiddlewa
 	securityHandler := enterprise.NewSecurityHandler()
 	alertsHandler := enterprise.NewAlertsHandler()
 	licenseHandler := enterprise.NewLicenseHandler()
+	sessionHandler := enterprise.NewSessionHandler()
 
 	// Create Enterprise API metrics
 	enterpriseMetrics := enterpriseMiddleware.NewEnterpriseMetrics()
@@ -57,6 +58,9 @@ func SetupEnterpriseRoutes(app *fiber.App, enterpriseFeatures enterpriseMiddlewa
 
 	// License Routes (4 endpoints)
 	setupLicenseRoutes(api, licenseHandler)
+
+	// Session Management Routes (11 endpoints)
+	setupSessionRoutes(api, sessionHandler)
 }
 
 // setupRBACRoutes configures RBAC endpoints
@@ -155,4 +159,25 @@ func setupLicenseRoutes(api fiber.Router, h *enterprise.LicenseHandler) {
 	license.Post("/validate", h.ValidateLicense) // Validate license key
 	license.Get("/features", h.ListFeatures)     // List available features
 	license.Get("/usage", h.GetUsageMetrics)     // License usage metrics
+}
+
+// setupSessionRoutes configures session management endpoints
+func setupSessionRoutes(api fiber.Router, h *enterprise.SessionHandler) {
+	sessions := api.Group("/sessions")
+
+	// User Session Management (6 endpoints)
+	sessions.Get("", h.ListSessions)              // List user's sessions
+	sessions.Get("/current", h.GetCurrentSession) // Get current session
+	sessions.Get("/:id", h.GetSession)            // Get specific session
+	sessions.Delete("/:id", h.RevokeSession)      // Revoke specific session
+	sessions.Delete("", h.RevokeAllSessions)      // Revoke all sessions except current
+	sessions.Post("/refresh", h.RefreshSession)   // Refresh current session
+
+	// Admin Session Management (5 endpoints)
+	admin := api.Group("/admin/sessions")
+	admin.Get("", h.AdminListSessions)                      // List all sessions (admin)
+	admin.Get("/stats", h.GetSessionStats)                  // Session statistics
+	admin.Get("/suspicious", h.AdminGetSuspiciousSessions)  // Suspicious sessions
+	admin.Get("/user/:userId", h.AdminGetUserSessions)      // Get user's sessions (admin)
+	admin.Delete("/user/:userId", h.AdminForceLogoutUser)   // Force logout user (admin)
 }
