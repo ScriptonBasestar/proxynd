@@ -412,11 +412,111 @@ func (c *cacheManagerImpl) shouldEvict(newEntrySize, maxSizeMB int64) bool {
 	return c.stats.TotalSizeBytes+newEntrySize > maxSizeBytes
 }
 
-// evictOldEntries 오래된 엔트리 제거
+// evictOldEntries 오래된 엔트리 제거 (LRU + 크기 기반 하이브리드 정책)
 func (c *cacheManagerImpl) evictOldEntries(ctx context.Context, requiredSize int64) error {
-	// LRU 기반 제거 구현 (단순화)
-	// TODO: 더 정교한 제거 정책 구현
-	return c.CleanupExpired(ctx)
+	// 1. 먼저 만료된 엔트리 정리
+	if err := c.CleanupExpired(ctx); err != nil {
+		c.logger.Warn("Failed to cleanup expired entries", logging.F("error", err))
+	}
+
+	// 2. 현재 캐시 크기 재확인
+	c.statsMutex.RLock()
+	currentSize := c.stats.TotalSizeBytes
+	maxSizeBytes := c.config.GetCacheConfig().MaxSizeMB * 1024 * 1024
+	c.statsMutex.RUnlock()
+
+	// 만료 정리 후 충분한 공간이 확보되었으면 종료
+	if currentSize+requiredSize <= maxSizeBytes {
+		return nil
+	}
+
+	// 3. LRU 기반 추가 제거 수행
+	return c.evictByLRU(ctx, requiredSize)
+}
+
+// evictByLRU LRU 정책에 따른 캐시 제거
+func (c *cacheManagerImpl) evictByLRU(ctx context.Context, requiredSpace int64) error {
+	cacheDir := c.config.GetCacheConfig().BaseDir
+	if cacheDir == "" {
+		return nil
+	}
+
+	dockerCacheDir := filepath.Join(cacheDir, c.config.GetPath())
+
+	// 모든 캐시 엔트리 수집
+	type entryInfo struct {
+		key          string
+		lastAccessed time.Time
+		size         int64
+	}
+	var entries []entryInfo
+
+	err := filepath.Walk(dockerCacheDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil || info.IsDir() {
+			return nil
+		}
+
+		if !strings.HasSuffix(path, ".meta") {
+			return nil
+		}
+
+		entry, err := c.loadCacheEntry(path)
+		if err != nil {
+			return nil
+		}
+
+		entries = append(entries, entryInfo{
+			key:          entry.Key,
+			lastAccessed: entry.LastAccessed,
+			size:         entry.Size,
+		})
+
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("failed to scan cache directory: %w", err)
+	}
+
+	// LastAccessed 기준 오름차순 정렬 (가장 오래된 것 먼저)
+	for i := 0; i < len(entries)-1; i++ {
+		for j := i + 1; j < len(entries); j++ {
+			if entries[i].lastAccessed.After(entries[j].lastAccessed) {
+				entries[i], entries[j] = entries[j], entries[i]
+			}
+		}
+	}
+
+	// 필요한 공간만큼 제거
+	var freedSpace int64
+	var evictedCount int64
+
+	for _, entry := range entries {
+		if freedSpace >= requiredSpace {
+			break
+		}
+
+		if err := c.Delete(ctx, entry.key); err != nil {
+			c.logger.Warn("Failed to evict cache entry",
+				logging.F("key", entry.key),
+				logging.F("error", err))
+			continue
+		}
+
+		freedSpace += entry.size
+		evictedCount++
+	}
+
+	c.logger.Info("LRU eviction completed",
+		logging.F("evicted_count", evictedCount),
+		logging.F("freed_bytes", freedSpace),
+		logging.F("required_bytes", requiredSpace))
+
+	// 통계 업데이트
+	c.statsMutex.Lock()
+	c.stats.EvictionCount += evictedCount
+	c.statsMutex.Unlock()
+
+	return nil
 }
 
 // updateCacheStats 캐시 통계 업데이트

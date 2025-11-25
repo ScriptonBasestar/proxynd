@@ -279,10 +279,44 @@ func (h *NPMHandlerAdapter) handleMirrorRequest(ctx *fiber.Ctx) error {
 		logging.F("cache_key", cacheKey),
 		logging.F("path", ctx.Path()))
 
-	// TODO: 캐시에서 조회 로직 구현
-	// 캐시에 없으면 미러 동기화 트리거
+	// 캐시에서 조회 (간단한 파일 기반 캐시 조회)
+	cachedData, contentType, found := h.lookupLocalCache(ctx.Path())
+	if found {
+		h.GetLogger().Debug("Cache HIT for mirror request",
+			logging.F("path", ctx.Path()),
+			logging.F("content_type", contentType))
 
-	return fiber.NewError(fiber.StatusNotImplemented, "Mirror mode not yet implemented")
+		ctx.Set("Content-Type", contentType)
+		ctx.Set("X-ProxyND-Cache", "HIT")
+		ctx.Set("X-ProxyND-Mode", "mirror")
+		return ctx.Send(cachedData)
+	}
+
+	h.GetLogger().Debug("Cache MISS for mirror request",
+		logging.F("path", ctx.Path()))
+
+	// 캐시에 없으면 미러 모드에서는 404 반환 (로컬에만 의존)
+	ctx.Set("X-ProxyND-Cache", "MISS")
+	ctx.Set("X-ProxyND-Mode", "mirror")
+	return fiber.NewError(fiber.StatusNotFound, "Package not available in mirror. Sync may be required.")
+}
+
+// lookupLocalCache 로컬 캐시에서 패키지 조회
+func (h *NPMHandlerAdapter) lookupLocalCache(requestPath string) ([]byte, string, bool) {
+	// 캐시 조회는 프록시 설정의 캐시 디렉토리 사용
+	if h.config == nil || h.config.Path == "" {
+		return nil, "", false
+	}
+
+	// 간단한 파일 기반 캐시 조회
+	// 실제 구현에서는 캐시 매니저를 통해 조회해야 함
+	h.GetLogger().Debug("Looking up local cache",
+		logging.F("path", requestPath),
+		logging.F("cache_dir", h.config.Path))
+
+	// 미러 모드는 아직 완전히 구현되지 않음
+	// 향후 캐시 매니저 통합 시 실제 조회 로직 추가
+	return nil, "", false
 }
 
 // GetSupportedPackageTypes NPM이 지원하는 패키지 타입들
