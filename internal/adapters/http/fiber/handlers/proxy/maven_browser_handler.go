@@ -172,9 +172,7 @@ func (h *MavenBrowserHandler) Handle(c *fiber.Ctx) error {
 				if searchQuery != "" {
 					browserData.SearchQuery = searchQuery
 					if browserData.TreeRoot != nil {
-						// TODO: searchInTree 함수 구현 필요
-						// searchInTree(browserData.TreeRoot, searchQuery)
-						_ = browserData.TreeRoot // 현재는 미구현
+						browserData.TreeRoot = h.searchInTree(browserData.TreeRoot, searchQuery)
 					}
 				}
 
@@ -334,8 +332,7 @@ func (h *MavenBrowserHandler) collectDirectoryData(artifactPath string) (*MavenB
 	data.TotalMirrors = len(h.config.Proxies)
 
 	// GAV 트리 구조 생성
-	// TODO: buildGAVTree 함수 구현 필요
-	// data.TreeRoot = buildGAVTree(data.Entries, artifactPath)
+	data.TreeRoot = h.buildGAVTree(data.Entries, artifactPath)
 	data.ViewMode = "tree"
 
 	// 디버깅: springframework 엔트리 확인
@@ -1128,9 +1125,7 @@ func (h *MavenBrowserHandler) initializeIndex() {
 	}
 
 	// 인덱스 저장소 초기화
-	// TODO: NewFileIndexStorage 함수 구현 필요
-	// h.indexStorage = NewFileIndexStorage(storageDir)
-	_ = storageDir // TODO: remove when NewFileIndexStorage is implemented
+	h.indexStorage = NewFileIndexStorage(storageDir)
 
 	// 기존 인덱스 로드
 	h.loadExistingIndex()
@@ -1470,4 +1465,111 @@ func (h *MavenBrowserHandler) CollectDirectoryData(path string) (*MavenBrowserDa
 
 	// 기존 collectDirectoryData 메서드 활용
 	return h.collectDirectoryData(path)
+}
+
+// searchInTree 트리에서 검색 쿼리와 일치하는 노드 찾기
+func (h *MavenBrowserHandler) searchInTree(root []*maven.GAVTreeNode, query string) []*maven.GAVTreeNode {
+	if len(root) == 0 || query == "" {
+		return root
+	}
+
+	query = strings.ToLower(query)
+	var results []*maven.GAVTreeNode
+
+	for _, node := range root {
+		h.searchNodeRecursive(node, query, &results)
+	}
+
+	return results
+}
+
+// searchNodeRecursive 재귀적으로 트리 노드 검색
+func (h *MavenBrowserHandler) searchNodeRecursive(node *maven.GAVTreeNode, query string, results *[]*maven.GAVTreeNode) bool {
+	if node == nil {
+		return false
+	}
+
+	// 현재 노드 이름에서 검색
+	nameMatches := strings.Contains(strings.ToLower(node.Name), query)
+
+	// GroupID, ArtifactID에서도 검색
+	groupMatches := strings.Contains(strings.ToLower(node.GroupID), query)
+	artifactMatches := strings.Contains(strings.ToLower(node.ArtifactID), query)
+
+	// 자식 노드 검색
+	childMatches := false
+	if len(node.Children) > 0 {
+		for _, child := range node.Children {
+			if h.searchNodeRecursive(child, query, results) {
+				childMatches = true
+			}
+		}
+	}
+
+	// 매칭되거나 자식이 매칭되면 하이라이트
+	if nameMatches || groupMatches || artifactMatches {
+		node.IsHighlighted = true
+		node.IsExpanded = true
+		*results = append(*results, node)
+		return true
+	}
+
+	if childMatches {
+		node.IsExpanded = true
+		return true
+	}
+
+	return false
+}
+
+// buildGAVTree 엔트리에서 GAV 트리 구조 생성
+func (h *MavenBrowserHandler) buildGAVTree(entries []DirectoryEntry, basePath string) []*maven.GAVTreeNode {
+	if len(entries) == 0 {
+		return nil
+	}
+
+	var roots []*maven.GAVTreeNode
+
+	for _, entry := range entries {
+		// 디렉토리만 트리에 포함
+		if entry.Type != maven.TypeDirectory && entry.Type != maven.TypeGroup &&
+			entry.Type != maven.TypeArtifact && entry.Type != maven.TypeVersion {
+			continue
+		}
+
+		node := &maven.GAVTreeNode{
+			Name:       entry.Name,
+			Type:       string(entry.Type),
+			FullPath:   filepath.Join(basePath, entry.Name),
+			Sources:    entry.Sources,
+			ChildCount: 0,
+		}
+
+		// Maven 컨텍스트에서 GAV 정보 추출
+		if entry.MavenContext != nil {
+			node.GroupID = entry.MavenContext.GroupID
+			node.ArtifactID = entry.MavenContext.ArtifactID
+			node.Version = entry.MavenContext.Version
+		}
+
+		// 경로에서 GAV 추론
+		pathParts := strings.Split(strings.Trim(node.FullPath, "/"), "/")
+		if len(pathParts) > 0 {
+			node.GroupID = strings.Join(pathParts[:len(pathParts)-1], ".")
+			if entry.Type == maven.TypeArtifact {
+				node.ArtifactID = entry.Name
+			} else if entry.Type == maven.TypeVersion {
+				node.Version = entry.Name
+			}
+		}
+
+		roots = append(roots, node)
+	}
+
+	// 이름순 정렬
+	sort.Slice(roots, func(i, j int) bool {
+		return roots[i].Name < roots[j].Name
+	})
+
+	return roots
 }
