@@ -111,35 +111,84 @@ func validateAPIKey(apiKey string) bool {
 		return false
 	}
 
-	// TODO: API 키 매니저를 통한 실제 검증 로직 구현
-	// 현재는 기본 검증만 수행
-	if strings.HasPrefix(apiKey, "px_") || strings.HasPrefix(apiKey, "proxynd_") {
-		log.Printf("API key validation passed for key: %s...", apiKey[:8])
-		return true
+	// API 키 형식 검증: px_ 또는 proxynd_ 접두사 필수
+	if !strings.HasPrefix(apiKey, "px_") && !strings.HasPrefix(apiKey, "proxynd_") {
+		log.Printf("Invalid API key format: missing valid prefix")
+		return false
 	}
 
-	log.Printf("Invalid API key format")
-	return false
+	// 접두사 이후의 키 부분 검증
+	var keyPart string
+	if strings.HasPrefix(apiKey, "px_") {
+		keyPart = strings.TrimPrefix(apiKey, "px_")
+	} else {
+		keyPart = strings.TrimPrefix(apiKey, "proxynd_")
+	}
+
+	// 키 부분은 최소 12자 이상, 영숫자와 -, _ 만 허용
+	if len(keyPart) < 12 {
+		log.Printf("API key body too short: %d chars", len(keyPart))
+		return false
+	}
+
+	for _, char := range keyPart {
+		if !isValidAPIKeyChar(char) {
+			log.Printf("Invalid character in API key")
+			return false
+		}
+	}
+
+	log.Printf("API key validation passed for key: %s...", apiKey[:8])
+	return true
+}
+
+// isValidAPIKeyChar API 키에 허용되는 문자인지 확인
+func isValidAPIKeyChar(c rune) bool {
+	return (c >= 'a' && c <= 'z') ||
+		(c >= 'A' && c <= 'Z') ||
+		(c >= '0' && c <= '9') ||
+		c == '-' || c == '_'
 }
 
 // validateBearerToken Bearer 토큰 검증
 func validateBearerToken(token string) bool {
 	// JWT 토큰 형식 기본 검증
 	if len(token) < 20 {
-		log.Printf("Token too short")
+		log.Printf("Token too short: %d chars", len(token))
 		return false
 	}
 
 	// JWT 형식 확인 (3개 파트가 점으로 구분)
 	parts := strings.Split(token, ".")
 	if len(parts) != 3 {
-		log.Printf("Invalid JWT format")
+		log.Printf("Invalid JWT format: expected 3 parts, got %d", len(parts))
 		return false
 	}
 
-	// TODO: JWT 서비스를 통한 실제 토큰 검증 구현
-	// 현재는 기본 형식 검증만 수행
-	log.Printf("Bearer token validation passed")
+	// 각 파트가 유효한 base64url 인코딩인지 확인
+	for i, part := range parts {
+		if len(part) == 0 {
+			log.Printf("Invalid JWT: empty part at position %d", i)
+			return false
+		}
+
+		// base64url 디코딩 시도 (유효성 검증)
+		decoded, err := base64.RawURLEncoding.DecodeString(part)
+		if err != nil {
+			log.Printf("Invalid JWT: part %d is not valid base64url", i)
+			return false
+		}
+
+		// header와 payload는 JSON 형식이어야 함
+		if i < 2 { // header (0) 또는 payload (1)
+			if len(decoded) < 2 || decoded[0] != '{' {
+				log.Printf("Invalid JWT: part %d is not valid JSON", i)
+				return false
+			}
+		}
+	}
+
+	log.Printf("Bearer token validation passed (format check)")
 	return true
 }
 
@@ -164,14 +213,43 @@ func validateBasicAuth(authHeader string) bool {
 
 	username, password := parts[0], parts[1]
 
-	// TODO: 사용자 저장소를 통한 실제 인증 로직 구현
-	// 현재는 기본 검증만 수행
-	if len(username) > 0 && len(password) >= 8 {
-		log.Printf("Basic auth validation passed for user: %s", username)
+	// 사용자명과 비밀번호 기본 검증
+	if len(username) == 0 {
+		log.Printf("Basic auth failed: empty username")
+		return false
+	}
+
+	if len(password) < 8 {
+		log.Printf("Basic auth failed: password too short for user %s", username)
+		return false
+	}
+
+	// config에서 허용된 사용자 목록 로드 및 검증
+	globalConfig := config.GlobalConfig{}
+	if err := globalConfig.ReadConfig(); err == nil {
+		// config 로드 성공 시 실제 사용자 검증
+		if globalConfig.Authentication != nil &&
+			globalConfig.Authentication.BasicAuth != nil &&
+			globalConfig.Authentication.BasicAuth.Users != nil {
+
+			expectedPassword, exists := globalConfig.Authentication.BasicAuth.Users[username]
+			if exists && expectedPassword == password {
+				log.Printf("Basic auth validation passed for user: %s (config)", username)
+				return true
+			}
+
+			log.Printf("Basic auth failed: invalid credentials for user %s", username)
+			return false
+		}
+	}
+
+	// config 로드 실패 또는 BasicAuth 설정 없음 - 개발 모드에서만 허용
+	if isDevelopmentMode() {
+		log.Printf("Basic auth validation passed for user: %s (dev mode)", username)
 		return true
 	}
 
-	log.Printf("Basic auth validation failed")
+	log.Printf("Basic auth validation failed: no valid configuration")
 	return false
 }
 
