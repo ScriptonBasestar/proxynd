@@ -492,6 +492,16 @@ func (m *Manager) applyOverrides(overrides EnvironmentOverrides) {
 }
 
 func (m *Manager) handleFailure(pluginName, hook string, err error) error {
+	// Guard against nil error
+	if err == nil {
+		return nil
+	}
+
+	// Guard against nil logger
+	if m.logger == nil {
+		return fmt.Errorf("logger not initialized for plugin %s: %w", pluginName, err)
+	}
+
 	switch m.config.Lifecycle.FailurePolicy {
 	case FailurePolicyHalt:
 		return fmt.Errorf("plugin %s %s failed: %w", pluginName, hook, err)

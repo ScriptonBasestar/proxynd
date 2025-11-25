@@ -51,7 +51,7 @@ func NewWebhookSender(config config.WebhookConfig) (*WebhookSender, error) {
 	// 테스트 호환을 위한 더미 객체들
 	dummyQueue := &DummyQueue{}
 	dummyRateLimiter := struct{}{}
-	dummyBatchManager := &DummyBatchManager{}
+	dummyBatchManager := NewDummyBatchManager(config.Batching.Enabled, config.Batching.MaxSize)
 	dummyMetrics := &DummyMetrics{}
 
 	return &WebhookSender{
@@ -172,10 +172,22 @@ func (dm *DummyMetrics) incrementFailed()  {}
 func (dm *DummyMetrics) incrementRetries() {}
 
 // DummyBatchManager 테스트용 더미 배치 매니저
-type DummyBatchManager struct{}
+type DummyBatchManager struct {
+	enabled bool
+	maxSize int
+}
+
+func NewDummyBatchManager(enabled bool, maxSize int) *DummyBatchManager {
+	return &DummyBatchManager{enabled: enabled, maxSize: maxSize}
+}
 
 func (dbm *DummyBatchManager) GetStats() map[string]interface{} {
-	return make(map[string]interface{})
+	stats := make(map[string]interface{})
+	stats["enabled"] = dbm.enabled
+	if dbm.enabled {
+		stats["maxSize"] = dbm.maxSize
+	}
+	return stats
 }
 
 // CompatibleWebhookAdapter 테스트 호환성을 위한 어댑터 인터페이스

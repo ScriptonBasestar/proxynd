@@ -77,14 +77,23 @@ func NewCore(config config.WebhookConfig) (*Core, error) {
 	}
 	retryManager := retry.NewManager(retryPolicy)
 
+	// BatchStats 초기화 (config 기반)
+	batchStats := make(map[string]interface{})
+	batchStats["enabled"] = config.Batching.Enabled
+	if config.Batching.Enabled {
+		batchStats["maxSize"] = config.Batching.MaxSize
+	}
+
 	core := &Core{
-		config:         config,
-		logger:         logger,
-		queue:          queue,
-		rateLimiter:    rateLimiter,
-		adapters:       make(map[string]types.WebhookAdapter),
-		workers:        make([]*Worker, 0),
-		metrics:        &types.SenderMetrics{},
+		config:      config,
+		logger:      logger,
+		queue:       queue,
+		rateLimiter: rateLimiter,
+		adapters:    make(map[string]types.WebhookAdapter),
+		workers:     make([]*Worker, 0),
+		metrics: &types.SenderMetrics{
+			BatchStats: batchStats,
+		},
 		failureQueue:   failureQueue,
 		historyManager: historyManager,
 		retryManager:   retryManager,
@@ -126,11 +135,17 @@ func (c *Core) Start(ctx context.Context) error {
 		}
 		c.batchManager = NewBatchManager(batchConfig, c.logger)
 
+		// BatchStats 초기화
+		c.metrics.BatchStats["enabled"] = true
+		c.metrics.BatchStats["maxSize"] = c.config.Batching.MaxSize
+
 		c.wg.Add(1)
 		go func() {
 			defer c.wg.Done()
 			c.batchManager.Start(ctx)
 		}()
+	} else {
+		c.metrics.BatchStats["enabled"] = false
 	}
 
 	// 워커 시작
