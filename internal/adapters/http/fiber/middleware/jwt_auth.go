@@ -113,6 +113,11 @@ func JWTMiddleware(config JWTConfig) fiber.Handler {
 
 // GenerateJWTToken JWT 토큰 생성
 func GenerateJWTToken(userID, username string, roles []string, config JWTConfig) (string, error) {
+	// Default to 24 hours if not specified
+	if config.TokenDuration == 0 {
+		config.TokenDuration = 24 * time.Hour
+	}
+
 	now := time.Now()
 	expiresAt := now.Add(config.TokenDuration)
 
