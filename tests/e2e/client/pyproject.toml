@@ -1,0 +1,32 @@
+[project]
+name = "proxynd-test-client"
+version = "0.1.0"
+description = "ProxyND E2E Test Client - Python-based tests for ProxyND proxy server"
+requires-python = ">=3.10"
+dependencies = [
+    "requests>=2.31.0",
+    "pytest>=8.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest-cov>=4.0.0",
+    "pytest-xdist>=3.0.0",
+]
+
+[tool.pytest.ini_options]
+markers = [
+    "public: public repository tests (no auth required)",
+    "private: private repository tests (auth required)",
+    "slow: tests that take > 5 seconds",
+    "npm: NPM registry tests",
+    "maven: Maven repository tests",
+    "pypi: PyPI repository tests",
+    "docker: Docker registry tests",
+]
+testpaths = ["."]
+python_files = ["test_*.py"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"

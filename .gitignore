@@ -83,6 +83,11 @@ artifacts/
 # Dependency vendors
 vendor/
 
+# Python virtual environments
+.venv/
+__pycache__/
+*.pyc
+
 # Container and tooling overrides
 docker-compose.override.yml
 .docker/
