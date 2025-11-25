@@ -16,6 +16,9 @@ import (
 const (
 	proxyTypeNpm    = "npm"
 	proxyTypeDocker = "docker"
+	proxyTypePip    = "pip"
+	proxyTypeYum    = "yum"
+	proxyTypeApk    = "apk"
 )
 
 func TestNewProxyServiceFactory(t *testing.T) {
@@ -105,6 +108,51 @@ func TestProxyServiceFactory_CreateProxyService(t *testing.T) {
 			},
 		},
 		{
+			name:      "create pip service",
+			proxyType: proxyTypePip,
+			setupMocks: func(config *MockConfigService) {
+				pipConfig := &configpkg.PipProxySettings{
+					Path:     "/pip",
+					UseCache: true,
+				}
+				config.On("GetProxyConfig", mock.Anything, proxyTypePip).Return(pipConfig, nil)
+			},
+			wantErr: false,
+			checkType: func(s ProxyService) bool {
+				return s.GetProxyType() == proxyTypePip
+			},
+		},
+		{
+			name:      "create yum service",
+			proxyType: proxyTypeYum,
+			setupMocks: func(config *MockConfigService) {
+				yumConfig := &configpkg.YumProxySettings{
+					Path:     "/yum",
+					UseCache: true,
+				}
+				config.On("GetProxyConfig", mock.Anything, proxyTypeYum).Return(yumConfig, nil)
+			},
+			wantErr: false,
+			checkType: func(s ProxyService) bool {
+				return s.GetProxyType() == proxyTypeYum
+			},
+		},
+		{
+			name:      "create apk service",
+			proxyType: proxyTypeApk,
+			setupMocks: func(config *MockConfigService) {
+				apkConfig := &configpkg.ApkProxySettings{
+					Path:     "/apk",
+					UseCache: true,
+				}
+				config.On("GetProxyConfig", mock.Anything, proxyTypeApk).Return(apkConfig, nil)
+			},
+			wantErr: false,
+			checkType: func(s ProxyService) bool {
+				return s.GetProxyType() == proxyTypeApk
+			},
+		},
+		{
 			name:      "unknown proxy type",
 			proxyType: "unknown",
 			setupMocks: func(_ *MockConfigService) {
@@ -168,7 +216,7 @@ func TestProxyServiceFactory_CreateProxyService(t *testing.T) {
 func TestProxyServiceFactory_AllProxyTypes(t *testing.T) {
 	ctx := context.Background()
 
-	proxyTypes := []string{"apt", "maven", proxyTypeNpm, proxyTypeDocker}
+	proxyTypes := []string{"apt", "maven", proxyTypeNpm, proxyTypeDocker, proxyTypePip, proxyTypeYum, proxyTypeApk}
 
 	for _, proxyType := range proxyTypes {
 		t.Run(proxyType, func(t *testing.T) {
@@ -186,12 +234,12 @@ func TestProxyServiceFactory_AllProxyTypes(t *testing.T) {
 				config.On("GetProxyConfig", mock.Anything, proxyType).Return(&configpkg.NpmProxySettings{}, nil)
 			case proxyTypeDocker:
 				config.On("GetProxyConfig", mock.Anything, proxyType).Return(&configpkg.DockerProxySettings{}, nil)
-			case "pip":
-				config.On("GetProxyConfig", mock.Anything, proxyType).Return(struct{}{}, nil)
-			case "yum":
-				config.On("GetProxyConfig", mock.Anything, proxyType).Return(struct{}{}, nil)
-			case "apk":
-				config.On("GetProxyConfig", mock.Anything, proxyType).Return(struct{}{}, nil)
+			case proxyTypePip:
+				config.On("GetProxyConfig", mock.Anything, proxyType).Return(&configpkg.PipProxySettings{}, nil)
+			case proxyTypeYum:
+				config.On("GetProxyConfig", mock.Anything, proxyType).Return(&configpkg.YumProxySettings{}, nil)
+			case proxyTypeApk:
+				config.On("GetProxyConfig", mock.Anything, proxyType).Return(&configpkg.ApkProxySettings{}, nil)
 			default:
 				// For helm and others that use generic config
 				config.On("GetProxyConfig", mock.Anything, proxyType).Return(struct{}{}, nil)
