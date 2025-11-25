@@ -30,6 +30,41 @@ test-e2e: ## run end-to-end tests (full system)
 	@go test -v -tags=e2e ./tests/e2e/... || (docker-compose -f docker-compose.e2e.yml down && exit 1)
 	@docker-compose -f docker-compose.e2e.yml down
 
+# ==============================================================================
+# Python E2E Test Client
+# ==============================================================================
+
+.PHONY: test-e2e-client test-e2e-client-public test-e2e-client-private
+.PHONY: test-e2e-client-npm test-e2e-client-maven test-e2e-client-auth
+
+test-e2e-client: ## run Python E2E test client (all tests)
+	@echo "🐍 Running Python E2E test client..."
+	@cd tests/e2e/client && ./run_tests.sh
+
+test-e2e-client-public: ## run Python E2E client public tests (no auth required)
+	@echo "🐍 Running Python E2E client public tests..."
+	@cd tests/e2e/client && ./run_tests.sh --public
+
+test-e2e-client-private: ## run Python E2E client private tests (auth required)
+	@echo "🐍 Running Python E2E client private tests..."
+	@cd tests/e2e/client && ./run_tests.sh --private
+
+test-e2e-client-npm: ## run Python E2E client NPM tests
+	@echo "🐍 Running Python E2E client NPM tests..."
+	@cd tests/e2e/client && ./run_tests.sh --npm
+
+test-e2e-client-maven: ## run Python E2E client Maven tests
+	@echo "🐍 Running Python E2E client Maven tests..."
+	@cd tests/e2e/client && ./run_tests.sh --maven
+
+test-e2e-client-auth: ## run Python E2E client auth tests
+	@echo "🐍 Running Python E2E client auth tests..."
+	@cd tests/e2e/client && ./run_tests.sh --auth
+
+test-e2e-client-manual: ## list available manual curl tests
+	@echo "🐍 Listing manual test commands..."
+	@cd tests/e2e/client && ./manual_tests.sh
+
 # Legacy test targets (for backward compatibility)
 test-unit-legacy: ## run legacy unit tests
 	@echo "Running legacy unit tests..."
