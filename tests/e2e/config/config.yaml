@@ -1,0 +1,55 @@
+# ProxyND E2E Test Configuration
+# Minimal config for running Python E2E tests
+
+server:
+  port: 8080
+  host: "0.0.0.0"
+
+logging:
+  level: debug
+  format: json
+
+cache:
+  type: filesystem
+  ttl: 3600
+  maxSize: 1073741824  # 1GB
+
+# NPM Proxy
+npm:
+  enabled: true
+  upstream: "https://registry.npmjs.org"
+  path: "proxy/npm"
+  useCache: true
+  allowedPackages:
+    - "*"
+
+# Maven Proxy
+maven:
+  enabled: true
+  upstream: "https://repo1.maven.org/maven2"
+  path: "proxy/maven"
+  useCache: true
+  allowedArtifacts:
+    - "*"
+
+# PyPI Proxy
+pip:
+  enabled: true
+  upstream: "https://pypi.org/simple"
+  path: "proxy/pip"
+  useCache: true
+
+# Docker Registry Proxy
+docker:
+  enabled: true
+  upstream: "https://registry-1.docker.io"
+  path: "proxy/docker"
+  useCache: true
+
+metrics:
+  enabled: true
+  path: "/metrics"
+
+health:
+  enabled: true
+  path: "/healthz"
