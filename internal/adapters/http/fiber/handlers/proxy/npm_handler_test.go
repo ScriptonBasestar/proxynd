@@ -67,7 +67,7 @@ func TestNpmProxy_ContentType(t *testing.T) {
 			name:         "tarball file",
 			filename:     "package-1.0.0.tgz",
 			path:         "/package/-/package-1.0.0.tgz",
-			expectedType: "application/gzip",
+			expectedType: MimeApplicationXGzip, // application/x-gzip is the standard for .tgz files
 		},
 		{
 			name:         "json metadata",
