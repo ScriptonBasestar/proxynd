@@ -5,24 +5,6 @@ import (
 	"fmt"
 )
 
-// PipService handles PIP repository proxy requests
-type PipService struct {
-	*BaseProxyService
-}
-
-// NewPipService creates a new PIP proxy service
-func NewPipService(cache CacheService, configService ConfigService,
-	upstreamClient UpstreamClient,
-) (*PipService, error) {
-	base := NewBaseProxyService("pip", cache, configService, upstreamClient)
-	return &PipService{BaseProxyService: base}, nil
-}
-
-// HandleRequest processes a PIP proxy request
-func (s *PipService) HandleRequest(_ context.Context, _ ProxyRequest) (*ProxyResponse, error) {
-	return s.HandleError(fmt.Errorf("PIP service not yet implemented"), 501), nil
-}
-
 // YumService handles YUM repository proxy requests
 type YumService struct {
 	*BaseProxyService
