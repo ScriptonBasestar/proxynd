@@ -1,0 +1,8 @@
+# Docker Proxy Configuration for E2E Tests
+path: proxy/docker
+use_cache: true
+
+proxies:
+  - name: docker-hub
+    url: https://registry-1.docker.io
+    description: "Docker Hub public registry"

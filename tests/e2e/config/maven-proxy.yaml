@@ -1,0 +1,9 @@
+# Maven Proxy Configuration for E2E Tests
+path: proxy/maven
+use_cache: true
+
+proxies:
+  - name: central
+    id: maven-central
+    url: https://repo1.maven.org/maven2
+    description: "Maven Central Repository"

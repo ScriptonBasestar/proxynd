@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	containerMetricsOnce sync.Once
+	containerMetricsOnce      sync.Once
 	containerMetricsSingleton *ContainerMetrics
 )
 

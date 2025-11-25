@@ -1,0 +1,9 @@
+# NPM Proxy Configuration for E2E Tests
+path: proxy/npm
+use_cache: true
+
+proxies:
+  default:
+    - name: npmjs
+      url: https://registry.npmjs.org
+      description: "NPM official public registry"

@@ -1,0 +1,23 @@
+# Global Configuration for E2E Tests
+server:
+  port: 8080
+  host: "0.0.0.0"
+
+logging:
+  level: debug
+  format: json
+
+cache:
+  type: filesystem
+  ttl: 3600
+  maxSize: 1073741824  # 1GB
+  filesystem:
+    path: "/cache"
+
+metrics:
+  enabled: true
+  path: "/metrics"
+
+health:
+  enabled: true
+  path: "/healthz"
