@@ -3,11 +3,18 @@ package enterprise
 import (
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+)
+
+// Singleton instance for enterprise metrics to prevent duplicate registration
+var (
+	enterpriseMetricsInstance *EnterpriseMetrics
+	enterpriseMetricsOnce     sync.Once
 )
 
 // EnterpriseMetrics holds all Enterprise API Prometheus metrics
@@ -42,8 +49,17 @@ type EnterpriseMetrics struct {
 	cacheMissesTotal *prometheus.CounterVec
 }
 
-// NewEnterpriseMetrics creates and registers all Enterprise API metrics
+// NewEnterpriseMetrics creates and registers all Enterprise API metrics.
+// Uses singleton pattern to prevent duplicate registration panics in tests.
 func NewEnterpriseMetrics() *EnterpriseMetrics {
+	enterpriseMetricsOnce.Do(func() {
+		enterpriseMetricsInstance = createEnterpriseMetrics()
+	})
+	return enterpriseMetricsInstance
+}
+
+// createEnterpriseMetrics creates the actual metrics (called once via sync.Once)
+func createEnterpriseMetrics() *EnterpriseMetrics {
 	namespace := "proxynd"
 	subsystem := "enterprise_api"
 
