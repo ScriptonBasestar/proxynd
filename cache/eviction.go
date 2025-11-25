@@ -5,6 +5,9 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
+	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 )
@@ -148,11 +151,15 @@ func (e *CacheEvictor) evictExpiredItems() error {
 
 // evictExpiredFromFileSystem 파일 시스템에서 만료 항목 제거
 func (e *CacheEvictor) evictExpiredFromFileSystem(backend *FileSystemBackend) error {
-	// 구현 간소화를 위해 샘플 키 목록만 확인
-	// 실제로는 전체 디렉토리 스캔 필요
-	sampleKeys := []string{} // TODO: 디렉토리 스캔으로 키 목록 가져오기
+	// 디렉토리 스캔으로 캐시 키 목록 가져오기
+	keys, err := e.scanCacheKeys(backend.basePath)
+	if err != nil {
+		log.Printf("Failed to scan cache keys: %v", err)
+		return err
+	}
 
-	for _, key := range sampleKeys {
+	evictedCount := 0
+	for _, key := range keys {
 		meta, err := backend.GetMetadata(key)
 		if err != nil {
 			continue
@@ -161,11 +168,58 @@ func (e *CacheEvictor) evictExpiredFromFileSystem(backend *FileSystemBackend) er
 		if e.policy.ShouldEvict(0, 0, meta) {
 			if err := backend.Delete(key); err != nil {
 				log.Printf("Failed to delete expired key %s: %v", key, err)
+			} else {
+				evictedCount++
 			}
 		}
 	}
 
+	if evictedCount > 0 {
+		log.Printf("Evicted %d expired cache entries", evictedCount)
+	}
+
 	return nil
+}
+
+// scanCacheKeys 디렉토리 스캔으로 캐시 키 목록 수집
+func (e *CacheEvictor) scanCacheKeys(basePath string) ([]string, error) {
+	var keys []string
+
+	err := filepath.Walk(basePath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			// 접근 오류는 무시하고 계속 진행
+			return nil
+		}
+
+		// 디렉토리는 건너뛰기
+		if info.IsDir() {
+			return nil
+		}
+
+		// 메타데이터 파일(.meta)은 건너뛰기 - 실제 캐시 파일만 처리
+		if strings.HasSuffix(path, ".meta") {
+			return nil
+		}
+
+		// 임시 파일(.tmp, .partial)은 건너뛰기
+		if strings.HasSuffix(path, ".tmp") || strings.HasSuffix(path, ".partial") {
+			return nil
+		}
+
+		// basePath를 기준으로 상대 경로를 키로 사용
+		relPath, err := filepath.Rel(basePath, path)
+		if err != nil {
+			return nil
+		}
+
+		// 경로 구분자를 슬래시로 정규화 (플랫폼 독립성)
+		key := filepath.ToSlash(relPath)
+		keys = append(keys, key)
+
+		return nil
+	})
+
+	return keys, err
 }
 
 // evictExpiredFromS3 S3에서 만료 항목 제거
@@ -178,22 +232,53 @@ func (e *CacheEvictor) evictExpiredFromS3(_ *S3Backend) error {
 // evictByPolicy 정책에 따른 캐시 제거 (외부에서 호출 가능)
 func (e *CacheEvictor) evictByPolicy(requiredSpace int64) error {
 	// 모든 캐시 메타데이터 수집
-	var allMetadata []*CacheMetadata
-
-	// 실제로는 백엔드에서 모든 메타데이터를 가져와야 함
-	// 구현 간소화를 위해 샘플 데이터 사용
+	allMetadata, err := e.collectAllMetadata()
+	if err != nil {
+		log.Printf("Failed to collect cache metadata: %v", err)
+		return err
+	}
 
 	// 제거 후보 선택
 	candidates := e.policy.SelectEvictionCandidates(allMetadata, requiredSpace)
 
 	// 캐시 항목 제거
+	evictedCount := 0
 	for _, key := range candidates {
 		if err := e.backend.Delete(key); err != nil {
 			log.Printf("Failed to evict key %s: %v", key, err)
+		} else {
+			evictedCount++
 		}
 	}
 
+	if evictedCount > 0 {
+		log.Printf("Evicted %d cache entries by policy", evictedCount)
+	}
+
 	return nil
+}
+
+// collectAllMetadata 모든 캐시 메타데이터 수집
+func (e *CacheEvictor) collectAllMetadata() ([]*CacheMetadata, error) {
+	var allMetadata []*CacheMetadata
+
+	// FileSystemBackend인 경우
+	if fsBackend, ok := e.backend.(*FileSystemBackend); ok {
+		keys, err := e.scanCacheKeys(fsBackend.basePath)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, key := range keys {
+			meta, err := fsBackend.GetMetadata(key)
+			if err != nil {
+				continue // 메타데이터 없는 항목은 건너뛰기
+			}
+			allMetadata = append(allMetadata, meta)
+		}
+	}
+
+	return allMetadata, nil
 }
 
 // EvictKey 특정 키 강제 제거
