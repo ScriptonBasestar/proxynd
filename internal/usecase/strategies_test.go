@@ -137,12 +137,13 @@ func TestLRUEvictionPolicy(t *testing.T) {
 
 	// Test GetPriority - recent item with high access count
 	metadata = ports.CacheMetadata{
-		LastAccessed: time.Now().Add(-time.Hour * 2), // Recent
-		AccessCount:  100,                            // High access
+		LastAccessed: time.Now().Add(-time.Hour * 2), // Recent (less than 1 day)
+		AccessCount:  100,                            // High access (>= 5, no boost)
 	}
 	priority = policy.GetPriority(metadata)
-	assert.Greater(t, priority, 0)
-	assert.Less(t, priority, 50) // Should have lower priority
+	// Recent items (< 1 day) with high access count should have lowest priority (0)
+	// daysSinceAccess = 0, AccessCount >= 5 means no boost
+	assert.Equal(t, 0, priority) // Lowest priority - most valuable to keep
 }
 
 func TestTTLEvictionPolicy(t *testing.T) {
@@ -210,7 +211,9 @@ func TestEvictionPolicyIntegration(t *testing.T) {
 
 	assert.True(t, policy.ShouldEvict(metadata, stats))
 	priority := policy.GetPriority(metadata)
-	assert.Greater(t, priority, 150) // High priority due to age and low access
+	// 10 days old = daysSinceAccess * 10 = 100, AccessCount < 5 = +50 boost
+	// Total: 100 + 50 = 150
+	assert.Equal(t, 150, priority) // High priority due to age and low access
 }
 
 func TestStrategyDefaults(t *testing.T) {
