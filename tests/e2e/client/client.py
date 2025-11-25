@@ -84,7 +84,7 @@ class ProxyNDClient:
     def health_check(self) -> bool:
         """Check if the server is healthy."""
         try:
-            response = self.get("/health")
+            response = self.get("/healthz")
             return response.status_code == 200
         except requests.RequestException:
             return False
