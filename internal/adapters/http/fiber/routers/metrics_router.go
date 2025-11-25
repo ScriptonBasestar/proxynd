@@ -12,6 +12,7 @@ import (
 	"github.com/valyala/fasthttp/fasthttpadaptor"
 
 	"proxynd/internal/config"
+	"proxynd/internal/health"
 	"proxynd/internal/logging"
 	"proxynd/internal/metrics"
 )
@@ -69,14 +70,21 @@ func adaptor(h http.Handler) fiber.Handler {
 }
 
 // getMetricsUsers 메트릭 엔드포인트용 사용자 정보 반환
-func getMetricsUsers(_ *config.UnifiedConfig) map[string]string {
+func getMetricsUsers(cfg *config.UnifiedConfig) map[string]string {
 	// 기본 사용자
 	users := map[string]string{
 		"metrics": "prometheus", // 기본 사용자
 	}
 
-	// TODO: 설정에서 사용자 정보 로드
-	// config.Security.Authentication.BasicAuth에서 메트릭 사용자 추출
+	// 설정에서 사용자 정보 로드
+	if cfg != nil &&
+		cfg.Security.Authentication.BasicAuth != nil &&
+		cfg.Security.Authentication.BasicAuth.Users != nil {
+		// 설정된 BasicAuth 사용자들을 메트릭 사용자로 추가
+		for username, password := range cfg.Security.Authentication.BasicAuth.Users {
+			users[username] = password
+		}
+	}
 
 	return users
 }
@@ -339,9 +347,15 @@ func getGaugeVecValue(vec *prometheus.GaugeVec, labelValue string) float64 {
 
 // isHealthy 서비스 건강 상태 확인
 func isHealthy() bool {
-	// TODO: 실제 건강 상태 확인 로직
-	// - 필수 서비스 연결 상태
-	// - 캐시 백엔드 상태
-	// - 디스크 공간
-	return true
+	// healthService가 초기화되지 않은 경우 기본적으로 healthy 반환
+	if healthService == nil {
+		return true
+	}
+
+	// 전체 건강 상태 확인
+	overallStatus, _ := healthService.GetStatus()
+
+	// "healthy" 또는 "degraded" 상태는 서비스 가능으로 판단
+	// "unhealthy" 상태만 건강하지 않음으로 판단
+	return overallStatus != health.StatusUnhealthy
 }
