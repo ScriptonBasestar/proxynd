@@ -497,3 +497,31 @@ func WithFields(fields ...Field) Logger {
 func WithField(key string, value interface{}) Logger {
 	return GetLogger().WithField(key, value)
 }
+
+// SetLevel dynamically changes the global log level at runtime.
+// This is used for hot reload of logging configuration.
+func SetLevel(level LogLevel) {
+	zerologLevel := parseLevel(level)
+	zerolog.SetGlobalLevel(zerologLevel)
+}
+
+// GetLevel returns the current global log level.
+func GetLevel() LogLevel {
+	level := zerolog.GlobalLevel()
+	switch level {
+	case zerolog.DebugLevel:
+		return LevelDebug
+	case zerolog.InfoLevel:
+		return LevelInfo
+	case zerolog.WarnLevel:
+		return LevelWarn
+	case zerolog.ErrorLevel:
+		return LevelError
+	case zerolog.FatalLevel:
+		return LevelFatal
+	case zerolog.PanicLevel:
+		return LevelPanic
+	default:
+		return LevelInfo
+	}
+}
