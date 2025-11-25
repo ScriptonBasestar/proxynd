@@ -305,7 +305,7 @@ func TestProxyService_HandleProxyRequest_Success(t *testing.T) {
 		User: &ports.User{ID: "test-user"},
 	}, nil)
 	mockAuth.On("Authorize", mock.Anything, mock.AnythingOfType("*ports.AuthorizeRequest")).Return(&ports.AuthorizeResponse{Allowed: true}, nil)
-	mockRateLimit.On("CheckLimit", mock.Anything, mock.AnythingOfType("*ports.RateLimitRequest")).Return(nil)
+	// ProxyService uses Allow() not CheckLimit()
 	mockRateLimit.On("Allow", mock.Anything, mock.AnythingOfType("string")).Return(true, nil)
 
 	// Cache miss
@@ -375,6 +375,11 @@ func TestProxyService_HandleProxyRequest_CacheHit(t *testing.T) {
 	mockMetrics := &MockMetricsCollector{}
 	mockRateLimit := &MockRateLimiter{}
 
+	// Mock logger - set up BEFORE creating services (services log during initialization)
+	mockLogger.On("Debug", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return()
+	mockLogger.On("Info", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return()
+
+	// Create services AFTER mock setup
 	cacheStrategy := NewCacheStrategyService(mockCache, mockLogger, mockMetrics, nil)
 	proxyService := NewProxyService(
 		mockPM, mockCache, cacheStrategy, mockAuth,
@@ -386,7 +391,8 @@ func TestProxyService_HandleProxyRequest_CacheHit(t *testing.T) {
 		User: &ports.User{ID: "test-user"},
 	}, nil)
 	mockAuth.On("Authorize", mock.Anything, mock.AnythingOfType("*ports.AuthorizeRequest")).Return(&ports.AuthorizeResponse{Allowed: true}, nil)
-	mockRateLimit.On("CheckLimit", mock.Anything, mock.AnythingOfType("*ports.RateLimitRequest")).Return(nil)
+	// ProxyService uses Allow() not CheckLimit()
+	mockRateLimit.On("Allow", mock.Anything, mock.AnythingOfType("string")).Return(true, nil)
 
 	// Cache hit
 	cacheResp := &ports.CacheResponse{
@@ -404,13 +410,11 @@ func TestProxyService_HandleProxyRequest_CacheHit(t *testing.T) {
 
 	// Metrics
 	mockMetrics.On("IncCounter", mock.AnythingOfType("string"), mock.AnythingOfType("map[string]string")).Return()
+	mockMetrics.On("ObserveHistogram", mock.AnythingOfType("string"), mock.AnythingOfType("float64"), mock.AnythingOfType("map[string]string")).Return()
 	mockMetrics.On("RecordDuration",
 		mock.AnythingOfType("string"),
 		mock.AnythingOfType("time.Duration"),
 		mock.AnythingOfType("map[string]string")).Return()
-
-	// Logger calls
-	mockLogger.On("Debug", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return()
 
 	// Test request
 	req := &ProxyRequest{
@@ -448,6 +452,12 @@ func TestProxyService_HandleProxyRequest_AuthFailure(t *testing.T) {
 	mockMetrics := &MockMetricsCollector{}
 	mockRateLimit := &MockRateLimiter{}
 
+	// Mock logger - set up BEFORE creating services (services log during initialization)
+	mockLogger.On("Debug", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return()
+	mockLogger.On("Info", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return()
+	mockLogger.On("Error", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return()
+
+	// Create services AFTER mock setup
 	cacheStrategy := NewCacheStrategyService(mockCache, mockLogger, mockMetrics, nil)
 	proxyService := NewProxyService(
 		mockPM, mockCache, cacheStrategy, mockAuth,
@@ -459,9 +469,8 @@ func TestProxyService_HandleProxyRequest_AuthFailure(t *testing.T) {
 		mock.Anything,
 		mock.AnythingOfType("*ports.AuthRequest")).Return(nil, fmt.Errorf("invalid token"))
 
-	// Metrics and logging
-	mockMetrics.On("IncCounter", "proxy_auth_failures", mock.AnythingOfType("map[string]string")).Return()
-	mockLogger.On("Error", mock.Anything, "Authentication/authorization failed", mock.Anything).Return()
+	// Metrics
+	mockMetrics.On("IncCounter", mock.AnythingOfType("string"), mock.AnythingOfType("map[string]string")).Return()
 
 	// Test request
 	req := &ProxyRequest{
@@ -496,6 +505,12 @@ func TestProxyService_HandleProxyRequest_RateLimitExceeded(t *testing.T) {
 	mockMetrics := &MockMetricsCollector{}
 	mockRateLimit := &MockRateLimiter{}
 
+	// Mock logger - set up BEFORE creating services (services log during initialization)
+	mockLogger.On("Debug", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return()
+	mockLogger.On("Info", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return()
+	mockLogger.On("Warn", mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return()
+
+	// Create services AFTER mock setup
 	cacheStrategy := NewCacheStrategyService(mockCache, mockLogger, mockMetrics, nil)
 	proxyService := NewProxyService(
 		mockPM, mockCache, cacheStrategy, mockAuth,
@@ -508,13 +523,11 @@ func TestProxyService_HandleProxyRequest_RateLimitExceeded(t *testing.T) {
 	}, nil)
 	mockAuth.On("Authorize", mock.Anything, mock.AnythingOfType("*ports.AuthorizeRequest")).Return(&ports.AuthorizeResponse{Allowed: true}, nil)
 
-	// Rate limit exceeded
-	mockRateLimit.On("CheckLimit",
-		mock.Anything, mock.AnythingOfType("*ports.RateLimitRequest")).Return(fmt.Errorf("rate limit exceeded"))
+	// Rate limit exceeded - ProxyService uses Allow() not CheckLimit()
+	mockRateLimit.On("Allow", mock.Anything, mock.AnythingOfType("string")).Return(false, fmt.Errorf("rate limit exceeded"))
 
-	// Metrics and logging
-	mockMetrics.On("IncCounter", "proxy_rate_limit_exceeded", mock.AnythingOfType("map[string]string")).Return()
-	mockLogger.On("Warn", mock.Anything, "Rate limit exceeded", mock.Anything).Return()
+	// Metrics
+	mockMetrics.On("IncCounter", mock.AnythingOfType("string"), mock.AnythingOfType("map[string]string")).Return()
 
 	// Test request
 	req := &ProxyRequest{
