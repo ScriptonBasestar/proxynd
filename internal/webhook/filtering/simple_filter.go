@@ -33,7 +33,28 @@ func (sef *SimpleEventFilter) ShouldSendEvent(event *alerts.AlertEvent) bool {
 		return true
 	}
 
-	// 레벨 필터 확인
+	// 레벨 오버라이드 확인
+	levelPriority := map[string]int{
+		"INFO": 1, "WARNING": 2, "ERROR": 3, "CRITICAL": 4,
+	}
+
+	eventPriority := levelPriority[string(event.Level)]
+	if eventPriority == 0 {
+		eventPriority = 1 // 기본값
+	}
+
+	// 레벨 오버라이드 매칭 확인
+	for pattern, overrideLevel := range sef.config.EventFilter.LevelOverrides {
+		if sef.matchesPattern(string(event.Type), pattern) {
+			minPriority := levelPriority[overrideLevel]
+			if minPriority == 0 {
+				minPriority = 1
+			}
+			return eventPriority >= minPriority
+		}
+	}
+
+	// 기본 레벨 필터 확인
 	return sef.MatchesLevelFilter(event)
 }
 
@@ -75,7 +96,21 @@ func (sef *SimpleEventFilter) MatchesEndpointFilter(event *alerts.AlertEvent, en
 		return false
 	}
 
-	// 레벨 필터만 확인 (간단한 구현)
+	// 이벤트 타입 필터 확인
+	if len(endpoint.EventTypes) > 0 {
+		eventTypeMatched := false
+		for _, pattern := range endpoint.EventTypes {
+			if sef.matchesPattern(string(event.Type), pattern) {
+				eventTypeMatched = true
+				break
+			}
+		}
+		if !eventTypeMatched {
+			return false
+		}
+	}
+
+	// 레벨 필터 확인
 	if endpoint.Filters.MinLevel != "" {
 		levelPriority := map[string]int{
 			"INFO": 1, "WARNING": 2, "ERROR": 3, "CRITICAL": 4,
@@ -90,6 +125,26 @@ func (sef *SimpleEventFilter) MatchesEndpointFilter(event *alerts.AlertEvent, en
 	}
 
 	return true
+}
+
+// matchesPattern 패턴 매칭 헬퍼
+func (sef *SimpleEventFilter) matchesPattern(eventType, pattern string) bool {
+	// 전체 와일드카드
+	if pattern == "*" {
+		return true
+	}
+	// 정확한 매칭
+	if pattern == eventType {
+		return true
+	}
+	// 접미사 와일드카드 패턴 (예: "security.*")
+	if len(pattern) > 2 && pattern[len(pattern)-2:] == ".*" {
+		prefix := pattern[:len(pattern)-2]
+		if len(eventType) > len(prefix) && eventType[:len(prefix)] == prefix && eventType[len(prefix)] == '.' {
+			return true
+		}
+	}
+	return false
 }
 
 // GetFilterStats 필터링 통계 반환 (기본 구현)
