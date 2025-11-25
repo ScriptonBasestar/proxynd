@@ -11,6 +11,73 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
+var (
+	userActivityOnce      sync.Once
+	userActivityInstance  *UserActivityCollector
+	userActivityMetrics   *userActivityPrometheusMetrics
+	userActivityMetricsMu sync.Mutex
+)
+
+// userActivityPrometheusMetrics holds the Prometheus metrics (registered once)
+type userActivityPrometheusMetrics struct {
+	activeUsers         prometheus.Gauge
+	userRequests        *prometheus.CounterVec
+	userBandwidth       *prometheus.CounterVec
+	userSessionDuration *prometheus.HistogramVec
+	uniqueUsersDaily    prometheus.Gauge
+	topUsersByRequests  *prometheus.GaugeVec
+	userGeolocation     *prometheus.CounterVec
+	userErrors          *prometheus.CounterVec
+}
+
+// initUserActivityMetrics initializes Prometheus metrics once
+func initUserActivityMetrics() *userActivityPrometheusMetrics {
+	userActivityMetricsMu.Lock()
+	defer userActivityMetricsMu.Unlock()
+
+	if userActivityMetrics != nil {
+		return userActivityMetrics
+	}
+
+	userActivityMetrics = &userActivityPrometheusMetrics{
+		activeUsers: promauto.NewGauge(prometheus.GaugeOpts{
+			Name: "proxynd_active_users_total",
+			Help: "Number of currently active users",
+		}),
+		userRequests: promauto.NewCounterVec(prometheus.CounterOpts{
+			Name: "proxynd_user_requests_total",
+			Help: "Total number of requests by user",
+		}, []string{"user_id", "proxy_type", "status"}),
+		userBandwidth: promauto.NewCounterVec(prometheus.CounterOpts{
+			Name: "proxynd_user_bandwidth_bytes_total",
+			Help: "Total bandwidth usage by user",
+		}, []string{"user_id", "proxy_type", "direction"}),
+		userSessionDuration: promauto.NewHistogramVec(prometheus.HistogramOpts{
+			Name:    "proxynd_user_session_duration_seconds",
+			Help:    "User session duration in seconds",
+			Buckets: prometheus.ExponentialBuckets(60, 2, 12), // 1분부터 68시간까지
+		}, []string{"user_id"}),
+		uniqueUsersDaily: promauto.NewGauge(prometheus.GaugeOpts{
+			Name: "proxynd_unique_users_daily",
+			Help: "Number of unique users in the last 24 hours",
+		}),
+		topUsersByRequests: promauto.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "proxynd_top_users_requests",
+			Help: "Top users by request count",
+		}, []string{"user_id", "rank"}),
+		userGeolocation: promauto.NewCounterVec(prometheus.CounterOpts{
+			Name: "proxynd_user_geolocation_total",
+			Help: "User requests by geographic location",
+		}, []string{"country", "proxy_type"}),
+		userErrors: promauto.NewCounterVec(prometheus.CounterOpts{
+			Name: "proxynd_user_errors_total",
+			Help: "User errors by type and proxy",
+		}, []string{"user_id", "proxy_type", "error_type"}),
+	}
+
+	return userActivityMetrics
+}
+
 // UserActivityCollector 사용자 활동 메트릭 수집기
 type UserActivityCollector struct {
 	// Prometheus 메트릭
@@ -48,51 +115,23 @@ type UserSession struct {
 }
 
 // NewUserActivityCollector 새 사용자 활동 수집기 생성
+// Note: Creates a new collector instance but shares Prometheus metrics (registered once)
 func NewUserActivityCollector() *UserActivityCollector {
+	// Initialize metrics once
+	metrics := initUserActivityMetrics()
+
 	collector := &UserActivityCollector{
-		// Prometheus 메트릭 초기화
-		activeUsers: promauto.NewGauge(prometheus.GaugeOpts{
-			Name: "proxynd_active_users_total",
-			Help: "Number of currently active users",
-		}),
+		// Use shared Prometheus metrics
+		activeUsers:         metrics.activeUsers,
+		userRequests:        metrics.userRequests,
+		userBandwidth:       metrics.userBandwidth,
+		userSessionDuration: metrics.userSessionDuration,
+		uniqueUsersDaily:    metrics.uniqueUsersDaily,
+		topUsersByRequests:  metrics.topUsersByRequests,
+		userGeolocation:     metrics.userGeolocation,
+		userErrors:          metrics.userErrors,
 
-		userRequests: promauto.NewCounterVec(prometheus.CounterOpts{
-			Name: "proxynd_user_requests_total",
-			Help: "Total number of requests by user",
-		}, []string{"user_id", "proxy_type", "status"}),
-
-		userBandwidth: promauto.NewCounterVec(prometheus.CounterOpts{
-			Name: "proxynd_user_bandwidth_bytes_total",
-			Help: "Total bandwidth usage by user",
-		}, []string{"user_id", "proxy_type", "direction"}),
-
-		userSessionDuration: promauto.NewHistogramVec(prometheus.HistogramOpts{
-			Name:    "proxynd_user_session_duration_seconds",
-			Help:    "User session duration in seconds",
-			Buckets: prometheus.ExponentialBuckets(60, 2, 12), // 1분부터 68시간까지
-		}, []string{"user_id"}),
-
-		uniqueUsersDaily: promauto.NewGauge(prometheus.GaugeOpts{
-			Name: "proxynd_unique_users_daily",
-			Help: "Number of unique users in the last 24 hours",
-		}),
-
-		topUsersByRequests: promauto.NewGaugeVec(prometheus.GaugeOpts{
-			Name: "proxynd_top_users_requests",
-			Help: "Top users by request count",
-		}, []string{"user_id", "rank"}),
-
-		userGeolocation: promauto.NewCounterVec(prometheus.CounterOpts{
-			Name: "proxynd_user_geolocation_total",
-			Help: "User requests by geographic location",
-		}, []string{"country", "proxy_type"}),
-
-		userErrors: promauto.NewCounterVec(prometheus.CounterOpts{
-			Name: "proxynd_user_errors_total",
-			Help: "User errors by type and proxy",
-		}, []string{"user_id", "proxy_type", "error_type"}),
-
-		// 내부 상태 초기화
+		// 내부 상태 초기화 (각 인스턴스마다 별도)
 		activeSessions:  make(map[string]*UserSession),
 		dailyUsers:      make(map[string]time.Time),
 		cleanupInterval: 5 * time.Minute,

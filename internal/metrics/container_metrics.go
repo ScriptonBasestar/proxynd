@@ -1,8 +1,15 @@
 package metrics
 
 import (
+	"sync"
+
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+)
+
+var (
+	containerMetricsOnce sync.Once
+	containerMetricsSingleton *ContainerMetrics
 )
 
 // ContainerMetrics Container 기반 핸들러 전용 메트릭
@@ -34,9 +41,12 @@ type ContainerMetrics struct {
 	CacheKeyGenerationTime *prometheus.HistogramVec
 }
 
-// NewContainerMetrics 새로운 Container 메트릭 인스턴스 생성
+// NewContainerMetrics 새로운 Container 메트릭 인스턴스 생성 (싱글톤)
 func NewContainerMetrics() *ContainerMetrics {
-	return newContainerMetricsWithRegistry(prometheus.DefaultRegisterer)
+	containerMetricsOnce.Do(func() {
+		containerMetricsSingleton = newContainerMetricsWithRegistry(prometheus.DefaultRegisterer)
+	})
+	return containerMetricsSingleton
 }
 
 // newContainerMetricsWithRegistry 지정된 레지스트리로 Container 메트릭 생성 (테스트용)
@@ -62,7 +72,7 @@ func newContainerMetricsWithRegistry(reg prometheus.Registerer) *ContainerMetric
 		),
 
 		// Container 핸들러 처리 시간 메트릭
-		ContainerHandlerDuration: promauto.NewHistogramVec(
+		ContainerHandlerDuration: factory.NewHistogramVec(
 			prometheus.HistogramOpts{
 				Name:    "proxynd_container_handler_duration_seconds",
 				Help:    "Duration of container handler request processing",
@@ -72,7 +82,7 @@ func newContainerMetricsWithRegistry(reg prometheus.Registerer) *ContainerMetric
 		),
 
 		// Container 핸들러 오류 메트릭
-		ContainerHandlerErrors: promauto.NewCounterVec(
+		ContainerHandlerErrors: factory.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "proxynd_container_handler_errors_total",
 				Help: "Total number of container handler errors",
@@ -81,7 +91,7 @@ func newContainerMetricsWithRegistry(reg prometheus.Registerer) *ContainerMetric
 		),
 
 		// 설정 로딩 작업 메트릭
-		ConfigLoadOperations: promauto.NewCounterVec(
+		ConfigLoadOperations: factory.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "proxynd_config_load_operations_total",
 				Help: "Total number of configuration load operations",
@@ -90,7 +100,7 @@ func newContainerMetricsWithRegistry(reg prometheus.Registerer) *ContainerMetric
 		),
 
 		// 설정 로딩 시간 메트릭
-		ConfigLoadDuration: promauto.NewHistogramVec(
+		ConfigLoadDuration: factory.NewHistogramVec(
 			prometheus.HistogramOpts{
 				Name:    "proxynd_config_load_duration_seconds",
 				Help:    "Duration of configuration loading operations",
@@ -100,7 +110,7 @@ func newContainerMetricsWithRegistry(reg prometheus.Registerer) *ContainerMetric
 		),
 
 		// 설정 캐시 히트 메트릭
-		ConfigCacheHits: promauto.NewCounterVec(
+		ConfigCacheHits: factory.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "proxynd_config_cache_hits_total",
 				Help: "Total number of configuration cache hits",
@@ -109,7 +119,7 @@ func newContainerMetricsWithRegistry(reg prometheus.Registerer) *ContainerMetric
 		),
 
 		// 설정 캐시 미스 메트릭
-		ConfigCacheMisses: promauto.NewCounterVec(
+		ConfigCacheMisses: factory.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "proxynd_config_cache_misses_total",
 				Help: "Total number of configuration cache misses",
@@ -118,7 +128,7 @@ func newContainerMetricsWithRegistry(reg prometheus.Registerer) *ContainerMetric
 		),
 
 		// Container Provider 호출 메트릭
-		ContainerProviderCalls: promauto.NewCounterVec(
+		ContainerProviderCalls: factory.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "proxynd_container_provider_calls_total",
 				Help: "Total number of container provider method calls",
@@ -127,7 +137,7 @@ func newContainerMetricsWithRegistry(reg prometheus.Registerer) *ContainerMetric
 		),
 
 		// Handler Factory 작업 메트릭
-		HandlerFactoryOperations: promauto.NewCounterVec(
+		HandlerFactoryOperations: factory.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "proxynd_handler_factory_operations_total",
 				Help: "Total number of handler factory operations",
@@ -136,7 +146,7 @@ func newContainerMetricsWithRegistry(reg prometheus.Registerer) *ContainerMetric
 		),
 
 		// 활성 Handler 인스턴스 메트릭
-		HandlerInstancesActive: promauto.NewGaugeVec(
+		HandlerInstancesActive: factory.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Name: "proxynd_handler_instances_active",
 				Help: "Number of active handler instances",
@@ -145,7 +155,7 @@ func newContainerMetricsWithRegistry(reg prometheus.Registerer) *ContainerMetric
 		),
 
 		// Handler 헬스체크 메트릭
-		HandlerHealthChecks: promauto.NewCounterVec(
+		HandlerHealthChecks: factory.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "proxynd_handler_health_checks_total",
 				Help: "Total number of handler health checks",
@@ -154,7 +164,7 @@ func newContainerMetricsWithRegistry(reg prometheus.Registerer) *ContainerMetric
 		),
 
 		// Handler 설정 리로드 메트릭
-		HandlerConfigReloads: promauto.NewCounterVec(
+		HandlerConfigReloads: factory.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "proxynd_handler_config_reloads_total",
 				Help: "Total number of handler configuration reloads",
@@ -163,7 +173,7 @@ func newContainerMetricsWithRegistry(reg prometheus.Registerer) *ContainerMetric
 		),
 
 		// Handler 업스트림 URL 빌드 메트릭
-		HandlerUpstreamBuilds: promauto.NewCounterVec(
+		HandlerUpstreamBuilds: factory.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "proxynd_handler_upstream_builds_total",
 				Help: "Total number of upstream URL build operations",
@@ -172,7 +182,7 @@ func newContainerMetricsWithRegistry(reg prometheus.Registerer) *ContainerMetric
 		),
 
 		// 캐시 키 생성 메트릭
-		CacheKeyGenerations: promauto.NewCounterVec(
+		CacheKeyGenerations: factory.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: "proxynd_cache_key_generations_total",
 				Help: "Total number of cache key generations",
@@ -181,7 +191,7 @@ func newContainerMetricsWithRegistry(reg prometheus.Registerer) *ContainerMetric
 		),
 
 		// 캐시 키 생성 시간 메트릭
-		CacheKeyGenerationTime: promauto.NewHistogramVec(
+		CacheKeyGenerationTime: factory.NewHistogramVec(
 			prometheus.HistogramOpts{
 				Name:    "proxynd_cache_key_generation_duration_seconds",
 				Help:    "Duration of cache key generation operations",

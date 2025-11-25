@@ -53,16 +53,17 @@ func TestResetContainerMetrics(t *testing.T) {
 	// Get initial instance
 	metrics1 := metrics.GetContainerMetrics()
 
-	// Reset metrics
+	// Reset metrics (in singleton pattern, this just updates globalContainerMetrics)
 	metrics.ResetContainerMetrics()
 
-	// Get new instance
+	// Get instance after reset
 	metrics2 := metrics.GetContainerMetrics()
 
 	assert.NotNil(t, metrics1)
 	assert.NotNil(t, metrics2)
-	// They should be different instances
-	assert.NotEqual(t, metrics1, metrics2)
+	// With singleton pattern, they should be the same instance
+	// (Prometheus metrics can only be registered once)
+	assert.Equal(t, metrics1, metrics2)
 }
 
 func TestContainerMetricsRecordMethods(t *testing.T) {
