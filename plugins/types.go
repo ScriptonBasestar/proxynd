@@ -12,6 +12,7 @@ type Context struct {
 	ConfigDir   string
 	DataDir     string
 	Environment map[string]string
+	Config      map[string]interface{}
 }
 
 // Logger is a lightweight logging interface that plugins can rely on without

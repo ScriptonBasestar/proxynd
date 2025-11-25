@@ -3,6 +3,7 @@ package integration
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"net/http/httptest"
