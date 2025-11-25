@@ -279,27 +279,38 @@ func TestPluginHealthEndpoint_Integration(t *testing.T) {
 type testPluginLogger struct{}
 
 func (l *testPluginLogger) Debug(msg string, fields ...interface{}) {
-	logging.GetLogger().Debug(msg, fields...)
+	logging.GetLogger().Debug(msg, convertToFields(fields)...)
 }
 
 func (l *testPluginLogger) Info(msg string, fields ...interface{}) {
-	logging.GetLogger().Info(msg, fields...)
+	logging.GetLogger().Info(msg, convertToFields(fields)...)
 }
 
 func (l *testPluginLogger) Warn(msg string, fields ...interface{}) {
-	logging.GetLogger().Warn(msg, fields...)
+	logging.GetLogger().Warn(msg, convertToFields(fields)...)
 }
 
 func (l *testPluginLogger) Error(msg string, fields ...interface{}) {
-	logging.GetLogger().Error(msg, fields...)
+	logging.GetLogger().Error(msg, convertToFields(fields)...)
 }
 
 func (l *testPluginLogger) Fatal(msg string, fields ...interface{}) {
-	logging.GetLogger().Fatal(msg, fields...)
+	logging.GetLogger().Fatal(msg, convertToFields(fields)...)
 }
 
 func (l *testPluginLogger) With(fields ...interface{}) plugins.Logger {
 	return l
+}
+
+// convertToFields converts interface{} slice to logging.Field slice
+func convertToFields(fields []interface{}) []logging.Field {
+	result := make([]logging.Field, 0, len(fields)/2)
+	for i := 0; i+1 < len(fields); i += 2 {
+		if key, ok := fields[i].(string); ok {
+			result = append(result, logging.F(key, fields[i+1]))
+		}
+	}
+	return result
 }
 
 // Ensure testPluginLogger implements plugins.Logger interface
