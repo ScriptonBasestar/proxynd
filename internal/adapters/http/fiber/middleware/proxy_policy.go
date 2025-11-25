@@ -6,13 +6,96 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 
+	"proxynd/internal/auth"
+	"proxynd/internal/auth/jwt"
 	"proxynd/internal/config"
 	"proxynd/internal/helpers"
 	"proxynd/internal/security"
 )
+
+// authCacheEntry 인증 결과 캐시 엔트리
+type authCacheEntry struct {
+	valid     bool
+	expiresAt time.Time
+	userInfo  map[string]interface{}
+}
+
+var (
+	authCacheMu   sync.RWMutex
+	authCacheData = make(map[string]*authCacheEntry)
+
+	// 서비스 싱글톤
+	apiKeyManagerOnce sync.Once
+	apiKeyManagerInst *auth.APIKeyManager
+
+	jwtServiceOnce sync.Once
+	jwtServiceInst *jwt.JWTService
+)
+
+// getAPIKeyManagerInstance API Key Manager 싱글톤
+func getAPIKeyManagerInstance() *auth.APIKeyManager {
+	apiKeyManagerOnce.Do(func() {
+		var err error
+		apiKeyManagerInst, err = auth.NewAPIKeyManager(nil)
+		if err != nil {
+			log.Printf("Failed to initialize API key manager: %v", err)
+		}
+	})
+	return apiKeyManagerInst
+}
+
+// getJWTServiceInstance JWT Service 싱글톤
+func getJWTServiceInstance() *jwt.JWTService {
+	jwtServiceOnce.Do(func() {
+		oauth2Config := &config.OAuth2Config{}
+		if err := oauth2Config.ReadConfig(); err != nil {
+			log.Printf("Failed to load OAuth2 config for JWT service: %v", err)
+			return
+		}
+		jwtServiceInst = jwt.NewJWTService(oauth2Config)
+	})
+	return jwtServiceInst
+}
+
+// getCachedAuth 캐시된 인증 결과 조회
+func getCachedAuth(key string) *authCacheEntry {
+	authCacheMu.RLock()
+	defer authCacheMu.RUnlock()
+
+	if entry, exists := authCacheData[key]; exists {
+		if time.Now().Before(entry.expiresAt) {
+			return entry
+		}
+	}
+	return nil
+}
+
+// setCachedAuth 인증 결과 캐시 저장
+func setCachedAuth(key string, valid bool, userInfo map[string]interface{}, ttl time.Duration) {
+	authCacheMu.Lock()
+	defer authCacheMu.Unlock()
+
+	authCacheData[key] = &authCacheEntry{
+		valid:     valid,
+		expiresAt: time.Now().Add(ttl),
+		userInfo:  userInfo,
+	}
+
+	// 캐시 크기 제한 (1000개 초과 시 오래된 항목 정리)
+	if len(authCacheData) > 1000 {
+		now := time.Now()
+		for k, v := range authCacheData {
+			if now.After(v.expiresAt) {
+				delete(authCacheData, k)
+			}
+		}
+	}
+}
 
 // ProxyPolicyMiddleware 프록시 정책 처리 미들웨어
 // 캐시 hit/miss 판단, 인증/허가 체크, 요청 허용/차단 정책 적용
@@ -103,8 +186,50 @@ func isBasicAuthenticated(c *fiber.Ctx) bool {
 	return false
 }
 
-// validateAPIKey API 키 검증
+// validateAPIKey API 키 검증 - API Key Manager 통합
 func validateAPIKey(apiKey string) bool {
+	// 캐시 키 생성 (처음 8자만 사용)
+	cacheKeyLen := len(apiKey)
+	if cacheKeyLen > 8 {
+		cacheKeyLen = 8
+	}
+	cacheKey := "apikey:" + apiKey[:cacheKeyLen]
+
+	// 캐시 확인
+	if cached := getCachedAuth(cacheKey); cached != nil {
+		return cached.valid
+	}
+
+	// API Key Manager를 통한 실제 검증
+	manager := getAPIKeyManagerInstance()
+	if manager != nil {
+		validatedKey, err := manager.ValidateAPIKey(apiKey)
+		if err == nil && validatedKey != nil {
+			log.Printf("API key validated via manager for user: %s", validatedKey.UserID)
+			setCachedAuth(cacheKey, true, map[string]interface{}{
+				"user_id":     validatedKey.UserID,
+				"permissions": validatedKey.Permissions,
+			}, 5*time.Minute)
+			return true
+		}
+		if err != nil {
+			log.Printf("API key validation failed via manager: %v", err)
+		}
+	}
+
+	// 폴백: 레거시 형식 검증
+	if validateAPIKeyFormat(apiKey) {
+		log.Printf("API key passed format validation (legacy): %s...", apiKey[:cacheKeyLen])
+		setCachedAuth(cacheKey, true, nil, 5*time.Minute)
+		return true
+	}
+
+	setCachedAuth(cacheKey, false, nil, 1*time.Minute)
+	return false
+}
+
+// validateAPIKeyFormat API 키 형식 검증 (레거시 호환)
+func validateAPIKeyFormat(apiKey string) bool {
 	// API 키 형식 기본 검증 (최소 길이, 문자 제한 등)
 	if len(apiKey) < 16 || len(apiKey) > 128 {
 		log.Printf("Invalid API key length: %d", len(apiKey))
@@ -138,7 +263,6 @@ func validateAPIKey(apiKey string) bool {
 		}
 	}
 
-	log.Printf("API key validation passed for key: %s...", apiKey[:8])
 	return true
 }
 
@@ -150,8 +274,62 @@ func isValidAPIKeyChar(c rune) bool {
 		c == '-' || c == '_'
 }
 
-// validateBearerToken Bearer 토큰 검증
+// validateBearerToken Bearer 토큰 검증 - JWT 서비스 통합
 func validateBearerToken(token string) bool {
+	// 캐시 키 생성 (처음 8자 + 마지막 8자)
+	tokenLen := len(token)
+	var cacheKey string
+	if tokenLen > 16 {
+		cacheKey = "bearer:" + token[:8] + token[tokenLen-8:]
+	} else {
+		cacheKey = "bearer:" + token
+	}
+
+	// 캐시 확인
+	if cached := getCachedAuth(cacheKey); cached != nil {
+		return cached.valid
+	}
+
+	// JWT 서비스를 통한 서명 검증
+	svc := getJWTServiceInstance()
+	if svc != nil {
+		claims, err := svc.ValidateAccessToken(token)
+		if err == nil && claims != nil {
+			log.Printf("JWT token validated for user: %s", claims.UserID)
+			// 캐시 TTL: 토큰 만료까지 또는 최대 5분
+			ttl := 5 * time.Minute
+			if claims.ExpiresAt != nil {
+				remaining := time.Until(claims.ExpiresAt.Time)
+				if remaining > 0 && remaining < ttl {
+					ttl = remaining
+				}
+			}
+			setCachedAuth(cacheKey, true, map[string]interface{}{
+				"user_id":       claims.UserID,
+				"email":         claims.Email,
+				"role":          claims.Role,
+				"organizations": claims.Organizations,
+			}, ttl)
+			return true
+		}
+		if err != nil {
+			log.Printf("JWT validation failed via service: %v", err)
+		}
+	}
+
+	// 폴백: JWT 형식 검증만 (서명 검증 없음)
+	if validateJWTFormat(token) {
+		log.Printf("JWT token passed format validation only")
+		setCachedAuth(cacheKey, true, nil, 1*time.Minute)
+		return true
+	}
+
+	setCachedAuth(cacheKey, false, nil, 1*time.Minute)
+	return false
+}
+
+// validateJWTFormat JWT 형식 검증 (서명 검증 없음)
+func validateJWTFormat(token string) bool {
 	// JWT 토큰 형식 기본 검증
 	if len(token) < 20 {
 		log.Printf("Token too short: %d chars", len(token))
@@ -188,7 +366,6 @@ func validateBearerToken(token string) bool {
 		}
 	}
 
-	log.Printf("Bearer token validation passed (format check)")
 	return true
 }
 
