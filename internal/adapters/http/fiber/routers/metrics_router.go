@@ -11,6 +11,7 @@ import (
 	dto "github.com/prometheus/client_model/go"
 	"github.com/valyala/fasthttp/fasthttpadaptor"
 
+	"proxynd/internal/adapters/http/fiber/handlers"
 	"proxynd/internal/config"
 	"proxynd/internal/health"
 	"proxynd/internal/logging"
@@ -56,6 +57,10 @@ func MetricsRouter(app *fiber.App, config *config.UnifiedConfig) {
 
 	// Prometheus 핸들러 어댑터
 	metricsGroup.Get("", adaptor(promhttp.Handler()))
+
+	// Dashboard metrics handler
+	dashboardHandler := handlers.NewMetricsDashboardHandler(logger)
+	app.Get("/api/v1/metrics/dashboard", dashboardHandler.GetDashboardMetrics)
 
 	// 추가 메트릭 엔드포인트들
 	setupAdditionalMetrics(app, config)

@@ -156,6 +156,7 @@ curl http://localhost:8080/api/test/connectivity/maven
 | `GET` | `/api/status/metrics` | 상세 메트릭 | ✅ |
 | `GET` | `/api/status/dependencies` | 의존성 상태 | ✅ |
 | `GET` | `/api/status/stats` | 실시간 통계 | ✅ |
+| `GET` | `/api/v1/metrics/dashboard` | 대시보드 집계 메트릭 | ✅ |
 
 #### 호환성 엔드포인트
 
@@ -185,6 +186,76 @@ curl http://localhost:8080/healthz?format=simple
 
 # Prometheus 메트릭
 curl http://localhost:8080/metrics
+
+# 대시보드 집계 메트릭 (WebUI용)
+curl http://localhost:8080/api/v1/metrics/dashboard
+```
+
+##### Dashboard Metrics Response
+
+`/api/v1/metrics/dashboard` 엔드포인트는 WebUI 대시보드에 최적화된 집계된 메트릭을 반환합니다:
+
+```json
+{
+  "overview": {
+    "total_requests": 125000,
+    "total_packages": 15420,
+    "cache_hit_rate": 0.847,
+    "storage_used_bytes": 52428800000,
+    "uptime_seconds": 864000
+  },
+  "cache": {
+    "hits": 105875,
+    "misses": 19125,
+    "hit_rate": 0.847,
+    "size_bytes": 52428800000,
+    "evictions": 1250
+  },
+  "requests": {
+    "total": 125000,
+    "success": 122500,
+    "errors": 2500,
+    "by_package_manager": {
+      "npm": 45000,
+      "maven": 35000,
+      "pip": 25000,
+      "docker": 12000,
+      "go": 5000,
+      "nuget": 2000,
+      "cargo": 1000
+    }
+  },
+  "packages": {
+    "total": 15420,
+    "by_package_manager": {
+      "npm": 8500,
+      "maven": 3200,
+      "pip": 2100,
+      "docker": 850,
+      "go": 420,
+      "nuget": 250,
+      "cargo": 100
+    }
+  },
+  "time_series": {
+    "requests_hourly": [
+      {"timestamp": "2025-11-25T12:00:00Z", "value": 5200},
+      {"timestamp": "2025-11-25T13:00:00Z", "value": 5350}
+    ],
+    "cache_hits_hourly": [
+      {"timestamp": "2025-11-25T12:00:00Z", "value": 4400},
+      {"timestamp": "2025-11-25T13:00:00Z", "value": 4530}
+    ]
+  },
+  "last_updated": "2025-11-25T14:00:00Z"
+}
+```
+
+**주요 기능**:
+- 10초 캐싱으로 고성능 (< 100ms 응답)
+- 모든 패키지 매니저 통합 통계
+- 시간별 시계열 데이터 (최근 24시간)
+- WebUI 대시보드 직접 사용 가능
 ```
 
 ## 🛠️ CLI 도구 연동
