@@ -46,9 +46,6 @@ const (
 	AptContentTypePlain    = "text/plain; charset=utf-8"
 	AptContentTypeGPG      = "application/pgp-signature"
 	AptContentTypeDefault  = "application/octet-stream"
-
-	// Cache status headers
-	cacheStatusMiss = "MISS"
 )
 
 // AptService handles APT repository proxy requests
