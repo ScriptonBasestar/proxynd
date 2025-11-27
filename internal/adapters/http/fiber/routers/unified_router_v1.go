@@ -51,8 +51,8 @@ func setupProxyRoutesV1(apiV1 fiber.Router) {
 func setupAdminRoutesV1(apiV1 fiber.Router) {
 	adminGroup := apiV1.Group("/admin")
 
-	// TODO: 관리자 인증 미들웨어 구현 필요 (임시로 비활성화)
-	// adminGroup.Use(authHandlers.OptionalAuth())
+	// Apply admin-only middleware to protect all admin routes
+	adminGroup.Use(middlewares.AdminOnlyMiddleware())
 
 	// Connection Pool 관리
 	setupConnectionPoolAdmin(adminGroup)

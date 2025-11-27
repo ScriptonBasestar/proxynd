@@ -20,7 +20,7 @@ func PoolRouter(app *fiber.App) {
 	poolGroup.Use(
 		middlewares.DefaultAccessLogMiddleware(), // 액세스 로깅
 		authHandlers.OptionalAuth(),              // 선택적 인증
-		// TODO: AdminOnlyMiddleware 구현 필요
+		middlewares.AdminOnlyMiddleware(),        // Admin role required
 	)
 
 	// Connection Pool 상태 및 통계

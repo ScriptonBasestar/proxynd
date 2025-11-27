@@ -13,6 +13,7 @@ import (
 	"proxynd/cache"
 	"proxynd/internal/config"
 	"proxynd/internal/health"
+	middlewares "proxynd/internal/middleware-legacy"
 )
 
 // EnhancedHealthRouter 강화된 헬스체크 라우터
@@ -155,6 +156,9 @@ func (ehr *EnhancedHealthRouter) registerSystemEndpoints(group fiber.Router) {
 // registerManagementEndpoints 관리용 엔드포인트 등록
 func (ehr *EnhancedHealthRouter) registerManagementEndpoints(group fiber.Router) {
 	mgmtGroup := group.Group("/manage")
+
+	// Apply admin-only middleware to all management endpoints
+	mgmtGroup.Use(middlewares.AdminOnlyMiddleware())
 
 	// 유지보수 모드
 	mgmtGroup.Post("/maintenance", ehr.handleEnableMaintenance)
