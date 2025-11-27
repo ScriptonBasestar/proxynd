@@ -11,6 +11,7 @@ import (
 	"proxynd/cache"
 	fiberHandlers "proxynd/internal/adapters/http/fiber/handlers"
 	enterpriseHandlers "proxynd/internal/adapters/http/fiber/handlers/enterprise"
+	fiberMiddleware "proxynd/internal/adapters/http/fiber/middleware"
 	fiberRouters "proxynd/internal/adapters/http/fiber/routers"
 	"proxynd/internal/config"
 
@@ -182,11 +183,32 @@ func setupNewMiddlewares(app *fiber.App, config *RouteConfig) {
 	logger := config.Logger
 	logger.Info("Setting up middlewares (new architecture)")
 
-	// TODO: HEXAGONAL_MIGRATION - Implement new middleware architecture
-	// For now, fall back to legacy middlewares to maintain functionality
-	setupLegacyMiddlewares(app, config)
+	// Basic middlewares - error handling and recovery
+	app.Use(fiberMiddleware.ErrorRecovery())
+	logger.Info("Middleware registered: ErrorRecovery")
 
-	logger.Info("New middleware setup completed")
+	app.Use(fiberMiddleware.ErrorHandler())
+	logger.Info("Middleware registered: ErrorHandler")
+
+	// Access logging
+	app.Use(fiberMiddleware.DefaultAccessLogMiddleware())
+	logger.Info("Middleware registered: AccessLog")
+
+	// Security middlewares
+	app.Use(fiberMiddleware.SecurityHeaders())
+	logger.Info("Middleware registered: SecurityHeaders")
+
+	// Rate limiting using enhanced rate limiter
+	app.Use(fiberMiddleware.NewEnhancedRateLimiter())
+	logger.Info("Middleware registered: EnhancedRateLimiter")
+
+	// Authentication middleware (conditional)
+	// Note: JWT authentication can be enabled via OAuth2 configuration
+	// For now, skip JWT middleware in new architecture until auth config is properly structured
+	// TODO: HEXAGONAL_MIGRATION - Add proper auth middleware integration when OAuth2Config is available
+
+	logger.Info("New middleware setup completed",
+		logging.Int("middleware_count", 5))
 }
 
 // setupLegacyMiddlewares configures middlewares using legacy structure
