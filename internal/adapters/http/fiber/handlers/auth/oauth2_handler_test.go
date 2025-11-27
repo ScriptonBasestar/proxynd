@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -15,6 +16,31 @@ import (
 
 	"proxynd/internal/config"
 )
+
+// setupTestEnv sets up environment variables for tests
+func setupTestEnv(t *testing.T) func() {
+	// Save original values
+	origConfigDir := os.Getenv("CONFIG_DIR")
+	origStorageDir := os.Getenv("STORAGE_DIR")
+
+	// Set test values
+	_ = os.Setenv("CONFIG_DIR", t.TempDir())
+	_ = os.Setenv("STORAGE_DIR", t.TempDir())
+
+	// Return cleanup function
+	return func() {
+		if origConfigDir != "" {
+			_ = os.Setenv("CONFIG_DIR", origConfigDir)
+		} else {
+			_ = os.Unsetenv("CONFIG_DIR")
+		}
+		if origStorageDir != "" {
+			_ = os.Setenv("STORAGE_DIR", origStorageDir)
+		} else {
+			_ = os.Unsetenv("STORAGE_DIR")
+		}
+	}
+}
 
 // 테스트용 OAuth2 설정 생성
 func createTestOAuth2Config() *config.OAuth2Config {
@@ -74,6 +100,9 @@ func createTestApp() *fiber.App {
 }
 
 func TestStartOAuth2Login(t *testing.T) {
+	cleanup := setupTestEnv(t)
+	defer cleanup()
+
 	app := createTestApp()
 
 	// 테스트용 OAuth2 설정 생성
@@ -172,6 +201,9 @@ func TestHandleOAuth2Callback_InvalidState(t *testing.T) {
 }
 
 func TestGetAuthStatus_NotAuthenticated(t *testing.T) {
+	cleanup := setupTestEnv(t)
+	defer cleanup()
+
 	app := createTestApp()
 
 	req := httptest.NewRequest("GET", "/auth/status", nil)
@@ -423,6 +455,9 @@ func TestOAuth2Flow_Integration(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
 	}
+
+	cleanup := setupTestEnv(t)
+	defer cleanup()
 
 	app := createTestApp()
 

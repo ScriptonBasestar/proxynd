@@ -95,9 +95,8 @@ func TestMetricsDashboardHandler_GetDashboardMetrics_EmptyMetrics(t *testing.T) 
 }
 
 func TestMetricsDashboardHandler_GetDashboardMetrics_MultiplePackageManagers(t *testing.T) {
-	// Initialize metrics
+	// Initialize metrics (idempotent)
 	metrics.InitMetrics()
-	defer metrics.ResetMetrics()
 	defer metrics.ResetAggregator()
 
 	// Add metrics for multiple package managers
@@ -142,9 +141,8 @@ func TestMetricsDashboardHandler_GetDashboardMetrics_MultiplePackageManagers(t *
 }
 
 func TestMetricsDashboardHandler_ResponseStructure(t *testing.T) {
-	// Initialize metrics
+	// Initialize metrics (idempotent)
 	metrics.InitMetrics()
-	defer metrics.ResetMetrics()
 	defer metrics.ResetAggregator()
 
 	// Add test data
