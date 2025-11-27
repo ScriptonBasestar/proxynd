@@ -39,13 +39,13 @@ const (
 
 // APT content types
 const (
-	AptContentTypeDebian   = "application/vnd.debian.binary-package"
-	AptContentTypeGzip     = "application/gzip"
-	AptContentTypeXz       = "application/x-xz"
-	AptContentTypeBz2      = "application/x-bzip2"
-	AptContentTypePlain    = "text/plain; charset=utf-8"
-	AptContentTypeGPG      = "application/pgp-signature"
-	AptContentTypeDefault  = "application/octet-stream"
+	AptContentTypeDebian  = "application/vnd.debian.binary-package"
+	AptContentTypeGzip    = "application/gzip"
+	AptContentTypeXz      = "application/x-xz"
+	AptContentTypeBz2     = "application/x-bzip2"
+	AptContentTypePlain   = "text/plain; charset=utf-8"
+	AptContentTypeGPG     = "application/pgp-signature"
+	AptContentTypeDefault = "application/octet-stream"
 )
 
 // AptService handles APT repository proxy requests

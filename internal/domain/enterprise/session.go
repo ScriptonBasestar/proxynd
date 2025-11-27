@@ -61,25 +61,25 @@ func DefaultSessionConfig() *SessionConfig {
 
 // SessionStats represents session statistics
 type SessionStats struct {
-	TotalActiveSessions   int64            `json:"total_active_sessions"`
-	UniqueUsers           int64            `json:"unique_users"`
-	SessionsByDevice      map[string]int64 `json:"sessions_by_device"`
-	SessionsByCountry     map[string]int64 `json:"sessions_by_country"`
-	AverageSessionAge     float64          `json:"average_session_age_hours"`
-	SuspiciousSessions    int64            `json:"suspicious_sessions"`
-	SessionsCreatedToday  int64            `json:"sessions_created_today"`
-	SessionsExpiredToday  int64            `json:"sessions_expired_today"`
-	SessionsRevokedToday  int64            `json:"sessions_revoked_today"`
+	TotalActiveSessions  int64            `json:"total_active_sessions"`
+	UniqueUsers          int64            `json:"unique_users"`
+	SessionsByDevice     map[string]int64 `json:"sessions_by_device"`
+	SessionsByCountry    map[string]int64 `json:"sessions_by_country"`
+	AverageSessionAge    float64          `json:"average_session_age_hours"`
+	SuspiciousSessions   int64            `json:"suspicious_sessions"`
+	SessionsCreatedToday int64            `json:"sessions_created_today"`
+	SessionsExpiredToday int64            `json:"sessions_expired_today"`
+	SessionsRevokedToday int64            `json:"sessions_revoked_today"`
 }
 
 // SuspiciousSession represents a session flagged as suspicious
 type SuspiciousSession struct {
-	Session      *Session `json:"session"`
-	Reason       string   `json:"reason"`
-	RiskLevel    string   `json:"risk_level"` // low, medium, high, critical
-	DetectedAt   time.Time `json:"detected_at"`
-	Indicators   []string `json:"indicators"`
-	Recommended  string   `json:"recommended_action"`
+	Session     *Session  `json:"session"`
+	Reason      string    `json:"reason"`
+	RiskLevel   string    `json:"risk_level"` // low, medium, high, critical
+	DetectedAt  time.Time `json:"detected_at"`
+	Indicators  []string  `json:"indicators"`
+	Recommended string    `json:"recommended_action"`
 }
 
 // SessionFilter represents filter criteria for session queries

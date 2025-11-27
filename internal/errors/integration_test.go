@@ -405,7 +405,7 @@ func TestErrorIntegration_ConcurrentRequests(t *testing.T) {
 
 	// Expected status codes based on getHTTPStatusForError mapping
 	expectedStatus := map[string]int{
-		"auth":   fiber.StatusUnauthorized,      // AUTH_FAILED -> 401
+		"auth":   fiber.StatusUnauthorized,        // AUTH_FAILED -> 401
 		"cache":  fiber.StatusInternalServerError, // CACHE errors -> 500
 		"panic":  fiber.StatusInternalServerError, // Panic -> 500
 		"normal": fiber.StatusOK,                  // No error -> 200

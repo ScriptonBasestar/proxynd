@@ -105,8 +105,8 @@ func TestCacheStrategyService_DetermineStrategy_FallbackToDefault(t *testing.T) 
 	// Assertions
 	require.NoError(t, err)
 	assert.NotNil(t, decision)
-	assert.True(t, decision.ShouldCache)                               // Default strategy should cache
-	assert.Equal(t, time.Hour*24, decision.TTL)                        // Default TTL
+	assert.True(t, decision.ShouldCache)                              // Default strategy should cache
+	assert.Equal(t, time.Hour*24, decision.TTL)                       // Default TTL
 	assert.Equal(t, "unknown:test-repo:test/path", decision.CacheKey) // Generated key (leading slash stripped)
 	assert.Equal(t, "unknown", decision.Strategy)
 }

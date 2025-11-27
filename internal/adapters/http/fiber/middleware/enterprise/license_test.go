@@ -203,7 +203,7 @@ func TestLicenseMiddleware_RequireFeature(t *testing.T) {
 			req := httptest.NewRequest("GET", "/test", nil)
 			resp, err := app.Test(req)
 			require.NoError(t, err)
-	defer func() { _ = resp.Body.Close() }()
+			defer func() { _ = resp.Body.Close() }()
 
 			assert.Equal(t, tt.expectedStatus, resp.StatusCode)
 
@@ -265,7 +265,7 @@ func TestLicenseMiddleware_RequireAnyFeature(t *testing.T) {
 			req := httptest.NewRequest("GET", "/test", nil)
 			resp, err := app.Test(req)
 			require.NoError(t, err)
-	defer func() { _ = resp.Body.Close() }()
+			defer func() { _ = resp.Body.Close() }()
 
 			assert.Equal(t, tt.expectedStatus, resp.StatusCode)
 
@@ -327,7 +327,7 @@ func TestLicenseMiddleware_SkipInDevelopment(t *testing.T) {
 			}
 			resp, err := app.Test(req)
 			require.NoError(t, err)
-	defer func() { _ = resp.Body.Close() }()
+			defer func() { _ = resp.Body.Close() }()
 
 			assert.Equal(t, tt.expectedStatus, resp.StatusCode)
 		})

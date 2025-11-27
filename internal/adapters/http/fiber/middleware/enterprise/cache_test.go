@@ -99,7 +99,7 @@ func TestInMemoryCacheStore_Clear(t *testing.T) {
 			Body:       []byte(`{"test":"data"}`),
 			CachedAt:   time.Now(),
 		}
-	_ = store.Set(string(rune('a'+i)), entry, 1*time.Minute)
+		_ = store.Set(string(rune('a'+i)), entry, 1*time.Minute)
 	}
 
 	assert.Equal(t, 5, store.Size())
@@ -373,7 +373,7 @@ func TestCacheStats(t *testing.T) {
 			Body:       []byte(`{"test":"data"}`),
 			CachedAt:   time.Now(),
 		}
-	_ = store.Set(string(rune('a'+i)), entry, 1*time.Minute)
+		_ = store.Set(string(rune('a'+i)), entry, 1*time.Minute)
 	}
 
 	stats := cache.CacheStats()

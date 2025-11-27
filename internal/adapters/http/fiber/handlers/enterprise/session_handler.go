@@ -185,9 +185,9 @@ func (h *SessionHandler) RevokeAllSessions(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"success": true,
 		"data": fiber.Map{
-			"revoked_count":    4,
-			"exclude_current":  excludeCurrent,
-			"revoked_at":       time.Now().UTC(),
+			"revoked_count":   4,
+			"exclude_current": excludeCurrent,
+			"revoked_at":      time.Now().UTC(),
 		},
 		"metadata": fiber.Map{
 			"timestamp":  time.Now().UTC(),
@@ -212,9 +212,9 @@ func (h *SessionHandler) RefreshSession(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"success": true,
 		"data": fiber.Map{
-			"session_id":    "sess_current_001",
-			"refreshed_at":  now,
-			"new_expires_at": now.Add(config.SessionTimeout),
+			"session_id":         "sess_current_001",
+			"refreshed_at":       now,
+			"new_expires_at":     now.Add(config.SessionTimeout),
 			"expires_in_seconds": int64(config.SessionTimeout.Seconds()),
 		},
 		"metadata": fiber.Map{
@@ -344,11 +344,11 @@ func (h *SessionHandler) AdminForceLogoutUser(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"success": true,
 		"data": fiber.Map{
-			"user_id":        userID,
+			"user_id":          userID,
 			"sessions_revoked": 3,
-			"reason":         reason,
-			"revoked_at":     time.Now().UTC(),
-			"revoked_by":     "admin@example.com",
+			"reason":           reason,
+			"revoked_at":       time.Now().UTC(),
+			"revoked_by":       "admin@example.com",
 		},
 		"metadata": fiber.Map{
 			"timestamp":  time.Now().UTC(),
@@ -416,8 +416,8 @@ func (h *SessionHandler) AdminGetSuspiciousSessions(c *fiber.Ctx) error {
 // @Router /api/v1/enterprise/admin/sessions/stats [get]
 func (h *SessionHandler) GetSessionStats(c *fiber.Ctx) error {
 	stats := &enterprise.SessionStats{
-		TotalActiveSessions:  156,
-		UniqueUsers:          47,
+		TotalActiveSessions: 156,
+		UniqueUsers:         47,
 		SessionsByDevice: map[string]int64{
 			"desktop": 89,
 			"mobile":  42,
@@ -425,10 +425,10 @@ func (h *SessionHandler) GetSessionStats(c *fiber.Ctx) error {
 			"other":   10,
 		},
 		SessionsByCountry: map[string]int64{
-			"KR": 78,
-			"US": 45,
-			"JP": 18,
-			"DE": 10,
+			"KR":    78,
+			"US":    45,
+			"JP":    18,
+			"DE":    10,
 			"other": 5,
 		},
 		AverageSessionAge:    4.5,

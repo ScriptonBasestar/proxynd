@@ -175,9 +175,9 @@ func setupSessionRoutes(api fiber.Router, h *enterprise.SessionHandler) {
 
 	// Admin Session Management (5 endpoints)
 	admin := api.Group("/admin/sessions")
-	admin.Get("", h.AdminListSessions)                      // List all sessions (admin)
-	admin.Get("/stats", h.GetSessionStats)                  // Session statistics
-	admin.Get("/suspicious", h.AdminGetSuspiciousSessions)  // Suspicious sessions
-	admin.Get("/user/:userId", h.AdminGetUserSessions)      // Get user's sessions (admin)
-	admin.Delete("/user/:userId", h.AdminForceLogoutUser)   // Force logout user (admin)
+	admin.Get("", h.AdminListSessions)                     // List all sessions (admin)
+	admin.Get("/stats", h.GetSessionStats)                 // Session statistics
+	admin.Get("/suspicious", h.AdminGetSuspiciousSessions) // Suspicious sessions
+	admin.Get("/user/:userId", h.AdminGetUserSessions)     // Get user's sessions (admin)
+	admin.Delete("/user/:userId", h.AdminForceLogoutUser)  // Force logout user (admin)
 }

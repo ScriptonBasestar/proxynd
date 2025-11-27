@@ -33,8 +33,8 @@ type JWTTestClaims struct {
 	UserID    string   `json:"user_id"`
 	Username  string   `json:"username"`
 	Roles     []string `json:"roles"`
-	IssuedAt  int64    `json:"iat"`  // Custom int64 field for middleware compatibility
-	ExpiresAt int64    `json:"exp"`  // Custom int64 field for middleware compatibility
+	IssuedAt  int64    `json:"iat"` // Custom int64 field for middleware compatibility
+	ExpiresAt int64    `json:"exp"` // Custom int64 field for middleware compatibility
 	jwt.RegisteredClaims
 }
 

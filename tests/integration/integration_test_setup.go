@@ -16,11 +16,11 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/stretchr/testify/require"
 
+	fiberRouters "proxynd/internal/adapters/http/fiber/routers"
 	"proxynd/internal/app"
 	"proxynd/internal/config"
 	"proxynd/internal/metrics"
 	"proxynd/internal/routers"
-	fiberRouters "proxynd/internal/adapters/http/fiber/routers"
 )
 
 // IntegrationTestEnvironment 통합 테스트 환경
@@ -542,7 +542,7 @@ func (env *IntegrationTestEnvironment) setupProxyServer(_ *testing.T) {
 	routers.UserRouter(fiberApp)
 	routers.TestRouter(fiberApp)
 	routers.WebhookRouter(fiberApp)
-	routers.UnifiedRouterV1(fiberApp) // API v1 unified routes (legacy)
+	routers.UnifiedRouterV1(fiberApp)            // API v1 unified routes (legacy)
 	fiberRouters.SetupAPIv1Routes(fiberApp, nil) // Modern API v1 routes (includes PM toggle)
 	// MetricsRouter는 Prometheus 글로벌 레지스트리 중복 등록 문제로 인해
 	// 통합 테스트에서 비활성화 (메트릭 테스트는 별도 수행 필요)
