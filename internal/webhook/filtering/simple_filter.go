@@ -45,7 +45,7 @@ func (sef *SimpleEventFilter) ShouldSendEvent(event *alerts.AlertEvent) bool {
 
 	// 레벨 오버라이드 매칭 확인
 	for pattern, overrideLevel := range sef.config.EventFilter.LevelOverrides {
-		if sef.matchesPattern(string(event.Type), pattern) {
+		if sef.matchesPattern(event.Type, pattern) {
 			minPriority := levelPriority[overrideLevel]
 			if minPriority == 0 {
 				minPriority = 1
@@ -100,7 +100,7 @@ func (sef *SimpleEventFilter) MatchesEndpointFilter(event *alerts.AlertEvent, en
 	if len(endpoint.EventTypes) > 0 {
 		eventTypeMatched := false
 		for _, pattern := range endpoint.EventTypes {
-			if sef.matchesPattern(string(event.Type), pattern) {
+			if sef.matchesPattern(event.Type, pattern) {
 				eventTypeMatched = true
 				break
 			}
