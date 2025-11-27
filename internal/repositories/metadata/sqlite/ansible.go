@@ -475,9 +475,9 @@ func (r *AnsibleRepository) ListVersions(ctx context.Context, req *ports.ListVer
 			return nil, fmt.Errorf("failed to scan version: %w", err)
 		}
 
-		json.Unmarshal([]byte(tagsJSON), &ver.Tags)
-		json.Unmarshal([]byte(authorsJSON), &ver.Authors)
-		json.Unmarshal([]byte(depsJSON), &ver.Dependencies)
+		_ = json.Unmarshal([]byte(tagsJSON), &ver.Tags)
+		_ = json.Unmarshal([]byte(authorsJSON), &ver.Authors)
+		_ = json.Unmarshal([]byte(depsJSON), &ver.Dependencies)
 
 		ver.CreatedAt, _ = time.Parse("2006-01-02 15:04:05", createdAt)
 

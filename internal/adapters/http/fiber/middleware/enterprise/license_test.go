@@ -62,7 +62,7 @@ func TestDevModeLicenseMiddleware_RequireEnterprise(t *testing.T) {
 	req := httptest.NewRequest("GET", "/test", nil)
 	resp, err := app.Test(req)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, 200, resp.StatusCode, "Request should pass through in dev mode")
 
@@ -89,7 +89,7 @@ func TestProductionModeLicenseMiddleware_WithNilFeatures(t *testing.T) {
 	req := httptest.NewRequest("GET", "/test", nil)
 	resp, err := app.Test(req)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, 402, resp.StatusCode, "Request should be rejected with 402 when features is nil")
 
@@ -119,7 +119,7 @@ func TestProductionModeLicenseMiddleware_WithDisabledFeatures(t *testing.T) {
 	req := httptest.NewRequest("GET", "/test", nil)
 	resp, err := app.Test(req)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, 402, resp.StatusCode, "Request should be rejected when enterprise is disabled")
 
@@ -149,7 +149,7 @@ func TestProductionModeLicenseMiddleware_WithEnabledFeatures(t *testing.T) {
 	req := httptest.NewRequest("GET", "/test", nil)
 	resp, err := app.Test(req)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, 200, resp.StatusCode, "Request should pass when enterprise is enabled")
 }
@@ -203,7 +203,7 @@ func TestLicenseMiddleware_RequireFeature(t *testing.T) {
 			req := httptest.NewRequest("GET", "/test", nil)
 			resp, err := app.Test(req)
 			require.NoError(t, err)
-			defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 			assert.Equal(t, tt.expectedStatus, resp.StatusCode)
 
@@ -265,7 +265,7 @@ func TestLicenseMiddleware_RequireAnyFeature(t *testing.T) {
 			req := httptest.NewRequest("GET", "/test", nil)
 			resp, err := app.Test(req)
 			require.NoError(t, err)
-			defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 			assert.Equal(t, tt.expectedStatus, resp.StatusCode)
 
@@ -327,7 +327,7 @@ func TestLicenseMiddleware_SkipInDevelopment(t *testing.T) {
 			}
 			resp, err := app.Test(req)
 			require.NoError(t, err)
-			defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 			assert.Equal(t, tt.expectedStatus, resp.StatusCode)
 		})

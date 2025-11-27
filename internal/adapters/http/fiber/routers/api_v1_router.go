@@ -17,6 +17,11 @@ import (
 	"proxynd/plugins"
 )
 
+// Constants for API responses
+const (
+	anonUserID = "anonymous"
+)
+
 // Global cache manager reference (set by main app)
 var globalCacheManager *cache.Manager
 
@@ -273,8 +278,8 @@ func togglePackageManager(c *fiber.Ctx, cfg *config.RootConfig) error {
 	// Extract user information from context (if available from JWT)
 	userID, username, _, authenticated := middlewares.GetUserFromContext(c)
 	if !authenticated {
-		userID = "anonymous"
-		username = "anonymous"
+		userID = anonUserID
+		username = anonUserID
 	}
 
 	// Get client info for audit logging

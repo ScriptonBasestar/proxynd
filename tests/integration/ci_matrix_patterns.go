@@ -304,29 +304,6 @@ func runErrorResilienceTests(t *testing.T, env *IntegrationTestEnvironment, conf
 	}
 }
 
-// runHealthCheckTests 헬스체크 테스트 실행
-func runHealthCheckTests(t *testing.T, env *IntegrationTestEnvironment) {
-	t.Helper()
-
-	// 기본 헬스체크
-	healthPattern := HealthCheckPattern{
-		Endpoint:        "/health",
-		ExpectedStatus:  200,
-		ExpectedContent: "healthy",
-		MaxResponseTime: 100 * time.Millisecond,
-	}
-	RunHealthCheckPattern(t, env, healthPattern)
-
-	// 메트릭 엔드포인트 체크
-	metricsPattern := HealthCheckPattern{
-		Endpoint:        "/metrics",
-		ExpectedStatus:  200,
-		ExpectedContent: "proxynd_requests_total",
-		MaxResponseTime: 50 * time.Millisecond,
-	}
-	RunHealthCheckPattern(t, env, metricsPattern)
-}
-
 // CIEnvironmentFromEnv 환경 변수에서 CI 환경 감지
 func CIEnvironmentFromEnv() string {
 	// GitHub Actions

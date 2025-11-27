@@ -25,7 +25,7 @@ func TestPluginHealthHandler_GetPluginHealth(t *testing.T) {
 		req := httptest.NewRequest("GET", "/health", nil)
 		resp, err := app.Test(req, -1)
 		require.NoError(t, err)
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		// Should return 503 Service Unavailable
 		assert.Equal(t, http.StatusServiceUnavailable, resp.StatusCode)
@@ -60,7 +60,7 @@ func TestPluginHealthHandler_GetPluginHealth(t *testing.T) {
 		req := httptest.NewRequest("GET", "/health", nil)
 		resp, err := app.Test(req, -1)
 		require.NoError(t, err)
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		// Should return 200 OK
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -114,7 +114,7 @@ func TestPluginHealthHandler_GetPluginHealth(t *testing.T) {
 		req := httptest.NewRequest("GET", "/health", nil)
 		resp, err := app.Test(req, -1)
 		require.NoError(t, err)
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		// Should return 200 OK
 		assert.Equal(t, http.StatusOK, resp.StatusCode)

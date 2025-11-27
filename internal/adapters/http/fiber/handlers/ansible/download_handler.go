@@ -59,7 +59,7 @@ func (h *AnsibleHandler) DownloadCollection(c *fiber.Ctx) error {
 				namespace, name, version),
 		})
 	}
-	defer resp.Content.Close()
+	defer func() { _ = resp.Content.Close() }()
 
 	// Set response headers
 	c.Set("Content-Type", "application/gzip")

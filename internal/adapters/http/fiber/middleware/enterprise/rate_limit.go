@@ -36,7 +36,6 @@ type RateLimitConfig struct {
 type RateLimiter struct {
 	config  RateLimitConfig
 	storage sync.Map // map[string]*limitEntry
-	mu      sync.RWMutex
 }
 
 // limitEntry tracks request counts for a specific key

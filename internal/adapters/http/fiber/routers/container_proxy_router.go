@@ -15,6 +15,13 @@ import (
 	middlewares "proxynd/internal/middleware-legacy"
 )
 
+// Constants for package managers
+const (
+	pmAPT   = "apt"
+	pmMaven = "maven"
+	pmNPM   = "npm"
+)
+
 // ContainerProxyRouter Container 기반 프록시 라우터
 type ContainerProxyRouter struct {
 	container           container.ContainerProvider
@@ -97,11 +104,11 @@ func (r *ContainerProxyRouter) createHandlerByType(
 	provider container.ContainerProvider,
 ) (handlers.ContainerProxyHandler, error) {
 	switch proxyType {
-	case "apt":
+	case pmAPT:
 		return r.createAPTHandler(provider)
-	case "maven":
+	case pmMaven:
 		return r.createMavenHandler(provider)
-	case "npm":
+	case pmNPM:
 		return r.createNPMHandler(provider)
 	case "docker":
 		return r.createDockerHandler(provider)

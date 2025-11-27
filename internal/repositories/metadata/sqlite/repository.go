@@ -34,7 +34,7 @@ func NewRepository(dbPath string, logger ports.Logger) (*Repository, error) {
 
 	// Initialize schema
 	if _, err := db.Exec(schemaSQL); err != nil {
-		db.Close()
+		_ = db.Close()
 		return nil, fmt.Errorf("failed to initialize schema: %w", err)
 	}
 

@@ -77,7 +77,7 @@ func TestInMemoryCacheStore_Delete(t *testing.T) {
 		CachedAt:   time.Now(),
 	}
 
-	store.Set("test-key", entry, 1*time.Minute)
+	_ = store.Set("test-key", entry, 1*time.Minute)
 	assert.Equal(t, 1, store.Size())
 
 	err := store.Delete("test-key")
@@ -99,7 +99,7 @@ func TestInMemoryCacheStore_Clear(t *testing.T) {
 			Body:       []byte(`{"test":"data"}`),
 			CachedAt:   time.Now(),
 		}
-		store.Set(string(rune('a'+i)), entry, 1*time.Minute)
+	_ = store.Set(string(rune('a'+i)), entry, 1*time.Minute)
 	}
 
 	assert.Equal(t, 5, store.Size())
@@ -126,7 +126,7 @@ func TestCacheMiddleware_CacheHit(t *testing.T) {
 	req1 := httptest.NewRequest("GET", "/test", nil)
 	resp1, err := app.Test(req1)
 	require.NoError(t, err)
-	defer resp1.Body.Close()
+	defer func() { _ = resp1.Body.Close() }()
 
 	assert.Equal(t, 200, resp1.StatusCode)
 	assert.Equal(t, "MISS", resp1.Header.Get("X-Cache"))
@@ -135,7 +135,7 @@ func TestCacheMiddleware_CacheHit(t *testing.T) {
 	req2 := httptest.NewRequest("GET", "/test", nil)
 	resp2, err := app.Test(req2)
 	require.NoError(t, err)
-	defer resp2.Body.Close()
+	defer func() { _ = resp2.Body.Close() }()
 
 	assert.Equal(t, 200, resp2.StatusCode)
 	assert.Equal(t, "HIT", resp2.Header.Get("X-Cache"))
@@ -158,7 +158,7 @@ func TestCacheMiddleware_OnlyGET(t *testing.T) {
 	req := httptest.NewRequest("POST", "/test", nil)
 	resp, err := app.Test(req)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, 200, resp.StatusCode)
 	assert.Empty(t, resp.Header.Get("X-Cache"))
@@ -180,7 +180,7 @@ func TestCacheMiddleware_TTL(t *testing.T) {
 	req1 := httptest.NewRequest("GET", "/test", nil)
 	resp1, err := app.Test(req1)
 	require.NoError(t, err)
-	defer resp1.Body.Close()
+	defer func() { _ = resp1.Body.Close() }()
 
 	body1, _ := io.ReadAll(resp1.Body)
 
@@ -188,7 +188,7 @@ func TestCacheMiddleware_TTL(t *testing.T) {
 	req2 := httptest.NewRequest("GET", "/test", nil)
 	resp2, err := app.Test(req2)
 	require.NoError(t, err)
-	defer resp2.Body.Close()
+	defer func() { _ = resp2.Body.Close() }()
 
 	body2, _ := io.ReadAll(resp2.Body)
 	assert.Equal(t, "HIT", resp2.Header.Get("X-Cache"))
@@ -201,7 +201,7 @@ func TestCacheMiddleware_TTL(t *testing.T) {
 	req3 := httptest.NewRequest("GET", "/test", nil)
 	resp3, err := app.Test(req3)
 	require.NoError(t, err)
-	defer resp3.Body.Close()
+	defer func() { _ = resp3.Body.Close() }()
 
 	assert.Equal(t, "MISS", resp3.Header.Get("X-Cache"))
 }
@@ -225,21 +225,21 @@ func TestCacheMiddleware_DifferentPaths(t *testing.T) {
 	req1 := httptest.NewRequest("GET", "/path1", nil)
 	resp1, err := app.Test(req1)
 	require.NoError(t, err)
-	defer resp1.Body.Close()
+	defer func() { _ = resp1.Body.Close() }()
 	assert.Equal(t, "MISS", resp1.Header.Get("X-Cache"))
 
 	// Request path2
 	req2 := httptest.NewRequest("GET", "/path2", nil)
 	resp2, err := app.Test(req2)
 	require.NoError(t, err)
-	defer resp2.Body.Close()
+	defer func() { _ = resp2.Body.Close() }()
 	assert.Equal(t, "MISS", resp2.Header.Get("X-Cache"))
 
 	// Request path1 again - should hit cache
 	req3 := httptest.NewRequest("GET", "/path1", nil)
 	resp3, err := app.Test(req3)
 	require.NoError(t, err)
-	defer resp3.Body.Close()
+	defer func() { _ = resp3.Body.Close() }()
 	assert.Equal(t, "HIT", resp3.Header.Get("X-Cache"))
 }
 
@@ -260,21 +260,21 @@ func TestCacheMiddleware_QueryParams(t *testing.T) {
 	req1 := httptest.NewRequest("GET", "/test?page=1", nil)
 	resp1, err := app.Test(req1)
 	require.NoError(t, err)
-	defer resp1.Body.Close()
+	defer func() { _ = resp1.Body.Close() }()
 	assert.Equal(t, "MISS", resp1.Header.Get("X-Cache"))
 
 	// Request with page=2 - different query, should miss
 	req2 := httptest.NewRequest("GET", "/test?page=2", nil)
 	resp2, err := app.Test(req2)
 	require.NoError(t, err)
-	defer resp2.Body.Close()
+	defer func() { _ = resp2.Body.Close() }()
 	assert.Equal(t, "MISS", resp2.Header.Get("X-Cache"))
 
 	// Request with page=1 again - should hit cache
 	req3 := httptest.NewRequest("GET", "/test?page=1", nil)
 	resp3, err := app.Test(req3)
 	require.NoError(t, err)
-	defer resp3.Body.Close()
+	defer func() { _ = resp3.Body.Close() }()
 	assert.Equal(t, "HIT", resp3.Header.Get("X-Cache"))
 }
 
@@ -299,7 +299,7 @@ func TestCacheMiddleware_Skip(t *testing.T) {
 	req1.Header.Set("X-Admin", "true")
 	resp1, err := app.Test(req1)
 	require.NoError(t, err)
-	defer resp1.Body.Close()
+	defer func() { _ = resp1.Body.Close() }()
 
 	assert.Empty(t, resp1.Header.Get("X-Cache"))
 
@@ -307,7 +307,7 @@ func TestCacheMiddleware_Skip(t *testing.T) {
 	req2 := httptest.NewRequest("GET", "/test", nil)
 	resp2, err := app.Test(req2)
 	require.NoError(t, err)
-	defer resp2.Body.Close()
+	defer func() { _ = resp2.Body.Close() }()
 
 	assert.Equal(t, "MISS", resp2.Header.Get("X-Cache"))
 }
@@ -328,7 +328,7 @@ func TestCacheMiddleware_OnlySuccess(t *testing.T) {
 	req1 := httptest.NewRequest("GET", "/error", nil)
 	resp1, err := app.Test(req1)
 	require.NoError(t, err)
-	defer resp1.Body.Close()
+	defer func() { _ = resp1.Body.Close() }()
 
 	assert.Equal(t, 500, resp1.StatusCode)
 	assert.Equal(t, "MISS", resp1.Header.Get("X-Cache"))
@@ -337,7 +337,7 @@ func TestCacheMiddleware_OnlySuccess(t *testing.T) {
 	req2 := httptest.NewRequest("GET", "/error", nil)
 	resp2, err := app.Test(req2)
 	require.NoError(t, err)
-	defer resp2.Body.Close()
+	defer func() { _ = resp2.Body.Close() }()
 
 	assert.Equal(t, "MISS", resp2.Header.Get("X-Cache"))
 }
@@ -373,7 +373,7 @@ func TestCacheStats(t *testing.T) {
 			Body:       []byte(`{"test":"data"}`),
 			CachedAt:   time.Now(),
 		}
-		store.Set(string(rune('a'+i)), entry, 1*time.Minute)
+	_ = store.Set(string(rune('a'+i)), entry, 1*time.Minute)
 	}
 
 	stats := cache.CacheStats()
@@ -398,7 +398,7 @@ func TestCacheMiddleware_Integration(t *testing.T) {
 	req1 := httptest.NewRequest("GET", "/analytics/overview", nil)
 	resp1, err := app.Test(req1)
 	require.NoError(t, err)
-	defer resp1.Body.Close()
+	defer func() { _ = resp1.Body.Close() }()
 
 	assert.Equal(t, 200, resp1.StatusCode)
 	assert.Equal(t, "MISS", resp1.Header.Get("X-Cache"))
@@ -411,7 +411,7 @@ func TestCacheMiddleware_Integration(t *testing.T) {
 	req2 := httptest.NewRequest("GET", "/analytics/overview", nil)
 	resp2, err := app.Test(req2)
 	require.NoError(t, err)
-	defer resp2.Body.Close()
+	defer func() { _ = resp2.Body.Close() }()
 
 	assert.Equal(t, 200, resp2.StatusCode)
 	assert.Equal(t, "HIT", resp2.Header.Get("X-Cache"))

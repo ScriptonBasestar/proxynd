@@ -31,7 +31,6 @@ type CacheStore interface {
 // InMemoryCacheStore implements CacheStore using in-memory map
 type InMemoryCacheStore struct {
 	data sync.Map
-	mu   sync.RWMutex
 }
 
 // NewInMemoryCacheStore creates a new in-memory cache store

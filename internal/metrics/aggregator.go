@@ -14,7 +14,6 @@ type MetricsAggregator struct {
 	metrics    *Metrics
 	cache      *MetricsCache
 	interval   time.Duration
-	mu         sync.RWMutex
 	timeSeries struct {
 		mu              sync.RWMutex
 		requestsHourly  []TimeSeriesPoint

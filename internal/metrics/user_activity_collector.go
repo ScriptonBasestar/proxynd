@@ -12,8 +12,6 @@ import (
 )
 
 var (
-	userActivityOnce      sync.Once
-	userActivityInstance  *UserActivityCollector
 	userActivityMetrics   *userActivityPrometheusMetrics
 	userActivityMetricsMu sync.Mutex
 )

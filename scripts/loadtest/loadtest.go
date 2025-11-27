@@ -181,7 +181,7 @@ func worker(config *Config, stopChan chan struct{}, latencyChan chan time.Durati
 			}
 
 			_, _ = io.Copy(io.Discard, resp.Body)
-			resp.Body.Close()
+			_ = resp.Body.Close()
 
 			statusChan <- resp.StatusCode
 			latencyChan <- latency

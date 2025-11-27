@@ -61,7 +61,7 @@ func (h *AnsibleHandler) UploadCollection(c *fiber.Ctx) error {
 			Detail: "Failed to process uploaded file",
 		})
 	}
-	defer fileContent.Close()
+	defer func() { _ = fileContent.Close() }()
 
 	// 4. Read file content and calculate SHA256
 	fileBytes, err := io.ReadAll(fileContent)

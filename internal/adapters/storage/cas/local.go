@@ -46,8 +46,8 @@ func (c *LocalCAS) PutBlob(ctx context.Context, req *ports.PutBlobRequest) (*por
 		if err != nil {
 			return nil, fmt.Errorf("failed to create temp file: %w", err)
 		}
-		defer os.Remove(tempFile.Name())
-		defer tempFile.Close()
+		defer func() { _ = os.Remove(tempFile.Name()) }()
+		defer func() { _ = tempFile.Close() }()
 
 		// Calculate SHA256 while copying to temp file
 		hash := sha256.New()
@@ -91,7 +91,7 @@ func (c *LocalCAS) PutBlob(ctx context.Context, req *ports.PutBlobRequest) (*por
 	if err != nil {
 		return nil, fmt.Errorf("failed to create temp file: %w", err)
 	}
-	defer os.Remove(tmpPath) // Cleanup on error
+	defer func() { _ = os.Remove(tmpPath) }() // Cleanup on error
 
 	// 5. Copy content
 	var written int64
@@ -104,10 +104,10 @@ func (c *LocalCAS) PutBlob(ctx context.Context, req *ports.PutBlobRequest) (*por
 	}
 
 	if err != nil {
-		tmpOutput.Close()
+		_ = tmpOutput.Close()
 		return nil, fmt.Errorf("failed to write blob: %w", err)
 	}
-	tmpOutput.Close()
+	_ = tmpOutput.Close()
 
 	// 6. Verify size if provided
 	if req.Size > 0 && written != req.Size {

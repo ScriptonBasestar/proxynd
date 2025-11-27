@@ -19,17 +19,14 @@ import (
 )
 
 var (
-	customCollectorOnce      sync.Once
-	enhancedCollectorOnce    sync.Once
-	metricsMiddlewareApplied bool
-	metricsMiddlewareMutex   sync.Mutex
+	customCollectorOnce   sync.Once
+	enhancedCollectorOnce sync.Once
 )
 
 // ResetMetricsRouter 테스트용 메트릭 라우터 리셋
 func ResetMetricsRouter() {
 	customCollectorOnce = sync.Once{}
 	enhancedCollectorOnce = sync.Once{}
-	metricsMiddlewareApplied = false
 }
 
 // MetricsRouter 메트릭 라우터 설정 (여러 번 호출 안전)

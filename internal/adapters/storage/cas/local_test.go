@@ -118,7 +118,7 @@ func TestLocalCAS_GetBlob(t *testing.T) {
 	t.Run("get existing blob", func(t *testing.T) {
 		reader, err := storage.GetBlob(ctx, storeResp.SHA256)
 		require.NoError(t, err)
-		defer reader.Close()
+		defer func() { _ = reader.Close() }()
 
 		retrieved, err := io.ReadAll(reader)
 		require.NoError(t, err)

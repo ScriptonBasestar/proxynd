@@ -47,6 +47,7 @@ func TestMetricsDashboardHandler_GetDashboardMetrics(t *testing.T) {
 	// Test request
 	req := httptest.NewRequest("GET", "/api/v1/metrics/dashboard", nil)
 	resp, err := app.Test(req)
+	defer resp.Body.Close()
 
 	assert.NoError(t, err)
 	assert.Equal(t, fiber.StatusOK, resp.StatusCode)
@@ -81,6 +82,7 @@ func TestMetricsDashboardHandler_GetDashboardMetrics_EmptyMetrics(t *testing.T) 
 	// Test request
 	req := httptest.NewRequest("GET", "/api/v1/metrics/dashboard", nil)
 	resp, err := app.Test(req)
+	defer resp.Body.Close()
 
 	assert.NoError(t, err)
 	assert.Equal(t, fiber.StatusOK, resp.StatusCode)
@@ -123,6 +125,7 @@ func TestMetricsDashboardHandler_GetDashboardMetrics_MultiplePackageManagers(t *
 	// Test request
 	req := httptest.NewRequest("GET", "/api/v1/metrics/dashboard", nil)
 	resp, err := app.Test(req)
+	defer resp.Body.Close()
 
 	assert.NoError(t, err)
 	assert.Equal(t, fiber.StatusOK, resp.StatusCode)
@@ -164,6 +167,7 @@ func TestMetricsDashboardHandler_ResponseStructure(t *testing.T) {
 	// Test request
 	req := httptest.NewRequest("GET", "/api/v1/metrics/dashboard", nil)
 	resp, err := app.Test(req)
+	defer resp.Body.Close()
 
 	assert.NoError(t, err)
 	assert.Equal(t, fiber.StatusOK, resp.StatusCode)

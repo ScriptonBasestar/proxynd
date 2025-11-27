@@ -24,7 +24,7 @@ func TestToggleEndpointAuthentication(t *testing.T) {
 
 	t.Run("without JWT secret - allows anonymous access", func(t *testing.T) {
 		// Ensure JWT_SECRET is not set
-		os.Unsetenv("JWT_SECRET")
+		_ = os.Unsetenv("JWT_SECRET")
 
 		reqBody := map[string]interface{}{
 			"enabled": true,
@@ -45,8 +45,8 @@ func TestToggleEndpointAuthentication(t *testing.T) {
 
 	t.Run("with JWT secret - requires authentication", func(t *testing.T) {
 		// Set JWT_SECRET to enforce authentication
-		os.Setenv("JWT_SECRET", "test-secret-key-for-testing")
-		defer os.Unsetenv("JWT_SECRET")
+		_ = os.Setenv("JWT_SECRET", "test-secret-key-for-testing")
+		defer func() { _ = os.Unsetenv("JWT_SECRET") }()
 
 		// Recreate app with JWT enabled
 		app := fiber.New()
@@ -77,8 +77,8 @@ func TestToggleEndpointAuthentication(t *testing.T) {
 
 	t.Run("with valid JWT but no admin role - forbidden", func(t *testing.T) {
 		// Set JWT_SECRET
-		os.Setenv("JWT_SECRET", "test-secret-key-for-testing")
-		defer os.Unsetenv("JWT_SECRET")
+		_ = os.Setenv("JWT_SECRET", "test-secret-key-for-testing")
+		defer func() { _ = os.Unsetenv("JWT_SECRET") }()
 
 		// Recreate app
 		app := fiber.New()
@@ -119,8 +119,8 @@ func TestToggleEndpointAuthentication(t *testing.T) {
 
 	t.Run("with valid JWT and admin role - allowed", func(t *testing.T) {
 		// Set JWT_SECRET
-		os.Setenv("JWT_SECRET", "test-secret-key-for-testing")
-		defer os.Unsetenv("JWT_SECRET")
+		_ = os.Setenv("JWT_SECRET", "test-secret-key-for-testing")
+		defer func() { _ = os.Unsetenv("JWT_SECRET") }()
 
 		// Recreate app
 		app := fiber.New()
@@ -147,7 +147,7 @@ func TestToggleEndpointAuthentication(t *testing.T) {
 
 		resp, err := app.Test(req)
 		require.NoError(t, err)
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		// Should pass authentication but fail at configService
 		// (503 because configService is not available in test)
