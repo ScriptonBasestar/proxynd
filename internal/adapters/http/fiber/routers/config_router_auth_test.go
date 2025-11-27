@@ -17,10 +17,10 @@ func TestConfigReloadAuthentication(t *testing.T) {
 	t.Run("without JWT_SECRET - allows anonymous access", func(t *testing.T) {
 		// Clear JWT_SECRET to test development mode
 		originalSecret := os.Getenv("JWT_SECRET")
-		os.Unsetenv("JWT_SECRET")
+		_ = os.Unsetenv("JWT_SECRET")
 		defer func() {
 			if originalSecret != "" {
-				os.Setenv("JWT_SECRET", originalSecret)
+				_ = os.Setenv("JWT_SECRET", originalSecret)
 			}
 		}()
 
@@ -40,8 +40,8 @@ func TestConfigReloadAuthentication(t *testing.T) {
 
 	t.Run("with JWT_SECRET - requires authentication", func(t *testing.T) {
 		// Set JWT_SECRET to enable production mode
-		os.Setenv("JWT_SECRET", "test-secret-key-for-config-reload")
-		defer os.Unsetenv("JWT_SECRET")
+		_ = os.Setenv("JWT_SECRET", "test-secret-key-for-config-reload")
+		defer func() { _ = os.Unsetenv("JWT_SECRET") }()
 
 		// Create test app
 		app := fiber.New()
@@ -60,8 +60,8 @@ func TestConfigReloadAuthentication(t *testing.T) {
 	t.Run("with valid JWT but no admin role - returns 403", func(t *testing.T) {
 		// Set JWT_SECRET
 		secretKey := "test-secret-key-for-config-reload"
-		os.Setenv("JWT_SECRET", secretKey)
-		defer os.Unsetenv("JWT_SECRET")
+		_ = os.Setenv("JWT_SECRET", secretKey)
+		defer func() { _ = os.Unsetenv("JWT_SECRET") }()
 
 		// Create test app
 		app := fiber.New()
@@ -93,8 +93,8 @@ func TestConfigReloadAuthentication(t *testing.T) {
 	t.Run("with valid JWT and admin role - passes authentication", func(t *testing.T) {
 		// Set JWT_SECRET
 		secretKey := "test-secret-key-for-config-reload"
-		os.Setenv("JWT_SECRET", secretKey)
-		defer os.Unsetenv("JWT_SECRET")
+		_ = os.Setenv("JWT_SECRET", secretKey)
+		defer func() { _ = os.Unsetenv("JWT_SECRET") }()
 
 		// Create test app
 		app := fiber.New()
@@ -124,7 +124,7 @@ func TestConfigReloadAuthentication(t *testing.T) {
 func TestConfigReloadRateLimiting(t *testing.T) {
 	t.Run("rate limiting is enforced", func(t *testing.T) {
 		// Clear JWT_SECRET for development mode
-		os.Unsetenv("JWT_SECRET")
+		_ = os.Unsetenv("JWT_SECRET")
 
 		// Create test app
 		app := fiber.New()
@@ -140,7 +140,7 @@ func TestConfigReloadRateLimiting(t *testing.T) {
 
 			resp, err := app.Test(req, -1)
 			require.NoError(t, err)
-			resp.Body.Close()
+			_ = resp.Body.Close()
 
 			switch resp.StatusCode {
 			case http.StatusTooManyRequests:
@@ -158,7 +158,7 @@ func TestConfigReloadRateLimiting(t *testing.T) {
 
 	t.Run("rate limit headers present", func(t *testing.T) {
 		// Clear JWT_SECRET for development mode
-		os.Unsetenv("JWT_SECRET")
+		_ = os.Unsetenv("JWT_SECRET")
 
 		// Create test app
 		app := fiber.New()

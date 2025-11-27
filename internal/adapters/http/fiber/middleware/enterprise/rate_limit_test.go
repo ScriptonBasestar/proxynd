@@ -43,7 +43,7 @@ func TestRateLimiter_WithinLimit(t *testing.T) {
 		req := httptest.NewRequest("GET", "/test", nil)
 		resp, err := app.Test(req)
 		require.NoError(t, err)
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		assert.Equal(t, 200, resp.StatusCode, "Request %d should succeed", i)
 		assert.Equal(t, "5", resp.Header.Get("X-RateLimit-Limit"), "Limit header should be 5")
@@ -70,7 +70,7 @@ func TestRateLimiter_ExceedsLimit(t *testing.T) {
 		req := httptest.NewRequest("GET", "/test", nil)
 		resp, err := app.Test(req)
 		require.NoError(t, err)
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		assert.Equal(t, 200, resp.StatusCode, "Request %d should succeed", i)
 	}
@@ -79,7 +79,7 @@ func TestRateLimiter_ExceedsLimit(t *testing.T) {
 	req := httptest.NewRequest("GET", "/test", nil)
 	resp, err := app.Test(req)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, 429, resp.StatusCode, "Request should be rate limited")
 	assert.NotEmpty(t, resp.Header.Get("Retry-After"), "Retry-After header should be set")

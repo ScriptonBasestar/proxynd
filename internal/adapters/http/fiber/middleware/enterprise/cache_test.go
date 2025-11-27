@@ -405,7 +405,7 @@ func TestCacheMiddleware_Integration(t *testing.T) {
 
 	body1, _ := io.ReadAll(resp1.Body)
 	var data1 map[string]interface{}
-	json.Unmarshal(body1, &data1)
+	_ = json.Unmarshal(body1, &data1)
 
 	// Second request - cache hit (same data)
 	req2 := httptest.NewRequest("GET", "/analytics/overview", nil)
@@ -418,7 +418,7 @@ func TestCacheMiddleware_Integration(t *testing.T) {
 
 	body2, _ := io.ReadAll(resp2.Body)
 	var data2 map[string]interface{}
-	json.Unmarshal(body2, &data2)
+	_ = json.Unmarshal(body2, &data2)
 
 	// Timestamp should be the same (cached)
 	assert.Equal(t, data1["timestamp"], data2["timestamp"])
