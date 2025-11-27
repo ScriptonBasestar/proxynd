@@ -61,7 +61,7 @@ func TestCacheClearEventIntegration(t *testing.T) {
 	defer env.Cleanup()
 
 	t.Run("clear all cache triggers EventCacheCleared", func(t *testing.T) {
-		resp, err := env.MakeRequest("DELETE", "/api/cache/clear", nil)
+		resp, err := env.MakeRequest("DELETE", "/api/cache/clear?confirm=true", nil)
 		require.NoError(t, err)
 		defer func() { _ = resp.Body.Close() }()
 
@@ -73,15 +73,16 @@ func TestCacheClearEventIntegration(t *testing.T) {
 		require.NoError(t, err)
 
 		// Verify response structure
-		assert.Equal(t, "success", result["status"])
+		assert.Equal(t, true, result["success"])
 		assert.Contains(t, result, "message")
+		assert.Contains(t, result, "cleared_at")
 
 		// EventCacheCleared should have been triggered with cache_type="all"
 	})
 
 	t.Run("clear cache by type triggers EventCacheCleared", func(t *testing.T) {
 		// Test clearing npm cache
-		resp, err := env.MakeRequest("DELETE", "/api/cache/clear/npm", nil)
+		resp, err := env.MakeRequest("DELETE", "/api/cache/clear/npm?confirm=true", nil)
 		require.NoError(t, err)
 		defer func() { _ = resp.Body.Close() }()
 
@@ -94,13 +95,16 @@ func TestCacheClearEventIntegration(t *testing.T) {
 			err = json.NewDecoder(resp.Body).Decode(&result)
 			require.NoError(t, err)
 
-			assert.Equal(t, "success", result["status"])
+			// Verify response structure
+			assert.Equal(t, true, result["success"])
+			assert.Contains(t, result, "message")
+			assert.Contains(t, result, "type")
 			// EventCacheCleared should have been triggered with cache_type="npm"
 		}
 	})
 
 	t.Run("clear maven cache", func(t *testing.T) {
-		resp, err := env.MakeRequest("DELETE", "/api/cache/clear/maven", nil)
+		resp, err := env.MakeRequest("DELETE", "/api/cache/clear/maven?confirm=true", nil)
 		require.NoError(t, err)
 		defer func() { _ = resp.Body.Close() }()
 
@@ -109,7 +113,7 @@ func TestCacheClearEventIntegration(t *testing.T) {
 	})
 
 	t.Run("clear docker cache", func(t *testing.T) {
-		resp, err := env.MakeRequest("DELETE", "/api/cache/clear/docker", nil)
+		resp, err := env.MakeRequest("DELETE", "/api/cache/clear/docker?confirm=true", nil)
 		require.NoError(t, err)
 		defer func() { _ = resp.Body.Close() }()
 
@@ -186,7 +190,7 @@ func TestAllEventTypes(t *testing.T) {
 		assert.Equal(t, http.StatusOK, resp2.StatusCode)
 
 		// 3. EventCacheCleared
-		resp3, err := env.MakeRequest("DELETE", "/api/cache/clear", nil)
+		resp3, err := env.MakeRequest("DELETE", "/api/cache/clear?confirm=true", nil)
 		require.NoError(t, err)
 		defer func() { _ = resp3.Body.Close() }()
 
@@ -218,7 +222,7 @@ func TestEventNotificationNonBlocking(t *testing.T) {
 	})
 
 	t.Run("cache clear responds immediately", func(t *testing.T) {
-		resp, err := env.MakeRequest("DELETE", "/api/cache/clear/npm", nil)
+		resp, err := env.MakeRequest("DELETE", "/api/cache/clear/npm?confirm=true", nil)
 		require.NoError(t, err)
 		defer func() { _ = resp.Body.Close() }()
 
@@ -294,7 +298,7 @@ func TestEventErrorHandling(t *testing.T) {
 	})
 
 	t.Run("cache clear succeeds even with event errors", func(t *testing.T) {
-		resp, err := env.MakeRequest("DELETE", "/api/cache/clear/pypi", nil)
+		resp, err := env.MakeRequest("DELETE", "/api/cache/clear/pypi?confirm=true", nil)
 		require.NoError(t, err)
 		defer func() { _ = resp.Body.Close() }()
 
