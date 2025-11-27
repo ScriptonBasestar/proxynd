@@ -352,7 +352,7 @@ type ProxyHTTPResponse struct {
 }
 
 // PackageNormalizer defines path normalization interface
-// TODO: Implement in internal/adapters/pm/common/normalizer.go
+// Implementation: internal/adapters/pm/common/normalizer.go
 type PackageNormalizer interface {
 	// NormalizePath normalizes package path for the specific package manager
 	NormalizePath(pmType, path string) (string, error)
@@ -375,7 +375,7 @@ type PathComponents struct {
 }
 
 // SignatureVerifier defines signature verification interface
-// TODO: Implement in internal/adapters/pm/common/signature.go
+// Implementation: internal/adapters/pm/common/signature.go
 type SignatureVerifier interface {
 	// VerifySignature verifies package signature
 	VerifySignature(pmType string, content, signature []byte) error
@@ -388,7 +388,7 @@ type SignatureVerifier interface {
 }
 
 // ErrorMapper defines error mapping interface
-// TODO: Implement in internal/adapters/pm/common/errors.go
+// Implementation: internal/adapters/pm/common/errors.go
 type ErrorMapper interface {
 	// MapError maps driver-specific errors to standard proxy errors
 	MapError(pmType string, err error) error
