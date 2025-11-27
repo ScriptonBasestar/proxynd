@@ -2,6 +2,11 @@ package npm
 
 import (
 	"context"
+	"crypto/sha1"
+	"crypto/sha256"
+	"crypto/sha512"
+	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"regexp"
@@ -181,8 +186,25 @@ func (d *Driver) FetchPackage(ctx context.Context, req *ports.DriverRequest) (*p
 		if registryConfig.Token != "" {
 			headers["Authorization"] = fmt.Sprintf("Bearer %s", registryConfig.Token)
 		} else if registryConfig.Auth != nil {
-			// TODO: Handle basic auth
-			_ = registryConfig.Auth // Placeholder to avoid empty branch warning
+			auth := registryConfig.Auth
+			switch auth.Type {
+			case "basic":
+				// Basic Authentication
+				if auth.Username != "" && auth.Password != "" {
+					headers["Authorization"] = fmt.Sprintf("Basic %s", encodeBasicAuth(auth.Username, auth.Password))
+				}
+			case "bearer", "token":
+				// Bearer Token Authentication
+				if auth.Token != "" {
+					headers["Authorization"] = fmt.Sprintf("Bearer %s", auth.Token)
+				}
+			case "digest":
+				// Digest Authentication - add WWW-Authenticate response handling
+				// Note: Full digest auth requires challenge-response, implemented in HTTP client
+				if auth.Username != "" {
+					headers["X-Auth-Username"] = auth.Username
+				}
+			}
 		}
 	}
 
@@ -245,13 +267,28 @@ func (d *Driver) ParseMetadata(content []byte) (*ports.PackageMetadata, error) {
 
 // ValidateSignature validates NPM package signatures
 func (d *Driver) ValidateSignature(content, signature []byte) error {
+	// Use the common signature verifier
 	if d.verifier != nil {
 		return d.verifier.VerifySignature(d.Type(), content, signature)
 	}
 
-	// TODO: Implement NPM-specific signature validation
-	// NPM uses SHA1, SHA512, and integrity hashes
-	return nil
+	// NPM uses SHA1, SHA512, and SRI integrity hashes
+	// If no verifier is configured, perform basic validation
+	if len(signature) == 0 {
+		// No signature provided
+		return nil
+	}
+
+	sigStr := strings.TrimSpace(string(signature))
+
+	// Check if it's SRI (Subresource Integrity) format
+	// Format: sha512-base64hash or sha384-base64hash or sha256-base64hash
+	if strings.HasPrefix(sigStr, "sha512-") || strings.HasPrefix(sigStr, "sha384-") || strings.HasPrefix(sigStr, "sha256-") {
+		return d.validateSRIIntegrity(content, sigStr)
+	}
+
+	// Try hash-based signature validation (SHA1, SHA256, SHA512 hex)
+	return d.validateHashSignature(content, signature)
 }
 
 // GetCacheKey generates cache key for NPM request
@@ -347,4 +384,88 @@ func getContentType(path string) string {
 
 	// Package metadata
 	return "application/json"
+}
+
+// validateSRIIntegrity validates SRI (Subresource Integrity) format
+func (d *Driver) validateSRIIntegrity(content []byte, integrity string) error {
+	// SRI format: algorithm-base64hash
+	// Example: sha512-xxxxx or sha256-xxxxx
+
+	parts := strings.SplitN(integrity, "-", 2)
+	if len(parts) != 2 {
+		return fmt.Errorf("invalid SRI format: %s", integrity)
+	}
+
+	algorithm := parts[0]
+	expectedHash := parts[1]
+
+	var computed string
+	switch algorithm {
+	case "sha256":
+		hasher := sha256.New()
+		hasher.Write(content)
+		computed = base64.StdEncoding.EncodeToString(hasher.Sum(nil))
+	case "sha384":
+		hasher := sha512.New384()
+		hasher.Write(content)
+		computed = base64.StdEncoding.EncodeToString(hasher.Sum(nil))
+	case "sha512":
+		hasher := sha512.New()
+		hasher.Write(content)
+		computed = base64.StdEncoding.EncodeToString(hasher.Sum(nil))
+	default:
+		return fmt.Errorf("unsupported SRI algorithm: %s", algorithm)
+	}
+
+	if computed != expectedHash {
+		return fmt.Errorf("%s SRI integrity mismatch", algorithm)
+	}
+
+	return nil
+}
+
+// validateHashSignature validates hash-based signatures (SHA1, SHA256, SHA512 hex)
+func (d *Driver) validateHashSignature(content, signature []byte) error {
+	sigStr := strings.ToLower(strings.TrimSpace(string(signature)))
+
+	// Try SHA1 (40 hex characters) - NPM shasum
+	if len(sigStr) == 40 {
+		hasher := sha1.New()
+		hasher.Write(content)
+		computed := hex.EncodeToString(hasher.Sum(nil))
+		if computed == sigStr {
+			return nil
+		}
+		return fmt.Errorf("SHA1 hash mismatch")
+	}
+
+	// Try SHA256 (64 hex characters)
+	if len(sigStr) == 64 {
+		hasher := sha256.New()
+		hasher.Write(content)
+		computed := hex.EncodeToString(hasher.Sum(nil))
+		if computed == sigStr {
+			return nil
+		}
+		return fmt.Errorf("SHA256 hash mismatch")
+	}
+
+	// Try SHA512 (128 hex characters)
+	if len(sigStr) == 128 {
+		hasher := sha512.New()
+		hasher.Write(content)
+		computed := hex.EncodeToString(hasher.Sum(nil))
+		if computed == sigStr {
+			return nil
+		}
+		return fmt.Errorf("SHA512 hash mismatch")
+	}
+
+	return fmt.Errorf("unknown hash signature length: %d", len(sigStr))
+}
+
+// encodeBasicAuth encodes username and password for HTTP Basic Authentication
+func encodeBasicAuth(username, password string) string {
+	auth := username + ":" + password
+	return base64.StdEncoding.EncodeToString([]byte(auth))
 }
