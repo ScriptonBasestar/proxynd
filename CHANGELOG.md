@@ -43,6 +43,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Distroless Image Support**: Added BusyBox shell to Dockerfile.multiarch to enable ulimit support in distroless images
 
 ### Changed
+- **Hexagonal Architecture Migration Phase 2a**: Implemented new middleware setup in hexagonal architecture
+  - Migrated `setupNewMiddlewares()` from legacy fallback to proper new architecture
+  - Integrated 5 core middleware: ErrorRecovery, ErrorHandler, AccessLog, SecurityHeaders, EnhancedRateLimiter
+  - Feature flag system enables safe testing and instant rollback
+  - Migration progress: 40% → 55% complete
+- **Documentation Cleanup**: Resolved obsolete TODO markers and updated issue templates
+  - Converted 4 legacy TODOs to NOTE references pointing to actual implementations
+  - Updated 3 issue templates (auth, metrics, proxy services) to RESOLVED status
+  - Clarified that all "missing" features are actually fully implemented in new architecture
 - **Dockerfile CMD**: Updated all Dockerfiles to use shell wrapper with ulimit for memory enforcement
   - Main Dockerfile: `CMD ["/bin/sh", "-c", "ulimit -v 268435456 && exec /app/proxynd"]`
   - Dockerfile.multiarch: `ENTRYPOINT ["/bin/sh", "-c", "ulimit -v 268435456 && exec /app/proxynd \"$@\"", "--"]`

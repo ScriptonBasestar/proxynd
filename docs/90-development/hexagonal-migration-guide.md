@@ -11,17 +11,37 @@ ProxyND 헥사고널 아키텍처 마이그레이션을 위한 개발자 가이�
 - [x] Fiber 어댑터 기반 구조 (`internal/adapters/http/fiber/`)
 - [x] 헬스체크 핸들러 마이그레이션 완료
 - [x] 문서 업데이트 (README.md, TECH_STACK.md)
+- [x] **Phase 1**: Handlers/Middleware copied (34 → 50 handlers, 19 → 33 middleware)
+- [x] **Phase 2a**: New middleware setup implemented (setupNewMiddlewares)
+  - ErrorRecovery, ErrorHandler, AccessLog, SecurityHeaders, EnhancedRateLimiter integrated
+  - Feature flag system for safe testing and rollback
+  - Migration progress: 40% → 55%
 
 ### 진행 중인 작업 🚧
-- [ ] 프록시 핸들러 마이그레이션
-- [ ] 미들웨어 마이그레이션
-- [ ] 의존성 주입 컨테이너 설정
+- [ ] **Phase 2b**: Update router imports (handlers-legacy → adapters/http/fiber/handlers)
+- [ ] **Phase 2c**: Enable new architecture by default
+- [ ] 의존성 주입 컨테이너 설정 최적화
 
 ### 예정된 작업 📋
-- [ ] 캐시 서비스 마이그레이션
-- [ ] 인증 서비스 마이그레이션
-- [ ] 기존 코드 정리 및 제거
+- [ ] **Phase 3**: Legacy code removal (internal/handlers-legacy, internal/middleware-legacy)
+- [ ] Authentication middleware integration (OAuth2Config compatibility)
+- [ ] 캐시 서비스 마이그레이션 검증
 - [ ] 통합 테스트 업데이트
+- [ ] Performance benchmarking (old vs new architecture)
+
+## 📊 Migration Progress
+
+**Overall Progress**: 55% complete (Updated: 2025-11-27)
+
+| Phase | Status | Progress | Details |
+|-------|--------|----------|---------|
+| Phase 1 | ✅ Complete | 100% | Files copied to new structure |
+| Phase 2a | ✅ Complete | 100% | Middleware integration |
+| Phase 2b | 🚧 In Progress | 0% | Router import updates |
+| Phase 2c | 📋 Planned | 0% | Default to new architecture |
+| Phase 3 | 📋 Planned | 0% | Legacy code removal |
+
+**Estimated completion**: Phase 3 completion will bring to 100%
 
 ## 🏗️ 새로운 구조
 
