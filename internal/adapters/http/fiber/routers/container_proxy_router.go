@@ -2,6 +2,7 @@ package routers
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 
@@ -114,45 +115,63 @@ func (r *ContainerProxyRouter) createHandlerByType(
 		return r.createDockerHandler(provider)
 	case "pip":
 		return r.createPIPHandler(provider)
+	case "yum":
+		return r.createYUMHandler(provider)
+	case "apk":
+		return r.createAPKHandler(provider)
 	default:
 		return nil, fmt.Errorf("unsupported proxy type: %s", proxyType)
 	}
 }
 
-// 핸들러 생성 함수들 (플레이스홀더)
+// 핸들러 생성 함수들 - V3 legacy handlers wrapped for Container compatibility
 func (r *ContainerProxyRouter) createAPTHandler(
 	provider container.ContainerProvider,
 ) (handlers.ContainerProxyHandler, error) {
-	// TODO: 실제 APT 핸들러 생성 로직 구현
-	return nil, fmt.Errorf("APT handler not implemented yet")
+	legacyHandler := proxyHandlers.NewAPTHandlerV3()
+	return newLegacyHandlerAdapter(legacyHandler, pmAPT, provider), nil
 }
 
 func (r *ContainerProxyRouter) createMavenHandler(
 	provider container.ContainerProvider,
 ) (handlers.ContainerProxyHandler, error) {
-	// TODO: 실제 Maven 핸들러 생성 로직 구현
-	return nil, fmt.Errorf("maven handler not implemented yet")
+	legacyHandler := proxyHandlers.NewMavenHandlerV3()
+	return newLegacyHandlerAdapter(legacyHandler, pmMaven, provider), nil
 }
 
 func (r *ContainerProxyRouter) createNPMHandler(
 	provider container.ContainerProvider,
 ) (handlers.ContainerProxyHandler, error) {
-	// TODO: 실제 NPM 핸들러 생성 로직 구현
-	return nil, fmt.Errorf("NPM handler not implemented yet")
+	legacyHandler := proxyHandlers.NewNPMHandlerV3()
+	return newLegacyHandlerAdapter(legacyHandler, pmNPM, provider), nil
 }
 
 func (r *ContainerProxyRouter) createDockerHandler(
 	provider container.ContainerProvider,
 ) (handlers.ContainerProxyHandler, error) {
-	// TODO: 실제 Docker 핸들러 생성 로직 구현
-	return nil, fmt.Errorf("docker handler not implemented yet")
+	legacyHandler := proxyHandlers.NewDockerHandlerV3()
+	return newLegacyHandlerAdapter(legacyHandler, "docker", provider), nil
 }
 
 func (r *ContainerProxyRouter) createPIPHandler(
 	provider container.ContainerProvider,
 ) (handlers.ContainerProxyHandler, error) {
-	// TODO: 실제 PIP 핸들러 생성 로직 구현
-	return nil, fmt.Errorf("PIP handler not implemented yet")
+	legacyHandler := proxyHandlers.NewPipHandlerV3()
+	return newLegacyHandlerAdapter(legacyHandler, "pip", provider), nil
+}
+
+func (r *ContainerProxyRouter) createYUMHandler(
+	provider container.ContainerProvider,
+) (handlers.ContainerProxyHandler, error) {
+	legacyHandler := proxyHandlers.NewYumHandlerV3()
+	return newLegacyHandlerAdapter(legacyHandler, "yum", provider), nil
+}
+
+func (r *ContainerProxyRouter) createAPKHandler(
+	provider container.ContainerProvider,
+) (handlers.ContainerProxyHandler, error) {
+	legacyHandler := proxyHandlers.NewApkHandlerV3()
+	return newLegacyHandlerAdapter(legacyHandler, "apk", provider), nil
 }
 
 // Setup Container 기반 프록시 라우터 설정
@@ -363,4 +382,131 @@ func loadContainerAlertConfig() *alerts.AlertConfig {
 			},
 		},
 	}
+}
+
+// legacyHandlerAdapter V3 legacy handler를 ContainerProxyHandler 인터페이스로 wrapping하는 어댑터
+// 이 어댑터는 기존 V3 핸들러들이 ContainerProxyHandler 인터페이스를 충족하도록 브릿지 역할을 수행
+type legacyHandlerAdapter struct {
+	legacyHandler interface{} // V3 handler (APTHandlerV3, MavenHandlerV3, etc.)
+	proxyType     string
+	container     container.ContainerProvider
+	logger        logging.Logger
+}
+
+// newLegacyHandlerAdapter 새로운 legacy handler adapter 생성
+func newLegacyHandlerAdapter(
+	legacyHandler interface{},
+	proxyType string,
+	provider container.ContainerProvider,
+) *legacyHandlerAdapter {
+	return &legacyHandlerAdapter{
+		legacyHandler: legacyHandler,
+		proxyType:     proxyType,
+		container:     provider,
+		logger:        logging.GetLogger(),
+	}
+}
+
+// Handle implements handlers.Handler.Handle
+func (a *legacyHandlerAdapter) Handle(c *fiber.Ctx) error {
+	// V3 핸들러의 Handle 메서드 호출
+	type handlerWithHandle interface {
+		Handle(c *fiber.Ctx) error
+	}
+
+	if h, ok := a.legacyHandler.(handlerWithHandle); ok {
+		return h.Handle(c)
+	}
+
+	return c.Status(fiber.StatusInternalServerError).SendString(
+		fmt.Sprintf("Handler for %s does not implement Handle method", a.proxyType),
+	)
+}
+
+// Name implements handlers.Handler.Name
+func (a *legacyHandlerAdapter) Name() string {
+	return fmt.Sprintf("%s-handler-v3", a.proxyType)
+}
+
+// Type implements handlers.Handler.Type and handlers.BaseProxyHandler.Type
+func (a *legacyHandlerAdapter) Type() string {
+	return a.proxyType
+}
+
+// SetContainer implements handlers.ContainerAwareHandler.SetContainer
+func (a *legacyHandlerAdapter) SetContainer(provider container.ContainerProvider) {
+	a.container = provider
+}
+
+// GetContainer implements handlers.ContainerAwareHandler.GetContainer
+func (a *legacyHandlerAdapter) GetContainer() container.ContainerProvider {
+	return a.container
+}
+
+// LoadConfig implements handlers.ContainerAwareHandler.LoadConfig
+func (a *legacyHandlerAdapter) LoadConfig() error {
+	// Legacy handlers don't require explicit config loading
+	return nil
+}
+
+// ReloadConfig implements handlers.ContainerAwareHandler.ReloadConfig
+func (a *legacyHandlerAdapter) ReloadConfig() error {
+	// Legacy handlers don't support config reloading
+	return nil
+}
+
+// IsEnabled implements handlers.BaseProxyHandler.IsEnabled
+func (a *legacyHandlerAdapter) IsEnabled() bool {
+	// Always enabled for registered handlers
+	return true
+}
+
+// GenerateCacheKey implements handlers.BaseProxyHandler.GenerateCacheKey
+func (a *legacyHandlerAdapter) GenerateCacheKey(c *fiber.Ctx) string {
+	// Generate cache key from proxy type and path
+	return fmt.Sprintf("%s:%s", a.proxyType, c.Path())
+}
+
+// BuildUpstreamURL implements handlers.BaseProxyHandler.BuildUpstreamURL
+func (a *legacyHandlerAdapter) BuildUpstreamURL(c *fiber.Ctx) (string, error) {
+	// For legacy handlers, URL building is handled internally in Handle()
+	// Return a placeholder that indicates the handler manages its own URLs
+	return fmt.Sprintf("handled-by-%s-handler", a.proxyType), nil
+}
+
+// TransformRequest implements handlers.BaseProxyHandler.TransformRequest
+func (a *legacyHandlerAdapter) TransformRequest(c *fiber.Ctx, upstreamReq *fiber.Agent) error {
+	// Legacy handlers handle request transformation internally
+	return nil
+}
+
+// TransformResponse implements handlers.BaseProxyHandler.TransformResponse
+func (a *legacyHandlerAdapter) TransformResponse(resp []byte, c *fiber.Ctx) ([]byte, error) {
+	// Legacy handlers handle response transformation internally
+	return resp, nil
+}
+
+// ShouldCache implements handlers.BaseProxyHandler.ShouldCache
+func (a *legacyHandlerAdapter) ShouldCache(c *fiber.Ctx, statusCode int) bool {
+	// Cache successful responses
+	return statusCode >= 200 && statusCode < 300
+}
+
+// GetCacheTTL implements handlers.BaseProxyHandler.GetCacheTTL
+func (a *legacyHandlerAdapter) GetCacheTTL(c *fiber.Ctx) time.Duration {
+	// Default TTL for package artifacts
+	return 24 * time.Hour
+}
+
+// HandleError implements handlers.BaseProxyHandler.HandleError
+func (a *legacyHandlerAdapter) HandleError(err error, c *fiber.Ctx) error {
+	a.logger.Error("Handler error",
+		logging.F("type", a.proxyType),
+		logging.F("error", err),
+		logging.F("path", c.Path()),
+	)
+	return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+		"error": err.Error(),
+		"type":  a.proxyType,
+	})
 }
