@@ -432,4 +432,3 @@ func (d *Driver) parsePrimaryMetadata(content []byte) (*ports.PackageMetadata, e
 
 	return metadata, nil
 }
-
