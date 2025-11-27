@@ -20,6 +20,7 @@ import (
 	"proxynd/internal/config"
 	"proxynd/internal/metrics"
 	"proxynd/internal/routers"
+	fiberRouters "proxynd/internal/adapters/http/fiber/routers"
 )
 
 // IntegrationTestEnvironment 통합 테스트 환경
@@ -541,6 +542,8 @@ func (env *IntegrationTestEnvironment) setupProxyServer(_ *testing.T) {
 	routers.UserRouter(fiberApp)
 	routers.TestRouter(fiberApp)
 	routers.WebhookRouter(fiberApp)
+	routers.UnifiedRouterV1(fiberApp) // API v1 unified routes (legacy)
+	fiberRouters.SetupAPIv1Routes(fiberApp, nil) // Modern API v1 routes (includes PM toggle)
 	// MetricsRouter는 Prometheus 글로벌 레지스트리 중복 등록 문제로 인해
 	// 통합 테스트에서 비활성화 (메트릭 테스트는 별도 수행 필요)
 	// routers.MetricsRouter(fiberApp, env.Config)
@@ -548,6 +551,11 @@ func (env *IntegrationTestEnvironment) setupProxyServer(_ *testing.T) {
 	// 컨테이너를 앱 로컬에 저장 (handlers가 사용할 수 있도록)
 	fiberApp.Use(func(c *fiber.Ctx) error {
 		c.Locals("container", container)
+		// Get configService from container
+		if configSvc, err := container.GetConfigService(); err == nil {
+			c.Locals("configService", configSvc)
+		}
+		// auditService and pluginManager are optional for tests
 		return c.Next()
 	})
 
