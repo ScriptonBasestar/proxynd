@@ -3,6 +3,10 @@ package fiber
 import (
 	"context"
 	"fmt"
+	"os"
+	"os/signal"
+	"sync/atomic"
+	"syscall"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -28,19 +32,23 @@ type Server struct {
 	logger        ports.Logger
 	metrics       ports.MetricsCollector
 	config        *ServerConfig
+	ready         atomic.Bool // Readiness state for health checks
+	shutdownCh    chan struct{}
 }
 
 // ServerConfig represents server configuration
 type ServerConfig struct {
-	Port           string        `json:"port"`
-	ReadTimeout    time.Duration `json:"read_timeout"`
-	WriteTimeout   time.Duration `json:"write_timeout"`
-	IdleTimeout    time.Duration `json:"idle_timeout"`
-	EnableCORS     bool          `json:"enable_cors"`
-	EnableCompress bool          `json:"enable_compress"`
-	EnableSecurity bool          `json:"enable_security"`
-	EnableLimiter  bool          `json:"enable_limiter"`
-	TrustedProxies []string      `json:"trusted_proxies"`
+	Port            string        `json:"port"`
+	ReadTimeout     time.Duration `json:"read_timeout"`
+	WriteTimeout    time.Duration `json:"write_timeout"`
+	IdleTimeout     time.Duration `json:"idle_timeout"`
+	ShutdownTimeout time.Duration `json:"shutdown_timeout"` // Graceful shutdown timeout
+	StartupTimeout  time.Duration `json:"startup_timeout"`  // Startup readiness timeout
+	EnableCORS      bool          `json:"enable_cors"`
+	EnableCompress  bool          `json:"enable_compress"`
+	EnableSecurity  bool          `json:"enable_security"`
+	EnableLimiter   bool          `json:"enable_limiter"`
+	TrustedProxies  []string      `json:"trusted_proxies"`
 }
 
 // NewServer creates a new Fiber HTTP server
@@ -52,11 +60,20 @@ func NewServer(
 	metrics ports.MetricsCollector,
 	config *ServerConfig,
 ) *Server {
+	// Set default timeouts if not configured
+	if config.ShutdownTimeout == 0 {
+		config.ShutdownTimeout = 30 * time.Second
+	}
+	if config.StartupTimeout == 0 {
+		config.StartupTimeout = 10 * time.Second
+	}
+
 	app := fiber.New(fiber.Config{
 		ReadTimeout:  config.ReadTimeout,
 		WriteTimeout: config.WriteTimeout,
 		IdleTimeout:  config.IdleTimeout,
-		// TODO: Add more Fiber configuration
+		// Disable default startup message (we'll log our own)
+		DisableStartupMessage: true,
 	})
 
 	server := &Server{
@@ -67,7 +84,11 @@ func NewServer(
 		logger:        logger,
 		metrics:       metrics,
 		config:        config,
+		shutdownCh:    make(chan struct{}),
 	}
+
+	// Server starts in not-ready state
+	server.ready.Store(false)
 
 	server.setupMiddleware()
 	server.setupRoutes()
@@ -75,26 +96,119 @@ func NewServer(
 	return server
 }
 
-// Start starts the HTTP server
+// Start starts the HTTP server with graceful startup
 func (s *Server) Start(ctx context.Context, addr string) error {
-	// TODO: Implement graceful startup
 	if addr == "" {
 		addr = fmt.Sprintf(":%s", s.config.Port)
 	}
 
 	s.logger.Info(ctx, "Starting HTTP server",
 		NewField("address", addr),
-		NewField("config", s.config),
+		NewField("shutdown_timeout", s.config.ShutdownTimeout),
+		NewField("startup_timeout", s.config.StartupTimeout),
 	)
 
-	return s.app.Listen(addr)
+	// Setup signal handling for graceful shutdown
+	go s.handleSignals(ctx)
+
+	// Start server in goroutine
+	serverErr := make(chan error, 1)
+	go func() {
+		if err := s.app.Listen(addr); err != nil {
+			serverErr <- err
+		}
+	}()
+
+	// Wait for server to become ready or timeout
+	startupTimer := time.NewTimer(s.config.StartupTimeout)
+	defer startupTimer.Stop()
+
+	ticker := time.NewTicker(100 * time.Millisecond)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case err := <-serverErr:
+			return fmt.Errorf("server startup failed: %w", err)
+
+		case <-startupTimer.C:
+			return fmt.Errorf("server startup timed out after %v", s.config.StartupTimeout)
+
+		case <-ticker.C:
+			// Check if server is listening (basic check)
+			// In production, you might want more sophisticated health checks
+			if s.app.Server() != nil {
+				// Mark server as ready
+				s.ready.Store(true)
+				s.logger.Info(ctx, "HTTP server ready",
+					NewField("address", addr),
+					NewField("startup_time", s.config.StartupTimeout),
+				)
+				return nil
+			}
+
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
 }
 
 // Stop gracefully stops the HTTP server
 func (s *Server) Stop(ctx context.Context) error {
-	// TODO: Implement graceful shutdown
-	s.logger.Info(ctx, "Stopping HTTP server")
-	return s.app.Shutdown()
+	s.logger.Info(ctx, "Initiating graceful shutdown",
+		NewField("shutdown_timeout", s.config.ShutdownTimeout),
+	)
+
+	// Mark server as not ready immediately
+	s.ready.Store(false)
+
+	// Create shutdown context with timeout
+	shutdownCtx, cancel := context.WithTimeout(ctx, s.config.ShutdownTimeout)
+	defer cancel()
+
+	// Close shutdown channel to signal handlers
+	close(s.shutdownCh)
+
+	// Attempt graceful shutdown
+	if err := s.app.ShutdownWithContext(shutdownCtx); err != nil {
+		s.logger.Error(ctx, "Graceful shutdown failed, forcing shutdown",
+			NewField("error", err),
+		)
+		// Force shutdown if graceful fails
+		return s.app.Shutdown()
+	}
+
+	s.logger.Info(ctx, "HTTP server stopped gracefully")
+	return nil
+}
+
+// handleSignals handles OS signals for graceful shutdown
+func (s *Server) handleSignals(ctx context.Context) {
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
+
+	select {
+	case sig := <-sigCh:
+		s.logger.Info(ctx, "Received shutdown signal",
+			NewField("signal", sig.String()),
+		)
+		if err := s.Stop(ctx); err != nil {
+			s.logger.Error(ctx, "Error during signal-triggered shutdown",
+				NewField("error", err),
+			)
+		}
+	case <-s.shutdownCh:
+		// Shutdown initiated by Stop() method
+		return
+	case <-ctx.Done():
+		// Context cancelled
+		return
+	}
+}
+
+// IsReady returns whether the server is ready to accept requests
+func (s *Server) IsReady() bool {
+	return s.ready.Load()
 }
 
 // RegisterRoute registers a route with handler
@@ -203,10 +317,17 @@ func (s *Server) handleHealth(c *fiber.Ctx) error {
 
 // handleReadiness handles readiness check requests
 func (s *Server) handleReadiness(c *fiber.Ctx) error {
-	// TODO: Implement readiness check handler
-	return c.JSON(fiber.Map{
-		"ready":     true,
+	ready := s.IsReady()
+
+	status := 200
+	if !ready {
+		status = 503 // Service Unavailable if not ready
+	}
+
+	return c.Status(status).JSON(fiber.Map{
+		"ready":     ready,
 		"timestamp": time.Now(),
+		"status":    map[bool]string{true: "ready", false: "not_ready"}[ready],
 	})
 }
 
