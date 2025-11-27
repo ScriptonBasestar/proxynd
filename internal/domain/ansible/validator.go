@@ -52,7 +52,7 @@ func (v *TarballValidator) ValidateStructure(tarballReader io.Reader) error {
 	if err != nil {
 		return fmt.Errorf("%w: %v", ErrTarballCorrupted, err)
 	}
-	defer gzr.Close()
+	defer func() { _ = gzr.Close() }()
 
 	// Create tar reader
 	tr := tar.NewReader(gzr)

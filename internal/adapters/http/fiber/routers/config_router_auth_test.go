@@ -32,7 +32,7 @@ func TestConfigReloadAuthentication(t *testing.T) {
 		req := httptest.NewRequest("POST", "/api/config/reload", nil)
 		resp, err := app.Test(req, -1)
 		require.NoError(t, err)
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		// Should succeed in development mode
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -51,7 +51,7 @@ func TestConfigReloadAuthentication(t *testing.T) {
 		req := httptest.NewRequest("POST", "/api/config/reload", nil)
 		resp, err := app.Test(req, -1)
 		require.NoError(t, err)
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		// Should return 401 Unauthorized
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
@@ -81,7 +81,7 @@ func TestConfigReloadAuthentication(t *testing.T) {
 		req.Header.Set("Authorization", "Bearer "+token)
 		resp, err := app.Test(req, -1)
 		require.NoError(t, err)
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		// Should return 403 Forbidden (not admin)
 		// Note: Actual behavior depends on middleware implementation
@@ -114,7 +114,7 @@ func TestConfigReloadAuthentication(t *testing.T) {
 		req.Header.Set("Authorization", "Bearer "+token)
 		resp, err := app.Test(req, -1)
 		require.NoError(t, err)
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		// Should succeed (200 OK)
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -169,7 +169,7 @@ func TestConfigReloadRateLimiting(t *testing.T) {
 
 		resp, err := app.Test(req, -1)
 		require.NoError(t, err)
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		// Check for rate limit headers (implementation may vary)
 		// At minimum, response should be successful

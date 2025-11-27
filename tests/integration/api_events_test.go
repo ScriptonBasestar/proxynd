@@ -173,7 +173,7 @@ func TestAllEventTypes(t *testing.T) {
 
 		resp1, err := env.MakeRequest("POST", "/api/v1/pm/maven/toggle", bytes.NewReader(body))
 		require.NoError(t, err)
-		resp1.Body.Close()
+		defer func() { _ = resp1.Body.Close() }()
 
 		// Just check it didn't crash (may fail if config service unavailable)
 		assert.NotEqual(t, http.StatusInternalServerError, resp1.StatusCode)
@@ -181,14 +181,14 @@ func TestAllEventTypes(t *testing.T) {
 		// 2. EventConfigReloaded
 		resp2, err := env.MakeRequest("POST", "/api/config/reload", nil)
 		require.NoError(t, err)
-		resp2.Body.Close()
+		defer func() { _ = resp2.Body.Close() }()
 
 		assert.Equal(t, http.StatusOK, resp2.StatusCode)
 
 		// 3. EventCacheCleared
 		resp3, err := env.MakeRequest("DELETE", "/api/cache/clear", nil)
 		require.NoError(t, err)
-		resp3.Body.Close()
+		defer func() { _ = resp3.Body.Close() }()
 
 		assert.Equal(t, http.StatusOK, resp3.StatusCode)
 
@@ -209,7 +209,7 @@ func TestEventNotificationNonBlocking(t *testing.T) {
 		// Config reload should respond immediately
 		resp, err := env.MakeRequest("POST", "/api/config/reload", nil)
 		require.NoError(t, err)
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
 
@@ -220,7 +220,7 @@ func TestEventNotificationNonBlocking(t *testing.T) {
 	t.Run("cache clear responds immediately", func(t *testing.T) {
 		resp, err := env.MakeRequest("DELETE", "/api/cache/clear/npm", nil)
 		require.NoError(t, err)
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		// Should respond immediately regardless of plugin event processing
 		acceptableStatuses := []int{http.StatusOK, http.StatusNotFound}
@@ -236,7 +236,7 @@ func TestEventDataStructure(t *testing.T) {
 	t.Run("config reload response contains timestamp", func(t *testing.T) {
 		resp, err := env.MakeRequest("POST", "/api/config/reload", nil)
 		require.NoError(t, err)
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		var result map[string]interface{}
 		err = json.NewDecoder(resp.Body).Decode(&result)
@@ -255,7 +255,7 @@ func TestEventDataStructure(t *testing.T) {
 
 		resp, err := env.MakeRequest("POST", "/api/v1/pm/docker/toggle", bytes.NewReader(body))
 		require.NoError(t, err)
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		if resp.StatusCode == http.StatusOK {
 			var result map[string]interface{}
@@ -281,7 +281,7 @@ func TestEventErrorHandling(t *testing.T) {
 
 		resp, err := env.MakeRequest("POST", "/api/config/reload", nil)
 		require.NoError(t, err)
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		// Should always succeed (event notification is best-effort)
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -296,7 +296,7 @@ func TestEventErrorHandling(t *testing.T) {
 	t.Run("cache clear succeeds even with event errors", func(t *testing.T) {
 		resp, err := env.MakeRequest("DELETE", "/api/cache/clear/pypi", nil)
 		require.NoError(t, err)
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		// Should succeed even if event notification fails
 		acceptableStatuses := []int{http.StatusOK, http.StatusNotFound}

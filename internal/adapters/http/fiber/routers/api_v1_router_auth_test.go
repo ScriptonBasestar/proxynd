@@ -36,7 +36,7 @@ func TestToggleEndpointAuthentication(t *testing.T) {
 
 		resp, err := app.Test(req)
 		require.NoError(t, err)
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		// Should return 503 (service unavailable) since configService is not available
 		// But authentication should not block the request
@@ -62,7 +62,7 @@ func TestToggleEndpointAuthentication(t *testing.T) {
 
 		resp, err := app.Test(req)
 		require.NoError(t, err)
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		// Should return 401 (unauthorized) without valid JWT token
 		assert.Equal(t, http.StatusUnauthorized, resp.StatusCode)
@@ -105,7 +105,7 @@ func TestToggleEndpointAuthentication(t *testing.T) {
 
 		resp, err := app.Test(req)
 		require.NoError(t, err)
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		// Should return 403 (forbidden) without admin role
 		assert.Equal(t, http.StatusForbidden, resp.StatusCode)
@@ -170,7 +170,7 @@ func TestInvalidPackageManagerAuditLog(t *testing.T) {
 
 	resp, err := app.Test(req)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Should return 400 (bad request)
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)

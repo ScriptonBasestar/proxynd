@@ -469,7 +469,7 @@ func (s *AptService) parsePackagesIndex(data []byte) {
 		s.Logger.Debug("Failed to decompress Packages.gz", logging.F("error", err))
 		return
 	}
-	defer reader.Close()
+	defer func() { _ = reader.Close() }()
 
 	content, err := io.ReadAll(reader)
 	if err != nil {

@@ -40,7 +40,7 @@ func TestToggleEndpointRateLimiting(t *testing.T) {
 
 			resp, err := app.Test(req)
 			require.NoError(t, err)
-			resp.Body.Close()
+			_ = resp.Body.Close()
 
 			if resp.StatusCode == http.StatusTooManyRequests {
 				rateLimitedCount++
@@ -66,7 +66,7 @@ func TestToggleEndpointRateLimiting(t *testing.T) {
 
 		resp, err := app.Test(req)
 		require.NoError(t, err)
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		// Check for rate limit headers
 		limitHeader := resp.Header.Get("X-RateLimit-Limit")
@@ -92,7 +92,7 @@ func TestToggleEndpointRateLimiting(t *testing.T) {
 
 			resp, err := app.Test(req)
 			require.NoError(t, err)
-			resp.Body.Close()
+			_ = resp.Body.Close()
 		}
 
 		// Different IP - should still have available quota
@@ -102,7 +102,7 @@ func TestToggleEndpointRateLimiting(t *testing.T) {
 
 		resp, err := app.Test(req)
 		require.NoError(t, err)
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		// Should not be rate limited since it's a different IP
 		// May get 503 (service unavailable) or 200 (if config available), but not 429
@@ -132,7 +132,7 @@ func TestToggleEndpointRateLimiting(t *testing.T) {
 			if resp.StatusCode == http.StatusTooManyRequests {
 				var result map[string]interface{}
 				err = json.NewDecoder(resp.Body).Decode(&result)
-				resp.Body.Close()
+				_ = resp.Body.Close()
 				require.NoError(t, err)
 
 				// Check that error message exists
@@ -145,7 +145,7 @@ func TestToggleEndpointRateLimiting(t *testing.T) {
 				}
 				return
 			}
-			resp.Body.Close()
+			_ = resp.Body.Close()
 		}
 	})
 }
@@ -174,7 +174,7 @@ func TestRateLimitingWithJWT(t *testing.T) {
 
 			resp, err := app.Test(req)
 			require.NoError(t, err)
-			resp.Body.Close()
+			_ = resp.Body.Close()
 
 			// Once rate limited, should get 429 (not 401 for missing auth)
 			// This proves rate limiting is checked first
@@ -208,7 +208,7 @@ func TestRateLimitRecovery(t *testing.T) {
 
 		resp, err := app.Test(req)
 		require.NoError(t, err)
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		// Should get a response (not necessarily success, but not rate limited)
 		assert.NotEqual(t, http.StatusTooManyRequests, resp.StatusCode,
@@ -246,7 +246,7 @@ func TestRateLimitConfiguration(t *testing.T) {
 
 			resp, err := app.Test(req)
 			require.NoError(t, err)
-			resp.Body.Close()
+			_ = resp.Body.Close()
 
 			if resp.StatusCode != http.StatusTooManyRequests {
 				successCount++

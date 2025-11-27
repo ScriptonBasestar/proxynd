@@ -51,7 +51,7 @@ type MockUpstreamResponse struct {
 // SetupIntegrationTest 통합 테스트 환경 설정
 func SetupIntegrationTest(t *testing.T) *IntegrationTestEnvironment {
 	// Set development mode for tests to bypass authentication
-	os.Setenv("PROXYND_ENV", "development")
+	_ = os.Setenv("PROXYND_ENV", "development")
 
 	// 임시 디렉토리 생성
 	configDir, err := os.MkdirTemp("", "proxynd-integration-config-*")

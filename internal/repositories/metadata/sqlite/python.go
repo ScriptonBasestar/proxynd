@@ -135,7 +135,7 @@ func (r *PythonRepository) ListPackages(ctx context.Context, req *ports.ListPyth
 	if err != nil {
 		return nil, fmt.Errorf("failed to list packages: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var packages []*ports.PythonPackage
 	for rows.Next() {
@@ -285,9 +285,9 @@ func (r *PythonRepository) GetVersion(ctx context.Context, packageName, version 
 		return nil, fmt.Errorf("failed to get version: %w", err)
 	}
 
-	// Parse JSON fields
-	json.Unmarshal([]byte(classifiersJSON), &ver.Classifiers)
-	json.Unmarshal([]byte(depsJSON), &ver.Dependencies)
+	// Parse JSON fields (best-effort, ignore errors for malformed JSON)
+	_ = json.Unmarshal([]byte(classifiersJSON), &ver.Classifiers)
+	_ = json.Unmarshal([]byte(depsJSON), &ver.Dependencies)
 
 	ver.CreatedAt, _ = time.Parse("2006-01-02 15:04:05", createdAt)
 
@@ -317,7 +317,7 @@ func (r *PythonRepository) ListVersions(ctx context.Context, req *ports.ListPyth
 	if err != nil {
 		return nil, fmt.Errorf("failed to list versions: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var versions []*ports.PythonPackageVersion
 	for rows.Next() {
@@ -344,8 +344,8 @@ func (r *PythonRepository) ListVersions(ctx context.Context, req *ports.ListPyth
 			return nil, fmt.Errorf("failed to scan version: %w", err)
 		}
 
-		json.Unmarshal([]byte(classifiersJSON), &ver.Classifiers)
-		json.Unmarshal([]byte(depsJSON), &ver.Dependencies)
+		_ = json.Unmarshal([]byte(classifiersJSON), &ver.Classifiers)
+		_ = json.Unmarshal([]byte(depsJSON), &ver.Dependencies)
 
 		ver.CreatedAt, _ = time.Parse("2006-01-02 15:04:05", createdAt)
 

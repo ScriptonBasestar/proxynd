@@ -117,7 +117,7 @@ func ParseManifestFromTarball(tarballReader io.Reader) (*Manifest, error) {
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrTarballCorrupted, err)
 	}
-	defer gzr.Close()
+	defer func() { _ = gzr.Close() }()
 
 	// Create tar reader
 	tr := tar.NewReader(gzr)

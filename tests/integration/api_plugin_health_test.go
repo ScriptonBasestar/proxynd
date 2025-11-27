@@ -29,7 +29,7 @@ func TestPluginHealthEndpoint_WithoutPluginManager(t *testing.T) {
 
 	resp, err := app.Test(req, -1)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Should return 503 Service Unavailable
 	assert.Equal(t, http.StatusServiceUnavailable, resp.StatusCode)
@@ -68,7 +68,7 @@ func TestPluginHealthEndpoint_WithUninitializedManager(t *testing.T) {
 
 	resp, err := app.Test(req, -1)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Should return 200 OK
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -126,7 +126,7 @@ func TestPluginHealthEndpoint_WithInitializedManager(t *testing.T) {
 
 	resp, err := app.Test(req, -1)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Should return 200 OK
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -180,7 +180,7 @@ func TestPluginHealthEndpoint_ResponseStructure(t *testing.T) {
 
 	resp, err := app.Test(req, -1)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
@@ -258,7 +258,7 @@ func TestPluginHealthEndpoint_Integration(t *testing.T) {
 	// Make request to health endpoint
 	resp, err := env.MakeRequest("GET", "/api/v1/plugins/health", nil)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Verify response
 	assert.Equal(t, http.StatusOK, resp.StatusCode)

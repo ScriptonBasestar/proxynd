@@ -169,8 +169,8 @@ func TestTokenBucketRateLimiter_MultipleKeys(t *testing.T) {
 	ctx := context.Background()
 
 	// Key 1 - consume all tokens
-	rl.Allow(ctx, "key1")
-	rl.Allow(ctx, "key1")
+	_, _ = rl.Allow(ctx, "key1")
+	_, _ = rl.Allow(ctx, "key1")
 	ok, _ := rl.Allow(ctx, "key1")
 	if ok {
 		t.Error("expected key1 to be rate limited")
@@ -195,8 +195,8 @@ func TestTokenBucketRateLimiter_Reset(t *testing.T) {
 	ctx := context.Background()
 
 	// Consume all tokens
-	rl.Allow(ctx, "test-key")
-	rl.Allow(ctx, "test-key")
+	_, _ = rl.Allow(ctx, "test-key")
+	_, _ = rl.Allow(ctx, "test-key")
 	ok, _ := rl.Allow(ctx, "test-key")
 	if ok {
 		t.Error("expected to be rate limited")

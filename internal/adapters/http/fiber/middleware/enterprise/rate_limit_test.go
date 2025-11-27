@@ -114,7 +114,7 @@ func TestRateLimiter_BurstAllowance(t *testing.T) {
 		req := httptest.NewRequest("GET", "/test", nil)
 		resp, err := app.Test(req)
 		require.NoError(t, err)
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		assert.Equal(t, 200, resp.StatusCode, "Request %d should succeed (within burst)", i)
 	}
@@ -123,7 +123,7 @@ func TestRateLimiter_BurstAllowance(t *testing.T) {
 	req := httptest.NewRequest("GET", "/test", nil)
 	resp, err := app.Test(req)
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, 429, resp.StatusCode, "Request beyond burst should fail")
 }
@@ -152,7 +152,7 @@ func TestRateLimiter_Skip(t *testing.T) {
 		req.Header.Set("X-Admin", adminHeaderValue)
 		resp, err := app.Test(req)
 		require.NoError(t, err)
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		assert.Equal(t, 200, resp.StatusCode, "Admin request %d should succeed", i)
 	}

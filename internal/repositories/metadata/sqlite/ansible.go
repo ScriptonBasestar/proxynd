@@ -110,7 +110,7 @@ func (r *AnsibleRepository) ListNamespaces(ctx context.Context, req *ports.ListN
 	if err != nil {
 		return nil, fmt.Errorf("failed to list namespaces: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var namespaces []*ports.AnsibleNamespace
 	for rows.Next() {
@@ -260,7 +260,7 @@ func (r *AnsibleRepository) ListCollections(ctx context.Context, req *ports.List
 	if err != nil {
 		return nil, fmt.Errorf("failed to list collections: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var collections []*ports.AnsibleCollection
 	for rows.Next() {
@@ -414,10 +414,10 @@ func (r *AnsibleRepository) GetVersion(ctx context.Context, namespace, name, ver
 		return nil, fmt.Errorf("failed to get version: %w", err)
 	}
 
-	// Parse JSON fields
-	json.Unmarshal([]byte(tagsJSON), &ver.Tags)
-	json.Unmarshal([]byte(authorsJSON), &ver.Authors)
-	json.Unmarshal([]byte(depsJSON), &ver.Dependencies)
+	// Parse JSON fields (best-effort, ignore errors for malformed JSON)
+	_ = json.Unmarshal([]byte(tagsJSON), &ver.Tags)
+	_ = json.Unmarshal([]byte(authorsJSON), &ver.Authors)
+	_ = json.Unmarshal([]byte(depsJSON), &ver.Dependencies)
 
 	ver.CreatedAt, _ = time.Parse("2006-01-02 15:04:05", createdAt)
 
@@ -446,7 +446,7 @@ func (r *AnsibleRepository) ListVersions(ctx context.Context, req *ports.ListVer
 	if err != nil {
 		return nil, fmt.Errorf("failed to list versions: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var versions []*ports.AnsibleCollectionVersion
 	for rows.Next() {
