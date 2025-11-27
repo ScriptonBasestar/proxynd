@@ -16,10 +16,21 @@ ProxyND 헥사고널 아키텍처 마이그레이션을 위한 개발자 가이�
   - ErrorRecovery, ErrorHandler, AccessLog, SecurityHeaders, EnhancedRateLimiter integrated
   - Feature flag system for safe testing and rollback
   - Migration progress: 40% → 55%
+- [x] **Phase 2b**: Router imports updated to new architecture
+  - All 7 routers migrated (pool, auth, base, container_proxy, proxy, proxy_v3, unified_v1)
+  - Removed all handlers-legacy and middleware-legacy imports
+  - Created backward-compatible function wrappers
+  - Migration progress: 55% → 75%
+- [x] **Phase 2c**: New architecture enabled as default
+  - Verified new architecture is default behavior (UseNewArchitecture = true)
+  - Updated all migration comments to reflect default status
+  - Enhanced migration status API with progress tracking
+  - Retained feature flag for emergency rollback
+  - All unit tests passing
+  - Migration progress: 75% (Phase 2 complete)
 
 ### 진행 중인 작업 🚧
-- [ ] **Phase 2b**: Update router imports (handlers-legacy → adapters/http/fiber/handlers)
-- [ ] **Phase 2c**: Enable new architecture by default
+- [ ] **Phase 3**: Legacy code removal
 - [ ] 의존성 주입 컨테이너 설정 최적화
 
 ### 예정된 작업 📋
@@ -31,15 +42,15 @@ ProxyND 헥사고널 아키텍처 마이그레이션을 위한 개발자 가이�
 
 ## 📊 Migration Progress
 
-**Overall Progress**: 55% complete (Updated: 2025-11-27)
+**Overall Progress**: 75% complete (Updated: 2025-11-27)
 
 | Phase | Status | Progress | Details |
 |-------|--------|----------|---------|
 | Phase 1 | ✅ Complete | 100% | Files copied to new structure |
 | Phase 2a | ✅ Complete | 100% | Middleware integration |
-| Phase 2b | 🚧 In Progress | 0% | Router import updates |
-| Phase 2c | 📋 Planned | 0% | Default to new architecture |
-| Phase 3 | 📋 Planned | 0% | Legacy code removal |
+| Phase 2b | ✅ Complete | 100% | Router import updates |
+| Phase 2c | ✅ Complete | 100% | Default to new architecture |
+| Phase 3 | 🚧 Next | 0% | Legacy code removal |
 
 **Estimated completion**: Phase 3 completion will bring to 100%
 

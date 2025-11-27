@@ -43,6 +43,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Distroless Image Support**: Added BusyBox shell to Dockerfile.multiarch to enable ulimit support in distroless images
 
 ### Changed
+- **Hexagonal Architecture Migration Phase 2c**: Enabled new architecture as default
+  - Verified and documented that new architecture is default behavior
+  - Updated all migration comments to reflect "default mode" status
+  - Enhanced migration status API with accurate progress tracking
+  - Retained feature flag for emergency rollback capability
+  - Migration progress: 75% complete (Phase 2 fully complete)
+  - All unit tests passing with new architecture
+- **Hexagonal Architecture Migration Phase 2b**: Completed router layer migration to new architecture
+  - Updated all 7 router files to use new hexagonal architecture imports
+  - Removed all `handlers-legacy` and `middleware-legacy` imports from router layer
+  - Created backward-compatible function wrappers for smooth transition
+  - Updated jwt_handler.go to use new middleware package
+  - Migration progress: 55% → 75% complete
+  - All routers: pool, auth, base, container_proxy, proxy, proxy_v3, unified_v1
 - **Hexagonal Architecture Migration Phase 2a**: Implemented new middleware setup in hexagonal architecture
   - Migrated `setupNewMiddlewares()` from legacy fallback to proper new architecture
   - Integrated 5 core middleware: ErrorRecovery, ErrorHandler, AccessLog, SecurityHeaders, EnhancedRateLimiter

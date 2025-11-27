@@ -293,9 +293,10 @@ func (app *Application) initializeFiberApp() {
 		}
 	}
 
-	// === NEW ARCHITECTURE ROUTING (Hybrid Mode) ===
-	// TODO: HEXAGONAL_MIGRATION - Enable new architecture for WebUI API v1 routes
-	routeConfig := InitializeRouteConfig(unifiedConfig, true, app.container) // Enable new architecture for API v1
+	// === NEW ARCHITECTURE ROUTING (Default Mode) ===
+	// HEXAGONAL_MIGRATION Phase 2c Complete - New architecture enabled by default (2025-11-27)
+	// Feature flag allows rollback to legacy mode if needed: set second parameter to false
+	routeConfig := InitializeRouteConfig(unifiedConfig, true, app.container) // New architecture enabled by default
 	SetupRoutes(app.fiberApp, routeConfig)
 
 	// === Hexagonal Architecture Proxy Router (최우선순위) ===
