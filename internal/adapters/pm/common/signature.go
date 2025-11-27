@@ -339,3 +339,47 @@ func (v *SignatureVerifier) verifyPGPSignature(content, signature []byte) error 
 	// This would require integrating with a PGP library like golang.org/x/crypto/openpgp
 	return fmt.Errorf("pgp signature verification not implemented")
 }
+
+// ValidateHashSignature validates hash-based signatures (hex format)
+// Supports MD5 (32), SHA1 (40), SHA256 (64), SHA512 (128)
+// This is a common utility used by all package manager drivers
+func ValidateHashSignature(content, signature []byte) error {
+	sigStr := strings.ToLower(strings.TrimSpace(string(signature)))
+
+	switch len(sigStr) {
+	case 32: // MD5
+		hasher := md5.New()
+		hasher.Write(content)
+		computed := hex.EncodeToString(hasher.Sum(nil))
+		if computed == sigStr {
+			return nil
+		}
+		return fmt.Errorf("MD5 hash mismatch")
+	case 40: // SHA1
+		hasher := sha1.New()
+		hasher.Write(content)
+		computed := hex.EncodeToString(hasher.Sum(nil))
+		if computed == sigStr {
+			return nil
+		}
+		return fmt.Errorf("SHA1 hash mismatch")
+	case 64: // SHA256
+		hasher := sha256.New()
+		hasher.Write(content)
+		computed := hex.EncodeToString(hasher.Sum(nil))
+		if computed == sigStr {
+			return nil
+		}
+		return fmt.Errorf("SHA256 hash mismatch")
+	case 128: // SHA512
+		hasher := sha512.New()
+		hasher.Write(content)
+		computed := hex.EncodeToString(hasher.Sum(nil))
+		if computed == sigStr {
+			return nil
+		}
+		return fmt.Errorf("SHA512 hash mismatch")
+	default:
+		return fmt.Errorf("unknown hash signature length: %d", len(sigStr))
+	}
+}

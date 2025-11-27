@@ -2,10 +2,6 @@ package yum
 
 import (
 	"context"
-	"crypto/sha256"
-	"crypto/sha512"
-	"encoding/base64"
-	"encoding/hex"
 	"fmt"
 	"path/filepath"
 	"regexp"
@@ -177,25 +173,7 @@ func (d *Driver) FetchPackage(ctx context.Context, req *ports.DriverRequest) (*p
 	}
 
 	if repoConfig, exists := d.config.Repositories[repository]; exists && repoConfig.Auth != nil {
-		auth := repoConfig.Auth
-		switch auth.Type {
-		case "basic":
-			// Basic Authentication
-			if auth.Username != "" && auth.Password != "" {
-				headers["Authorization"] = fmt.Sprintf("Basic %s", encodeBasicAuth(auth.Username, auth.Password))
-			}
-		case "bearer", "token":
-			// Bearer Token Authentication
-			if auth.Token != "" {
-				headers["Authorization"] = fmt.Sprintf("Bearer %s", auth.Token)
-			}
-		case "digest":
-			// Digest Authentication - add WWW-Authenticate response handling
-			// Note: Full digest auth requires challenge-response, implemented in HTTP client
-			if auth.Username != "" {
-				headers["X-Auth-Username"] = auth.Username
-			}
-		}
+		common.ApplyAuthentication(headers, repoConfig.Auth)
 	}
 
 	// Fetch from upstream
@@ -383,33 +361,9 @@ func getContentType(path string) string {
 	}
 }
 
-// validateHashSignature validates hash-based signatures
+// validateHashSignature validates hash-based signatures using common utility
 func (d *Driver) validateHashSignature(content, signature []byte) error {
-	sigStr := strings.ToLower(strings.TrimSpace(string(signature)))
-
-	// Try SHA256
-	if len(sigStr) == 64 {
-		hasher := sha256.New()
-		hasher.Write(content)
-		computed := hex.EncodeToString(hasher.Sum(nil))
-		if computed == sigStr {
-			return nil
-		}
-		return fmt.Errorf("SHA256 hash mismatch")
-	}
-
-	// Try SHA512
-	if len(sigStr) == 128 {
-		hasher := sha512.New()
-		hasher.Write(content)
-		computed := hex.EncodeToString(hasher.Sum(nil))
-		if computed == sigStr {
-			return nil
-		}
-		return fmt.Errorf("SHA512 hash mismatch")
-	}
-
-	return fmt.Errorf("unknown hash signature length: %d", len(sigStr))
+	return common.ValidateHashSignature(content, signature)
 }
 
 // parseRepomdMetadata parses repomd.xml metadata
@@ -479,8 +433,3 @@ func (d *Driver) parsePrimaryMetadata(content []byte) (*ports.PackageMetadata, e
 	return metadata, nil
 }
 
-// encodeBasicAuth encodes username and password for HTTP Basic Authentication
-func encodeBasicAuth(username, password string) string {
-	auth := username + ":" + password
-	return base64.StdEncoding.EncodeToString([]byte(auth))
-}

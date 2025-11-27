@@ -3,7 +3,6 @@ package registry
 import (
 	"context"
 	"crypto/sha256"
-	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -187,25 +186,7 @@ func (d *Driver) FetchPackage(ctx context.Context, req *ports.DriverRequest) (*p
 	}
 
 	if registryConfig, exists := d.config.Registries[registry]; exists && registryConfig.Auth != nil {
-		auth := registryConfig.Auth
-		switch auth.Type {
-		case "basic":
-			// Basic Authentication
-			if auth.Username != "" && auth.Password != "" {
-				headers["Authorization"] = fmt.Sprintf("Basic %s", encodeBasicAuth(auth.Username, auth.Password))
-			}
-		case "bearer", "token":
-			// Bearer Token Authentication (Docker registry standard)
-			if auth.Token != "" {
-				headers["Authorization"] = fmt.Sprintf("Bearer %s", auth.Token)
-			}
-		case "digest":
-			// Digest Authentication - add WWW-Authenticate response handling
-			// Note: Full digest auth requires challenge-response, implemented in HTTP client
-			if auth.Username != "" {
-				headers["X-Auth-Username"] = auth.Username
-			}
-		}
+		common.ApplyAuthentication(headers, registryConfig.Auth)
 	}
 
 	// Fetch from upstream
@@ -399,25 +380,7 @@ func (d *Driver) validateDockerDigest(content []byte, digest string) error {
 	return nil
 }
 
-// validateHashSignature validates plain SHA256 hash
+// validateHashSignature validates hash-based signatures using common utility
 func (d *Driver) validateHashSignature(content, signature []byte) error {
-	sigStr := strings.ToLower(strings.TrimSpace(string(signature)))
-
-	if len(sigStr) == 64 {
-		hasher := sha256.New()
-		hasher.Write(content)
-		computed := hex.EncodeToString(hasher.Sum(nil))
-		if computed == sigStr {
-			return nil
-		}
-		return fmt.Errorf("SHA256 hash mismatch")
-	}
-
-	return fmt.Errorf("unknown hash signature length: %d", len(sigStr))
-}
-
-// encodeBasicAuth encodes username and password for HTTP Basic Authentication
-func encodeBasicAuth(username, password string) string {
-	auth := username + ":" + password
-	return base64.StdEncoding.EncodeToString([]byte(auth))
+	return common.ValidateHashSignature(content, signature)
 }

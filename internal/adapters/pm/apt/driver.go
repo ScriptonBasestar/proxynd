@@ -2,9 +2,6 @@ package apt
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/base64"
-	"encoding/hex"
 	"fmt"
 	"path/filepath"
 	"regexp"
@@ -179,25 +176,7 @@ func (d *Driver) FetchPackage(ctx context.Context, req *ports.DriverRequest) (*p
 	// Add authentication if configured
 	mirror := d.getMirrorForPath(req.Path)
 	if mirrorConfig, exists := d.config.Mirrors[mirror]; exists && mirrorConfig.Auth != nil {
-		auth := mirrorConfig.Auth
-		switch auth.Type {
-		case "basic":
-			// Basic Authentication
-			if auth.Username != "" && auth.Password != "" {
-				headers["Authorization"] = fmt.Sprintf("Basic %s", encodeBasicAuth(auth.Username, auth.Password))
-			}
-		case "bearer", "token":
-			// Bearer Token Authentication
-			if auth.Token != "" {
-				headers["Authorization"] = fmt.Sprintf("Bearer %s", auth.Token)
-			}
-		case "digest":
-			// Digest Authentication - add WWW-Authenticate response handling
-			// Note: Full digest auth requires challenge-response, implemented in HTTP client
-			if auth.Username != "" {
-				headers["X-Auth-Username"] = auth.Username
-			}
-		}
+		common.ApplyAuthentication(headers, mirrorConfig.Auth)
 	}
 
 	// Fetch from upstream
@@ -488,26 +467,7 @@ func (d *Driver) parsePackagesMetadata(content []byte) (*ports.PackageMetadata, 
 	return metadata, nil
 }
 
-// validateHashSignature validates hash-based signatures
+// validateHashSignature validates hash-based signatures using common utility
 func (d *Driver) validateHashSignature(content, signature []byte) error {
-	sigStr := strings.ToLower(strings.TrimSpace(string(signature)))
-
-	// Try SHA256
-	if len(sigStr) == 64 {
-		hasher := sha256.New()
-		hasher.Write(content)
-		computed := hex.EncodeToString(hasher.Sum(nil))
-		if computed == sigStr {
-			return nil
-		}
-		return fmt.Errorf("SHA256 hash mismatch")
-	}
-
-	return fmt.Errorf("unknown hash signature length: %d", len(sigStr))
-}
-
-// encodeBasicAuth encodes username and password for HTTP Basic Authentication
-func encodeBasicAuth(username, password string) string {
-	auth := username + ":" + password
-	return base64.StdEncoding.EncodeToString([]byte(auth))
+	return common.ValidateHashSignature(content, signature)
 }
