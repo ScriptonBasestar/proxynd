@@ -2,6 +2,9 @@ package registry
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"regexp"
@@ -184,9 +187,25 @@ func (d *Driver) FetchPackage(ctx context.Context, req *ports.DriverRequest) (*p
 	}
 
 	if registryConfig, exists := d.config.Registries[registry]; exists && registryConfig.Auth != nil {
-		// TODO: Implement Docker registry authentication (Bearer token)
-		// This will be handled by the unified HTTP client
-		_ = registryConfig // Placeholder to avoid empty branch warning
+		auth := registryConfig.Auth
+		switch auth.Type {
+		case "basic":
+			// Basic Authentication
+			if auth.Username != "" && auth.Password != "" {
+				headers["Authorization"] = fmt.Sprintf("Basic %s", encodeBasicAuth(auth.Username, auth.Password))
+			}
+		case "bearer", "token":
+			// Bearer Token Authentication (Docker registry standard)
+			if auth.Token != "" {
+				headers["Authorization"] = fmt.Sprintf("Bearer %s", auth.Token)
+			}
+		case "digest":
+			// Digest Authentication - add WWW-Authenticate response handling
+			// Note: Full digest auth requires challenge-response, implemented in HTTP client
+			if auth.Username != "" {
+				headers["X-Auth-Username"] = auth.Username
+			}
+		}
 	}
 
 	// Fetch from upstream
@@ -229,13 +248,33 @@ func (d *Driver) ParseMetadata(content []byte) (*ports.PackageMetadata, error) {
 
 // ValidateSignature validates Docker registry signatures
 func (d *Driver) ValidateSignature(content, signature []byte) error {
+	// Use the common signature verifier
 	if d.verifier != nil {
 		return d.verifier.VerifySignature(d.Type(), content, signature)
 	}
 
-	// TODO: Implement Docker-specific signature validation
 	// Docker uses content trust and notary for signing
-	return nil
+	// Manifests are signed with sha256 digests
+	// If no verifier is configured, perform basic validation
+	if len(signature) == 0 {
+		// No signature provided
+		return nil
+	}
+
+	sigStr := strings.TrimSpace(string(signature))
+
+	// Check if it's a Docker digest format (sha256:hexhash)
+	if strings.HasPrefix(sigStr, "sha256:") {
+		return d.validateDockerDigest(content, sigStr)
+	}
+
+	// Try plain SHA256 hex hash
+	if len(sigStr) == 64 {
+		return d.validateHashSignature(content, signature)
+	}
+
+	// Unknown signature format
+	return fmt.Errorf("unsupported signature format for Docker registry")
 }
 
 // GetCacheKey generates cache key for Docker registry request
@@ -335,4 +374,50 @@ func getContentType(path string, headers map[string]string) string {
 	}
 
 	return "application/json"
+}
+
+// validateDockerDigest validates Docker digest format (sha256:hexhash)
+func (d *Driver) validateDockerDigest(content []byte, digest string) error {
+	// Docker digest format: sha256:hexhash
+	if !strings.HasPrefix(digest, "sha256:") {
+		return fmt.Errorf("invalid Docker digest format: %s", digest)
+	}
+
+	expectedHash := strings.TrimPrefix(digest, "sha256:")
+	if len(expectedHash) != 64 {
+		return fmt.Errorf("invalid Docker sha256 digest length: %d", len(expectedHash))
+	}
+
+	hasher := sha256.New()
+	hasher.Write(content)
+	computed := hex.EncodeToString(hasher.Sum(nil))
+
+	if computed != strings.ToLower(expectedHash) {
+		return fmt.Errorf("Docker digest mismatch")
+	}
+
+	return nil
+}
+
+// validateHashSignature validates plain SHA256 hash
+func (d *Driver) validateHashSignature(content, signature []byte) error {
+	sigStr := strings.ToLower(strings.TrimSpace(string(signature)))
+
+	if len(sigStr) == 64 {
+		hasher := sha256.New()
+		hasher.Write(content)
+		computed := hex.EncodeToString(hasher.Sum(nil))
+		if computed == sigStr {
+			return nil
+		}
+		return fmt.Errorf("SHA256 hash mismatch")
+	}
+
+	return fmt.Errorf("unknown hash signature length: %d", len(sigStr))
+}
+
+// encodeBasicAuth encodes username and password for HTTP Basic Authentication
+func encodeBasicAuth(username, password string) string {
+	auth := username + ":" + password
+	return base64.StdEncoding.EncodeToString([]byte(auth))
 }
