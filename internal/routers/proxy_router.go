@@ -7,9 +7,9 @@ import (
 
 	"proxynd/internal/alerts"
 	"proxynd/internal/config"
-	authHandlers "proxynd/internal/handlers-legacy/auth"
-	proxynd "proxynd/internal/handlers-legacy/proxy"
-	middlewares "proxynd/internal/middleware-legacy"
+	authHandlers "proxynd/internal/adapters/http/fiber/handlers/auth"
+	proxynd "proxynd/internal/adapters/http/fiber/handlers/proxy"
+	middlewares "proxynd/internal/adapters/http/fiber/middleware"
 )
 
 // ProxyRouter is exported

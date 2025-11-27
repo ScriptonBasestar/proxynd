@@ -6,7 +6,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	middlewares "proxynd/internal/middleware-legacy"
+	middlewares "proxynd/internal/adapters/http/fiber/middleware"
 )
 
 // LoginRequest 로그인 요청 구조체

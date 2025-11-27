@@ -3,9 +3,9 @@ package routers
 import (
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/internal/handlers-legacy"
-	authHandlers "proxynd/internal/handlers-legacy/auth"
-	middlewares "proxynd/internal/middleware-legacy"
+	handlers "proxynd/internal/adapters/http/fiber/handlers"
+	authHandlers "proxynd/internal/adapters/http/fiber/handlers/auth"
+	middlewares "proxynd/internal/adapters/http/fiber/middleware"
 )
 
 // PoolRouter Connection Pool 관리 라우터
