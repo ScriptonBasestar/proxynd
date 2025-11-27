@@ -1,6 +1,7 @@
 package app
 
 import (
+	"fmt"
 	"os"
 	"time"
 
@@ -43,7 +44,8 @@ func SetupRoutes(app *fiber.App, config *RouteConfig) {
 	logger.Info("Setting up routes",
 		logging.Bool("new_architecture", config.UseNewArchitecture))
 
-	// TODO: HEXAGONAL_MIGRATION - Phase out legacy routes gradually
+	// HEXAGONAL_MIGRATION Phase 2c - New architecture is now default
+	// Legacy mode retained for emergency rollback only
 	if config.UseNewArchitecture {
 		setupNewArchitectureRoutes(app, config)
 	} else {
@@ -244,9 +246,10 @@ func InitializeRouteConfig(unifiedConfig *config.UnifiedConfig, useNewArch bool,
 	}
 }
 
-// TODO: HEXAGONAL_MIGRATION - Migration utilities
+// HEXAGONAL_MIGRATION - Migration utilities (Phase 2c complete)
+// These functions allow runtime switching for testing/rollback
 
-// EnableNewArchitecture switches to new architecture mode
+// EnableNewArchitecture switches to new architecture mode (default since Phase 2c)
 func (rc *RouteConfig) EnableNewArchitecture() {
 	rc.UseNewArchitecture = true
 	rc.Logger.Info("Switched to new architecture mode")
@@ -260,11 +263,79 @@ func (rc *RouteConfig) DisableNewArchitecture() {
 
 // GetMigrationStatus returns current migration status
 func (rc *RouteConfig) GetMigrationStatus() map[string]interface{} {
+	// Calculate migration progress dynamically based on completed phases
+	// Phase 1: Files copied (25%)
+	// Phase 2a: Middleware integrated (25%)
+	// Phase 2b: Routers migrated (25%)
+	// Phase 2c: Default enabled (25%)
+	// Phase 3: Legacy removed (not started = 0%)
+	progress := calculateMigrationProgress()
+
 	return map[string]interface{}{
 		"new_architecture_enabled": rc.UseNewArchitecture,
-		"migration_phase":          "handlers_copied",
-		"legacy_fallback_active":   true,
+		"migration_phase":          getCurrentMigrationPhase(),
+		"default_mode":             getDefaultMode(rc.UseNewArchitecture),
+		"legacy_fallback_active":   true, // Still available for rollback
+		"migration_progress":       progress,
+		"phases": map[string]interface{}{
+			"phase_1_files_copied":     true,  // 25%
+			"phase_2a_middleware":      true,  // 25%
+			"phase_2b_routers":         true,  // 25%
+			"phase_2c_default_enabled": true,  // 25%
+			"phase_3_legacy_removed":   false, // 0% (pending)
+		},
 	}
+}
+
+// calculateMigrationProgress computes the current migration progress percentage
+func calculateMigrationProgress() string {
+	// Each phase contributes 20% (5 phases total)
+	const (
+		phase1Complete  = true  // Files copied
+		phase2aComplete = true  // Middleware integrated
+		phase2bComplete = true  // Routers migrated
+		phase2cComplete = true  // Default enabled (completed 2025-11-27)
+		phase3Complete  = false // Legacy removed (pending)
+	)
+
+	progress := 0
+	if phase1Complete {
+		progress += 20
+	}
+	if phase2aComplete {
+		progress += 20
+	}
+	if phase2bComplete {
+		progress += 20
+	}
+	if phase2cComplete {
+		progress += 20
+	}
+	if phase3Complete {
+		progress += 20
+	}
+
+	// Format as percentage string
+	return fmt.Sprintf("%d%%", progress)
+}
+
+// getCurrentMigrationPhase returns the current active migration phase
+func getCurrentMigrationPhase() string {
+	// Update this when phases progress
+	const phase3Complete = false
+
+	if !phase3Complete {
+		return "phase_2c_complete" // Updated 2025-11-27
+	}
+	return "phase_3_complete"
+}
+
+// getDefaultMode returns the default architecture mode
+func getDefaultMode(useNewArchitecture bool) string {
+	if useNewArchitecture {
+		return "new_architecture"
+	}
+	return "legacy_architecture"
 }
 
 // setupCacheManagerForAPI initializes and sets cache manager for API v1 stats

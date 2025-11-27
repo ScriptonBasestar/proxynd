@@ -19,8 +19,15 @@ type SearchResultMirror = usecase.SearchResultMirror
 // SearchResponse represents the API response
 type SearchResponse = usecase.SearchResponse
 
-// SearchHandler handles content search across proxies using hexagonal architecture
-type SearchHandler struct {
+// SearchHandler is a backward-compatible alias for SearchHandlerFunc
+// Deprecated: This variable wrapper is for backward compatibility only.
+// For new code, use NewSearchHandler() with dependency injection.
+// Migration path: Router → SearchHandlerStruct (Phase 2b complete, 2025-11-27)
+// Planned removal: Phase 3 (legacy cleanup, target v2.0.0)
+var SearchHandler = SearchHandlerFunc
+
+// SearchHandlerStruct handles content search across proxies using hexagonal architecture
+type SearchHandlerStruct struct {
 	*BaseHandler
 	searchService *usecase.SearchService
 }
@@ -29,15 +36,15 @@ type SearchHandler struct {
 func NewSearchHandler(
 	base *BaseHandler,
 	searchService *usecase.SearchService,
-) *SearchHandler {
-	return &SearchHandler{
+) *SearchHandlerStruct {
+	return &SearchHandlerStruct{
 		BaseHandler:   base,
 		searchService: searchService,
 	}
 }
 
 // Handle implements ports.HTTPHandler for search requests
-func (h *SearchHandler) Handle(ctx ports.HTTPContext) error {
+func (h *SearchHandlerStruct) Handle(ctx ports.HTTPContext) error {
 	// Extract request parameters
 	query := ctx.Query("q")
 	proxyType := ctx.Query("type")
@@ -84,7 +91,10 @@ func (h *SearchHandler) Handle(ctx ports.HTTPContext) error {
 }
 
 // SearchHandlerFunc is a backward-compatible function-based handler
-// Deprecated: Use SearchHandler struct with dependency injection instead
+// Deprecated: This function is for backward compatibility only.
+// For new code, use SearchHandlerStruct with NewSearchHandler() and dependency injection.
+// Migration path: Router → SearchHandlerStruct (Phase 2b complete, 2025-11-27)
+// Planned removal: Phase 3 (legacy cleanup, target v2.0.0)
 func SearchHandlerFunc(c *fiber.Ctx) error {
 	// Extract request parameters
 	query := c.Query("q")

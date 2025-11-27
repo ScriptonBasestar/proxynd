@@ -8,8 +8,8 @@ import (
 	"proxynd/internal/usecase"
 )
 
-// UnifiedProxyHandler 통합 프록시 핸들러 (Hexagonal Architecture)
-type UnifiedProxyHandler struct {
+// UnifiedProxyHandlerStruct 통합 프록시 핸들러 (Hexagonal Architecture)
+type UnifiedProxyHandlerStruct struct {
 	proxyService   *usecase.ProxyService
 	adapterFactory *factory.HandlerAdapterFactory
 	logger         logging.Logger
@@ -20,8 +20,8 @@ func NewUnifiedProxyHandler(
 	proxyService *usecase.ProxyService,
 	adapterFactory *factory.HandlerAdapterFactory,
 	logger logging.Logger,
-) *UnifiedProxyHandler {
-	return &UnifiedProxyHandler{
+) *UnifiedProxyHandlerStruct {
+	return &UnifiedProxyHandlerStruct{
 		proxyService:   proxyService,
 		adapterFactory: adapterFactory,
 		logger:         logger,
@@ -29,7 +29,7 @@ func NewUnifiedProxyHandler(
 }
 
 // Handle processes unified proxy requests using injected dependencies
-func (h *UnifiedProxyHandler) Handle(c *fiber.Ctx) error {
+func (h *UnifiedProxyHandlerStruct) Handle(c *fiber.Ctx) error {
 	proxyType := c.Params("type")
 	path := c.Params("*")
 
@@ -100,6 +100,36 @@ func (h *UnifiedProxyHandler) Handle(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusInternalServerError).SendString("Proxy service not initialized")
 }
 
-// Note: Legacy global functions UnifiedProxyHandler and UnifiedProxyHandlerWithFactory
-// have been removed. They are available in internal/handlers-legacy/proxy for backward compatibility.
-// Use the new DI-based UnifiedProxyHandler struct with NewUnifiedProxyHandler() instead.
+// Backward-compatible function wrappers for router migration
+// These allow routers to continue using function-style handlers while we migrate to struct-based DI
+
+var (
+	globalHandlerInstance *UnifiedProxyHandlerStruct
+	globalAdapterFactory  *factory.HandlerAdapterFactory
+)
+
+// InitializeGlobalHandler initializes the global handler instance for backward compatibility
+func InitializeGlobalHandler() {
+	if globalAdapterFactory == nil {
+		globalAdapterFactory = factory.NewHandlerAdapterFactory()
+	}
+	if globalHandlerInstance == nil {
+		logger := logging.GetLogger()
+		globalHandlerInstance = NewUnifiedProxyHandler(nil, globalAdapterFactory, logger)
+		logger.Info("Global unified proxy handler initialized for backward compatibility")
+	}
+}
+
+// UnifiedProxyHandler backward-compatible function wrapper
+// Deprecated: Use NewUnifiedProxyHandler() with dependency injection instead
+func UnifiedProxyHandler(c *fiber.Ctx) error {
+	if globalHandlerInstance == nil {
+		InitializeGlobalHandler()
+	}
+	return globalHandlerInstance.Handle(c)
+}
+
+// Deprecated: This function wrapper is for backward compatibility only.
+// For new code, use NewUnifiedProxyHandler() with dependency injection.
+// Migration path: Router → UnifiedProxyHandlerStruct (Phase 2b complete, 2025-11-27)
+// Planned removal: Phase 3 (legacy cleanup, target v2.0.0)
