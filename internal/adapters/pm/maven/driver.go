@@ -2,6 +2,12 @@ package maven
 
 import (
 	"context"
+	"crypto/md5"
+	"crypto/sha1"
+	"crypto/sha256"
+	"crypto/sha512"
+	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"path/filepath"
 	"regexp"
@@ -144,9 +150,25 @@ func (d *Driver) FetchPackage(ctx context.Context, req *ports.DriverRequest) (*p
 	}
 
 	if repoConfig, exists := d.config.Repositories[repository]; exists && repoConfig.Auth != nil {
-		// TODO: Implement authentication headers
-		// This will be handled by the unified HTTP client
-		_ = repoConfig // Placeholder to avoid empty branch warning
+		auth := repoConfig.Auth
+		switch auth.Type {
+		case "basic":
+			// Basic Authentication
+			if auth.Username != "" && auth.Password != "" {
+				headers["Authorization"] = fmt.Sprintf("Basic %s", encodeBasicAuth(auth.Username, auth.Password))
+			}
+		case "bearer", "token":
+			// Bearer Token Authentication
+			if auth.Token != "" {
+				headers["Authorization"] = fmt.Sprintf("Bearer %s", auth.Token)
+			}
+		case "digest":
+			// Digest Authentication - add WWW-Authenticate response handling
+			// Note: Full digest auth requires challenge-response, implemented in HTTP client
+			if auth.Username != "" {
+				headers["X-Auth-Username"] = auth.Username
+			}
+		}
 	}
 
 	// Fetch from upstream
@@ -170,25 +192,62 @@ func (d *Driver) FetchPackage(ctx context.Context, req *ports.DriverRequest) (*p
 
 // ParseMetadata parses Maven metadata from content
 func (d *Driver) ParseMetadata(content []byte) (*ports.PackageMetadata, error) {
-	// TODO: Implement Maven POM parsing
-	// This should parse maven-metadata.xml or pom.xml files
+	// Detect content type
+	contentStr := string(content)
+
+	// Check if it's maven-metadata.xml
+	if strings.Contains(contentStr, "<metadata") && strings.Contains(contentStr, "<groupId>") {
+		return d.parseMavenMetadataXML(content)
+	}
+
+	// Check if it's pom.xml
+	if strings.Contains(contentStr, "<project") && strings.Contains(contentStr, "<artifactId>") {
+		return d.parsePOMXML(content)
+	}
+
+	// Check if it's a JAR file (ZIP archive)
+	if len(content) > 4 && string(content[0:2]) == "PK" {
+		return &ports.PackageMetadata{
+			Name:        "java-archive",
+			Description: "Java JAR/WAR/EAR package",
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
+		}, nil
+	}
+
+	// Unknown metadata format
 	return &ports.PackageMetadata{
-		Name:      "unknown",
-		Version:   "unknown",
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+		Name:        "unknown",
+		Description: "Maven metadata",
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
 	}, nil
 }
 
 // ValidateSignature validates Maven package signatures
 func (d *Driver) ValidateSignature(content, signature []byte) error {
+	// Use the common signature verifier
 	if d.verifier != nil {
 		return d.verifier.VerifySignature(d.Type(), content, signature)
 	}
 
-	// TODO: Implement Maven-specific signature validation
 	// Maven uses MD5, SHA1, SHA256, SHA512, PGP signatures
-	return nil
+	// If no verifier is configured, perform basic validation
+	if len(signature) == 0 {
+		// No signature provided
+		return nil
+	}
+
+	// Basic PGP signature format validation
+	sigStr := string(signature)
+	if strings.Contains(sigStr, "BEGIN PGP SIGNATURE") {
+		// PGP signature found, but no verifier configured
+		// Return nil to indicate signature format is valid but not verified
+		return nil
+	}
+
+	// Try hash-based signature validation (MD5, SHA1, SHA256, SHA512)
+	return d.validateHashSignature(content, signature)
 }
 
 // GetCacheKey generates cache key for Maven request
@@ -295,4 +354,167 @@ func getContentType(path string) string {
 	default:
 		return "application/octet-stream"
 	}
+}
+
+// parseMavenMetadataXML parses maven-metadata.xml
+func (d *Driver) parseMavenMetadataXML(content []byte) (*ports.PackageMetadata, error) {
+	// maven-metadata.xml format:
+	// <metadata>
+	//   <groupId>...</groupId>
+	//   <artifactId>...</artifactId>
+	//   <version>...</version>
+	// </metadata>
+
+	contentStr := string(content)
+
+	metadata := &ports.PackageMetadata{
+		Name:        "maven-metadata",
+		Description: "Maven repository metadata",
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+		Attributes:  make(map[string]string),
+	}
+
+	// Extract groupId
+	if start := strings.Index(contentStr, "<groupId>"); start != -1 {
+		start += 9
+		if end := strings.Index(contentStr[start:], "</groupId>"); end != -1 {
+			metadata.Attributes["group_id"] = contentStr[start : start+end]
+		}
+	}
+
+	// Extract artifactId
+	if start := strings.Index(contentStr, "<artifactId>"); start != -1 {
+		start += 12
+		if end := strings.Index(contentStr[start:], "</artifactId>"); end != -1 {
+			metadata.Name = contentStr[start : start+end]
+		}
+	}
+
+	// Extract version (latest or release)
+	if start := strings.Index(contentStr, "<release>"); start != -1 {
+		start += 9
+		if end := strings.Index(contentStr[start:], "</release>"); end != -1 {
+			metadata.Version = contentStr[start : start+end]
+		}
+	} else if start := strings.Index(contentStr, "<latest>"); start != -1 {
+		start += 8
+		if end := strings.Index(contentStr[start:], "</latest>"); end != -1 {
+			metadata.Version = contentStr[start : start+end]
+		}
+	}
+
+	return metadata, nil
+}
+
+// parsePOMXML parses pom.xml
+func (d *Driver) parsePOMXML(content []byte) (*ports.PackageMetadata, error) {
+	// pom.xml format:
+	// <project>
+	//   <groupId>...</groupId>
+	//   <artifactId>...</artifactId>
+	//   <version>...</version>
+	//   <description>...</description>
+	// </project>
+
+	contentStr := string(content)
+
+	metadata := &ports.PackageMetadata{
+		Name:        "unknown",
+		Description: "Maven POM",
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
+		Attributes:  make(map[string]string),
+	}
+
+	// Extract groupId
+	if start := strings.Index(contentStr, "<groupId>"); start != -1 {
+		start += 9
+		if end := strings.Index(contentStr[start:], "</groupId>"); end != -1 {
+			metadata.Attributes["group_id"] = contentStr[start : start+end]
+		}
+	}
+
+	// Extract artifactId
+	if start := strings.Index(contentStr, "<artifactId>"); start != -1 {
+		start += 12
+		if end := strings.Index(contentStr[start:], "</artifactId>"); end != -1 {
+			metadata.Name = contentStr[start : start+end]
+		}
+	}
+
+	// Extract version
+	if start := strings.Index(contentStr, "<version>"); start != -1 {
+		start += 9
+		if end := strings.Index(contentStr[start:], "</version>"); end != -1 {
+			metadata.Version = contentStr[start : start+end]
+		}
+	}
+
+	// Extract description
+	if start := strings.Index(contentStr, "<description>"); start != -1 {
+		start += 13
+		if end := strings.Index(contentStr[start:], "</description>"); end != -1 {
+			metadata.Description = contentStr[start : start+end]
+		}
+	}
+
+	return metadata, nil
+}
+
+// validateHashSignature validates hash-based signatures (MD5, SHA1, SHA256, SHA512)
+func (d *Driver) validateHashSignature(content, signature []byte) error {
+	sigStr := strings.ToLower(strings.TrimSpace(string(signature)))
+
+	// Try MD5 (32 hex characters)
+	if len(sigStr) == 32 {
+		hasher := md5.New()
+		hasher.Write(content)
+		computed := hex.EncodeToString(hasher.Sum(nil))
+		if computed == sigStr {
+			return nil
+		}
+		return fmt.Errorf("MD5 hash mismatch")
+	}
+
+	// Try SHA1 (40 hex characters)
+	if len(sigStr) == 40 {
+		hasher := sha1.New()
+		hasher.Write(content)
+		computed := hex.EncodeToString(hasher.Sum(nil))
+		if computed == sigStr {
+			return nil
+		}
+		return fmt.Errorf("SHA1 hash mismatch")
+	}
+
+	// Try SHA256 (64 hex characters)
+	if len(sigStr) == 64 {
+		hasher := sha256.New()
+		hasher.Write(content)
+		computed := hex.EncodeToString(hasher.Sum(nil))
+		if computed == sigStr {
+			return nil
+		}
+		return fmt.Errorf("SHA256 hash mismatch")
+	}
+
+	// Try SHA512 (128 hex characters)
+	if len(sigStr) == 128 {
+		hasher := sha512.New()
+		hasher.Write(content)
+		computed := hex.EncodeToString(hasher.Sum(nil))
+		if computed == sigStr {
+			return nil
+		}
+		return fmt.Errorf("SHA512 hash mismatch")
+	}
+
+	return fmt.Errorf("unknown hash signature length: %d", len(sigStr))
+}
+
+// encodeBasicAuth encodes username and password for HTTP Basic Authentication
+func encodeBasicAuth(username, password string) string {
+	auth := username + ":" + password
+	return base64.StdEncoding.EncodeToString([]byte(auth))
 }
