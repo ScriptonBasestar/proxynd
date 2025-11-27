@@ -21,9 +21,22 @@ logging:
 `
 )
 
+// setupTestEnvironment sets up required environment variables for tests
+func setupTestEnvironment(t *testing.T, tempDir string) {
+	t.Helper()
+	t.Setenv("CONFIG_DIR", tempDir)
+	t.Setenv("STORAGE_DIR", filepath.Join(tempDir, "storage"))
+
+	// Create storage directory
+	storageDir := filepath.Join(tempDir, "storage")
+	require.NoError(t, os.MkdirAll(storageDir, 0o755))
+}
+
 func TestContainer_GetUnifiedConfig(t *testing.T) {
 	// Given
 	tempDir := t.TempDir()
+	setupTestEnvironment(t, tempDir)
+
 	cfg := &Config{
 		ConfigDir: tempDir,
 		Port:      "8080",
@@ -56,6 +69,8 @@ logging:
 func TestContainer_ReloadConfig(t *testing.T) {
 	// Given
 	tempDir := t.TempDir()
+	setupTestEnvironment(t, tempDir)
+
 	cfg := &Config{
 		ConfigDir: tempDir,
 		Port:      "8080",
@@ -97,6 +112,8 @@ logging:
 func TestContainer_ConfigChangeCallback(t *testing.T) {
 	// Given
 	tempDir := t.TempDir()
+	setupTestEnvironment(t, tempDir)
+
 	cfg := &Config{
 		ConfigDir: tempDir,
 		Port:      "8080",
@@ -147,6 +164,8 @@ logging:
 func TestContainer_InvalidConfig(t *testing.T) {
 	// Given
 	tempDir := t.TempDir()
+	setupTestEnvironment(t, tempDir)
+
 	cfg := &Config{
 		ConfigDir: tempDir,
 		Port:      "8080",
@@ -178,6 +197,8 @@ logging:
 func TestContainer_ConfigFileWatcher(t *testing.T) {
 	// Given
 	tempDir := t.TempDir()
+	setupTestEnvironment(t, tempDir)
+
 	cfg := &Config{
 		ConfigDir: tempDir,
 		Port:      "8080",

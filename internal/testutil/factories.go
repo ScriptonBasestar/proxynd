@@ -78,7 +78,13 @@ func NewFactory(t *testing.T) *Factory {
 // ConfigService creates a test configuration service
 func (f *Factory) ConfigService() configservice.Service {
 	configDir := filepath.Join(f.tempDir, "config")
+	storageDir := filepath.Join(f.tempDir, "storage")
 	require.NoError(f.t, os.MkdirAll(configDir, 0o755))
+	require.NoError(f.t, os.MkdirAll(storageDir, 0o755))
+
+	// Set required environment variables for config loading
+	f.t.Setenv("CONFIG_DIR", configDir)
+	f.t.Setenv("STORAGE_DIR", storageDir)
 
 	// Create test config files
 	f.createTestConfigFiles(configDir)

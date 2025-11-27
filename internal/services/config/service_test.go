@@ -61,10 +61,9 @@ cache:
 				tt.configDir = tempDir
 			}
 
-			// Set config directory environment variable
-			oldConfigDir := os.Getenv("CONFIG_DIR")
-			_ = os.Setenv("CONFIG_DIR", tempDir)
-			defer func() { _ = os.Setenv("CONFIG_DIR", oldConfigDir) }()
+			// Set required environment variables
+			t.Setenv("CONFIG_DIR", tempDir)
+			t.Setenv("STORAGE_DIR", filepath.Join(tempDir, "storage"))
 
 			// Setup test configs
 			tt.setupFunc(t, tempDir)

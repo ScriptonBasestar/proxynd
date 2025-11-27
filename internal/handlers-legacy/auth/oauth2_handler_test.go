@@ -16,6 +16,15 @@ import (
 	"proxynd/internal/config"
 )
 
+// setupTestEnvironment sets up required environment variables for tests
+func setupTestEnvironment(t *testing.T) string {
+	t.Helper()
+	tempDir := t.TempDir()
+	t.Setenv("CONFIG_DIR", tempDir)
+	t.Setenv("STORAGE_DIR", tempDir)
+	return tempDir
+}
+
 // 테스트용 OAuth2 설정 생성
 func createTestOAuth2Config() *config.OAuth2Config {
 	return &config.OAuth2Config{
@@ -74,6 +83,7 @@ func createTestApp() *fiber.App {
 }
 
 func TestStartOAuth2Login(t *testing.T) {
+	setupTestEnvironment(t)
 	app := createTestApp()
 
 	// 테스트용 OAuth2 설정 생성
@@ -102,6 +112,7 @@ func TestStartOAuth2Login(t *testing.T) {
 }
 
 func TestHandleOAuth2Callback_MissingParameters(t *testing.T) {
+	setupTestEnvironment(t)
 	app := createTestApp()
 
 	tests := []struct {
@@ -150,6 +161,7 @@ func TestHandleOAuth2Callback_MissingParameters(t *testing.T) {
 }
 
 func TestHandleOAuth2Callback_InvalidState(t *testing.T) {
+	setupTestEnvironment(t)
 	app := createTestApp()
 
 	req := httptest.NewRequest("GET", "/auth/callback/github?code=test_code&state=invalid_state", nil)
@@ -172,6 +184,7 @@ func TestHandleOAuth2Callback_InvalidState(t *testing.T) {
 }
 
 func TestGetAuthStatus_NotAuthenticated(t *testing.T) {
+	setupTestEnvironment(t)
 	app := createTestApp()
 
 	req := httptest.NewRequest("GET", "/auth/status", nil)
@@ -198,6 +211,7 @@ func TestGetAuthStatus_NotAuthenticated(t *testing.T) {
 }
 
 func TestGetCurrentUser_NotAuthenticated(t *testing.T) {
+	setupTestEnvironment(t)
 	app := createTestApp()
 
 	req := httptest.NewRequest("GET", "/auth/me", nil)
@@ -220,6 +234,7 @@ func TestGetCurrentUser_NotAuthenticated(t *testing.T) {
 }
 
 func TestHandleLogout_WithSession(t *testing.T) {
+	setupTestEnvironment(t)
 	app := createTestApp()
 
 	// 세션에 사용자 정보 설정
@@ -247,6 +262,7 @@ func TestHandleLogout_WithSession(t *testing.T) {
 }
 
 func TestRefreshToken_NoRefreshToken(t *testing.T) {
+	setupTestEnvironment(t)
 	app := createTestApp()
 
 	req := httptest.NewRequest("POST", "/auth/refresh", nil)
