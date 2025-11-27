@@ -8,6 +8,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/aws/aws-sdk-go-v2/service/ssm"
+	"github.com/aws/aws-sdk-go-v2/service/ssm/types"
 )
 
 // ClientConfig holds AWS client configuration
@@ -20,9 +22,9 @@ type ClientConfig struct {
 
 // AWSClient provides AWS service clients
 type AWSClient struct {
-	config aws.Config
-	// ssmClient *ssm.Client // TODO: Add SSM dependency
-	s3Client *s3.Client
+	config    aws.Config
+	ssmClient *ssm.Client
+	s3Client  *s3.Client
 }
 
 // NewAWSClient creates a new AWS client with the provided configuration
@@ -55,21 +57,18 @@ func NewAWSClient(ctx context.Context, cfg ClientConfig) (*AWSClient, error) {
 	}
 
 	client := &AWSClient{
-		config: awsConfig,
-		// ssmClient: ssm.NewFromConfig(awsConfig), // TODO: Add SSM dependency
-		s3Client: s3.NewFromConfig(awsConfig),
+		config:    awsConfig,
+		ssmClient: ssm.NewFromConfig(awsConfig),
+		s3Client:  s3.NewFromConfig(awsConfig),
 	}
 
 	return client, nil
 }
 
 // GetSSMClient returns the SSM client for parameter store operations
-// TODO: Add SSM dependency
-/*
 func (c *AWSClient) GetSSMClient() *ssm.Client {
 	return c.ssmClient
 }
-*/
 
 // GetS3Client returns the S3 client for storage operations
 func (c *AWSClient) GetS3Client() *s3.Client {
@@ -77,8 +76,6 @@ func (c *AWSClient) GetS3Client() *s3.Client {
 }
 
 // GetParameter retrieves a parameter from AWS SSM Parameter Store
-// TODO: Add SSM dependency
-/*
 func (c *AWSClient) GetParameter(ctx context.Context, name string, withDecryption bool) (string, error) {
 	input := &ssm.GetParameterInput{
 		Name:           aws.String(name),
@@ -96,11 +93,8 @@ func (c *AWSClient) GetParameter(ctx context.Context, name string, withDecryptio
 
 	return *result.Parameter.Value, nil
 }
-*/
 
 // GetParameters retrieves multiple parameters from AWS SSM Parameter Store
-// TODO: Add SSM dependency
-/*
 func (c *AWSClient) GetParameters(ctx context.Context, names []string, withDecryption bool) (map[string]string, error) {
 	if len(names) == 0 {
 		return make(map[string]string), nil
@@ -137,13 +131,77 @@ func (c *AWSClient) GetParameters(ctx context.Context, names []string, withDecry
 
 	return params, nil
 }
-*/
+
+// GetParametersByPath retrieves all parameters under a specific path
+// This is useful for retrieving configuration hierarchies
+func (c *AWSClient) GetParametersByPath(ctx context.Context, path string, withDecryption bool, recursive bool) (map[string]string, error) {
+	params := make(map[string]string)
+	var nextToken *string
+
+	for {
+		input := &ssm.GetParametersByPathInput{
+			Path:           aws.String(path),
+			WithDecryption: aws.Bool(withDecryption),
+			Recursive:      aws.Bool(recursive),
+			NextToken:      nextToken,
+		}
+
+		result, err := c.ssmClient.GetParametersByPath(ctx, input)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get parameters by path %s: %w", path, err)
+		}
+
+		// Add parameters to map
+		for _, param := range result.Parameters {
+			if param.Name != nil && param.Value != nil {
+				params[*param.Name] = *param.Value
+			}
+		}
+
+		// Check if there are more parameters
+		if result.NextToken == nil {
+			break
+		}
+		nextToken = result.NextToken
+	}
+
+	return params, nil
+}
+
+// PutParameter creates or updates a parameter in AWS SSM Parameter Store
+func (c *AWSClient) PutParameter(ctx context.Context, name string, value string, paramType types.ParameterType, overwrite bool) error {
+	input := &ssm.PutParameterInput{
+		Name:      aws.String(name),
+		Value:     aws.String(value),
+		Type:      paramType,
+		Overwrite: aws.Bool(overwrite),
+	}
+
+	_, err := c.ssmClient.PutParameter(ctx, input)
+	if err != nil {
+		return fmt.Errorf("failed to put parameter %s: %w", name, err)
+	}
+
+	return nil
+}
+
+// DeleteParameter deletes a parameter from AWS SSM Parameter Store
+func (c *AWSClient) DeleteParameter(ctx context.Context, name string) error {
+	input := &ssm.DeleteParameterInput{
+		Name: aws.String(name),
+	}
+
+	_, err := c.ssmClient.DeleteParameter(ctx, input)
+	if err != nil {
+		return fmt.Errorf("failed to delete parameter %s: %w", name, err)
+	}
+
+	return nil
+}
 
 // HealthCheck verifies that the AWS client can connect to AWS services
-// TODO: Add SSM dependency
-/*
 func (c *AWSClient) HealthCheck(ctx context.Context) error {
-	// Try to get caller identity to verify connectivity
+	// Try to describe parameters to verify SSM connectivity
 	_, err := c.ssmClient.DescribeParameters(ctx, &ssm.DescribeParametersInput{
 		MaxResults: aws.Int32(1),
 	})
@@ -153,4 +211,3 @@ func (c *AWSClient) HealthCheck(ctx context.Context) error {
 
 	return nil
 }
-*/

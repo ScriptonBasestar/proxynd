@@ -1,0 +1,77 @@
+# AWS SSM Parameter Store Configuration Example
+# This example shows how to configure ProxyND to retrieve secrets from AWS SSM
+
+# Global AWS SSM Configuration
+aws_ssm:
+  # Enable SSM integration
+  enabled: true
+
+  # AWS Region where parameters are stored
+  region: "us-east-1"
+
+  # AWS Credentials (optional - will use IAM role if not specified)
+  # Prefer using IAM roles in production
+  # access_key_id: "AKIAIOSFODNN7EXAMPLE"
+  # secret_access_key: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+  # session_token: ""  # Optional, for temporary credentials
+
+  # Cache TTL for parameters (in seconds)
+  # Default: 300 seconds (5 minutes)
+  cache_ttl: 300
+
+  # Parameter prefix for organization
+  # All parameters will be prefixed with this path
+  parameter_prefix: "/proxynd/"
+
+# Example: Using SSM parameters in authentication
+authentication:
+  enabled: true
+  basic_auth:
+    enabled: true
+    # You can reference SSM parameters in your code
+    # The application will fetch these from SSM automatically
+    users:
+      admin: "will-be-fetched-from-ssm"  # Value from /proxynd/auth/admin/password
+
+# Storage configuration
+storage_dir: "/var/lib/proxynd"
+config_dir: "/etc/proxynd"
+
+# Cache configuration
+cache:
+  ttl: 3600
+  use_cache_headers: true
+
+---
+# Example SSM Parameters to create in AWS
+# Use AWS CLI to create these parameters:
+
+# aws ssm put-parameter \
+#   --name "/proxynd/auth/admin/password" \
+#   --value "your-secure-password" \
+#   --type "SecureString" \
+#   --description "ProxyND admin password"
+
+# aws ssm put-parameter \
+#   --name "/proxynd/s3/access-key-id" \
+#   --value "AKIAIOSFODNN7EXAMPLE" \
+#   --type "SecureString" \
+#   --description "S3 cache access key"
+
+# aws ssm put-parameter \
+#   --name "/proxynd/s3/secret-access-key" \
+#   --value "wJalrXUtnFEMI/K7MDENG/bPxRfiCY" \
+#   --type "SecureString" \
+#   --description "S3 cache secret key"
+
+# aws ssm put-parameter \
+#   --name "/proxynd/oauth2/client-secret" \
+#   --value "your-oauth2-client-secret" \
+#   --type "SecureString" \
+#   --description "OAuth2 client secret"
+
+# Retrieve parameters:
+# aws ssm get-parameter --name "/proxynd/auth/admin/password" --with-decryption
+
+# List all ProxyND parameters:
+# aws ssm get-parameters-by-path --path "/proxynd/" --recursive --with-decryption

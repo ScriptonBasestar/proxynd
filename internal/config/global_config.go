@@ -266,14 +266,27 @@ type VerificationConfig struct {
 	PackageTypes   map[string]PackageVerificationConfig `yaml:"package_types,omitempty"`
 }
 
+// AWSSSMConfig represents AWS SSM Parameter Store configuration.
+// It controls how the application retrieves secrets from AWS SSM.
+type AWSSSMConfig struct {
+	Enabled         *bool  `yaml:"enabled,omitempty" default:"false"`
+	Region          string `yaml:"region,omitempty" validate:"omitempty,min=2"`
+	AccessKeyID     string `yaml:"access_key_id,omitempty"`
+	SecretAccessKey string `yaml:"secret_access_key,omitempty"`
+	SessionToken    string `yaml:"session_token,omitempty"`
+	CacheTTL        int    `yaml:"cache_ttl,omitempty" default:"300" validate:"min=0,max=3600"` // 5 minutes default
+	ParameterPrefix string `yaml:"parameter_prefix,omitempty" default:"/proxynd/"`
+}
+
 // GlobalConfig represents the global configuration for ProxyND.
-// It includes storage paths, cache settings, authentication, and verification configuration.
+// It includes storage paths, cache settings, authentication, verification, and AWS SSM configuration.
 type GlobalConfig struct {
 	StorageDir     string                `yaml:"storage_dir,omitempty" validate:"omitempty,path"`
 	ConfigDir      string                `yaml:"config_dir,omitempty" validate:"omitempty,path"`
 	Cache          Cache                 `yaml:"cache,omitempty"`
 	Authentication *AuthenticationConfig `yaml:"authentication,omitempty"`
 	Verification   *VerificationConfig   `yaml:"verification,omitempty"`
+	AWSSSM         *AWSSSMConfig         `yaml:"aws_ssm,omitempty"`
 	CacheDir       string                `yaml:"cache_dir,omitempty" validate:"omitempty,path"`
 	CacheTTL       int                   `yaml:"cache_ttl,omitempty" validate:"min=0,max=604800"`
 	MaxCacheSize   int64                 `yaml:"max_cache_size,omitempty" validate:"min=0"`
