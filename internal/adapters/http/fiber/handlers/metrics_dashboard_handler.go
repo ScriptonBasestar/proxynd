@@ -27,8 +27,8 @@ func (h *MetricsDashboardHandler) GetDashboardMetrics(c *fiber.Ctx) error {
 	dashboard, err := h.aggregator.GetDashboardMetrics()
 	if err != nil {
 		h.logger.Error("Failed to get dashboard metrics",
-			"error", err,
-			"remote_ip", c.IP(),
+			logging.F("error", err),
+			logging.F("remote_ip", c.IP()),
 		)
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to retrieve dashboard metrics",
