@@ -139,9 +139,22 @@ func MFAMiddleware(config *MFAMiddlewareConfig) fiber.Handler {
 		}
 
 		// JWT에 MFA 인증 정보가 있는지 확인 (토큰 발급 시 MFA가 완료된 경우)
-		// Note: MFA verification would need to be added to Claims struct
-		// For now, we'll skip this check and proceed with standard MFA flow
-		// TODO: Add MFA fields to Claims struct and implement verification
+		if claims.MFAVerified {
+			// MFA 검증 시각이 최근인지 확인 (24시간 이내)
+			if claims.MFAVerifiedAt != nil && time.Since(*claims.MFAVerifiedAt) < 24*time.Hour {
+				logger.Debug("MFA already verified in JWT token",
+					logging.F("user_id", claims.UserID),
+					logging.F("mfa_method", claims.MFAMethod),
+					logging.F("verified_at", claims.MFAVerifiedAt))
+				// MFA 검증 상태를 로컬에 설정하여 이후 체크 스킵
+				c.Locals("mfa_verified", true)
+				return c.Next()
+			}
+			// MFA 검증이 오래되었으면 재인증 필요
+			logger.Warn("MFA verification expired in JWT, re-authentication required",
+				logging.F("user_id", claims.UserID),
+				logging.F("verified_at", claims.MFAVerifiedAt))
+		}
 
 		// MFA 챌린지가 필요한 경우
 		availableMethods := config.getAvailableMethods(userMFA)

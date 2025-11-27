@@ -25,6 +25,10 @@ type Claims struct {
 	Provider      string   `json:"provider"`
 	Organizations []string `json:"organizations,omitempty"`
 	TokenType     string   `json:"token_type"` // "access" 또는 "refresh"
+	// MFA (Multi-Factor Authentication) 관련 필드
+	MFAVerified   bool       `json:"mfa_verified,omitempty"`    // MFA 인증 완료 여부
+	MFAVerifiedAt *time.Time `json:"mfa_verified_at,omitempty"` // MFA 인증 완료 시각
+	MFAMethod     string     `json:"mfa_method,omitempty"`      // MFA 방식 (totp, sms, email 등)
 	jwt.RegisteredClaims
 }
 
