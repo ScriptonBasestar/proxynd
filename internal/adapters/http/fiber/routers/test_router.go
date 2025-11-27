@@ -13,6 +13,10 @@ import (
 	"proxynd/internal/logging"
 )
 
+const (
+	pmDocker = "docker"
+)
+
 // ProxyTestRequest 프록시 테스트 요청 구조체
 type ProxyTestRequest struct {
 	ProxyType string            `json:"proxy_type"`
@@ -203,7 +207,7 @@ func performProxyTest(proxyType string, req ProxyTestRequest) ProxyTestResult {
 		result = testMavenProxy(req)
 	case "pip":
 		result = testPipProxy(req)
-	case "docker":
+	case pmDocker:
 		result = testDockerProxy(req)
 	case common.PMTypeYum:
 		result = testYumProxy(req)

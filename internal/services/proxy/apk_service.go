@@ -38,6 +38,9 @@ const (
 	ApkContentTypeSig     = "application/octet-stream"
 	ApkContentTypeText    = "text/plain; charset=utf-8"
 	ApkContentTypeDefault = "application/octet-stream"
+
+	// Cache status for APK responses
+	apkCacheStatusMiss = "MISS"
 )
 
 // ApkService handles Alpine Linux APK repository proxy requests
@@ -347,7 +350,7 @@ func (s *ApkService) fetchFromUpstream(ctx context.Context, req ProxyRequest, ca
 			// Determine content type
 			contentType := s.getContentType(req.Path)
 			headers["Content-Type"] = contentType
-			headers["X-Cache-Status"] = "MISS"
+			headers["X-Cache-Status"] = apkCacheStatusMiss
 
 			s.Logger.Info("Successfully fetched from upstream",
 				logging.F("proxy", proxy.Name),

@@ -19,7 +19,9 @@ import (
 
 // Constants for API responses
 const (
-	anonUserID = "anonymous"
+	anonUserID        = "anonymous"
+	editionEnterprise = "enterprise"
+	editionCloud      = "cloud"
 )
 
 // Global cache manager reference (set by main app)
@@ -139,10 +141,10 @@ func SetupAPIv1Routes(app *fiber.App, cfg interface{}) {
 func getLicenseType() string {
 	edition := getEdition()
 	switch edition {
-	case "enterprise":
-		return "enterprise"
-	case "cloud":
-		return "cloud"
+	case editionEnterprise:
+		return editionEnterprise
+	case editionCloud:
+		return editionCloud
 	default:
 		return "community"
 	}

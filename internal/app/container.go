@@ -997,7 +997,7 @@ func (c *Container) SetProxyService(proxyService interface{}) {
 func (c *Container) GetOrCreateProxyService() (interface{}, error) {
 	// Check if already created
 	if ps := c.GetProxyService(); ps != nil {
-		if ps == "pending" {
+		if ps == serviceStatusPending {
 			c.logger.Debug("ProxyService creation is pending")
 			return nil, fmt.Errorf("ProxyService creation is pending")
 		}

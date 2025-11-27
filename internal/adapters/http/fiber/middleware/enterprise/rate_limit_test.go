@@ -12,6 +12,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const (
+	adminHeaderValue = "true"
+)
+
 // TestNewRateLimiter tests rate limiter creation with default config
 func TestNewRateLimiter(t *testing.T) {
 	rl := NewRateLimiter(RateLimitConfig{})
@@ -133,7 +137,7 @@ func TestRateLimiter_Skip(t *testing.T) {
 		Burst:  0,
 		Skip: func(c *fiber.Ctx) bool {
 			// Skip rate limiting for admin users
-			return c.Get("X-Admin") == "true"
+			return c.Get("X-Admin") == adminHeaderValue
 		},
 	})
 
@@ -145,7 +149,7 @@ func TestRateLimiter_Skip(t *testing.T) {
 	// Admin user should bypass rate limiting
 	for i := 1; i <= 5; i++ {
 		req := httptest.NewRequest("GET", "/test", nil)
-		req.Header.Set("X-Admin", "true")
+		req.Header.Set("X-Admin", adminHeaderValue)
 		resp, err := app.Test(req)
 		require.NoError(t, err)
 		defer resp.Body.Close()

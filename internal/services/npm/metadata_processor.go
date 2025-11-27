@@ -93,13 +93,13 @@ func (p *metadataProcessorImpl) GetContentType(packagePath string) string {
 	filename := filepath.Base(packagePath)
 	switch {
 	case strings.HasSuffix(filename, ".tgz"):
-		return "application/octet-stream"
+		return mimeApplicationOctetStream
 	case strings.HasSuffix(filename, ".tar.gz"):
-		return "application/octet-stream"
+		return mimeApplicationOctetStream
 	case strings.HasSuffix(filename, ".json"):
 		return "application/json; charset=utf-8"
 	default:
-		return "application/octet-stream"
+		return mimeApplicationOctetStream
 	}
 }
 

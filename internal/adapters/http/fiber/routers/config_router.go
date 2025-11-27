@@ -659,6 +659,7 @@ func notifyConfigReload(c *fiber.Ctx, reloadedAt time.Time) {
 	if err := pluginMgr.NotifyEvent(ctx, event); err != nil {
 		// Log but don't fail the request - notification is best-effort
 		// (logging will be handled by plugin manager internally)
+		_ = err // ignore error, best-effort notification
 	}
 }
 

@@ -16,6 +16,7 @@ import (
 const (
 	mimeApplicationJSONCharsetUTF8 = "application/json; charset=utf-8"
 	mimeApplicationXGzip           = "application/x-gzip"
+	mimeApplicationOctetStream     = "application/octet-stream"
 )
 
 // cacheManagerImpl 캐시 관리 서비스 구현
@@ -264,5 +265,5 @@ func (c *cacheManagerImpl) getContentTypeFromPath(path string) string {
 	} else if strings.Contains(path, ".tgz") {
 		return mimeApplicationXGzip
 	}
-	return "application/octet-stream"
+	return mimeApplicationOctetStream
 }

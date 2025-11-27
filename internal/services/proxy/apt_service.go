@@ -39,12 +39,16 @@ const (
 
 // APT content types
 const (
-	AptContentTypeDebian = "application/vnd.debian.binary-package"
-	AptContentTypeGzip   = "application/gzip"
-	AptContentTypeXz     = "application/x-xz"
-	AptContentTypeBz2    = "application/x-bzip2"
-	AptContentTypePlain  = "text/plain; charset=utf-8"
-	AptContentTypeGPG    = "application/pgp-signature"
+	AptContentTypeDebian   = "application/vnd.debian.binary-package"
+	AptContentTypeGzip     = "application/gzip"
+	AptContentTypeXz       = "application/x-xz"
+	AptContentTypeBz2      = "application/x-bzip2"
+	AptContentTypePlain    = "text/plain; charset=utf-8"
+	AptContentTypeGPG      = "application/pgp-signature"
+	AptContentTypeDefault  = "application/octet-stream"
+
+	// Cache status headers
+	cacheStatusMiss = "MISS"
 )
 
 // AptService handles APT repository proxy requests
@@ -349,7 +353,7 @@ func (s *AptService) fetchFromUpstream(ctx context.Context, req ProxyRequest, ca
 			// Determine content type
 			contentType := s.getContentType(req.Path)
 			headers["Content-Type"] = contentType
-			headers["X-Cache-Status"] = "MISS"
+			headers["X-Cache-Status"] = cacheStatusMiss
 
 			s.Logger.Info("Successfully fetched from upstream",
 				logging.F("proxy", proxy.Name),
@@ -457,7 +461,7 @@ func (s *AptService) getContentType(requestPath string) string {
 		strings.Contains(lowerPath, "contents"):
 		return AptContentTypePlain
 	default:
-		return "application/octet-stream"
+		return AptContentTypeDefault
 	}
 }
 

@@ -12,6 +12,11 @@ import (
 	"proxynd/internal/security"
 )
 
+const (
+	cacheStatusHit  = "HIT"
+	cacheStatusMiss = "MISS"
+)
+
 // BaseProxyService provides common functionality for all proxy services
 type BaseProxyService struct {
 	Logger         logging.Logger
@@ -139,7 +144,7 @@ func (s *BaseProxyService) DetermineContentType(filename string) string {
 	case ".rpm":
 		return "application/x-rpm"
 	default:
-		return "application/octet-stream"
+		return ApkContentTypeSig
 	}
 }
 
@@ -162,9 +167,9 @@ func (s *BaseProxyService) BuildProxyResponse(
 	}
 
 	if cached {
-		headers["X-Cache"] = "HIT"
+		headers["X-Cache"] = cacheStatusHit
 	} else {
-		headers["X-Cache"] = "MISS"
+		headers["X-Cache"] = cacheStatusMiss
 	}
 
 	headers["X-Proxy-Type"] = s.ProxyType

@@ -222,7 +222,7 @@ func addVerificationFields(fields []logging.Field, c *fiber.Ctx) []logging.Field
 
 // shouldLogRequestBody 요청 본문을 로깅할지 확인
 func shouldLogRequestBody(cfg StructuredAccessLogConfig, c *fiber.Ctx) bool {
-	return cfg.IncludeRequestBody && c.Method() != "GET" && c.Method() != "HEAD"
+	return cfg.IncludeRequestBody && c.Method() != MethodGET && c.Method() != "HEAD"
 }
 
 // addRequestBody 요청 본문 추가
