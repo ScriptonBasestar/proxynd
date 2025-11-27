@@ -142,9 +142,10 @@ func TestConfigReloadRateLimiting(t *testing.T) {
 			require.NoError(t, err)
 			resp.Body.Close()
 
-			if resp.StatusCode == http.StatusTooManyRequests {
+			switch resp.StatusCode {
+			case http.StatusTooManyRequests:
 				rateLimitedCount++
-			} else if resp.StatusCode == http.StatusOK {
+			case http.StatusOK:
 				successCount++
 			}
 		}

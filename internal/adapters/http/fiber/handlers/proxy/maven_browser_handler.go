@@ -1556,9 +1556,10 @@ func (h *MavenBrowserHandler) buildGAVTree(entries []DirectoryEntry, basePath st
 		pathParts := strings.Split(strings.Trim(node.FullPath, "/"), "/")
 		if len(pathParts) > 0 {
 			node.GroupID = strings.Join(pathParts[:len(pathParts)-1], ".")
-			if entry.Type == maven.TypeArtifact {
+			switch entry.Type {
+			case maven.TypeArtifact:
 				node.ArtifactID = entry.Name
-			} else if entry.Type == maven.TypeVersion {
+			case maven.TypeVersion:
 				node.Version = entry.Name
 			}
 		}

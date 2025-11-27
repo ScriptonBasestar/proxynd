@@ -227,9 +227,10 @@ func (mc *MetricsCollector) GetSummary() MetricsSummary {
 			summary.DisabledPlugins++
 		}
 
-		if m.Status == PluginStatusReady {
+		switch m.Status {
+		case PluginStatusReady:
 			summary.ReadyPlugins++
-		} else if m.Status == PluginStatusFailed {
+		case PluginStatusFailed:
 			summary.FailedPlugins++
 		}
 

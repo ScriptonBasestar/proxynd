@@ -408,7 +408,6 @@ func validateBasicAuth(authHeader string) bool {
 		if globalConfig.Authentication != nil &&
 			globalConfig.Authentication.BasicAuth != nil &&
 			globalConfig.Authentication.BasicAuth.Users != nil {
-
 			expectedPassword, exists := globalConfig.Authentication.BasicAuth.Users[username]
 			if exists && expectedPassword == password {
 				log.Printf("Basic auth validation passed for user: %s (config)", username)

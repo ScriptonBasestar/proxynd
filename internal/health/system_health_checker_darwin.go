@@ -1,5 +1,4 @@
 //go:build darwin
-// +build darwin
 
 // Package health provides system resource health checking functionality for macOS
 package health

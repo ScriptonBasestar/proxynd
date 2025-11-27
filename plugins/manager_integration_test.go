@@ -314,11 +314,12 @@ func TestPluginLifecycle_FailureHandling(t *testing.T) {
 			}
 
 			// Check logs based on policy
-			if tt.failurePolicy == FailurePolicyWarn {
+			switch tt.failurePolicy {
+			case FailurePolicyWarn:
 				if len(logger.warnLogs) == 0 {
 					t.Error("Expected warning log but found none")
 				}
-			} else if tt.failurePolicy == FailurePolicyContinue {
+			case FailurePolicyContinue:
 				if len(logger.errorLogs) == 0 {
 					t.Error("Expected error log but found none")
 				}
