@@ -481,7 +481,8 @@ func TestPluginLifecycle_ConcurrentAccess(t *testing.T) {
 			}
 
 			if !manager.IsInitialized() && !manager.IsReady() {
-				// State is fine - not yet initialized
+				// State is fine - not yet initialized during startup is expected
+				_ = struct{}{} // placeholder - no action needed in this state
 			}
 		}()
 	}

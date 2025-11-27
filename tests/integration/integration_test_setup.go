@@ -605,10 +605,8 @@ func (env *IntegrationTestEnvironment) MakeRequest(method, path string,
 	}
 
 	// 헤더 설정
-	if headers != nil {
-		for key, value := range headers {
-			req.Header.Set(key, value)
-		}
+	for key, value := range headers {
+		req.Header.Set(key, value)
 	}
 
 	// Fiber의 Test 메서드 사용
