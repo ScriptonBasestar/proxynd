@@ -23,9 +23,8 @@ func TestNewMetricsDashboardHandler(t *testing.T) {
 }
 
 func TestMetricsDashboardHandler_GetDashboardMetrics(t *testing.T) {
-	// Initialize metrics
+	// Initialize metrics (idempotent - only initializes once)
 	metrics.InitMetrics()
-	defer metrics.ResetMetrics()
 	defer metrics.ResetAggregator()
 
 	// Add some test metrics
@@ -64,11 +63,8 @@ func TestMetricsDashboardHandler_GetDashboardMetrics(t *testing.T) {
 }
 
 func TestMetricsDashboardHandler_GetDashboardMetrics_EmptyMetrics(t *testing.T) {
-	// Reset metrics to ensure clean state
-	metrics.ResetMetrics()
-	metrics.ResetAggregator()
+	// Initialize metrics if not already initialized
 	metrics.InitMetrics()
-	defer metrics.ResetMetrics()
 	defer metrics.ResetAggregator()
 
 	// Create handler

@@ -10,8 +10,8 @@ func TestBoolIcon(t *testing.T) {
 		input    bool
 		expected string
 	}{
-		{true, "✓"},
-		{false, "✗"},
+		{true, "✅"},
+		{false, "❌"},
 	}
 
 	for _, test := range tests {
