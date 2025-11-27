@@ -100,14 +100,8 @@ func (c *AWSClient) GetParameters(ctx context.Context, names []string, withDecry
 		return make(map[string]string), nil
 	}
 
-	// Convert string slice to aws.String slice
-	paramNames := make([]string, len(names))
-	for i, name := range names {
-		paramNames[i] = name
-	}
-
 	input := &ssm.GetParametersInput{
-		Names:          paramNames,
+		Names:          names,
 		WithDecryption: aws.Bool(withDecryption),
 	}
 

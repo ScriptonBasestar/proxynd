@@ -8,6 +8,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **AWS SSM Integration**: AWS Systems Manager Parameter Store support with intelligent caching
+  - Complete SSM client with GetParameter, GetParameters, GetParametersByPath operations
+  - TTL-based caching layer (default 5 minutes) to reduce API calls and costs
+  - Thread-safe cache implementation with auto-cleanup goroutine
+  - IAM role support for secure credential management
+  - Comprehensive documentation (425 lines) with security best practices
+  - Example configuration files and AWS CLI commands
+  - Full test suite with integration test scaffolding and benchmarks
+- **Hexagonal Architecture Migration**: Migrated handlers to clean architecture pattern
+  - Refactored SearchHandler to struct-based pattern with dependency injection
+  - Added backward-compatible function wrappers for smooth transition
+  - Established pattern for future handler migrations
+- **Enhanced Verification Configuration**: Configuration-driven package verification system
+  - Added VerificationConfig and PackageVerificationConfig types
+  - Externalized verification policies to YAML configuration
+  - Package-type specific settings for all 7 package managers
+  - Configurable strict mode, block on failure, and alert on failure options
+- **APK Signature Verification**: Improved APK package signature verification flow
+  - Implemented temporary file management for in-memory package verification
+  - Added singleton pattern for verifier initialization
+  - Proper cleanup with defer pattern
 - **Memory Limiting**: Implemented comprehensive memory limiting across all deployment methods
   - Added `ulimit -v 268435456` (256MiB) to all Dockerfiles for OS-level memory enforcement
   - Added ulimits configuration to docker-compose.yml (memlock, nofile, nproc)
