@@ -199,57 +199,121 @@ func (vh *VerificationHandler) sendErrorAlert(
 
 // isStrictMode 엄격 모드 확인
 func (vh *VerificationHandler) isStrictMode() bool {
-	// 설정에서 확인
-	// NOTE: 실제 설정 구조에 맞게 수정 필요
+	if vh.config != nil && vh.config.Verification != nil {
+		return vh.config.Verification.StrictMode
+	}
+	// Default to true for security
 	return true
 }
 
 // shouldBlockOnFailure 검증 실패 시 차단 여부
 func (vh *VerificationHandler) shouldBlockOnFailure() bool {
-	// 설정에서 확인
-	// NOTE: 실제 설정 구조에 맞게 수정 필요
+	if vh.config != nil && vh.config.Verification != nil {
+		return vh.config.Verification.BlockOnFailure
+	}
+	// Default to true for security
 	return true
 }
 
 // loadVerifierConfig 검증 설정 로드
-func loadVerifierConfig(_ *config.GlobalConfig) *verification.VerifierConfig {
+func loadVerifierConfig(globalConfig *config.GlobalConfig) *verification.VerifierConfig {
 	// 기본 설정
-	config := &verification.VerifierConfig{
-		StrictMode:     true,
-		BlockOnFailure: true,
-		AlertOnFailure: true,
-		PackageTypeConfigs: map[string]verification.PackageConfig{
-			"npm": {
-				Enabled:        true,
-				RequiredHashes: []string{"sha512"},
-				TrustedSources: []string{"https://registry.npmjs.org"},
-			},
-			"pip": {
-				Enabled:        true,
-				RequiredHashes: []string{"sha256"},
-				TrustedSources: []string{"https://pypi.org", "https://files.pythonhosted.org"},
-			},
-			"apt": {
-				Enabled:        true,
-				RequiredHashes: []string{"sha256"},
-				TrustedSources: []string{"http://archive.ubuntu.com", "http://security.ubuntu.com"},
-			},
-			"docker": {
-				Enabled:        true,
-				RequiredHashes: []string{"sha256"},
-				TrustedSources: []string{"https://registry-1.docker.io"},
-			},
-			"maven": {
-				Enabled:        true,
-				RequiredHashes: []string{"sha256", "sha1"},
-				TrustedSources: []string{"https://repo1.maven.org"},
-			},
-		},
+	verifierConfig := &verification.VerifierConfig{
+		StrictMode:         true,
+		BlockOnFailure:     true,
+		AlertOnFailure:     true,
+		PackageTypeConfigs: getDefaultPackageTypeConfigs(),
 	}
 
-	// TODO: 실제 설정 파일에서 로드
+	// GlobalConfig에서 설정 로드
+	if globalConfig != nil && globalConfig.Verification != nil {
+		cfg := globalConfig.Verification
 
-	return config
+		// 전역 설정 적용
+		if cfg.Enabled != nil && !*cfg.Enabled {
+			// 검증이 비활성화된 경우 모든 패키지 타입 비활성화
+			for pkgType := range verifierConfig.PackageTypeConfigs {
+				pkgConfig := verifierConfig.PackageTypeConfigs[pkgType]
+				pkgConfig.Enabled = false
+				verifierConfig.PackageTypeConfigs[pkgType] = pkgConfig
+			}
+			verifierConfig.StrictMode = false
+			verifierConfig.BlockOnFailure = false
+			verifierConfig.AlertOnFailure = false
+			return verifierConfig
+		}
+
+		verifierConfig.StrictMode = cfg.StrictMode
+		verifierConfig.BlockOnFailure = cfg.BlockOnFailure
+		verifierConfig.AlertOnFailure = cfg.AlertOnFailure
+
+		// 패키지 타입별 설정 적용
+		if cfg.PackageTypes != nil {
+			for pkgType, pkgCfg := range cfg.PackageTypes {
+				if existing, ok := verifierConfig.PackageTypeConfigs[pkgType]; ok {
+					// 기존 설정 업데이트
+					existing.Enabled = pkgCfg.Enabled
+					if len(pkgCfg.RequiredHashes) > 0 {
+						existing.RequiredHashes = pkgCfg.RequiredHashes
+					}
+					if len(pkgCfg.TrustedSources) > 0 {
+						existing.TrustedSources = pkgCfg.TrustedSources
+					}
+					verifierConfig.PackageTypeConfigs[pkgType] = existing
+				} else {
+					// 새로운 패키지 타입 추가
+					verifierConfig.PackageTypeConfigs[pkgType] = verification.PackageConfig{
+						Enabled:        pkgCfg.Enabled,
+						RequiredHashes: pkgCfg.RequiredHashes,
+						TrustedSources: pkgCfg.TrustedSources,
+					}
+				}
+			}
+		}
+	}
+
+	return verifierConfig
+}
+
+// getDefaultPackageTypeConfigs 기본 패키지 타입 설정 반환
+func getDefaultPackageTypeConfigs() map[string]verification.PackageConfig {
+	return map[string]verification.PackageConfig{
+		"npm": {
+			Enabled:        true,
+			RequiredHashes: []string{"sha512"},
+			TrustedSources: []string{"https://registry.npmjs.org"},
+		},
+		"pip": {
+			Enabled:        true,
+			RequiredHashes: []string{"sha256"},
+			TrustedSources: []string{"https://pypi.org", "https://files.pythonhosted.org"},
+		},
+		"apt": {
+			Enabled:        true,
+			RequiredHashes: []string{"sha256"},
+			TrustedSources: []string{"http://archive.ubuntu.com", "http://security.ubuntu.com"},
+		},
+		"docker": {
+			Enabled:        true,
+			RequiredHashes: []string{"sha256"},
+			TrustedSources: []string{"https://registry-1.docker.io"},
+		},
+		"maven": {
+			Enabled:        true,
+			RequiredHashes: []string{"sha256", "sha1"},
+			TrustedSources: []string{"https://repo1.maven.org"},
+		},
+		"yum": {
+			Enabled:        true,
+			RequiredHashes: []string{"sha256"},
+			TrustedSources: []string{"http://mirrorlist.centos.org"},
+		},
+		"apk": {
+			Enabled:        true,
+			RequiredHashes: []string{"sha256", "sha1"},
+			TrustedSources: []string{"http://dl-cdn.alpinelinux.org"},
+		},
+	}
 }
 
 // VerificationMiddleware 검증 미들웨어

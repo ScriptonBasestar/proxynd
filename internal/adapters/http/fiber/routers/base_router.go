@@ -7,8 +7,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/template/html/v2"
 
+	"proxynd/internal/adapters/http/fiber/handlers"
 	"proxynd/internal/config"
-	"proxynd/internal/handlers-legacy"
 	"proxynd/internal/logging"
 )
 
@@ -80,7 +80,8 @@ func BaseRouter() *fiber.App {
 	})
 
 	// Add search API
-	app.Get("/api/search", handlers.SearchHandler)
+	// TODO: Migrate to fully injected SearchHandler once dependency injection container is ready
+	app.Get("/api/search", handlers.SearchHandlerFunc)
 
 	// NOTE: MetricsRouter is now handled by SetupRoutes to avoid duplication
 	// MetricsRouter(app, nil) // REMOVED - Called in SetupRoutes instead

@@ -3,6 +3,8 @@ package proxy
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -14,12 +16,12 @@ import (
 	"proxynd/internal/helpers"
 	"proxynd/internal/logging"
 	"proxynd/internal/mirror"
-	"proxynd/internal/verification/apk"
+	apkverification "proxynd/internal/verification/apk"
 	"proxynd/pkg/httpclient"
 )
 
 var (
-	apkVerifierV3        *apk.SignatureVerifier
+	apkVerifierV3        *apkverification.SignatureVerifier
 	apkVerifierV3Once    sync.Once
 	mirrorSelectorV3     *mirror.AlpineMirrorSelector
 	mirrorSelectorV3Once sync.Once
@@ -341,11 +343,9 @@ func (h *ApkHandlerV3) Handle(c *fiber.Ctx) error {
 // 헬퍼 메서드들
 
 // getApkVerifier APK 서명 검증기 싱글톤 인스턴스 반환
-func (h *ApkHandlerV3) getApkVerifier() *apk.SignatureVerifier {
-	apkVerifierV3Once.Do(func() {
-		apkVerifierV3 = apk.NewSignatureVerifier()
-	})
-	return apkVerifierV3
+// getApkVerifier is deprecated, use getOrCreateSignatureVerifier instead
+func (h *ApkHandlerV3) getApkVerifier() *apkverification.SignatureVerifier {
+	return h.getOrCreateSignatureVerifier()
 }
 
 // getMirrorSelector 미러 선택기 싱글톤 인스턴스 반환
@@ -414,10 +414,101 @@ func (h *ApkHandlerV3) verifyApkSignature(body []byte, packagePath string) bool 
 		return true
 	}
 
-	// TODO: 임시 파일에 저장하여 검증하거나, 메모리 기반 검증 구현
-	// 현재는 간단히 검증 통과로 처리 (실제 구현시 apk.SignatureVerifier 사용)
-	h.GetLogger().Debug("APK 서명 검증 건너뜀 (메모리 기반 검증 미구현)",
-		logging.F("package_path", packagePath))
+	// APK 검증을 위해 임시 파일로 저장
+	tempFile, err := h.saveToTempFile(body, packagePath)
+	if err != nil {
+		h.GetLogger().Error("임시 파일 생성 실패",
+			logging.F("package_path", packagePath),
+			logging.F("error", err.Error()))
+		// 검증 실패 시 기본값은 false (보수적 접근)
+		// FailOnInvalid가 false면 검증 실패해도 true 반환
+		return !h.Config.Verification.FailOnInvalid
+	}
+	defer h.cleanupTempFile(tempFile)
+
+	// 서명 검증기를 사용한 검증
+	verifier := h.getOrCreateSignatureVerifier()
+	if verifier == nil {
+		h.GetLogger().Warn("서명 검증기를 생성할 수 없음", logging.F("package_path", packagePath))
+		// FailOnInvalid가 false면 검증 실패해도 true 반환
+		return !h.Config.Verification.FailOnInvalid
+	}
+
+	result := verifier.VerifyApkSignature(tempFile)
+	if result == nil || !result.IsValid {
+		h.GetLogger().Warn("APK 서명 검증 실패",
+			logging.F("package_path", packagePath),
+			logging.F("error", getErrorFromResult(result)))
+		return false
+	}
+
+	h.GetLogger().Debug("APK 서명 검증 성공",
+		logging.F("package_path", packagePath),
+		logging.F("key_fingerprint", result.KeyFingerprint))
 
 	return true
+}
+
+// saveToTempFile 바이트 데이터를 임시 파일로 저장
+func (h *ApkHandlerV3) saveToTempFile(data []byte, packagePath string) (string, error) {
+	// 임시 디렉토리 생성
+	tmpDir := filepath.Join(os.TempDir(), "proxynd-apk-verify")
+	if err := os.MkdirAll(tmpDir, 0755); err != nil {
+		return "", fmt.Errorf("임시 디렉토리 생성 실패: %v", err)
+	}
+
+	// 임시 파일 이름 생성 (패키지 경로 기반)
+	filename := filepath.Base(packagePath)
+	tempFile := filepath.Join(tmpDir, fmt.Sprintf("%s-%d.apk", filename, time.Now().UnixNano()))
+
+	// 파일 작성
+	if err := os.WriteFile(tempFile, data, 0644); err != nil {
+		return "", fmt.Errorf("임시 파일 작성 실패: %v", err)
+	}
+
+	return tempFile, nil
+}
+
+// cleanupTempFile 임시 파일 정리
+func (h *ApkHandlerV3) cleanupTempFile(tempFile string) {
+	if err := os.Remove(tempFile); err != nil {
+		h.GetLogger().Warn("임시 파일 삭제 실패",
+			logging.F("file", tempFile),
+			logging.F("error", err.Error()))
+	}
+}
+
+// getOrCreateSignatureVerifier 서명 검증기 가져오기 또는 생성
+// 캐싱을 통해 재사용 가능 (전역 singleton 패턴 사용)
+func (h *ApkHandlerV3) getOrCreateSignatureVerifier() *apkverification.SignatureVerifier {
+	apkVerifierV3Once.Do(func() {
+		// 새로운 검증기 생성
+		apkVerifierV3 = apkverification.NewSignatureVerifier()
+
+		// 신뢰할 수 있는 키 디렉토리 로드 (설정에서 가져옴)
+		if h.Config.Verification.KeyDirectory != "" {
+			if err := apkVerifierV3.LoadTrustedKeys(h.Config.Verification.KeyDirectory); err != nil {
+				h.GetLogger().Error("신뢰할 수 있는 키 로드 실패",
+					logging.F("directory", h.Config.Verification.KeyDirectory),
+					logging.F("error", err.Error()))
+				apkVerifierV3 = nil
+			}
+		}
+	})
+
+	return apkVerifierV3
+}
+
+// getErrorFromResult 검증 결과에서 에러 메시지 추출
+func getErrorFromResult(result *apkverification.VerificationResult) string {
+	if result == nil {
+		return "검증 결과 없음"
+	}
+	if result.Error != "" {
+		return result.Error
+	}
+	if len(result.Details) > 0 {
+		return strings.Join(result.Details, "; ")
+	}
+	return "검증 실패 (상세 정보 없음)"
 }

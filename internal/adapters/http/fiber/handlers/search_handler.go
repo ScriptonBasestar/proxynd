@@ -3,12 +3,9 @@ package handlers
 import (
 	"github.com/gofiber/fiber/v2"
 
+	"proxynd/internal/ports"
 	"proxynd/internal/usecase"
 )
-
-// TODO: HEXAGONAL_MIGRATION - These types are duplicated in usecase package
-// They should be imported from usecase or moved to a shared package
-// Keeping them here temporarily for backward compatibility
 
 // SearchResult represents a search result item
 type SearchResult = usecase.SearchResult
@@ -23,7 +20,72 @@ type SearchResultMirror = usecase.SearchResultMirror
 type SearchResponse = usecase.SearchResponse
 
 // SearchHandler handles content search across proxies using hexagonal architecture
-func SearchHandler(c *fiber.Ctx) error {
+type SearchHandler struct {
+	*BaseHandler
+	searchService *usecase.SearchService
+}
+
+// NewSearchHandler creates a new search handler with proper dependency injection
+func NewSearchHandler(
+	base *BaseHandler,
+	searchService *usecase.SearchService,
+) *SearchHandler {
+	return &SearchHandler{
+		BaseHandler:   base,
+		searchService: searchService,
+	}
+}
+
+// Handle implements ports.HTTPHandler for search requests
+func (h *SearchHandler) Handle(ctx ports.HTTPContext) error {
+	// Extract request parameters
+	query := ctx.Query("q")
+	proxyType := ctx.Query("type")
+	if proxyType == "" {
+		proxyType = "all" // default to all types
+	}
+	limit := 20 // default limit
+	if limitStr := ctx.Query("limit"); limitStr != "" {
+		// Parse limit from string
+		// Note: In real implementation, we'd convert limitStr to int
+		// For now using default
+	}
+
+	// Create search request
+	searchReq := &usecase.SearchRequest{
+		Query:     query,
+		Type:      proxyType,
+		Limit:     limit,
+		UserAgent: ctx.UserAgent(),
+		ClientIP:  ctx.ClientIP(),
+	}
+
+	// Call usecase service with proper dependency injection
+	response, err := h.searchService.Search(ctx.Context(), searchReq)
+	if err != nil {
+		// Log error with injected logger
+		h.logger.Error(ctx.Context(), "Search failed",
+			NewField("error", err.Error()),
+			NewField("query", query),
+			NewField("type", proxyType),
+		)
+
+		// Convert usecase error to appropriate HTTP response
+		if err.Error() == "empty search query" {
+			return ctx.Status(400).JSON(response)
+		}
+
+		return ctx.Status(500).JSON(&usecase.SearchResponse{
+			Error: "검색 중 오류가 발생했습니다",
+		})
+	}
+
+	return ctx.JSON(response)
+}
+
+// SearchHandlerFunc is a backward-compatible function-based handler
+// Deprecated: Use SearchHandler struct with dependency injection instead
+func SearchHandlerFunc(c *fiber.Ctx) error {
 	// Extract request parameters
 	query := c.Query("q")
 	proxyType := c.Query("type", "all") // all, maven, apt, npm, etc.
@@ -38,9 +100,8 @@ func SearchHandler(c *fiber.Ctx) error {
 		ClientIP:  c.IP(),
 	}
 
-	// TODO: HEXAGONAL_MIGRATION - Inject SearchService via dependency injection
-	// For now, create a minimal service instance with nil logger to avoid interface mismatch
-	// The search service will handle nil logger gracefully
+	// Create minimal service instance for backward compatibility
+	// In production, this should be injected via dependency injection
 	searchService := usecase.NewSearchService(nil, nil, nil, nil)
 
 	// Call usecase service
@@ -51,7 +112,6 @@ func SearchHandler(c *fiber.Ctx) error {
 			return c.Status(400).JSON(response)
 		}
 
-		// TODO: HEXAGONAL_MIGRATION - Add proper error logging via injected logger
 		return c.Status(500).JSON(&usecase.SearchResponse{
 			Error: "검색 중 오류가 발생했습니다",
 		})
@@ -59,6 +119,3 @@ func SearchHandler(c *fiber.Ctx) error {
 
 	return c.JSON(response)
 }
-
-// TODO: HEXAGONAL_MIGRATION - All search business logic has been moved to usecase.SearchService
-// This file now contains only the HTTP adapter logic

@@ -249,13 +249,31 @@ type AuthenticationConfig struct {
 	OAuth2    *OAuth2Config    `yaml:"oauth2,omitempty"`
 }
 
+// PackageVerificationConfig represents package-type specific verification settings.
+type PackageVerificationConfig struct {
+	Enabled        bool     `yaml:"enabled,omitempty" default:"true"`
+	RequiredHashes []string `yaml:"required_hashes,omitempty"`
+	TrustedSources []string `yaml:"trusted_sources,omitempty"`
+}
+
+// VerificationConfig represents the package verification configuration.
+// It controls signature verification, hash validation, and security policies.
+type VerificationConfig struct {
+	Enabled        *bool                                `yaml:"enabled,omitempty" default:"true"`
+	StrictMode     bool                                 `yaml:"strict_mode,omitempty" default:"true"`
+	BlockOnFailure bool                                 `yaml:"block_on_failure,omitempty" default:"true"`
+	AlertOnFailure bool                                 `yaml:"alert_on_failure,omitempty" default:"true"`
+	PackageTypes   map[string]PackageVerificationConfig `yaml:"package_types,omitempty"`
+}
+
 // GlobalConfig represents the global configuration for ProxyND.
-// It includes storage paths, cache settings, and authentication configuration.
+// It includes storage paths, cache settings, authentication, and verification configuration.
 type GlobalConfig struct {
 	StorageDir     string                `yaml:"storage_dir,omitempty" validate:"omitempty,path"`
 	ConfigDir      string                `yaml:"config_dir,omitempty" validate:"omitempty,path"`
 	Cache          Cache                 `yaml:"cache,omitempty"`
 	Authentication *AuthenticationConfig `yaml:"authentication,omitempty"`
+	Verification   *VerificationConfig   `yaml:"verification,omitempty"`
 	CacheDir       string                `yaml:"cache_dir,omitempty" validate:"omitempty,path"`
 	CacheTTL       int                   `yaml:"cache_ttl,omitempty" validate:"min=0,max=604800"`
 	MaxCacheSize   int64                 `yaml:"max_cache_size,omitempty" validate:"min=0"`

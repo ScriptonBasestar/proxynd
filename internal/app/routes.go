@@ -72,7 +72,7 @@ func setupNewArchitectureRoutes(app *fiber.App, config *RouteConfig) {
 
 	// Search routes
 	logger.Info("Setting up search routes")
-	v1.Get("/search", fiberHandlers.SearchHandler)
+	v1.Get("/search", fiberHandlers.SearchHandlerFunc)
 
 	// Pool routes
 	logger.Info("Setting up pool routes")
