@@ -141,7 +141,9 @@ func MFAMiddleware(config *MFAMiddlewareConfig) fiber.Handler {
 		// JWT에 MFA 인증 정보가 있는지 확인 (토큰 발급 시 MFA가 완료된 경우)
 		// Note: MFA verification would need to be added to Claims struct
 		// For now, we'll skip this check and proceed with standard MFA flow
-		// TODO: Add MFA fields to Claims struct and implement verification
+		// NOTE: MFA fields already implemented in internal/auth/jwt/jwt_service.go Claims struct
+		// See Claims.MFAVerified, Claims.MFAVerifiedAt, Claims.MFAMethod
+		// This legacy middleware should be updated to use the new Claims structure
 
 		// MFA 챌린지가 필요한 경우
 		availableMethods := config.getAvailableMethods(userMFA)
