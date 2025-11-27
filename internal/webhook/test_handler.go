@@ -3,6 +3,8 @@ package webhook
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"sync"
 	"time"
 
 	"proxynd/internal/alerts"
@@ -42,9 +44,13 @@ type TestAllResult struct {
 
 // WebhookTester 웹훅 테스트 클래스
 type WebhookTester struct {
-	config config.WebhookConfig
-	sender *WebhookSender
-	logger logging.Logger
+	config      config.WebhookConfig
+	sender      *WebhookSender
+	logger      logging.Logger
+	httpClient  *http.Client
+	testHistory map[string][]TestResult // endpoint name -> test results
+	historyMu   sync.RWMutex            // protects testHistory
+	maxHistory  int                     // maximum history entries per endpoint
 }
 
 // NewWebhookTester 새로운 웹훅 테스터 생성
@@ -53,6 +59,14 @@ func NewWebhookTester(config config.WebhookConfig, sender *WebhookSender) *Webho
 		config: config,
 		sender: sender,
 		logger: logging.GetLogger(),
+		httpClient: &http.Client{
+			Timeout: 10 * time.Second,
+			CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
+				return http.ErrUseLastResponse // Don't follow redirects
+			},
+		},
+		testHistory: make(map[string][]TestResult),
+		maxHistory:  100, // Store up to 100 test results per endpoint
 	}
 }
 
@@ -215,6 +229,9 @@ func (wt *WebhookTester) testEndpoint(endpoint config.WebhookEndpointConfig) (*T
 			logging.F(fieldResponseTime, responseTime))
 	}
 
+	// Store result in history
+	wt.addTestResult(endpoint.Name, *result)
+
 	return result, nil
 }
 
@@ -235,32 +252,135 @@ func (wt *WebhookTester) TestEndpointConnectivity(endpointName string) (*TestRes
 
 	startTime := time.Now()
 
-	// 간단한 HEAD 또는 GET 요청으로 연결성 확인
-	// 실제 이벤트를 전송하지 않고 엔드포인트 접근 가능성만 확인
-
 	wt.logger.Debug("웹훅 엔드포인트 연결성 테스트",
 		logging.F(fieldEndpoint, endpoint.Name),
 		logging.F("url", endpoint.URL))
 
-	// TODO: HTTP client로 HEAD/GET 요청 구현
-	// 현재는 기본 응답 반환
+	// Create HTTP request with timeout
+	timeout := 10 * time.Second
+	if endpoint.Timeout != "" {
+		if parsed, err := time.ParseDuration(endpoint.Timeout); err == nil {
+			timeout = parsed
+		}
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	// Try HEAD request first (lightweight), fallback to GET
+	var req *http.Request
+	var err error
+
+	req, err = http.NewRequestWithContext(ctx, http.MethodHead, endpoint.URL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	// Add custom headers if configured
+	req.Header.Set("User-Agent", "ProxyND-Webhook-Tester/1.0")
+	for key, value := range endpoint.Headers {
+		req.Header.Set(key, value)
+	}
+
+	// Send request
+	resp, err := wt.httpClient.Do(req)
 	responseTime := time.Since(startTime)
 
-	return &TestResult{
+	result := &TestResult{
 		EndpointName:  endpoint.Name,
 		URL:           endpoint.URL,
-		Success:       true,
-		StatusCode:    200,
 		ResponseTime:  responseTime,
 		TestTimestamp: time.Now(),
-	}, nil
+	}
+
+	if err != nil {
+		result.Success = false
+		result.ErrorMessage = err.Error()
+
+		wt.logger.Warn("웹훅 엔드포인트 연결성 테스트 실패",
+			logging.F(fieldEndpoint, endpoint.Name),
+			logging.F("url", endpoint.URL),
+			logging.F("error", err.Error()),
+			logging.F(fieldResponseTime, responseTime))
+
+		// Store failed result
+		wt.addTestResult(endpoint.Name, *result)
+		return result, nil
+	}
+	defer resp.Body.Close()
+
+	result.StatusCode = resp.StatusCode
+	result.Success = resp.StatusCode >= 200 && resp.StatusCode < 400
+
+	if !result.Success {
+		result.ErrorMessage = fmt.Sprintf("unexpected status code: %d %s",
+			resp.StatusCode, http.StatusText(resp.StatusCode))
+
+		wt.logger.Warn("웹훅 엔드포인트 연결성 테스트 실패",
+			logging.F(fieldEndpoint, endpoint.Name),
+			logging.F("url", endpoint.URL),
+			logging.F("status_code", resp.StatusCode),
+			logging.F(fieldResponseTime, responseTime))
+	} else {
+		wt.logger.Info("웹훅 엔드포인트 연결성 테스트 성공",
+			logging.F(fieldEndpoint, endpoint.Name),
+			logging.F("url", endpoint.URL),
+			logging.F("status_code", resp.StatusCode),
+			logging.F(fieldResponseTime, responseTime))
+	}
+
+	// Store result in history
+	wt.addTestResult(endpoint.Name, *result)
+
+	return result, nil
 }
 
-// GetTestHistory 테스트 이력 조회 (향후 확장용)
-func (wt *WebhookTester) GetTestHistory(_ string, _ int) ([]TestResult, error) {
-	// TODO: 테스트 이력을 저장하고 조회하는 기능 구현
-	// 현재는 빈 슬라이스 반환
-	return []TestResult{}, nil
+// GetTestHistory 테스트 이력 조회
+// endpointName: 특정 엔드포인트의 이력 조회, 빈 문자열이면 모든 엔드포인트
+// limit: 반환할 최대 결과 수, 0이면 모든 결과 반환
+func (wt *WebhookTester) GetTestHistory(endpointName string, limit int) ([]TestResult, error) {
+	wt.historyMu.RLock()
+	defer wt.historyMu.RUnlock()
+
+	var results []TestResult
+
+	if endpointName != "" {
+		// Get history for specific endpoint
+		history, exists := wt.testHistory[endpointName]
+		if !exists {
+			return []TestResult{}, nil
+		}
+
+		if limit > 0 && len(history) > limit {
+			// Return most recent 'limit' entries
+			results = make([]TestResult, limit)
+			copy(results, history[len(history)-limit:])
+		} else {
+			results = make([]TestResult, len(history))
+			copy(results, history)
+		}
+	} else {
+		// Get history for all endpoints
+		for _, history := range wt.testHistory {
+			results = append(results, history...)
+		}
+
+		// Sort by timestamp (newest first)
+		// Using simple sort - in production might want to use sort.Slice
+		for i := 0; i < len(results)-1; i++ {
+			for j := i + 1; j < len(results); j++ {
+				if results[i].TestTimestamp.Before(results[j].TestTimestamp) {
+					results[i], results[j] = results[j], results[i]
+				}
+			}
+		}
+
+		if limit > 0 && len(results) > limit {
+			results = results[:limit]
+		}
+	}
+
+	return results, nil
 }
 
 // ValidateEndpointConfig 엔드포인트 설정 검증
@@ -320,4 +440,103 @@ func (wt *WebhookTester) ValidateEndpointConfig(endpoint config.WebhookEndpointC
 	}
 
 	return errors
+}
+
+// addTestResult 테스트 결과를 히스토리에 추가
+func (wt *WebhookTester) addTestResult(endpointName string, result TestResult) {
+	wt.historyMu.Lock()
+	defer wt.historyMu.Unlock()
+
+	history := wt.testHistory[endpointName]
+	history = append(history, result)
+
+	// Maintain maximum history size (FIFO)
+	if len(history) > wt.maxHistory {
+		history = history[1:] // Remove oldest entry
+	}
+
+	wt.testHistory[endpointName] = history
+
+	wt.logger.Debug("테스트 결과 저장",
+		logging.F(fieldEndpoint, endpointName),
+		logging.F("history_size", len(history)),
+		logging.F("success", result.Success))
+}
+
+// ClearHistory 특정 엔드포인트 또는 전체 테스트 히스토리 삭제
+func (wt *WebhookTester) ClearHistory(endpointName string) {
+	wt.historyMu.Lock()
+	defer wt.historyMu.Unlock()
+
+	if endpointName != "" {
+		delete(wt.testHistory, endpointName)
+		wt.logger.Info("엔드포인트 테스트 히스토리 삭제",
+			logging.F(fieldEndpoint, endpointName))
+	} else {
+		wt.testHistory = make(map[string][]TestResult)
+		wt.logger.Info("전체 테스트 히스토리 삭제")
+	}
+}
+
+// GetTestStatistics 테스트 통계 조회
+func (wt *WebhookTester) GetTestStatistics(endpointName string) map[string]interface{} {
+	wt.historyMu.RLock()
+	defer wt.historyMu.RUnlock()
+
+	stats := make(map[string]interface{})
+
+	if endpointName != "" {
+		// Statistics for specific endpoint
+		history, exists := wt.testHistory[endpointName]
+		if !exists {
+			return stats
+		}
+
+		successCount := 0
+		totalResponseTime := time.Duration(0)
+
+		for _, result := range history {
+			if result.Success {
+				successCount++
+			}
+			totalResponseTime += result.ResponseTime
+		}
+
+		stats["endpoint_name"] = endpointName
+		stats["total_tests"] = len(history)
+		stats["success_count"] = successCount
+		stats["failure_count"] = len(history) - successCount
+		stats["success_rate"] = float64(successCount) / float64(len(history)) * 100
+
+		if len(history) > 0 {
+			stats["avg_response_time"] = totalResponseTime / time.Duration(len(history))
+			stats["last_test"] = history[len(history)-1].TestTimestamp
+			stats["last_success"] = history[len(history)-1].Success
+		}
+	} else {
+		// Statistics for all endpoints
+		totalTests := 0
+		totalSuccess := 0
+		endpointCount := len(wt.testHistory)
+
+		for _, history := range wt.testHistory {
+			totalTests += len(history)
+			for _, result := range history {
+				if result.Success {
+					totalSuccess++
+				}
+			}
+		}
+
+		stats["total_endpoints"] = endpointCount
+		stats["total_tests"] = totalTests
+		stats["success_count"] = totalSuccess
+		stats["failure_count"] = totalTests - totalSuccess
+
+		if totalTests > 0 {
+			stats["success_rate"] = float64(totalSuccess) / float64(totalTests) * 100
+		}
+	}
+
+	return stats
 }
