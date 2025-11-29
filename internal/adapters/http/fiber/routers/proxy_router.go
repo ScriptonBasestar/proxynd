@@ -10,10 +10,10 @@ import (
 	"proxynd/internal/alerts"
 	"proxynd/internal/config"
 	"proxynd/internal/factory"
-	authHandlers "proxynd/internal/handlers-legacy/auth"
-	legacyProxy "proxynd/internal/handlers-legacy/proxy"
+	authHandlers "proxynd/internal/adapters/http/fiber/handlers/auth"
+	proxyHandlers "proxynd/internal/adapters/http/fiber/handlers/proxy"
 	"proxynd/internal/logging"
-	middlewares "proxynd/internal/middleware-legacy"
+	middlewares "proxynd/internal/adapters/http/fiber/middleware"
 	"proxynd/internal/usecase"
 )
 
@@ -47,7 +47,7 @@ func ProxyRouter(app *fiber.App) {
 	}
 
 	// Create verification handler
-	verificationHandler := legacyProxy.NewVerificationHandler(&globalConfig, alertManager)
+	verificationHandler := proxyHandlers.NewVerificationHandler(&globalConfig, alertManager)
 
 	// Setup unified proxy router (legacy mode)
 	// Handle all proxy requests with /proxy/:type/*path format
@@ -68,7 +68,7 @@ func ProxyRouter(app *fiber.App) {
 		authHandlers.OptionalAuth(),      // Optional OAuth2/JWT authentication
 		authHandlers.BasicAuthFallback(), // BasicAuth fallback
 		verificationHandler.VerificationMiddleware(),
-		legacyProxy.UnifiedProxyHandler,
+		proxyHandlers.UnifiedProxyHandler,
 	)
 	app.Head("/proxy/:type/*",
 		middlewares.ProxyPolicyMiddleware(),
@@ -76,7 +76,7 @@ func ProxyRouter(app *fiber.App) {
 		authHandlers.OptionalAuth(),      // Optional OAuth2/JWT authentication
 		authHandlers.BasicAuthFallback(), // BasicAuth fallback
 		verificationHandler.VerificationMiddleware(),
-		legacyProxy.UnifiedProxyHandler,
+		proxyHandlers.UnifiedProxyHandler,
 	)
 
 	// Reject all other HTTP methods with 405 Method Not Allowed

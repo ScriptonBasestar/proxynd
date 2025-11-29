@@ -13,7 +13,7 @@ import (
 	"proxynd/cache"
 	"proxynd/internal/config"
 	"proxynd/internal/health"
-	middlewares "proxynd/internal/middleware-legacy"
+	middlewares "proxynd/internal/adapters/http/fiber/middleware"
 )
 
 // EnhancedHealthRouter 강화된 헬스체크 라우터

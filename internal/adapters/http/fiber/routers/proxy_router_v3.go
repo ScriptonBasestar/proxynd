@@ -3,9 +3,9 @@ package routers
 import (
 	"github.com/gofiber/fiber/v2"
 
-	authHandlers "proxynd/internal/handlers-legacy/auth"
-	proxyHandlers "proxynd/internal/handlers-legacy/proxy"
-	middlewares "proxynd/internal/middleware-legacy"
+	authHandlers "proxynd/internal/adapters/http/fiber/handlers/auth"
+	proxyHandlers "proxynd/internal/adapters/http/fiber/handlers/proxy"
+	middlewares "proxynd/internal/adapters/http/fiber/middleware"
 )
 
 // ProxyRouterV3 새로운 V3 프록시 라우터 - 단순화된 Factory 패턴 사용

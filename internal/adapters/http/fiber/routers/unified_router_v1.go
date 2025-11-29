@@ -3,10 +3,10 @@ package routers
 import (
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/internal/handlers-legacy"
-	authHandlers "proxynd/internal/handlers-legacy/auth"
-	proxyHandlers "proxynd/internal/handlers-legacy/proxy"
-	middlewares "proxynd/internal/middleware-legacy"
+	handlers "proxynd/internal/adapters/http/fiber/handlers"
+	authHandlers "proxynd/internal/adapters/http/fiber/handlers/auth"
+	proxyHandlers "proxynd/internal/adapters/http/fiber/handlers/proxy"
+	middlewares "proxynd/internal/adapters/http/fiber/middleware"
 )
 
 // UnifiedRouterV1 모든 API를 /api/v1/* 구조로 통합한 라우터
