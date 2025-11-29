@@ -13,13 +13,11 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
 
-	"proxynd/cache"
 	fiberRouters "proxynd/internal/adapters/http/fiber/routers"
 	configTypes "proxynd/internal/config"
 	"proxynd/internal/logging"
 	cacheRepo "proxynd/internal/repositories/cache"
 	"proxynd/internal/repositories/config"
-	"proxynd/internal/routers"
 	"proxynd/internal/services/adapters"
 	configService "proxynd/internal/services/config"
 	"proxynd/internal/services/proxy"
@@ -258,8 +256,18 @@ func (app *Application) initializeContainer() error {
 }
 
 func (app *Application) initializeFiberApp() {
-	// Create base router
-	app.fiberApp = routers.BaseRouter()
+	// Create base Fiber app
+	app.fiberApp = fiber.New(fiber.Config{
+		ErrorHandler: func(c *fiber.Ctx, err error) error {
+			code := fiber.StatusInternalServerError
+			if e, ok := err.(*fiber.Error); ok {
+				code = e.Code
+			}
+			return c.Status(code).JSON(fiber.Map{
+				"error": err.Error(),
+			})
+		},
+	})
 
 	// Connection Pool 초기화 (v1 API에서 사용)
 	if err := InitializeConnectionPool(); err != nil {
@@ -298,75 +306,25 @@ func (app *Application) initializeFiberApp() {
 	routeConfig := InitializeRouteConfig(unifiedConfig, app.container)
 	SetupRoutes(app.fiberApp, routeConfig)
 
-	// === Hexagonal Architecture Proxy Router (최우선순위) ===
-	// ProxyService 기반 새로운 아키텍처 라우터
+	// === Hexagonal Architecture Proxy Router (Dependency Injection) ===
+	// ProxyService-based architecture with container
 	app.logger.Info("Setting up Hexagonal Architecture proxy router")
 	containerAdapter := &containerAdapter{container: app.container}
 	fiberRouters.ProxyRouterWithContainer(app.fiberApp, containerAdapter)
 
-	// === Container 기반 프록시 라우터 (레거시 Container 시스템) ===
-	routers.ContainerProxyRouterSetup(app.fiberApp, app.container)
-
-	// === 새로운 v1 통합 API 등록 (우선순위 높음) ===
-	routers.UnifiedRouterV1(app.fiberApp)
-
-	// === 기존 라우터들 (v1으로 마이그레이션 예정) ===
-	// 헬스 라우터 초기화 (어댑터 팩토리와 통합)
-	if adapterFactory, err := app.container.GetHandlerAdapterFactory(); err == nil {
-		routers.InitHandlerAdapterFactory(adapterFactory)
-	} else {
-		app.logger.Warn("Handler adapter factory initialization failed for health router",
-			logging.F("error", err))
-	}
-	routers.HealthRouter(app.fiberApp)
-
-	// === 강화된 헬스 모니터링 라우터 ===
-	if _, err := app.container.GetCacheRepository(); err == nil {
-		// FileSystemBackend을 사용해 cache.Manager 생성
-		cacheBackend, err := cache.NewFileSystemBackend(config.StorageDir)
-		if err == nil {
-			cacheOptions := cache.CacheOptions{
-				MaxSize:    1024 * 1024 * 1024, // 1GB
-				DefaultTTL: time.Hour,
-				BasePath:   config.StorageDir,
-			}
-			cacheManager := cache.NewManager(cacheBackend, cacheOptions)
-
-			enhancedHealthRouter := routers.NewEnhancedHealthRouter(unifiedConfig, cacheManager)
-			enhancedHealthRouter.RegisterRoutes(app.fiberApp)
-			app.logger.Info("Enhanced health monitoring system initialized")
-		} else {
-			app.logger.Warn("Enhanced health router initialization failed: cache backend creation failed",
-				logging.F("error", err))
-		}
-	} else {
-		app.logger.Warn("Enhanced health router initialization failed: cache repository not available",
-			logging.F("error", err))
-	}
-
-	routers.ProxyRouter(app.fiberApp)      // 레거시 호환용
-	routers.ProxyRouterV3(app.fiberApp)    // V3 라우터 (deprecated)
-	routers.RegisterProxyAPI(app.fiberApp) // V3 API (이미 v1)
-	routers.PoolRouter(app.fiberApp)       // Connection Pool API (이미 v1)
-	routers.CacheRouter(app.fiberApp)
-	routers.ConfigRouter(app.fiberApp)
-	routers.StatusRouter(app.fiberApp)
-	routers.UserRouter(app.fiberApp)
-	routers.TestRouter(app.fiberApp)
-	routers.WebhookRouter(app.fiberApp) // 이미 v1
-	routers.AuthRouter(app.fiberApp)    // 인증 라우터 추가
-
-	// === CLI 호환성 라우터 ===
-	routers.APICompatibilityRouter(app.fiberApp) // CLI API 호환성
-	// TODO: MetricsRouter 시그니처 수정 필요
-	// routers.MetricsRouter(app.fiberApp)     // 메트릭 라우터 추가
-	// TODO: APK 라우터들 구현 필요
-	// routers.ApkMirrorRouter(app.fiberApp)   // APK 라우터들 추가
-	// routers.ApkVerificationRouter(app.fiberApp)
-
-	// === 레거시 호환성 라우터 (가장 낮은 우선순위) ===
-	routers.LegacyCompatibilityRouter(app.fiberApp)
-	routers.LegacyAPIInfo(app.fiberApp)
+	// All other routes are now configured via SetupRoutes() above
+	// This includes:
+	// - Health routes (new architecture)
+	// - Proxy routes (V1 and V3 APIs)
+	// - Search routes
+	// - Pool routes (Connection Pool API)
+	// - Cache routes
+	// - WebUI routes
+	// - API v1 routes
+	// - Enterprise API routes
+	// - Swagger documentation
+	// - Metrics routes
+	// - Ansible routes (Galaxy v3 API)
 
 	// Store service factory and container in app locals for handlers to use
 	app.fiberApp.Use(func(c *fiber.Ctx) error {

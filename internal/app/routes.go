@@ -20,7 +20,6 @@ import (
 	_ "proxynd/docs"
 
 	"proxynd/internal/logging"
-	"proxynd/internal/routers"
 )
 
 // RouteConfig holds configuration for route setup
@@ -128,7 +127,7 @@ func setupNewArchitectureRoutes(app *fiber.App, config *RouteConfig) {
 
 	// Metrics routes
 	logger.Info("Setting up metrics routes")
-	routers.MetricsRouter(app, config.UnifiedConfig)
+	fiberRouters.MetricsRouter(app, config.UnifiedConfig)
 
 	// Ansible routes (Galaxy v3 API)
 	logger.Info("Setting up Ansible routes")
