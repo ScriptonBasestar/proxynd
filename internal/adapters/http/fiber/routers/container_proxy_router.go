@@ -286,22 +286,20 @@ func (r *ContainerProxyRouter) createLegacyContainerHandlerMiddleware() fiber.Ha
 
 		// 지원되는 프록시 타입인지 확인
 		if !r.isProxyTypeSupported(proxyType) {
-			r.logger.Warn("Unsupported proxy type in legacy route",
+			r.logger.Warn("Unsupported proxy type",
 				logging.F("type", proxyType),
 			)
-			// 기존 UnifiedProxyHandler로 폴백
-			return proxyHandlers.UnifiedProxyHandler(c)
+			return c.Status(fiber.StatusBadRequest).SendString(fmt.Sprintf("Unsupported proxy type: %s", proxyType))
 		}
 
 		// Container 기반 핸들러 사용
 		handler, err := r.handlerFactory.CreateHandler(proxyType, r.container)
 		if err != nil {
-			r.logger.Error("Failed to create handler in legacy route",
+			r.logger.Error("Failed to create handler",
 				logging.F("type", proxyType),
 				logging.F("error", err),
 			)
-			// 기존 UnifiedProxyHandler로 폴백
-			return proxyHandlers.UnifiedProxyHandler(c)
+			return c.Status(fiber.StatusInternalServerError).SendString(fmt.Sprintf("Failed to create handler: %v", err))
 		}
 
 		// 핸들러 실행

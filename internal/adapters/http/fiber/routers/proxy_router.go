@@ -49,6 +49,11 @@ func ProxyRouter(app *fiber.App) {
 	// Create verification handler
 	verificationHandler := proxyHandlers.NewVerificationHandler(&globalConfig, alertManager)
 
+	// Create unified proxy handler instance for backward compatibility
+	logger := logging.GetLogger()
+	adapterFactory := factory.NewHandlerAdapterFactory()
+	unifiedHandler := proxyHandlers.NewUnifiedProxyHandler(nil, adapterFactory, logger)
+
 	// Setup unified proxy router (legacy mode)
 	// Handle all proxy requests with /proxy/:type/*path format
 	// Note: Using direct app registration instead of Group to ensure correct routing
@@ -68,7 +73,7 @@ func ProxyRouter(app *fiber.App) {
 		authHandlers.OptionalAuth(),      // Optional OAuth2/JWT authentication
 		authHandlers.BasicAuthFallback(), // BasicAuth fallback
 		verificationHandler.VerificationMiddleware(),
-		proxyHandlers.UnifiedProxyHandler,
+		unifiedHandler.Handle,
 	)
 	app.Head("/proxy/:type/*",
 		middlewares.ProxyPolicyMiddleware(),
@@ -76,7 +81,7 @@ func ProxyRouter(app *fiber.App) {
 		authHandlers.OptionalAuth(),      // Optional OAuth2/JWT authentication
 		authHandlers.BasicAuthFallback(), // BasicAuth fallback
 		verificationHandler.VerificationMiddleware(),
-		proxyHandlers.UnifiedProxyHandler,
+		unifiedHandler.Handle,
 	)
 
 	// Reject all other HTTP methods with 405 Method Not Allowed

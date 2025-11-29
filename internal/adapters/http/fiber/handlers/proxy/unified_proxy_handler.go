@@ -100,36 +100,3 @@ func (h *UnifiedProxyHandlerStruct) Handle(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusInternalServerError).SendString("Proxy service not initialized")
 }
 
-// Backward-compatible function wrappers for router migration
-// These allow routers to continue using function-style handlers while we migrate to struct-based DI
-
-var (
-	globalHandlerInstance *UnifiedProxyHandlerStruct
-	globalAdapterFactory  *factory.HandlerAdapterFactory
-)
-
-// InitializeGlobalHandler initializes the global handler instance for backward compatibility
-func InitializeGlobalHandler() {
-	if globalAdapterFactory == nil {
-		globalAdapterFactory = factory.NewHandlerAdapterFactory()
-	}
-	if globalHandlerInstance == nil {
-		logger := logging.GetLogger()
-		globalHandlerInstance = NewUnifiedProxyHandler(nil, globalAdapterFactory, logger)
-		logger.Info("Global unified proxy handler initialized for backward compatibility")
-	}
-}
-
-// UnifiedProxyHandler backward-compatible function wrapper
-// Deprecated: Use NewUnifiedProxyHandler() with dependency injection instead
-func UnifiedProxyHandler(c *fiber.Ctx) error {
-	if globalHandlerInstance == nil {
-		InitializeGlobalHandler()
-	}
-	return globalHandlerInstance.Handle(c)
-}
-
-// Deprecated: This function wrapper is for backward compatibility only.
-// For new code, use NewUnifiedProxyHandler() with dependency injection.
-// Migration path: Router → UnifiedProxyHandlerStruct (Phase 2b complete, 2025-11-27)
-// Planned removal: Phase 3 (legacy cleanup, target v2.0.0)
