@@ -293,10 +293,9 @@ func (app *Application) initializeFiberApp() {
 		}
 	}
 
-	// === NEW ARCHITECTURE ROUTING (Default Mode) ===
-	// HEXAGONAL_MIGRATION Phase 2c Complete - New architecture enabled by default (2025-11-27)
-	// Feature flag allows rollback to legacy mode if needed: set second parameter to false
-	routeConfig := InitializeRouteConfig(unifiedConfig, true, app.container) // New architecture enabled by default
+	// === NEW ARCHITECTURE ROUTING (Exclusive Mode) ===
+	// HEXAGONAL_MIGRATION Phase 3 Complete - Using hexagonal architecture exclusively (2025-11-29)
+	routeConfig := InitializeRouteConfig(unifiedConfig, app.container)
 	SetupRoutes(app.fiberApp, routeConfig)
 
 	// === Hexagonal Architecture Proxy Router (최우선순위) ===
@@ -424,7 +423,7 @@ func (app *Application) initializeFiberApp() {
 
 	app.logger.Info("Container-based proxy router initialized",
 		logging.F("supported_handlers", []string{"apt", "maven", "npm"}),
-		logging.F("new_architecture_enabled", routeConfig.UseNewArchitecture),
+		logging.F("architecture", "hexagonal"),
 	)
 }
 
