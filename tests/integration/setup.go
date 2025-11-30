@@ -14,8 +14,10 @@ import (
 
 	"proxynd/internal/app"
 	"proxynd/internal/config"
-	proxyHandlers "proxynd/internal/handlers-legacy/proxy"
-	middlewares "proxynd/internal/middleware-legacy"
+	"proxynd/internal/factory"
+	"proxynd/internal/logging"
+	proxyHandlers "proxynd/internal/adapters/http/fiber/handlers/proxy"
+	middlewares "proxynd/internal/adapters/http/fiber/middleware"
 )
 
 // TestServer 통합 테스트용 서버 구조체
@@ -196,9 +198,14 @@ func setupRoutes(app *fiber.App, _ *app.Container) {
 	})
 
 	// 통합 프록시 라우트 - unified_proxy_handler 사용
+	// Create unified proxy handler instance
+	logger := logging.GetLogger()
+	adapterFactory := factory.NewHandlerAdapterFactory()
+	unifiedHandler := proxyHandlers.NewUnifiedProxyHandler(nil, adapterFactory, logger)
+
 	// HTTP method validator for read-only proxy
 	methodValidator := middlewares.ReadOnlyMethodValidator()
-	proxy.All("/:type/*", methodValidator, proxyHandlers.UnifiedProxyHandler)
+	proxy.All("/:type/*", methodValidator, unifiedHandler.Handle)
 
 	// APK 프록시 라우트
 	proxy.All("/apk/*", func(c *fiber.Ctx) error {

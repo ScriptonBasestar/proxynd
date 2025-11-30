@@ -16,7 +16,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 
-	"proxynd/internal/routers"
+	fiberRouters "proxynd/internal/adapters/http/fiber/routers"
+	"proxynd/internal/app"
+	"proxynd/internal/config"
 )
 
 // IntegrationTestSuite 통합 테스트 스위트
@@ -46,9 +48,22 @@ func (s *IntegrationTestSuite) SetupSuite() {
 		DisableStartupMessage: true,
 	})
 
-	// 라우터 설정
-	routers.ProxyRouter(s.app)
-	routers.HealthRouter(s.app)
+	// Create container for dependency injection
+	container := app.NewContainer(&app.Config{
+		ConfigDir:  "./",
+		StorageDir: s.cacheDir,
+		Port:       "8082",
+	})
+
+	// Setup routes using new hexagonal architecture
+	testConfig := &config.RootConfig{
+		Server: config.ServerConfig{
+			Port: 8082,
+			Host: "localhost",
+		},
+	}
+	routeConfig := app.InitializeRouteConfig(testConfig, container)
+	app.SetupRoutes(s.app, routeConfig)
 
 	// 테스트 서버 시작
 	s.baseURL = "http://localhost:8082"
@@ -379,7 +394,7 @@ func BenchmarkIntegrationProxyRequests(b *testing.B) {
 		DisableStartupMessage: true,
 	})
 
-	routers.ProxyRouter(app)
+	fiberRouters.ProxyRouter(app)
 
 	go func() {
 		_ = app.Listen(":8083")

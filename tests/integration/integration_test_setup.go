@@ -20,7 +20,6 @@ import (
 	"proxynd/internal/app"
 	"proxynd/internal/config"
 	"proxynd/internal/metrics"
-	"proxynd/internal/routers"
 )
 
 // IntegrationTestEnvironment 통합 테스트 환경
@@ -530,23 +529,26 @@ func (env *IntegrationTestEnvironment) setupProxyServer(_ *testing.T) {
 	// 컨테이너 생성
 	container := app.NewContainer(appConfig)
 
-	// Fiber 앱 생성 (BaseRouter 사용)
-	fiberApp := routers.BaseRouter()
+	// Fiber 앱 생성 (New Architecture)
+	fiberApp := fiber.New(fiber.Config{
+		ErrorHandler: func(c *fiber.Ctx, err error) error {
+			code := fiber.StatusInternalServerError
+			if e, ok := err.(*fiber.Error); ok {
+				code = e.Code
+			}
+			return c.Status(code).JSON(fiber.Map{
+				"error": err.Error(),
+			})
+		},
+	})
 
-	// 프록시 라우터 추가
-	routers.ProxyRouter(fiberApp)
-	routers.HealthRouter(fiberApp)
-	routers.CacheRouter(fiberApp)
-	routers.ConfigRouter(fiberApp)
-	routers.StatusRouter(fiberApp)
-	routers.UserRouter(fiberApp)
-	routers.TestRouter(fiberApp)
-	routers.WebhookRouter(fiberApp)
-	routers.UnifiedRouterV1(fiberApp)            // API v1 unified routes (legacy)
-	fiberRouters.SetupAPIv1Routes(fiberApp, nil) // Modern API v1 routes (includes PM toggle)
-	// MetricsRouter는 Prometheus 글로벌 레지스트리 중복 등록 문제로 인해
-	// 통합 테스트에서 비활성화 (메트릭 테스트는 별도 수행 필요)
-	// routers.MetricsRouter(fiberApp, env.Config)
+	// Setup routes using new hexagonal architecture
+	routeConfig := app.InitializeRouteConfig(env.Config, container)
+	app.SetupRoutes(fiberApp, routeConfig)
+
+	// Setup container-based proxy router
+	containerAdapter := &containerAdapterForTest{container: container}
+	fiberRouters.ProxyRouterWithContainer(fiberApp, containerAdapter)
 
 	// 컨테이너를 앱 로컬에 저장 (handlers가 사용할 수 있도록)
 	fiberApp.Use(func(c *fiber.Ctx) error {
@@ -569,8 +571,24 @@ func (env *IntegrationTestEnvironment) setupProxyServer(_ *testing.T) {
 		}
 		// Metrics 리셋하여 다음 테스트에서 재초기화 가능하게 함
 		metrics.ResetMetrics()
-		routers.ResetMetricsRouter()
 	})
+}
+
+// containerAdapterForTest implements ContainerProvider for integration tests
+type containerAdapterForTest struct {
+	container *app.Container
+}
+
+func (c *containerAdapterForTest) GetLogger() interface{} {
+	return c.container.GetLogger()
+}
+
+func (c *containerAdapterForTest) GetHandlerAdapterFactory() (interface{}, error) {
+	return c.container.GetHandlerAdapterFactory()
+}
+
+func (c *containerAdapterForTest) GetProxyService() interface{} {
+	return c.container.GetProxyService()
 }
 
 // MakeRequest 통합 테스트용 HTTP 요청 실행
