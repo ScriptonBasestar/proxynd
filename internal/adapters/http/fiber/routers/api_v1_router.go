@@ -10,7 +10,7 @@ import (
 
 	"proxynd/cache"
 	"proxynd/internal/adapters/http/fiber/handlers"
-	"proxynd/internal/adapters/http/fiber/middleware"
+	middlewares "proxynd/internal/adapters/http/fiber/middleware"
 	"proxynd/internal/auth/audit"
 	"proxynd/internal/config"
 	configService "proxynd/internal/services/config"
@@ -425,7 +425,8 @@ func togglePackageManager(c *fiber.Ctx, cfg *config.RootConfig) error {
 // logAuditEvent logs an audit event for package manager configuration changes
 func logAuditEvent(c *fiber.Ctx, eventType audit.AuditEventType, level audit.AuditLevel,
 	message, userID, username, clientIP, userAgent, pmName string,
-	previousState, newState, success bool, errorMsg string) {
+	previousState, newState, success bool, errorMsg string,
+) {
 	// Try to get audit service from locals
 	auditSvc, ok := c.Locals("auditService").(*audit.AuditService)
 	if !ok || auditSvc == nil {
