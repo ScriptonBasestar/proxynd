@@ -29,7 +29,7 @@ ENV GOARCH=$TARGETARCH
 RUN go build -ldflags="-w -s" -trimpath -o proxynd .
 
 # BusyBox 스테이지 - ulimit 지원을 위한 shell 제공
-FROM busybox:1.36-musl AS busybox
+FROM busybox:1.37-musl AS busybox
 
 # 실행 단계 - distroless 이미지 사용으로 보안 강화
 FROM gcr.io/distroless/static:nonroot
