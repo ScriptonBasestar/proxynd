@@ -665,7 +665,8 @@ func notifyConfigReload(c *fiber.Ctx, reloadedAt time.Time) {
 
 // logConfigReloadAudit logs an audit event for configuration reload operations
 func logConfigReloadAudit(c *fiber.Ctx, eventType audit.AuditEventType, level audit.AuditLevel,
-	message, userID, username, clientIP, userAgent string, success bool, errorMsg string) {
+	message, userID, username, clientIP, userAgent string, success bool, errorMsg string,
+) {
 	// Try to get audit service from locals
 	auditSvc, ok := c.Locals("auditService").(*audit.AuditService)
 	if !ok || auditSvc == nil {

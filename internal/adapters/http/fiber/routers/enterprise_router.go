@@ -2,6 +2,7 @@ package routers
 
 import (
 	"github.com/gofiber/fiber/v2"
+
 	"proxynd/internal/adapters/http/fiber/handlers/enterprise"
 	enterpriseMiddleware "proxynd/internal/adapters/http/fiber/middleware/enterprise"
 )

@@ -373,7 +373,7 @@ func addFileToTar(t *testing.T, tw *tar.Writer, name, content string) {
 
 	hdr := &tar.Header{
 		Name: name,
-		Mode: 0644,
+		Mode: 0o644,
 		Size: int64(len(content)),
 	}
 

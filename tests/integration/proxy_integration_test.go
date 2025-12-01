@@ -440,7 +440,6 @@ func TestProxySecurityIntegration(t *testing.T) {
 		req.Header.Set("Content-Type", "application/json")
 
 		resp, err := env.ProxyServer.Test(req, -1)
-
 		// Fiber가 body size limit으로 요청을 거부하는 경우 에러 발생 가능 (정상 동작)
 		if err != nil {
 			// "body size exceeds the given limit" 에러는 정상적인 크기 제한 동작

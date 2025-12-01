@@ -23,7 +23,7 @@ type LocalCAS struct {
 // NewLocalCAS creates a new local CAS instance
 func NewLocalCAS(basePath string, logger ports.Logger) (*LocalCAS, error) {
 	// Create base directory
-	if err := os.MkdirAll(basePath, 0755); err != nil {
+	if err := os.MkdirAll(basePath, 0o755); err != nil {
 		return nil, fmt.Errorf("failed to create CAS directory: %w", err)
 	}
 
@@ -81,7 +81,7 @@ func (c *LocalCAS) PutBlob(ctx context.Context, req *ports.PutBlobRequest) (*por
 
 	// 3. Create directory structure
 	dir := filepath.Dir(blobPath)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return nil, fmt.Errorf("failed to create directory: %w", err)
 	}
 
