@@ -110,7 +110,12 @@ jobs:
           echo "🔍 Checking if formatting made changes..."
           if [ -n "$(git status --porcelain)" ]; then
             echo "❌ Formatting made changes - code is not properly formatted"
-            git diff
+            echo "Changed files:"
+            git status --porcelain
+            echo "Diff output:"
+            git diff || true
+            echo "Diff stat:"
+            git diff --stat || true
             exit 1
           else
             echo "✅ Code is properly formatted"
