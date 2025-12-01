@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"proxynd/internal/adapters/http/fiber/middleware"
+	middlewares "proxynd/internal/adapters/http/fiber/middleware"
 )
 
 func TestToggleEndpointAuthentication(t *testing.T) {

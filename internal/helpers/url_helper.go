@@ -34,7 +34,7 @@ func ParsePackageName(packagePath string) (name, version string) {
 		if len(parts) > 2 {
 			version = parts[2]
 		}
-		return
+		return name, version
 	}
 
 	// 일반 패키지인 경우
@@ -45,7 +45,7 @@ func ParsePackageName(packagePath string) (name, version string) {
 		}
 	}
 
-	return
+	return name, version
 }
 
 // IsValidURL URL이 유효한지 검증합니다

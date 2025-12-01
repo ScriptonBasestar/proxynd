@@ -11,7 +11,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/internal/adapters/http/fiber/middleware"
+	middlewares "proxynd/internal/adapters/http/fiber/middleware"
 	"proxynd/internal/config"
 	"proxynd/internal/logging"
 	"proxynd/internal/security"
