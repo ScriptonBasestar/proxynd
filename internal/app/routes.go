@@ -137,7 +137,6 @@ func setupNewArchitectureRoutes(app *fiber.App, config *RouteConfig) {
 	logger.Info("New architecture routes setup completed")
 }
 
-
 // setupNewMiddlewares configures middlewares using new architecture
 func setupNewMiddlewares(app *fiber.App, config *RouteConfig) {
 	logger := config.Logger
@@ -170,7 +169,6 @@ func setupNewMiddlewares(app *fiber.App, config *RouteConfig) {
 	logger.Info("New middleware setup completed",
 		logging.Int("middleware_count", 5))
 }
-
 
 // InitializeRouteConfig creates a default route configuration
 func InitializeRouteConfig(unifiedConfig *config.UnifiedConfig, container *Container) *RouteConfig {

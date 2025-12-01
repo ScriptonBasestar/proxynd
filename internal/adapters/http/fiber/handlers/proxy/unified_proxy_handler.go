@@ -99,4 +99,3 @@ func (h *UnifiedProxyHandlerStruct) Handle(c *fiber.Ctx) error {
 	h.logger.Error("No proxy service or adapter factory available")
 	return c.Status(fiber.StatusInternalServerError).SendString("Proxy service not initialized")
 }
-

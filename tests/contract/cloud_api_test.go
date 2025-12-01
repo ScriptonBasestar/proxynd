@@ -370,11 +370,11 @@ func mockUpdateTenantHandler(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"success": true,
 		"data": fiber.Map{
-			"id":          c.Params("id"),
-			"name":        "Updated Tenant",
-			"plan":        "enterprise",
-			"status":      "active",
-			"updated_at":  "2025-11-25T00:00:00Z",
+			"id":         c.Params("id"),
+			"name":       "Updated Tenant",
+			"plan":       "enterprise",
+			"status":     "active",
+			"updated_at": "2025-11-25T00:00:00Z",
 		},
 		"metadata": fiber.Map{
 			"timestamp": "2025-11-25T00:00:00Z",
@@ -551,14 +551,14 @@ func mockGetSubscriptionHandler(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"success": true,
 		"data": fiber.Map{
-			"id":                    "sub_001",
-			"tenant_id":             c.Query("tenant_id"),
-			"plan":                  "business",
-			"status":                "active",
-			"current_period_start":  "2025-11-01T00:00:00Z",
-			"current_period_end":    "2025-12-01T00:00:00Z",
-			"cancel_at_period_end":  false,
-			"created_at":            "2025-01-01T00:00:00Z",
+			"id":                   "sub_001",
+			"tenant_id":            c.Query("tenant_id"),
+			"plan":                 "business",
+			"status":               "active",
+			"current_period_start": "2025-11-01T00:00:00Z",
+			"current_period_end":   "2025-12-01T00:00:00Z",
+			"cancel_at_period_end": false,
+			"created_at":           "2025-01-01T00:00:00Z",
 		},
 		"metadata": fiber.Map{
 			"timestamp": "2025-11-25T00:00:00Z",

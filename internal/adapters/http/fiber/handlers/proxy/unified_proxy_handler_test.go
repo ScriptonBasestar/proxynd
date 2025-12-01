@@ -22,4 +22,3 @@ func TestNewUnifiedProxyHandler(t *testing.T) {
 	assert.Equal(t, adapterFactory, handler.adapterFactory, "Factory should be set")
 	assert.Equal(t, logger, handler.logger, "Logger should be set")
 }
-

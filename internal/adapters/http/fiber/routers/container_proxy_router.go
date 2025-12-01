@@ -6,14 +6,14 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
+	authHandlers "proxynd/internal/adapters/http/fiber/handlers/auth"
+	proxyHandlers "proxynd/internal/adapters/http/fiber/handlers/proxy"
+	middlewares "proxynd/internal/adapters/http/fiber/middleware"
 	"proxynd/internal/alerts"
 	"proxynd/internal/config"
 	"proxynd/internal/container"
 	"proxynd/internal/handlers"
-	authHandlers "proxynd/internal/adapters/http/fiber/handlers/auth"
-	proxyHandlers "proxynd/internal/adapters/http/fiber/handlers/proxy"
 	"proxynd/internal/logging"
-	middlewares "proxynd/internal/adapters/http/fiber/middleware"
 )
 
 // Constants for package managers

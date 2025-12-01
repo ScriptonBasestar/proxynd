@@ -12,12 +12,12 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 
+	proxyHandlers "proxynd/internal/adapters/http/fiber/handlers/proxy"
+	middlewares "proxynd/internal/adapters/http/fiber/middleware"
 	"proxynd/internal/app"
 	"proxynd/internal/config"
 	"proxynd/internal/factory"
 	"proxynd/internal/logging"
-	proxyHandlers "proxynd/internal/adapters/http/fiber/handlers/proxy"
-	middlewares "proxynd/internal/adapters/http/fiber/middleware"
 )
 
 // TestServer 통합 테스트용 서버 구조체

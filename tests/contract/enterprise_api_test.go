@@ -403,6 +403,7 @@ func TestEnterpriseAPIErrorFormat(t *testing.T) {
 	assert.Contains(t, errorObj, "code", "Error object must contain 'code'")
 	assert.Contains(t, errorObj, "message", "Error object must contain 'message'")
 }
+
 // TestEnterpriseAPIMutationEndpoints validates POST/PUT/DELETE endpoints
 func TestEnterpriseAPIMutationEndpoints(t *testing.T) {
 	app := fiber.New()
@@ -540,7 +541,7 @@ func TestEnterpriseAPIMutationEndpoints(t *testing.T) {
 
 			resp, err := app.Test(req, -1)
 			require.NoError(t, err, "Failed to make request")
-			
+
 			assert.Equal(t, tt.expectedStatus, resp.StatusCode,
 				"Expected status %d but got %d for %s %s",
 				tt.expectedStatus, resp.StatusCode, tt.method, tt.path)
@@ -549,7 +550,7 @@ func TestEnterpriseAPIMutationEndpoints(t *testing.T) {
 			var body map[string]interface{}
 			err = json.NewDecoder(resp.Body).Decode(&body)
 			require.NoError(t, err, "Failed to decode response body")
-			
+
 			// All responses should have success and metadata fields
 			assert.Contains(t, body, "success", "Response must contain 'success' field")
 			assert.Contains(t, body, "metadata", "Response must contain 'metadata' field")

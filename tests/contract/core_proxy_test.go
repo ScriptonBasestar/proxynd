@@ -142,11 +142,11 @@ func TestPackageManagerProxyEndpoints(t *testing.T) {
 	// This test validates the expected URL patterns
 
 	proxyTests := []struct {
-		name           string
-		method         string
-		path           string
-		contentType    string
-		description    string
+		name        string
+		method      string
+		path        string
+		contentType string
+		description string
 	}{
 		// NPM Proxy Endpoints
 		{

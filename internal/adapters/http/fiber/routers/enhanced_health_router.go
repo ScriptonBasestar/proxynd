@@ -11,9 +11,9 @@ import (
 	"github.com/gofiber/fiber/v2"
 
 	"proxynd/cache"
+	middlewares "proxynd/internal/adapters/http/fiber/middleware"
 	"proxynd/internal/config"
 	"proxynd/internal/health"
-	middlewares "proxynd/internal/adapters/http/fiber/middleware"
 )
 
 // EnhancedHealthRouter 강화된 헬스체크 라우터
