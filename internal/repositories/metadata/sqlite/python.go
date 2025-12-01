@@ -53,7 +53,6 @@ func (r *PythonRepository) CreatePackage(ctx context.Context, req *ports.CreateP
 		now,
 		now,
 	).Scan(&id)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to create package: %w", err)
 	}
@@ -217,7 +216,6 @@ func (r *PythonRepository) CreateVersion(ctx context.Context, req *ports.CreateP
 		req.UploadedBy,
 		now,
 	).Scan(&id)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to create version: %w", err)
 	}

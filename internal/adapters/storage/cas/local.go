@@ -218,7 +218,6 @@ func (c *LocalCAS) ListBlobs(ctx context.Context, req *ports.ListBlobsRequest) (
 		}
 		return nil
 	})
-
 	if err != nil {
 		return nil, err
 	}
@@ -275,7 +274,6 @@ func (c *LocalCAS) GetStats(ctx context.Context) (*ports.StorageStats, error) {
 		}
 		return nil
 	})
-
 	if err != nil {
 		return nil, err
 	}

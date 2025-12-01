@@ -154,7 +154,6 @@ func (rl *RedisRateLimiter) AllowN(ctx context.Context, key string, n int) (bool
 		limit,
 		n,
 	).Int()
-
 	if err != nil {
 		return false, fmt.Errorf("rate limit check failed: %w", err)
 	}

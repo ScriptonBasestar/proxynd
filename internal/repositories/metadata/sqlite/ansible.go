@@ -35,7 +35,6 @@ func (r *AnsibleRepository) CreateNamespace(ctx context.Context, req *ports.Crea
 		now,
 		now,
 	).Scan(&id)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to create namespace: %w", err)
 	}
@@ -174,7 +173,6 @@ func (r *AnsibleRepository) CreateCollection(ctx context.Context, req *ports.Cre
 		now,
 		now,
 	).Scan(&id)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to create collection: %w", err)
 	}
@@ -343,7 +341,6 @@ func (r *AnsibleRepository) CreateVersion(ctx context.Context, req *ports.Create
 		req.UploadedBy,
 		now,
 	).Scan(&id)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to create version: %w", err)
 	}

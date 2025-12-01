@@ -411,7 +411,7 @@ func (s *packageServiceImpl) parseApkFilename(filename string) (name, version st
 		name = filename
 	}
 
-	return
+	return name, version
 }
 
 func (s *packageServiceImpl) recordRequestMetrics(ctx context.Context, request *apk.PackageRequest, statusCode int, responseTime time.Duration, cacheHit bool, proxyUsed string, fileSize int64) { //nolint:lll
@@ -446,5 +446,5 @@ func (s *packageServiceImpl) parsePackagePath(packagePath string) (arch, branch,
 		component = parts[1] // main
 		arch = parts[2]      // x86_64
 	}
-	return
+	return arch, branch, component
 }

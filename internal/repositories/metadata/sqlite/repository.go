@@ -128,7 +128,6 @@ func (r *Repository) StoreArtifact(ctx context.Context, artifact *ports.Artifact
 		artifact.CreatedAt.Format("2006-01-02 15:04:05"),
 		artifact.AccessedAt.Format("2006-01-02 15:04:05"),
 	)
-
 	if err != nil {
 		return fmt.Errorf("failed to store artifact: %w", err)
 	}
