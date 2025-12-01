@@ -88,7 +88,7 @@ func (sc *SSMCache) GetParameters(ctx context.Context, names []string, withDecry
 }
 
 // GetParametersByPath retrieves parameters by path with caching
-func (sc *SSMCache) GetParametersByPath(ctx context.Context, path string, withDecryption bool, recursive bool) (map[string]string, error) {
+func (sc *SSMCache) GetParametersByPath(ctx context.Context, path string, withDecryption, recursive bool) (map[string]string, error) {
 	// For path-based retrieval, we always fetch fresh data
 	// as the parameters under a path can change frequently
 	params, err := sc.client.GetParametersByPath(ctx, path, withDecryption, recursive)
@@ -137,7 +137,7 @@ func (sc *SSMCache) getCached(name string) *CachedParameter {
 }
 
 // setCached stores a parameter in cache
-func (sc *SSMCache) setCached(name string, value string, encrypted bool) {
+func (sc *SSMCache) setCached(name, value string, encrypted bool) {
 	sc.mutex.Lock()
 	defer sc.mutex.Unlock()
 

@@ -2,10 +2,12 @@ package enterprise
 
 import (
 	"fmt"
-	"github.com/gofiber/fiber/v2"
-	"proxynd/internal/domain/enterprise"
 	"strconv"
 	"time"
+
+	"github.com/gofiber/fiber/v2"
+
+	"proxynd/internal/domain/enterprise"
 )
 
 // AnalyticsHandler handles analytics and reporting API requests

@@ -1,10 +1,12 @@
 package enterprise
 
 import (
-	"github.com/gofiber/fiber/v2"
-	"proxynd/internal/domain/enterprise"
 	"strconv"
 	"time"
+
+	"github.com/gofiber/fiber/v2"
+
+	"proxynd/internal/domain/enterprise"
 )
 
 // AlertsHandler handles alerts and notifications API requests

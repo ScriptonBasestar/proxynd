@@ -3,6 +3,7 @@ package enterprise
 
 import (
 	"github.com/gofiber/fiber/v2"
+
 	"proxynd/internal/enterprise/license"
 )
 

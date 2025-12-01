@@ -173,7 +173,7 @@ func (a *DockerHandlerAdapter) extractPathComponents(requestPath string) (reposi
 		repository = strings.Join(parts[:len(parts)-2], "/")
 		reference = parts[len(parts)-1]
 		operation = "manifest"
-		return
+		return repository, reference, operation
 	}
 
 	// Blob 요청: /v2/<name>/blobs/<digest>
@@ -181,7 +181,7 @@ func (a *DockerHandlerAdapter) extractPathComponents(requestPath string) (reposi
 		repository = strings.Join(parts[:len(parts)-2], "/")
 		reference = parts[len(parts)-1]
 		operation = "blob"
-		return
+		return repository, reference, operation
 	}
 
 	// 태그 목록 요청: /v2/<name>/tags/list
@@ -189,14 +189,14 @@ func (a *DockerHandlerAdapter) extractPathComponents(requestPath string) (reposi
 		repository = strings.Join(parts[:len(parts)-2], "/")
 		reference = ""
 		operation = dockerTagsEndpoint
-		return
+		return repository, reference, operation
 	}
 
 	// 기본값
 	repository = strings.Join(parts, "/")
 	reference = ""
 	operation = "unknown"
-	return
+	return repository, reference, operation
 }
 
 // processResponse Docker 서비스 응답을 Fiber 응답으로 변환

@@ -128,7 +128,7 @@ func (c *AWSClient) GetParameters(ctx context.Context, names []string, withDecry
 
 // GetParametersByPath retrieves all parameters under a specific path
 // This is useful for retrieving configuration hierarchies
-func (c *AWSClient) GetParametersByPath(ctx context.Context, path string, withDecryption bool, recursive bool) (map[string]string, error) {
+func (c *AWSClient) GetParametersByPath(ctx context.Context, path string, withDecryption, recursive bool) (map[string]string, error) {
 	params := make(map[string]string)
 	var nextToken *string
 
@@ -163,7 +163,7 @@ func (c *AWSClient) GetParametersByPath(ctx context.Context, path string, withDe
 }
 
 // PutParameter creates or updates a parameter in AWS SSM Parameter Store
-func (c *AWSClient) PutParameter(ctx context.Context, name string, value string, paramType types.ParameterType, overwrite bool) error {
+func (c *AWSClient) PutParameter(ctx context.Context, name, value string, paramType types.ParameterType, overwrite bool) error {
 	input := &ssm.PutParameterInput{
 		Name:      aws.String(name),
 		Value:     aws.String(value),

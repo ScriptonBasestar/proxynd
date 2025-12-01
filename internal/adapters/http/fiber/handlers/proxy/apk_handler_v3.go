@@ -453,7 +453,7 @@ func (h *ApkHandlerV3) verifyApkSignature(body []byte, packagePath string) bool 
 func (h *ApkHandlerV3) saveToTempFile(data []byte, packagePath string) (string, error) {
 	// 임시 디렉토리 생성
 	tmpDir := filepath.Join(os.TempDir(), "proxynd-apk-verify")
-	if err := os.MkdirAll(tmpDir, 0755); err != nil {
+	if err := os.MkdirAll(tmpDir, 0o755); err != nil {
 		return "", fmt.Errorf("임시 디렉토리 생성 실패: %v", err)
 	}
 
@@ -462,7 +462,7 @@ func (h *ApkHandlerV3) saveToTempFile(data []byte, packagePath string) (string, 
 	tempFile := filepath.Join(tmpDir, fmt.Sprintf("%s-%d.apk", filename, time.Now().UnixNano()))
 
 	// 파일 작성
-	if err := os.WriteFile(tempFile, data, 0644); err != nil {
+	if err := os.WriteFile(tempFile, data, 0o644); err != nil {
 		return "", fmt.Errorf("임시 파일 작성 실패: %v", err)
 	}
 

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+
 	"proxynd/internal/domain/enterprise"
 )
 
