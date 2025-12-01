@@ -111,5 +111,6 @@ docker-compose.override.yml
 # Static analysis and local tooling artifacts
 *.sarif
 *.report.json
+gosec-report.json
 .claude/
 CLAUDE.local.md
