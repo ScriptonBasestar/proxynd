@@ -171,7 +171,9 @@ func (d *Driver) FetchPackage(ctx context.Context, req *ports.DriverRequest) (*p
 	}
 
 	if indexConfig, exists := d.config.Indexes[index]; exists && indexConfig.Auth != nil {
-		common.ApplyAuthentication(headers, indexConfig.Auth)
+		if err := common.ApplyAuthentication(headers, indexConfig.Auth); err != nil {
+			return nil, fmt.Errorf("failed to apply authentication: %w", err)
+		}
 	}
 
 	// Fetch from upstream

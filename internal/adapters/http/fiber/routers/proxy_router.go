@@ -5,15 +5,13 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 
-	"proxynd/internal/adapters/http/fiber/handlers/proxy"
-	fiberMiddlewares "proxynd/internal/adapters/http/fiber/middleware"
+	authHandlers "proxynd/internal/adapters/http/fiber/handlers/auth"
+	proxyHandlers "proxynd/internal/adapters/http/fiber/handlers/proxy"
+	middlewares "proxynd/internal/adapters/http/fiber/middleware"
 	"proxynd/internal/alerts"
 	"proxynd/internal/config"
 	"proxynd/internal/factory"
-	authHandlers "proxynd/internal/adapters/http/fiber/handlers/auth"
-	proxyHandlers "proxynd/internal/adapters/http/fiber/handlers/proxy"
 	"proxynd/internal/logging"
-	middlewares "proxynd/internal/adapters/http/fiber/middleware"
 	"proxynd/internal/usecase"
 )
 
@@ -122,12 +120,12 @@ func ProxyRouterWithContainer(app *fiber.App, container ContainerProvider) {
 
 		if psOk && afOk && logOk {
 			// Create new architecture handler with DI
-			handler := proxy.NewUnifiedProxyHandler(proxyService, adapterFactory, loggerTyped)
+			handler := proxyHandlers.NewUnifiedProxyHandler(proxyService, adapterFactory, loggerTyped)
 
 			log.Printf("Container-based proxy router initialized with ProxyService (hexagonal architecture)")
 
 			// Create method validator middleware for read-only proxy
-			methodValidator := fiberMiddlewares.ReadOnlyMethodValidator()
+			methodValidator := middlewares.ReadOnlyMethodValidator()
 
 			// Register unified proxy routes with new architecture
 			// Only GET and HEAD methods are allowed for read-only proxy

@@ -162,7 +162,9 @@ func (d *Driver) FetchPackage(ctx context.Context, req *ports.DriverRequest) (*p
 	}
 
 	if repoConfig, exists := d.config.Repositories[repository]; exists && repoConfig.Auth != nil {
-		common.ApplyAuthentication(headers, repoConfig.Auth)
+		if err := common.ApplyAuthentication(headers, repoConfig.Auth); err != nil {
+			return nil, fmt.Errorf("failed to apply authentication: %w", err)
+		}
 	}
 
 	// Fetch from upstream

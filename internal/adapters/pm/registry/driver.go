@@ -186,7 +186,9 @@ func (d *Driver) FetchPackage(ctx context.Context, req *ports.DriverRequest) (*p
 	}
 
 	if registryConfig, exists := d.config.Registries[registry]; exists && registryConfig.Auth != nil {
-		common.ApplyAuthentication(headers, registryConfig.Auth)
+		if err := common.ApplyAuthentication(headers, registryConfig.Auth); err != nil {
+			return nil, fmt.Errorf("failed to apply authentication: %w", err)
+		}
 	}
 
 	// Fetch from upstream
@@ -374,7 +376,7 @@ func (d *Driver) validateDockerDigest(content []byte, digest string) error {
 	computed := hex.EncodeToString(hasher.Sum(nil))
 
 	if computed != strings.ToLower(expectedHash) {
-		return fmt.Errorf("Docker digest mismatch")
+		return fmt.Errorf("docker digest mismatch")
 	}
 
 	return nil

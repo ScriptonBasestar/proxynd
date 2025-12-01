@@ -81,7 +81,11 @@ func TestAdminOnlyMiddleware(t *testing.T) {
 			// Test with context setup
 			resp, err := app.Test(req, -1)
 			assert.NoError(t, err)
-			defer resp.Body.Close()
+			defer func() {
+				if err := resp.Body.Close(); err != nil {
+					t.Logf("Failed to close response body: %v", err)
+				}
+			}()
 
 			// Note: We can't directly setup Fiber context in tests
 			// This test validates the middleware logic structure
@@ -159,7 +163,11 @@ func TestAdminOnlyMiddleware_Integration(t *testing.T) {
 			req := httptest.NewRequest("GET", tt.path, nil)
 			resp, err := app.Test(req, -1)
 			assert.NoError(t, err)
-			defer resp.Body.Close()
+			defer func() {
+				if err := resp.Body.Close(); err != nil {
+					t.Logf("Failed to close response body: %v", err)
+				}
+			}()
 
 			assert.Equal(t, tt.expectedStatus, resp.StatusCode)
 		})
@@ -229,7 +237,11 @@ func TestAdminOnlyMiddlewareWithJWT(t *testing.T) {
 
 			resp, err := app.Test(req, -1)
 			assert.NoError(t, err)
-			defer resp.Body.Close()
+			defer func() {
+				if err := resp.Body.Close(); err != nil {
+					t.Logf("Failed to close response body: %v", err)
+				}
+			}()
 
 			assert.Equal(t, tt.expectedStatus, resp.StatusCode)
 		})

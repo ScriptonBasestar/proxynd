@@ -307,7 +307,11 @@ func (wt *WebhookTester) TestEndpointConnectivity(endpointName string) (*TestRes
 		wt.addTestResult(endpoint.Name, *result)
 		return result, nil
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			wt.logger.Error("Failed to close response body", logging.F("error", err))
+		}
+	}()
 
 	result.StatusCode = resp.StatusCode
 	result.Success = resp.StatusCode >= 200 && resp.StatusCode < 400

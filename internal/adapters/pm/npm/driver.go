@@ -185,7 +185,9 @@ func (d *Driver) FetchPackage(ctx context.Context, req *ports.DriverRequest) (*p
 		if registryConfig.Token != "" {
 			headers["Authorization"] = fmt.Sprintf("Bearer %s", registryConfig.Token)
 		} else if registryConfig.Auth != nil {
-			common.ApplyAuthentication(headers, registryConfig.Auth)
+			if err := common.ApplyAuthentication(headers, registryConfig.Auth); err != nil {
+				return nil, fmt.Errorf("failed to apply authentication: %w", err)
+			}
 		}
 	}
 

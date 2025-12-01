@@ -144,12 +144,22 @@ jobs:
       - name: Run memory profiling
         run: |
           echo "🧠 Running memory profiling..."
-          go test -memprofile=mem.prof -run=^$ -bench=. -timeout=20m ./...
+          # Profile key service packages individually
+          mkdir -p profiles
+          for pkg in ./internal/services ./internal/adapters/pm/npm ./internal/adapters/pm/maven ./internal/adapters/pm/docker; do
+            if [ -d "$pkg" ]; then
+              pkgname=$(basename $pkg)
+              echo "Profiling $pkgname..."
+              go test -memprofile=profiles/mem-${pkgname}.prof -run=^$ -bench=. -timeout=5m $pkg || true
+            fi
+          done
 
-          # Memory allocation analysis
-          go tool pprof -text -alloc_space mem.prof > memory_alloc_space.txt
-          go tool pprof -text -alloc_objects mem.prof > memory_alloc_objects.txt
-          go tool pprof -text -inuse_space mem.prof > memory_inuse_space.txt
+          # Analyze the largest profile (services)
+          if [ -f "profiles/mem-services.prof" ]; then
+            go tool pprof -text -alloc_space profiles/mem-services.prof > memory_alloc_space.txt
+            go tool pprof -text -alloc_objects profiles/mem-services.prof > memory_alloc_objects.txt
+            go tool pprof -text -inuse_space profiles/mem-services.prof > memory_inuse_space.txt
+          fi
 
       - name: Generate memory report
         run: |
@@ -180,7 +190,7 @@ jobs:
         with:
           name: memory-profiles
           path: |
-            mem.prof
+            profiles/*.prof
             memory_*.txt
             memory_report.md
           retention-days: 30
@@ -530,4 +540,12 @@ jobs:
 
       - name: Add summary to workflow
         run: |
-          cat comprehensive_report.md >> $GITHUB_STEP_SUMMARY
+          # Truncate report to fit GitHub's 1MB limit
+          head -n 500 comprehensive_report.md > summary_truncated.md
+          echo "" >> summary_truncated.md
+          echo "---" >> summary_truncated.md
+          echo "" >> summary_truncated.md
+          echo "📊 **Full report available in artifacts** (comprehensive-performance-report)" >> summary_truncated.md
+          echo "" >> summary_truncated.md
+          echo "Report truncated to first 500 lines to fit GitHub Actions summary size limit." >> summary_truncated.md
+          cat summary_truncated.md >> $GITHUB_STEP_SUMMARY

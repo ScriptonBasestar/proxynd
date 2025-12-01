@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"strconv"
+
 	"github.com/gofiber/fiber/v2"
 
 	"proxynd/internal/ports"
@@ -53,9 +55,9 @@ func (h *SearchHandlerStruct) Handle(ctx ports.HTTPContext) error {
 	}
 	limit := 20 // default limit
 	if limitStr := ctx.Query("limit"); limitStr != "" {
-		// Parse limit from string
-		// Note: In real implementation, we'd convert limitStr to int
-		// For now using default
+		if parsedLimit, err := strconv.Atoi(limitStr); err == nil && parsedLimit > 0 && parsedLimit <= 100 {
+			limit = parsedLimit
+		}
 	}
 
 	// Create search request

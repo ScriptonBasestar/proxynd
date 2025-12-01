@@ -176,7 +176,9 @@ func (d *Driver) FetchPackage(ctx context.Context, req *ports.DriverRequest) (*p
 	// Add authentication if configured
 	mirror := d.getMirrorForPath(req.Path)
 	if mirrorConfig, exists := d.config.Mirrors[mirror]; exists && mirrorConfig.Auth != nil {
-		common.ApplyAuthentication(headers, mirrorConfig.Auth)
+		if err := common.ApplyAuthentication(headers, mirrorConfig.Auth); err != nil {
+			return nil, fmt.Errorf("failed to apply authentication: %w", err)
+		}
 	}
 
 	// Fetch from upstream
