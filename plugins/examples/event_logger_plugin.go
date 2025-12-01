@@ -217,5 +217,7 @@ func getMapKeys(m map[string]interface{}) []string {
 }
 
 // Ensure EventLoggerPlugin implements required interfaces
-var _ plugins.Plugin = (*EventLoggerPlugin)(nil)
-var _ plugins.EventHandler = (*EventLoggerPlugin)(nil)
+var (
+	_ plugins.Plugin       = (*EventLoggerPlugin)(nil)
+	_ plugins.EventHandler = (*EventLoggerPlugin)(nil)
+)

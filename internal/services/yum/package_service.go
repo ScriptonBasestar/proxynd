@@ -348,7 +348,7 @@ func (s *packageServiceImpl) parseRpmFilename(filename string) (name, version, r
 		name = filename
 	}
 
-	return
+	return name, version, release, arch
 }
 
 func (s *packageServiceImpl) recordRequestMetrics(ctx context.Context, request *yum.PackageRequest, statusCode int, responseTime time.Duration, cacheHit bool, proxyUsed string, fileSize int64) { //nolint:lll

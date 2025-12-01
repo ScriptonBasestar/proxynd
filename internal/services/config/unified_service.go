@@ -369,7 +369,7 @@ func (s *unifiedService) SaveConfig(ctx context.Context) error {
 	}
 
 	// Write to file with appropriate permissions (0644)
-	if err := os.WriteFile(configPath, data, 0644); err != nil {
+	if err := os.WriteFile(configPath, data, 0o644); err != nil {
 		return fmt.Errorf("failed to write configuration file: %w", err)
 	}
 
