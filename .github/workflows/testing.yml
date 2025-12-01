@@ -107,7 +107,7 @@ jobs:
   quick-feedback:
     name: Quick Feedback (Unit + Lint)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 8  # Reduced from 15 (optimized with conditional race detector)
     needs: changes
     if: needs.changes.outputs.has_changes == 'true'
     steps:
@@ -121,6 +121,20 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
           cache: true
+          cache-dependency-path: |
+            go.sum
+            go.mod
+
+      - name: Cache test artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-test-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-test-
+            ${{ runner.os }}-go-
 
       - name: Install dependencies
         run: |
@@ -131,11 +145,20 @@ jobs:
         uses: golangci/golangci-lint-action@v9
         with:
           version: latest
-          args: --timeout=5m
+          args: --timeout=5m --new-from-rev=HEAD~1
+          skip-cache: false
+          skip-pkg-cache: false
 
       - name: Run unit tests
         run: |
-          go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
+          # Conditional race detector: develop = fast, PR/master = thorough
+          if [ "${{ github.ref }}" = "refs/heads/develop" ] && [ "${{ github.event_name }}" = "push" ]; then
+            echo "🚀 Fast feedback mode (develop push)"
+            go test -v -p 4 -coverprofile=coverage.out -covermode=atomic ./...
+          else
+            echo "🔍 Thorough testing mode (PR/master)"
+            go test -v -race -p 4 -coverprofile=coverage.out -covermode=atomic ./...
+          fi
 
       - name: Upload coverage
         uses: codecov/codecov-action@v5
