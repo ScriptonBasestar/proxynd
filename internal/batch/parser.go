@@ -7,6 +7,10 @@ import (
 	"strings"
 )
 
+const (
+	keywordExit = "exit"
+)
+
 // Parser parses batch script files into executable BatchScript
 type Parser struct {
 	lines   []string
@@ -70,7 +74,7 @@ func (p *Parser) parseCommand() (Command, error) {
 	switch keyword {
 	case "echo":
 		return p.parseEcho(parts[1:])
-	case "exit":
+	case keywordExit:
 		return p.parseExit(parts[1:])
 	case "if":
 		return p.parseConditional()

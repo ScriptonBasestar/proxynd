@@ -23,7 +23,7 @@ if last_exit == 0 then
     echo "Success"
 fi
 `
-	if err := os.WriteFile(scriptFile, []byte(script), 0644); err != nil {
+	if err := os.WriteFile(scriptFile, []byte(script), 0o644); err != nil {
 		t.Fatalf("Failed to create test script: %v", err)
 	}
 
@@ -42,7 +42,7 @@ func TestBatchValidate_InvalidScript(t *testing.T) {
 	script := `if last_exit == 0 then
     echo "Success"
 `
-	if err := os.WriteFile(scriptFile, []byte(script), 0644); err != nil {
+	if err := os.WriteFile(scriptFile, []byte(script), 0o644); err != nil {
 		t.Fatalf("Failed to create test script: %v", err)
 	}
 
@@ -63,8 +63,8 @@ func TestBatchValidate_FileNotFound(t *testing.T) {
 func TestBatchHistory_EmptyHistory(t *testing.T) {
 	// Create temporary history directory
 	tmpDir := t.TempDir()
-	os.Setenv("PROXYND_BATCH_HISTORY_DIR", tmpDir)
-	defer os.Unsetenv("PROXYND_BATCH_HISTORY_DIR")
+	_ = os.Setenv("PROXYND_BATCH_HISTORY_DIR", tmpDir)
+	defer func() { _ = os.Unsetenv("PROXYND_BATCH_HISTORY_DIR") }()
 
 	// Test with empty history
 	err := runBatchHistory(10, "", "", "table")
@@ -75,8 +75,8 @@ func TestBatchHistory_EmptyHistory(t *testing.T) {
 
 func TestBatchHistory_WithData(t *testing.T) {
 	tmpDir := t.TempDir()
-	os.Setenv("PROXYND_BATCH_HISTORY_DIR", tmpDir)
-	defer os.Unsetenv("PROXYND_BATCH_HISTORY_DIR")
+	_ = os.Setenv("PROXYND_BATCH_HISTORY_DIR", tmpDir)
+	defer func() { _ = os.Unsetenv("PROXYND_BATCH_HISTORY_DIR") }()
 
 	// Create storage and add test data
 	storage, err := history.NewStorage(tmpDir)
@@ -126,8 +126,8 @@ func TestBatchHistory_WithData(t *testing.T) {
 
 func TestBatchHistory_WithTimeFilter(t *testing.T) {
 	tmpDir := t.TempDir()
-	os.Setenv("PROXYND_BATCH_HISTORY_DIR", tmpDir)
-	defer os.Unsetenv("PROXYND_BATCH_HISTORY_DIR")
+	_ = os.Setenv("PROXYND_BATCH_HISTORY_DIR", tmpDir)
+	defer func() { _ = os.Unsetenv("PROXYND_BATCH_HISTORY_DIR") }()
 
 	storage, err := history.NewStorage(tmpDir)
 	if err != nil {
@@ -178,8 +178,8 @@ func TestBatchHistory_WithTimeFilter(t *testing.T) {
 
 func TestBatchHistory_WithStatusFilter(t *testing.T) {
 	tmpDir := t.TempDir()
-	os.Setenv("PROXYND_BATCH_HISTORY_DIR", tmpDir)
-	defer os.Unsetenv("PROXYND_BATCH_HISTORY_DIR")
+	_ = os.Setenv("PROXYND_BATCH_HISTORY_DIR", tmpDir)
+	defer func() { _ = os.Unsetenv("PROXYND_BATCH_HISTORY_DIR") }()
 
 	storage, err := history.NewStorage(tmpDir)
 	if err != nil {
@@ -228,8 +228,8 @@ func TestBatchHistory_WithStatusFilter(t *testing.T) {
 
 func TestBatchShow_Success(t *testing.T) {
 	tmpDir := t.TempDir()
-	os.Setenv("PROXYND_BATCH_HISTORY_DIR", tmpDir)
-	defer os.Unsetenv("PROXYND_BATCH_HISTORY_DIR")
+	_ = os.Setenv("PROXYND_BATCH_HISTORY_DIR", tmpDir)
+	defer func() { _ = os.Unsetenv("PROXYND_BATCH_HISTORY_DIR") }()
 
 	storage, err := history.NewStorage(tmpDir)
 	if err != nil {
@@ -270,8 +270,8 @@ func TestBatchShow_Success(t *testing.T) {
 
 func TestBatchShow_NotFound(t *testing.T) {
 	tmpDir := t.TempDir()
-	os.Setenv("PROXYND_BATCH_HISTORY_DIR", tmpDir)
-	defer os.Unsetenv("PROXYND_BATCH_HISTORY_DIR")
+	_ = os.Setenv("PROXYND_BATCH_HISTORY_DIR", tmpDir)
+	defer func() { _ = os.Unsetenv("PROXYND_BATCH_HISTORY_DIR") }()
 
 	err := runBatchShow("nonexistent-job", false)
 	if err == nil {
@@ -281,8 +281,8 @@ func TestBatchShow_NotFound(t *testing.T) {
 
 func TestBatchClean_DryRun(t *testing.T) {
 	tmpDir := t.TempDir()
-	os.Setenv("PROXYND_BATCH_HISTORY_DIR", tmpDir)
-	defer os.Unsetenv("PROXYND_BATCH_HISTORY_DIR")
+	_ = os.Setenv("PROXYND_BATCH_HISTORY_DIR", tmpDir)
+	defer func() { _ = os.Unsetenv("PROXYND_BATCH_HISTORY_DIR") }()
 
 	storage, err := history.NewStorage(tmpDir)
 	if err != nil {
@@ -324,8 +324,8 @@ func TestBatchClean_DryRun(t *testing.T) {
 
 func TestBatchClean_ActualClean(t *testing.T) {
 	tmpDir := t.TempDir()
-	os.Setenv("PROXYND_BATCH_HISTORY_DIR", tmpDir)
-	defer os.Unsetenv("PROXYND_BATCH_HISTORY_DIR")
+	_ = os.Setenv("PROXYND_BATCH_HISTORY_DIR", tmpDir)
+	defer func() { _ = os.Unsetenv("PROXYND_BATCH_HISTORY_DIR") }()
 
 	storage, err := history.NewStorage(tmpDir)
 	if err != nil {

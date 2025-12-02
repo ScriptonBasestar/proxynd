@@ -137,7 +137,6 @@ func TestParser_ParseCLICommand(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			parser := NewParser(tt.input)
 			script, err := parser.Parse()
-
 			if err != nil {
 				t.Errorf("Parse() error = %v", err)
 				return
@@ -181,7 +180,6 @@ fi`
 
 	parser := NewParser(input)
 	script, err := parser.Parse()
-
 	if err != nil {
 		t.Fatalf("Parse() error = %v", err)
 	}
@@ -215,7 +213,6 @@ echo Done`
 
 	parser := NewParser(input)
 	script, err := parser.Parse()
-
 	if err != nil {
 		t.Fatalf("Parse() error = %v", err)
 	}
@@ -233,7 +230,6 @@ echo world`
 
 	parser := NewParser(input)
 	script, err := parser.Parse()
-
 	if err != nil {
 		t.Fatalf("Parse() error = %v", err)
 	}

@@ -20,7 +20,7 @@ type Storage struct {
 // NewStorage creates a new history storage manager.
 func NewStorage(dataDir string) (*Storage, error) {
 	// Create data directory if it doesn't exist
-	if err := os.MkdirAll(dataDir, 0755); err != nil {
+	if err := os.MkdirAll(dataDir, 0o755); err != nil {
 		return nil, fmt.Errorf("failed to create data directory: %w", err)
 	}
 
@@ -53,7 +53,7 @@ func (s *Storage) Save(job *batch.JobExecution) error {
 
 	// Write to file
 	filename := filepath.Join(s.dataDir, fmt.Sprintf("%s.json", job.ID))
-	if err := os.WriteFile(filename, data, 0644); err != nil {
+	if err := os.WriteFile(filename, data, 0o644); err != nil {
 		return fmt.Errorf("failed to write history file: %w", err)
 	}
 

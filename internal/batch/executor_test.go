@@ -117,7 +117,6 @@ func TestExecutor_ExecuteScript(t *testing.T) {
 
 	executor := NewExecutor()
 	err := executor.Execute(context.Background(), script)
-
 	if err != nil {
 		t.Fatalf("Execute() error = %v", err)
 	}

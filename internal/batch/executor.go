@@ -28,8 +28,8 @@ type Executor struct {
 // NewExecutor creates a new batch executor
 func NewExecutor() *Executor {
 	return &Executor{
-		Output:      &bytes.Buffer{},
-		Variables:   make(map[string]string),
+		Output:       &bytes.Buffer{},
+		Variables:    make(map[string]string),
 		LastExitCode: 0,
 		AllowedCommands: map[string]bool{
 			"cache":        true,
@@ -50,7 +50,7 @@ func (e *Executor) Execute(ctx context.Context, script *BatchScript) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
-			e.Output.WriteString(fmt.Sprintf("[Step %d/%d] %s\n", i+1, len(script.Commands), cmd.String()))
+			fmt.Fprintf(e.Output, "[Step %d/%d] %s\n", i+1, len(script.Commands), cmd.String())
 
 			if err := cmd.Execute(ctx, e); err != nil {
 				// Check if it's an explicit exit

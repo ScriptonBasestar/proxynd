@@ -16,6 +16,10 @@ import (
 	"proxynd/internal/batch/history"
 )
 
+const (
+	outputFormatText = "text"
+)
+
 // BatchJobResponse represents a job execution response
 type BatchJobResponse struct {
 	ID        string    `json:"id"`
@@ -301,7 +305,7 @@ func runBatchRun(filename string, async bool, outputFile string, timeoutStr stri
 
 			// Save output if requested
 			if outputFile != "" {
-				if err := os.WriteFile(outputFile, []byte(strings.Join(currentJob.Output, "\n")), 0644); err != nil {
+				if err := os.WriteFile(outputFile, []byte(strings.Join(currentJob.Output, "\n")), 0o644); err != nil {
 					return fmt.Errorf("failed to write output file: %w", err)
 				}
 				fmt.Printf("\nOutput saved to: %s\n", outputFile)
@@ -398,9 +402,9 @@ func runBatchHistory(limit int, sinceStr string, statusFilter string, format str
 
 	// Output based on format
 	switch format {
-	case "json":
+	case outputFormatJSON:
 		return outputHistoryJSON(histories)
-	case "text":
+	case outputFormatText:
 		return outputHistoryText(histories)
 	default:
 		return outputHistoryTable(histories)
@@ -412,7 +416,7 @@ func runBatchCancel(jobID string, skipConfirm bool) error {
 	if !skipConfirm {
 		fmt.Printf("Are you sure you want to cancel job %s? (y/N): ", jobID)
 		var response string
-		fmt.Scanln(&response)
+		_, _ = fmt.Scanln(&response)
 		if !strings.EqualFold(response, "y") && !strings.EqualFold(response, "yes") {
 			fmt.Println("Cancelled")
 			return nil
@@ -585,8 +589,8 @@ func outputHistoryText(histories []*batch.JobHistory) error {
 
 func outputHistoryTable(histories []*batch.JobHistory) error {
 	w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
-	fmt.Fprintln(w, "JOB ID\tSTATUS\tSTART TIME\tDURATION\tEXIT CODE")
-	fmt.Fprintln(w, strings.Repeat("─", 80))
+	_, _ = fmt.Fprintln(w, "JOB ID\tSTATUS\tSTART TIME\tDURATION\tEXIT CODE")
+	_, _ = fmt.Fprintln(w, strings.Repeat("─", 80))
 
 	for _, h := range histories {
 		duration := ""
@@ -594,7 +598,7 @@ func outputHistoryTable(histories []*batch.JobHistory) error {
 			duration = formatDuration(h.EndTime.Sub(h.StartTime))
 		}
 
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%d\n",
+		_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%d\n",
 			h.ID,
 			h.Status,
 			h.StartTime.Format("2006-01-02 15:04"),
@@ -603,7 +607,7 @@ func outputHistoryTable(histories []*batch.JobHistory) error {
 		)
 	}
 
-	w.Flush()
+	_ = w.Flush()
 	return nil
 }
 
