@@ -1,0 +1,37 @@
+# Maintenance Batch Script
+# Performs routine maintenance tasks
+
+echo "Starting maintenance batch job..."
+
+# Clear old cache entries
+cache clear --older-than 30d --force
+
+# Check if cache cleanup succeeded
+if last_exit == 0 then
+    echo "✅ Cache cleared successfully"
+else
+    echo "❌ Cache cleanup failed"
+    exit 1
+fi
+
+# Create Maven backup
+maven-backup create --target /backup/maven
+
+# Check backup result
+if last_exit == 0 then
+    echo "✅ Maven backup created"
+else
+    echo "⚠️ Maven backup failed, continuing..."
+fi
+
+# Rebuild Maven index
+maven-index build --force
+
+if last_exit == 0 then
+    echo "✅ Maven index rebuilt"
+else
+    echo "❌ Maven index rebuild failed"
+    exit 1
+fi
+
+echo "✅ Maintenance completed successfully"

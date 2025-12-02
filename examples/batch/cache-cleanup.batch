@@ -1,0 +1,30 @@
+# Cache Cleanup Batch Script
+# Removes old cache entries based on age
+
+echo "Starting cache cleanup..."
+
+# Get current status
+status
+
+# Clear Maven cache older than 60 days
+cache clear --type maven --older-than 60d
+
+if last_exit == 0 then
+    echo "Maven cache cleaned"
+fi
+
+# Clear NPM cache older than 30 days
+cache clear --type npm --older-than 30d
+
+if last_exit == 0 then
+    echo "NPM cache cleaned"
+fi
+
+# Clear Docker cache older than 45 days
+cache clear --type docker --older-than 45d
+
+if last_exit == 0 then
+    echo "Docker cache cleaned"
+fi
+
+echo "Cache cleanup completed"
