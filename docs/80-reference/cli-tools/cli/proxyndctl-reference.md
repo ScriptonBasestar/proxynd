@@ -11,13 +11,14 @@
 5. [사용자 관리](#사용자-관리)
 6. [서버 상태 관리](#서버-상태-관리)
 7. [프록시 테스트](#프록시-테스트)
-8. [Maven 전용 기능](#maven-전용-기능)
+8. [배치 작업 관리](#배치-작업-관리)
+9. [Maven 전용 기능](#maven-전용-기능)
    - [Maven 인덱스 관리](#maven-인덱스-관리)
    - [Maven 백업 관리](#maven-백업-관리)
-9. [문서 생성](#문서-생성)
-10. [자동완성](#자동완성)
-11. [실전 예제](#실전-예제)
-12. [문제 해결](#문제-해결)
+10. [문서 생성](#문서-생성)
+11. [자동완성](#자동완성)
+12. [실전 예제](#실전-예제)
+13. [문제 해결](#문제-해결)
 
 ## 설치 및 설정
 
@@ -269,6 +270,159 @@ proxyndctl test all --timeout 60s
 
 # 특정 URL 테스트
 proxyndctl test maven --url /proxy/maven/org/springframework/spring-core/maven-metadata.xml
+```
+
+## 배치 작업 관리
+
+배치 작업 시스템을 통해 자동화된 유지보수 작업을 실행하고 관리합니다.
+
+> **📚 상세 문서**: [Batch Job System Documentation](../batch/README.md)
+
+### batch run - 배치 스크립트 실행
+
+```bash
+# 기본 실행
+proxyndctl batch run maintenance.batch
+
+# 백그라운드 실행
+proxyndctl batch run --async cleanup.batch
+
+# 타임아웃 설정
+proxyndctl batch run --timeout 30m long-running.batch
+
+# 출력 저장
+proxyndctl batch run --output result.log script.batch
+```
+
+### batch validate - 스크립트 검증
+
+```bash
+# 스크립트 구문 검증
+proxyndctl batch validate maintenance.batch
+
+# 여러 스크립트 검증
+for file in *.batch; do
+    proxyndctl batch validate "$file"
+done
+```
+
+### batch history - 실행 이력 조회
+
+```bash
+# 최근 10개 작업 조회
+proxyndctl batch history
+
+# 최근 20개 작업
+proxyndctl batch history --limit 20
+
+# 지난 24시간 작업
+proxyndctl batch history --since 24h
+
+# 실패한 작업만
+proxyndctl batch history --status failed
+
+# JSON 출력
+proxyndctl batch history --format json
+```
+
+### batch show - 작업 상세 정보
+
+```bash
+# 작업 상세 정보
+proxyndctl batch show job-1638360000123
+
+# 전체 출력 (잘림 없음)
+proxyndctl batch show --full-output job-1638360000123
+```
+
+### batch cancel - 실행 중인 작업 취소
+
+```bash
+# 작업 취소
+proxyndctl batch cancel job-1638360000123
+
+# 확인 없이 취소
+proxyndctl batch cancel --yes job-1638360000123
+```
+
+### batch clean - 이력 정리
+
+```bash
+# 30일 이상 오래된 작업 삭제
+proxyndctl batch clean
+
+# 7일 이상 오래된 작업 삭제
+proxyndctl batch clean --older-than 7d
+
+# 실패한 작업만 삭제
+proxyndctl batch clean --status failed
+
+# 미리보기 (실제 삭제 안 함)
+proxyndctl batch clean --dry-run
+```
+
+### 배치 스크립트 예제
+
+#### 일일 유지보수 스크립트
+
+```bash
+# Daily Maintenance Script
+echo "Starting daily maintenance..."
+
+# Clear old cache
+cache clear --older-than 30d --force
+
+if last_exit == 0 then
+    echo "✅ Cache cleared successfully"
+else
+    echo "❌ Cache cleanup failed"
+    exit 1
+fi
+
+# Create backup
+maven-backup create --target /backup/daily
+
+if last_exit == 0 then
+    echo "✅ Backup created"
+else
+    echo "⚠️ Backup failed, continuing..."
+fi
+
+# Rebuild indexes
+maven-index build --force
+
+if last_exit != 0 then
+    echo "❌ Index rebuild failed"
+    exit 1
+fi
+
+echo "✅ Daily maintenance completed"
+```
+
+#### 조건부 캐시 정리
+
+```bash
+# Conditional cache cleanup
+echo "Checking cache size..."
+
+cache size
+
+if last_exit > 1000000 then
+    echo "Cache too large, cleaning..."
+    cache clear --older-than 7d
+else
+    echo "Cache size OK"
+fi
+```
+
+### Cron 통합 예제
+
+```bash
+# Daily at 2 AM
+0 2 * * * /usr/local/bin/proxyndctl batch run /etc/proxynd/daily.batch >> /var/log/proxynd-batch.log 2>&1
+
+# Weekly on Sunday at 3 AM
+0 3 * * 0 /usr/local/bin/proxyndctl batch run /etc/proxynd/weekly.batch >> /var/log/proxynd-batch.log 2>&1
 ```
 
 ## Maven 전용 기능
