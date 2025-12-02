@@ -46,13 +46,19 @@ func SetupWebUIRoutes(app *fiber.App, edition string) {
 		logging.String("edition", edition),
 		logging.String("path", absPath))
 
-	// Serve WebUI static files
-	app.Use("/", filesystem.New(filesystem.Config{
+	// Serve WebUI static files at /dashboard to avoid conflicting with API routes
+	app.Use("/dashboard", filesystem.New(filesystem.Config{
 		Root:         http.Dir(absPath),
 		Index:        "index.html",
 		NotFoundFile: "index.html",
 		Browse:       false,
 	}))
 
-	logger.Info("WebUI routes configured successfully")
+	// Redirect root to dashboard for convenience
+	app.Get("/", func(c *fiber.Ctx) error {
+		return c.Redirect("/dashboard", fiber.StatusMovedPermanently)
+	})
+
+	logger.Info("WebUI routes configured successfully",
+		logging.String("mount_path", "/dashboard"))
 }
