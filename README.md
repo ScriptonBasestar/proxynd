@@ -848,6 +848,24 @@ make test
 make coverage
 ```
 
+### Makefile Structure
+
+The project uses a modular Makefile structure for better organization:
+
+```
+.make/
+├── build.mk      # Build and installation targets
+├── clean.mk      # Cleanup operations
+├── deps.mk       # Dependency management
+├── dev.mk        # Development environment
+├── docker.mk     # Docker operations
+├── quality.mk    # Code quality and linting
+├── test.mk       # Testing and validation
+└── tools.mk      # Tool installation
+```
+
+All targets are accessible through the main `Makefile`. Use `make help` to see all available commands, or `make help-<category>` for category-specific help (e.g., `make help-dev`, `make help-test`).
+
 ### Adding a New Package Manager
 
 1. **Create adapter** in `adapters/pm/newpm/`:
