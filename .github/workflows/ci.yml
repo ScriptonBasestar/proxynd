@@ -40,6 +40,7 @@ jobs:
       pip: ${{ steps.filter.outputs.pip }}
       yum: ${{ steps.filter.outputs.yum }}
       apk: ${{ steps.filter.outputs.apk }}
+      batch: ${{ steps.filter.outputs.batch }}
       core: ${{ steps.filter.outputs.core }}
     steps:
       - name: Checkout
@@ -79,6 +80,11 @@ jobs:
               - 'internal/services/apk/**'
               - 'handlers/proxy/apk_handler.go'
               - 'tests/integration/apk_*'
+            batch:
+              - 'internal/batch/**'
+              - 'cmd/proxyndctl/commands/batch.go'
+              - 'cmd/proxyndctl/commands/batch_test.go'
+              - 'examples/batch/**'
             core:
               - 'internal/app/**'
               - 'internal/config/**'
@@ -306,7 +312,8 @@ jobs:
       (needs.changes.outputs.core == 'true' ||
        needs.changes.outputs.npm == 'true' ||
        needs.changes.outputs.maven == 'true' ||
-       needs.changes.outputs.docker == 'true')
+       needs.changes.outputs.docker == 'true' ||
+       needs.changes.outputs.batch == 'true')
     strategy:
       matrix:
         proxy-type: [maven, npm, docker]  # 핵심 프록시만
