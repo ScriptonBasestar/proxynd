@@ -77,6 +77,14 @@ ProxyND Core is the **community edition** of ProxyND, providing essential packag
 - ✅ **Structured Logging** - JSON formatted logs
 - ✅ **Hot Reload** - Configuration reload without restart
 
+### Automation & Management
+- ✅ **Batch Job System** - Script-based automated maintenance tasks
+  - Conditional execution (if/then/else)
+  - Job history tracking with JSON storage
+  - 6 CLI commands (run, validate, history, cancel, show, clean)
+  - Multiple output formats (table, JSON, text)
+  - CI/CD integration (Cron, GitHub Actions, Jenkins)
+
 ---
 
 ## 📦 Supported Package Managers
@@ -626,6 +634,45 @@ proxyndctl maven-index build
 
 # Create incremental backup
 proxyndctl maven-backup create
+```
+
+**Batch Job Automation**
+```bash
+# Run batch script
+proxyndctl batch run maintenance.batch
+
+# Validate script syntax
+proxyndctl batch validate script.batch
+
+# View job history
+proxyndctl batch history --limit 10
+
+# Show job details
+proxyndctl batch show job-1638360000123
+
+# Clean old history
+proxyndctl batch clean --older-than 30d
+```
+
+**Example Batch Script** (`maintenance.batch`):
+```bash
+# Daily maintenance automation
+echo "Starting maintenance..."
+
+# Clear old cache
+cache clear --older-than 30d --force
+
+if last_exit == 0 then
+    echo "✅ Cache cleared"
+else
+    echo "❌ Failed"
+    exit 1
+fi
+
+# Create backup
+maven-backup create --target /backup
+
+echo "✅ Maintenance complete"
 ```
 
 ---
