@@ -40,7 +40,8 @@ var rootCmd = &cobra.Command{
 - 설정 검증 및 조회
 - 서버 상태 모니터링
 - 사용자 관리
-- 프록시 기능 테스트`,
+- 프록시 기능 테스트
+- 배치 작업 실행 및 관리`,
 	Version: Version,
 	Example: `  # 서버 상태 확인
   proxyndctl status
@@ -86,6 +87,9 @@ var metricsCmd = commands.NewMetricsCmd()
 // mavenBackupCmd는 Maven 백업 관리 명령어 (commands 패키지에서 가져옴)
 // var mavenBackupCmd = commands.NewMavenBackupCmd()
 
+// batchCmd는 배치 작업 관리 명령어 그룹 (commands 패키지에서 가져옴)
+var batchCmd = commands.NewBatchCmd()
+
 // completionCmd는 자동완성 스크립트 생성 명령어
 var completionCmd *cobra.Command
 
@@ -113,6 +117,7 @@ func init() {
 	rootCmd.AddCommand(statusCmd)
 	rootCmd.AddCommand(healthCmd)
 	rootCmd.AddCommand(metricsCmd)
+	rootCmd.AddCommand(batchCmd)
 	// TODO: Add Maven commands when implemented
 	// rootCmd.AddCommand(mavenIndexCmd)
 	// rootCmd.AddCommand(mavenBackupCmd)
