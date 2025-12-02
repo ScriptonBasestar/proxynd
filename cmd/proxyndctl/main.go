@@ -80,12 +80,8 @@ var healthCmd = commands.NewHealthCmd()
 // metricsCmd는 메트릭 조회 명령어 (commands 패키지에서 가져옴)
 var metricsCmd = commands.NewMetricsCmd()
 
-// TODO: Implement Maven commands
-// mavenIndexCmd는 Maven 인덱스 관리 명령어 (commands 패키지에서 가져옴)
-// var mavenIndexCmd = commands.NewMavenIndexCmd()
-
-// mavenBackupCmd는 Maven 백업 관리 명령어 (commands 패키지에서 가져옴)
-// var mavenBackupCmd = commands.NewMavenBackupCmd()
+// mavenCmd는 Maven 관리 명령어 그룹 (commands 패키지에서 가져옴)
+var mavenCmd = commands.NewMavenCmd()
 
 // batchCmd는 배치 작업 관리 명령어 그룹 (commands 패키지에서 가져옴)
 var batchCmd = commands.NewBatchCmd()
@@ -117,10 +113,8 @@ func init() {
 	rootCmd.AddCommand(statusCmd)
 	rootCmd.AddCommand(healthCmd)
 	rootCmd.AddCommand(metricsCmd)
+	rootCmd.AddCommand(mavenCmd)
 	rootCmd.AddCommand(batchCmd)
-	// TODO: Add Maven commands when implemented
-	// rootCmd.AddCommand(mavenIndexCmd)
-	// rootCmd.AddCommand(mavenBackupCmd)
 	rootCmd.AddCommand(completionCmd)
 	rootCmd.AddCommand(docsCmd)
 
