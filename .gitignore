@@ -114,3 +114,9 @@ docker-compose.override.yml
 gosec-report.json
 .claude/
 CLAUDE.local.md
+
+# Makefile management
+Makefile.backup.*
+
+# Analysis and review results
+results/

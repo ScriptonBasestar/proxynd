@@ -29,14 +29,14 @@ export RESET := \033[0m
 # Include Modular Makefiles
 # ==============================================================================
 
-include Makefile.dev.mk        # Development environment and setup
-include Makefile.build.mk      # Build and installation
-include Makefile.test.mk       # Testing and validation
-include Makefile.quality.mk    # Code quality and linting
-include Makefile.deps.mk       # Dependency management
-include Makefile.docker.mk     # Docker operations
-include Makefile.tools.mk      # Tool installation and management
-include Makefile.clean.mk      # Cleanup operations
+include .make/dev.mk        # Development environment and setup
+include .make/build.mk      # Build and installation
+include .make/test.mk       # Testing and validation
+include .make/quality.mk    # Code quality and linting
+include .make/deps.mk       # Dependency management
+include .make/docker.mk     # Docker operations
+include .make/tools.mk      # Tool installation and management
+include .make/clean.mk      # Cleanup operations
 
 # ==============================================================================
 # Quick Access Aliases
@@ -158,35 +158,35 @@ help: ## show main help menu with categories
 
 help-dev: ## show development help
 	@echo "$(GREEN)🛠️  Development Environment Commands:$(RESET)"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' Makefile.dev.mk | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(CYAN)%-20s$(RESET) %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' .make/dev.mk | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(CYAN)%-20s$(RESET) %s\n", $$1, $$2}'
 
 help-build: ## show build help
 	@echo "$(GREEN)🔨 Build and Installation Commands:$(RESET)"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' Makefile.build.mk | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(CYAN)%-20s$(RESET) %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' .make/build.mk | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(CYAN)%-20s$(RESET) %s\n", $$1, $$2}'
 
 help-test: ## show testing help
 	@echo "$(GREEN)🧪 Testing and Validation Commands:$(RESET)"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' Makefile.test.mk | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(CYAN)%-20s$(RESET) %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' .make/test.mk | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(CYAN)%-20s$(RESET) %s\n", $$1, $$2}'
 
 help-quality: ## show quality help
 	@echo "$(GREEN)✨ Code Quality Commands:$(RESET)"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' Makefile.quality.mk | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(CYAN)%-20s$(RESET) %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' .make/quality.mk | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(CYAN)%-20s$(RESET) %s\n", $$1, $$2}'
 
 help-docker: ## show docker help
 	@echo "$(GREEN)🐳 Docker Commands:$(RESET)"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' Makefile.docker.mk | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(CYAN)%-20s$(RESET) %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' .make/docker.mk | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(CYAN)%-20s$(RESET) %s\n", $$1, $$2}'
 
 help-deps: ## show dependency help
 	@echo "$(GREEN)📦 Dependency Management Commands:$(RESET)"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' Makefile.deps.mk | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(CYAN)%-20s$(RESET) %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' .make/deps.mk | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(CYAN)%-20s$(RESET) %s\n", $$1, $$2}'
 
 help-tools: ## show tools help
 	@echo "$(GREEN)🔧 Tool Management Commands:$(RESET)"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' Makefile.tools.mk | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(CYAN)%-20s$(RESET) %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' .make/tools.mk | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(CYAN)%-20s$(RESET) %s\n", $$1, $$2}'
 
 help-clean: ## show cleanup help
 	@echo "$(GREEN)🧹 Cleanup Commands:$(RESET)"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' Makefile.clean.mk | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(CYAN)%-20s$(RESET) %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' .make/clean.mk | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  $(CYAN)%-20s$(RESET) %s\n", $$1, $$2}'
 
 # ==============================================================================
 # Project Information
@@ -219,11 +219,11 @@ info: ## show project information and current configuration
 	@echo "  Logs:           ./logs"
 	@echo ""
 	@echo "$(GREEN)🔧 Available Modules:$(RESET)"
-	@echo "  • Development    (Makefile.dev.mk)"
-	@echo "  • Build          (Makefile.build.mk)"
-	@echo "  • Testing        (Makefile.test.mk)"
-	@echo "  • Quality        (Makefile.quality.mk)"
-	@echo "  • Dependencies   (Makefile.deps.mk)"
-	@echo "  • Docker         (Makefile.docker.mk)"
-	@echo "  • Tools          (Makefile.tools.mk)"
-	@echo "  • Cleanup        (Makefile.clean.mk)"
+	@echo "  • Development    (.make/dev.mk)"
+	@echo "  • Build          (.make/build.mk)"
+	@echo "  • Testing        (.make/test.mk)"
+	@echo "  • Quality        (.make/quality.mk)"
+	@echo "  • Dependencies   (.make/deps.mk)"
+	@echo "  • Docker         (.make/docker.mk)"
+	@echo "  • Tools          (.make/tools.mk)"
+	@echo "  • Cleanup        (.make/clean.mk)"
