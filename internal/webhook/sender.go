@@ -124,6 +124,20 @@ func (ws *WebhookSender) GetMetrics() *types.SenderMetrics {
 	coreMetrics.TotalSent = ws.metrics.sent
 	coreMetrics.TotalFailed = ws.metrics.failed
 	coreMetrics.TotalRetries = ws.metrics.retries
+
+	// BatchStats 초기화 및 설정
+	if coreMetrics.BatchStats == nil {
+		coreMetrics.BatchStats = make(map[string]interface{})
+	}
+
+	// 배치 통계 추가
+	if ws.batchManager != nil {
+		stats := ws.batchManager.GetStats()
+		for k, v := range stats {
+			coreMetrics.BatchStats[k] = v
+		}
+	}
+
 	return coreMetrics
 }
 
