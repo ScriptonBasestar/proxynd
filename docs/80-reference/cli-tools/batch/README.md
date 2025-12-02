@@ -21,7 +21,94 @@ The batch job system provides automated execution of complex management tasks th
 - **Filtering**: Filter history by time range and status
 - **Validation**: Pre-execution syntax validation
 
-## Quick Start
+## ⚡ Quick Start (3 Minutes)
+
+### Step 1: Create Your First Batch Script (30 seconds)
+
+Create a file named `hello.batch`:
+
+```bash
+# My first batch script
+echo "Hello from ProxyND Batch!"
+echo "Current time: $(date)"
+
+# Simple conditional
+cache size
+
+if last_exit == 0 then
+    echo "✅ Cache check successful"
+else
+    echo "⚠️ Could not check cache"
+fi
+
+echo "Script completed!"
+```
+
+### Step 2: Validate the Script (10 seconds)
+
+```bash
+proxyndctl batch validate hello.batch
+```
+
+**Expected output**:
+```
+✅ Script is valid: hello.batch
+   - 6 commands parsed
+   - No syntax errors
+```
+
+### Step 3: Run the Script (30 seconds)
+
+```bash
+proxyndctl batch run hello.batch
+```
+
+**Expected output**:
+```
+Job started: job-1638360000123
+[Step 1/6] echo Hello from ProxyND Batch!
+Hello from ProxyND Batch!
+[Step 2/6] echo Current time: $(date)
+Current time: Mon Dec  2 12:00:00 UTC 2025
+[Step 3/6] cache size
+...
+✅ Cache check successful
+Script completed!
+
+Job completed: success
+Exit code: 0
+```
+
+### Step 4: View Job History (10 seconds)
+
+```bash
+proxyndctl batch history
+```
+
+**Expected output**:
+```
+JOB ID              STATUS   START TIME       DURATION  EXIT CODE
+────────────────────────────────────────────────────────────────
+job-1638360000123   success  2025-12-02 12:00 1m 5s     0
+```
+
+### Step 5: View Detailed Results (10 seconds)
+
+```bash
+proxyndctl batch show job-1638360000123
+```
+
+**That's it!** You've successfully created, validated, run, and tracked your first batch job.
+
+### Next Steps
+
+- ✅ Try the [example scripts](../../../../examples/batch/) (`maintenance.batch`, `cache-cleanup.batch`)
+- ✅ Read the [complete usage guide](usage.md) for all commands
+- ✅ Set up [automated scheduling](#integration-examples) with cron
+
+---
+
+## Basic Usage Examples
 
 ### Execute a Batch Script
 
