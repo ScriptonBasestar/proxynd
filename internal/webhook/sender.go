@@ -29,6 +29,7 @@ type WebhookSender struct {
 	rateLimiter  interface{}                         // 테스트 호환성을 위한 rate limiter 필드
 	batchManager *DummyBatchManager                  // 테스트 호환성을 위한 batch manager 필드
 	metrics      *DummyMetrics                       // 테스트 호환성을 위한 metrics 필드
+	dlq          *DeadLetterQueue                    // Dead Letter Queue for failed events
 }
 
 // NewWebhookSender 새로운 웹훅 전송기 생성
