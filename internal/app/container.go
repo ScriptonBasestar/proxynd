@@ -670,7 +670,18 @@ func (c *Container) GetHandlerFactory() (types.ProxyHandlerFactory, error) {
 		}
 	*/
 
-	// TODO: Register other handlers (Docker, PIP, YUM, APK)
+	// NOTE: Handler registration superseded by ProxyFactoryV3
+	// All 7 package manager handlers (apt, maven, npm, docker, pip, yum, apk) are now
+	// registered automatically via ProxyFactoryV3.registerDefaultHandlers()
+	// See: internal/adapters/http/fiber/handlers/proxy/proxy_factory_v3.go
+	//
+	// The V3 factory pattern provides:
+	// - Automatic handler registration at initialization
+	// - Runtime handler availability checking
+	// - Simplified routing via unified endpoint: /v3/proxy/:type/*
+	//
+	// This legacy factory approach is maintained for backward compatibility but is
+	// no longer the primary method for handler management.
 
 	c.handlerFactory = factory
 	return factory, nil
@@ -946,26 +957,25 @@ func (a *containerHandlerAdapter) ModifyResponse(c *fiber.Ctx) error {
 }
 
 // GetUnifiedRouter returns the unified proxy router (placeholder)
+// NOTE: This method is deprecated. Routing is now handled by ProxyFactoryV3.
+//
+// Current Implementation:
+// - ProxyFactoryV3 provides unified routing via GetGlobalFactoryV3()
+// - All 7 package managers registered automatically
+// - Routes configured in: internal/adapters/http/fiber/routers/proxy_router_v3.go
+// - Unified endpoint: /v3/proxy/:type/* handles all proxy requests
+// - Handler selection is automatic based on :type parameter
+//
+// See:
+// - internal/adapters/http/fiber/handlers/proxy/proxy_factory_v3.go
+// - internal/adapters/http/fiber/handlers/proxy/unified_proxy_handler_v3.go
+// - internal/adapters/http/fiber/routers/proxy_router_v3.go
 func (c *Container) GetUnifiedRouter() (interface{}, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	// TODO: Implement unified router when handlers are ready
-	/*
-		if c.unifiedRouter != nil {
-			return c.unifiedRouter, nil
-		}
-
-		// Get service factory
-		serviceFactory, err := c.GetServiceFactory()
-		if err != nil {
-			return nil, err
-		}
-
-		// Create unified router
-		c.unifiedRouter = proxyHandlers.NewUnifiedProxyRouter(serviceFactory)
-	*/
-	return nil, fmt.Errorf("unified router not implemented yet")
+	// Deprecated: Use ProxyFactoryV3.GetGlobalFactoryV3() instead
+	return nil, fmt.Errorf("unified router not implemented yet - use ProxyFactoryV3 pattern")
 }
 
 // GetProxyService returns the hexagonal architecture ProxyService instance

@@ -235,41 +235,30 @@ func ProvideUnifiedRouter(c *Container) (interface{}, error) {
 		return nil, fmt.Errorf("service factory has wrong type")
 	}
 
-	// Create unified router (placeholder implementation)
-	// TODO: Implement proper router when handlers are ready
+	// NOTE: Unified router is implemented via ProxyFactoryV3 pattern
+	// See: internal/adapters/http/fiber/handlers/proxy/proxy_factory_v3.go
+	// All 7 package manager handlers (apt, maven, npm, docker, pip, yum, apk) are
+	// registered automatically in ProxyFactoryV3.registerDefaultHandlers()
+	// Routes are configured in: internal/adapters/http/fiber/routers/proxy_router_v3.go
 	return nil, fmt.Errorf("unified router not implemented yet")
 }
 
 // Helper function to register all handlers
+// NOTE: This function is deprecated and no longer used.
+// Handler registration now uses ProxyFactoryV3 pattern for automatic registration.
+//
+// V3 Factory Pattern (Current Implementation):
+// - Location: internal/adapters/http/fiber/handlers/proxy/proxy_factory_v3.go
+// - All handlers registered in: ProxyFactoryV3.registerDefaultHandlers()
+// - Supported handlers: apt, maven, npm, docker, pip, yum, apk
+// - Factory initialized as singleton via GetGlobalFactoryV3()
+// - Routes configured in: internal/adapters/http/fiber/routers/proxy_router_v3.go
+//
+// This approach provides:
+// - Automatic handler discovery and registration
+// - Runtime handler availability checking
+// - Simplified route management via unified endpoint: /v3/proxy/:type/*
 func registerAllHandlers(_ types.ProxyHandlerFactory, _ *proxy.ServiceFactory) error {
-	// TODO: Implement handlers when ready
-	/*
-		// Maven
-		if err := factory.RegisterHandler(
-			types.ProxyTypeMaven,
-			proxyHandlers.MavenHandlerCreator(serviceFactory),
-		); err != nil {
-			return fmt.Errorf("failed to register Maven handler: %w", err)
-		}
-
-		// APT
-		if err := factory.RegisterHandler(
-			types.ProxyTypeAPT,
-			proxyHandlers.AptHandlerCreator(serviceFactory),
-		); err != nil {
-			return fmt.Errorf("failed to register APT handler: %w", err)
-		}
-
-		// NPM
-		if err := factory.RegisterHandler(
-			types.ProxyTypeNPM,
-			proxyHandlers.NpmHandlerCreator(serviceFactory),
-		); err != nil {
-			return fmt.Errorf("failed to register NPM handler: %w", err)
-		}
-
-		// TODO: Register other handlers (Docker, PIP, YUM, APK)
-	*/
-
+	// Deprecated: Handlers are now registered via ProxyFactoryV3
 	return nil
 }
