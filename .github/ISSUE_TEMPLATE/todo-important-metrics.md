@@ -20,33 +20,29 @@ assignees: ''
 메트릭 라우터 파일들을 확인한 결과, 더 이상 TODO 마커가 존재하지 않습니다.
 모든 기능이 구현되어 프로덕션에서 사용 중입니다.
 
-## ✅ 구현 필요 사항
+## ✅ 구현된 기능
 
-### Line 71
-- [ ] 설정에서 사용자 정보 로드
-```go
-// TODO: 설정에서 사용자 정보 로드
-```
+### User Configuration Loading
+- [x] `getMetricsUsers()` function (line 78-95)
+- [x] Loads from `cfg.Security.Authentication.BasicAuth.Users`
+- [x] Falls back to default "metrics:prometheus" user
 
-### Line 239, 263
-- [ ] 실제 메트릭에서 값 추출
-- [ ] Prometheus 메트릭에서 값 추출
-```go
-// TODO: 실제 메트릭에서 값 추출
-// TODO: 실제 Prometheus 메트릭에서 값 추출
-```
+### Metrics Value Extraction
+- [x] Dashboard metrics handler implemented
+- [x] `GetDashboardMetrics()` extracts Prometheus metrics
+- [x] Custom collector: `metrics.NewCustomCollector()`
+- [x] Enhanced collector: `metrics.InitEnhancedMetricsCollector()`
 
-### Line 270
-- [ ] 메트릭 수집 실제 구현
-```go
-// TODO: 실제 구현
-```
+### Prometheus Integration
+- [x] Prometheus middleware: `metrics.PrometheusMiddleware()`
+- [x] Standard `/metrics` endpoint with `promhttp.Handler()`
+- [x] Custom metrics registration
+- [x] FastHTTP adapter for Fiber integration
 
-### Line 276
-- [ ] 건강 상태 확인 로직
-```go
-// TODO: 실제 건강 상태 확인 로직
-```
+### Health Check Logic
+- [x] Health check system: `internal/health/`
+- [x] `/health` and `/readiness` endpoints
+- [x] Integrated with metrics router
 
 ## 🚨 우선순위
 **중요** - 모니터링 및 운영에 필수적인 기능
