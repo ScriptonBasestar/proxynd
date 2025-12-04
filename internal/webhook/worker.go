@@ -2,6 +2,7 @@ package webhook
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -153,8 +154,33 @@ func (rq *RetryQueue) processRetries(ctx context.Context, sender *WebhookSender)
 				logging.F(fieldEndpoint, item.Endpoint),
 				logging.F("attempts", item.Attempt))
 
-			// 실패 처리 (Dead Letter Queue 등) - 추후 구현 예정
-			// TODO: Dead Letter Queue 구현
+			// Dead Letter Queue에 추가
+			if sender.dlq != nil {
+				dlqItem := DeadLetterItem{
+					Event:       item.Event,
+					Endpoint:    item.Endpoint,
+					Attempts:    item.Attempt,
+					LastAttempt: time.Now(),
+					FirstFailed: item.CreatedAt,
+					Error:       item.LastError.Error(),
+					Metadata: map[string]string{
+						"reason":      "max_retries_exceeded",
+						"max_retries": fmt.Sprintf("%d", sender.config.Retry.MaxAttempts),
+					},
+				}
+
+				if err := sender.dlq.Add(dlqItem); err != nil {
+					sender.logger.Error("Failed to add to DLQ",
+						logging.F(fieldEventID, item.Event.ID),
+						logging.F(fieldEndpoint, item.Endpoint),
+						logging.F(fieldError, err.Error()))
+				} else {
+					sender.logger.Info("Event added to DLQ after max retries",
+						logging.F(fieldEventID, item.Event.ID),
+						logging.F(fieldEndpoint, item.Endpoint),
+						logging.F("attempts", item.Attempt))
+				}
+			}
 			continue
 		}
 

@@ -18,18 +18,19 @@ import (
 // WebhookSender 웹훅 전송기 (리팩토링된 버전)
 // 기존 인터페이스를 유지하면서 내부적으로 새로운 모듈들을 사용
 type WebhookSender struct {
-	core         *sender.Core
-	filter       *filtering.SimpleEventFilter
-	config       config.WebhookConfig                // 하위 호환성을 위한 config 접근
-	wg           sync.WaitGroup                      // 하위 호환성을 위한 WaitGroup
-	adapters     map[string]CompatibleWebhookAdapter // 하위 호환성을 위한 어댑터 맵
-	logger       logging.Logger                      // 하위 호환성을 위한 logger 접근
-	started      bool                                // 시작 상태 (테스트 호환성)
-	queue        *DummyQueue                         // 테스트 호환성을 위한 큐 필드
-	rateLimiter  interface{}                         // 테스트 호환성을 위한 rate limiter 필드
-	batchManager *DummyBatchManager                  // 테스트 호환성을 위한 batch manager 필드
-	metrics      *DummyMetrics                       // 테스트 호환성을 위한 metrics 필드
-	dlq          *DeadLetterQueue                    // Dead Letter Queue for failed events
+	core           *sender.Core
+	filter         *filtering.SimpleEventFilter
+	historyManager *WebhookHistoryManager              // Real history manager from webhook package
+	config         config.WebhookConfig                // 하위 호환성을 위한 config 접근
+	wg             sync.WaitGroup                      // 하위 호환성을 위한 WaitGroup
+	adapters       map[string]CompatibleWebhookAdapter // 하위 호환성을 위한 어댑터 맵
+	logger         logging.Logger                      // 하위 호환성을 위한 logger 접근
+	started        bool                                // 시작 상태 (테스트 호환성)
+	queue          *DummyQueue                         // 테스트 호환성을 위한 큐 필드
+	rateLimiter    interface{}                         // 테스트 호환성을 위한 rate limiter 필드
+	batchManager   *DummyBatchManager                  // 테스트 호환성을 위한 batch manager 필드
+	metrics        *DummyMetrics                       // 테스트 호환성을 위한 metrics 필드
+	dlq            *DeadLetterQueue                    // Dead Letter Queue for failed events
 }
 
 // NewWebhookSender 새로운 웹훅 전송기 생성
@@ -42,6 +43,21 @@ func NewWebhookSender(config config.WebhookConfig) (*WebhookSender, error) {
 
 	// 필터 생성
 	filter := filtering.NewSimpleEventFilter(config)
+
+	// Real history manager 생성
+	historyDir := config.FailureStorage.StorageDir + "/history"
+	historyManager := NewWebhookHistoryManager(
+		historyDir,
+		10000,          // 최대 10,000개 이력 보관
+		7*24*time.Hour, // 7일 보관
+	)
+
+	// Dead Letter Queue 생성
+	dlqDir := config.FailureStorage.StorageDir + "/dlq"
+	dlq, err := NewDeadLetterQueue(dlqDir, 10000) // 최대 10,000개
+	if err != nil {
+		return nil, fmt.Errorf("failed to create DLQ: %w", err)
+	}
 
 	// 기본 어댑터들 생성
 	adapters := make(map[string]CompatibleWebhookAdapter)
@@ -56,15 +72,17 @@ func NewWebhookSender(config config.WebhookConfig) (*WebhookSender, error) {
 	dummyMetrics := &DummyMetrics{}
 
 	return &WebhookSender{
-		core:         core,
-		filter:       filter,
-		config:       config,              // config 저장
-		adapters:     adapters,            // 어댑터 맵 초기화
-		logger:       logging.GetLogger(), // logger 초기화
-		queue:        dummyQueue,          // 테스트 호환성
-		rateLimiter:  dummyRateLimiter,    // 테스트 호환성
-		batchManager: dummyBatchManager,   // 테스트 호환성
-		metrics:      dummyMetrics,        // 테스트 호환성
+		core:           core,
+		filter:         filter,
+		historyManager: historyManager,     // Real history manager
+		dlq:            dlq,                 // Dead Letter Queue
+		config:         config,              // config 저장
+		adapters:       adapters,            // 어댑터 맵 초기화
+		logger:         logging.GetLogger(), // logger 초기화
+		queue:          dummyQueue,          // 테스트 호환성
+		rateLimiter:    dummyRateLimiter,    // 테스트 호환성
+		batchManager:   dummyBatchManager,   // 테스트 호환성
+		metrics:        dummyMetrics,        // 테스트 호환성
 	}, nil
 }
 
@@ -144,9 +162,8 @@ func (ws *WebhookSender) GetMetrics() *types.SenderMetrics {
 
 // GetHistoryManager 이력 관리자 조회
 func (ws *WebhookSender) GetHistoryManager() *WebhookHistoryManager {
-	// TODO: sender.Core에서 실제 WebhookHistoryManager를 반환하도록 수정 필요
-	// 임시로 nil 반환 (실제 구현에서는 적절한 변환 로직 필요)
-	return nil
+	// Real WebhookHistoryManager from webhook package
+	return ws.historyManager
 }
 
 // shouldSendEvent 이벤트 전송 여부 확인 (하위 호환성을 위한 메서드)
