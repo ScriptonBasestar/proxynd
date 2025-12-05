@@ -1159,6 +1159,54 @@ func (c *Container) GetRootConfig() (*config.RootConfig, error) {
 	return cfg, nil
 }
 
+// ProvideHotReloadManager provides the hot reload manager and connects it to the config loader.
+// This bridges the existing hot reload system with the new hexagonal architecture.
+func (c *Container) ProvideHotReloadManager() (*config.HotReloadManager, error) {
+	c.mu.RLock()
+	if manager, exists := c.singletons["hot-reload-manager"]; exists {
+		c.mu.RUnlock()
+		return manager.(*config.HotReloadManager), nil
+	}
+	c.mu.RUnlock()
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// Double-check after acquiring write lock
+	if manager, exists := c.singletons["hot-reload-manager"]; exists {
+		return manager.(*config.HotReloadManager), nil
+	}
+
+	// Create hot reload manager
+	manager := config.NewHotReloadManager()
+
+	// Register default handlers
+	manager.RegisterHandler(config.NewLoggingReloadHandler())
+	// Add other default handlers as needed (cache, metrics, security, webhook, proxy, custom)
+
+	// Create adapter to connect hot reload manager with config loader observer pattern
+	adapter := configadapter.NewHotReloadAdapter(manager)
+
+	// Get config loader and subscribe the adapter
+	loader, err := c.ProvideConfigLoader()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get config loader for hot reload: %w", err)
+	}
+
+	// Config loader also implements ConfigProvider which has Subscribe method
+	provider, ok := loader.(ports.ConfigProvider)
+	if !ok {
+		return nil, fmt.Errorf("config loader does not implement ConfigProvider interface")
+	}
+
+	provider.Subscribe(adapter)
+
+	c.singletons["hot-reload-manager"] = manager
+	c.logger.Info("Hot reload manager initialized and connected to config loader")
+
+	return manager, nil
+}
+
 // Close gracefully shuts down all components
 func (c *Container) Close() error {
 	c.mu.Lock()
