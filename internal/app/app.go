@@ -14,7 +14,6 @@ import (
 	"github.com/joho/godotenv"
 
 	fiberRouters "proxynd/internal/adapters/http/fiber/routers"
-	configTypes "proxynd/internal/config"
 	"proxynd/internal/logging"
 	cacheRepo "proxynd/internal/repositories/cache"
 	"proxynd/internal/repositories/config"
@@ -275,30 +274,12 @@ func (app *Application) initializeFiberApp() {
 			logging.F("error", err))
 	}
 
-	// TODO: HEXAGONAL_MIGRATION - Convert to unified config loading
-	// Load unified config for new routing system
-	var unifiedConfig *configTypes.RootConfig
-	config := app.container.GetConfig()
-	if config != nil {
-		// 포트를 정수로 변환
-		port := 8080 // 기본값
-		if config.Port != "" {
-			if p, err := strconv.Atoi(config.Port); err == nil {
-				port = p
-			}
-		}
-
-		// RootConfig 구성
-		unifiedConfig = &configTypes.RootConfig{
-			Server: configTypes.ServerConfig{
-				Host: "0.0.0.0",
-				Port: port,
-				// TODO: Add Auth config when available
-			},
-			Cache: configTypes.CacheSettings{
-				TTL: 3600,
-			},
-		}
+	// Load unified config using hexagonal architecture
+	unifiedConfig, err := app.container.GetRootConfig()
+	if err != nil {
+		app.logger.Warn("Failed to load unified config", logging.F("error", err))
+		// System cannot function without config, but let routing system handle the error
+		unifiedConfig = nil
 	}
 
 	// === NEW ARCHITECTURE ROUTING (Exclusive Mode) ===

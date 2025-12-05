@@ -9,6 +9,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 	"github.com/gofiber/fiber/v2"
 
+	configadapter "proxynd/internal/adapters/config"
 	"proxynd/internal/config"
 	"proxynd/internal/container"
 	"proxynd/internal/containerhandlers"
@@ -16,6 +17,7 @@ import (
 	"proxynd/internal/handlers"
 	"proxynd/internal/logging"
 	"proxynd/internal/metrics"
+	"proxynd/internal/ports"
 	"proxynd/internal/repositories/cache"
 	configRepo "proxynd/internal/repositories/config"
 	"proxynd/internal/services/adapters"
@@ -1065,15 +1067,116 @@ func (c *Container) SetSingleton(key string, instance interface{}) {
 	c.singletons[key] = instance
 }
 
+// ProvideConfigLoader provides the hexagonal architecture config loader.
+// This is the new way to access configuration following ports and adapters pattern.
+func (c *Container) ProvideConfigLoader() (ports.ConfigLoader, error) {
+	c.mu.RLock()
+	if loader, exists := c.singletons["config-loader"]; exists {
+		c.mu.RUnlock()
+		return loader.(ports.ConfigLoader), nil
+	}
+	c.mu.RUnlock()
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// Double-check after acquiring write lock
+	if loader, exists := c.singletons["config-loader"]; exists {
+		return loader.(ports.ConfigLoader), nil
+	}
+
+	// Determine config file path from config directory
+	configPath := c.config.ConfigDir + "/config.yaml"
+
+	// Create new unified config loader
+	loader, err := configadapter.NewUnifiedConfigLoader(configPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create config loader: %w", err)
+	}
+
+	c.singletons["config-loader"] = loader
+	c.logger.Info("Config loader initialized", logging.F("path", configPath))
+
+	return loader, nil
+}
+
+// ProvideConfigWatcher provides the configuration file watcher.
+func (c *Container) ProvideConfigWatcher() (ports.ConfigWatcher, error) {
+	c.mu.RLock()
+	if watcher, exists := c.singletons["config-watcher"]; exists {
+		c.mu.RUnlock()
+		return watcher.(ports.ConfigWatcher), nil
+	}
+	c.mu.RUnlock()
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// Double-check after acquiring write lock
+	if watcher, exists := c.singletons["config-watcher"]; exists {
+		return watcher.(ports.ConfigWatcher), nil
+	}
+
+	// Get config loader first
+	loader, err := c.ProvideConfigLoader()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get config loader for watcher: %w", err)
+	}
+
+	// Determine config file path from config directory
+	configPath := c.config.ConfigDir + "/config.yaml"
+
+	// Create file watcher
+	watcher, err := configadapter.NewFileWatcher(configPath, loader, 500*time.Millisecond)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create config watcher: %w", err)
+	}
+
+	// Start the watcher
+	if err := watcher.Start(); err != nil {
+		return nil, fmt.Errorf("failed to start config watcher: %w", err)
+	}
+
+	c.singletons["config-watcher"] = watcher
+	c.logger.Info("Config watcher initialized and started", logging.F("path", configPath))
+
+	return watcher, nil
+}
+
+// GetRootConfig returns the current RootConfig using the new hexagonal architecture.
+// This replaces GetUnifiedConfig() for type-safe config access.
+func (c *Container) GetRootConfig() (*config.RootConfig, error) {
+	loader, err := c.ProvideConfigLoader()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get config loader: %w", err)
+	}
+
+	cfg := loader.GetCurrent()
+	if cfg == nil {
+		return nil, fmt.Errorf("no configuration loaded")
+	}
+
+	return cfg, nil
+}
+
 // Close gracefully shuts down all components
 func (c *Container) Close() error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	// Close config watcher
+	// Close new hexagonal config watcher
+	if watcher, exists := c.singletons["config-watcher"]; exists {
+		if configWatcher, ok := watcher.(ports.ConfigWatcher); ok {
+			if err := configWatcher.Stop(); err != nil {
+				c.logger.Error("Failed to stop config watcher", logging.F("error", err))
+			}
+		}
+	}
+
+	// Close legacy config watcher (will be removed in Step 6)
 	if c.configWatcher != nil {
 		if err := c.configWatcher.Close(); err != nil {
-			c.logger.Error("Failed to close config watcher", logging.F("error", err))
+			c.logger.Error("Failed to close legacy config watcher", logging.F("error", err))
 		}
 	}
 
