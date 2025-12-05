@@ -19,16 +19,7 @@ func TestNewUnifiedConfigLoader(t *testing.T) {
 		configPath := filepath.Join(tempDir, "config.yaml")
 
 		// Create a minimal valid config file
-		configContent := `
-server:
-  host: "0.0.0.0"
-  port: 8080
-logging:
-  level: "info"
-  format: "json"
-cache:
-  ttl: 3600
-`
+		configContent := validTestConfig()
 		err := os.WriteFile(configPath, []byte(configContent), 0644)
 		require.NoError(t, err)
 
@@ -83,13 +74,7 @@ func TestUnifiedConfigLoader_GetCurrent(t *testing.T) {
 		tempDir := t.TempDir()
 		configPath := filepath.Join(tempDir, "config.yaml")
 
-		configContent := `
-server:
-  host: "0.0.0.0"
-  port: 8080
-logging:
-  level: "info"
-`
+		configContent := validTestConfig()
 		err := os.WriteFile(configPath, []byte(configContent), 0644)
 		require.NoError(t, err)
 
@@ -112,10 +97,7 @@ func TestUnifiedConfigLoader_GetPath(t *testing.T) {
 		tempDir := t.TempDir()
 		configPath := filepath.Join(tempDir, "config.yaml")
 
-		configContent := `
-server:
-  port: 8080
-`
+		configContent := validTestConfig()
 		err := os.WriteFile(configPath, []byte(configContent), 0644)
 		require.NoError(t, err)
 
@@ -137,14 +119,8 @@ func TestUnifiedConfigLoader_Load(t *testing.T) {
 		configPath1 := filepath.Join(tempDir, "config1.yaml")
 		configPath2 := filepath.Join(tempDir, "config2.yaml")
 
-		config1Content := `
-server:
-  port: 8080
-`
-		config2Content := `
-server:
-  port: 9090
-`
+		config1Content := validTestConfigWithPort(8080)
+		config2Content := validTestConfigWithPort(9090)
 		err := os.WriteFile(configPath1, []byte(config1Content), 0644)
 		require.NoError(t, err)
 		err = os.WriteFile(configPath2, []byte(config2Content), 0644)
@@ -171,10 +147,7 @@ server:
 		configPath1 := filepath.Join(tempDir, "config1.yaml")
 		configPath2 := filepath.Join(tempDir, "config2.yaml")
 
-		config1Content := `
-server:
-  port: 8080
-`
+		config1Content := validTestConfig()
 		err := os.WriteFile(configPath1, []byte(config1Content), 0644)
 		require.NoError(t, err)
 		err = os.WriteFile(configPath2, []byte("invalid: yaml: ["), 0644)
@@ -201,10 +174,7 @@ func TestUnifiedConfigLoader_Reload(t *testing.T) {
 		tempDir := t.TempDir()
 		configPath := filepath.Join(tempDir, "config.yaml")
 
-		initialContent := `
-server:
-  port: 8080
-`
+		initialContent := validTestConfigWithPort(8080)
 		err := os.WriteFile(configPath, []byte(initialContent), 0644)
 		require.NoError(t, err)
 
@@ -213,10 +183,7 @@ server:
 		assert.Equal(t, 8080, loader.GetCurrent().Server.Port)
 
 		// Modify the config file
-		updatedContent := `
-server:
-  port: 9090
-`
+		updatedContent := validTestConfigWithPort(9090)
 		err = os.WriteFile(configPath, []byte(updatedContent), 0644)
 		require.NoError(t, err)
 
@@ -237,10 +204,7 @@ func TestUnifiedConfigLoader_Validate(t *testing.T) {
 		tempDir := t.TempDir()
 		configPath := filepath.Join(tempDir, "config.yaml")
 
-		configContent := `
-server:
-  port: 8080
-`
+		configContent := validTestConfig()
 		err := os.WriteFile(configPath, []byte(configContent), 0644)
 		require.NoError(t, err)
 
@@ -261,10 +225,7 @@ server:
 		tempDir := t.TempDir()
 		configPath := filepath.Join(tempDir, "config.yaml")
 
-		configContent := `
-server:
-  port: 8080
-`
+		configContent := validTestConfig()
 		err := os.WriteFile(configPath, []byte(configContent), 0644)
 		require.NoError(t, err)
 
@@ -285,10 +246,7 @@ func TestUnifiedConfigLoader_ObserverPattern(t *testing.T) {
 		tempDir := t.TempDir()
 		configPath := filepath.Join(tempDir, "config.yaml")
 
-		initialContent := `
-server:
-  port: 8080
-`
+		initialContent := validTestConfigWithPort(8080)
 		err := os.WriteFile(configPath, []byte(initialContent), 0644)
 		require.NoError(t, err)
 
@@ -313,10 +271,7 @@ server:
 		provider.Subscribe(mockObserver)
 
 		// Update config file
-		updatedContent := `
-server:
-  port: 9090
-`
+		updatedContent := validTestConfigWithPort(9090)
 		err = os.WriteFile(configPath, []byte(updatedContent), 0644)
 		require.NoError(t, err)
 
@@ -337,10 +292,7 @@ server:
 		tempDir := t.TempDir()
 		configPath := filepath.Join(tempDir, "config.yaml")
 
-		initialContent := `
-server:
-  port: 8080
-`
+		initialContent := validTestConfigWithPort(8080)
 		err := os.WriteFile(configPath, []byte(initialContent), 0644)
 		require.NoError(t, err)
 
@@ -368,10 +320,7 @@ server:
 		provider.Subscribe(observer3)
 
 		// Update config
-		updatedContent := `
-server:
-  port: 9090
-`
+		updatedContent := validTestConfigWithPort(9090)
 		err = os.WriteFile(configPath, []byte(updatedContent), 0644)
 		require.NoError(t, err)
 
@@ -390,10 +339,7 @@ server:
 		tempDir := t.TempDir()
 		configPath := filepath.Join(tempDir, "config.yaml")
 
-		initialContent := `
-server:
-  port: 8080
-`
+		initialContent := validTestConfigWithPort(8080)
 		err := os.WriteFile(configPath, []byte(initialContent), 0644)
 		require.NoError(t, err)
 
@@ -412,10 +358,7 @@ server:
 		provider.Unsubscribe(observer)
 
 		// Update config
-		updatedContent := `
-server:
-  port: 9090
-`
+		updatedContent := validTestConfigWithPort(9090)
 		err = os.WriteFile(configPath, []byte(updatedContent), 0644)
 		require.NoError(t, err)
 
@@ -434,10 +377,7 @@ func TestUnifiedConfigLoader_ThreadSafety(t *testing.T) {
 		tempDir := t.TempDir()
 		configPath := filepath.Join(tempDir, "config.yaml")
 
-		configContent := `
-server:
-  port: 8080
-`
+		configContent := validTestConfig()
 		err := os.WriteFile(configPath, []byte(configContent), 0644)
 		require.NoError(t, err)
 

@@ -171,12 +171,7 @@ func TestHotReloadAdapter_Integration(t *testing.T) {
 		tempDir := t.TempDir()
 		configPath := filepath.Join(tempDir, "config.yaml")
 
-		initialContent := `
-server:
-  port: 8080
-logging:
-  level: "info"
-`
+		initialContent := validTestConfigWithPort(8080)
 		err := os.WriteFile(configPath, []byte(initialContent), 0644)
 		require.NoError(t, err)
 
@@ -210,12 +205,7 @@ logging:
 		provider.Subscribe(adapter)
 
 		// Act - update config
-		updatedContent := `
-server:
-  port: 9090
-logging:
-  level: "debug"
-`
+		updatedContent := validTestConfigWithPort(9090)
 		err = os.WriteFile(configPath, []byte(updatedContent), 0644)
 		require.NoError(t, err)
 

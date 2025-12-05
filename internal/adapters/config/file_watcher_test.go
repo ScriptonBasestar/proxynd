@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -20,10 +19,7 @@ func TestNewFileWatcher(t *testing.T) {
 		tempDir := t.TempDir()
 		configPath := filepath.Join(tempDir, "config.yaml")
 
-		configContent := `
-server:
-  port: 8080
-`
+		configContent := validTestConfig()
 		err := os.WriteFile(configPath, []byte(configContent), 0644)
 		require.NoError(t, err)
 
@@ -44,10 +40,7 @@ server:
 		tempDir := t.TempDir()
 		configPath := filepath.Join(tempDir, "config.yaml")
 
-		configContent := `
-server:
-  port: 8080
-`
+		configContent := validTestConfig()
 		err := os.WriteFile(configPath, []byte(configContent), 0644)
 		require.NoError(t, err)
 
@@ -70,10 +63,7 @@ func TestFileWatcher_StartStop(t *testing.T) {
 		tempDir := t.TempDir()
 		configPath := filepath.Join(tempDir, "config.yaml")
 
-		configContent := `
-server:
-  port: 8080
-`
+		configContent := validTestConfig()
 		err := os.WriteFile(configPath, []byte(configContent), 0644)
 		require.NoError(t, err)
 
@@ -99,10 +89,7 @@ server:
 		tempDir := t.TempDir()
 		configPath := filepath.Join(tempDir, "config.yaml")
 
-		configContent := `
-server:
-  port: 8080
-`
+		configContent := validTestConfig()
 		err := os.WriteFile(configPath, []byte(configContent), 0644)
 		require.NoError(t, err)
 
@@ -129,10 +116,7 @@ server:
 		tempDir := t.TempDir()
 		configPath := filepath.Join(tempDir, "config.yaml")
 
-		configContent := `
-server:
-  port: 8080
-`
+		configContent := validTestConfig()
 		err := os.WriteFile(configPath, []byte(configContent), 0644)
 		require.NoError(t, err)
 
@@ -161,10 +145,7 @@ server:
 		tempDir := t.TempDir()
 		configPath := filepath.Join(tempDir, "config.yaml")
 
-		configContent := `
-server:
-  port: 8080
-`
+		configContent := validTestConfig()
 		err := os.WriteFile(configPath, []byte(configContent), 0644)
 		require.NoError(t, err)
 
@@ -187,10 +168,7 @@ server:
 		configPath := filepath.Join(tempDir, "config.yaml")
 
 		// Create loader with valid config first
-		configContent := `
-server:
-  port: 8080
-`
+		configContent := validTestConfig()
 		err := os.WriteFile(configPath, []byte(configContent), 0644)
 		require.NoError(t, err)
 
@@ -219,10 +197,7 @@ func TestFileWatcher_FileChangeDetection(t *testing.T) {
 		tempDir := t.TempDir()
 		configPath := filepath.Join(tempDir, "config.yaml")
 
-		initialContent := `
-server:
-  port: 8080
-`
+		initialContent := validTestConfigWithPort(8080)
 		err := os.WriteFile(configPath, []byte(initialContent), 0644)
 		require.NoError(t, err)
 
@@ -250,10 +225,7 @@ server:
 		defer watcher.Stop()
 
 		// Act - modify config file
-		updatedContent := `
-server:
-  port: 9090
-`
+		updatedContent := validTestConfigWithPort(9090)
 		err = os.WriteFile(configPath, []byte(updatedContent), 0644)
 		require.NoError(t, err)
 
@@ -270,10 +242,7 @@ server:
 		tempDir := t.TempDir()
 		configPath := filepath.Join(tempDir, "config.yaml")
 
-		initialContent := `
-server:
-  port: 8080
-`
+		initialContent := validTestConfigWithPort(8080)
 		err := os.WriteFile(configPath, []byte(initialContent), 0644)
 		require.NoError(t, err)
 
@@ -302,10 +271,7 @@ server:
 
 		// Act - modify config file multiple times rapidly
 		for i := 0; i < 5; i++ {
-			content := fmt.Sprintf(`
-server:
-  port: %d
-`, 9000+i)
+			content := validTestConfigWithPort(9000 + i)
 			err = os.WriteFile(configPath, []byte(content), 0644)
 			require.NoError(t, err)
 			time.Sleep(10 * time.Millisecond) // Rapid writes within debounce window
@@ -325,10 +291,7 @@ func TestFileWatcher_IsRunning(t *testing.T) {
 		tempDir := t.TempDir()
 		configPath := filepath.Join(tempDir, "config.yaml")
 
-		configContent := `
-server:
-  port: 8080
-`
+		configContent := validTestConfig()
 		err := os.WriteFile(configPath, []byte(configContent), 0644)
 		require.NoError(t, err)
 
@@ -347,10 +310,7 @@ server:
 		tempDir := t.TempDir()
 		configPath := filepath.Join(tempDir, "config.yaml")
 
-		configContent := `
-server:
-  port: 8080
-`
+		configContent := validTestConfig()
 		err := os.WriteFile(configPath, []byte(configContent), 0644)
 		require.NoError(t, err)
 
@@ -373,10 +333,7 @@ server:
 		tempDir := t.TempDir()
 		configPath := filepath.Join(tempDir, "config.yaml")
 
-		configContent := `
-server:
-  port: 8080
-`
+		configContent := validTestConfig()
 		err := os.WriteFile(configPath, []byte(configContent), 0644)
 		require.NoError(t, err)
 
