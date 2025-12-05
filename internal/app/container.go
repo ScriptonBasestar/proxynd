@@ -2,11 +2,9 @@ package app
 
 import (
 	"fmt"
-	"strings"
 	"sync"
 	"time"
 
-	"github.com/fsnotify/fsnotify"
 	"github.com/gofiber/fiber/v2"
 
 	configadapter "proxynd/internal/adapters/config"
@@ -31,13 +29,10 @@ type Container struct {
 	config *Config
 	logger logging.Logger
 
-	// 설정 캐싱 및 핫 리로드 관련 필드
-	unifiedConfigLoader *config.UnifiedConfigLoader
-	unifiedConfig       interface{} // Using interface{} to avoid type issues for now
-	configCacheMu       sync.RWMutex
-	configWatcher       *fsnotify.Watcher
-	configChangeCbs     []func(interface{})
-	configNotifier      *ConfigChangeNotifier
+	// Legacy config fields removed - now using hexagonal architecture (P1-01 Step 6)
+	// Config management now handled via ports.ConfigLoader in singletons["config-loader"]
+	// Hot reload now handled via ports.ConfigWatcher in singletons["config-watcher"]
+	configNotifier *ConfigChangeNotifier
 
 	// Repositories
 	cacheRepo  cache.Repository
@@ -64,31 +59,16 @@ type Container struct {
 // NewContainer creates a new dependency injection container
 func NewContainer(cfg *Config) *Container {
 	container := &Container{
-		config:          cfg,
-		logger:          logging.GetLogger(),
-		singletons:      make(map[string]interface{}),
-		configChangeCbs: make([]func(interface{}), 0),
-		configNotifier:  NewConfigChangeNotifier(),
+		config:         cfg,
+		logger:         logging.GetLogger(),
+		singletons:     make(map[string]interface{}),
+		configNotifier: NewConfigChangeNotifier(),
 	}
 
-	// UnifiedConfigLoader 초기화
-	loader, err := config.NewUnifiedConfigLoader(cfg.ConfigDir)
-	if err != nil {
-		container.logger.Error("Failed to create unified config loader", logging.F("error", err))
-		return container
-	}
-	container.unifiedConfigLoader = loader
-
-	// 초기 설정 로드
-	if unifiedConfig, err := container.unifiedConfigLoader.LoadConfig(); err == nil {
-		container.unifiedConfig = unifiedConfig
-		container.logger.Info("Initial unified configuration loaded successfully")
-	} else {
-		container.logger.Error("Failed to load initial unified config", logging.F("error", err))
-	}
-
-	// 설정 파일 감시 시작
-	container.startConfigWatcher()
+	// NOTE: Legacy config initialization removed (P1-01 Step 6)
+	// Config is now loaded lazily via ProvideConfigLoader() when first accessed
+	// File watching is started lazily via ProvideConfigWatcher() when first accessed
+	// This provides better separation of concerns and testability
 
 	return container
 }
@@ -103,12 +83,8 @@ func (c *Container) GetConfig() *Config {
 	return c.config
 }
 
-// GetUnifiedConfig returns the cached unified configuration
-func (c *Container) GetUnifiedConfig() interface{} {
-	c.configCacheMu.RLock()
-	defer c.configCacheMu.RUnlock()
-	return c.unifiedConfig
-}
+// NOTE: GetUnifiedConfig() removed (P1-01 Step 6)
+// Use GetRootConfig() instead for type-safe config access via hexagonal architecture
 
 // GetAptProxyConfig returns the APT proxy configuration
 func (c *Container) GetAptProxyConfig() (*config.AptProxyConfig, error) {
@@ -342,148 +318,23 @@ func (c *Container) GetApkProxyConfig() (*config.ApkProxySettings, error) {
 }
 
 // ReloadConfig reloads the configuration from files
-func (c *Container) ReloadConfig() error {
-	c.configCacheMu.Lock()
-	defer c.configCacheMu.Unlock()
-
-	// unifiedConfigLoader가 nil인지 확인
-	if c.unifiedConfigLoader == nil {
-		c.logger.Error("Unified config loader is nil, cannot reload config")
-		return fmt.Errorf("unified config loader is nil")
-	}
-
-	// 새 설정 로드
-	newConfig, err := c.unifiedConfigLoader.LoadConfig()
-	if err != nil {
-		c.logger.Error("Failed to reload unified config", logging.F("error", err))
-		return err
-	}
-
-	// 기존 설정과 비교하여 변경된 경우에만 업데이트
-	if c.unifiedConfig == nil || !c.isConfigEqual(c.unifiedConfig, newConfig) {
-		oldConfig := c.unifiedConfig
-		c.unifiedConfig = newConfig
-
-		c.logger.Info("Unified configuration reloaded successfully")
-
-		// 변경 콜백 실행
-		c.notifyConfigChange(newConfig)
-
-		// 새로운 알림 시스템을 통한 알림
-		if c.configNotifier != nil {
-			c.configNotifier.NotifyChange(newConfig)
-		}
-
-		// 서비스 팩토리에 설정 변경 알림
-		if c.serviceFactory != nil {
-			c.serviceFactory.ReloadServices()
-		}
-
-		if oldConfig == nil {
-			c.logger.Info("Initial unified configuration loaded")
-		} else {
-			c.logger.Info("Unified configuration updated")
-		}
-	}
-
-	return nil
-}
-
-// AddConfigChangeCallback adds a callback to be called when config changes
-func (c *Container) AddConfigChangeCallback(callback func(interface{})) {
-	c.configCacheMu.Lock()
-	defer c.configCacheMu.Unlock()
-	c.configChangeCbs = append(c.configChangeCbs, callback)
-
-	// 새로운 알림 시스템에도 추가
-	c.configNotifier.AddListener(callback)
-}
+// NOTE: Legacy ReloadConfig() and AddConfigChangeCallback() removed (P1-01 Step 6)
+// Config reloading is now handled automatically by:
+// 1. ports.ConfigWatcher (file watching with fsnotify)
+// 2. ports.ConfigLoader.Reload() (triggered by watcher)
+// 3. ports.ConfigObserver pattern (hot reload handlers subscribed to loader)
+// To reload config manually: loader.Reload() via ProvideConfigLoader()
+// To subscribe to changes: loader.Subscribe(observer) where loader implements ConfigProvider
 
 // GetConfigNotifier returns the config change notifier
 func (c *Container) GetConfigNotifier() *ConfigChangeNotifier {
 	return c.configNotifier
 }
 
-// startConfigWatcher starts watching for configuration file changes
-func (c *Container) startConfigWatcher() {
-	// unifiedConfigLoader가 nil인지 확인
-	if c.unifiedConfigLoader == nil {
-		c.logger.Error("Unified config loader not initialized, cannot start file watcher")
-		return
-	}
-
-	watcher, err := fsnotify.NewWatcher()
-	if err != nil {
-		c.logger.Error("Failed to create config watcher", logging.F("error", err))
-		return
-	}
-
-	c.configWatcher = watcher
-
-	// 설정 디렉토리 감시
-	err = watcher.Add(c.config.ConfigDir)
-	if err != nil {
-		c.logger.Error("Failed to watch config directory", logging.F("error", err))
-		return
-	}
-
-	// 고루틴에서 파일 변경 감지
-	go func() {
-		defer func() { _ = watcher.Close() }()
-
-		for {
-			select {
-			case event, ok := <-watcher.Events:
-				if !ok {
-					return
-				}
-
-				// YAML 파일 변경 감지
-				if event.Op&fsnotify.Write == fsnotify.Write &&
-					(strings.HasSuffix(event.Name, ".yaml") || strings.HasSuffix(event.Name, ".yml")) {
-					c.logger.Info("Config file changed", logging.F("file", event.Name))
-
-					// 약간의 지연 후 리로드 (파일 쓰기 완료 대기)
-					time.Sleep(100 * time.Millisecond)
-
-					// unifiedConfigLoader가 여전히 유효한지 확인
-					c.configCacheMu.RLock()
-					if c.unifiedConfigLoader != nil && c.configNotifier != nil {
-						c.configCacheMu.RUnlock()
-						if err := c.ReloadConfig(); err != nil {
-							c.logger.Error("Failed to reload unified config after file change",
-								logging.F("error", err), logging.F("file", event.Name))
-						}
-					} else {
-						c.configCacheMu.RUnlock()
-						c.logger.Warn("Unified config loader or notifier is nil, skipping reload")
-						return // 정리되었으므로 고루틴 종료
-					}
-				}
-
-			case err, ok := <-watcher.Errors:
-				if !ok {
-					return
-				}
-				c.logger.Error("Config watcher error", logging.F("error", err))
-			}
-		}
-	}()
-}
-
-// notifyConfigChange notifies all registered callbacks about config changes
-func (c *Container) notifyConfigChange(config interface{}) {
-	for _, callback := range c.configChangeCbs {
-		go func(cb func(interface{})) {
-			defer func() {
-				if r := recover(); r != nil {
-					c.logger.Error("Config change callback panicked", logging.F("panic", r))
-				}
-			}()
-			cb(config)
-		}(callback)
-	}
-}
+// NOTE: Legacy startConfigWatcher() and notifyConfigChange() removed (P1-01 Step 6)
+// File watching is now handled by ports.ConfigWatcher via ProvideConfigWatcher()
+// The watcher is started automatically when first accessed
+// Config change notifications are handled via observer pattern (ports.ConfigObserver)
 
 // isConfigEqual compares two configurations for equality (simplified check)
 func (c *Container) isConfigEqual(old, newVal interface{}) bool {
@@ -1212,19 +1063,12 @@ func (c *Container) Close() error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	// Close new hexagonal config watcher
+	// Close hexagonal config watcher
 	if watcher, exists := c.singletons["config-watcher"]; exists {
 		if configWatcher, ok := watcher.(ports.ConfigWatcher); ok {
 			if err := configWatcher.Stop(); err != nil {
 				c.logger.Error("Failed to stop config watcher", logging.F("error", err))
 			}
-		}
-	}
-
-	// Close legacy config watcher (will be removed in Step 6)
-	if c.configWatcher != nil {
-		if err := c.configWatcher.Close(); err != nil {
-			c.logger.Error("Failed to close legacy config watcher", logging.F("error", err))
 		}
 	}
 
@@ -1253,10 +1097,6 @@ func (c *Container) Close() error {
 	c.serviceFactory = nil
 	c.handlerFactory = nil
 	c.handlerAdapterFactory = nil
-	c.configWatcher = nil
-	c.unifiedConfig = nil
-	c.unifiedConfigLoader = nil
-	c.configChangeCbs = nil
 
 	// 설정 변경 알림자 정리
 	if c.configNotifier != nil {
@@ -1264,7 +1104,7 @@ func (c *Container) Close() error {
 		c.configNotifier = nil
 	}
 
-	// c.unifiedRouter = nil // Commented out since field is removed
+	// Clear singletons (includes new hexagonal architecture components)
 	c.singletons = make(map[string]interface{})
 
 	return nil
