@@ -8,6 +8,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Webhook Dead Letter Queue (DLQ)**: Fault-tolerant storage for failed webhook events (2025-12-05)
+  - File-based DLQ persistence with automatic retry support
+  - 7 HTTP API endpoints for DLQ management (list, get, retry, delete, stats, purge, clear)
+  - Automatic DLQ integration after max retries exhausted
+  - Comprehensive DLQ documentation (633 lines) with operational guide
+  - Integration tests and statistics tracking
+  - DLQ capacity management (10,000 items max, 7-day retention)
+- **Configuration Hot Reload System**: Zero-downtime configuration updates (2025-11-25)
+  - 7 hot reload handlers (Logging, Cache, Metrics, Security, Webhook, Proxy, Custom)
+  - fsnotify integration for automatic config file watching
+  - Handler-based architecture for component-specific reload logic
+  - Support for dynamic log level/format changes without restart
+  - Cache TTL and size updates at runtime
+  - Metrics server start/stop without restart
+  - IP whitelist and BasicAuth user updates
+  - Comprehensive test suite (486 lines) with 14+ test cases
+  - Complete documentation (390+ lines) with examples and best practices
+- **Webhook System Enhancements**: Improved webhook delivery and history tracking (2025-12-05)
+  - Fixed WebhookHistoryManager integration (was returning nil)
+  - Added real history manager with file-based persistence
+  - Integrated DLQ for failed webhook events
+  - Enhanced webhook worker with DLQ storage after max retries
 - **AWS SSM Integration**: AWS Systems Manager Parameter Store support with intelligent caching
   - Complete SSM client with GetParameter, GetParameters, GetParametersByPath operations
   - TTL-based caching layer (default 5 minutes) to reduce API calls and costs
