@@ -12,7 +12,7 @@ import (
 func TestDeadLetterQueue_AddAndList(t *testing.T) {
 	// Create temporary directory for DLQ
 	tempDir := filepath.Join(os.TempDir(), "test_dlq")
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	dlq, err := NewDeadLetterQueue(tempDir, 100)
 	if err != nil {
@@ -68,7 +68,7 @@ func TestDeadLetterQueue_AddAndList(t *testing.T) {
 
 func TestDeadLetterQueue_GetAndRemove(t *testing.T) {
 	tempDir := filepath.Join(os.TempDir(), "test_dlq_get_remove")
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	dlq, err := NewDeadLetterQueue(tempDir, 100)
 	if err != nil {
@@ -126,7 +126,7 @@ func TestDeadLetterQueue_GetAndRemove(t *testing.T) {
 
 func TestDeadLetterQueue_Retry(t *testing.T) {
 	tempDir := filepath.Join(os.TempDir(), "test_dlq_retry")
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	dlq, err := NewDeadLetterQueue(tempDir, 100)
 	if err != nil {
@@ -176,7 +176,7 @@ func TestDeadLetterQueue_Retry(t *testing.T) {
 
 func TestDeadLetterQueue_MaxSize(t *testing.T) {
 	tempDir := filepath.Join(os.TempDir(), "test_dlq_maxsize")
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	maxSize := 5
 	dlq, err := NewDeadLetterQueue(tempDir, maxSize)
@@ -222,7 +222,7 @@ func TestDeadLetterQueue_MaxSize(t *testing.T) {
 
 func TestDeadLetterQueue_Statistics(t *testing.T) {
 	tempDir := filepath.Join(os.TempDir(), "test_dlq_stats")
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	dlq, err := NewDeadLetterQueue(tempDir, 100)
 	if err != nil {
@@ -279,7 +279,7 @@ func TestDeadLetterQueue_Statistics(t *testing.T) {
 
 func TestDeadLetterQueue_Purge(t *testing.T) {
 	tempDir := filepath.Join(os.TempDir(), "test_dlq_purge")
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	dlq, err := NewDeadLetterQueue(tempDir, 100)
 	if err != nil {

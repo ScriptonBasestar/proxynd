@@ -222,7 +222,7 @@ func TestFileWatcher_FileChangeDetection(t *testing.T) {
 
 		err = watcher.Start()
 		require.NoError(t, err)
-		defer watcher.Stop()
+		defer func() { _ = watcher.Stop() }()
 
 		// Act - modify config file
 		updatedContent := validTestConfigWithPort(9090)
@@ -267,7 +267,7 @@ func TestFileWatcher_FileChangeDetection(t *testing.T) {
 
 		err = watcher.Start()
 		require.NoError(t, err)
-		defer watcher.Stop()
+		defer func() { _ = watcher.Stop() }()
 
 		// Act - modify config file multiple times rapidly
 		for i := 0; i < 5; i++ {
@@ -322,7 +322,7 @@ func TestFileWatcher_IsRunning(t *testing.T) {
 
 		err = watcher.Start()
 		require.NoError(t, err)
-		defer watcher.Stop()
+		defer func() { _ = watcher.Stop() }()
 
 		// Act & Assert
 		assert.True(t, watcher.IsRunning())

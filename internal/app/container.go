@@ -337,6 +337,9 @@ func (c *Container) GetConfigNotifier() *ConfigChangeNotifier {
 // Config change notifications are handled via observer pattern (ports.ConfigObserver)
 
 // isConfigEqual compares two configurations for equality (simplified check)
+// TODO: HEXAGONAL_MIGRATION - Will be used when unified config reload is implemented
+//
+//nolint:unused // Will be used in unified config reload implementation
 func (c *Container) isConfigEqual(old, newVal interface{}) bool {
 	// 간단한 포인터 비교 (실제로는 더 정교한 비교가 필요할 수 있음)
 	if old == nil && newVal == nil {

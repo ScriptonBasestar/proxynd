@@ -58,7 +58,7 @@ func (fw *fileWatcher) Start() error {
 
 	// Add config file to watch list
 	if err := watcher.Add(fw.configPath); err != nil {
-		watcher.Close()
+		_ = watcher.Close()
 		return fmt.Errorf("failed to watch config file %s: %w", fw.configPath, err)
 	}
 

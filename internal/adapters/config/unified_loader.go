@@ -15,7 +15,7 @@ import (
 type unifiedConfigLoader struct {
 	configPath string
 	current    *config.RootConfig
-	loader     *config.UnifiedConfigLoader
+	loader     *config.UnifiedConfigLoader //nolint:unused // TODO: HEXAGONAL_MIGRATION - Use when unified config loading is implemented
 	observers  []ports.ConfigObserver
 	mu         sync.RWMutex
 	logger     logging.Logger
