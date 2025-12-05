@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Unified Config Hexagonal Architecture Migration** (P1-01): Complete hexagonal architecture refactoring of config system (2025-12-05)
+  - Migrated to ports and adapters pattern with clean separation of concerns
+  - Created 3 port interfaces: `ConfigLoader`, `ConfigProvider`, `ConfigWatcher`
+  - Implemented 3 adapters: `UnifiedConfigLoader`, `FileWatcher`, `HotReloadAdapter`
+  - Integrated with DI container for lazy loading and lifecycle management
+  - Added observer pattern for config change notifications
+  - Comprehensive test suite (1,124 lines) covering all adapters
+  - Removed 160 lines of legacy code from container.go
+  - All tests passing with proper validation and helper functions
 - **Webhook Dead Letter Queue (DLQ)**: Fault-tolerant storage for failed webhook events (2025-12-05)
   - File-based DLQ persistence with automatic retry support
   - 7 HTTP API endpoints for DLQ management (list, get, retry, delete, stats, purge, clear)
